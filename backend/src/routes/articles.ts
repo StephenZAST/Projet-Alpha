@@ -1,6 +1,8 @@
 import express from 'express';
 import { authenticateUser, requireAdmin } from '../middleware/auth';
 import { createArticle, getArticles, updateArticle, deleteArticle } from '../services/articles';
+import { validateArticleInput } from '../middleware/validation/index';
+
 
 const router = express.Router();
 
@@ -15,7 +17,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // Protected admin routes
-router.post('/', authenticateUser, requireAdmin, async (req, res, next) => {
+router.post('/', authenticateUser, requireAdmin, validateArticleInput, async (req, res, next) => {
   try {
     const article = await createArticle(req.body);
     res.status(201).json(article);
@@ -24,7 +26,7 @@ router.post('/', authenticateUser, requireAdmin, async (req, res, next) => {
   }
 });
 
-router.put('/:id', authenticateUser, requireAdmin, async (req, res, next) => {
+router.put('/:id', authenticateUser, requireAdmin, validateArticleInput, async (req, res, next) => {
   try {
     const articleId = req.params.id;
     const updatedArticle = await updateArticle(articleId, req.body);

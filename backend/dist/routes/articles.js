@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_1 = require("../middleware/auth");
 const articles_1 = require("../services/articles");
+const index_1 = require("../middleware/validation/index");
 const router = express_1.default.Router();
 // Public route - anyone can view articles
 router.get('/', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -27,7 +28,7 @@ router.get('/', (req, res, next) => __awaiter(void 0, void 0, void 0, function* 
     }
 }));
 // Protected admin routes
-router.post('/', auth_1.authenticateUser, auth_1.requireAdmin, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/', auth_1.authenticateUser, auth_1.requireAdmin, index_1.validateArticleInput, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const article = yield (0, articles_1.createArticle)(req.body);
         res.status(201).json(article);
@@ -36,7 +37,7 @@ router.post('/', auth_1.authenticateUser, auth_1.requireAdmin, (req, res, next) 
         next(error);
     }
 }));
-router.put('/:id', auth_1.authenticateUser, auth_1.requireAdmin, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+router.put('/:id', auth_1.authenticateUser, auth_1.requireAdmin, index_1.validateArticleInput, (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const articleId = req.params.id;
         const updatedArticle = yield (0, articles_1.updateArticle)(articleId, req.body);
