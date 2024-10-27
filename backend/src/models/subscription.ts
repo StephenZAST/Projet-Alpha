@@ -12,3 +12,14 @@ export interface SubscriptionPlan {
     isActive: boolean;
   }
   
+export enum SubscriptionType {
+  PREMIUM = 'PREMIUM',
+  VIP = 'VIP'
+}
+
+export interface Subscription {
+  type: SubscriptionType;
+  pricePerMonth: number;
+  weightLimitPerWeek: number;
+  description: string;
+}

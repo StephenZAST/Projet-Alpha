@@ -23,11 +23,16 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.db = void 0;
+exports.subscriptionsRef = exports.articlesRef = exports.ordersRef = exports.usersRef = exports.auth = exports.db = void 0;
 const admin = __importStar(require("firebase-admin"));
-// Replace with the actual path to your service account key
 const serviceAccount = require("../../serviceAccountKey.json");
 const app = admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
 });
 exports.db = app.firestore();
+exports.auth = app.auth();
+// Collections references
+exports.usersRef = exports.db.collection('users');
+exports.ordersRef = exports.db.collection('orders');
+exports.articlesRef = exports.db.collection('articles');
+exports.subscriptionsRef = exports.db.collection('subscriptionPlans');

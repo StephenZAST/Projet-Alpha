@@ -88,7 +88,10 @@ export enum MainService {
   WASH_AND_IRON = 'wash_and_iron',
   WASH_ONLY = 'wash_only',
   IRON_ONLY = 'iron_only',
-  PICKUP_DELIVERY = 'pickup_delivery'
+  PICKUP_DELIVERY = 'pickup_delivery',
+  PRESSING = 'pressing',
+  DRY_CLEANING = 'dry_cleaning',
+  IRONING = 'ironing'
 }
 
 export enum AdditionalService {
@@ -121,4 +124,4 @@ export enum PaymentStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
   FAILED = 'failed'
-}  
+}
