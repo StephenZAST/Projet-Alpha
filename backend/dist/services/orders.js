@@ -32,7 +32,22 @@ function getOrdersByUser(userId) {
                 .where('userId', '==', userId)
                 .orderBy('creationDate', 'desc')
                 .get();
-            return ordersSnapshot.docs.map(doc => (Object.assign({ orderId: doc.id }, doc.data())));
+            return ordersSnapshot.docs.map((doc) => {
+                const data = doc.data();
+                // Explicitly map fields to ensure correct types
+                return {
+                    id: doc.id,
+                    userId: data.userId,
+                    status: data.status,
+                    items: data.items,
+                    pickup: data.pickup,
+                    delivery: data.delivery,
+                    tracking: data.tracking,
+                    totalAmount: data.totalAmount,
+                    createdAt: data.createdAt,
+                    updatedAt: data.updatedAt,
+                };
+            });
         }
         catch (error) {
             console.error('Error fetching orders:', error);

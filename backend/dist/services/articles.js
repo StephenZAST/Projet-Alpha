@@ -8,18 +8,38 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getArticles = exports.createArticle = void 0;
 const firebase_1 = require("./firebase");
-function createArticle(article) {
+const errors_1 = require("../utils/errors");
+const joi_1 = __importDefault(require("joi"));
+const order_1 = require("../models/order"); // Import necessary enums
+const articleValidationSchema = joi_1.default.object({
+    articleName: joi_1.default.string().required(),
+    articleCategory: joi_1.default.string().required(),
+    prices: joi_1.default.object().required(),
+    availableServices: joi_1.default.array().items(joi_1.default.string().valid(...Object.values(order_1.MainService))).required(),
+    availableAdditionalServices: joi_1.default.array().items(joi_1.default.string()).required()
+});
+function createArticle(articleData) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const articleRef = yield firebase_1.db.collection('articles').add(article);
-            return Object.assign(Object.assign({}, article), { articleId: articleRef.id });
+            const validationResult = articleValidationSchema.validate(articleData);
+            if (validationResult.error) {
+                const errorMessage = validationResult.error.details[0].message;
+                throw new errors_1.AppError(400, errorMessage, errors_1.errorCodes.INVALID_ARTICLE_DATA);
+            }
+            const articleRef = yield firebase_1.db.collection('articles').add(articleData);
+            return Object.assign(Object.assign({}, articleData), { articleId: articleRef.id });
         }
         catch (error) {
-            console.error('Error creating article:', error);
-            return null;
+            if (error instanceof errors_1.AppError) {
+                return null; // Return null on validation or database error
+            }
+            throw new errors_1.AppError(500, 'Failed to create article', errors_1.errorCodes.DATABASE_ERROR);
         }
     });
 }
@@ -28,11 +48,15 @@ function getArticles() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const articlesSnapshot = yield firebase_1.db.collection('articles').get();
-            return articlesSnapshot.docs.map(doc => (Object.assign({ articleId: doc.id }, doc.data())));
+            return articlesSnapshot.docs.map((doc) => (Object.assign({ articleId: doc.id }, doc.data())));
         }
         catch (error) {
-            console.error('Error fetching articles:', error);
-            return [];
+            if (error instanceof errors_1.AppError) {
+                throw error;
+            }
+            else {
+                throw new errors_1.AppError(500, 'Failed to fetch articles', errors_1.errorCodes.DATABASE_ERROR);
+            }
         }
     });
 }

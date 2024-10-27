@@ -20,6 +20,9 @@ var MainService;
     MainService["WASH_ONLY"] = "wash_only";
     MainService["IRON_ONLY"] = "iron_only";
     MainService["PICKUP_DELIVERY"] = "pickup_delivery";
+    MainService["PRESSING"] = "pressing";
+    MainService["DRY_CLEANING"] = "dry_cleaning";
+    MainService["IRONING"] = "ironing";
 })(MainService || (exports.MainService = MainService = {}));
 var AdditionalService;
 (function (AdditionalService) {

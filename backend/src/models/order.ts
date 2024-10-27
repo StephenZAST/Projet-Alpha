@@ -1,7 +1,8 @@
-import { Address } from "cluster";
+import { Address } from "./address";
 
 export interface Order {
   id: string;
+  orderId: string;
   userId: string;
   status: OrderStatus;
   items: OrderItem[];

@@ -1,5 +1,6 @@
 import { db } from './firebase';
 import { Order, OrderStatus } from '../models/order';
+import { AppError, errorCodes } from '../utils/errors'; // Import error handling
 
 export async function createOrder(order: Order): Promise<Order | null> {
   try {
@@ -8,7 +9,6 @@ export async function createOrder(order: Order): Promise<Order | null> {
       creationDate: new Date(),
       status: OrderStatus.PENDING,
     });
-    
     return { ...order, orderId: orderRef.id };
   } catch (error) {
     console.error('Error creating order:', error);
@@ -23,10 +23,22 @@ export async function getOrdersByUser(userId: string): Promise<Order[]> {
       .orderBy('creationDate', 'desc')
       .get();
 
-    return ordersSnapshot.docs.map(doc => ({
-      orderId: doc.id,
-      ...doc.data()
-    } as Order));
+    return ordersSnapshot.docs.map((doc) => {
+      const data = doc.data();
+      // Explicitly map fields to ensure correct types
+      return {
+        id: doc.id,
+        userId: data.userId,
+        status: data.status,
+        items: data.items,
+        pickup: data.pickup,
+        delivery: data.delivery,
+        tracking: data.tracking,
+        totalAmount: data.totalAmount,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+      } as Order;
+    });
   } catch (error) {
     console.error('Error fetching orders:', error);
     return [];
@@ -34,7 +46,7 @@ export async function getOrdersByUser(userId: string): Promise<Order[]> {
 }
 
 export async function updateOrderStatus(
-  orderId: string, 
+  orderId: string,
   status: OrderStatus
 ): Promise<boolean> {
   try {
