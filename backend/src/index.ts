@@ -6,6 +6,8 @@ import usersRouter from './routes/users';
 import ordersRouter from './routes/orders';
 import articlesRouter from './routes/articles';
 import notificationsRouter from './routes/notifications';
+import categoriesRouter from './routes/categories';
+import subscriptionsRouter from './routes/subscriptions';
 import { config } from './config';
 
 const app = express();
@@ -39,6 +41,9 @@ app.use('/api/users', usersRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/articles', articlesRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/categories', categoriesRouter);
+app.use('/api/subscriptions', subscriptionsRouter);
+
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);

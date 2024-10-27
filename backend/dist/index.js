@@ -9,7 +9,10 @@ const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const users_1 = __importDefault(require("./routes/users"));
 const orders_1 = __importDefault(require("./routes/orders"));
+const articles_1 = __importDefault(require("./routes/articles"));
 const notifications_1 = __importDefault(require("./routes/notifications"));
+const categories_1 = __importDefault(require("./routes/categories"));
+const subscriptions_1 = __importDefault(require("./routes/subscriptions"));
 const config_1 = require("./config");
 const app = (0, express_1.default)();
 const port = config_1.config.port || 3001;
@@ -35,7 +38,10 @@ app.use(express_1.default.urlencoded({ extended: true }));
 // Routes
 app.use('/api/users', users_1.default);
 app.use('/api/orders', orders_1.default);
+app.use('/api/articles', articles_1.default);
 app.use('/api/notifications', notifications_1.default);
+app.use('/api/categories', categories_1.default);
+app.use('/api/subscriptions', subscriptions_1.default);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
