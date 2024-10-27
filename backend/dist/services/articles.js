@@ -12,15 +12,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getArticles = exports.createArticle = void 0;
+exports.deleteArticle = exports.updateArticle = exports.getArticles = exports.createArticle = void 0;
 const firebase_1 = require("./firebase");
 const errors_1 = require("../utils/errors");
 const joi_1 = __importDefault(require("joi"));
-const order_1 = require("../models/order"); // Import necessary enums
+const order_1 = require("../models/order");
 const articleValidationSchema = joi_1.default.object({
     articleName: joi_1.default.string().required(),
     articleCategory: joi_1.default.string().required(),
-    prices: joi_1.default.object().required(),
+    prices: joi_1.default.object().required().pattern(joi_1.default.string().valid(...Object.values(order_1.MainService)), joi_1.default.object().pattern(joi_1.default.string().valid(...Object.values(order_1.PriceType)), joi_1.default.number().min(0))),
     availableServices: joi_1.default.array().items(joi_1.default.string().valid(...Object.values(order_1.MainService))).required(),
     availableAdditionalServices: joi_1.default.array().items(joi_1.default.string()).required()
 });
@@ -37,7 +37,7 @@ function createArticle(articleData) {
         }
         catch (error) {
             if (error instanceof errors_1.AppError) {
-                return null; // Return null on validation or database error
+                return null;
             }
             throw new errors_1.AppError(500, 'Failed to create article', errors_1.errorCodes.DATABASE_ERROR);
         }
@@ -61,3 +61,41 @@ function getArticles() {
     });
 }
 exports.getArticles = getArticles;
+function updateArticle(articleId, articleData) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const articleRef = firebase_1.db.collection('articles').doc(articleId);
+            const article = yield articleRef.get();
+            if (!article.exists) {
+                throw new errors_1.AppError(404, 'Article not found', errors_1.errorCodes.ARTICLE_NOT_FOUND);
+            }
+            yield articleRef.update(articleData);
+            return Object.assign(Object.assign({ articleId }, article.data()), articleData);
+        }
+        catch (error) {
+            if (error instanceof errors_1.AppError)
+                throw error;
+            throw new errors_1.AppError(500, 'Failed to update article', errors_1.errorCodes.DATABASE_ERROR);
+        }
+    });
+}
+exports.updateArticle = updateArticle;
+function deleteArticle(articleId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const articleRef = firebase_1.db.collection('articles').doc(articleId);
+            const article = yield articleRef.get();
+            if (!article.exists) {
+                throw new errors_1.AppError(404, 'Article not found', errors_1.errorCodes.ARTICLE_NOT_FOUND);
+            }
+            yield articleRef.delete();
+            return true;
+        }
+        catch (error) {
+            if (error instanceof errors_1.AppError)
+                throw error;
+            throw new errors_1.AppError(500, 'Failed to delete article', errors_1.errorCodes.DATABASE_ERROR);
+        }
+    });
+}
+exports.deleteArticle = deleteArticle;

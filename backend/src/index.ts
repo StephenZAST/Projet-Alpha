@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import usersRouter from './routes/users';
 import ordersRouter from './routes/orders';
+import articlesRouter from './routes/articles';
 import notificationsRouter from './routes/notifications';
 import { config } from './config';
 
@@ -36,6 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/users', usersRouter);
 app.use('/api/orders', ordersRouter);
+app.use('/api/articles', articlesRouter);
 app.use('/api/notifications', notificationsRouter);
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
