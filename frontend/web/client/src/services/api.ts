@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { OrderData } from '../types/order';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -11,6 +12,11 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+export const ordersApi = {
+  create: (orderData: OrderData) => api.post('/orders', orderData),
+  getByUser: () => api.get('/orders'),
+};
 
 export const articlesApi = {
   getAll: () => api.get('/articles'),

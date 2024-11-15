@@ -9,7 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserSubscription = exports.deleteSubscription = exports.updateSubscription = exports.createSubscription = exports.getSubscriptions = void 0;
+exports.getSubscriptions = getSubscriptions;
+exports.createSubscription = createSubscription;
+exports.updateSubscription = updateSubscription;
+exports.deleteSubscription = deleteSubscription;
+exports.getUserSubscription = getUserSubscription;
 const firebase_1 = require("./firebase");
 const errors_1 = require("../utils/errors");
 function getSubscriptions() {
@@ -23,7 +27,6 @@ function getSubscriptions() {
         }
     });
 }
-exports.getSubscriptions = getSubscriptions;
 function createSubscription(subscriptionData) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -35,7 +38,6 @@ function createSubscription(subscriptionData) {
         }
     });
 }
-exports.createSubscription = createSubscription;
 function updateSubscription(subscriptionId, subscriptionData) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -49,7 +51,6 @@ function updateSubscription(subscriptionId, subscriptionData) {
         }
     });
 }
-exports.updateSubscription = updateSubscription;
 function deleteSubscription(subscriptionId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -60,7 +61,6 @@ function deleteSubscription(subscriptionId) {
         }
     });
 }
-exports.deleteSubscription = deleteSubscription;
 function getUserSubscription(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -77,4 +77,3 @@ function getUserSubscription(userId) {
         }
     });
 }
-exports.getUserSubscription = getUserSubscription;

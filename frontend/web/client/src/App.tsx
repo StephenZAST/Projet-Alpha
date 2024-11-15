@@ -4,7 +4,7 @@ import { theme } from './styles/theme';
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import Orders from './pages/Orders';
-import Profile from './pages/Profile';
+import Profile from './pages/Profile.tsx';
 
 function App() {
   return (

@@ -12,7 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteArticle = exports.updateArticle = exports.getArticles = exports.createArticle = void 0;
+exports.createArticle = createArticle;
+exports.getArticles = getArticles;
+exports.updateArticle = updateArticle;
+exports.deleteArticle = deleteArticle;
 const firebase_1 = require("./firebase");
 const errors_1 = require("../utils/errors");
 const joi_1 = __importDefault(require("joi"));
@@ -43,7 +46,6 @@ function createArticle(articleData) {
         }
     });
 }
-exports.createArticle = createArticle;
 function getArticles() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -60,7 +62,6 @@ function getArticles() {
         }
     });
 }
-exports.getArticles = getArticles;
 function updateArticle(articleId, articleData) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -79,7 +80,6 @@ function updateArticle(articleId, articleData) {
         }
     });
 }
-exports.updateArticle = updateArticle;
 function deleteArticle(articleId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -98,4 +98,3 @@ function deleteArticle(articleId) {
         }
     });
 }
-exports.deleteArticle = deleteArticle;

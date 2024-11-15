@@ -9,7 +9,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCategory = exports.updateCategory = exports.createCategory = exports.getCategories = void 0;
+exports.getCategories = getCategories;
+exports.createCategory = createCategory;
+exports.updateCategory = updateCategory;
+exports.deleteCategory = deleteCategory;
 const firebase_1 = require("./firebase");
 const errors_1 = require("../utils/errors");
 function getCategories() {
@@ -23,7 +26,6 @@ function getCategories() {
         }
     });
 }
-exports.getCategories = getCategories;
 function createCategory(categoryData) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -35,7 +37,6 @@ function createCategory(categoryData) {
         }
     });
 }
-exports.createCategory = createCategory;
 function updateCategory(categoryId, categoryData) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -49,7 +50,6 @@ function updateCategory(categoryId, categoryData) {
         }
     });
 }
-exports.updateCategory = updateCategory;
 function deleteCategory(categoryId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -60,4 +60,3 @@ function deleteCategory(categoryId) {
         }
     });
 }
-exports.deleteCategory = deleteCategory;

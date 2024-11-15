@@ -9,7 +9,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.requireDriver = exports.requireAffiliate = exports.requireAdmin = exports.authenticateUser = void 0;
+exports.authenticateUser = authenticateUser;
+exports.requireAdmin = requireAdmin;
+exports.requireAffiliate = requireAffiliate;
+exports.requireDriver = requireDriver;
 const firebase_1 = require("../services/firebase");
 function authenticateUser(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -34,7 +37,6 @@ function authenticateUser(req, res, next) {
         }
     });
 }
-exports.authenticateUser = authenticateUser;
 // Middleware for checking admin role
 function requireAdmin(req, res, next) {
     if (!req.user || req.user.role !== 'admin') {
@@ -42,7 +44,6 @@ function requireAdmin(req, res, next) {
     }
     next();
 }
-exports.requireAdmin = requireAdmin;
 // Middleware for checking affiliate role
 function requireAffiliate(req, res, next) {
     if (!req.user || req.user.role !== 'affiliate') {
@@ -50,11 +51,9 @@ function requireAffiliate(req, res, next) {
     }
     next();
 }
-exports.requireAffiliate = requireAffiliate;
 function requireDriver(req, res, next) {
     if (!req.user || req.user.role !== 'driver') {
         return res.status(403).json({ error: 'Access denied. Driver privileges required.' });
     }
     next();
 }
-exports.requireDriver = requireDriver;

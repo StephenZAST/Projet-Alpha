@@ -11,7 +11,7 @@ import subscriptionsRouter from './routes/subscriptions';
 import { config } from './config';
 
 const app = express();
-const port = config.port || 3001;
+const port = process.env.PORT || config.port || 3001;
 
 // Rate limiting configuration
 const limiter = rateLimit({
@@ -23,7 +23,7 @@ const limiter = rateLimit({
 // Security middleware
 app.use(helmet()); // Adds various HTTP headers for security
 app.use(cors({
-  origin: config.allowedOrigins || '*', // Configure your allowed origins
+  origin: config.allowedOrigins || '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -44,6 +44,11 @@ app.use('/api/notifications', notificationsRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/subscriptions', subscriptionsRouter);
 
+// Basic route for testing
+app.get('/', (req, res) => {
+  res.json({ message: 'Backend API is running!' });
+});
+
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
@@ -53,6 +58,25 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+// Handle specific errors
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled Rejection:', error);
+});
+
+// Start server with error handling
+const server = app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+}).on('error', (err: any) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${port} is already in use. Please try a different port.`);
+    process.exit(1);
+  } else {
+    console.error('Server error:', err);
+    process.exit(1);
+  }
 });

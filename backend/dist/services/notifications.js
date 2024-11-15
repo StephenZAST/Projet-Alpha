@@ -132,8 +132,8 @@ class NotificationService {
             }
         });
     }
-    getUserNotifications(userId, limit = 50) {
-        return __awaiter(this, void 0, void 0, function* () {
+    getUserNotifications(userId_1) {
+        return __awaiter(this, arguments, void 0, function* (userId, limit = 50) {
             const snapshot = yield this.notificationsRef
                 .where('recipientId', '==', userId)
                 .orderBy('createdAt', 'desc')

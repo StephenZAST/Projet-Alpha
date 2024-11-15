@@ -9,7 +9,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateOrderStatus = exports.getOrdersByUser = exports.createOrder = void 0;
+exports.createOrder = createOrder;
+exports.getOrdersByUser = getOrdersByUser;
+exports.updateOrderStatus = updateOrderStatus;
 const firebase_1 = require("./firebase");
 const order_1 = require("../models/order");
 function createOrder(order) {
@@ -24,7 +26,6 @@ function createOrder(order) {
         }
     });
 }
-exports.createOrder = createOrder;
 function getOrdersByUser(userId) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -55,7 +56,6 @@ function getOrdersByUser(userId) {
         }
     });
 }
-exports.getOrdersByUser = getOrdersByUser;
 function updateOrderStatus(orderId, status) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -68,4 +68,3 @@ function updateOrderStatus(orderId, status) {
         }
     });
 }
-exports.updateOrderStatus = updateOrderStatus;

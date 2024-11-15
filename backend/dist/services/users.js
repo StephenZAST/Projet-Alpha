@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createUser = void 0;
+exports.createUser = createUser;
 const firestore_1 = require("firebase/firestore");
 function createUser(user) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -36,4 +36,3 @@ function createUser(user) {
         }
     });
 }
-exports.createUser = createUser;

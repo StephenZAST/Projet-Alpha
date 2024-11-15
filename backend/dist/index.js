@@ -15,7 +15,7 @@ const categories_1 = __importDefault(require("./routes/categories"));
 const subscriptions_1 = __importDefault(require("./routes/subscriptions"));
 const config_1 = require("./config");
 const app = (0, express_1.default)();
-const port = config_1.config.port || 3001;
+const port = process.env.PORT || config_1.config.port || 3001;
 // Rate limiting configuration
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -25,7 +25,7 @@ const limiter = (0, express_rate_limit_1.default)({
 // Security middleware
 app.use((0, helmet_1.default)()); // Adds various HTTP headers for security
 app.use((0, cors_1.default)({
-    origin: config_1.config.allowedOrigins || '*', // Configure your allowed origins
+    origin: config_1.config.allowedOrigins || '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
@@ -42,6 +42,10 @@ app.use('/api/articles', articles_1.default);
 app.use('/api/notifications', notifications_1.default);
 app.use('/api/categories', categories_1.default);
 app.use('/api/subscriptions', subscriptions_1.default);
+// Basic route for testing
+app.get('/', (req, res) => {
+    res.json({ message: 'Backend API is running!' });
+});
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -50,6 +54,24 @@ app.use((err, req, res, next) => {
         message: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
 });
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+// Handle specific errors
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
+});
+process.on('unhandledRejection', (error) => {
+    console.error('Unhandled Rejection:', error);
+});
+// Start server with error handling
+const server = app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+}).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${port} is already in use. Please try a different port.`);
+        process.exit(1);
+    }
+    else {
+        console.error('Server error:', err);
+        process.exit(1);
+    }
 });
