@@ -1,12 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { auth } from '../services/firebase';
 import { DecodedIdToken } from 'firebase-admin/auth';
+import { UserRole } from '../models/user';
 
 // Extend Express Request type to include user information
 declare global {
   namespace Express {
     interface Request {
-      user?: DecodedIdToken;
+      user?: DecodedIdToken & {
+        role?: UserRole;
+        uid?: string;
+      };
     }
   }
 }
@@ -38,25 +42,56 @@ export async function authenticateUser(req: Request, res: Response, next: NextFu
   }
 }
 
-// Middleware for checking admin role
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-  }
-  next();
+// Middleware pour vérifier les rôles spécifiques
+export function requireRole(roles: UserRole[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !req.user.role) {
+      return res.status(403).json({ error: 'Access denied. Authentication required.' });
+    }
+
+    if (!roles.includes(req.user.role as UserRole)) {
+      return res.status(403).json({ 
+        error: 'Access denied. Insufficient privileges.',
+        requiredRoles: roles,
+        currentRole: req.user.role
+      });
+    }
+
+    next();
+  };
 }
 
-// Middleware for checking affiliate role
-export function requireAffiliate(req: Request, res: Response, next: NextFunction) {
-  if (!req.user || req.user.role !== 'affiliate') {
-    return res.status(403).json({ error: 'Access denied. Affiliate privileges required.' });
-  }
-  next();
+// Middlewares spécifiques pour chaque rôle
+export const requireSuperAdmin = requireRole([UserRole.SUPER_ADMIN]);
+export const requireServiceClient = requireRole([UserRole.SERVICE_CLIENT, UserRole.SUPER_ADMIN]);
+export const requireSecretaire = requireRole([UserRole.SECRETAIRE, UserRole.SUPER_ADMIN]);
+export const requireLivreur = requireRole([UserRole.LIVREUR, UserRole.SUPER_ADMIN]);
+export const requireSuperviseur = requireRole([UserRole.SUPERVISEUR, UserRole.SUPER_ADMIN]);
+
+// Middleware pour vérifier si l'utilisateur est le propriétaire de la ressource
+export function requireOwnership(getUserId: (req: Request) => string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !req.user.uid) {
+      return res.status(403).json({ error: 'Access denied. Authentication required.' });
+    }
+
+    const resourceUserId = getUserId(req);
+    
+    if (req.user.uid !== resourceUserId && req.user.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ error: 'Access denied. You can only access your own resources.' });
+    }
+
+    next();
+  };
 }
 
-export function requireDriver(req: Request, res: Response, next: NextFunction) {
-  if (!req.user || req.user.role !== 'driver') {
-    return res.status(403).json({ error: 'Access denied. Driver privileges required.' });
+// Middleware pour les commandes one-click
+export function validateOneClickOrder(req: Request, res: Response, next: NextFunction) {
+  if (!req.user || !req.user.uid) {
+    return res.status(403).json({ error: 'Authentication required for one-click orders.' });
   }
+
+  // Vérifier si l'utilisateur a les informations nécessaires pour une commande one-click
+  // Cette vérification sera implémentée dans le service utilisateur
   next();
 }
