@@ -7,13 +7,14 @@ import { optimizeRoute, RouteStop } from '../utils/routeOptimization';
 import { validateOrderData } from '../validation/orders';
 import { checkDeliverySlotAvailability } from './delivery';
 import { Address } from '../models/address';
+import { Query, CollectionReference } from 'firebase-admin/firestore';
 
 export async function createOrder(orderData: Partial<Order>): Promise<Order> {
   try {
     // Valider les données d'entrée
     const validationResult = await validateOrderData(orderData);
     if (!validationResult.isValid) {
-      throw new AppError(errorCodes.INVALID_ORDER_DATA, validationResult.errors.join(', '));
+      throw new AppError(400, validationResult.errors.join(', '), errorCodes.INVALID_ORDER_DATA);
     }
 
     // Vérifier la disponibilité du créneau
@@ -23,7 +24,7 @@ export async function createOrder(orderData: Partial<Order>): Promise<Order> {
       orderData.scheduledDeliveryTime!
     );
     if (!isSlotAvailable) {
-      throw new AppError(errorCodes.SLOT_NOT_AVAILABLE, 'Selected delivery slot is not available');
+      throw new AppError(400, 'Selected delivery slot is not available', errorCodes.SLOT_NOT_AVAILABLE);
     }
 
     const order: Order = {
@@ -37,7 +38,7 @@ export async function createOrder(orderData: Partial<Order>): Promise<Order> {
     return { ...order, id: orderRef.id };
   } catch (error) {
     console.error('Error creating order:', error);
-    throw new AppError(errorCodes.ORDER_CREATION_FAILED, 'Failed to create order');
+    throw new AppError(500, 'Failed to create order', errorCodes.ORDER_CREATION_FAILED);
   }
 }
 
@@ -48,10 +49,7 @@ export async function createOneClickOrder(
   try {
     const userProfile = await getUserProfile(userId);
     if (!userProfile || !userProfile.defaultAddress) {
-      throw new AppError(
-        errorCodes.INVALID_USER_PROFILE,
-        'User profile or default address not found'
-      );
+      throw new AppError(404, 'User profile or default address not found', errorCodes.INVALID_USER_PROFILE);
     }
 
     const defaultAddress = userProfile.defaultAddress as Address;
@@ -74,7 +72,8 @@ export async function createOneClickOrder(
     return await createOrder(order);
   } catch (error) {
     console.error('Error creating one-click order:', error);
-    throw new AppError(errorCodes.ONE_CLICK_ORDER_FAILED, 'Failed to create one-click order');
+    if (error instanceof AppError) throw error;
+    throw new AppError(500, 'Failed to create one-click order', errorCodes.ONE_CLICK_ORDER_FAILED);
   }
 }
 
@@ -103,7 +102,7 @@ export async function getOrdersByUser(
     return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
   } catch (error) {
     console.error('Error fetching orders:', error);
-    throw new AppError(errorCodes.ORDERS_FETCH_FAILED, 'Failed to fetch orders');
+    throw new AppError(500, 'Failed to fetch orders', errorCodes.ORDERS_FETCH_FAILED);
   }
 }
 
@@ -122,7 +121,7 @@ export async function getOrdersByZone(
     return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
   } catch (error) {
     console.error('Error fetching zone orders:', error);
-    throw new AppError(errorCodes.ZONE_ORDERS_FETCH_FAILED, 'Failed to fetch zone orders');
+    throw new AppError(500, 'Failed to fetch zone orders', errorCodes.ZONE_ORDERS_FETCH_FAILED);
   }
 }
 
@@ -136,7 +135,7 @@ export async function updateOrderStatus(
     const orderDoc = await orderRef.get();
 
     if (!orderDoc.exists) {
-      throw new AppError(errorCodes.ORDER_NOT_FOUND, 'Order not found');
+      throw new AppError(404, 'Order not found', errorCodes.ORDER_NOT_FOUND);
     }
 
     const updateData: Partial<Order> = {
@@ -156,7 +155,8 @@ export async function updateOrderStatus(
     return { ...orderDoc.data(), ...updateData, id: orderId } as Order;
   } catch (error) {
     console.error('Error updating order status:', error);
-    throw new AppError(errorCodes.ORDER_UPDATE_FAILED, 'Failed to update order status');
+    if (error instanceof AppError) throw error;
+    throw new AppError(500, 'Failed to update order status', errorCodes.ORDER_UPDATE_FAILED);
   }
 }
 
@@ -192,7 +192,7 @@ export async function getDeliveryRoute(deliveryPersonId: string): Promise<RouteS
     return optimizeRoute(stops);
   } catch (error) {
     console.error('Error calculating delivery route:', error);
-    throw new AppError(errorCodes.ROUTE_CALCULATION_FAILED, 'Failed to calculate delivery route');
+    throw new AppError(500, 'Failed to calculate delivery route', errorCodes.ROUTE_CALCULATION_FAILED);
   }
 }
 
@@ -216,7 +216,7 @@ export async function getOrderStatistics(
   } = {}
 ): Promise<OrderStatistics> {
   try {
-    let query = db.collection('orders');
+    let query: Query = db.collection('orders');
 
     if (options.zoneId) {
       query = query.where('zoneId', '==', options.zoneId);
@@ -256,7 +256,7 @@ export async function getOrderStatistics(
     };
   } catch (error) {
     console.error('Error fetching order statistics:', error);
-    throw new AppError(errorCodes.STATS_FETCH_FAILED, 'Failed to fetch order statistics');
+    throw new AppError(500, 'Failed to fetch order statistics', errorCodes.STATS_FETCH_FAILED);
   }
 }
 

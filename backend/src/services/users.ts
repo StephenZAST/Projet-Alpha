@@ -1,6 +1,7 @@
 import { collection, addDoc, Timestamp, getFirestore } from "firebase/firestore";
 import { db } from "./firebase";
 import { User } from "../models/user";
+import { AppError, errorCodes } from '../utils/errors';
 
 export async function createUser(user: User): Promise<User | null> {
   try {
@@ -22,5 +23,36 @@ export async function createUser(user: User): Promise<User | null> {
   } catch (error) {
     console.error("Error creating user:", error);
     return null;
+  }
+}
+
+export interface UserProfile {
+  id: string;
+  defaultAddress?: {
+    formattedAddress: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  defaultItems?: any[];
+  defaultInstructions?: string;
+}
+
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  try {
+    const userDoc = await db.collection('users').doc(userId).get();
+    
+    if (!userDoc.exists) {
+      return null;
+    }
+
+    return {
+      id: userDoc.id,
+      ...userDoc.data()
+    } as UserProfile;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    throw new AppError(500, 'Failed to fetch user profile', errorCodes.DATABASE_ERROR);
   }
 }

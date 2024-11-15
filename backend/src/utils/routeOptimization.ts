@@ -1,6 +1,37 @@
-import { Location } from '../models/order';
-import { RouteInfo, OptimizedRoute } from '../models/delivery';
 import { Timestamp } from 'firebase-admin/firestore';
+
+export interface Location {
+  latitude: number;
+  longitude: number;
+}
+
+export interface RouteStop {
+  type: 'pickup' | 'delivery';
+  location: Location;
+  orderId: string;
+  scheduledTime: Timestamp;
+  address: string;
+}
+
+export interface RouteInfo {
+  orderId: string;
+  location: Location;
+  type: 'pickup' | 'delivery';
+  scheduledTime: Timestamp;
+  status: 'pending' | 'in_progress' | 'completed';
+  address: string;
+}
+
+export interface OptimizedRoute {
+  deliveryPersonId: string;
+  zoneId: string;
+  date: Timestamp;
+  stops: RouteInfo[];
+  estimatedDuration: number;
+  estimatedDistance: number;
+  startLocation: Location;
+  endLocation: Location;
+}
 
 interface DistanceMatrix {
   [key: string]: {
@@ -15,17 +46,17 @@ export function calculateDistance(point1: Location, point2: Location): number {
   const R = 6371; // Rayon de la Terre en km
   const dLat = toRad(point2.latitude - point1.latitude);
   const dLon = toRad(point2.longitude - point1.longitude);
-  const lat1 = toRad(point1.latitude);
-  const lat2 = toRad(point2.latitude);
-
+  
   const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2);
+    Math.cos(toRad(point1.latitude)) * Math.cos(toRad(point2.latitude)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 }
 
-function toRad(value: number): number {
-  return value * Math.PI / 180;
+function toRad(degrees: number): number {
+  return degrees * Math.PI / 180;
 }
 
 /**
@@ -159,4 +190,13 @@ export function calculateRouteEfficiency(route: OptimizedRoute): number {
   
   // Score basé sur le nombre d'arrêts par heure et la distance moyenne entre les arrêts
   return (stopsPerHour * 10) - (distancePerStop * 2);
+}
+
+/**
+ * Optimise une route pour un ensemble de points de livraison
+ */
+export function optimizeRouteSimple(stops: RouteStop[]): RouteStop[] {
+  // Ici, vous pouvez implémenter votre logique d'optimisation de route
+  // Pour l'instant, nous retournons simplement les arrêts triés par heure prévue
+  return stops.sort((a, b) => a.scheduledTime.seconds - b.scheduledTime.seconds);
 }

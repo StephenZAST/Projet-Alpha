@@ -1,6 +1,8 @@
 import { db } from './firebase';
 import { Order, TimeSlot, RouteInfo } from '../models/order';
 import { NotificationService } from './notifications';
+import { Timestamp } from 'firebase-admin/firestore';
+import { AppError, errorCodes } from '../utils/errors';
 
 export class DeliveryService {
   private readonly ordersRef = db.collection('orders');
@@ -92,6 +94,36 @@ export class DeliveryService {
       console.error('Error updating order location:', error);
       return false;
     }
+  }
+}
+
+export async function checkDeliverySlotAvailability(
+  zoneId: string,
+  pickupTime: Timestamp,
+  deliveryTime: Timestamp
+): Promise<boolean> {
+  try {
+    // Vérifier le nombre de commandes déjà programmées pour ce créneau
+    const ordersInSlot = await db.collection('orders')
+      .where('zoneId', '==', zoneId)
+      .where('scheduledPickupTime', '>=', pickupTime)
+      .where('scheduledPickupTime', '<=', deliveryTime)
+      .get();
+
+    // Récupérer la capacité maximale de la zone
+    const zoneDoc = await db.collection('zones').doc(zoneId).get();
+    if (!zoneDoc.exists) {
+      throw new AppError(404, 'Zone not found', errorCodes.DATABASE_ERROR);
+    }
+
+    const zoneData = zoneDoc.data();
+    const maxOrdersPerSlot = zoneData?.maxOrdersPerSlot || 5; // Valeur par défaut
+
+    return ordersInSlot.size < maxOrdersPerSlot;
+  } catch (error) {
+    console.error('Error checking delivery slot availability:', error);
+    if (error instanceof AppError) throw error;
+    throw new AppError(500, 'Failed to check slot availability', errorCodes.DATABASE_ERROR);
   }
 }
 

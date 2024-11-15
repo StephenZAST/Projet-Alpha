@@ -77,6 +77,7 @@ export interface Order {
   actualPickupTime?: Timestamp;
   actualDeliveryTime?: Timestamp;
   creationDate: Timestamp;
+  updatedAt: Timestamp;
   completionDate?: Timestamp;
   totalAmount: number;
   deliveryPersonId?: string;
