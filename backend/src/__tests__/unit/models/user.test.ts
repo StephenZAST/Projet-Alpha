@@ -34,6 +34,7 @@ describe('User Model', () => {
     role: UserRole.CLIENT,
     creationDate: new Date(),
     lastLogin: new Date(),
+    address: mockAddress,
     defaultAddress: mockAddress
   };
 
@@ -43,8 +44,7 @@ describe('User Model', () => {
     expect(user.email).toBe(mockUserData.email);
     expect(user.displayName).toBe(mockUserData.displayName);
     expect(user.role).toBe(UserRole.CLIENT);
-    expect(user.defaultAddress).toBeDefined();
-    expect(user.defaultAddress.formattedAddress).toBe(mockAddress.formattedAddress);
+    expect(user.defaultAddress?.formattedAddress).toBe(mockAddress.formattedAddress);
   });
 
   it('should validate email format', () => {

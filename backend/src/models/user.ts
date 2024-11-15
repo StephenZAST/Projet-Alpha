@@ -4,12 +4,13 @@ export interface User {
   email: string;
   displayName: string;
   phoneNumber?: string;
-  address: Address;
+  address?: Address;
+  defaultAddress?: Address;
   role: UserRole;
   affiliateId?: string;
   creationDate: Date;
   lastLogin: Date;
-  loyaltyPoints: number;
+  loyaltyPoints?: number;
   subscriptionType?: SubscriptionType;
   defaultServicePreferences?: ServicePreferences;
   activeOffers?: string[];

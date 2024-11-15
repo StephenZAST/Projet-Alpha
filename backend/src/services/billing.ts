@@ -1,122 +1,214 @@
 import { db } from './firebase';
-import { Bill, BillStatus } from '../models/billing';
-import { LoyaltyTransaction, LoyaltyReward } from '../models/loyalty';
+import { Bill, BillStatus, PaymentStatus, RefundStatus } from '../models/billing';
+import { LoyaltyTransaction, LoyaltyTransactionType, LoyaltyReward } from '../models/loyalty';
 import { Subscription, SubscriptionType } from '../models/subscription';
 import { AppError, errorCodes } from '../utils/errors';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
 // Services de facturation
-export async function createBill(bill: Bill): Promise<Bill> {
+export async function createBill(bill: Omit<Bill, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'paymentStatus'>): Promise<Bill> {
   try {
-    const billRef = await db.collection('bills').add({
+    const newBill: Bill = {
       ...bill,
-      creationDate: new Date(),
-      status: BillStatus.PENDING,
-      lastUpdated: new Date()
-    });
-    
-    return { ...bill, id: billRef.id };
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+      status: BillStatus.DRAFT,
+      paymentStatus: PaymentStatus.PENDING,
+      total: calculateTotal(bill)
+    };
+
+    const billRef = await db.collection('bills').add(newBill);
+    return { ...newBill, id: billRef.id };
   } catch (error) {
     console.error('Error creating bill:', error);
     throw new AppError(500, 'Failed to create bill', errorCodes.BILL_CREATION_FAILED);
   }
 }
 
-export async function getBillById(billId: string): Promise<Bill | null> {
+function calculateTotal(bill: Pick<Bill, 'subtotal' | 'tax' | 'discount' | 'loyaltyPointsUsed'>): number {
+  let total = bill.subtotal + bill.tax;
+  if (bill.discount) {
+    total -= bill.discount;
+  }
+  if (bill.loyaltyPointsUsed) {
+    // Conversion des points en valeur monétaire (1 point = 0.1 unité)
+    total -= bill.loyaltyPointsUsed * 0.1;
+  }
+  return Math.max(0, total);
+}
+
+export async function updateBillStatus(
+  billId: string,
+  status: BillStatus,
+  paymentStatus?: PaymentStatus,
+  refundStatus?: RefundStatus
+): Promise<Bill> {
   try {
-    const billDoc = await db.collection('bills').doc(billId).get();
-    
+    const billRef = db.collection('bills').doc(billId);
+    const billDoc = await billRef.get();
+
     if (!billDoc.exists) {
-      return null;
+      throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND);
     }
-    
-    return { id: billDoc.id, ...billDoc.data() } as Bill;
-  } catch (error) {
-    console.error('Error fetching bill:', error);
-    throw new AppError(500, 'Failed to fetch bill', errorCodes.BILL_FETCH_FAILED);
-  }
-}
 
-export async function getBillsByUser(userId: string): Promise<Bill[]> {
-  try {
-    const billsSnapshot = await db.collection('bills')
-      .where('userId', '==', userId)
-      .orderBy('creationDate', 'desc')
-      .get();
-    
-    return billsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Bill));
-  } catch (error) {
-    console.error('Error fetching user bills:', error);
-    throw new AppError(500, 'Failed to fetch user bills', errorCodes.USER_BILLS_FETCH_FAILED);
-  }
-}
-
-export async function updateBillStatus(billId: string, status: BillStatus): Promise<boolean> {
-  try {
-    await db.collection('bills').doc(billId).update({
+    const updateData: Partial<Bill> = {
       status,
-      lastUpdated: new Date()
-    });
-    return true;
+      updatedAt: Timestamp.now()
+    };
+
+    if (paymentStatus) {
+      updateData.paymentStatus = paymentStatus;
+      if (paymentStatus === PaymentStatus.COMPLETED) {
+        updateData.paymentDate = Timestamp.now();
+      }
+    }
+
+    if (refundStatus) {
+      updateData.refundStatus = refundStatus;
+      if (refundStatus === RefundStatus.COMPLETED) {
+        updateData.refundDate = Timestamp.now();
+      }
+    }
+
+    await billRef.update(updateData);
+    
+    const updatedBill = await billRef.get();
+    return { id: billId, ...updatedBill.data() } as Bill;
   } catch (error) {
     console.error('Error updating bill status:', error);
     throw new AppError(500, 'Failed to update bill status', errorCodes.BILL_UPDATE_FAILED);
   }
 }
 
-// Services de fidélité
-export async function getLoyaltyPoints(userId: string): Promise<number> {
+export async function processBillPayment(
+  billId: string,
+  paymentMethod: string,
+  amount: number
+): Promise<Bill> {
   try {
-    const userDoc = await db.collection('users').doc(userId).get();
-    
-    if (!userDoc.exists) {
-      throw new AppError(errorCodes.USER_NOT_FOUND, 'User not found');
+    const billRef = db.collection('bills').doc(billId);
+    const billDoc = await billRef.get();
+
+    if (!billDoc.exists) {
+      throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND);
     }
+
+    const bill = billDoc.data() as Bill;
     
-    const userData = userDoc.data();
-    return userData?.loyaltyPoints || 0;
+    if (bill.status === BillStatus.PAID) {
+      throw new AppError(400, 'Bill is already paid', errorCodes.BILL_ALREADY_PAID);
+    }
+
+    if (amount < bill.total) {
+      throw new AppError(400, 'Payment amount is insufficient', errorCodes.INSUFFICIENT_PAYMENT);
+    }
+
+    const updateData: Partial<Bill> = {
+      status: BillStatus.PAID,
+      paymentStatus: PaymentStatus.COMPLETED,
+      paymentMethod,
+      paymentDate: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    };
+
+    await billRef.update(updateData);
+
+    // Add loyalty points if applicable
+    if (bill.loyaltyPointsEarned > 0) {
+      await addLoyaltyPoints(
+        bill.userId,
+        bill.loyaltyPointsEarned,
+        `Points earned from bill ${billId}`
+      );
+    }
+
+    const updatedBill = await billRef.get();
+    return { id: billId, ...updatedBill.data() } as Bill;
   } catch (error) {
-    console.error('Error fetching loyalty points:', error);
-    throw new AppError(500, 'Failed to fetch loyalty points', errorCodes.LOYALTY_POINTS_FETCH_FAILED);
+    console.error('Error processing bill payment:', error);
+    throw new AppError(500, 'Failed to process payment', errorCodes.PAYMENT_PROCESSING_FAILED);
   }
 }
 
+export async function processBillRefund(
+  billId: string,
+  amount: number,
+  reason: string
+): Promise<Bill> {
+  try {
+    const billRef = db.collection('bills').doc(billId);
+    const billDoc = await billRef.get();
+
+    if (!billDoc.exists) {
+      throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND);
+    }
+
+    const bill = billDoc.data() as Bill;
+    
+    if (bill.status !== BillStatus.PAID) {
+      throw new AppError(400, 'Bill must be paid to process refund', errorCodes.INVALID_REFUND_REQUEST);
+    }
+
+    if (amount > bill.total) {
+      throw new AppError(400, 'Refund amount cannot exceed bill total', errorCodes.INVALID_REFUND_AMOUNT);
+    }
+
+    const status = amount === bill.total ? BillStatus.REFUNDED : BillStatus.PARTIALLY_REFUNDED;
+
+    const updateData: Partial<Bill> = {
+      status,
+      refundStatus: RefundStatus.COMPLETED,
+      refundAmount: amount,
+      refundDate: Timestamp.now(),
+      notes: reason,
+      updatedAt: Timestamp.now()
+    };
+
+    await billRef.update(updateData);
+
+    // Reverse loyalty points if applicable
+    if (bill.loyaltyPointsEarned > 0) {
+      const pointsToReverse = Math.floor((amount / bill.total) * bill.loyaltyPointsEarned);
+      if (pointsToReverse > 0) {
+        await addLoyaltyPoints(
+          bill.userId,
+          -pointsToReverse,
+          `Points reversed from refund of bill ${billId}`
+        );
+      }
+    }
+
+    const updatedBill = await billRef.get();
+    return { id: billId, ...updatedBill.data() } as Bill;
+  } catch (error) {
+    console.error('Error processing bill refund:', error);
+    throw new AppError(500, 'Failed to process refund', errorCodes.REFUND_PROCESSING_FAILED);
+  }
+}
+
+// Services de points de fidélité
 export async function addLoyaltyPoints(
   userId: string,
   points: number,
   reason: string
 ): Promise<number> {
   try {
+    const transaction: LoyaltyTransaction = {
+      userId,
+      type: points > 0 ? LoyaltyTransactionType.EARNED : LoyaltyTransactionType.ADJUSTED,
+      points,
+      description: reason,
+      createdAt: Timestamp.now(),
+      expiryDate: Timestamp.fromDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)) // 1 year expiry
+    };
+
+    await db.collection('loyaltyTransactions').add(transaction);
+    
     const userRef = db.collection('users').doc(userId);
-    
-    await db.runTransaction(async (transaction) => {
-      const userDoc = await transaction.get(userRef);
-      if (!userDoc.exists) {
-        throw new AppError(errorCodes.USER_NOT_FOUND, 'User not found');
-      }
-      
-      const currentPoints = userDoc.data()?.loyaltyPoints || 0;
-      const newPoints = currentPoints + points;
-      
-      transaction.update(userRef, { loyaltyPoints: newPoints });
-      
-      // Enregistrer la transaction de points
-      const loyaltyTransaction: LoyaltyTransaction = {
-        userId,
-        points,
-        type: points > 0 ? 'EARNED' : 'SPENT',
-        reason,
-        date: new Date()
-      };
-      
-      transaction.create(
-        db.collection('loyaltyTransactions').doc(),
-        loyaltyTransaction
-      );
+    await userRef.update({
+      loyaltyPoints: FieldValue.increment(points)
     });
-    
+
     return points;
   } catch (error) {
     console.error('Error adding loyalty points:', error);
@@ -129,55 +221,48 @@ export async function redeemLoyaltyPoints(
   rewardId: string
 ): Promise<LoyaltyReward> {
   try {
-    const rewardDoc = await db.collection('loyaltyRewards').doc(rewardId).get();
-    
-    if (!rewardDoc.exists) {
-      throw new AppError(errorCodes.REWARD_NOT_FOUND, 'Reward not found');
+    const userRef = db.collection('users').doc(userId);
+    const rewardRef = db.collection('loyaltyRewards').doc(rewardId);
+
+    const [userDoc, rewardDoc] = await Promise.all([
+      userRef.get(),
+      rewardRef.get()
+    ]);
+
+    if (!userDoc.exists) {
+      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
     }
-    
+
+    if (!rewardDoc.exists) {
+      throw new AppError(404, 'Reward not found', errorCodes.REWARD_NOT_FOUND);
+    }
+
+    const user = userDoc.data();
     const reward = rewardDoc.data() as LoyaltyReward;
-    
-    await db.runTransaction(async (transaction) => {
-      const userDoc = await transaction.get(db.collection('users').doc(userId));
-      
-      if (!userDoc.exists) {
-        throw new AppError(errorCodes.USER_NOT_FOUND, 'User not found');
-      }
-      
-      const currentPoints = userDoc.data()?.loyaltyPoints || 0;
-      
-      if (currentPoints < reward.pointsCost) {
-        throw new AppError(
-          errorCodes.INSUFFICIENT_POINTS,
-          'Insufficient loyalty points'
-        );
-      }
-      
-      // Déduire les points
-      transaction.update(userDoc.ref, {
-        loyaltyPoints: currentPoints - reward.pointsCost
-      });
-      
-      // Enregistrer la transaction
-      const redemption: LoyaltyTransaction = {
-        userId,
-        points: -reward.pointsCost,
-        type: 'REDEEMED',
-        reason: `Redeemed for ${reward.name}`,
-        rewardId,
-        date: new Date()
-      };
-      
-      transaction.create(
-        db.collection('loyaltyTransactions').doc(),
-        redemption
-      );
-    });
-    
+
+    if (!user || user.loyaltyPoints < reward.pointsCost) {
+      throw new AppError(400, 'Insufficient loyalty points', errorCodes.INSUFFICIENT_POINTS);
+    }
+
+    const transaction: LoyaltyTransaction = {
+      userId,
+      type: LoyaltyTransactionType.REDEEMED,
+      points: -reward.pointsCost,
+      description: `Redeemed reward: ${reward.name}`,
+      createdAt: Timestamp.now()
+    };
+
+    await Promise.all([
+      db.collection('loyaltyTransactions').add(transaction),
+      userRef.update({
+        loyaltyPoints: FieldValue.increment(-reward.pointsCost)
+      })
+    ]);
+
     return reward;
   } catch (error) {
     console.error('Error redeeming loyalty points:', error);
-    throw new AppError(500, 'Failed to redeem points', errorCodes.POINTS_REDEMPTION_FAILED);
+    throw new AppError(500, 'Failed to redeem loyalty points', errorCodes.LOYALTY_POINTS_UPDATE_FAILED);
   }
 }
 
@@ -188,86 +273,58 @@ export async function createOrUpdateSubscription(
 ): Promise<Subscription> {
   try {
     const subscription: Subscription = {
-      userId,
       type: subscriptionType,
-      startDate: new Date(),
-      status: 'ACTIVE',
-      lastUpdated: new Date()
+      startDate: Timestamp.now(),
+      status: 'active',
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
     };
-    
-    await db.collection('subscriptions')
-      .doc(userId)
-      .set(subscription, { merge: true });
-    
-    return subscription;
-  } catch (error) {
-    console.error('Error updating subscription:', error);
-    throw new AppError(500, 'Failed to update subscription', errorCodes.SUBSCRIPTION_UPDATE_FAILED);
-  }
-}
 
-export async function getSubscription(userId: string): Promise<Subscription | null> {
-  try {
-    const subDoc = await db.collection('subscriptions').doc(userId).get();
-    
-    if (!subDoc.exists) {
-      return null;
-    }
-    
-    return subDoc.data() as Subscription;
+    await db.collection('subscriptions').doc(userId).set(subscription);
+    return { ...subscription, id: userId };
   } catch (error) {
-    console.error('Error fetching subscription:', error);
-    throw new AppError(500, 'Failed to fetch subscription', errorCodes.SUBSCRIPTION_FETCH_FAILED);
-  }
-}
-
-export async function cancelSubscription(userId: string): Promise<boolean> {
-  try {
-    await db.collection('subscriptions').doc(userId).update({
-      status: 'CANCELLED',
-      cancellationDate: new Date(),
-      lastUpdated: new Date()
-    });
-    
-    return true;
-  } catch (error) {
-    console.error('Error cancelling subscription:', error);
-    throw new AppError(500, 'Failed to cancel subscription', errorCodes.SUBSCRIPTION_CANCELLATION_FAILED);
+    console.error('Error creating/updating subscription:', error);
+    throw new AppError(500, 'Failed to create/update subscription', errorCodes.SUBSCRIPTION_UPDATE_FAILED);
   }
 }
 
 // Services de statistiques de facturation
 export async function getBillingStatistics(startDate?: Date, endDate?: Date) {
   try {
-    let query = db.collection('bills');
-    
+    let billsQuery = db.collection('bills');
+
     if (startDate) {
-      query = query.where('creationDate', '>=', startDate);
+      billsQuery = billsQuery.where('createdAt', '>=', Timestamp.fromDate(startDate));
     }
     if (endDate) {
-      query = query.where('creationDate', '<=', endDate);
+      billsQuery = billsQuery.where('createdAt', '<=', Timestamp.fromDate(endDate));
     }
-    
-    const billsSnapshot = await query.get();
-    const bills = billsSnapshot.docs.map(doc => doc.data() as Bill);
-    
-    // Calculer les statistiques
+
+    const billsSnapshot = await billsQuery.get();
+    const bills = billsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Bill[];
+
     const stats = {
-      totalRevenue: bills.reduce((sum, bill) => sum + (bill.totalAmount || 0), 0),
       totalBills: bills.length,
-      averageBillAmount: 0,
-      paidBills: bills.filter(b => b.status === BillStatus.PAID).length,
-      pendingBills: bills.filter(b => b.status === BillStatus.PENDING).length,
-      subscriptionRevenue: bills
-        .filter(b => b.type === 'SUBSCRIPTION')
-        .reduce((sum, bill) => sum + (bill.totalAmount || 0), 0)
+      totalRevenue: bills.reduce((sum, bill) => sum + (bill.status === BillStatus.PAID ? bill.total : 0), 0),
+      averageOrderValue: 0,
+      billsByStatus: {} as Record<BillStatus, number>,
+      refundedAmount: bills.reduce((sum, bill) => sum + (bill.refundAmount || 0), 0),
+      loyaltyPointsIssued: bills.reduce((sum, bill) => sum + (bill.loyaltyPointsEarned || 0), 0),
+      loyaltyPointsRedeemed: bills.reduce((sum, bill) => sum + (bill.loyaltyPointsUsed || 0), 0)
     };
-    
-    stats.averageBillAmount = stats.totalRevenue / (stats.totalBills || 1);
-    
+
+    stats.averageOrderValue = stats.totalRevenue / bills.filter(bill => bill.status === BillStatus.PAID).length;
+
+    bills.forEach(bill => {
+      if (!stats.billsByStatus[bill.status]) {
+        stats.billsByStatus[bill.status] = 0;
+      }
+      stats.billsByStatus[bill.status]++;
+    });
+
     return stats;
   } catch (error) {
-    console.error('Error fetching billing statistics:', error);
-    throw new AppError(500, 'Failed to fetch billing statistics', errorCodes.BILLING_STATS_FETCH_FAILED);
+    console.error('Error getting billing statistics:', error);
+    throw new AppError(500, 'Failed to get billing statistics', errorCodes.BILLING_STATS_FETCH_FAILED);
   }
 }
