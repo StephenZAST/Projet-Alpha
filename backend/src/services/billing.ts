@@ -17,7 +17,7 @@ export async function createBill(bill: Bill): Promise<Bill> {
     return { ...bill, id: billRef.id };
   } catch (error) {
     console.error('Error creating bill:', error);
-    throw new AppError(errorCodes.BILL_CREATION_FAILED, 'Failed to create bill');
+    throw new AppError(500, 'Failed to create bill', errorCodes.BILL_CREATION_FAILED);
   }
 }
 
@@ -32,7 +32,7 @@ export async function getBillById(billId: string): Promise<Bill | null> {
     return { id: billDoc.id, ...billDoc.data() } as Bill;
   } catch (error) {
     console.error('Error fetching bill:', error);
-    throw new AppError(errorCodes.BILL_FETCH_FAILED, 'Failed to fetch bill');
+    throw new AppError(500, 'Failed to fetch bill', errorCodes.BILL_FETCH_FAILED);
   }
 }
 
@@ -49,7 +49,7 @@ export async function getBillsByUser(userId: string): Promise<Bill[]> {
     } as Bill));
   } catch (error) {
     console.error('Error fetching user bills:', error);
-    throw new AppError(errorCodes.USER_BILLS_FETCH_FAILED, 'Failed to fetch user bills');
+    throw new AppError(500, 'Failed to fetch user bills', errorCodes.USER_BILLS_FETCH_FAILED);
   }
 }
 
@@ -59,11 +59,10 @@ export async function updateBillStatus(billId: string, status: BillStatus): Prom
       status,
       lastUpdated: new Date()
     });
-    
     return true;
   } catch (error) {
     console.error('Error updating bill status:', error);
-    throw new AppError(errorCodes.BILL_UPDATE_FAILED, 'Failed to update bill status');
+    throw new AppError(500, 'Failed to update bill status', errorCodes.BILL_UPDATE_FAILED);
   }
 }
 
@@ -80,7 +79,7 @@ export async function getLoyaltyPoints(userId: string): Promise<number> {
     return userData?.loyaltyPoints || 0;
   } catch (error) {
     console.error('Error fetching loyalty points:', error);
-    throw new AppError(errorCodes.LOYALTY_POINTS_FETCH_FAILED, 'Failed to fetch loyalty points');
+    throw new AppError(500, 'Failed to fetch loyalty points', errorCodes.LOYALTY_POINTS_FETCH_FAILED);
   }
 }
 
@@ -121,7 +120,7 @@ export async function addLoyaltyPoints(
     return points;
   } catch (error) {
     console.error('Error adding loyalty points:', error);
-    throw new AppError(errorCodes.LOYALTY_POINTS_UPDATE_FAILED, 'Failed to add loyalty points');
+    throw new AppError(500, 'Failed to add loyalty points', errorCodes.LOYALTY_POINTS_UPDATE_FAILED);
   }
 }
 
@@ -178,7 +177,7 @@ export async function redeemLoyaltyPoints(
     return reward;
   } catch (error) {
     console.error('Error redeeming loyalty points:', error);
-    throw new AppError(errorCodes.POINTS_REDEMPTION_FAILED, 'Failed to redeem points');
+    throw new AppError(500, 'Failed to redeem points', errorCodes.POINTS_REDEMPTION_FAILED);
   }
 }
 
@@ -203,7 +202,7 @@ export async function createOrUpdateSubscription(
     return subscription;
   } catch (error) {
     console.error('Error updating subscription:', error);
-    throw new AppError(errorCodes.SUBSCRIPTION_UPDATE_FAILED, 'Failed to update subscription');
+    throw new AppError(500, 'Failed to update subscription', errorCodes.SUBSCRIPTION_UPDATE_FAILED);
   }
 }
 
@@ -218,7 +217,7 @@ export async function getSubscription(userId: string): Promise<Subscription | nu
     return subDoc.data() as Subscription;
   } catch (error) {
     console.error('Error fetching subscription:', error);
-    throw new AppError(errorCodes.SUBSCRIPTION_FETCH_FAILED, 'Failed to fetch subscription');
+    throw new AppError(500, 'Failed to fetch subscription', errorCodes.SUBSCRIPTION_FETCH_FAILED);
   }
 }
 
@@ -233,7 +232,7 @@ export async function cancelSubscription(userId: string): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('Error cancelling subscription:', error);
-    throw new AppError(errorCodes.SUBSCRIPTION_CANCELLATION_FAILED, 'Failed to cancel subscription');
+    throw new AppError(500, 'Failed to cancel subscription', errorCodes.SUBSCRIPTION_CANCELLATION_FAILED);
   }
 }
 
@@ -269,6 +268,6 @@ export async function getBillingStatistics(startDate?: Date, endDate?: Date) {
     return stats;
   } catch (error) {
     console.error('Error fetching billing statistics:', error);
-    throw new AppError(errorCodes.BILLING_STATS_FETCH_FAILED, 'Failed to fetch billing statistics');
+    throw new AppError(500, 'Failed to fetch billing statistics', errorCodes.BILLING_STATS_FETCH_FAILED);
   }
 }

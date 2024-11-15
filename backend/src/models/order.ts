@@ -107,3 +107,16 @@ export interface DeliverySlot {
   isAvailable: boolean;
   deliveryPersonId?: string;
 }
+
+export interface TimeSlot {
+  startTime: string;
+  endTime: string;
+  availableSpots: number;
+}
+
+export interface RouteInfo {
+  routeId: string;
+  checkpoints: Location[];
+  estimatedTime: number;
+  driverNotes?: string;
+}

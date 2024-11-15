@@ -21,19 +21,23 @@ export interface LoyaltyAccount {
 
 // Updated LoyaltyTier enum
 export enum LoyaltyTier {
-  BRONZE = 'bronze',    // 0-1000 points
-  SILVER = 'silver'     // 1001-5000 points
+  BRONZE = 'BRONZE',    // 0-1000 points
+  SILVER = 'SILVER',    // 1001-5000 points
+  GOLD = 'GOLD',       // 5001-10000 points
+  PLATINUM = 'PLATINUM' // 10001+ points
 }
 
 // Example function using the updated LoyaltyTier enum
-function calculateLoyaltyTier(points: number): LoyaltyTier {
+export function calculateLoyaltyTier(points: number): LoyaltyTier {
   if (points <= 1000) {
     return LoyaltyTier.BRONZE;
   } else if (points <= 5000) {
     return LoyaltyTier.SILVER;
+  } else if (points <= 10000) {
+    return LoyaltyTier.GOLD;
+  } else {
+    return LoyaltyTier.PLATINUM;
   }
-  // Expand with more tiers if needed
-  throw new Error("Points exceed defined tiers");
 }
 
 export interface Reward {

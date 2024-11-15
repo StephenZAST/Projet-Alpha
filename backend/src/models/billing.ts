@@ -87,3 +87,5 @@ export enum UserOfferType {
   SUBSCRIPTION = 'subscription',
   LOYALTY = 'loyalty'
 }
+
+export { SubscriptionType };

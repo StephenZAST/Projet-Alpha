@@ -66,6 +66,7 @@ export const requireSuperAdmin = requireRole([UserRole.SUPER_ADMIN]);
 export const requireServiceClient = requireRole([UserRole.SERVICE_CLIENT, UserRole.SUPER_ADMIN]);
 export const requireSecretaire = requireRole([UserRole.SECRETAIRE, UserRole.SUPER_ADMIN]);
 export const requireLivreur = requireRole([UserRole.LIVREUR, UserRole.SUPER_ADMIN]);
+export const requireDriver = requireRole([UserRole.LIVREUR, UserRole.SUPER_ADMIN]); // Alias pour requireLivreur
 export const requireSuperviseur = requireRole([UserRole.SUPERVISEUR, UserRole.SUPER_ADMIN]);
 
 // Middleware pour vérifier si l'utilisateur est le propriétaire de la ressource

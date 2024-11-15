@@ -12,7 +12,7 @@ import { Query, CollectionReference } from 'firebase-admin/firestore';
 export async function createOrder(orderData: Partial<Order>): Promise<Order> {
   try {
     // Valider les données d'entrée
-    const validationResult = await validateOrderData(orderData);
+    const validationResult = validateOrderData(orderData);
     if (!validationResult.isValid) {
       throw new AppError(400, validationResult.errors.join(', '), errorCodes.INVALID_ORDER_DATA);
     }
@@ -27,16 +27,33 @@ export async function createOrder(orderData: Partial<Order>): Promise<Order> {
       throw new AppError(400, 'Selected delivery slot is not available', errorCodes.SLOT_NOT_AVAILABLE);
     }
 
+    // S'assurer que tous les champs requis sont présents
+    if (!orderData.userId || !orderData.type || !orderData.items || !orderData.zoneId) {
+      throw new AppError(400, 'Missing required fields', errorCodes.INVALID_ORDER_DATA);
+    }
+
     const order: Order = {
-      ...orderData,
+      userId: orderData.userId,
+      type: orderData.type,
+      items: orderData.items,
       status: OrderStatus.PENDING,
+      pickupAddress: orderData.pickupAddress!,
+      pickupLocation: orderData.pickupLocation!,
+      deliveryAddress: orderData.deliveryAddress!,
+      deliveryLocation: orderData.deliveryLocation!,
+      scheduledPickupTime: orderData.scheduledPickupTime!,
+      scheduledDeliveryTime: orderData.scheduledDeliveryTime!,
       creationDate: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
+      totalAmount: orderData.totalAmount!,
+      zoneId: orderData.zoneId,
+      serviceType: orderData.serviceType!
     };
 
     const orderRef = await db.collection('orders').add(order);
     return { ...order, id: orderRef.id };
   } catch (error) {
+    if (error instanceof AppError) throw error;
     console.error('Error creating order:', error);
     throw new AppError(500, 'Failed to create order', errorCodes.ORDER_CREATION_FAILED);
   }
@@ -138,6 +155,7 @@ export async function updateOrderStatus(
       throw new AppError(404, 'Order not found', errorCodes.ORDER_NOT_FOUND);
     }
 
+    const order = orderDoc.data() as Order;
     const updateData: Partial<Order> = {
       status,
       updatedAt: Timestamp.now()
@@ -147,52 +165,50 @@ export async function updateOrderStatus(
       updateData.deliveryPersonId = deliveryPersonId;
     }
 
-    if (status === OrderStatus.COMPLETED) {
-      updateData.completionDate = Timestamp.now();
-    }
-
     await orderRef.update(updateData);
-    return { ...orderDoc.data(), ...updateData, id: orderId } as Order;
+    return { ...order, ...updateData };
   } catch (error) {
-    console.error('Error updating order status:', error);
     if (error instanceof AppError) throw error;
+    console.error('Error updating order status:', error);
     throw new AppError(500, 'Failed to update order status', errorCodes.ORDER_UPDATE_FAILED);
   }
 }
 
 export async function getDeliveryRoute(deliveryPersonId: string): Promise<RouteStop[]> {
   try {
-    const ordersSnapshot = await db.collection('orders')
+    const ordersSnapshot = await db
+      .collection('orders')
       .where('deliveryPersonId', '==', deliveryPersonId)
-      .where('status', 'in', [OrderStatus.ACCEPTED, OrderStatus.IN_PROGRESS])
+      .where('status', 'in', [OrderStatus.ACCEPTED, OrderStatus.PICKED_UP])
       .get();
 
-    const orders = ordersSnapshot.docs.map(doc => ({
-      ...doc.data(),
-      id: doc.id
-    }) as Order);
+    const stops: RouteStop[] = [];
+    ordersSnapshot.forEach(doc => {
+      const order = doc.data() as Order;
+      stops.push(
+        {
+          type: 'pickup',
+          location: order.pickupLocation,
+          orderId: doc.id,
+          scheduledTime: order.scheduledPickupTime,
+          address: order.pickupAddress
+        },
+        {
+          type: 'delivery',
+          location: order.deliveryLocation,
+          orderId: doc.id,
+          scheduledTime: order.scheduledDeliveryTime,
+          address: order.deliveryAddress
+        }
+      );
+    });
 
-    const stops: RouteStop[] = orders.flatMap(order => [
-      {
-        type: 'pickup',
-        location: order.pickupLocation,
-        orderId: order.id,
-        scheduledTime: order.scheduledPickupTime,
-        address: order.pickupAddress
-      },
-      {
-        type: 'delivery',
-        location: order.deliveryLocation,
-        orderId: order.id,
-        scheduledTime: order.scheduledDeliveryTime,
-        address: order.deliveryAddress
-      }
-    ]);
-
-    return optimizeRoute(stops);
+    // Optimiser la route
+    const optimizedStops = await optimizeRoute(stops);
+    return optimizedStops;
   } catch (error) {
-    console.error('Error calculating delivery route:', error);
-    throw new AppError(500, 'Failed to calculate delivery route', errorCodes.ROUTE_CALCULATION_FAILED);
+    console.error('Error getting delivery route:', error);
+    throw new AppError(500, 'Failed to get delivery route', errorCodes.ROUTE_GENERATION_FAILED);
   }
 }
 

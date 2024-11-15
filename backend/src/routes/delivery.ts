@@ -1,5 +1,6 @@
 import express from 'express';
-import { authenticateUser, requireDriver } from '../middleware/auth';
+import { authenticateUser } from '../middleware/auth';
+import { requireLivreur as requireDriver } from '../middleware/auth';
 import { DeliveryService } from '../services/delivery';
 
 const router = express.Router();

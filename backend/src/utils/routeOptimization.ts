@@ -42,12 +42,13 @@ interface DistanceMatrix {
 /**
  * Calcule la distance entre deux points géographiques en utilisant la formule de Haversine
  */
-export function calculateDistance(point1: Location, point2: Location): number {
-  const R = 6371; // Rayon de la Terre en km
+function calculateDistance(point1: Location, point2: Location): number {
+  const R = 6371; // Rayon de la Terre en kilomètres
   const dLat = toRad(point2.latitude - point1.latitude);
   const dLon = toRad(point2.longitude - point1.longitude);
   
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
     Math.cos(toRad(point1.latitude)) * Math.cos(toRad(point2.latitude)) * 
     Math.sin(dLon/2) * Math.sin(dLon/2);
   
@@ -60,118 +61,56 @@ function toRad(degrees: number): number {
 }
 
 /**
- * Crée une matrice de distances entre tous les points
- */
-function createDistanceMatrix(stops: RouteInfo[]): DistanceMatrix {
-  const matrix: DistanceMatrix = {};
-  
-  stops.forEach((stop1, i) => {
-    matrix[i] = {};
-    stops.forEach((stop2, j) => {
-      if (i !== j) {
-        matrix[i][j] = calculateDistance(stop1.location, stop2.location);
-      }
-    });
-  });
-
-  return matrix;
-}
-
-/**
- * Algorithme du plus proche voisin pour l'optimisation de route
- */
-function nearestNeighborAlgorithm(
-  stops: RouteInfo[],
-  distanceMatrix: DistanceMatrix,
-  startIndex: number = 0
-): number[] {
-  const numStops = stops.length;
-  const visited = new Set<number>([startIndex]);
-  const route = [startIndex];
-
-  while (visited.size < numStops) {
-    let currentStop = route[route.length - 1];
-    let nearestStop = -1;
-    let minDistance = Infinity;
-
-    for (let i = 0; i < numStops; i++) {
-      if (!visited.has(i) && distanceMatrix[currentStop][i] < minDistance) {
-        minDistance = distanceMatrix[currentStop][i];
-        nearestStop = i;
-      }
-    }
-
-    if (nearestStop !== -1) {
-      route.push(nearestStop);
-      visited.add(nearestStop);
-    }
-  }
-
-  return route;
-}
-
-/**
  * Optimise une route pour un ensemble de points de livraison
  */
-export function optimizeRoute(
-  deliveryPersonId: string,
-  zoneId: string,
-  stops: RouteInfo[],
-  startLocation: Location,
-  endLocation: Location
-): OptimizedRoute {
-  // Ajouter les points de départ et d'arrivée
-  const allStops = [
-    {
-      orderId: 'start',
-      location: startLocation,
-      type: 'pickup' as const,
-      scheduledTime: Timestamp.now(),
-      status: 'pending' as const,
-      address: 'Starting Point'
-    },
-    ...stops,
-    {
-      orderId: 'end',
-      location: endLocation,
-      type: 'delivery' as const,
-      scheduledTime: Timestamp.now(),
-      status: 'pending' as const,
-      address: 'Ending Point'
-    }
-  ];
+export function optimizeRoute(stops: RouteStop[]): Promise<RouteStop[]> {
+  try {
+    // Trier les arrêts par heure programmée
+    const sortedStops = stops.sort((a, b) => {
+      return a.scheduledTime.seconds - b.scheduledTime.seconds;
+    });
 
-  // Créer la matrice de distances
-  const distanceMatrix = createDistanceMatrix(allStops);
+    // Optimiser l'ordre des arrêts en tenant compte des contraintes de temps
+    const optimizedStops = sortedStops.reduce((acc: RouteStop[], stop: RouteStop) => {
+      if (acc.length === 0) {
+        return [stop];
+      }
 
-  // Optimiser la route
-  const optimizedIndices = nearestNeighborAlgorithm(allStops, distanceMatrix);
+      // Trouver la meilleure position pour insérer l'arrêt
+      let bestPosition = 0;
+      let minExtraDistance = Infinity;
 
-  // Réorganiser les arrêts selon l'ordre optimisé
-  const optimizedStops = optimizedIndices.map(index => allStops[index]);
+      for (let i = 0; i <= acc.length; i++) {
+        const routeWithStop = [
+          ...acc.slice(0, i),
+          stop,
+          ...acc.slice(i)
+        ];
 
-  // Calculer la distance totale
-  let totalDistance = 0;
-  for (let i = 0; i < optimizedIndices.length - 1; i++) {
-    const currentIndex = optimizedIndices[i];
-    const nextIndex = optimizedIndices[i + 1];
-    totalDistance += distanceMatrix[currentIndex][nextIndex];
+        // Calculer la distance totale de cette route
+        let totalDistance = 0;
+        for (let j = 1; j < routeWithStop.length; j++) {
+          totalDistance += calculateDistance(
+            routeWithStop[j-1].location,
+            routeWithStop[j].location
+          );
+        }
+
+        if (totalDistance < minExtraDistance) {
+          minExtraDistance = totalDistance;
+          bestPosition = i;
+        }
+      }
+
+      // Insérer l'arrêt à la meilleure position
+      acc.splice(bestPosition, 0, stop);
+      return acc;
+    }, []);
+
+    return Promise.resolve(optimizedStops);
+  } catch (error) {
+    return Promise.reject(error);
   }
-
-  // Estimer la durée (en supposant une vitesse moyenne de 30 km/h en ville)
-  const averageSpeed = 30; // km/h
-  const estimatedDuration = (totalDistance / averageSpeed) * 60; // Conversion en minutes
-
-  return {
-    deliveryPersonId,
-    zoneId,
-    date: Timestamp.now(),
-    stops: optimizedStops.slice(1, -1), // Exclure les points de départ et d'arrivée
-    estimatedDuration: Math.round(estimatedDuration),
-    estimatedDistance: Math.round(totalDistance * 10) / 10,
-    startLocation,
-    endLocation
-  };
 }
 
 /**

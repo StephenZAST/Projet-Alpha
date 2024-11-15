@@ -1,6 +1,13 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { Location } from './order';
 
+export enum ZoneStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  FULL = 'FULL',
+  MAINTENANCE = 'MAINTENANCE'
+}
+
 export interface Zone {
   id?: string;
   name: string;
@@ -12,6 +19,7 @@ export interface Zone {
   isActive: boolean;
   maxOrders: number;
   currentOrders: number;
+  status: ZoneStatus;
   specialInstructions?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -49,9 +57,8 @@ export interface ZoneStats {
   zoneId: string;
   period: string;
   totalOrders: number;
-  completedOrders: number;
-  cancelledOrders: number;
-  averageDeliveryTime: number;
   totalRevenue: number;
-  deliveryFees: number;
+  averageOrderValue: number;
+  deliverySuccessRate: number;
+  averageDeliveryTime: number;
 }
