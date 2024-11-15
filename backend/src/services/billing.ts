@@ -1,9 +1,10 @@
 import { db } from './firebase';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { Bill, BillStatus, PaymentStatus, RefundStatus } from '../models/billing';
 import { LoyaltyTransaction, LoyaltyTransactionType, LoyaltyReward } from '../models/loyalty';
-import { Subscription, SubscriptionType } from '../models/subscription';
+import { Subscription, SubscriptionType, SubscriptionStatus, SubscriptionPlan } from '../models/subscription';
 import { AppError, errorCodes } from '../utils/errors';
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { Query, CollectionReference, DocumentData } from 'firebase-admin/firestore';
 
 // Services de facturation
 export async function createBill(bill: Omit<Bill, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'paymentStatus'>): Promise<Bill> {
@@ -269,15 +270,38 @@ export async function redeemLoyaltyPoints(
 // Services d'abonnement
 export async function createOrUpdateSubscription(
   userId: string,
-  subscriptionType: SubscriptionType
+  planId: string,
+  type: SubscriptionType
 ): Promise<Subscription> {
   try {
+    const planDoc = await db.collection('subscriptionPlans').doc(planId).get();
+
+    if (!planDoc.exists) {
+      throw new AppError(404, 'Subscription plan not found', errorCodes.SUBSCRIPTION_PLAN_NOT_FOUND);
+    }
+
+    const plan = planDoc.data() as SubscriptionPlan;
+    if (!plan) {
+      throw new AppError(500, 'Invalid subscription plan data', errorCodes.SUBSCRIPTION_PLAN_NOT_FOUND);
+    }
+
+    const now = Timestamp.now();
+    const endDate = Timestamp.fromDate(new Date(now.toDate().getTime() + plan.duration * 30 * 24 * 60 * 60 * 1000));
+
     const subscription: Subscription = {
-      type: subscriptionType,
-      startDate: Timestamp.now(),
-      status: 'active',
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      userId,
+      planId,
+      type,
+      startDate: now,
+      endDate,
+      status: SubscriptionStatus.ACTIVE,
+      pricePerMonth: plan.price,
+      weightLimitPerWeek: plan.weightLimitPerWeek,
+      description: plan.description,
+      createdAt: now,
+      updatedAt: now,
+      autoRenew: true,
+      nextBillingDate: Timestamp.fromDate(new Date(now.toDate().getTime() + 30 * 24 * 60 * 60 * 1000))
     };
 
     await db.collection('subscriptions').doc(userId).set(subscription);
@@ -291,16 +315,17 @@ export async function createOrUpdateSubscription(
 // Services de statistiques de facturation
 export async function getBillingStatistics(startDate?: Date, endDate?: Date) {
   try {
-    let billsQuery = db.collection('bills');
+    const billsRef: CollectionReference<DocumentData> = db.collection('bills');
+    let query: Query<DocumentData> = billsRef;
 
     if (startDate) {
-      billsQuery = billsQuery.where('createdAt', '>=', Timestamp.fromDate(startDate));
+      query = query.where('createdAt', '>=', Timestamp.fromDate(startDate));
     }
     if (endDate) {
-      billsQuery = billsQuery.where('createdAt', '<=', Timestamp.fromDate(endDate));
+      query = query.where('createdAt', '<=', Timestamp.fromDate(endDate));
     }
 
-    const billsSnapshot = await billsQuery.get();
+    const billsSnapshot = await query.get();
     const bills = billsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Bill[];
 
     const stats = {

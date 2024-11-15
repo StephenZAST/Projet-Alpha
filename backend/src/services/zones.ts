@@ -1,15 +1,15 @@
 import { db } from './firebase';
 import { Zone, ZoneStatus } from '../models/zone';
 import { AppError, errorCodes } from '../utils/errors';
-import { GeoPoint, FieldValue } from 'firebase-admin/firestore';
+import { GeoPoint, FieldValue, Timestamp } from 'firebase-admin/firestore';
 
 export async function createZone(zone: Zone): Promise<Zone> {
   try {
     const zoneRef = await db.collection('zones').add({
       ...zone,
-      createdAt: new Date(),
+      createdAt: Timestamp.now(),
       status: ZoneStatus.ACTIVE,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
     
     return { ...zone, id: zoneRef.id };
@@ -54,9 +54,8 @@ export async function updateZone(zoneId: string, updates: Partial<Zone>): Promis
   try {
     await db.collection('zones').doc(zoneId).update({
       ...updates,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
-    
     return true;
   } catch (error) {
     console.error('Error updating zone:', error);
@@ -66,28 +65,28 @@ export async function updateZone(zoneId: string, updates: Partial<Zone>): Promis
 
 export async function deleteZone(zoneId: string): Promise<boolean> {
   try {
-    const zoneRef = db.collection('zones').doc(zoneId);
-    const zoneDoc = await zoneRef.get();
-    
+    // Vérifier si la zone existe
+    const zoneDoc = await db.collection('zones').doc(zoneId).get();
     if (!zoneDoc.exists) {
       throw new AppError(404, 'Zone not found', errorCodes.ZONE_NOT_FOUND);
     }
-    
-    const zone = zoneDoc.data() as Zone;
-    
-    if (zone.currentOrders > 0) {
+
+    // Vérifier s'il y a des commandes actives dans la zone
+    const activeOrders = await db.collection('orders')
+      .where('zoneId', '==', zoneId)
+      .where('status', 'in', ['pending', 'processing', 'assigned'])
+      .get();
+
+    if (!activeOrders.empty) {
       throw new AppError(400, 'Cannot delete zone with active orders', errorCodes.ZONE_HAS_ACTIVE_ORDERS);
     }
-    
-    await zoneRef.update({
-      status: ZoneStatus.INACTIVE,
-      updatedAt: new Date()
-    });
-    
+
+    // Supprimer la zone
+    await db.collection('zones').doc(zoneId).delete();
     return true;
   } catch (error) {
     console.error('Error deleting zone:', error);
-    throw new AppError(500, 'Failed to delete zone', errorCodes.ZONE_DELETE_FAILED);
+    throw new AppError(500, 'Failed to delete zone', errorCodes.ZONE_DELETION_FAILED);
   }
 }
 
@@ -97,31 +96,40 @@ export async function assignDeliveryPerson(
 ): Promise<boolean> {
   try {
     const zoneRef = db.collection('zones').doc(zoneId);
-    const zoneDoc = await zoneRef.get();
-    
+    const deliveryPersonRef = db.collection('deliveryPersons').doc(deliveryPersonId);
+
+    const [zoneDoc, deliveryPersonDoc] = await Promise.all([
+      zoneRef.get(),
+      deliveryPersonRef.get()
+    ]);
+
     if (!zoneDoc.exists) {
       throw new AppError(404, 'Zone not found', errorCodes.ZONE_NOT_FOUND);
     }
-    
-    const assignmentData = {
-      zoneId,
-      deliveryPersonId,
-      startTime: new Date(),
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    await db.collection('zoneAssignments').add(assignmentData);
-    
-    await zoneRef.update({
-      currentOrders: FieldValue.increment(1),
-      updatedAt: new Date()
-    });
-    
+
+    if (!deliveryPersonDoc.exists) {
+      throw new AppError(404, 'Delivery person not found', errorCodes.DELIVERY_PERSON_NOT_FOUND);
+    }
+
+    if (deliveryPersonDoc.data()?.status !== 'available') {
+      throw new AppError(400, 'Delivery person is not available', errorCodes.DELIVERY_PERSON_UNAVAILABLE);
+    }
+
+    await Promise.all([
+      zoneRef.update({
+        deliveryPersonId,
+        updatedAt: Timestamp.now()
+      }),
+      deliveryPersonRef.update({
+        zoneId,
+        status: 'assigned',
+        updatedAt: Timestamp.now()
+      })
+    ]);
+
     return true;
   } catch (error) {
-    console.error('Error assigning delivery person:', error);
+    console.error('Error assigning delivery person to zone:', error);
     throw new AppError(500, 'Failed to assign delivery person', errorCodes.ZONE_ASSIGNMENT_FAILED);
   }
 }
@@ -132,74 +140,82 @@ export async function getZoneStatistics(
   endDate?: Date
 ) {
   try {
-    const zoneRef = db.collection('zones').doc(zoneId);
-    const zoneDoc = await zoneRef.get();
-    
+    const zoneDoc = await db.collection('zones').doc(zoneId).get();
     if (!zoneDoc.exists) {
       throw new AppError(404, 'Zone not found', errorCodes.ZONE_NOT_FOUND);
     }
-    
-    let ordersQuery = db.collection('orders').where('zoneId', '==', zoneId);
+
+    let query = db.collection('orders').where('zoneId', '==', zoneId);
     
     if (startDate) {
-      ordersQuery = ordersQuery.where('createdAt', '>=', startDate);
+      query = query.where('createdAt', '>=', startDate);
     }
     if (endDate) {
-      ordersQuery = ordersQuery.where('createdAt', '<=', endDate);
+      query = query.where('createdAt', '<=', endDate);
     }
-    
-    const ordersSnapshot = await ordersQuery.get();
-    const orders = ordersSnapshot.docs.map(doc => doc.data());
-    
+
+    const ordersSnapshot = await query.get();
+    const orders = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    const averageDeliveryTime = calculateAverageDeliveryTime(orders);
+    const totalRevenue = calculateTotalRevenue(orders);
+    const busyHours = calculateBusyHours(orders);
+    const deliveryPersonsStats = await getDeliveryPersonsStats(zoneId);
+
     return {
       totalOrders: orders.length,
-      averageDeliveryTime: calculateAverageDeliveryTime(orders),
-      totalRevenue: calculateTotalRevenue(orders),
-      busyHours: calculateBusyHours(orders),
-      deliveryPersons: await getDeliveryPersonsStats(zoneId)
+      averageDeliveryTime,
+      totalRevenue,
+      busyHours,
+      deliveryPersonsStats,
+      period: {
+        start: startDate || null,
+        end: endDate || null
+      }
     };
   } catch (error) {
-    console.error('Error getting zone statistics:', error);
-    throw new AppError(500, 'Failed to get zone statistics', errorCodes.ZONE_STATS_FAILED);
+    console.error('Error fetching zone statistics:', error);
+    throw new AppError(500, 'Failed to fetch zone statistics', errorCodes.ZONE_STATS_FETCH_FAILED);
   }
 }
 
 function calculateAverageDeliveryTime(orders: any[]): number {
   if (orders.length === 0) return 0;
-  
+
   const totalTime = orders.reduce((sum, order) => {
     if (order.deliveredAt && order.pickedUpAt) {
-      const deliveryTime = order.deliveredAt.toDate().getTime() - order.pickedUpAt.toDate().getTime();
-      return sum + deliveryTime;
+      return sum + (order.deliveredAt.toMillis() - order.pickedUpAt.toMillis());
     }
     return sum;
   }, 0);
-  
+
   return totalTime / orders.length / (1000 * 60); // Convert to minutes
 }
 
 function calculateTotalRevenue(orders: any[]): number {
-  return orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  return orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
 }
 
 function calculateBusyHours(orders: any[]): { hour: number; count: number }[] {
   const hourCounts = new Array(24).fill(0);
-  
+
   orders.forEach(order => {
-    if (order.createdAt) {
-      const hour = order.createdAt.toDate().getHours();
+    if (order.pickedUpAt) {
+      const hour = order.pickedUpAt.toDate().getHours();
       hourCounts[hour]++;
     }
   });
-  
+
   return hourCounts.map((count, hour) => ({ hour, count }));
 }
 
 async function getDeliveryPersonsStats(zoneId: string) {
-  const assignmentsSnapshot = await db.collection('zoneAssignments')
+  const deliveryPersonsSnapshot = await db.collection('deliveryPersons')
     .where('zoneId', '==', zoneId)
-    .where('isActive', '==', true)
     .get();
-  
-  return assignmentsSnapshot.docs.length;
+
+  return deliveryPersonsSnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
 }
