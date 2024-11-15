@@ -1,93 +1,102 @@
-import { Address } from "./address";
-import { ServiceType, PriceRange, GeoLocation } from './user';
+import { Timestamp } from 'firebase-admin/firestore';
+import { ServiceType } from './service';
 
-export interface Order {
-  id: string;
-  userId: string;
-  type: OrderType;
-  status: OrderStatus;
-  createdAt: Date;
-  updatedAt: Date;
-  collectAddress: DeliveryAddress;
-  deliveryAddress: DeliveryAddress;
-  items?: OrderItem[];
-  serviceType: ServiceType;
-  priceRange: PriceRange;
-  totalWeight?: number;
-  totalPrice?: number;
-  appliedOffers?: string[];
-  assignedDeliveryId?: string;
-  collectionSlot?: TimeSlot;
-  deliverySlot?: TimeSlot;
-  subscriptionCollectionsLeft?: number;
-  isOneClick: boolean;
-  notes?: string;
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  PICKED_UP = 'PICKED_UP',
+  IN_PROGRESS = 'IN_PROGRESS',
+  READY = 'READY',
+  DELIVERING = 'DELIVERING',
+  DELIVERED = 'DELIVERED',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
 }
 
 export enum OrderType {
-  STANDARD = 'standard',
-  ONE_CLICK = 'one_click',
-  SUBSCRIPTION = 'subscription'
+  STANDARD = 'STANDARD',
+  ONE_CLICK = 'ONE_CLICK',
+  SUBSCRIPTION = 'SUBSCRIPTION'
 }
 
-export enum OrderStatus {
-  CREATED = 'created',                    // Commande créée
-  PENDING_COLLECTION = 'pending_collection', // En attente de collecte
-  COLLECTED = 'collected',                // Collectée par le livreur
-  PROCESSING = 'processing',              // En cours de traitement
-  DETAILED = 'detailed',                  // Détaillée par la secrétaire
-  READY_FOR_DELIVERY = 'ready_for_delivery', // Prête pour la livraison
-  OUT_FOR_DELIVERY = 'out_for_delivery',  // En cours de livraison
-  DELIVERED = 'delivered',                // Livrée
-  CANCELLED = 'cancelled'                 // Annulée
+export enum MainService {
+  PRESSING = 'PRESSING',
+  REPASSAGE = 'REPASSAGE',
+  NETTOYAGE_SEC = 'NETTOYAGE_SEC',
+  BLANCHISSERIE = 'BLANCHISSERIE'
+}
+
+export enum AdditionalService {
+  DETACHAGE = 'DETACHAGE',
+  REPASSAGE_SPECIAL = 'REPASSAGE_SPECIAL',
+  LIVRAISON_EXPRESS = 'LIVRAISON_EXPRESS',
+  PARFUM = 'PARFUM',
+  ANTI_TACHES = 'ANTI_TACHES',
+  DESINFECTION = 'DESINFECTION'
+}
+
+export enum PriceType {
+  FIXED = 'FIXED',
+  PER_KG = 'PER_KG',
+  PER_PIECE = 'PER_PIECE'
+}
+
+export interface Location {
+  latitude: number;
+  longitude: number;
+  address?: string;
+  additionalInfo?: string;
 }
 
 export interface OrderItem {
-  id: string;
-  name: string;
+  id?: string;
+  itemType: string;
   quantity: number;
-  serviceType: ServiceType;
-  pricePerUnit: number;
-  totalPrice: number;
-  category: string;
-  specialInstructions?: string;
+  mainService: MainService;
+  additionalServices?: AdditionalService[];
+  notes?: string;
+  price: number;
+  priceType: PriceType;
   weight?: number;
+  photos?: string[];
+  specialInstructions?: string;
 }
 
-export interface DeliveryAddress {
-  address: string;
-  location: GeoLocation;
-  contactName: string;
-  contactPhone: string;
-  instructions?: string;
+export interface Order {
+  id?: string;
+  userId: string;
+  type: OrderType;
+  items: OrderItem[];
+  status: OrderStatus;
+  pickupAddress: string;
+  pickupLocation: Location;
+  deliveryAddress: string;
+  deliveryLocation: Location;
+  scheduledPickupTime: Timestamp;
+  scheduledDeliveryTime: Timestamp;
+  actualPickupTime?: Timestamp;
+  actualDeliveryTime?: Timestamp;
+  creationDate: Timestamp;
+  completionDate?: Timestamp;
+  totalAmount: number;
+  deliveryPersonId?: string;
+  zoneId: string;
+  specialInstructions?: string;
+  serviceType: ServiceType;
+  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  rating?: number;
+  feedback?: string;
 }
 
-export interface TimeSlot {
-  date: Date;
+export interface DeliverySlot {
+  id?: string;
+  date: Timestamp;
   startTime: string;
   endTime: string;
+  maxOrders: number;
+  currentOrders: number;
   zoneId: string;
-}
-
-export interface DeliveryZone {
-  id: string;
-  name: string;
-  boundaries: GeoLocation[];
-  assignedDeliveryId?: string;
-}
-
-export interface DeliveryRoute {
-  deliveryId: string;
-  zoneId: string;
-  orders: OrderRoutePoint[];
-  optimizedRoute: GeoLocation[];
-  estimatedDuration: number;
-}
-
-export interface OrderRoutePoint {
-  orderId: string;
-  location: GeoLocation;
-  type: 'collection' | 'delivery';
-  timeSlot: TimeSlot;
-  status: OrderStatus;
+  isAvailable: boolean;
+  deliveryPersonId?: string;
 }

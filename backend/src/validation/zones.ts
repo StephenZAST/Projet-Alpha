@@ -1,55 +1,56 @@
 import Joi from 'joi';
 
-// Schéma pour les points de délimitation d'une zone
-const boundaryPointSchema = Joi.object({
-  latitude: Joi.number().required().min(-90).max(90),
-  longitude: Joi.number().required().min(-180).max(180)
-});
-
-// Schéma pour la création d'une zone
-export const createZoneSchema = Joi.object({
-  name: Joi.string().required().min(3).max(50),
-  description: Joi.string().allow(''),
-  boundaries: Joi.array().items(boundaryPointSchema).min(3).required(),
-  isActive: Joi.boolean().default(true),
-  deliveryPersonIds: Joi.array().items(Joi.string()),
+export const createZoneSchema: Joi.ObjectSchema = Joi.object({
+  name: Joi.string().required(),
+  description: Joi.string(),
+  boundaries: Joi.array().items(Joi.object({
+    latitude: Joi.number().min(-90).max(90).required(),
+    longitude: Joi.number().min(-180).max(180).required()
+  })).min(3).required(),
+  deliveryFee: Joi.number().min(0).required(),
+  minimumOrderAmount: Joi.number().min(0).required(),
   estimatedDeliveryTime: Joi.number().min(0).required(), // en minutes
-  baseDeliveryFee: Joi.number().min(0).required(),
-  rushHourMultiplier: Joi.number().min(1).max(5).default(1.5),
-  rushHourStart: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  rushHourEnd: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+  isActive: Joi.boolean().default(true),
+  maxOrders: Joi.number().min(1).required(),
+  specialInstructions: Joi.string()
 });
 
-// Schéma pour la mise à jour d'une zone
-export const updateZoneSchema = Joi.object({
-  name: Joi.string().min(3).max(50),
-  description: Joi.string().allow(''),
-  boundaries: Joi.array().items(boundaryPointSchema).min(3),
-  isActive: Joi.boolean(),
-  deliveryPersonIds: Joi.array().items(Joi.string()),
+export const updateZoneSchema: Joi.ObjectSchema = Joi.object({
+  name: Joi.string(),
+  description: Joi.string(),
+  boundaries: Joi.array().items(Joi.object({
+    latitude: Joi.number().min(-90).max(90).required(),
+    longitude: Joi.number().min(-180).max(180).required()
+  })).min(3),
+  deliveryFee: Joi.number().min(0),
+  minimumOrderAmount: Joi.number().min(0),
   estimatedDeliveryTime: Joi.number().min(0),
-  baseDeliveryFee: Joi.number().min(0),
-  rushHourMultiplier: Joi.number().min(1).max(5),
-  rushHourStart: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  rushHourEnd: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+  isActive: Joi.boolean(),
+  maxOrders: Joi.number().min(1),
+  specialInstructions: Joi.string()
 }).min(1);
 
-// Schéma pour l'attribution de livreurs à une zone
-export const assignDeliveryPersonsSchema = Joi.object({
-  deliveryPersonIds: Joi.array().items(Joi.string()).required()
+export const assignDeliveryPersonSchema: Joi.ObjectSchema = Joi.object({
+  deliveryPersonId: Joi.string().required(),
+  startTime: Joi.date().required(),
+  endTime: Joi.date().greater(Joi.ref('startTime')).required()
 });
 
-// Schéma pour la recherche de zones
-export const searchZonesSchema = Joi.object({
+export const searchZonesSchema: Joi.ObjectSchema = Joi.object({
+  name: Joi.string(),
   isActive: Joi.boolean(),
   deliveryPersonId: Joi.string(),
+  location: Joi.object({
+    latitude: Joi.number().min(-90).max(90).required(),
+    longitude: Joi.number().min(-180).max(180).required()
+  }),
   page: Joi.number().min(1).default(1),
   limit: Joi.number().min(1).max(100).default(10)
 });
 
-// Schéma pour les statistiques des zones
-export const zoneStatsSchema = Joi.object({
+export const zoneStatsSchema: Joi.ObjectSchema = Joi.object({
   startDate: Joi.date().required(),
   endDate: Joi.date().min(Joi.ref('startDate')).required(),
-  includeInactive: Joi.boolean().default(false)
+  zoneId: Joi.string().required(),
+  groupBy: Joi.string().valid('day', 'week', 'month').required()
 });

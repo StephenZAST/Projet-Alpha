@@ -10,6 +10,7 @@ export interface RewardRedemption {
   verificationCode: string;
   notes?: string;
 }
+
 export interface LoyaltyAccount {
   userId: string;
   points: number;
@@ -52,15 +53,60 @@ export enum RewardStatus {
   EXPIRED = 'expired'
 }
 
-// Add new interface for reward redemptions
-export interface RewardRedemption {
-  id: string;
+import { Timestamp } from 'firebase-admin/firestore';
+
+export enum LoyaltyTransactionType {
+  EARNED = 'EARNED',
+  REDEEMED = 'REDEEMED',
+  EXPIRED = 'EXPIRED',
+  BONUS = 'BONUS'
+}
+
+export interface LoyaltyTransaction {
+  id?: string;
   userId: string;
-  rewardId: string;
-  redemptionDate: Date;
-  status: RewardStatus;
-  claimedDate?: Date;
-  claimedByAdminId?: string;
-  verificationCode: string;
-  notes?: string;
+  type: LoyaltyTransactionType;
+  points: number;
+  orderId?: string;
+  rewardId?: string;
+  description: string;
+  createdAt: Timestamp;
+  expiresAt?: Timestamp;
+}
+
+export interface LoyaltyReward {
+  id?: string;
+  name: string;
+  description: string;
+  pointsCost: number;
+  type: 'discount' | 'freeService' | 'gift';
+  value: number; // Pourcentage de réduction ou valeur monétaire
+  minOrderAmount?: number;
+  maxDiscount?: number;
+  validFrom: Timestamp;
+  validUntil: Timestamp;
+  isActive: boolean;
+  termsAndConditions?: string;
+  limitPerUser?: number;
+  totalLimit?: number;
+  redemptionCount: number;
+}
+
+export interface LoyaltyProgram {
+  id?: string;
+  name: string;
+  description: string;
+  pointsPerCurrency: number; // Nombre de points gagnés par unité monétaire
+  pointsExpirationMonths: number;
+  tiers: LoyaltyTier[];
+  isActive: boolean;
+}
+
+export interface LoyaltyTier {
+  name: string;
+  minimumPoints: number;
+  benefits: {
+    pointsMultiplier: number;
+    additionalPerks: string[];
+  };
 }
