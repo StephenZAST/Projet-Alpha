@@ -63,20 +63,23 @@ export const orderStatsSchema = Joi.object({
   groupBy: Joi.string().valid('day', 'week', 'month').required()
 });
 
-interface ValidationResult {
+// Interface pour le résultat de validation
+export interface ValidationResult {
   isValid: boolean;
   errors: string[];
 }
 
 // Validate order data using the createOrderSchema
 export function validateOrderData(orderData: any): ValidationResult {
-  const { error } = createOrderSchema.validate(orderData, { abortEarly: false });
-  if (error) {
+  const validationResult = createOrderSchema.validate(orderData, { abortEarly: false });
+  
+  if (validationResult.error) {
     return {
       isValid: false,
-      errors: error.details.map(detail => detail.message)
+      errors: validationResult.error.details.map(detail => detail.message)
     };
   }
+
   return {
     isValid: true,
     errors: []
