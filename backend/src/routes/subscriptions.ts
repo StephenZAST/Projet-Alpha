@@ -1,5 +1,6 @@
 import express from 'express';
-import { authenticateUser, requireAdmin } from '../middleware/auth';
+import { authenticateUser } from '../middleware/auth';
+import { requireSuperAdmin as requireAdmin } from '../middleware/auth';
 import { createSubscription, getSubscriptions, updateSubscription, deleteSubscription, getUserSubscription } from '../services/subscriptions';
 
 const router = express.Router();

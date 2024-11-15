@@ -1,5 +1,6 @@
 import express from 'express';
-import { authenticateUser, requireAdmin } from '../middleware/auth';
+import { authenticateUser } from '../middleware/auth';
+import { requireSuperAdmin as requireAdmin } from '../middleware/auth';
 import { createCategory, getCategories, updateCategory, deleteCategory } from '../services/categories';
 
 const router = express.Router();

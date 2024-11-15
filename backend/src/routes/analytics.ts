@@ -1,5 +1,6 @@
 import express from 'express';
-import { authenticateUser, requireAdmin } from '../middleware/auth';
+import { authenticateUser } from '../middleware/auth';
+import { requireSuperAdmin as requireAdmin } from '../middleware/auth';
 import { AnalyticsService } from '../services/analytics';
 
 const router = express.Router();
@@ -41,3 +42,4 @@ router.get('/affiliates', authenticateUser, requireAdmin, async (req, res) => {
 });
 
 export default router;
+

@@ -33,13 +33,16 @@ export const categoryValidationSchema = Joi.object({
 
 export const priceRangeValidation = (price: number, service: MainService): boolean => {
     const maxPrices: Record<MainService, number> = {
-        [MainService.PRESSING]: 50000,
-        [MainService.DRY_CLEANING]: 75000,
-        [MainService.IRONING]: 25000,
-        [MainService.WASH_AND_IRON]: 75000,
-        [MainService.WASH_ONLY]: 50000,
-        [MainService.IRON_ONLY]: 25000,
-        [MainService.PICKUP_DELIVERY]: 0
+      [MainService.PRESSING]: 50000,
+      [MainService.DRY_CLEANING]: 75000,
+      [MainService.IRONING]: 25000,
+      [MainService.WASH_AND_IRON]: 75000,
+      [MainService.WASH_ONLY]: 50000,
+      [MainService.IRON_ONLY]: 25000,
+      [MainService.PICKUP_DELIVERY]: 0,
+      [MainService.REPASSAGE]: 0,
+      [MainService.NETTOYAGE_SEC]: 0,
+      [MainService.BLANCHISSERIE]: 0
     };
   
   return price >= 0 && price <= maxPrices[service];

@@ -1,6 +1,7 @@
 // src/middleware/validation.ts
 import { Request, Response, NextFunction } from 'express';
 import { Schema } from 'joi';
+import * as Joi from 'joi';
 
 // Middleware générique de validation
 export const validate = (schema: Schema, property: 'body' | 'query' | 'params' = 'body') => {
@@ -53,9 +54,9 @@ export const validateAndTransform = (schema: Schema, property: 'body' | 'query' 
 
 // Middleware de validation avec pagination
 export const validatePagination = (req: Request, res: Response, next: NextFunction) => {
-  const schema = Schema.object({
-    page: Schema.number().min(1).default(1),
-    limit: Schema.number().min(1).max(100).default(10)
+  const schema = Joi.object({
+    page: Joi.number().min(1).default(1),
+    limit: Joi.number().min(1).max(100).default(10)
   });
 
   const { error, value } = schema.validate(req.query);

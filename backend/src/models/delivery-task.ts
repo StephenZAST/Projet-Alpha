@@ -1,5 +1,7 @@
 import { Address } from "cluster";
-import { TimeSlot } from "./order";
+
+export interface TimeSlot {
+}
 
 export interface DeliveryTask {
   id: string;

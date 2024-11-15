@@ -1,5 +1,6 @@
 import express from 'express';
-import { authenticateUser, requireAdmin } from '../middleware/auth';
+import { authenticateUser } from '../middleware/auth';
+import { requireSuperAdmin as requireAdmin } from '../middleware/auth';
 import { createArticle, getArticles, updateArticle, deleteArticle } from '../services/articles';
 import { validateArticleInput } from '../middleware/validation/index';
 

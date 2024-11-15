@@ -1,5 +1,7 @@
 import express from 'express';
-import { authenticateUser, requireAdmin } from '../middleware/auth';
+import { authenticateUser } from '../middleware/auth';
+import { requireSuperAdmin as requireAdmin } from '../middleware/auth';
+
 
 const router = express.Router();
 
