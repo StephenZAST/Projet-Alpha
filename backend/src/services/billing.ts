@@ -200,7 +200,7 @@ export async function addLoyaltyPoints(
       points,
       description: reason,
       createdAt: Timestamp.now(),
-      expiryDate: Timestamp.fromDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)) // 1 year expiry
+      expiresAt: Timestamp.fromDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)) // 1 year expiry
     };
 
     await db.collection('loyaltyTransactions').add(transaction);
