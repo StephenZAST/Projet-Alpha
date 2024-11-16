@@ -1,5 +1,3 @@
-import { Timestamp } from 'firebase-admin/firestore';
-
 // Add new interface for reward redemptions
 export interface RewardRedemption {
   id: string;
@@ -17,115 +15,39 @@ export interface LoyaltyAccount {
   userId: string;
   points: number;
   lifetimePoints: number;
-  tier: LoyaltyTierEnum;
+  tier: LoyaltyTier;
   lastUpdated: Date;
 }
 
 // Updated LoyaltyTier enum
-export enum LoyaltyTierEnum {
-  BRONZE = 'BRONZE',    // 0-1000 points
-  SILVER = 'SILVER',    // 1001-5000 points
-  GOLD = 'GOLD',       // 5001-10000 points
-  PLATINUM = 'PLATINUM' // 10001+ points
+export enum LoyaltyTier {
+  BRONZE = 'bronze',    // 0-1000 points
+  SILVER = 'silver',     // 1001-5000 points
+  PLATINUM = "PLATINUM",
+  GOLD = "GOLD"
 }
 
 // Example function using the updated LoyaltyTier enum
-export function calculateLoyaltyTier(points: number): LoyaltyTierEnum {
+function calculateLoyaltyTier(points: number): LoyaltyTier {
   if (points <= 1000) {
-    return LoyaltyTierEnum.BRONZE;
+    return LoyaltyTier.BRONZE;
   } else if (points <= 5000) {
-    return LoyaltyTierEnum.SILVER;
-  } else if (points <= 10000) {
-    return LoyaltyTierEnum.GOLD;
-  } else {
-    return LoyaltyTierEnum.PLATINUM;
+    return LoyaltyTier.SILVER;
   }
+  // Expand with more tiers if needed
+  throw new Error("Points exceed defined tiers");
 }
 
-export interface LoyaltyTransaction {
-  id?: string;
-  userId: string;
-  orderId?: string;
-  billId?: string;
-  type: LoyaltyTransactionType;
-  points: number;
-  description: string;
-  createdAt: Timestamp;
-  expiryDate?: Timestamp;
-}
-
-export enum LoyaltyTransactionType {
-  EARNED = 'earned',
-  REDEEMED = 'redeemed',
-  EXPIRED = 'expired',
-  ADJUSTED = 'adjusted',
-  CANCELLED = 'cancelled'
-}
-
-export interface LoyaltyReward {
-  id?: string;
+export interface Reward {
+  id: string;
   name: string;
   description: string;
   pointsCost: number;
+  type: RewardType;
   value: number;
-  type: LoyaltyRewardType;
+  minTier: LoyaltyTier;
+  expiresAt?: Date;
   isActive: boolean;
-  validFrom: Timestamp;
-  validUntil: Timestamp;
-  termsAndConditions: string;
-  imageUrl?: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-export enum LoyaltyRewardType {
-  DISCOUNT = 'discount',
-  FREE_SERVICE = 'free_service',
-  GIFT = 'gift',
-  UPGRADE = 'upgrade'
-}
-
-export interface LoyaltyProgram {
-  id?: string;
-  name: string;
-  description: string;
-  pointsPerCurrency: number;
-  minimumPointsToRedeem: number;
-  pointsExpirationMonths: number;
-  tiers: LoyaltyTierConfig[];
-  rules: LoyaltyRule[];
-  isActive: boolean;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-export interface LoyaltyTierConfig {
-  id?: string;
-  name: string;
-  description: string;
-  minimumPoints: number;
-  benefits: string[];
-  multiplier: number;
-  icon?: string;
-  tier: LoyaltyTierEnum;
-}
-
-export interface LoyaltyRule {
-  id?: string;
-  name: string;
-  description: string;
-  type: LoyaltyRuleType;
-  points: number;
-  conditions: string[];
-  isActive: boolean;
-}
-
-export enum LoyaltyRuleType {
-  SIGNUP = 'signup',
-  FIRST_ORDER = 'first_order',
-  REFERRAL = 'referral',
-  SPECIAL_EVENT = 'special_event',
-  BIRTHDAY = 'birthday'
 }
 
 export enum RewardType {
@@ -143,14 +65,61 @@ export enum RewardStatus {
   EXPIRED = 'expired'
 }
 
-export interface Reward {
-  id: string;
+import { Timestamp } from 'firebase-admin/firestore';
+
+export enum LoyaltyTransactionType {
+  EARNED = 'EARNED',
+  REDEEMED = 'REDEEMED',
+  EXPIRED = 'EXPIRED',
+  BONUS = 'BONUS',
+  ADJUSTED = "ADJUSTED"
+}
+
+export interface LoyaltyTransaction {
+  id?: string;
+  userId: string;
+  type: LoyaltyTransactionType;
+  points: number;
+  orderId?: string;
+  rewardId?: string;
+  description: string;
+  createdAt: Timestamp;
+  expiresAt?: Timestamp;
+}
+
+export interface LoyaltyReward {
+  id?: string;
   name: string;
   description: string;
   pointsCost: number;
-  type: RewardType;
-  value: number;
-  isActive: boolean;
+  type: 'discount' | 'freeService' | 'gift';
+  value: number; // Pourcentage de réduction ou valeur monétaire
+  minOrderAmount?: number;
+  maxDiscount?: number;
   validFrom: Timestamp;
   validUntil: Timestamp;
+  isActive: boolean;
+  termsAndConditions?: string;
+  limitPerUser?: number;
+  totalLimit?: number;
+  redemptionCount: number;
+}
+
+export interface LoyaltyProgram {
+  id?: string;
+  name: string;
+  description: string;
+  pointsPerCurrency: number; // Nombre de points gagnés par unité monétaire
+  pointsExpirationMonths: number;
+  tiers: LoyaltyTier[];
+  isActive: boolean;
+}
+
+export interface LoyaltyTierDefinition {
+  name: string;
+  minimumPoints: number;
+  benefits: {
+    pointsMultiplier: number;
+    additionalPerks: string[];
+  };
 }
