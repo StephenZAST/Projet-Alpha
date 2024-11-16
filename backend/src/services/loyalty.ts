@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { LoyaltyAccount, LoyaltyTier, Reward, RewardRedemption, RewardStatus, RewardType } from '../models/loyalty';
+import { LoyaltyAccount, LoyaltyTierEnum, Reward, RewardRedemption, RewardStatus, RewardType } from '../models/loyalty';
 import { NotificationService } from './notifications';
 
 export class LoyaltyService {
@@ -8,11 +8,11 @@ export class LoyaltyService {
   private readonly redemptionsRef = db.collection('reward_redemptions');
   private notificationService = new NotificationService();
 
-  async calculateTier(points: number): Promise<LoyaltyTier> {
-    if (points >= 10001) return LoyaltyTier.PLATINUM;
-    if (points >= 5001) return LoyaltyTier.GOLD;
-    if (points >= 1001) return LoyaltyTier.SILVER;
-    return LoyaltyTier.BRONZE;
+  async calculateTier(points: number): Promise<LoyaltyTierEnum> {
+    if (points >= 10001) return LoyaltyTierEnum.PLATINUM;
+    if (points >= 5001) return LoyaltyTierEnum.GOLD;
+    if (points >= 1001) return LoyaltyTierEnum.SILVER;
+    return LoyaltyTierEnum.BRONZE;
   }
 
   async addPoints(userId: string, points: number, reason: string): Promise<LoyaltyAccount> {

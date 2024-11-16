@@ -1,7 +1,16 @@
 # Alpha Laundry Service API
 
 ## Overview
-REST API for Alpha laundry service management system, handling articles, orders, subscriptions, and user management.
+REST API for Alpha laundry service management system. A comprehensive solution for managing laundry services, including order processing, delivery management, loyalty programs, and billing.
+
+## Features
+- Complete laundry service management
+- Order tracking and processing
+- Delivery zone management and route optimization
+- Billing and subscription management
+- Loyalty program and rewards
+- User role management (Super Admin, Admin, Secretary, Delivery Person)
+- Analytics and reporting
 
 ## Setup Instructions
 
@@ -24,112 +33,166 @@ npm run dev
 
 ### Authentication
 All protected routes require Bearer token authentication:
-
 ```
 Authorization: Bearer <token>
 ```
 
-### Articles API
+### Role-Based Access Control
+The system implements the following roles:
+- SUPER_ADMIN: Full system access
+- SECRETAIRE: Order and customer management
+- LIVREUR: Delivery management
+- SUPERVISEUR: Operations oversight
+- CLIENT: Basic user access
 
-#### Get All Articles
-```
-GET /api/articles
-```
-Public endpoint to retrieve all available articles.
+### API Endpoints
 
-#### Create Article (Admin only)
-```
-POST /api/articles
-```
-Request body:
+#### Orders API
 
-```json
-{
-  "articleName": "Chemise",
-  "articleCategory": "Chemisier",
-  "prices": {
-    "wash_and_iron": {
-      "STANDARD": 500,
-      "BASIC": 300
-    }
-  },
-  "availableServices": ["wash_and_iron"],
-  "availableAdditionalServices": []
-}
-```
-
-#### Update Article (Admin only)
-```
-PUT /api/articles/:id
-```
-
-#### Delete Article (Admin only)
-```
-DELETE /api/articles/:id
-```
-
-### Subscriptions API
-
-#### Get All Subscriptions
-```
-GET /api/subscriptions
-```
-
-#### Create Subscription (Admin only)
-```
-POST /api/subscriptions
-```
-Request body:
-
-```json
-{
-  "name": "Premium",
-  "price": 30000,
-  "weightLimitPerWeek": 20,
-  "description": "Premium subscription with 20kg weekly limit"
-}
-```
-
-### Orders API
-
-#### Create Order
-```
+##### Create Order
+```http
 POST /api/orders
 ```
 Request body:
-
 ```json
 {
-  "items": [],
-  "pickup": {
-    "address": {},
-    "scheduledDate": "2024-01-20",
-    "timeSlot": {}
-  }
+  "userId": "string",
+  "type": "STANDARD | ONE_CLICK",
+  "serviceType": "PRESSING | REPASSAGE | NETTOYAGE",
+  "items": [{
+    "itemType": "string",
+    "quantity": "number",
+    "notes": "string"
+  }],
+  "pickupAddress": "string",
+  "deliveryAddress": "string",
+  "scheduledPickupTime": "date-time",
+  "scheduledDeliveryTime": "date-time"
 }
 ```
 
-### Service Documentation
+##### Get User Orders
+```http
+GET /api/orders/user/{userId}
+```
 
-* **Article Service:** Located in `src/services/articles.ts`
-    * `createArticle`: Creates new article with pricing and services
-    * `getArticles`: Retrieves all articles
-    * `updateArticle`: Updates existing article
-    * `deleteArticle`: Removes article from system
+##### Update Order Status
+```http
+PUT /api/orders/{orderId}/status
+```
+Request body:
+```json
+{
+  "status": "PENDING | ACCEPTED | PICKED_UP | IN_PROGRESS | READY | DELIVERING | DELIVERED"
+}
+```
 
-* **Subscription Service:** Located in `src/services/subscriptions.ts`
-    * `createSubscription`: Creates new subscription plan
-    * `getSubscriptions`: Retrieves all subscription plans
-    * `getUserSubscription`: Gets active subscription for specific user
+#### Billing API
 
-* **Order Service:** Located in `src/services/orders.ts`
-    * `createOrder`: Creates new laundry order
-    * `getOrdersByUser`: Retrieves user's order history
-    * `updateOrderStatus`: Updates order processing status
+##### Create Bill
+```http
+POST /api/billing
+```
+Protected: SECRETAIRE, SUPER_ADMIN
+
+##### Get User Bills
+```http
+GET /api/billing/user/{userId}
+```
+
+##### Get Billing Statistics
+```http
+GET /api/billing/stats
+```
+Protected: SUPERVISEUR, SUPER_ADMIN
+
+#### Loyalty API
+
+##### Get Loyalty Account
+```http
+GET /api/loyalty/account
+```
+
+##### Get Available Rewards
+```http
+GET /api/loyalty/rewards
+```
+
+##### Redeem Reward
+```http
+POST /api/loyalty/rewards/{rewardId}/redeem
+```
+
+#### Delivery API
+
+##### Get Available Time Slots
+```http
+GET /api/delivery/timeslots
+```
+Query params:
+- date: string
+- zoneId: string
+
+##### Schedule Pickup
+```http
+POST /api/delivery/schedule-pickup
+```
+
+##### Update Delivery Location
+```http
+POST /api/delivery/update-location
+```
+Protected: LIVREUR
+
+#### Zones API
+
+##### Create Zone
+```http
+POST /api/zones
+```
+Protected: SUPER_ADMIN
+
+##### Get All Zones
+```http
+GET /api/zones
+```
+Protected: SUPERVISEUR, LIVREUR, SUPER_ADMIN
+
+##### Assign Delivery Person
+```http
+POST /api/zones/{zoneId}/assign
+```
+Protected: SUPERVISEUR, SUPER_ADMIN
+
+#### Analytics API
+
+##### Revenue Metrics
+```http
+GET /api/analytics/revenue
+```
+Protected: SUPER_ADMIN
+
+##### Customer Metrics
+```http
+GET /api/analytics/customers
+```
+Protected: SUPER_ADMIN
+
+### Models
+
+#### Order Status Flow
+```
+PENDING → ACCEPTED → PICKED_UP → IN_PROGRESS → READY → DELIVERING → DELIVERED
+```
+
+#### Loyalty Tiers
+- BRONZE: 0-1000 points
+- SILVER: 1001-5000 points
+- GOLD: 5001-10000 points
+- PLATINUM: 10001+ points
 
 ### Error Handling
-The API uses standardized error responses:
-
+Standardized error responses:
 ```json
 {
   "status": "error",
@@ -138,11 +201,18 @@ The API uses standardized error responses:
 }
 ```
 
+Common error codes:
+- INVALID_ORDER_DATA
+- SLOT_NOT_AVAILABLE
+- INVALID_PRICE_RANGE
+- ZONE_HAS_ACTIVE_ORDERS
+- ONE_CLICK_ORDER_FAILED
+
 ### Price Ranges
-Standard Wash & Iron: 500-50000 XOF
-Basic Wash & Iron: 300-30000 XOF
-Dry Cleaning: 200-75000 XOF
-Ironing Only: 50-25000 XOF
+- Standard Wash & Iron: 500-50000 XOF
+- Basic Wash & Iron: 300-30000 XOF
+- Dry Cleaning: 200-75000 XOF
+- Ironing Only: 50-25000 XOF
 
 ### Environment Variables
 ```
@@ -152,7 +222,32 @@ FIREBASE_PROJECT_ID=alpha-79c09
 ```
 
 ### Tech Stack
-Node.js + Express
-TypeScript
-Firebase Admin SDK
-Joi Validation
+- Node.js + Express
+- TypeScript
+- Firebase Admin SDK
+- Joi Validation
+- Firebase/Firestore Database
+
+### Security Features
+- Role-based access control
+- JWT Authentication
+- Request rate limiting
+- Input validation
+- Error sanitization
+
+### Best Practices
+- Comprehensive error handling
+- Type safety with TypeScript
+- Modular architecture
+- Clean code principles
+- Detailed logging
+
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+ISC
