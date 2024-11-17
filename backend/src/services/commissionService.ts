@@ -1,17 +1,14 @@
-import { db } from '../config/firebase';
+import { db, FieldValue, Timestamp } from '../config/firebase'; // Import FieldValue
 import { Commission, CommissionRule } from '../models/commission';
-import { AppError } from '../utils/errors';
-import { Timestamp } from 'firebase-admin/firestore';
-import { NotificationService } from './notificationService';
+import { AppError, errorCodes } from '../utils/errors'; // Import errorCodes
+import { notificationService } from './notificationService';
 
 export class CommissionService {
     private commissionsRef = db.collection('commissions');
     private rulesRef = db.collection('commission-rules');
     private affiliatesRef = db.collection('affiliates');
-    private notificationService: NotificationService;
 
     constructor() {
-        this.notificationService = new NotificationService();
     }
 
     async calculateCommission(
@@ -24,7 +21,7 @@ export class CommissionService {
         const rule = await this.getActiveRule();
 
         if (orderAmount < rule.minimumOrderValue) {
-            throw new AppError(400, `Order amount below minimum value of ${rule.minimumOrderValue}`);
+            throw new AppError(400, `Order amount below minimum value of ${rule.minimumOrderValue}`, errorCodes.INVALID_AMOUNT); // Add error code
         }
 
         // Calculer la commission (toujours en pourcentage)
@@ -52,8 +49,8 @@ export class CommissionService {
         const affiliateRef = this.affiliatesRef.doc(affiliateId);
         
         await affiliateRef.update({
-            totalEarnings: db.FieldValue.increment(commissionAmount),
-            availableBalance: db.FieldValue.increment(commissionAmount),
+            totalEarnings: FieldValue.increment(commissionAmount), // Use imported FieldValue
+            availableBalance: FieldValue.increment(commissionAmount), // Use imported FieldValue
             updatedAt: Timestamp.now()
         });
     }
@@ -63,11 +60,11 @@ export class CommissionService {
         const commission = await commissionRef.get();
 
         if (!commission.exists) {
-            throw new AppError(404, 'Commission not found');
+            throw new AppError(404, 'Commission not found', errorCodes.COMMISSION_NOT_FOUND); // Add error code
         }
 
         if (commission.data()?.status !== 'PENDING') {
-            throw new AppError(400, 'Commission is not in pending status');
+            throw new AppError(400, 'Commission is not in pending status', errorCodes.INVALID_COMMISSION_STATUS); // Add error code
         }
 
         await commissionRef.update({
@@ -76,7 +73,7 @@ export class CommissionService {
         });
 
         // Notifier l'affilié
-        await this.notificationService.sendCommissionApprovalNotification(
+        await notificationService.sendCommissionApprovalNotification(
             commission.data()?.affiliateId,
             commission.data()?.commissionAmount
         );
@@ -137,7 +134,7 @@ export class CommissionService {
         const rule = await ruleRef.get();
 
         if (!rule.exists) {
-            throw new AppError(404, 'Commission rule not found');
+            throw new AppError(404, 'Commission rule not found', errorCodes.COMMISSION_RULE_NOT_FOUND); // Add error code
         }
 
         await ruleRef.update({

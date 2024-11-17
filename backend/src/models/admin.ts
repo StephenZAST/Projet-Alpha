@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose'; // Import Types
 
 export enum AdminRole {
     SUPER_ADMIN_MASTER = 'super_admin_master', // Votre compte unique
@@ -9,6 +9,7 @@ export enum AdminRole {
     SUPERVISOR = 'supervisor'
 }
 
+// Define IAdmin interface before adminSchema
 export interface IAdmin extends Document {
     userId: string;
     email: string;
@@ -18,7 +19,7 @@ export interface IAdmin extends Document {
     role: AdminRole;
     phoneNumber: string;
     isActive: boolean;
-    createdBy: string;      // ID de l'admin qui a créé ce compte
+    createdBy: Types.ObjectId;      // Change createdBy type to Types.ObjectId
     lastLogin?: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -94,7 +95,9 @@ adminSchema.pre('deleteOne', async function(next) {
 
 // Middleware pour empêcher la modification du rôle du Master Admin
 adminSchema.pre('save', function(next) {
-    if (this.isModified('isMasterAdmin') && this.isMasterAdmin) {
+    // Type cast this to IAdmin
+    const admin = this as IAdmin; 
+    if (admin.isModified('isMasterAdmin') && admin.isMasterAdmin) {
         throw new Error("Le statut Master Admin ne peut pas être modifié");
     }
     next();
