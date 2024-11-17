@@ -213,4 +213,34 @@ export class AffiliateService {
             ...doc.data()
         })) as CommissionWithdrawal[];
     }
+
+    // Placeholder for getAffiliateProfile
+    async getAffiliateProfile(affiliateId: string): Promise<Affiliate> {
+        // TODO: Implement getAffiliateProfile logic
+        throw new Error('getAffiliateProfile not implemented yet');
+    }
+
+    // Placeholder for updateProfile
+    async updateProfile(affiliateId: string, updates: Partial<Affiliate>): Promise<void> {
+        // TODO: Implement updateProfile logic
+        throw new Error('updateProfile not implemented yet');
+    }
+
+    // Placeholder for getPendingAffiliates
+    async getPendingAffiliates(): Promise<Affiliate[]> {
+        // TODO: Implement getPendingAffiliates logic
+        throw new Error('getPendingAffiliates not implemented yet');
+    }
+
+    // Placeholder for getAllAffiliates
+    async getAllAffiliates(): Promise<Affiliate[]> {
+        // TODO: Implement getAllAffiliates logic
+        throw new Error('getAllAffiliates not implemented yet');
+    }
+
+    // Placeholder for getAnalytics
+    async getAnalytics(): Promise<any> {
+        // TODO: Implement getAnalytics logic
+        throw new Error('getAnalytics not implemented yet');
+    }
 }
