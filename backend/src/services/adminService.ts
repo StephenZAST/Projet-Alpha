@@ -1,5 +1,5 @@
 import { Admin, AdminRole, IAdmin } from '../models/admin';
-import { hashPassword, comparePassword } from '../utils/auth';
+import { hashPassword, comparePassword } from '../utils/auth'; // Add import statement
 import { generateToken } from '../utils/jwt';
 import { AppError } from '../utils/errors';
 import { errorCodes } from '../utils/errors'; // Import errorCodes
@@ -22,7 +22,8 @@ export class AdminService {
             throw new AppError(403, "Seul le Super Admin Master peut créer d'autres Super Admins", errorCodes.FORBIDDEN); // Add error code
         }
 
-        const hashedPassword = await hashPassword(adminData.password);
+        // Check if password is defined before hashing
+        const hashedPassword = adminData.password ? await hashPassword(adminData.password) : undefined;
         
         const admin = new Admin({
             ...adminData,
@@ -54,7 +55,7 @@ export class AdminService {
     }
 
     // Mettre à jour un admin
-    async updateAdmin(adminId: string, updates: Partial<IAdmin>, updaterId: string): Promise<IAdmin> {
+    async updateAdmin(adminId: string, updates: Partial<IAdmin>, updaterId: string): Promise<IAdmin | null> { // Update return type
         const updater = await Admin.findById(updaterId);
         const adminToUpdate = await Admin.findById(adminId);
 
@@ -76,6 +77,7 @@ export class AdminService {
             throw new AppError(403, "Seul le Super Admin Master peut modifier un Super Admin", errorCodes.FORBIDDEN); // Add error code
         }
 
+        // Check if password is defined before hashing
         if (updates.password) {
             updates.password = await hashPassword(updates.password);
         }
@@ -86,7 +88,7 @@ export class AdminService {
             { new: true }
         );
 
-        return updatedAdmin;
+        return updatedAdmin; // Return the updated admin or null
     }
 
     // Supprimer un admin
@@ -167,7 +169,8 @@ export class AdminService {
             throw new AppError(403, "Un Super Admin Master existe déjà", errorCodes.FORBIDDEN); // Add error code
         }
 
-        const hashedPassword = await hashPassword(adminData.password);
+        // Check if password is defined before hashing
+        const hashedPassword = adminData.password ? await hashPassword(adminData.password) : undefined;
         
         const masterAdmin = new Admin({
             ...adminData,
