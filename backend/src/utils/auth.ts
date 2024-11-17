@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import { AppError } from './AppError';
+import AppError from './AppError'; // Correct import
 import { errorCodes } from './errors';
 
 // Number of salt rounds for bcrypt
