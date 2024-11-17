@@ -1,16 +1,16 @@
 import express from 'express';
 import { PermissionController } from '../controllers/permissionController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticateUser, requireAdminRole } from '../middleware/auth'; // Correct import names
 import { AdminRole } from '../models/admin';
 
 const router = express.Router();
 const permissionController = new PermissionController();
 
 // Protéger toutes les routes
-router.use(authenticate);
+router.use(authenticateUser);
 
 // Routes accessibles uniquement au Super Admin Master
-router.use(authorize([AdminRole.SUPER_ADMIN_MASTER]));
+router.use(requireAdminRole([AdminRole.SUPER_ADMIN_MASTER]));
 
 // Initialiser les permissions par défaut
 router.post('/initialize', permissionController.initializePermissions);

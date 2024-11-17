@@ -29,7 +29,7 @@ export class CacheService {
 
     // Définir une valeur dans le cache
     public set<T>(key: string, value: T, ttl?: number): boolean {
-        return this.cache.set(key, value, ttl);
+        return this.cache.set(key, value, ttl || 0);
     }
 
     // Supprimer une valeur du cache

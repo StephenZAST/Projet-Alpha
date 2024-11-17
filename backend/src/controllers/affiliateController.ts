@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AffiliateService } from '../services/affiliateService';
 import { CommissionService } from '../services/commissionService';
-import { AppError } from '../utils/errors';
+import { AppError, errorCodes } from '../utils/errors';
 import { PaymentMethod } from '../models/affiliate';
 
 export class AffiliateController {
@@ -19,7 +19,7 @@ export class AffiliateController {
             const { fullName, email, phone, paymentInfo } = req.body;
 
             if (!fullName || !email || !phone || !paymentInfo) {
-                throw new AppError(400, 'Missing required fields');
+                throw new AppError(400, 'Missing required fields', errorCodes.VALIDATION_ERROR); // Add error code
             }
 
             const affiliate = await this.affiliateService.createAffiliate(
@@ -34,17 +34,36 @@ export class AffiliateController {
                 data: affiliate
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
+    };
+
+    // Placeholder for login
+    login = async (req: Request, res: Response) => {
+        // TODO: Implement login logic
+        res.status(501).json({
+            success: false,
+            message: 'Login not implemented yet'
+        });
     };
 
     // Obtenir le profil de l'affilié
     getProfile = async (req: Request, res: Response) => {
         try {
-            const affiliateId = req.user.id; // Fourni par le middleware d'authentification
+            const affiliateId = req.user?.id; // Optional chaining for req.user
+            if (!affiliateId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
             const affiliate = await this.affiliateService.getAffiliateProfile(affiliateId);
 
             res.json({
@@ -52,17 +71,28 @@ export class AffiliateController {
                 data: affiliate
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
     // Mettre à jour le profil
     updateProfile = async (req: Request, res: Response) => {
         try {
-            const affiliateId = req.user.id;
+            const affiliateId = req.user?.id; // Optional chaining for req.user
+            if (!affiliateId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
+
             const updates = req.body;
 
             await this.affiliateService.updateProfile(affiliateId, updates);
@@ -72,17 +102,27 @@ export class AffiliateController {
                 message: 'Profile updated successfully'
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
     // Obtenir les statistiques de l'affilié
     getStats = async (req: Request, res: Response) => {
         try {
-            const affiliateId = req.user.id;
+            const affiliateId = req.user?.id; // Optional chaining for req.user
+            if (!affiliateId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
             const stats = await this.affiliateService.getAffiliateStats(affiliateId);
 
             res.json({
@@ -90,21 +130,31 @@ export class AffiliateController {
                 data: stats
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
     // Demande de retrait
     requestWithdrawal = async (req: Request, res: Response) => {
         try {
-            const affiliateId = req.user.id;
+            const affiliateId = req.user?.id; // Optional chaining for req.user
+            if (!affiliateId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
             const { amount, paymentMethod } = req.body;
 
             if (!amount || !paymentMethod) {
-                throw new AppError(400, 'Amount and payment method are required');
+                throw new AppError(400, 'Amount and payment method are required', errorCodes.VALIDATION_ERROR); // Add error code
             }
 
             const withdrawal = await this.affiliateService.requestWithdrawal(
@@ -118,17 +168,27 @@ export class AffiliateController {
                 data: withdrawal
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
     // Historique des retraits
     getWithdrawalHistory = async (req: Request, res: Response) => {
         try {
-            const affiliateId = req.user.id;
+            const affiliateId = req.user?.id; // Optional chaining for req.user
+            if (!affiliateId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
             const withdrawals = await this.affiliateService.getWithdrawalHistory(affiliateId);
 
             res.json({
@@ -136,10 +196,17 @@ export class AffiliateController {
                 data: withdrawals
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -155,10 +222,17 @@ export class AffiliateController {
                 data: pendingAffiliates
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -173,10 +247,17 @@ export class AffiliateController {
                 message: 'Affiliate approved successfully'
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -190,10 +271,17 @@ export class AffiliateController {
                 data: pendingWithdrawals
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -202,7 +290,10 @@ export class AffiliateController {
         try {
             const { id } = req.params;
             const { status, notes } = req.body;
-            const adminId = req.user.id;
+            const adminId = req.user?.id; // Optional chaining for req.user
+            if (!adminId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
 
             await this.affiliateService.processWithdrawal(id, adminId, status, notes);
 
@@ -211,10 +302,17 @@ export class AffiliateController {
                 message: 'Withdrawal processed successfully'
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -230,10 +328,17 @@ export class AffiliateController {
                 data: affiliates
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -248,10 +353,17 @@ export class AffiliateController {
                 message: 'Commission rules updated successfully'
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -265,10 +377,26 @@ export class AffiliateController {
                 data: analytics
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) {
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
+    };
+
+    // Placeholder for getCommissions
+    getCommissions = async (req: Request, res: Response) => {
+        // TODO: Implement getCommissions logic
+        res.status(501).json({
+            success: false,
+            message: 'getCommissions not implemented yet'
+        });
     };
 }

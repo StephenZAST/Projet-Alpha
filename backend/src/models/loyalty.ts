@@ -39,6 +39,7 @@ function calculateLoyaltyTier(points: number): LoyaltyTier {
 }
 
 export interface Reward {
+  pointsCost: number;
   id: string;
   clientId: string;
   type: RewardType;
