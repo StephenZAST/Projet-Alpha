@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
-import { AppError } from './errors';
+import { AppError, errorCodes } from './errors';
 
 // Configuration de base pour le rate limiting
 const baseConfig = {
@@ -8,7 +8,7 @@ const baseConfig = {
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req: Request, res: Response) => {
-        throw new AppError(429, 'Too many requests from this IP, please try again later');
+        throw new AppError(429, 'Too many requests from this IP, please try again later', errorCodes.RATE_LIMIT_EXCEEDED);
     }
 };
 

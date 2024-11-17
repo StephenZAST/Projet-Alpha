@@ -1,36 +1,37 @@
 import express from 'express';
 import { AdminController } from '../controllers/adminController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticateUser, requireRole } from '../middleware/auth';
 import { AdminRole } from '../models/admin';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 const adminController = new AdminController();
 
-// Routes publiques
+// Public routes
 router.post('/login', adminController.login);
 
-// Route protégée pour la création du Super Admin Master (à utiliser une seule fois)
+// Protected route for Master Admin creation (one-time use)
 router.post('/master/create', adminController.createMasterAdmin);
 
-// Routes protégées nécessitant une authentification
-router.use(authenticate);
+// Protected routes requiring authentication
+router.use(authenticateUser);
 
-// Routes pour Super Admin Master et Super Admin
-router.use(authorize([AdminRole.SUPER_ADMIN_MASTER, AdminRole.SUPER_ADMIN]));
+// Routes for Super Admin Master and Super Admin
+router.use(requireRole([AdminRole.SUPER_ADMIN_MASTER, AdminRole.SUPER_ADMIN] as unknown as UserRole[]));
 router.get('/all', adminController.getAllAdmins);
 router.post('/create', adminController.createAdmin);
 
-// Routes spécifiques au Super Admin Master
-router.use('/super-admin', authorize([AdminRole.SUPER_ADMIN_MASTER]));
+// Super Admin Master specific routes
+router.use('/super-admin', requireRole([AdminRole.SUPER_ADMIN_MASTER] as unknown as UserRole[]));
 router.post('/super-admin/create', adminController.createAdmin);
 router.delete('/super-admin/:id', adminController.deleteAdmin);
 router.put('/super-admin/:id', adminController.updateAdmin);
 
-// Routes pour tous les admins (pour voir/modifier leur propre profil)
+// Routes for all admins (view/modify their own profile)
 router.get('/profile', adminController.getAdminById);
 router.put('/profile', adminController.updateAdmin);
 
-// Routes pour la gestion des autres admins
+// Routes for managing other admins
 router.get('/:id', adminController.getAdminById);
 router.put('/:id', adminController.updateAdmin);
 router.delete('/:id', adminController.deleteAdmin);

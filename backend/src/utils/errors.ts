@@ -77,7 +77,10 @@ export const errorCodes = {
   // Erreurs liées aux adresses
   ADDRESS_NOT_FOUND: 'ADDRESS_NOT_FOUND',
   INVALID_ADDRESS_DATA: 'INVALID_ADDRESS_DATA',
-  GEOCODING_FAILED: 'GEOCODING_FAILED'
+  GEOCODING_FAILED: 'GEOCODING_FAILED',
+
+  // Erreurs liées au rate limiting
+  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED'
 } as const;
 
 export class AppError extends Error {
