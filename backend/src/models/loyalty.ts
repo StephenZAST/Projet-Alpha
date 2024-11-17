@@ -21,10 +21,10 @@ export interface LoyaltyAccount {
 
 // Updated LoyaltyTier enum
 export enum LoyaltyTier {
-  BRONZE = 'bronze',    // 0-1000 points
-  SILVER = 'silver',     // 1001-5000 points
-  PLATINUM = "PLATINUM",
-  GOLD = "GOLD"
+  BRONZE = 'BRONZE',    // 0-1000 points
+  SILVER = 'SILVER',     // 1001-5000 points
+  GOLD = 'GOLD',
+  PLATINUM = 'PLATINUM'
 }
 
 // Example function using the updated LoyaltyTier enum
@@ -40,21 +40,21 @@ function calculateLoyaltyTier(points: number): LoyaltyTier {
 
 export interface Reward {
   id: string;
-  name: string;
-  description: string;
-  pointsCost: number;
+  clientId: string;
   type: RewardType;
-  value: number;
-  minTier: LoyaltyTier;
-  expiresAt?: Date;
-  isActive: boolean;
+  value: number;                // Points ou pourcentage de réduction
+  source: 'REFERRAL' | 'PURCHASE' | 'PROMOTION';
+  description: string;
+  expiresAt?: Timestamp;
+  status: 'ACTIVE' | 'USED' | 'EXPIRED';
+  createdAt: Timestamp;
+  usedAt?: Timestamp;
 }
 
 export enum RewardType {
-  DISCOUNT_PERCENTAGE = 'discount_percentage',
-  DISCOUNT_FIXED = 'discount_fixed',
-  FREE_SERVICE = 'free_service',
-  GIFT = 'gift'
+  POINTS = 'POINTS',
+  DISCOUNT = 'DISCOUNT',
+  GIFT = 'GIFT'
 }
 
 // Add new status for rewards
@@ -106,13 +106,24 @@ export interface LoyaltyReward {
 }
 
 export interface LoyaltyProgram {
-  id?: string;
-  name: string;
-  description: string;
-  pointsPerCurrency: number; // Nombre de points gagnés par unité monétaire
-  pointsExpirationMonths: number;
-  tiers: LoyaltyTier[];
-  isActive: boolean;
+  id: string;
+  clientId: string;
+  points: number;
+  tier: LoyaltyTier;
+  referralCode: string;          // Code de parrainage personnel
+  totalReferrals: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface ClientReferral {
+  id: string;
+  referrerId: string;           // Client qui parraine
+  referredId: string;           // Nouveau client parrainé
+  referralCode: string;
+  status: 'PENDING' | 'COMPLETED';
+  createdAt: Timestamp;
+  completedAt?: Timestamp;
 }
 
 export interface LoyaltyTierDefinition {
