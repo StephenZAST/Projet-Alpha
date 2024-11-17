@@ -1,19 +1,22 @@
 import * as admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
+import { resolve } from 'path';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
     try {
+        const serviceAccount = require('./serviceAccountKey.json');
+        
         admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-            }),
-            projectId: process.env.FIREBASE_PROJECT_ID
+            credential: admin.credential.cert(serviceAccount),
+            databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
+            storageBucket: `${serviceAccount.project_id}.appspot.com`
         });
+
+        console.log('✅ Firebase Admin SDK initialized successfully');
     } catch (error) {
-        console.error('Firebase admin initialization error:', error);
+        console.error('❌ Firebase admin initialization error:', error);
+        throw error; // Re-throw to prevent app from starting with invalid Firebase config
     }
 }
 
