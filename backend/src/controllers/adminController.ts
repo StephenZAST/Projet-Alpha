@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AdminService } from '../services/adminService';
-import { AppError } from '../utils/errors';
+import { AppError, errorCodes } from '../utils/errors'; // Import errorCodes
 import { AdminRole } from '../models/admin';
 
 export class AdminController {
@@ -24,17 +24,27 @@ export class AdminController {
                 }
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) { // Check if error is an instance of AppError
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
     // Créer un nouvel admin
     createAdmin = async (req: Request, res: Response) => {
         try {
-            const creatorId = req.user.id; // Fourni par le middleware d'authentification
+            const creatorId = req.user?.id; // Optional chaining for req.user
+            if (!creatorId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
             const adminData = req.body;
             
             const admin = await this.adminService.createAdmin(adminData, creatorId);
@@ -44,10 +54,17 @@ export class AdminController {
                 data: admin
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) { // Check if error is an instance of AppError
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -56,7 +73,10 @@ export class AdminController {
         try {
             const { id } = req.params;
             const updates = req.body;
-            const updaterId = req.user.id;
+            const updaterId = req.user?.id; // Optional chaining for req.user
+            if (!updaterId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
 
             const admin = await this.adminService.updateAdmin(id, updates, updaterId);
             
@@ -65,10 +85,17 @@ export class AdminController {
                 data: admin
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) { // Check if error is an instance of AppError
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -76,7 +103,10 @@ export class AdminController {
     deleteAdmin = async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
-            const deleterId = req.user.id;
+            const deleterId = req.user?.id; // Optional chaining for req.user
+            if (!deleterId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
 
             await this.adminService.deleteAdmin(id, deleterId);
             
@@ -85,17 +115,27 @@ export class AdminController {
                 message: "Administrateur supprimé avec succès"
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) { // Check if error is an instance of AppError
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
     // Obtenir tous les admins
     getAllAdmins = async (req: Request, res: Response) => {
         try {
-            const requesterId = req.user.id;
+            const requesterId = req.user?.id; // Optional chaining for req.user
+            if (!requesterId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
             const admins = await this.adminService.getAllAdmins(requesterId);
             
             res.json({
@@ -103,10 +143,17 @@ export class AdminController {
                 data: admins
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) { // Check if error is an instance of AppError
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -114,7 +161,10 @@ export class AdminController {
     getAdminById = async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
-            const requesterId = req.user.id;
+            const requesterId = req.user?.id; // Optional chaining for req.user
+            if (!requesterId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
 
             const admin = await this.adminService.getAdminById(id, requesterId);
             
@@ -123,10 +173,17 @@ export class AdminController {
                 data: admin
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) { // Check if error is an instance of AppError
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -135,7 +192,10 @@ export class AdminController {
         try {
             const { id } = req.params;
             const { isActive } = req.body;
-            const requesterId = req.user.id;
+            const requesterId = req.user?.id; // Optional chaining for req.user
+            if (!requesterId) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+            }
 
             const admin = await this.adminService.toggleAdminStatus(id, isActive, requesterId);
             
@@ -144,10 +204,17 @@ export class AdminController {
                 data: admin
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) { // Check if error is an instance of AppError
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 
@@ -162,10 +229,17 @@ export class AdminController {
                 data: admin
             });
         } catch (error) {
-            res.status(error.statusCode || 500).json({
-                success: false,
-                message: error.message
-            });
+            if (error instanceof AppError) { // Check if error is an instance of AppError
+                res.status(error.statusCode || 500).json({
+                    success: false,
+                    message: error.message
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Internal Server Error'
+                });
+            }
         }
     };
 }
