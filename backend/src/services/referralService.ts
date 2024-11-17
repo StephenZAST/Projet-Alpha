@@ -4,7 +4,7 @@ import { CodeGenerator } from '../utils/codeGenerator'; // Correct import
 import { AppError } from '../utils/errors';
 import { errorCodes } from '../utils/errors'; // Import errorCodes
 import { Timestamp } from 'firebase-admin/firestore';
-import { notificationService } from './notificationService'; // Correct import
+import { notificationService, NotificationType, NotificationStatus } from './notificationService'; // Correct import
 
 export class ReferralService {
     private referralsRef = db.collection('referrals');

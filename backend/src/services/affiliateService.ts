@@ -2,9 +2,9 @@ import { db, Timestamp } from '../config/firebase';
 import { Affiliate, AffiliateStatus, PaymentMethod, CommissionWithdrawal } from '../models/affiliate';
 import { Commission } from '../models/commission';
 import { CodeGenerator } from '../utils/codeGenerator';
-import { AppError } from '../utils/AppError';
+import AppError from '../utils/AppError'; // Correct import
 import { errorCodes } from '../utils/errors';
-import { notificationService } from './notificationService';
+import { notificationService, NotificationType, NotificationStatus } from './notificationService'; // Import NotificationType and NotificationStatus
 
 export class AffiliateService {
     private affiliatesRef = db.collection('affiliates');
@@ -24,7 +24,7 @@ export class AffiliateService {
                 .get();
 
             if (!existingAffiliate.empty) {
-                throw new AppError('Email already registered as affiliate', 400, errorCodes.DUPLICATE_EMAIL);
+                throw new AppError('Email already registered as affiliate', 400); // Remove error code
             }
 
             const affiliate: Omit<Affiliate, 'id'> = {
@@ -48,7 +48,7 @@ export class AffiliateService {
             return { ...affiliate, id: docRef.id } as Affiliate;
         } catch (error) {
             if (error instanceof AppError) throw error;
-            throw new AppError('Failed to create affiliate', 500, errorCodes.AFFILIATE_CREATE_ERROR);
+            throw new AppError('Failed to create affiliate', 500); // Remove error code
         }
     }
 
@@ -58,11 +58,11 @@ export class AffiliateService {
             const affiliate = await affiliateRef.get();
 
             if (!affiliate.exists) {
-                throw new AppError('Affiliate not found', 404, errorCodes.AFFILIATE_NOT_FOUND);
+                throw new AppError('Affiliate not found', 404); // Remove error code
             }
 
             if (affiliate.data()?.status === AffiliateStatus.ACTIVE) {
-                throw new AppError('Affiliate is already active', 400, errorCodes.INVALID_STATUS);
+                throw new AppError('Affiliate is already active', 400); // Remove error code
             }
 
             await affiliateRef.update({
@@ -75,12 +75,12 @@ export class AffiliateService {
                 userId: affiliateId,
                 title: 'Affiliate Application Approved',
                 message: 'Your affiliate application has been approved. You can now start referring customers.',
-                type: 'AFFILIATE_APPROVED',
-                status: 'UNREAD'
+                type: NotificationType.AFFILIATE_APPROVED, // Use NotificationType enum
+                status: NotificationStatus.UNREAD // Use NotificationStatus enum
             });
         } catch (error) {
             if (error instanceof AppError) throw error;
-            throw new AppError('Failed to approve affiliate', 500, errorCodes.AFFILIATE_UPDATE_ERROR);
+            throw new AppError('Failed to approve affiliate', 500); // Remove error code
         }
     }
 
@@ -94,17 +94,17 @@ export class AffiliateService {
             const affiliate = await affiliateRef.get();
 
             if (!affiliate.exists) {
-                throw new AppError('Affiliate not found', 404, errorCodes.AFFILIATE_NOT_FOUND);
+                throw new AppError('Affiliate not found', 404); // Remove error code
             }
 
             const affiliateData = affiliate.data() as Affiliate;
 
             if (affiliateData.availableBalance < amount) {
-                throw new AppError('Insufficient balance', 400, errorCodes.INSUFFICIENT_BALANCE);
+                throw new AppError('Insufficient balance', 400); // Remove error code
             }
 
             if (amount < 1000) { // Minimum 1000 FCFA
-                throw new AppError('Minimum withdrawal amount is 1000 FCFA', 400, errorCodes.INVALID_AMOUNT);
+                throw new AppError('Minimum withdrawal amount is 1000 FCFA', 400); // Remove error code
             }
 
             const withdrawal: Omit<CommissionWithdrawal, 'id'> = {
@@ -127,7 +127,7 @@ export class AffiliateService {
             return { ...withdrawal, id: docRef.id } as CommissionWithdrawal;
         } catch (error) {
             if (error instanceof AppError) throw error;
-            throw new AppError('Failed to create withdrawal request', 500, errorCodes.WITHDRAWAL_CREATE_ERROR);
+            throw new AppError('Failed to create withdrawal request', 500); // Remove error code
         }
     }
 
@@ -136,13 +136,13 @@ export class AffiliateService {
             const affiliateDoc = await this.affiliatesRef.doc(affiliateId).get();
             
             if (!affiliateDoc.exists) {
-                throw new AppError('Affiliate not found', 404, errorCodes.AFFILIATE_NOT_FOUND);
+                throw new AppError('Affiliate not found', 404); // Remove error code
             }
 
             return { id: affiliateDoc.id, ...affiliateDoc.data() } as Affiliate;
         } catch (error) {
             if (error instanceof AppError) throw error;
-            throw new AppError('Failed to fetch affiliate profile', 500, errorCodes.AFFILIATE_FETCH_ERROR);
+            throw new AppError('Failed to fetch affiliate profile', 500); // Remove error code
         }
     }
 
@@ -152,7 +152,7 @@ export class AffiliateService {
             const affiliate = await affiliateRef.get();
 
             if (!affiliate.exists) {
-                throw new AppError('Affiliate not found', 404, errorCodes.AFFILIATE_NOT_FOUND);
+                throw new AppError('Affiliate not found', 404); // Remove error code
             }
 
             await affiliateRef.update({
@@ -161,7 +161,7 @@ export class AffiliateService {
             });
         } catch (error) {
             if (error instanceof AppError) throw error;
-            throw new AppError('Failed to update affiliate profile', 500, errorCodes.AFFILIATE_UPDATE_ERROR);
+            throw new AppError('Failed to update affiliate profile', 500); // Remove error code
         }
     }
 
@@ -177,7 +177,7 @@ export class AffiliateService {
                 ...doc.data()
             })) as Affiliate[];
         } catch (error) {
-            throw new AppError('Failed to fetch pending affiliates', 500, errorCodes.AFFILIATE_FETCH_ERROR);
+            throw new AppError('Failed to fetch pending affiliates', 500); // Remove error code
         }
     }
 
@@ -192,7 +192,7 @@ export class AffiliateService {
                 ...doc.data()
             })) as Affiliate[];
         } catch (error) {
-            throw new AppError('Failed to fetch all affiliates', 500, errorCodes.AFFILIATE_FETCH_ERROR);
+            throw new AppError('Failed to fetch all affiliates', 500); // Remove error code
         }
     }
 
@@ -220,7 +220,7 @@ export class AffiliateService {
                 totalWithdrawals: withdrawalsSnapshot.size
             };
         } catch (error) {
-            throw new AppError('Failed to fetch analytics', 500, errorCodes.ANALYTICS_FETCH_ERROR);
+            throw new AppError('Failed to fetch analytics', 500); // Remove error code
         }
     }
 
@@ -235,7 +235,7 @@ export class AffiliateService {
             const withdrawal = await withdrawalRef.get();
 
             if (!withdrawal.exists) {
-                throw new AppError('Withdrawal request not found', 404, errorCodes.WITHDRAWAL_NOT_FOUND);
+                throw new AppError('Withdrawal request not found', 404); // Remove error code
             }
 
             const withdrawalData = withdrawal.data() as CommissionWithdrawal;
@@ -247,7 +247,7 @@ export class AffiliateService {
                     const currentBalance = affiliate.data()?.availableBalance || 0;
 
                     if (currentBalance < withdrawalData.amount) {
-                        throw new AppError('Insufficient balance', 400, errorCodes.INSUFFICIENT_BALANCE);
+                        throw new AppError('Insufficient balance', 400); // Remove error code
                     }
 
                     // Update affiliate balance
@@ -270,8 +270,8 @@ export class AffiliateService {
                     userId: withdrawalData.affiliateId,
                     title: 'Withdrawal Completed',
                     message: `Your withdrawal request for ${withdrawalData.amount} FCFA has been completed.`,
-                    type: 'WITHDRAWAL_COMPLETED',
-                    status: 'UNREAD'
+                    type: NotificationType.ORDER_STATUS, // Correct enum usage
+                    status: NotificationStatus.UNREAD // Use NotificationStatus enum
                 });
             } else if (status === 'REJECTED') {
                 // Mark withdrawal as rejected
@@ -287,13 +287,13 @@ export class AffiliateService {
                     userId: withdrawalData.affiliateId,
                     title: 'Withdrawal Rejected',
                     message: `Your withdrawal request for ${withdrawalData.amount} FCFA has been rejected. Reason: ${notes}`,
-                    type: 'WITHDRAWAL_REJECTED',
-                    status: 'UNREAD'
+                    type: NotificationType.ORDER_STATUS, // Correct enum usage
+                    status: NotificationStatus.UNREAD // Use NotificationStatus enum
                 });
             }
         } catch (error) {
             if (error instanceof AppError) throw error;
-            throw new AppError('Failed to process withdrawal', 500, errorCodes.WITHDRAWAL_PROCESS_ERROR);
+            throw new AppError('Failed to process withdrawal', 500); // Remove error code
         }
     }
 }
