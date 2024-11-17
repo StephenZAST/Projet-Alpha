@@ -1,20 +1,15 @@
-import { db } from '../config/firebase';
+import { db, Timestamp } from '../config/firebase';
 import { Affiliate, AffiliateStatus, PaymentMethod, CommissionWithdrawal } from '../models/affiliate';
 import { Commission } from '../models/commission';
-import { generateUniqueCode } from '../utils/codeGenerator';
-import { AppError } from '../utils/errors';
-import { Timestamp } from 'firebase-admin/firestore';
-import { NotificationService } from './notificationService';
+import { CodeGenerator } from '../utils/codeGenerator';
+import { AppError } from '../utils/AppError';
+import { errorCodes } from '../utils/errors';
+import { notificationService } from './notificationService';
 
 export class AffiliateService {
     private affiliatesRef = db.collection('affiliates');
     private commissionsRef = db.collection('commissions');
     private withdrawalsRef = db.collection('commission-withdrawals');
-    private notificationService: NotificationService;
-
-    constructor() {
-        this.notificationService = new NotificationService();
-    }
 
     async createAffiliate(
         fullName: string,
@@ -22,55 +17,71 @@ export class AffiliateService {
         phone: string,
         paymentInfo: Affiliate['paymentInfo']
     ): Promise<Affiliate> {
-        // Vérifier si l'email est déjà utilisé
-        const existingAffiliate = await this.affiliatesRef
-            .where('email', '==', email)
-            .get();
+        try {
+            // Check if email is already used
+            const existingAffiliate = await this.affiliatesRef
+                .where('email', '==', email)
+                .get();
 
-        if (!existingAffiliate.empty) {
-            throw new AppError(400, 'Email already registered as affiliate');
+            if (!existingAffiliate.empty) {
+                throw new AppError('Email already registered as affiliate', 400, errorCodes.DUPLICATE_EMAIL);
+            }
+
+            const affiliate: Omit<Affiliate, 'id'> = {
+                fullName,
+                email,
+                phone,
+                status: AffiliateStatus.PENDING,
+                paymentInfo,
+                commissionSettings: {
+                    type: 'PERCENTAGE',
+                    value: 10, // 10% default
+                },
+                totalEarnings: 0,
+                availableBalance: 0,
+                referralCode: await CodeGenerator.generateAffiliateCode(),
+                createdAt: Timestamp.now(),
+                updatedAt: Timestamp.now()
+            };
+
+            const docRef = await this.affiliatesRef.add(affiliate);
+            return { ...affiliate, id: docRef.id } as Affiliate;
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to create affiliate', 500, errorCodes.AFFILIATE_CREATE_ERROR);
         }
-
-        const affiliate: Omit<Affiliate, 'id'> = {
-            fullName,
-            email,
-            phone,
-            status: AffiliateStatus.PENDING,
-            paymentInfo,
-            commissionSettings: {
-                type: 'PERCENTAGE',
-                value: 10, // 10% par défaut
-            },
-            totalEarnings: 0,
-            availableBalance: 0,
-            referralCode: await generateUniqueCode(8),
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now()
-        };
-
-        const docRef = await this.affiliatesRef.add(affiliate);
-        return { ...affiliate, id: docRef.id } as Affiliate;
     }
 
     async approveAffiliate(affiliateId: string): Promise<void> {
-        const affiliateRef = this.affiliatesRef.doc(affiliateId);
-        const affiliate = await affiliateRef.get();
+        try {
+            const affiliateRef = this.affiliatesRef.doc(affiliateId);
+            const affiliate = await affiliateRef.get();
 
-        if (!affiliate.exists) {
-            throw new AppError(404, 'Affiliate not found');
+            if (!affiliate.exists) {
+                throw new AppError('Affiliate not found', 404, errorCodes.AFFILIATE_NOT_FOUND);
+            }
+
+            if (affiliate.data()?.status === AffiliateStatus.ACTIVE) {
+                throw new AppError('Affiliate is already active', 400, errorCodes.INVALID_STATUS);
+            }
+
+            await affiliateRef.update({
+                status: AffiliateStatus.ACTIVE,
+                updatedAt: Timestamp.now()
+            });
+
+            // Notify affiliate
+            await notificationService.createNotification({
+                userId: affiliateId,
+                title: 'Affiliate Application Approved',
+                message: 'Your affiliate application has been approved. You can now start referring customers.',
+                type: 'AFFILIATE_APPROVED',
+                status: 'UNREAD'
+            });
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to approve affiliate', 500, errorCodes.AFFILIATE_UPDATE_ERROR);
         }
-
-        if (affiliate.data()?.status === AffiliateStatus.ACTIVE) {
-            throw new AppError(400, 'Affiliate is already active');
-        }
-
-        await affiliateRef.update({
-            status: AffiliateStatus.ACTIVE,
-            updatedAt: Timestamp.now()
-        });
-
-        // Notifier l'affilié
-        await this.notificationService.sendAffiliateApprovalNotification(affiliateId);
     }
 
     async requestWithdrawal(
@@ -78,169 +89,140 @@ export class AffiliateService {
         amount: number,
         paymentMethod: PaymentMethod
     ): Promise<CommissionWithdrawal> {
-        const affiliateRef = this.affiliatesRef.doc(affiliateId);
-        const affiliate = await affiliateRef.get();
+        try {
+            const affiliateRef = this.affiliatesRef.doc(affiliateId);
+            const affiliate = await affiliateRef.get();
 
-        if (!affiliate.exists) {
-            throw new AppError(404, 'Affiliate not found');
-        }
-
-        const affiliateData = affiliate.data() as Affiliate;
-
-        if (affiliateData.availableBalance < amount) {
-            throw new AppError(400, 'Insufficient balance');
-        }
-
-        if (amount < 1000) { // Minimum 1000 FCFA
-            throw new AppError(400, 'Minimum withdrawal amount is 1000 FCFA');
-        }
-
-        const withdrawal: Omit<CommissionWithdrawal, 'id'> = {
-            affiliateId,
-            amount,
-            paymentMethod,
-            paymentDetails: {
-                mobileMoneyNumber: paymentMethod === PaymentMethod.MOBILE_MONEY 
-                    ? affiliateData.paymentInfo.mobileMoneyNumber 
-                    : undefined,
-                bankInfo: paymentMethod === PaymentMethod.BANK_TRANSFER 
-                    ? affiliateData.paymentInfo.bankInfo 
-                    : undefined
-            },
-            status: 'PENDING',
-            requestedAt: Timestamp.now()
-        };
-
-        const docRef = await this.withdrawalsRef.add(withdrawal);
-        return { ...withdrawal, id: docRef.id } as CommissionWithdrawal;
-    }
-
-    async processWithdrawal(
-        withdrawalId: string,
-        adminId: string,
-        status: 'COMPLETED',
-        notes?: string
-    ): Promise<void> {
-        const withdrawalRef = this.withdrawalsRef.doc(withdrawalId);
-        const withdrawal = await withdrawalRef.get();
-
-        if (!withdrawal.exists) {
-            throw new AppError(404, 'Withdrawal request not found');
-        }
-
-        const withdrawalData = withdrawal.data() as CommissionWithdrawal;
-        const affiliateRef = this.affiliatesRef.doc(withdrawalData.affiliateId);
-
-        await db.runTransaction(async (transaction) => {
-            const affiliate = await transaction.get(affiliateRef);
-            const currentBalance = affiliate.data()?.availableBalance || 0;
-
-            if (currentBalance < withdrawalData.amount) {
-                throw new AppError(400, 'Insufficient balance');
+            if (!affiliate.exists) {
+                throw new AppError('Affiliate not found', 404, errorCodes.AFFILIATE_NOT_FOUND);
             }
 
-            // Mettre à jour le solde de l'affilié
-            transaction.update(affiliateRef, {
-                availableBalance: currentBalance - withdrawalData.amount,
+            const affiliateData = affiliate.data() as Affiliate;
+
+            if (affiliateData.availableBalance < amount) {
+                throw new AppError('Insufficient balance', 400, errorCodes.INSUFFICIENT_BALANCE);
+            }
+
+            if (amount < 1000) { // Minimum 1000 FCFA
+                throw new AppError('Minimum withdrawal amount is 1000 FCFA', 400, errorCodes.INVALID_AMOUNT);
+            }
+
+            const withdrawal: Omit<CommissionWithdrawal, 'id'> = {
+                affiliateId,
+                amount,
+                paymentMethod,
+                paymentDetails: {
+                    mobileMoneyNumber: paymentMethod === PaymentMethod.MOBILE_MONEY 
+                        ? affiliateData.paymentInfo.mobileMoneyNumber 
+                        : undefined,
+                    bankInfo: paymentMethod === PaymentMethod.BANK_TRANSFER 
+                        ? affiliateData.paymentInfo.bankInfo 
+                        : undefined
+                },
+                status: 'PENDING',
+                requestedAt: Timestamp.now()
+            };
+
+            const docRef = await this.withdrawalsRef.add(withdrawal);
+            return { ...withdrawal, id: docRef.id } as CommissionWithdrawal;
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to create withdrawal request', 500, errorCodes.WITHDRAWAL_CREATE_ERROR);
+        }
+    }
+
+    async getAffiliateProfile(affiliateId: string): Promise<Affiliate> {
+        try {
+            const affiliateDoc = await this.affiliatesRef.doc(affiliateId).get();
+            
+            if (!affiliateDoc.exists) {
+                throw new AppError('Affiliate not found', 404, errorCodes.AFFILIATE_NOT_FOUND);
+            }
+
+            return { id: affiliateDoc.id, ...affiliateDoc.data() } as Affiliate;
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to fetch affiliate profile', 500, errorCodes.AFFILIATE_FETCH_ERROR);
+        }
+    }
+
+    async updateProfile(affiliateId: string, updates: Partial<Omit<Affiliate, 'id' | 'status' | 'referralCode'>>): Promise<void> {
+        try {
+            const affiliateRef = this.affiliatesRef.doc(affiliateId);
+            const affiliate = await affiliateRef.get();
+
+            if (!affiliate.exists) {
+                throw new AppError('Affiliate not found', 404, errorCodes.AFFILIATE_NOT_FOUND);
+            }
+
+            await affiliateRef.update({
+                ...updates,
                 updatedAt: Timestamp.now()
             });
-
-            // Marquer le retrait comme complété
-            transaction.update(withdrawalRef, {
-                status: 'COMPLETED',
-                processedBy: adminId,
-                processedAt: Timestamp.now(),
-                notes: notes
-            });
-        });
-
-        // Notifier l'affilié
-        await this.notificationService.sendWithdrawalCompletedNotification(
-            withdrawalData.affiliateId,
-            withdrawalData.amount
-        );
-    }
-
-    async getAffiliateStats(affiliateId: string): Promise<{
-        totalCommissions: number;
-        pendingCommissions: number;
-        totalEarnings: number;
-        availableBalance: number;
-        clientsReferred: number;
-    }> {
-        const affiliate = await this.affiliatesRef.doc(affiliateId).get();
-        
-        if (!affiliate.exists) {
-            throw new AppError(404, 'Affiliate not found');
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to update affiliate profile', 500, errorCodes.AFFILIATE_UPDATE_ERROR);
         }
-
-        const commissions = await this.commissionsRef
-            .where('affiliateId', '==', affiliateId)
-            .get();
-
-        const commissionsData = commissions.docs.map(doc => doc.data() as Commission);
-
-        return {
-            totalCommissions: commissionsData.length,
-            pendingCommissions: commissionsData.filter(c => c.status === 'PENDING').length,
-            totalEarnings: affiliate.data()?.totalEarnings || 0,
-            availableBalance: affiliate.data()?.availableBalance || 0,
-            clientsReferred: new Set(commissionsData.map(c => c.clientId)).size
-        };
     }
 
-    // Pour le dashboard admin/secrétaire
-    async getPendingWithdrawals(): Promise<CommissionWithdrawal[]> {
-        const withdrawals = await this.withdrawalsRef
-            .where('status', '==', 'PENDING')
-            .orderBy('requestedAt', 'desc')
-            .get();
-
-        return withdrawals.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as CommissionWithdrawal[];
-    }
-
-    async getWithdrawalHistory(affiliateId: string): Promise<CommissionWithdrawal[]> {
-        const withdrawals = await this.withdrawalsRef
-            .where('affiliateId', '==', affiliateId)
-            .orderBy('requestedAt', 'desc')
-            .get();
-
-        return withdrawals.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as CommissionWithdrawal[];
-    }
-
-    // Placeholder for getAffiliateProfile
-    async getAffiliateProfile(affiliateId: string): Promise<Affiliate> {
-        // TODO: Implement getAffiliateProfile logic
-        throw new Error('getAffiliateProfile not implemented yet');
-    }
-
-    // Placeholder for updateProfile
-    async updateProfile(affiliateId: string, updates: Partial<Affiliate>): Promise<void> {
-        // TODO: Implement updateProfile logic
-        throw new Error('updateProfile not implemented yet');
-    }
-
-    // Placeholder for getPendingAffiliates
     async getPendingAffiliates(): Promise<Affiliate[]> {
-        // TODO: Implement getPendingAffiliates logic
-        throw new Error('getPendingAffiliates not implemented yet');
+        try {
+            const snapshot = await this.affiliatesRef
+                .where('status', '==', AffiliateStatus.PENDING)
+                .orderBy('createdAt', 'desc')
+                .get();
+
+            return snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Affiliate[];
+        } catch (error) {
+            throw new AppError('Failed to fetch pending affiliates', 500, errorCodes.AFFILIATE_FETCH_ERROR);
+        }
     }
 
-    // Placeholder for getAllAffiliates
     async getAllAffiliates(): Promise<Affiliate[]> {
-        // TODO: Implement getAllAffiliates logic
-        throw new Error('getAllAffiliates not implemented yet');
+        try {
+            const snapshot = await this.affiliatesRef
+                .orderBy('createdAt', 'desc')
+                .get();
+
+            return snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Affiliate[];
+        } catch (error) {
+            throw new AppError('Failed to fetch all affiliates', 500, errorCodes.AFFILIATE_FETCH_ERROR);
+        }
     }
 
-    // Placeholder for getAnalytics
-    async getAnalytics(): Promise<any> {
-        // TODO: Implement getAnalytics logic
-        throw new Error('getAnalytics not implemented yet');
+    async getAnalytics(): Promise<{
+        totalAffiliates: number;
+        pendingAffiliates: number;
+        activeAffiliates: number;
+        totalCommissions: number;
+        totalWithdrawals: number;
+    }> {
+        try {
+            const [affiliatesSnapshot, commissionsSnapshot, withdrawalsSnapshot] = await Promise.all([
+                this.affiliatesRef.get(),
+                this.commissionsRef.get(),
+                this.withdrawalsRef.get()
+            ]);
+
+            const affiliates = affiliatesSnapshot.docs.map(doc => doc.data() as Affiliate);
+
+            return {
+                totalAffiliates: affiliates.length,
+                pendingAffiliates: affiliates.filter(a => a.status === AffiliateStatus.PENDING).length,
+                activeAffiliates: affiliates.filter(a => a.status === AffiliateStatus.ACTIVE).length,
+                totalCommissions: commissionsSnapshot.size,
+                totalWithdrawals: withdrawalsSnapshot.size
+            };
+        } catch (error) {
+            throw new AppError('Failed to fetch analytics', 500, errorCodes.ANALYTICS_FETCH_ERROR);
+        }
     }
 }
+
+export const affiliateService = new AffiliateService();
