@@ -1,5 +1,5 @@
 import { admin, db } from '../config/firebase';
-import { AppError } from '../utils/AppError';
+import AppError from '../utils/AppError';
 import { errorCodes } from '../utils/errors';
 import { sendEmail } from '../utils/email';
 
@@ -37,14 +37,12 @@ class NotificationService {
     /**
      * Create a new notification
      */
-    async createNotification(notification: Omit<Notification, 'id' | 'createdAt' | 'updatedAt'>) {
+    async createNotification(notification: Omit<Notification, 'id' | 'createdAt' | 'updatedAt'>): Promise<Notification> {
         try {
-            const now = admin.firestore.Timestamp.now();
             const newNotification = {
                 ...notification,
-                createdAt: now,
-                updatedAt: now,
-                status: NotificationStatus.UNREAD
+                createdAt: admin.firestore.Timestamp.now(),
+                updatedAt: admin.firestore.Timestamp.now()
             };
 
             const docRef = await this.notificationsRef.add(newNotification);
@@ -57,7 +55,7 @@ class NotificationService {
     /**
      * Get notifications for a user
      */
-    async getUserNotifications(userId: string, status?: NotificationStatus) {
+    async getUserNotifications(userId: string, status?: NotificationStatus): Promise<Notification[]> {
         try {
             let query = this.notificationsRef.where('userId', '==', userId);
             
@@ -69,35 +67,54 @@ class NotificationService {
             return snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
-            }));
+            })) as Notification[];
         } catch (error) {
             throw new AppError('Failed to fetch notifications', 500, errorCodes.NOTIFICATION_FETCH_ERROR);
         }
     }
 
     /**
-     * Mark notification as read
+     * Get notification by id
      */
-    async markAsRead(notificationId: string, userId: string) {
+    async getNotification(notificationId: string): Promise<Notification> {
         try {
-            const notificationRef = this.notificationsRef.doc(notificationId);
-            const doc = await notificationRef.get();
+            const doc = await this.notificationsRef.doc(notificationId).get();
+            if (!doc.exists) {
+                throw new AppError('Notification not found', 404, errorCodes.NOTIFICATION_NOT_FOUND);
+            }
+            return { id: doc.id, ...doc.data() } as Notification;
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to fetch notification', 500, errorCodes.NOTIFICATION_FETCH_ERROR);
+        }
+    }
 
+    /**
+     * Update notification
+     */
+    async updateNotification(notificationId: string, update: Partial<Notification>): Promise<void> {
+        try {
+            const doc = await this.notificationsRef.doc(notificationId).get();
             if (!doc.exists) {
                 throw new AppError('Notification not found', 404, errorCodes.NOTIFICATION_NOT_FOUND);
             }
 
-            const notification = doc.data() as Notification;
-            if (notification.userId !== userId) {
-                throw new AppError('Unauthorized access to notification', 403, errorCodes.UNAUTHORIZED);
-            }
-
-            await notificationRef.update({
-                status: NotificationStatus.READ,
+            await this.notificationsRef.doc(notificationId).update({
+                ...update,
                 updatedAt: admin.firestore.Timestamp.now()
             });
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to update notification', 500, errorCodes.NOTIFICATION_UPDATE_ERROR);
+        }
+    }
 
-            return { success: true };
+    /**
+     * Mark notification as read
+     */
+    async markAsRead(notificationId: string, userId: string): Promise<void> {
+        try {
+            await this.updateNotification(notificationId, { status: NotificationStatus.READ });
         } catch (error) {
             if (error instanceof AppError) throw error;
             throw new AppError('Failed to mark notification as read', 500, errorCodes.NOTIFICATION_UPDATE_ERROR);
@@ -107,42 +124,58 @@ class NotificationService {
     /**
      * Send push notification
      */
-    async sendPushNotification(userId: string, title: string, message: string, data?: any) {
+    async sendPushNotification(userId: string, title: string, message: string, data?: any): Promise<void> {
         try {
+            // Get user's push notification token
             const userDoc = await db.collection('users').doc(userId).get();
             if (!userDoc.exists) {
                 throw new AppError('User not found', 404, errorCodes.USER_NOT_FOUND);
             }
 
             const userData = userDoc.data();
-            if (!userData?.fcmToken) {
-                return { success: false, reason: 'No FCM token found for user' };
+            const pushToken = userData?.fcmToken;
+
+            if (!pushToken) {
+                console.log('No push token found for user:', userId);
+                return;
             }
 
-            const message = {
-                notification: {
-                    title,
-                    body: message
-                },
-                data: data || {},
-                token: userData.fcmToken
-            };
+            // Create notification in database
+            await this.createNotification({
+                userId,
+                title,
+                message,
+                type: NotificationType.SYSTEM,
+                status: NotificationStatus.UNREAD
+            });
 
-            await admin.messaging().send(message);
-            return { success: true };
+            // Send push notification (implementation depends on your push notification service)
+            // Example using Firebase Cloud Messaging:
+            try {
+                await admin.messaging().send({
+                    token: pushToken,
+                    notification: {
+                        title,
+                        body: message
+                    },
+                    data: data || {}
+                });
+            } catch (error) {
+                console.error('Failed to send push notification:', error);
+                throw new AppError('Failed to send push notification', 500, errorCodes.PUSH_NOTIFICATION_ERROR);
+            }
         } catch (error) {
-            throw new AppError('Failed to send push notification', 500, errorCodes.PUSH_NOTIFICATION_ERROR);
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to process notification', 500, errorCodes.NOTIFICATION_CREATE_ERROR);
         }
     }
 
     /**
      * Delete notification
      */
-    async deleteNotification(notificationId: string, userId: string) {
+    async deleteNotification(notificationId: string, userId: string): Promise<void> {
         try {
-            const notificationRef = this.notificationsRef.doc(notificationId);
-            const doc = await notificationRef.get();
-
+            const doc = await this.notificationsRef.doc(notificationId).get();
             if (!doc.exists) {
                 throw new AppError('Notification not found', 404, errorCodes.NOTIFICATION_NOT_FOUND);
             }
@@ -152,8 +185,7 @@ class NotificationService {
                 throw new AppError('Unauthorized access to notification', 403, errorCodes.UNAUTHORIZED);
             }
 
-            await notificationRef.delete();
-            return { success: true };
+            await this.notificationsRef.doc(notificationId).delete();
         } catch (error) {
             if (error instanceof AppError) throw error;
             throw new AppError('Failed to delete notification', 500, errorCodes.NOTIFICATION_DELETE_ERROR);
@@ -207,11 +239,7 @@ class NotificationService {
             });
 
         } catch (error) {
-            throw new AppError(
-                'Failed to send referral invitation',
-                500,
-                errorCodes.NOTIFICATION_SEND_ERROR
-            );
+            throw new AppError('Failed to send referral invitation', 500, errorCodes.NOTIFICATION_SEND_ERROR);
         }
     }
 }

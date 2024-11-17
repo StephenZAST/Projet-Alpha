@@ -40,6 +40,7 @@ export class AffiliateService {
                 totalEarnings: 0,
                 availableBalance: 0,
                 referralCode: await CodeGenerator.generateAffiliateCode(),
+                referralClicks: 0, // Initialize referral clicks
                 createdAt: Timestamp.now(),
                 updatedAt: Timestamp.now()
             };
@@ -295,6 +296,237 @@ export class AffiliateService {
             if (error instanceof AppError) throw error;
             throw new AppError('Failed to process withdrawal', 500); // Remove error code
         }
+    }
+
+    async getAffiliateStats(affiliateId: string): Promise<{
+        totalEarnings: number;
+        availableBalance: number;
+        pendingCommissions: number;
+        totalReferrals: number;
+        conversionRate: number;
+        monthlyStats: {
+            month: string;
+            earnings: number;
+            referrals: number;
+            orders: number;
+        }[];
+        performanceMetrics: {
+            avgOrderValue: number;
+            totalOrders: number;
+            activeCustomers: number;
+        };
+    }> {
+        try {
+            // Get affiliate profile
+            const affiliateDoc = await this.affiliatesRef.doc(affiliateId).get();
+            if (!affiliateDoc.exists) {
+                throw new AppError('Affiliate not found', 404);
+            }
+            const affiliate = affiliateDoc.data() as Affiliate;
+
+            // Get all commissions for this affiliate
+            const commissionsSnapshot = await this.commissionsRef
+                .where('affiliateId', '==', affiliateId)
+                .get();
+
+            const commissions = commissionsSnapshot.docs.map(doc => doc.data() as Commission);
+
+            // Calculate pending commissions
+            const pendingCommissions = commissions
+                .filter(c => c.status === 'PENDING')
+                .reduce((sum, c) => sum + c.commissionAmount, 0); // Use commissionAmount instead of amount
+
+            // Get referral orders from orders collection
+            const ordersSnapshot = await db.collection('orders')
+                .where('referralCode', '==', affiliate.referralCode)
+                .get();
+
+            const orders = ordersSnapshot.docs.map(doc => doc.data());
+
+            // Calculate monthly stats for the last 6 months
+            const monthlyStats = this.calculateMonthlyStats(commissions, orders);
+
+            // Calculate performance metrics
+            const performanceMetrics = this.calculatePerformanceMetrics(orders);
+
+            // Calculate conversion rate (orders / total referral clicks)
+            const conversionRate = affiliate.referralClicks ? (orders.length / affiliate.referralClicks) * 100 : 0; // Handle 0 referral clicks
+
+            return {
+                totalEarnings: affiliate.totalEarnings,
+                availableBalance: affiliate.availableBalance,
+                pendingCommissions,
+                totalReferrals: orders.length,
+                conversionRate,
+                monthlyStats,
+                performanceMetrics
+            };
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to fetch affiliate stats', 500);
+        }
+    }
+
+    async getWithdrawalHistory(
+        affiliateId: string,
+        options: {
+            limit?: number;
+            offset?: number;
+            startDate?: Date;
+            endDate?: Date;
+        } = {}
+    ): Promise<{
+        withdrawals: CommissionWithdrawal[];
+        total: number;
+        totalAmount: number;
+    }> {
+        try {
+            let query = this.withdrawalsRef
+                .where('affiliateId', '==', affiliateId)
+                .orderBy('requestedAt', 'desc');
+
+            // Apply date filters if provided
+            if (options.startDate) {
+                query = query.where('requestedAt', '>=', Timestamp.fromDate(options.startDate));
+            }
+            if (options.endDate) {
+                query = query.where('requestedAt', '<=', Timestamp.fromDate(options.endDate));
+            }
+
+            // Get total count
+            const totalSnapshot = await query.get();
+            const total = totalSnapshot.size;
+
+            // Apply pagination
+            if (options.limit) {
+                query = query.limit(options.limit);
+            }
+            if (options.offset) {
+                query = query.offset(options.offset);
+            }
+
+            const snapshot = await query.get();
+
+            const withdrawals = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as CommissionWithdrawal[];
+
+            const totalAmount = withdrawals.reduce((sum, w) => sum + w.amount, 0);
+
+            return {
+                withdrawals,
+                total,
+                totalAmount
+            };
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to fetch withdrawal history', 500);
+        }
+    }
+
+    async getPendingWithdrawals(
+        options: {
+            limit?: number;
+            offset?: number;
+        } = {}
+    ): Promise<{
+        withdrawals: (CommissionWithdrawal & { affiliate: Pick<Affiliate, 'fullName' | 'email' | 'phone'> })[];
+        total: number;
+        totalAmount: number;
+    }> {
+        try {
+            let query = this.withdrawalsRef
+                .where('status', '==', 'PENDING')
+                .orderBy('requestedAt', 'desc');
+
+            // Get total count
+            const totalSnapshot = await query.get();
+            const total = totalSnapshot.size;
+
+            // Apply pagination
+            if (options.limit) {
+                query = query.limit(options.limit);
+            }
+            if (options.offset) {
+                query = query.offset(options.offset);
+            }
+
+            const snapshot = await query.get();
+
+            // Get withdrawals with affiliate info
+            const withdrawalsPromises = snapshot.docs.map(async doc => {
+                const withdrawal = { id: doc.id, ...doc.data() } as CommissionWithdrawal;
+                const affiliateDoc = await this.affiliatesRef.doc(withdrawal.affiliateId).get();
+                const affiliate = affiliateDoc.data() as Affiliate;
+
+                return {
+                    ...withdrawal,
+                    affiliate: {
+                        fullName: affiliate.fullName,
+                        email: affiliate.email,
+                        phone: affiliate.phone
+                    }
+                };
+            });
+
+            const withdrawals = await Promise.all(withdrawalsPromises);
+            const totalAmount = withdrawals.reduce((sum, w) => sum + w.amount, 0);
+
+            return {
+                withdrawals,
+                total,
+                totalAmount
+            };
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to fetch pending withdrawals', 500);
+        }
+    }
+
+    private calculateMonthlyStats(commissions: Commission[], orders: any[]): {
+        month: string;
+        earnings: number;
+        referrals: number;
+        orders: number;
+    }[] {
+        const last6Months = Array.from({ length: 6 }, (_, i) => {
+            const date = new Date();
+            date.setMonth(date.getMonth() - i);
+            return date.toISOString().substring(0, 7); // YYYY-MM format
+        });
+
+        return last6Months.map(month => {
+            const monthCommissions = commissions.filter(c => 
+                c.createdAt.toDate().toISOString().startsWith(month)
+            );
+            const monthOrders = orders.filter(o => 
+                o.createdAt?.toDate().toISOString().startsWith(month) // Optional chaining for createdAt
+            );
+
+            return {
+                month,
+                earnings: monthCommissions.reduce((sum, c) => sum + c.commissionAmount, 0), // Use commissionAmount
+                referrals: monthOrders.length,
+                orders: monthOrders.length
+            };
+        });
+    }
+
+    private calculatePerformanceMetrics(orders: any[]): {
+        avgOrderValue: number;
+        totalOrders: number;
+        activeCustomers: number;
+    } {
+        const totalOrders = orders.length;
+        const totalValue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0); // Optional chaining for totalAmount
+        const uniqueCustomers = new Set(orders.map(order => order.customerId)).size;
+
+        return {
+            avgOrderValue: totalOrders > 0 ? totalValue / totalOrders : 0,
+            totalOrders,
+            activeCustomers: uniqueCustomers
+        };
     }
 }
 

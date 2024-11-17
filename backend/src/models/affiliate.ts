@@ -36,6 +36,7 @@ export interface Affiliate {
     totalEarnings: number;
     availableBalance: number;
     referralCode: string;
+    referralClicks: number; // Add referralClicks property
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }
