@@ -223,6 +223,79 @@ export class AffiliateService {
             throw new AppError('Failed to fetch analytics', 500, errorCodes.ANALYTICS_FETCH_ERROR);
         }
     }
+
+    async processWithdrawal(
+        withdrawalId: string,
+        adminId: string,
+        status: 'COMPLETED' | 'REJECTED',
+        notes?: string
+    ): Promise<void> {
+        try {
+            const withdrawalRef = this.withdrawalsRef.doc(withdrawalId);
+            const withdrawal = await withdrawalRef.get();
+
+            if (!withdrawal.exists) {
+                throw new AppError('Withdrawal request not found', 404, errorCodes.WITHDRAWAL_NOT_FOUND);
+            }
+
+            const withdrawalData = withdrawal.data() as CommissionWithdrawal;
+            const affiliateRef = this.affiliatesRef.doc(withdrawalData.affiliateId);
+
+            if (status === 'COMPLETED') {
+                await db.runTransaction(async (transaction) => {
+                    const affiliate = await transaction.get(affiliateRef);
+                    const currentBalance = affiliate.data()?.availableBalance || 0;
+
+                    if (currentBalance < withdrawalData.amount) {
+                        throw new AppError('Insufficient balance', 400, errorCodes.INSUFFICIENT_BALANCE);
+                    }
+
+                    // Update affiliate balance
+                    transaction.update(affiliateRef, {
+                        availableBalance: currentBalance - withdrawalData.amount,
+                        updatedAt: Timestamp.now()
+                    });
+
+                    // Mark withdrawal as completed
+                    transaction.update(withdrawalRef, {
+                        status,
+                        processedBy: adminId,
+                        processedAt: Timestamp.now(),
+                        notes
+                    });
+                });
+
+                // Notify affiliate
+                await notificationService.createNotification({
+                    userId: withdrawalData.affiliateId,
+                    title: 'Withdrawal Completed',
+                    message: `Your withdrawal request for ${withdrawalData.amount} FCFA has been completed.`,
+                    type: 'WITHDRAWAL_COMPLETED',
+                    status: 'UNREAD'
+                });
+            } else if (status === 'REJECTED') {
+                // Mark withdrawal as rejected
+                await withdrawalRef.update({
+                    status,
+                    processedBy: adminId,
+                    processedAt: Timestamp.now(),
+                    notes
+                });
+
+                // Notify affiliate
+                await notificationService.createNotification({
+                    userId: withdrawalData.affiliateId,
+                    title: 'Withdrawal Rejected',
+                    message: `Your withdrawal request for ${withdrawalData.amount} FCFA has been rejected. Reason: ${notes}`,
+                    type: 'WITHDRAWAL_REJECTED',
+                    status: 'UNREAD'
+                });
+            }
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to process withdrawal', 500, errorCodes.WITHDRAWAL_PROCESS_ERROR);
+        }
+    }
 }
 
 export const affiliateService = new AffiliateService();

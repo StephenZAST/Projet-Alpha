@@ -1,18 +1,17 @@
 import { db } from '../config/firebase';
 import { Referral, ReferralReward, ReferralProgram } from '../models/referral';
-import { generateUniqueCode } from '../utils/codeGenerator';
+import { CodeGenerator } from '../utils/codeGenerator'; // Correct import
 import { AppError } from '../utils/errors';
+import { errorCodes } from '../utils/errors'; // Import errorCodes
 import { Timestamp } from 'firebase-admin/firestore';
-import { NotificationService } from './notificationService';
+import { notificationService } from './notificationService'; // Correct import
 
 export class ReferralService {
     private referralsRef = db.collection('referrals');
     private rewardsRef = db.collection('referral-rewards');
     private programsRef = db.collection('referral-programs');
-    private notificationService: NotificationService;
 
     constructor() {
-        this.notificationService = new NotificationService();
     }
 
     async createReferral(referrerId: string, referredEmail: string): Promise<Referral> {
@@ -22,13 +21,13 @@ export class ReferralService {
             .get();
 
         if (!existingReferral.empty) {
-            throw new AppError(400, 'This email has already been referred');
+            throw new AppError(400, 'This email has already been referred', errorCodes.REFERRAL_ALREADY_EXISTS); // Add error code
         }
 
         const referral: Omit<Referral, 'id'> = {
             referrerId,
             referredId: '', // Sera mis à jour lors de l'inscription
-            referralCode: await generateUniqueCode(8),
+            referralCode: await CodeGenerator.generateAffiliateCode(), // Assuming generateAffiliateCode is the correct function
             status: 'PENDING',
             pointsEarned: 0,
             ordersCount: 0,
@@ -39,7 +38,7 @@ export class ReferralService {
         const docRef = await this.referralsRef.add(referral);
         
         // Envoyer un email d'invitation
-        await this.notificationService.sendReferralInvitation(referredEmail, referral.referralCode);
+        await notificationService.sendReferralInvitation(referredEmail, referral.referralCode);
 
         return { ...referral, id: docRef.id } as Referral;
     }
@@ -51,7 +50,7 @@ export class ReferralService {
             .get();
 
         if (referralQuery.empty) {
-            throw new AppError(404, 'Invalid or expired referral code');
+            throw new AppError(404, 'Invalid or expired referral code', errorCodes.INVALID_REFERRAL_CODE); // Add error code
         }
 
         const referralDoc = referralQuery.docs[0];
@@ -109,11 +108,11 @@ export class ReferralService {
         const referral = await referralRef.get();
 
         if (!referral.exists) {
-            throw new AppError(404, 'Referral not found');
+            throw new AppError(404, 'Referral not found', errorCodes.REFERRAL_NOT_FOUND); // Add error code
         }
 
         if (referral.data()?.firstOrderCompleted) {
-            throw new AppError(400, 'First order reward already processed');
+            throw new AppError(400, 'First order reward already processed', errorCodes.REWARD_ALREADY_PROCESSED); // Add error code
         }
 
         // Mettre à jour les récompenses
@@ -149,7 +148,7 @@ export class ReferralService {
             .get();
 
         if (programQuery.empty) {
-            throw new AppError(404, 'No active referral program found');
+            throw new AppError(404, 'No active referral program found', errorCodes.NO_ACTIVE_PROGRAM); // Add error code
         }
 
         return { ...programQuery.docs[0].data(), id: programQuery.docs[0].id } as ReferralProgram;
