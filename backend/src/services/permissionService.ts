@@ -1,16 +1,22 @@
-import { Permission, IPermission, PermissionAction, PermissionResource, defaultPermissions } from '../models/permission';
+import { Permission, PermissionAction, PermissionResource, defaultPermissions, permissionsCollection } from '../models/permission';
 import { AdminRole } from '../models/admin';
-import { AppError } from '../utils/errors';
+import { AppError } from '../utils/AppError';
+import { firestore } from 'firebase-admin';
 
 export class PermissionService {
     static async initializeDefaultPermissions(): Promise<void> {
+        const batch = firestore().batch();
+
         for (const permission of defaultPermissions) {
-            await Permission.findOneAndUpdate(
-                { role: permission.role, resource: permission.resource },
-                permission,
-                { upsert: true, new: true }
-            );
+            const docRef = permissionsCollection.doc(`${permission.role}_${permission.resource}`);
+            batch.set(docRef, {
+                ...permission,
+                createdAt: firestore.FieldValue.serverTimestamp(),
+                updatedAt: firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
         }
+
+        await batch.commit();
     }
 
     static async hasPermission(
@@ -18,17 +24,19 @@ export class PermissionService {
         resource: PermissionResource,
         action: PermissionAction
     ): Promise<boolean> {
-        const permission = await Permission.findOne({ role, resource });
+        const docRef = await permissionsCollection.doc(`${role}_${resource}`).get();
         
-        if (!permission) {
+        if (!docRef.exists) {
             return false;
         }
 
+        const permission = docRef.data() as Permission;
         return permission.actions.includes(action);
     }
 
-    static async getPermissionsByRole(role: AdminRole): Promise<IPermission[]> {
-        return await Permission.find({ role });
+    static async getPermissionsByRole(role: AdminRole): Promise<Permission[]> {
+        const snapshot = await permissionsCollection.where('role', '==', role).get();
+        return snapshot.docs.map(doc => doc.data() as Permission);
     }
 
     static async addPermission(
@@ -36,24 +44,27 @@ export class PermissionService {
         resource: PermissionResource,
         actions: PermissionAction[],
         description: string,
-        conditions?: object
-    ): Promise<IPermission> {
-        // Vérifier si la permission existe déjà
-        const existingPermission = await Permission.findOne({ role, resource });
-        if (existingPermission) {
-            throw new AppError(400, 'Permission already exists for this role and resource');
+        conditions?: Record<string, any>
+    ): Promise<Permission> {
+        const docRef = permissionsCollection.doc(`${role}_${resource}`);
+        const doc = await docRef.get();
+
+        if (doc.exists) {
+            throw new AppError('Permission already exists for this role and resource', 400);
         }
 
-        // Créer une nouvelle permission
-        const permission = new Permission({
+        const permission: Permission = {
             role,
             resource,
             actions,
             description,
-            conditions
-        });
+            conditions,
+            createdAt: firestore.Timestamp.now(),
+            updatedAt: firestore.Timestamp.now()
+        };
 
-        return await permission.save();
+        await docRef.set(permission);
+        return permission;
     }
 
     static async updatePermission(
@@ -61,25 +72,42 @@ export class PermissionService {
         resource: PermissionResource,
         actions: PermissionAction[],
         description?: string,
-        conditions?: object
-    ): Promise<IPermission | null> {
-        const updateData: any = { actions };
+        conditions?: Record<string, any>
+    ): Promise<Permission | null> {
+        const docRef = permissionsCollection.doc(`${role}_${resource}`);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            return null;
+        }
+
+        const updateData: Partial<Permission> = {
+            actions,
+            updatedAt: firestore.Timestamp.now()
+        };
+
         if (description) updateData.description = description;
         if (conditions) updateData.conditions = conditions;
 
-        return await Permission.findOneAndUpdate(
-            { role, resource },
-            updateData,
-            { new: true }
-        );
+        await docRef.update(updateData);
+        
+        const updatedDoc = await docRef.get();
+        return updatedDoc.data() as Permission;
     }
 
     static async removePermission(
         role: AdminRole,
         resource: PermissionResource
     ): Promise<boolean> {
-        const result = await Permission.deleteOne({ role, resource });
-        return result.deletedCount > 0;
+        const docRef = permissionsCollection.doc(`${role}_${resource}`);
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
+            return false;
+        }
+
+        await docRef.delete();
+        return true;
     }
 
     static async checkMultiplePermissions(
@@ -100,19 +128,20 @@ export class PermissionService {
 
     static async getResourcePermissions(
         resource: PermissionResource
-    ): Promise<IPermission[]> {
-        return await Permission.find({ resource });
+    ): Promise<Permission[]> {
+        const snapshot = await permissionsCollection.where('resource', '==', resource).get();
+        return snapshot.docs.map(doc => doc.data() as Permission);
     }
 
     static async getRoleMatrix(): Promise<Record<AdminRole, Record<PermissionResource, PermissionAction[]>>> {
-        const permissions = await Permission.find();
+        const permissions = await permissionsCollection.get();
         const matrix: Record<AdminRole, Record<PermissionResource, PermissionAction[]>> = {} as any;
 
         for (const role of Object.values(AdminRole)) {
             matrix[role] = {} as Record<PermissionResource, PermissionAction[]>;
             for (const resource of Object.values(PermissionResource)) {
-                const permission = permissions.find(p => p.role === role && p.resource === resource);
-                matrix[role][resource] = permission ? permission.actions : [];
+                const permission = permissions.docs.find(p => p.data().role === role && p.data().resource === resource);
+                matrix[role][resource] = permission ? permission.data().actions : [];
             }
         }
 

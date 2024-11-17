@@ -1,5 +1,5 @@
-import mongoose, { Schema, Document } from 'mongoose';
 import { AdminRole } from './admin';
+import { firestore } from 'firebase-admin';
 
 export enum PermissionAction {
     CREATE = 'CREATE',
@@ -20,51 +20,21 @@ export enum PermissionResource {
     NOTIFICATION = 'NOTIFICATION'
 }
 
-export interface IPermission extends Document {
+export interface Permission {
     role: AdminRole;
     resource: PermissionResource;
     actions: PermissionAction[];
-    conditions?: object;
+    conditions?: Record<string, any>;
     description: string;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt: firestore.Timestamp;
+    updatedAt: firestore.Timestamp;
 }
 
-const permissionSchema = new Schema({
-    role: {
-        type: String,
-        enum: Object.values(AdminRole),
-        required: true
-    },
-    resource: {
-        type: String,
-        enum: Object.values(PermissionResource),
-        required: true
-    },
-    actions: [{
-        type: String,
-        enum: Object.values(PermissionAction),
-        required: true
-    }],
-    conditions: {
-        type: Schema.Types.Mixed,
-        default: {}
-    },
-    description: {
-        type: String,
-        required: true
-    }
-}, {
-    timestamps: true
-});
+// Collection reference
+export const permissionsCollection = firestore().collection('permissions');
 
-// Index composé pour une recherche rapide des permissions
-permissionSchema.index({ role: 1, resource: 1 });
-
-export const Permission = mongoose.model<IPermission>('Permission', permissionSchema);
-
-// Permissions par défaut pour chaque rôle
-export const defaultPermissions = [
+// Default permissions for each role
+export const defaultPermissions: Omit<Permission, 'createdAt' | 'updatedAt'>[] = [
     // SUPER_ADMIN_MASTER
     {
         role: AdminRole.SUPER_ADMIN_MASTER,
@@ -84,7 +54,7 @@ export const defaultPermissions = [
         role: AdminRole.SUPER_ADMIN,
         resource: PermissionResource.ADMIN,
         actions: [PermissionAction.CREATE, PermissionAction.READ, PermissionAction.UPDATE],
-        conditions: { role: { $ne: AdminRole.SUPER_ADMIN_MASTER } },
+        conditions: { excludedRoles: [AdminRole.SUPER_ADMIN_MASTER] },
         description: 'Can manage all admins except master admin'
     },
 
@@ -120,21 +90,21 @@ export const defaultPermissions = [
     {
         role: AdminRole.CUSTOMER_SERVICE,
         resource: PermissionResource.ORDER,
-        actions: [PermissionAction.READ, PermissionAction.UPDATE],
-        description: 'Can view and update orders'
+        actions: [PermissionAction.READ],
+        description: 'Can view order information'
     },
 
     // SUPERVISOR
     {
         role: AdminRole.SUPERVISOR,
-        resource: PermissionResource.ORDER,
-        actions: [PermissionAction.READ, PermissionAction.MANAGE],
-        description: 'Can view and manage orders'
+        resource: PermissionResource.REPORT,
+        actions: [PermissionAction.READ],
+        description: 'Can view reports'
     },
     {
         role: AdminRole.SUPERVISOR,
-        resource: PermissionResource.REPORT,
-        actions: [PermissionAction.READ, PermissionAction.CREATE],
-        description: 'Can view and create reports'
+        resource: PermissionResource.LOG,
+        actions: [PermissionAction.READ],
+        description: 'Can view logs'
     }
 ];
