@@ -1,24 +1,24 @@
 import express from 'express';
 import { AdminLogController } from '../controllers/adminLogController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticateUser, requireAdminRole } from '../middleware/auth';
 import { AdminRole } from '../models/admin';
 
 const router = express.Router();
 const adminLogController = new AdminLogController();
 
-// Protéger toutes les routes
-router.use(authenticate);
+// Protect all routes with authentication
+router.use(authenticateUser);
 
-// Routes pour Super Admin Master et Super Admin
-router.use(authorize([AdminRole.SUPER_ADMIN_MASTER, AdminRole.SUPER_ADMIN]));
+// Protect routes with role authorization
+router.use(requireAdminRole([AdminRole.SUPER_ADMIN_MASTER, AdminRole.SUPER_ADMIN]));
 
-// Obtenir tous les logs avec filtres
+// Get all logs with filters
 router.get('/', adminLogController.getLogs);
 
-// Obtenir l'activité récente d'un admin
+// Get recent activity of an admin
 router.get('/recent-activity', adminLogController.getRecentActivity);
 
-// Obtenir les tentatives de connexion échouées
+// Get failed login attempts
 router.get('/failed-attempts/:adminId', adminLogController.getFailedLoginAttempts);
 
 export default router;

@@ -2,13 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { auth } from '../services/firebase';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import { UserRole } from '../models/user';
+import { AdminRole } from '../models/admin'; // Import AdminRole
 
 // Extend Express Request type to include user information
 declare global {
   namespace Express {
     interface Request {
       user?: DecodedIdToken & {
-        role?: UserRole;
+        role?: UserRole | AdminRole; // Allow both UserRole and AdminRole
         uid?: string;
       };
     }
@@ -60,6 +61,26 @@ export function requireRole(roles: UserRole[]) {
     next();
   };
 }
+
+// Middleware pour vérifier les rôles d'administrateur
+export function requireAdminRole(roles: AdminRole[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user || !req.user.role) {
+      return res.status(403).json({ error: 'Access denied. Authentication required.' });
+    }
+
+    if (!roles.includes(req.user.role as AdminRole)) {
+      return res.status(403).json({
+        error: 'Access denied. Insufficient privileges.',
+        requiredRoles: roles,
+        currentRole: req.user.role
+      });
+    }
+
+    next();
+  };
+}
+
 
 // Middlewares spécifiques pour chaque rôle
 export const requireSuperAdmin = requireRole([UserRole.SUPER_ADMIN]);
