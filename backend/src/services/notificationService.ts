@@ -201,6 +201,7 @@ class NotificationService {
         try {
             // Email template for referral invitation
             const emailTemplate = {
+                to: email, // Add 'to' property
                 subject: 'You\'ve Been Invited to Join Our Platform!',
                 html: `
                     <h2>Welcome to Our Platform!</h2>
@@ -223,7 +224,7 @@ class NotificationService {
             };
 
             // Send the email
-            await sendEmail(email, emailTemplate.subject, emailTemplate.html);
+            await sendEmail(emailTemplate); // Fix sendEmail usage
 
             // Log the invitation in notifications collection
             await this.createNotification({
@@ -279,7 +280,7 @@ class NotificationService {
 
             // Send email notification if email is available
             if (affiliate.email) {
-                await sendEmail({
+                const emailData = { // Create email data object
                     to: affiliate.email,
                     subject: 'Commission Approved - Alpha Laundry',
                     html: `
@@ -294,7 +295,8 @@ class NotificationService {
                         <p>Best regards,</p>
                         <p>Alpha Laundry Team</p>
                     `
-                });
+                };
+                await sendEmail(emailData); // Pass email data object to sendEmail
             }
         } catch (error) {
             if (error instanceof AppError) throw error;
