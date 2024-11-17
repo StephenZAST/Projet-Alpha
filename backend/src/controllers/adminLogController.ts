@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AdminLogService } from '../services/adminLogService';
 import { AdminAction } from '../models/adminLog';
-import { AppError } from '../utils/errors';
+import { AppError, errorCodes } from '../utils/errors'; // Import errorCodes
 import { catchAsync } from '../utils/catchAsync';
 
 export class AdminLogController {
@@ -41,7 +41,11 @@ export class AdminLogController {
 
     getRecentActivity = catchAsync(async (req: Request, res: Response) => {
         const { limit = 10 } = req.query;
-        const adminId = req.user._id;
+        const adminId = req.user?._id; // Optional chaining for req.user
+
+        if (!adminId) {
+            throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
+        }
 
         const logs = await AdminLogService.getRecentActivityByAdmin(
             adminId,

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { PermissionService } from '../services/permissionService';
 import { catchAsync } from '../utils/catchAsync';
-import { AppError } from '../utils/errors';
+import { AppError, errorCodes } from '../utils/errors';
 import { AdminRole } from '../models/admin';
 import { PermissionResource, PermissionAction } from '../models/permission';
 
@@ -19,7 +19,7 @@ export class PermissionController {
         const { role } = req.params;
 
         if (!Object.values(AdminRole).includes(role as AdminRole)) {
-            throw new AppError(400, 'Invalid role');
+            throw new AppError(400, 'Invalid role', errorCodes.INVALID_ROLE); // Add error code
         }
 
         const permissions = await PermissionService.getPermissionsByRole(role as AdminRole);
@@ -35,21 +35,21 @@ export class PermissionController {
 
         // Validation
         if (!role || !resource || !actions || !description) {
-            throw new AppError(400, 'Missing required fields');
+            throw new AppError(400, 'Missing required fields', errorCodes.VALIDATION_ERROR); // Add error code
         }
 
         if (!Object.values(AdminRole).includes(role)) {
-            throw new AppError(400, 'Invalid role');
+            throw new AppError(400, 'Invalid role', errorCodes.INVALID_ROLE); // Add error code
         }
 
         if (!Object.values(PermissionResource).includes(resource)) {
-            throw new AppError(400, 'Invalid resource');
+            throw new AppError(400, 'Invalid resource', errorCodes.INVALID_RESOURCE); // Add error code
         }
 
         if (!Array.isArray(actions) || !actions.every(action => 
             Object.values(PermissionAction).includes(action)
         )) {
-            throw new AppError(400, 'Invalid actions');
+            throw new AppError(400, 'Invalid actions', errorCodes.INVALID_ACTION); // Add error code
         }
 
         const permission = await PermissionService.addPermission(
@@ -71,17 +71,17 @@ export class PermissionController {
         const { actions, description, conditions } = req.body;
 
         if (!Object.values(AdminRole).includes(role as AdminRole)) {
-            throw new AppError(400, 'Invalid role');
+            throw new AppError(400, 'Invalid role', errorCodes.INVALID_ROLE); // Add error code
         }
 
         if (!Object.values(PermissionResource).includes(resource as PermissionResource)) {
-            throw new AppError(400, 'Invalid resource');
+            throw new AppError(400, 'Invalid resource', errorCodes.INVALID_RESOURCE); // Add error code
         }
 
         if (actions && (!Array.isArray(actions) || !actions.every(action => 
             Object.values(PermissionAction).includes(action)
         ))) {
-            throw new AppError(400, 'Invalid actions');
+            throw new AppError(400, 'Invalid actions', errorCodes.INVALID_ACTION); // Add error code
         }
 
         const permission = await PermissionService.updatePermission(
@@ -93,7 +93,7 @@ export class PermissionController {
         );
 
         if (!permission) {
-            throw new AppError(404, 'Permission not found');
+            throw new AppError(404, 'Permission not found', errorCodes.PERMISSION_NOT_FOUND); // Add error code
         }
 
         res.status(200).json({
@@ -106,11 +106,11 @@ export class PermissionController {
         const { role, resource } = req.params;
 
         if (!Object.values(AdminRole).includes(role as AdminRole)) {
-            throw new AppError(400, 'Invalid role');
+            throw new AppError(400, 'Invalid role', errorCodes.INVALID_ROLE); // Add error code
         }
 
         if (!Object.values(PermissionResource).includes(resource as PermissionResource)) {
-            throw new AppError(400, 'Invalid resource');
+            throw new AppError(400, 'Invalid resource', errorCodes.INVALID_RESOURCE); // Add error code
         }
 
         const removed = await PermissionService.removePermission(
@@ -119,7 +119,7 @@ export class PermissionController {
         );
 
         if (!removed) {
-            throw new AppError(404, 'Permission not found');
+            throw new AppError(404, 'Permission not found', errorCodes.PERMISSION_NOT_FOUND); // Add error code
         }
 
         res.status(200).json({
@@ -141,7 +141,7 @@ export class PermissionController {
         const { resource } = req.params;
 
         if (!Object.values(PermissionResource).includes(resource as PermissionResource)) {
-            throw new AppError(400, 'Invalid resource');
+            throw new AppError(400, 'Invalid resource', errorCodes.INVALID_RESOURCE); // Add error code
         }
 
         const permissions = await PermissionService.getResourcePermissions(
