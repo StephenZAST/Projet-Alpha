@@ -5,6 +5,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
+import { setupSwagger } from './swagger/definitions';
 
 // Import des routes
 import orderRoutes from './routes/orders';
@@ -20,6 +21,9 @@ app.use(compression());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Setup Swagger documentation
+setupSwagger(app);
 
 // Documentation Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
