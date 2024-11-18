@@ -6,6 +6,8 @@ import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger';
 import { setupSwagger } from './swagger/definitions';
+import { JobScheduler } from './jobs/scheduler';
+import { logger } from './utils/logger';
 
 // Import des routes
 import orderRoutes from './routes/orders';
@@ -14,6 +16,7 @@ import billingRoutes from './routes/billing';
 import authRoutes from './routes/authRoutes';
 
 const app = express();
+const jobScheduler = new JobScheduler();
 
 // Middleware de base
 app.use(cors());
@@ -53,6 +56,26 @@ app.use((req, res) => {
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Erreur interne du serveur' });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  logger.info(`Server is running on port ${PORT}`);
+  jobScheduler.startJobs();
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received. Starting graceful shutdown...');
+  jobScheduler.stopJobs();
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received. Starting graceful shutdown...');
+  jobScheduler.stopJobs();
+  process.exit(0);
 });
 
 export default app;
