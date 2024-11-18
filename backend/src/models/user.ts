@@ -1,20 +1,34 @@
 // src/models/user.ts
+import { Timestamp } from 'firebase-admin/firestore';
+
 export interface User {
   uid: string;
   email: string;
   displayName: string;
   phoneNumber?: string;
+  password: string;  // Will be hashed
   address?: Address;
   defaultAddress?: Address;
   role: UserRole;
-  affiliateId?: string;
-  creationDate: Date;
-  lastLogin: Date;
-  loyaltyPoints?: number;
+  status: UserStatus;
+  affiliateId?: string;        // If registered through affiliate
+  sponsorId?: string;         // If registered through customer sponsorship
+  sponsorCode?: string;       // Customer's own sponsorship code
+  createdBy?: string;         // UID of admin who created the account (if applicable)
+  creationMethod: AccountCreationMethod;
+  emailVerified: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastLogin?: Timestamp;
+  loyaltyPoints: number;
   subscriptionType?: SubscriptionType;
   defaultServicePreferences?: ServicePreferences;
   activeOffers?: string[];
-  zone?: string; // Zone/quartier pour la gestion des livraisons
+  zone?: string;              // Zone/quartier pour la gestion des livraisons
+  passwordResetToken?: string;
+  passwordResetExpires?: Timestamp;
+  verificationToken?: string;
+  verificationExpires?: Timestamp;
 }
 
 export enum UserRole {
@@ -24,6 +38,20 @@ export enum UserRole {
   SECRETAIRE = 'secretaire',
   LIVREUR = 'livreur',
   SUPERVISEUR = 'superviseur'
+}
+
+export enum UserStatus {
+  PENDING = 'pending',          // Email not verified
+  ACTIVE = 'active',           // Email verified and account active
+  SUSPENDED = 'suspended',      // Account suspended
+  DEACTIVATED = 'deactivated'  // Account deactivated by user or admin
+}
+
+export enum AccountCreationMethod {
+  SELF_REGISTRATION = 'self_registration',    // Customer registered themselves
+  ADMIN_CREATED = 'admin_created',           // Created by admin/secretary
+  AFFILIATE_REFERRAL = 'affiliate_referral', // Through affiliate link/code
+  CUSTOMER_REFERRAL = 'customer_referral'    // Through customer sponsorship
 }
 
 export enum SubscriptionType {
@@ -63,5 +91,5 @@ export interface Address {
 export interface GeoLocation {
   latitude: number;
   longitude: number;
-  zoneId: string; // Identifiant de la zone pour regrouper les livraisons
+  zoneId: string;
 }

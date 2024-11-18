@@ -11,6 +11,7 @@ import { setupSwagger } from './swagger/definitions';
 import orderRoutes from './routes/orders';
 import zoneRoutes from './routes/zones';
 import billingRoutes from './routes/billing';
+import authRoutes from './routes/authRoutes';
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.use('/api/orders', orderRoutes);
 app.use('/api/zones', zoneRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/auth', authRoutes);
 
 // Route de base pour vérifier que le serveur fonctionne
 app.get('/', (req, res) => {
