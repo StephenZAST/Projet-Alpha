@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticateUser } from '../middleware/auth';
 import { requireLivreur as requireDriver } from '../middleware/auth';
 import { DeliveryTaskService } from '../services/delivery-tasks';
+import { GeoPoint } from 'firebase/firestore';
 
 const router = express.Router();
 const taskService = new DeliveryTaskService();
@@ -19,7 +20,15 @@ router.get('/tasks/area', authenticateUser, requireDriver, async (req, res) => {
   try {
     const { latitude, longitude, radius } = req.query;
     const tasks = await taskService.getTasksByArea(
-      { latitude: Number(latitude), longitude: Number(longitude) },
+      {
+        latitude: Number(latitude), longitude: Number(longitude),
+        isEqual: function (other: GeoPoint): boolean {
+          throw new Error('Function not implemented.');
+        },
+        toJSON: function (): { latitude: number; longitude: number; } {
+          throw new Error('Function not implemented.');
+        }
+      },
       Number(radius)
     );
     res.json({ tasks });
