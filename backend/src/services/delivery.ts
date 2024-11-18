@@ -5,6 +5,24 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { AppError, errorCodes } from '../utils/errors';
 
 export class DeliveryService {
+  getTasks(query: ParsedQs) {
+    throw new Error('Method not implemented.');
+  }
+  getTaskById(id: string) {
+    throw new Error('Method not implemented.');
+  }
+  createTask(body: any) {
+    throw new Error('Method not implemented.');
+  }
+  updateTask(id: string, body: any) {
+    throw new Error('Method not implemented.');
+  }
+  updateLocation(body: any) {
+    throw new Error('Method not implemented.');
+  }
+  getZones() {
+    throw new Error('Method not implemented.');
+  }
   private readonly ordersRef = db.collection('orders');
   private readonly driversRef = db.collection('drivers');
   private readonly routesRef = db.collection('routes');
@@ -127,4 +145,5 @@ export async function checkDeliverySlotAvailability(
   }
 }
 
-import * as admin from 'firebase-admin';
+import * as admin from 'firebase-admin';import { ParsedQs } from 'qs';
+

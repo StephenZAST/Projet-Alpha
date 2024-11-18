@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './config/swagger';
+import swaggerSpec from './config/swagger';
 import { setupSwagger } from './swagger/definitions';
 
 // Import des routes
