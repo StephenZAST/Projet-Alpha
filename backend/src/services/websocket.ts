@@ -129,7 +129,7 @@ export class WebSocketService {
     try {
       // Process geofence entry/exit events
       const { zoneId, eventType } = event;
-      
+
       // Notify relevant parties about zone entry/exit
       this.broadcastToZone(zoneId, {
         type: 'geofence',
@@ -170,7 +170,7 @@ export class WebSocketService {
     // Process location updates in batches every 5 seconds
     setInterval(() => {
       const locations = new Map<string, GeoLocation>();
-      
+
       // Collect all cached locations
       for (const [driverId, location] of this.locationCache.getStats().keys) {
         locations.set(driverId, location as unknown as GeoLocation);
@@ -192,7 +192,7 @@ export class WebSocketService {
 
   private sendMessage(driverId: string, message: WebSocketMessage) {
     const connection = this.connections.get(driverId);
-    if (connection &amp;&amp; connection.ws.readyState === WebSocket.OPEN) {
+    if (connection && connection.ws.readyState === WebSocket.OPEN) {
       connection.ws.send(JSON.stringify(message));
     }
   }
