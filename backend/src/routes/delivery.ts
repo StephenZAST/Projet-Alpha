@@ -398,10 +398,10 @@ router.put(
 
 /**
  * @swagger
- * /api/delivery/optimize-route:
+ * /api/delivery/optimize-tasks:
  *   post:
  *     tags: [Delivery]
- *     summary: Optimize delivery route
+ *     summary: Optimize delivery route for multiple tasks
  *     description: Calculate optimal route for multiple delivery tasks
  *     security:
  *       - bearerAuth: []
@@ -412,9 +412,15 @@ router.put(
  *           schema:
  *             type: object
  *             required:
+ *               - taskIds
  *               - driverId
  *               - startLocation
  *             properties:
+ *               taskIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of task IDs to optimize
  *               driverId:
  *                 type: string
  *               startLocation:
@@ -453,11 +459,19 @@ router.put(
  *               $ref: '#/components/schemas/Error'
  */
 router.post(
-  '/optimize-route',
+  '/optimize-tasks', // Renamed endpoint
   authenticateUser,
   async (req, res) => {
     try {
-      const route = await deliveryService.optimizeRoute(req.body);
+      const { taskIds, driverId, startLocation, endLocation, maxTasks, considerTraffic } = req.body;
+      const route = await deliveryService.optimizeRoute(
+        taskIds,
+        driverId,
+        startLocation,
+        endLocation,
+        maxTasks,
+        considerTraffic
+      );
       res.json(route);
     } catch (error) {
       res.status(400).json({ error: 'Invalid input' });

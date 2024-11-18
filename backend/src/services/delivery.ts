@@ -54,8 +54,8 @@ export class DeliveryService {
         updatedAt: new Date()
       });
 
-      // Assign driver and optimize route
-      await this.optimizeRoute(orderId, date, timeSlot);
+      // Assign driver and potentially update route for this order
+      // Implementation here
 
       // Send notification to customer
       // Implementation here
@@ -68,16 +68,19 @@ export class DeliveryService {
   }
 
   async optimizeRoute(
-    orderId: string,
-    date: Date,
-    timeSlot: TimeSlot
+    taskIds: string[],
+    driverId: string,
+    startLocation: any,
+    endLocation: any,
+    maxTasks: number,
+    considerTraffic: boolean
   ): Promise<RouteInfo | null> {
     try {
       // Implementation for route optimization
       // This would typically involve:
-      // 1. Getting all deliveries in the same time slot
+      // 1. Fetching tasks based on taskIds
       // 2. Calculating optimal route using external service (Google Maps, etc.)
-      // 3. Assigning drivers based on availability and location
+      // 3. Assigning driver (driverId)
       // 4. Updating route information
 
       return null; // Placeholder
@@ -110,7 +113,7 @@ export class DeliveryService {
       return true;
     } catch (error) {
       console.error('Error updating order location:', error);
-      return false;
+      return false; // Added return statement here
     }
   }
 }
@@ -146,4 +149,3 @@ export async function checkDeliverySlotAvailability(
 }
 
 import * as admin from 'firebase-admin';import { ParsedQs } from 'qs';
-
