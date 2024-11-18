@@ -1,16 +1,28 @@
 # Alpha Laundry Service API
 
 ## Overview
-REST API for Alpha laundry service management system. A comprehensive solution for managing laundry services, including order processing, delivery management, loyalty programs, and billing.
+A comprehensive REST API for Alpha laundry service management system. This system provides end-to-end solutions for laundry service operations, including order management, delivery optimization, affiliate programs, loyalty rewards, and real-time tracking.
 
-## Features
-- Complete laundry service management
-- Order tracking and processing
-- Delivery zone management and route optimization
-- Billing and subscription management
-- Loyalty program and rewards
-- User role management (Super Admin, Admin, Secretary, Delivery Person)
-- Analytics and reporting
+## Core Features
+- Complete Laundry Service Management
+- Advanced Order Processing & Tracking
+- Intelligent Delivery Management with Route Optimization
+- Billing and Subscription System
+- Affiliate Program Management
+- Loyalty Program and Rewards
+- Analytics and Reporting
+- Multi-Role User Management
+- Real-time Location Tracking
+- Zone-based Service Management
+
+## Technical Stack
+- **Runtime**: Node.js with Express
+- **Database**: Firebase Firestore
+- **Authentication**: Firebase Auth
+- **Real-time Updates**: WebSocket
+- **Geolocation**: Custom geohashing implementation
+- **Caching**: In-memory caching with TTL support
+- **Documentation**: OpenAPI/Swagger
 
 ## Setup Instructions
 
@@ -24,12 +36,57 @@ npm install
 cp .env.example .env
 ```
 
-3. Start the server:
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-## API Documentation
+4. Access the Swagger documentation:
+```
+http://localhost:3000/api-docs
+```
+
+## Core Modules
+
+### 1. Authentication & Authorization
+- JWT-based authentication
+- Role-based access control (RBAC)
+- Permission management
+- Session handling
+
+### 2. Order Management
+- Order creation and tracking
+- Service type categorization
+- Status updates
+- Price calculation
+- Scheduling
+
+### 3. Delivery System
+- Real-time location tracking
+- Route optimization
+- Geofencing
+- Zone management
+- Task assignment
+
+### 4. Affiliate System
+- Affiliate registration
+- Commission tracking
+- Performance analytics
+- Payment management
+
+### 5. Loyalty Program
+- Point accumulation
+- Reward redemption
+- Tier management
+- Special offers
+
+### 6. Analytics
+- Business metrics
+- Performance tracking
+- Customer insights
+- Operational statistics
+
+## API Structure
 
 ### Authentication
 All protected routes require Bearer token authentication:
@@ -38,216 +95,131 @@ Authorization: Bearer <token>
 ```
 
 ### Role-Based Access Control
-The system implements the following roles:
 - SUPER_ADMIN: Full system access
+- ADMIN: System management
 - SECRETAIRE: Order and customer management
-- LIVREUR: Delivery management
+- LIVREUR: Delivery operations
 - SUPERVISEUR: Operations oversight
-- CLIENT: Basic user access
+- AFFILIATE: Affiliate portal access
+- CLIENT: Customer features
 
-### API Endpoints
+## Available Endpoints
 
-#### Orders API
+### Authentication Routes
+- POST /api/auth/register
+- POST /api/auth/login
+- POST /api/auth/refresh-token
+- POST /api/auth/forgot-password
+- POST /api/auth/reset-password
 
-##### Create Order
-```http
-POST /api/orders
+### User Management
+- GET /api/users
+- GET /api/users/:id
+- PUT /api/users/:id
+- DELETE /api/users/:id
+
+### Order Management
+- POST /api/orders
+- GET /api/orders
+- GET /api/orders/:id
+- PUT /api/orders/:id
+- GET /api/orders/user/:userId
+- PUT /api/orders/:id/status
+
+### Delivery Management
+- GET /api/delivery/tasks
+- POST /api/delivery/tasks
+- PUT /api/delivery/tasks/:id
+- GET /api/delivery/zones
+- POST /api/delivery/location
+- GET /api/delivery/optimize-route
+
+### Affiliate System
+- POST /api/affiliate/register
+- GET /api/affiliate/dashboard
+- GET /api/affiliate/commissions
+- POST /api/affiliate/withdraw
+- GET /api/affiliate/performance
+
+### Loyalty Program
+- GET /api/loyalty/points
+- POST /api/loyalty/redeem
+- GET /api/loyalty/history
+- GET /api/loyalty/offers
+
+### Billing & Subscriptions
+- POST /api/billing/invoice
+- GET /api/billing/history
+- POST /api/subscriptions
+- GET /api/subscriptions/active
+
+### Analytics
+- GET /api/analytics/overview
+- GET /api/analytics/sales
+- GET /api/analytics/performance
+- GET /api/analytics/customer-insights
+
+## WebSocket Events
+
+### Driver Location Updates
+```javascript
+// Connect to WebSocket
+const ws = new WebSocket('ws://localhost:3000/ws?token=<auth_token>');
+
+// Location update event
+ws.send(JSON.stringify({
+  type: 'location',
+  payload: {
+    latitude: number,
+    longitude: number
+  }
+}));
 ```
-Request body:
+
+### Real-time Notifications
+```javascript
+// Listen for updates
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  switch(data.type) {
+    case 'task':
+      // New delivery task
+      break;
+    case 'geofence':
+      // Zone entry/exit event
+      break;
+  }
+};
+```
+
+## Error Handling
+The API uses standard HTTP status codes and returns errors in the following format:
 ```json
 {
-  "userId": "string",
-  "type": "STANDARD | ONE_CLICK",
-  "serviceType": "PRESSING | REPASSAGE | NETTOYAGE",
-  "items": [{
-    "itemType": "string",
-    "quantity": "number",
-    "notes": "string"
-  }],
-  "pickupAddress": "string",
-  "deliveryAddress": "string",
-  "scheduledPickupTime": "date-time",
-  "scheduledDeliveryTime": "date-time"
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable message",
+    "details": {}
+  }
 }
 ```
 
-##### Get User Orders
-```http
-GET /api/orders/user/{userId}
-```
+## Rate Limiting
+- API requests are limited to 100 requests per minute per IP
+- WebSocket connections are limited to 1 per authenticated user
 
-##### Update Order Status
-```http
-PUT /api/orders/{orderId}/status
-```
-Request body:
-```json
-{
-  "status": "PENDING | ACCEPTED | PICKED_UP | IN_PROGRESS | READY | DELIVERING | DELIVERED"
-}
-```
-
-#### Billing API
-
-##### Create Bill
-```http
-POST /api/billing
-```
-Protected: SECRETAIRE, SUPER_ADMIN
-
-##### Get User Bills
-```http
-GET /api/billing/user/{userId}
-```
-
-##### Get Billing Statistics
-```http
-GET /api/billing/stats
-```
-Protected: SUPERVISEUR, SUPER_ADMIN
-
-#### Loyalty API
-
-##### Get Loyalty Account
-```http
-GET /api/loyalty/account
-```
-
-##### Get Available Rewards
-```http
-GET /api/loyalty/rewards
-```
-
-##### Redeem Reward
-```http
-POST /api/loyalty/rewards/{rewardId}/redeem
-```
-
-#### Delivery API
-
-##### Get Available Time Slots
-```http
-GET /api/delivery/timeslots
-```
-Query params:
-- date: string
-- zoneId: string
-
-##### Schedule Pickup
-```http
-POST /api/delivery/schedule-pickup
-```
-
-##### Update Delivery Location
-```http
-POST /api/delivery/update-location
-```
-Protected: LIVREUR
-
-#### Zones API
-
-##### Create Zone
-```http
-POST /api/zones
-```
-Protected: SUPER_ADMIN
-
-##### Get All Zones
-```http
-GET /api/zones
-```
-Protected: SUPERVISEUR, LIVREUR, SUPER_ADMIN
-
-##### Assign Delivery Person
-```http
-POST /api/zones/{zoneId}/assign
-```
-Protected: SUPERVISEUR, SUPER_ADMIN
-
-#### Analytics API
-
-##### Revenue Metrics
-```http
-GET /api/analytics/revenue
-```
-Protected: SUPER_ADMIN
-
-##### Customer Metrics
-```http
-GET /api/analytics/customers
-```
-Protected: SUPER_ADMIN
-
-### Models
-
-#### Order Status Flow
-```
-PENDING → ACCEPTED → PICKED_UP → IN_PROGRESS → READY → DELIVERING → DELIVERED
-```
-
-#### Loyalty Tiers
-- BRONZE: 0-1000 points
-- SILVER: 1001-5000 points
-- GOLD: 5001-10000 points
-- PLATINUM: 10001+ points
-
-### Error Handling
-Standardized error responses:
-```json
-{
-  "status": "error",
-  "code": "ERROR_CODE",
-  "message": "Error description"
-}
-```
-
-Common error codes:
-- INVALID_ORDER_DATA
-- SLOT_NOT_AVAILABLE
-- INVALID_PRICE_RANGE
-- ZONE_HAS_ACTIVE_ORDERS
-- ONE_CLICK_ORDER_FAILED
-
-### Price Ranges
-- Standard Wash & Iron: 500-50000 XOF
-- Basic Wash & Iron: 300-30000 XOF
-- Dry Cleaning: 200-75000 XOF
-- Ironing Only: 50-25000 XOF
-
-### Environment Variables
-```
-PORT=3001
-ALLOWED_ORIGINS=http://localhost:3000
-FIREBASE_PROJECT_ID=alpha-79c09
-```
-
-### Tech Stack
-- Node.js + Express
-- TypeScript
-- Firebase Admin SDK
-- Joi Validation
-- Firebase/Firestore Database
-
-### Security Features
-- Role-based access control
-- JWT Authentication
-- Request rate limiting
-- Input validation
-- Error sanitization
-
-### Best Practices
-- Comprehensive error handling
-- Type safety with TypeScript
-- Modular architecture
-- Clean code principles
-- Detailed logging
+## Caching
+- Geolocation data: 5 minutes TTL
+- Route calculations: 5 minutes TTL
+- User data: 15 minutes TTL
+- Zone data: 1 hour TTL
 
 ## Contributing
 1. Fork the repository
-2. Create a feature branch
+2. Create your feature branch
 3. Commit your changes
 4. Push to the branch
-5. Create a Pull Request
+5. Create a new Pull Request
 
 ## License
-ISC
+This project is proprietary and confidential. Unauthorized copying or distribution is prohibited.
