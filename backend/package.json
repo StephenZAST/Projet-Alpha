@@ -45,6 +45,7 @@
     "morgan": "^1.10.0",
     "node-cache": "^5.1.2",
     "nodemailer": "^6.9.16",
+    "resend": "^4.0.1-alpha.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "typescript": "^5.1.3"

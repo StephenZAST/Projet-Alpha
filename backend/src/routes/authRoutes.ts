@@ -11,7 +11,8 @@ import {
   registerCustomer, 
   verifyEmail, 
   requestPasswordReset, 
-  resetPassword 
+  resetPassword,
+  sendVerificationEmail
 } from '../services/users';
 import { AccountCreationMethod, UserRole } from '../models/user';
 import { isAuthenticated } from '../middleware/auth';
@@ -72,6 +73,17 @@ router.post('/verify-email', validateRequest(emailVerificationSchema), async (re
     res.json({ message: 'Email verified successfully' });
   } catch (error) {
     next(error);
+  }
+});
+
+// Test email route (remove in production)
+router.post('/test-email', async (req, res) => {
+  try {
+    await sendVerificationEmail('alphalaundry.service1@gmail.com', 'test-token-123');
+    res.status(200).json({ message: 'Test email sent successfully' });
+  } catch (error) {
+    console.error('Error sending test email:', error);
+    res.status(500).json({ error: 'Failed to send test email' });
   }
 });
 
