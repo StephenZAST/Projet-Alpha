@@ -95,18 +95,13 @@ router.get('/timeslots', authenticateUser, async (req, res) => {
 router.post('/schedule-pickup', authenticateUser, async (req, res) => {
   try {
     const { orderId, date, timeSlot, address } = req.body;
-    const success = await deliveryService.schedulePickup(
+    await deliveryService.schedulePickup(
       orderId,
       new Date(date),
       timeSlot,
       address
     );
-    
-    if (success) {
-      res.json({ message: 'Pickup scheduled successfully' });
-    } else {
-      res.status(400).json({ error: 'Failed to schedule pickup' });
-    }
+    res.json({ message: 'Pickup scheduled successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to schedule pickup' });
   }
@@ -147,17 +142,12 @@ router.post('/schedule-pickup', authenticateUser, async (req, res) => {
 router.post('/update-location', authenticateUser, requireDriver, async (req, res) => {
   try {
     const { orderId, location, status } = req.body;
-    const success = await deliveryService.updateOrderLocation(
+    await deliveryService.updateOrderLocation(
       orderId,
       location,
       status
     );
-    
-    if (success) {
-      res.json({ message: 'Location updated successfully' });
-    } else {
-      res.status(400).json({ error: 'Failed to update location' });
-    }
+    res.json({ message: 'Location updated successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update location' });
   }
@@ -523,17 +513,16 @@ router.post(
   requireDriver,
   async (req, res) => {
     try {
-      const success = await deliveryService.updateLocation(req.body);
-      if (success) {
-        res.json({ message: 'Location updated successfully' });
-      } else {
-        res.status(400).json({ error: 'Failed to update location' });
-      }
+      await deliveryService.updateLocation(req.body);
+      res.json({ message: 'Location updated successfully' });
     } catch (error) {
-      res.status(400).json({ error: 'Invalid input' });
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(400).json({ error: 'Invalid input' });
+      }
     }
-  }
-);
+  });
 
 /**
  * @swagger
