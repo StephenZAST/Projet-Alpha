@@ -20,15 +20,7 @@ router.get('/tasks/area', authenticateUser, requireDriver, async (req, res) => {
   try {
     const { latitude, longitude, radius } = req.query;
     const tasks = await taskService.getTasksByArea(
-      {
-        latitude: Number(latitude), longitude: Number(longitude),
-        isEqual: function (other: GeoPoint): boolean {
-          throw new Error('Function not implemented.');
-        },
-        toJSON: function (): { latitude: number; longitude: number; } {
-          throw new Error('Function not implemented.');
-        }
-      },
+      new GeoPoint(Number(latitude), Number(longitude)),
       Number(radius)
     );
     res.json({ tasks });
@@ -36,7 +28,6 @@ router.get('/tasks/area', authenticateUser, requireDriver, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch tasks by area' });
   }
 });
-
 router.patch('/tasks/:taskId/status', authenticateUser, requireDriver, async (req, res) => {
   try {
     const { status, notes } = req.body;
