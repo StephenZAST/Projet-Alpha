@@ -1,13 +1,14 @@
 import { Timestamp, GeoPoint } from 'firebase-admin/firestore';
 import { db } from './firebase';
-import { Order, OrderStatus, OrderType, Location } from '../models/order';
+import { Order, OrderStatus, OrderType, Location, OrderItem, MainService, PriceType } from '../models/order';
 import { AppError, errorCodes } from '../utils/errors';
 import { getUserProfile } from './users';
 import { optimizeRoute, RouteStop } from '../utils/routeOptimization';
 import { validateOrderData } from '../validation/orders';
 import { checkDeliverySlotAvailability } from './delivery';
-import { Address } from '../models/address';
 import { Query, CollectionReference } from 'firebase-admin/firestore';
+import { Address } from '../models/user';
+
 
 export async function createOrder(orderData: Partial<Order>): Promise<Order> {
   try {
@@ -70,19 +71,29 @@ export async function createOneClickOrder(
     }
 
     const defaultAddress = userProfile.defaultAddress as Address;
+    if (!defaultAddress.coordinates) {
+      throw new AppError(400, 'Default address coordinates not found', errorCodes.INVALID_ADDRESS_DATA);
+    }
     const order: Partial<Order> = {
       userId,
       type: OrderType.ONE_CLICK,
       zoneId,
       status: OrderStatus.PENDING,
-      pickupAddress: defaultAddress.formattedAddress,
+      pickupAddress: defaultAddress.street, // Use defaultAddress.street
       pickupLocation: {
         latitude: defaultAddress.coordinates.latitude,
         longitude: defaultAddress.coordinates.longitude
       },
       scheduledPickupTime: Timestamp.fromDate(new Date(Date.now() + 3600000)), // +1h
       scheduledDeliveryTime: Timestamp.fromDate(new Date(Date.now() + 7200000)), // +2h
-      items: userProfile.defaultItems || [],
+      items: (userProfile.defaultItems || []).map(item => ({
+        id: item.id,
+        quantity: item.quantity,
+        itemType: 'default', // Provide a default value or handle this based on your logic
+        mainService: MainService.PRESSING, // Provide a default MainService value
+        price: 0, // Provide a default value or handle this based on your logic
+        priceType: PriceType.FIXED // Provide a default PriceType value
+      })),
       specialInstructions: userProfile.defaultInstructions
     };
 

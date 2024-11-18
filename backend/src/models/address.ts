@@ -1,6 +1,7 @@
 import { Timestamp } from 'firebase-admin/firestore';
 
 export interface Address {
+  formattedAddress: string | undefined;
   id?: string;
   userId?: string;
   type?: 'home' | 'work' | 'other';
