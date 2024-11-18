@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import http from 'http';
-import { verifyToken } from '../middleware/auth';
+import { isAuthenticated } from '../middleware/auth';
 import { Cache } from '../utils/cache';
 import { GeoLocation } from '../utils/geo';
 import { DeliveryTaskService } from './delivery-tasks';
@@ -44,8 +44,14 @@ export class WebSocketService {
           return;
         }
 
-        const decoded = await verifyToken(token);
-        const driverId = decoded.uid;
+        // @ts-ignore
+        const decoded: any = await isAuthenticated({ headers: { authorization: `Bearer ${token}` } } as any, {} as any, () => {});
+        const driverId = decoded.user?.id;
+
+        if (!driverId) {
+          ws.close(1008, 'Authentication failed');
+          return;
+        }
 
         // Store connection
         this.connections.set(driverId, { ws, driverId });
@@ -93,16 +99,18 @@ export class WebSocketService {
     }
   }
 
-  private async handleLocationUpdate(driverId: string, location: GeoLocation) {
+  private async handleLocationUpdate(driverId: string, location: string) {
     try {
+      const parsedLocation: GeoLocation = JSON.parse(location);
+
       // Cache the location
-      this.locationCache.set(driverId, location);
+      this.locationCache.set(driverId, parsedLocation);
 
       // Update driver's location in database (batch processed)
-      await this.deliveryTaskService.updateDriverLocation(driverId, location);
+      await this.deliveryTaskService.updateDriverLocation(driverId, parsedLocation);
 
       // Check for nearby tasks
-      const tasks = await this.deliveryTaskService.getTasksByArea(location, 5);
+      const tasks = await this.deliveryTaskService.getTasksByArea(parsedLocation, 5);
       if (tasks.length > 0) {
         this.sendMessage(driverId, {
           type: 'task',
@@ -111,7 +119,7 @@ export class WebSocketService {
       }
 
       // Check geofences
-      await this.checkGeofences(driverId, location);
+      await this.checkGeofences(driverId, parsedLocation);
     } catch (error) {
       console.error('Error handling location update:', error);
     }
@@ -165,7 +173,7 @@ export class WebSocketService {
       
       // Collect all cached locations
       for (const [driverId, location] of this.locationCache.getStats().keys) {
-        locations.set(driverId, location as GeoLocation);
+        locations.set(driverId, location as unknown as GeoLocation);
       }
 
       // Batch update if there are any locations
@@ -184,7 +192,7 @@ export class WebSocketService {
 
   private sendMessage(driverId: string, message: WebSocketMessage) {
     const connection = this.connections.get(driverId);
-    if (connection && connection.ws.readyState === WebSocket.OPEN) {
+    if (connection &amp;&amp; connection.ws.readyState === WebSocket.OPEN) {
       connection.ws.send(JSON.stringify(message));
     }
   }
