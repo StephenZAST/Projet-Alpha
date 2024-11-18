@@ -25,7 +25,7 @@ export class Cache<K = string, V = any> {
     }
 
     // Set a value in cache
-    public set(key: K, value: V, ttl?: number): boolean {
+    public set(key: K, value: V, ttl: number = 0): boolean {
         const stringKey = this.getStringKey(key);
         return this.cache.set(stringKey, value, ttl);
     }
@@ -99,8 +99,8 @@ export class CacheService {
         return this.cache.get<T>(key);
     }
 
-    public set<T>(key: string, value: T, ttl?: number): boolean {
-        return this.cache.set(key, value, ttl || 0);
+    public set<T>(key: string, value: T, ttl: number = 0): boolean {
+        return this.cache.set(key, value, ttl);
     }
 
     public del(key: string | string[]): number {
