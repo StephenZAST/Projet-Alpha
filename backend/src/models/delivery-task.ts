@@ -4,6 +4,7 @@ export interface TimeSlot {
 }
 
 export interface DeliveryTask {
+  estimatedDuration: number;
   deliveryLocation: any;
   pickupLocation: any;
   id: string;
@@ -12,6 +13,7 @@ export interface DeliveryTask {
   status: TaskStatus;
   address: Address;
   scheduledTime: {
+    duration: number;
     date: Date;
     slot: TimeSlot;
   };
