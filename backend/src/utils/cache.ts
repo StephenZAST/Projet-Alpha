@@ -1,18 +1,91 @@
 import NodeCache from 'node-cache';
 
-// Configuration du cache
-const cache = new NodeCache({
-    stdTTL: 600, // 10 minutes par défaut
-    checkperiod: 120, // Vérifier les clés expirées toutes les 2 minutes
-    useClones: false // Pour améliorer les performances
+// Cache configuration
+const defaultCache = new NodeCache({
+    stdTTL: 600, // 10 minutes default
+    checkperiod: 120, // Check expired keys every 2 minutes
+    useClones: false // For better performance
 });
 
+export class Cache<K = string, V = any> {
+    private cache: NodeCache;
+
+    constructor(ttl: number = 600) {
+        this.cache = new NodeCache({
+            stdTTL: ttl,
+            checkperiod: Math.min(ttl / 5, 120), // Check period is 1/5 of TTL or 2 minutes, whichever is smaller
+            useClones: false
+        });
+    }
+
+    // Get a value from cache
+    public get(key: K): V | undefined {
+        const stringKey = this.getStringKey(key);
+        return this.cache.get<V>(stringKey);
+    }
+
+    // Set a value in cache
+    public set(key: K, value: V, ttl?: number): boolean {
+        const stringKey = this.getStringKey(key);
+        return this.cache.set(stringKey, value, ttl);
+    }
+
+    // Delete a value from cache
+    public del(key: K | K[]): number {
+        const keys = Array.isArray(key) ? key.map(k => this.getStringKey(k)) : this.getStringKey(key);
+        return this.cache.del(keys);
+    }
+
+    // Clear entire cache
+    public flush(): void {
+        this.cache.flushAll();
+    }
+
+    // Get multiple values
+    public mget(keys: K[]): { [key: string]: V } {
+        const stringKeys = keys.map(k => this.getStringKey(k));
+        return this.cache.mget<V>(stringKeys);
+    }
+
+    // Set multiple values
+    public mset(items: { key: K; val: V; ttl?: number }[]): boolean {
+        const keyValuePairs = items.map(item => ({
+            key: this.getStringKey(item.key),
+            val: item.val,
+            ttl: item.ttl
+        }));
+        return this.cache.mset(keyValuePairs);
+    }
+
+    // Get stats about cache usage
+    public getStats() {
+        return {
+            keys: this.cache.keys(),
+            stats: this.cache.getStats(),
+            hits: this.cache.stats.hits,
+            misses: this.cache.stats.misses,
+            hitRate: this.cache.stats.hits / (this.cache.stats.hits + this.cache.stats.misses)
+        };
+    }
+
+    private getStringKey(key: K): string {
+        if (typeof key === 'string') {
+            return key;
+        }
+        if (typeof key === 'number') {
+            return key.toString();
+        }
+        return JSON.stringify(key);
+    }
+}
+
+// Legacy singleton instance for backward compatibility
 export class CacheService {
     private static instance: CacheService;
     private cache: NodeCache;
 
     private constructor() {
-        this.cache = cache;
+        this.cache = defaultCache;
     }
 
     public static getInstance(): CacheService {
@@ -22,76 +95,60 @@ export class CacheService {
         return CacheService.instance;
     }
 
-    // Obtenir une valeur du cache
     public get<T>(key: string): T | undefined {
         return this.cache.get<T>(key);
     }
 
-    // Définir une valeur dans le cache
     public set<T>(key: string, value: T, ttl?: number): boolean {
         return this.cache.set(key, value, ttl || 0);
     }
 
-    // Supprimer une valeur du cache
     public del(key: string | string[]): number {
         return this.cache.del(key);
     }
 
-    // Vider tout le cache
     public flush(): void {
         this.cache.flushAll();
     }
 
-    // Obtenir plusieurs valeurs
     public mget<T>(keys: string[]): { [key: string]: T } {
         return this.cache.mget<T>(keys);
     }
 
-    // Définir plusieurs valeurs
     public mset<T>(keyValuePairs: { key: string; val: T; ttl?: number }[]): boolean {
         return this.cache.mset(keyValuePairs);
     }
-
-    // Vérifier si une clé existe
-    public has(key: string): boolean {
-        return this.cache.has(key);
-    }
-
-    // Obtenir les statistiques du cache
-    public getStats() {
-        return this.cache.getStats();
-    }
-
-    // Obtenir toutes les clés
-    public keys(): string[] {
-        return this.cache.keys();
-    }
-
-    // Obtenir le nombre d'éléments dans le cache
-    public count(): number {
-        return this.cache.keys().length;
-    }
 }
 
-// Middleware pour mettre en cache les réponses HTTP
-export const cacheMiddleware = (duration: number = 600) => {
+// HTTP response caching middleware
+export function cacheMiddleware(duration: number = 600) {
+    const cache = new Cache(duration);
+    
     return (req: any, res: any, next: any) => {
-        const key = `__express__${req.originalUrl || req.url}`;
-        const cacheService = CacheService.getInstance();
-        const cachedResponse = cacheService.get(key);
-
-        if (cachedResponse) {
-            res.send(cachedResponse);
-            return;
+        // Only cache GET requests
+        if (req.method !== 'GET') {
+            return next();
         }
 
-        res.sendResponse = res.send;
-        res.send = (body: any) => {
-            cacheService.set(key, body, duration);
-            res.sendResponse(body);
+        const key = req.originalUrl || req.url;
+        const cachedResponse = cache.get(key);
+
+        if (cachedResponse) {
+            return res.send(cachedResponse);
+        }
+
+        // Store original send
+        const originalSend = res.send;
+
+        // Override send
+        res.send = function(body: any): any {
+            originalSend.call(this, body);
+            cache.set(key, body);
         };
+
         next();
     };
-};
+}
 
+// Export singleton instance for backward compatibility
 export default CacheService.getInstance();
