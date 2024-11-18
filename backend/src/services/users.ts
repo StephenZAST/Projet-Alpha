@@ -210,14 +210,13 @@ export async function updateUser(uid: string, updates: Partial<User>): Promise<U
       updatedAt: new Date()
     } as User;
 
-    await userDoc.ref.update(updatedUser);
-    return updatedUser;
+    await userDoc.ref.update(updates);
+    return { ...userDoc.data(), ...updates, id: userDoc.id } as User;
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
   }
 }
-
 export async function deleteUser(uid: string): Promise<void> {
   try {
     const userRef = db.collection(USERS_COLLECTION)

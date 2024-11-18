@@ -46,6 +46,9 @@ router.post(
   validateRequest(adminCustomerCreationSchema),
   async (req, res, next) => {
     try {
+      if (!req.user) {
+        throw new Error('User not authenticated');
+      }
       const userData = {
         ...req.body,
         createdBy: req.user.uid // From auth middleware
@@ -63,8 +66,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
-);
+  });
 
 // Email verification
 router.post('/verify-email', validateRequest(emailVerificationSchema), async (req, res, next) => {

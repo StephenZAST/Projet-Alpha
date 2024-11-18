@@ -1,6 +1,6 @@
 import { db } from './firebase';
 import { DeliveryTask, TaskStatus, TaskType } from '../models/delivery-task';
-import { GeoPoint } from '../models/address';
+import { GeoPoint } from 'firebase/firestore';
 
 export class DeliveryTaskService {
   private readonly tasksRef = db.collection('delivery_tasks');
