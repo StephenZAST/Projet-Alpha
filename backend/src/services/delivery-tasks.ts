@@ -11,6 +11,7 @@ import {
 import { Cache } from '../utils/cache';
 
 interface TaskWithDistance extends DeliveryTask {
+  createdAt: any;
   distance?: number;
 }
 
@@ -63,10 +64,11 @@ export class DeliveryTaskService {
           const distance = calculateDistance(center, location);
           if (distance <= radiusKm) {
             return {
-              id: doc.id,
               ...task,
-              distance
-            };
+              id: doc.id,
+              distance,
+              createdAt: doc.createTime
+            } as TaskWithDistance;
           }
           return null;
         })

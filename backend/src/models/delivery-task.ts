@@ -4,6 +4,8 @@ export interface TimeSlot {
 }
 
 export interface DeliveryTask {
+  deliveryLocation: any;
+  pickupLocation: any;
   id: string;
   orderId: string;
   type: TaskType;
