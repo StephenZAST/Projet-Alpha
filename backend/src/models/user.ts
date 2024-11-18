@@ -1,95 +1,74 @@
-// src/models/user.ts
 import { Timestamp } from 'firebase-admin/firestore';
 
-export interface User {
-  uid: string;
-  email: string;
-  displayName: string;
-  phoneNumber?: string;
-  password: string;  // Will be hashed
-  address?: Address;
-  defaultAddress?: Address;
-  role: UserRole;
-  status: UserStatus;
-  affiliateId?: string;        // If registered through affiliate
-  sponsorId?: string;         // If registered through customer sponsorship
-  sponsorCode?: string;       // Customer's own sponsorship code
-  createdBy?: string;         // UID of admin who created the account (if applicable)
-  creationMethod: AccountCreationMethod;
-  emailVerified: boolean;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  lastLogin?: Timestamp;
-  loyaltyPoints: number;
-  subscriptionType?: SubscriptionType;
-  defaultServicePreferences?: ServicePreferences;
-  activeOffers?: string[];
-  zone?: string;              // Zone/quartier pour la gestion des livraisons
-  passwordResetToken?: string;
-  passwordResetExpires?: Timestamp;
-  verificationToken?: string;
-  verificationExpires?: Timestamp;
-}
-
 export enum UserRole {
-  CLIENT = 'client',
-  SUPER_ADMIN = 'super_admin',
-  SERVICE_CLIENT = 'service_client',
-  SECRETAIRE = 'secretaire',
-  LIVREUR = 'livreur',
-  SUPERVISEUR = 'superviseur'
+  CLIENT = 'CLIENT',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  SERVICE_CLIENT = 'SERVICE_CLIENT',
+  SECRETAIRE = 'SECRETAIRE',
+  LIVREUR = 'LIVREUR',
+  SUPERVISEUR = 'SUPERVISEUR'
 }
 
 export enum UserStatus {
-  PENDING = 'pending',          // Email not verified
-  ACTIVE = 'active',           // Email verified and account active
-  SUSPENDED = 'suspended',      // Account suspended
-  DEACTIVATED = 'deactivated'  // Account deactivated by user or admin
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  DELETED = 'DELETED'
 }
 
 export enum AccountCreationMethod {
-  SELF_REGISTRATION = 'self_registration',    // Customer registered themselves
-  ADMIN_CREATED = 'admin_created',           // Created by admin/secretary
-  AFFILIATE_REFERRAL = 'affiliate_referral', // Through affiliate link/code
-  CUSTOMER_REFERRAL = 'customer_referral'    // Through customer sponsorship
-}
-
-export enum SubscriptionType {
-  NONE = 'none',
-  WEEKLY = 'weekly',
-  MONTHLY = 'monthly'
-}
-
-export interface ServicePreferences {
-  defaultService: ServiceType;
-  priceRange: PriceRange;
-  weightLimit?: number;
-}
-
-export enum ServiceType {
-  BLANCHISSERIE_COMPLETE = 'blanchisserie_complete',
-  REPASSAGE = 'repassage',
-  NETTOYAGE_SEC = 'nettoyage_sec'
-}
-
-export enum PriceRange {
-  STANDARD = 'standard',
-  PREMIUM = 'premium',
-  ECONOMIQUE = 'economique'
+  SELF_REGISTRATION = 'SELF_REGISTRATION',
+  ADMIN_CREATED = 'ADMIN_CREATED',
+  AFFILIATE_REFERRAL = 'AFFILIATE_REFERRAL',
+  CUSTOMER_REFERRAL = 'CUSTOMER_REFERRAL'
 }
 
 export interface Address {
   street: string;
   city: string;
-  postalCode: string;
+  state: string;
+  zipCode: string;
   country: string;
-  quartier: string;
-  location: GeoLocation;
-  additionalInfo?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
-export interface GeoLocation {
-  latitude: number;
-  longitude: number;
-  zoneId: string;
+export interface User {
+  id: string;
+  uid: string; // Firebase Auth UID
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  displayName?: string;
+  phoneNumber: string;
+  address?: Address;
+  defaultAddress?: Address;
+  role: UserRole;
+  status: UserStatus;
+  creationMethod: AccountCreationMethod;
+  emailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  loyaltyPoints: number;
+  referralCode?: string;
+  affiliateId?: string;
+  sponsorId?: string;
+  lastLogin?: Date;
+  zone?: string;
+  createdBy?: string;
+  defaultItems?: Array<{ id: string; quantity: number }>;
+  defaultInstructions?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+export type CreateUserInput = Omit<User, 'id' | 'createdAt' | 'updatedAt'> & {
+  id?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};

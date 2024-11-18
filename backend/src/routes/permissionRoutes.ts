@@ -1,28 +1,24 @@
 import express from 'express';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { PermissionController } from '../controllers/permissionController';
-import { authenticateUser, requireAdminRole } from '../middleware/auth'; // Correct import names
-import { AdminRole } from '../models/admin';
 
 const router = express.Router();
 const permissionController = new PermissionController();
 
-// Protéger toutes les routes
-router.use(authenticateUser);
+// Protect all routes in this router with authentication and admin role
+router.use(isAuthenticated);
+router.use(requireAdminRole);
 
-// Routes accessibles uniquement au Super Admin Master
-router.use(requireAdminRole([AdminRole.SUPER_ADMIN_MASTER]));
+// Routes
+router.get('/', permissionController.getAllPermissions);
+router.get('/:id', permissionController.getPermissionById);
+router.post('/', permissionController.createPermission);
+router.put('/:id', permissionController.updatePermission);
+router.delete('/:id', permissionController.deletePermission);
 
-// Initialiser les permissions par défaut
-router.post('/initialize', permissionController.initializePermissions);
-
-// Obtenir la matrice des rôles
-router.get('/matrix', permissionController.getRoleMatrix);
-
-// Routes CRUD pour les permissions
-router.get('/role/:role', permissionController.getPermissionsByRole);
-router.get('/resource/:resource', permissionController.getResourcePermissions);
-router.post('/', permissionController.addPermission);
-router.put('/:role/:resource', permissionController.updatePermission);
-router.delete('/:role/:resource', permissionController.removePermission);
+// Role-based permission routes
+router.get('/role/:roleId', permissionController.getRolePermissions);
+router.post('/role/:roleId', permissionController.assignPermissionToRole);
+router.delete('/role/:roleId/:permissionId', permissionController.removePermissionFromRole);
 
 export default router;

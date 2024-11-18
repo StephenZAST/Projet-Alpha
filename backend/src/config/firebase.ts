@@ -1,44 +1,33 @@
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
-import { resolve } from 'path';
+import { getAuth } from 'firebase-admin/auth';
 
-// Initialize Firebase Admin
+const serviceAccount = require('../../serviceAccountKey.json');
+
 if (!admin.apps.length) {
-    try {
-        const serviceAccount = require('./serviceAccountKey.json');
-        
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
-            storageBucket: `${serviceAccount.project_id}.appspot.com`
-        });
-
-        console.log('✅ Firebase Admin SDK initialized successfully');
-    } catch (error) {
-        console.error('❌ Firebase admin initialization error:', error);
-        throw error; // Re-throw to prevent app from starting with invalid Firebase config
-    }
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
 }
 
-// Initialize Firestore
-const db = getFirestore();
+export const db = getFirestore();
+export const auth = getAuth();
+export { admin }; // Export admin for messaging
 
 // Enable timestamps in snapshots
 db.settings({
-    ignoreUndefinedProperties: true,
-    timestampsInSnapshots: true
+  ignoreUndefinedProperties: true,
+  timestampsInSnapshots: true
 });
-
-export { admin, db };
 
 // Export common Firestore types
 export const { FieldValue, Timestamp } = admin.firestore;
 
 // Type definitions for Firestore documents
 export interface FirestoreDoc {
-    id: string;
-    createdAt: admin.firestore.Timestamp;
-    updatedAt: admin.firestore.Timestamp;
+  id: string;
+  createdAt: admin.firestore.Timestamp;
+  updatedAt: admin.firestore.Timestamp;
 }
 
 // Transaction type

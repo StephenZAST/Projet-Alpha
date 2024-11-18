@@ -1,15 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '../models/user';
-import { AppError } from '../utils/errors';
 
-export const hasRole = (allowedRoles: UserRole[]) => {
+export const hasRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const userRole = req.user?.role;
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      return next(
-        new AppError(403, 'Insufficient permissions', 'FORBIDDEN')
-      );
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        error: 'Insufficient permissions',
+        required: roles,
+        current: req.user.role
+      });
     }
 
     next();

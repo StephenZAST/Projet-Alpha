@@ -1,75 +1,170 @@
-import { Request, Response, NextFunction } from 'express';
-import { AdminLogService } from '../services/adminLogService';
-import { AdminAction } from '../models/adminLog';
-import { AppError, errorCodes } from '../utils/errors'; // Import errorCodes
-import { catchAsync } from '../utils/catchAsync';
+import { Request, Response } from 'express';
+import { db } from '../config/firebase';
+import { User } from '../models/user';
 
 export class AdminLogController {
-    getLogs = catchAsync(async (req: Request, res: Response) => {
-        const { adminId, action, startDate, endDate, page = 1, limit = 50 } = req.query;
-        
-        const skip = (Number(page) - 1) * Number(limit);
-        
-        const logs = await AdminLogService.getAdminLogs(
-            adminId as string,
-            action as AdminAction,
-            startDate ? new Date(startDate as string) : undefined,
-            endDate ? new Date(endDate as string) : undefined,
-            Number(limit),
-            skip
-        );
+  async getLogs(req: Request, res: Response) {
+    try {
+      const logsSnapshot = await db.collection('admin_logs')
+        .orderBy('createdAt', 'desc')
+        .limit(100)
+        .get();
 
-        const total = await AdminLogService.getLogCount(
-            adminId as string,
-            action as AdminAction,
-            startDate ? new Date(startDate as string) : undefined,
-            endDate ? new Date(endDate as string) : undefined
-        );
+      const logs = logsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
-        res.status(200).json({
-            status: 'success',
-            data: {
-                logs,
-                pagination: {
-                    total,
-                    page: Number(page),
-                    pages: Math.ceil(total / Number(limit))
-                }
-            }
-        });
-    });
+      res.json(logs);
+    } catch (error) {
+      console.error('Error getting admin logs:', error);
+      res.status(500).json({ error: 'Failed to retrieve admin logs' });
+    }
+  }
 
-    getRecentActivity = catchAsync(async (req: Request, res: Response) => {
-        const { limit = 10 } = req.query;
-        const adminId = req.user?._id; // Optional chaining for req.user
+  async getLogById(req: Request, res: Response) {
+    try {
+      const logDoc = await db.collection('admin_logs').doc(req.params.id).get();
+      
+      if (!logDoc.exists) {
+        return res.status(404).json({ error: 'Log not found' });
+      }
 
-        if (!adminId) {
-            throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
-        }
+      res.json({
+        id: logDoc.id,
+        ...logDoc.data()
+      });
+    } catch (error) {
+      console.error('Error getting admin log:', error);
+      res.status(500).json({ error: 'Failed to retrieve admin log' });
+    }
+  }
 
-        const logs = await AdminLogService.getRecentActivityByAdmin(
-            adminId,
-            Number(limit)
-        );
+  async createLog(req: Request, res: Response) {
+    try {
+      const { action, details } = req.body;
+      const user = req.user as User;
 
-        res.status(200).json({
-            status: 'success',
-            data: { logs }
-        });
-    });
+      const logRef = db.collection('admin_logs').doc();
+      const now = new Date();
 
-    getFailedLoginAttempts = catchAsync(async (req: Request, res: Response) => {
-        const { adminId } = req.params;
-        const { timeWindow = 15 } = req.query;
+      await logRef.set({
+        id: logRef.id,
+        adminId: user.id,
+        adminName: `${user.firstName} ${user.lastName}`,
+        action,
+        details,
+        createdAt: now,
+        updatedAt: now
+      });
 
-        const attempts = await AdminLogService.getFailedLoginAttempts(
-            adminId,
-            Number(timeWindow)
-        );
+      res.status(201).json({
+        id: logRef.id,
+        message: 'Admin log created successfully'
+      });
+    } catch (error) {
+      console.error('Error creating admin log:', error);
+      res.status(500).json({ error: 'Failed to create admin log' });
+    }
+  }
 
-        res.status(200).json({
-            status: 'success',
-            data: { attempts }
-        });
-    });
+  async updateLog(req: Request, res: Response) {
+    try {
+      const { action, details } = req.body;
+      const logRef = db.collection('admin_logs').doc(req.params.id);
+      
+      const logDoc = await logRef.get();
+      if (!logDoc.exists) {
+        return res.status(404).json({ error: 'Log not found' });
+      }
+
+      await logRef.update({
+        action,
+        details,
+        updatedAt: new Date()
+      });
+
+      res.json({
+        id: logRef.id,
+        message: 'Admin log updated successfully'
+      });
+    } catch (error) {
+      console.error('Error updating admin log:', error);
+      res.status(500).json({ error: 'Failed to update admin log' });
+    }
+  }
+
+  async deleteLog(req: Request, res: Response) {
+    try {
+      const logRef = db.collection('admin_logs').doc(req.params.id);
+      
+      const logDoc = await logRef.get();
+      if (!logDoc.exists) {
+        return res.status(404).json({ error: 'Log not found' });
+      }
+
+      await logRef.delete();
+
+      res.json({
+        message: 'Admin log deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting admin log:', error);
+      res.status(500).json({ error: 'Failed to delete admin log' });
+    }
+  }
+
+  async getRecentActivity(req: Request, res: Response) {
+    try {
+      const { limit = 10 } = req.query;
+      const adminId = req.user?.id;
+
+      if (!adminId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const logsSnapshot = await db.collection('admin_logs')
+        .where('adminId', '==', adminId)
+        .orderBy('createdAt', 'desc')
+        .limit(Number(limit))
+        .get();
+
+      const logs = logsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      res.json(logs);
+    } catch (error) {
+      console.error('Error getting recent activity:', error);
+      res.status(500).json({ error: 'Failed to retrieve recent activity' });
+    }
+  }
+
+  async getFailedLoginAttempts(req: Request, res: Response) {
+    try {
+      const { adminId } = req.params;
+      const { days = 7 } = req.query;
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - Number(days));
+
+      const logsSnapshot = await db.collection('admin_logs')
+        .where('adminId', '==', adminId)
+        .where('action', '==', 'FAILED_LOGIN')
+        .where('createdAt', '>=', startDate)
+        .orderBy('createdAt', 'desc')
+        .get();
+
+      const logs = logsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      res.json(logs);
+    } catch (error) {
+      console.error('Error getting failed login attempts:', error);
+      res.status(500).json({ error: 'Failed to retrieve failed login attempts' });
+    }
+  }
 }
