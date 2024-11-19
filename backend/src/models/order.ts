@@ -47,6 +47,11 @@ export enum PriceType {
   PER_PIECE = 'PER_PIECE'
 }
 
+export enum ItemType {
+  PRODUCT = 'PRODUCT',
+  SERVICE = 'SERVICE'
+}
+
 export interface Location {
   latitude: number;
   longitude: number;
@@ -56,7 +61,7 @@ export interface Location {
 
 export interface OrderItem {
   id?: string;
-  itemType: string;
+  itemType: ItemType;
   quantity: number;
   price: number;
   priceType: PriceType;
@@ -91,6 +96,7 @@ export interface Order {
   paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   rating?: number;
   feedback?: string;
+  recurringOrderId?: string; // Add recurringOrderId
 }
 
 export interface DeliverySlot {

@@ -4,6 +4,7 @@ import { OrderService } from './orders';
 import { NotificationService } from './notifications';
 import { addDays, addWeeks, addMonths } from 'date-fns';
 import { Timestamp } from 'firebase-admin/firestore';
+import { OrderItem, ItemType, PriceType } from '../models/order'; // Import necessary types
 
 export class RecurringOrderService {
   private recurringOrdersRef = db.collection('recurringOrders');
@@ -38,7 +39,9 @@ export class RecurringOrderService {
       items: recurringOrder.baseOrder.items.map(item => ({
         ...item,
         productId: item.id || '', // Provide a default value if id is missing
-        productName: item.name || '' // Provide a default value if name is missing
+        productName: item.name || '', // Provide a default value if name is missing
+        itemType: ItemType.PRODUCT, // Set default item type
+        priceType: PriceType.FIXED // Set default price type
       }))
     });
 
@@ -132,7 +135,9 @@ export class RecurringOrderService {
           items: recurringOrder.baseOrder.items.map(item => ({
             ...item,
             productId: item.id || '', // Provide a default value if id is missing
-            productName: item.name || '' // Provide a default value if name is missing
+            productName: item.name || '', // Provide a default value if name is missing
+            itemType: ItemType.PRODUCT, // Set default item type
+            priceType: PriceType.FIXED // Set default price type
           }))
         });
 
