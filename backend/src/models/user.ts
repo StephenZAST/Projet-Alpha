@@ -35,17 +35,88 @@ export interface Address {
   };
 }
 
-export interface User {
-  id: string;
-  uid: string; // Firebase Auth UID
-  email: string;
-  password: string;
+export interface UserAddress {
+  label?: string; // e.g., "Home", "Work", "Vacation Home"
+  type?: 'residential' | 'business' | 'other';
+  street: string;
+  unit?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  phoneNumber?: string;
+  instructions?: string;
+  isDefault?: boolean;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  validatedAt?: Date;
+  lastUsed?: Date;
+}
+
+export interface UserPreferences {
+  theme?: 'light' | 'dark' | 'system';
+  currency?: string;
+  measurementUnit?: 'metric' | 'imperial';
+  communicationFrequency?: 'daily' | 'weekly' | 'monthly' | 'never';
+  orderNotifications?: {
+    confirmation: boolean;
+    statusUpdates: boolean;
+    delivery: boolean;
+  };
+  marketingPreferences?: {
+    email: boolean;
+    sms: boolean;
+    push: boolean;
+    promotions: boolean;
+    newsletters: boolean;
+  };
+  servicePreferences?: {
+    defaultServiceType?: string;
+    preferredPickupTime?: string;
+    preferredDeliveryTime?: string;
+    specialInstructions?: string;
+  };
+}
+
+export interface UserProfile {
   firstName: string;
   lastName: string;
   displayName?: string;
+  email: string;
   phoneNumber: string;
-  address?: Address;
-  defaultAddress?: Address;
+  avatar?: string;
+  dateOfBirth?: Date;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  language?: string;
+  timezone?: string;
+  bio?: string;
+  occupation?: string;
+  company?: string;
+  website?: string;
+  socialLinks?: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
+  preferences?: UserPreferences;
+  notificationSettings?: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    marketing: boolean;
+  };
+  address?: UserAddress;
+  defaultAddress?: UserAddress;
+  lastUpdated: Date;
+}
+
+export interface User {
+  id: string;
+  uid: string; // Firebase Auth UID
+  profile: UserProfile;
   role: UserRole;
   status: UserStatus;
   creationMethod: AccountCreationMethod;

@@ -1,16 +1,18 @@
 import { db } from './firebase';
-import { 
-  LoyaltyAccount, 
-  LoyaltyTier, 
-  Reward, 
-  RewardRedemption, 
-  RewardStatus, 
+import {
+  LoyaltyAccount,
+  LoyaltyTier,
+  Reward,
+  RewardRedemption,
+  RewardStatus,
   RewardType,
   PointsTransaction,
-  LoyaltyTierConfig
+  LoyaltyTierConfig,
 } from '../models/loyalty';
 import { NotificationService } from './notifications';
 import { AppError } from '../utils/errors';
+import { UserAddress, UserProfile } from '../models/user';
+
 
 export class LoyaltyService {
   private readonly loyaltyRef = db.collection('loyalty_accounts');
@@ -56,12 +58,12 @@ export class LoyaltyService {
           tier: newTier,
           lastUpdated: new Date()
         };
-              transaction.update(accountRef, {
-                points: updatedAccount.points,
-                lifetimePoints: updatedAccount.lifetimePoints,
-                tier: updatedAccount.tier,
-                lastUpdated: updatedAccount.lastUpdated
-              });
+        transaction.update(accountRef, {
+          points: updatedAccount.points,
+          lifetimePoints: updatedAccount.lifetimePoints,
+          tier: updatedAccount.tier,
+          lastUpdated: updatedAccount.lastUpdated
+        });
       }
     });
 
@@ -71,13 +73,13 @@ export class LoyaltyService {
     return updatedAccount!;
   }
 
-  async redeemReward(userId: string, rewardId: string, shippingAddress: any): Promise<string> {
+  async redeemReward(userId: string, rewardId: string, shippingAddress: UserAddress): Promise<string> {
     const rewardRef = this.rewardsRef.doc(rewardId);
     const accountRef = this.loyaltyRef.doc(userId);
 
     try {
       let redemptionId: string;
-      
+
       await db.runTransaction(async (transaction) => {
         const rewardDoc = await transaction.get(rewardRef);
         const accountDoc = await transaction.get(accountRef);
@@ -107,6 +109,7 @@ export class LoyaltyService {
           redemptionDate: new Date(),
           status: reward.type === RewardType.GIFT ? RewardStatus.REDEEMED : RewardStatus.CLAIMED,
           verificationCode,
+          shippingAddress
         };
 
         // Update points balance

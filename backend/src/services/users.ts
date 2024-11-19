@@ -1,5 +1,5 @@
-import { db, auth } from '../config/firebase';
-import { User, UserRole, UserStatus, AccountCreationMethod, CreateUserInput } from '../models/user';
+import { db, auth, CollectionReference } from '../config/firebase';
+import { User, UserRole, UserStatus, AccountCreationMethod, CreateUserInput, UserProfile, UserAddress, UserPreferences } from '../models/user';
 import { hash } from 'bcrypt';
 import { generateToken } from '../utils/tokens';
 import { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } from './emailService';
@@ -10,27 +10,21 @@ const SALT_ROUNDS = 10;
 const USERS_COLLECTION = 'users';
 
 export class UserService {
-  private usersRef = db.collection(USERS_COLLECTION);
+  private usersRef: CollectionReference = db.collection(USERS_COLLECTION);
   private notificationService = new NotificationService();
 
   async getUserProfile(userId: string): Promise<UserProfile> {
     try {
       const userDoc = await this.usersRef.doc(userId).get();
-      
+
       if (!userDoc.exists) {
         throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
       }
 
       const userData = userDoc.data() as User;
       return {
-        id: userDoc.id,
-        displayName: userData.displayName,
-        email: userData.email,
-        phoneNumber: userData.phoneNumber,
-        avatar: userData.avatar,
-        language: userData.language,
-        createdAt: userData.createdAt,
-        updatedAt: userData.updatedAt
+        ...userData.profile,
+        lastUpdated: userData.updatedAt
       };
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -49,22 +43,27 @@ export class UserService {
 
       const updatedData = {
         ...updateData,
-        updatedAt: new Date()
+        lastUpdated: new Date()
       };
 
-      await userRef.update(updatedData);
+      await userRef.update({
+        profile: updatedData
+      });
 
       // Notify user about profile update
       await this.notificationService.sendNotification(userId, {
         type: 'PROFILE_UPDATE',
         title: 'Profile Updated',
-        message: 'Your profile has been successfully updated'
+        message: 'Your profile has been successfully updated',
+        data: {
+          orderId: undefined,
+          recurringOrderId: ''
+        }
       });
 
       return {
-        ...(userDoc.data() as User),
-        ...updatedData,
-        id: userId
+        ...(userDoc.data() as User).profile,
+        ...updatedData
       };
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -104,12 +103,12 @@ export class UserService {
 
       const userData = userDoc.data() as User;
       const updatedPreferences = {
-        ...userData.preferences,
+        ...userData.profile.preferences,
         ...preferences,
       };
 
       await userRef.update({
-        preferences: updatedPreferences,
+        'profile.preferences': updatedPreferences,
         updatedAt: new Date()
       });
 
@@ -123,13 +122,12 @@ export class UserService {
   async getUserById(userId: string): Promise<User> {
     try {
       const userDoc = await this.usersRef.doc(userId).get();
-      
+
       if (!userDoc.exists) {
         throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
       }
 
       return {
-        id: userDoc.id,
         ...(userDoc.data() as User)
       };
     } catch (error) {
@@ -140,25 +138,21 @@ export class UserService {
 
   async getUsers({ page = 1, limit = 10, search = '' }): Promise<{ users: User[], total: number, page: number, totalPages: number }> {
     try {
-      let query = this.usersRef;
-
-      if (search) {
-        query = query.where('displayName', '>=', search)
-                    .where('displayName', '<=', search + '\uf8ff');
-      }
-
-      const totalDocs = await query.count().get();
+      const totalDocs = await this.usersRef.count().get();
       const total = totalDocs.data().count;
       const totalPages = Math.ceil(total / limit);
 
-      const snapshot = await query
+      let snapshot = this.usersRef
         .orderBy('createdAt', 'desc')
         .offset((page - 1) * limit)
-        .limit(limit)
-        .get();
+        .limit(limit);
 
-      const users = snapshot.docs.map(doc => ({
-        id: doc.id,
+      if (search) {
+        snapshot = snapshot.where('profile.displayName', '>=', search)
+          .where('profile.displayName', '<=', search + '\uf8ff');
+      }
+
+      const users = (await snapshot.get()).docs.map(doc => ({
         ...(doc.data() as User)
       }));
 
@@ -178,29 +172,27 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
   try {
     const userRef = db.collection(USERS_COLLECTION).doc();
     const now = new Date();
-    
+
     // Create Firebase Auth user if not exists
     let firebaseUser;
     if (!userData.uid) {
       firebaseUser = await auth.createUser({
-        email: userData.email,
+        email: userData.profile.email,
         password: userData.password,
-        displayName: `${userData.firstName} ${userData.lastName}`,
-        phoneNumber: userData.phoneNumber
+        displayName: `${userData.profile.firstName} ${userData.profile.lastName}`,
+        phoneNumber: userData.profile.phoneNumber
       });
     }
 
     const hashedPassword = await hash(userData.password, SALT_ROUNDS);
-    
+
     const newUser: User = {
       id: userRef.id,
       uid: userData.uid || firebaseUser?.uid || userRef.id,
-      email: userData.email,
-      password: hashedPassword,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      displayName: userData.displayName || `${userData.firstName} ${userData.lastName}`,
-      phoneNumber: userData.phoneNumber,
+      profile: {
+        ...userData.profile,
+        lastUpdated: now
+      },
       role: userData.role || UserRole.CLIENT,
       status: UserStatus.PENDING,
       creationMethod: userData.creationMethod || AccountCreationMethod.SELF_REGISTRATION,
@@ -209,14 +201,14 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
       defaultItems: [],
       defaultInstructions: '',
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
 
     await userRef.set(newUser);
 
     // Send verification email
     const verificationToken = await generateToken();
-    await sendVerificationEmail(newUser.email, verificationToken);
+    await sendVerificationEmail(newUser.profile.email, verificationToken);
 
     return newUser;
   } catch (error) {
@@ -229,7 +221,7 @@ export async function registerCustomer(
   userData: CreateUserInput,
   method: AccountCreationMethod
 ): Promise<User> {
-  const existingUser = await getUserByEmail(userData.email);
+  const existingUser = await getUserByEmail(userData.profile.email);
   if (existingUser) {
     throw new Error('Email already registered');
   }
@@ -264,7 +256,7 @@ export async function verifyEmail(token: string): Promise<void> {
     updatedAt: new Date()
   });
 
-  await sendWelcomeEmail(user.email, user.firstName);
+  await sendWelcomeEmail(user.profile.email, user.profile.firstName);
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
@@ -297,7 +289,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
   }
 
   const hashedPassword = await hash(newPassword, SALT_ROUNDS);
-  
+
   await userSnapshot.docs[0].ref.update({
     password: hashedPassword,
     passwordResetToken: null,
@@ -308,7 +300,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   const userSnapshot = await db.collection(USERS_COLLECTION)
-    .where('email', '==', email)
+    .where('profile.email', '==', email)
     .limit(1)
     .get();
 
@@ -318,22 +310,20 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
   const userData = userSnapshot.docs[0].data() as User;
   return {
-    ...userData,
-    id: userSnapshot.docs[0].id
+    ...userData
   };
 }
 
 export async function getUserById(id: string): Promise<User | null> {
   const userDoc = await db.collection(USERS_COLLECTION).doc(id).get();
-  
+
   if (!userDoc.exists) {
     return null;
   }
 
   const userData = userDoc.data() as User;
   return {
-    ...userData,
-    id: userDoc.id
+    ...userData
   };
 }
 
@@ -343,15 +333,14 @@ export async function getUserProfile(uid: string): Promise<User | null> {
       .where('uid', '==', uid)
       .limit(1)
       .get();
-    
+
     if (userSnapshot.empty) {
       return null;
     }
 
     const userData = userSnapshot.docs[0].data() as User;
     return {
-      ...userData,
-      id: userSnapshot.docs[0].id
+      ...userData
     };
   } catch (error) {
     console.error('Error getting user profile:', error);
@@ -365,7 +354,7 @@ export async function updateUser(uid: string, updates: Partial<User>): Promise<U
       .where('uid', '==', uid)
       .limit(1);
     const userSnapshot = await userRef.get();
-    
+
     if (userSnapshot.empty) {
       throw new Error('User not found');
     }
@@ -378,7 +367,7 @@ export async function updateUser(uid: string, updates: Partial<User>): Promise<U
     } as User;
 
     await userDoc.ref.update(updates);
-    return { ...userDoc.data(), ...updates, id: userDoc.id } as User;
+    return { ...userDoc.data(), ...updates } as User;
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
@@ -391,7 +380,7 @@ export async function deleteUser(uid: string): Promise<void> {
       .where('uid', '==', uid)
       .limit(1);
     const userSnapshot = await userRef.get();
-    
+
     if (userSnapshot.empty) {
       throw new Error('User not found');
     }
