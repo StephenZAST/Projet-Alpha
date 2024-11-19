@@ -3,6 +3,9 @@ import { Notification, NotificationType } from '../models/notification';
 import * as admin from 'firebase-admin';
 
 export class NotificationService {
+  sendNotification(userId: string, arg1: { type: string; title: string; message: string; data: { orderId: any; recurringOrderId: string; }; }) {
+    throw new Error('Method not implemented.');
+  }
   private readonly notificationsRef = db.collection('notifications');
 
   async createNotification(notification: Omit<Notification, 'id' | 'createdAt'>): Promise<string> {
