@@ -1,13 +1,17 @@
 import { Timestamp, GeoPoint } from 'firebase-admin/firestore';
-import { db } from './firebase';
+import * as admin from 'firebase-admin'; // Import firebase-admin
 import { Order, OrderStatus, OrderType, Location, OrderItem, MainService, PriceType, ItemType } from '../models/order';
 import { AppError, errorCodes } from '../utils/errors';
 import { getUserProfile } from './users';
 import { optimizeRoute, RouteStop } from '../utils/routeOptimization';
 import { validateOrderData } from '../validation/orders';
 import { checkDeliverySlotAvailability } from './delivery';
-import { Query, CollectionReference } from 'firebase-admin/firestore';
+import { 
+  Query, 
+  CollectionReference
+} from 'firebase-admin/firestore';
 import { Address } from '../models/user';
+import { db } from './firebase'; // Import db
 
 interface OrderStatistics {
   total: number;
@@ -21,6 +25,17 @@ interface OrderStatistics {
   };
 }
 
+interface GetOrdersOptions {
+  status?: OrderStatus;
+  limit?: number;
+  startAfter?: Timestamp;
+  page?: number;
+  userId?: string;
+  startDate?: Date;
+  endDate?: Date;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
 
 export class OrderService {
   private ordersRef: CollectionReference;
@@ -126,32 +141,47 @@ export class OrderService {
 
   async getOrdersByUser(
     userId: string,
-    options: { status?: OrderStatus; limit?: number; startAfter?: Timestamp, page?: number } = {} // Add page parameter
+    options: GetOrdersOptions = {}
   ): Promise<Order[]> {
     try {
-      let query = this.ordersRef.where('userId', '==', userId);
+      let queryBuilder = this.ordersRef;
 
+      // Chain the where clauses
       if (options.status) {
-        query = query.where('status', '==', options.status);
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('status', '==', options.status));
+      }
+      if (options.userId) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('userId', '==', options.userId));
+      }
+      if (options.startDate) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('creationDate', '>=', options.startDate));
+      }
+      if (options.endDate) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('creationDate', '<=', options.endDate));
       }
 
-      query = query.orderBy('creationDate', 'desc');
+      // Apply ordering
+      if (options.sortBy) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.orderBy(options.sortBy, options.sortOrder || 'desc'));
+      }
 
+      // Apply startAfter if provided
       if (options.startAfter) {
-        query = query.startAfter(options.startAfter);
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.startAfter(options.startAfter));
       }
 
+      // Apply limit if provided
       if (options.limit) {
-        query = query.limit(options.limit);
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.limit(options.limit));
       }
 
-      // Apply pagination
+      // Apply pagination offset
       if (options.page && options.limit) {
-        const offset = (options.page - 1) * options.limit;
-        query = query.offset(offset);
+        const offsetValue = (options.page - 1) * options.limit;
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.offset(offsetValue));
       }
 
-      const ordersSnapshot = await query.get();
+      const ordersSnapshot = await queryBuilder.get();
       return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -164,13 +194,18 @@ export class OrderService {
     status?: OrderStatus[]
   ): Promise<Order[]> {
     try {
-      let query = this.ordersRef.where('zoneId', '==', zoneId);
+      let queryBuilder = this.ordersRef;
 
+      // Chain the where clauses
+      queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('zoneId', '==', zoneId));
       if (status && status.length > 0) {
-        query = query.where('status', 'in', status);
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('status', 'in', status));
       }
 
-      const ordersSnapshot = await query.orderBy('creationDate', 'desc').get();
+      // Apply ordering
+      queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.orderBy('creationDate', 'desc'));
+
+      const ordersSnapshot = await queryBuilder.get();
       return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
     } catch (error) {
       console.error('Error fetching zone orders:', error);
@@ -314,5 +349,111 @@ export class OrderService {
     }, 0);
 
     return Math.round((totalTime / completedOrders.length / (1000 * 60)) * 10) / 10; // Minutes avec 1 décimale
+  }
+
+  async getOrderById(orderId: string, userId: string): Promise<Order> {
+    try {
+      const orderDoc = await this.ordersRef.doc(orderId).get();
+
+      if (!orderDoc.exists) {
+        throw new AppError(404, 'Order not found', errorCodes.ORDER_NOT_FOUND);
+      }
+
+      const order = orderDoc.data() as Order;
+
+      if (order.userId !== userId) {
+        throw new AppError(403, 'Unauthorized to access this order', errorCodes.UNAUTHORIZED);
+      }
+
+      return { ...order, id: orderDoc.id };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      console.error('Error fetching order:', error);
+      throw new AppError(500, 'Failed to fetch order', errorCodes.ORDERS_FETCH_FAILED);
+    }
+  }
+
+  async updateOrder(orderId: string, userId: string, updates: Partial<Order>): Promise<Order> {
+    try {
+      const orderRef = this.ordersRef.doc(orderId);
+      const orderDoc = await orderRef.get();
+
+      if (!orderDoc.exists) {
+        throw new AppError(404, 'Order not found', errorCodes.ORDER_NOT_FOUND);
+      }
+
+      const order = orderDoc.data() as Order;
+
+      if (order.userId !== userId) {
+        throw new AppError(403, 'Unauthorized to update this order', errorCodes.UNAUTHORIZED);
+      }
+
+      // Validate updates using validateOrderData if needed
+
+      const updatedOrder = {
+        ...order,
+        ...updates,
+        updatedAt: Timestamp.now()
+      };
+
+      await orderRef.update(updatedOrder);
+      return updatedOrder;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      console.error('Error updating order:', error);
+      throw new AppError(500, 'Failed to update order', errorCodes.ORDER_UPDATE_FAILED);
+    }
+  }
+
+  async cancelOrder(orderId: string, userId: string): Promise<Order> {
+    try {
+      return await this.updateOrderStatus(orderId, OrderStatus.CANCELLED, userId);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      console.error('Error cancelling order:', error);
+      throw new AppError(500, 'Failed to cancel order', errorCodes.ORDER_UPDATE_FAILED);
+    }
+  }
+
+  async getAllOrders(options: GetOrdersOptions = {}): Promise<Order[]> {
+    try {
+      let queryBuilder = this.ordersRef;
+
+      // Chain the where clauses
+      if (options.status) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('status', '==', options.status));
+      }
+      if (options.userId) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('userId', '==', options.userId));
+      }
+      if (options.startDate) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('creationDate', '>=', options.startDate));
+      }
+      if (options.endDate) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('creationDate', '<=', options.endDate));
+      }
+
+      // Apply ordering
+      if (options.sortBy) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.orderBy(options.sortBy, options.sortOrder || 'desc'));
+      }
+
+      // Apply limit if provided
+      if (options.limit) {
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.limit(options.limit));
+      }
+
+      // Apply pagination offset
+      if (options.page && options.limit) {
+        const offsetValue = (options.page - 1) * options.limit;
+        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.offset(offsetValue));
+      }
+
+      const ordersSnapshot = await queryBuilder.get();
+      return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
+    } catch (error) {
+      console.error('Error fetching all orders:', error);
+      throw new AppError(500, 'Failed to fetch all orders', errorCodes.ORDERS_FETCH_FAILED);
+    }
   }
 }
