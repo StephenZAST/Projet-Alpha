@@ -126,7 +126,7 @@ export class OrderService {
 
   async getOrdersByUser(
     userId: string,
-    options: { status?: OrderStatus; limit?: number; startAfter?: Timestamp } = {}
+    options: { status?: OrderStatus; limit?: number; startAfter?: Timestamp, page?: number } = {} // Add page parameter
   ): Promise<Order[]> {
     try {
       let query = this.ordersRef.where('userId', '==', userId);
@@ -143,6 +143,12 @@ export class OrderService {
 
       if (options.limit) {
         query = query.limit(options.limit);
+      }
+
+      // Apply pagination
+      if (options.page && options.limit) {
+        const offset = (options.page - 1) * options.limit;
+        query = query.offset(offset);
       }
 
       const ordersSnapshot = await query.get();

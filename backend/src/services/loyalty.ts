@@ -71,7 +71,7 @@ export class LoyaltyService {
     return updatedAccount!;
   }
 
-  async redeemReward(userId: string, rewardId: string): Promise<string> {
+  async redeemReward(userId: string, rewardId: string, shippingAddress: any): Promise<string> {
     const rewardRef = this.rewardsRef.doc(rewardId);
     const accountRef = this.loyaltyRef.doc(userId);
 
@@ -168,7 +168,7 @@ export class LoyaltyService {
     return snapshot.docs.map(doc => doc.data() as RewardRedemption);
   }
 
-  async getAvailableRewards(userId: string): Promise<Reward[]> {
+  async getAvailableRewards(userId: string, p0: { type: string; category: string; status: string; }): Promise<Reward[]> {
     const accountDoc = await this.loyaltyRef.doc(userId).get();
     if (!accountDoc.exists) {
       return [];
