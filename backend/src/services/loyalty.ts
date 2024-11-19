@@ -10,7 +10,7 @@ import {
   LoyaltyTierConfig,
 } from '../models/loyalty';
 import { NotificationService } from './notifications';
-import { AppError } from '../utils/errors';
+import { AppError, errorCodes } from '../utils/errors';
 import { UserAddress, UserProfile } from '../models/user';
 
 
@@ -85,14 +85,14 @@ export class LoyaltyService {
         const accountDoc = await transaction.get(accountRef);
 
         if (!rewardDoc.exists || !accountDoc.exists) {
-          throw new Error('Reward or account not found');
+          throw new AppError('Reward or account not found', errorCodes.NOT_FOUND, 404);
         }
 
         const reward = rewardDoc.data() as Reward;
         const account = accountDoc.data() as LoyaltyAccount;
 
         if (account.points < reward.pointsCost) {
-          throw new Error('Insufficient points');
+          throw new AppError('Insufficient points', errorCodes.INSUFFICIENT_POINTS, 400);
         }
 
         // Generate unique verification code
@@ -143,12 +143,12 @@ export class LoyaltyService {
       await db.runTransaction(async (transaction) => {
         const doc = await transaction.get(redemptionRef);
         if (!doc.exists) {
-          throw new Error('Redemption not found');
+          throw new AppError('Redemption not found', errorCodes.NOT_FOUND, 404);
         }
 
         const redemption = doc.data() as RewardRedemption;
         if (redemption.status !== RewardStatus.REDEEMED) {
-          throw new Error('Reward already claimed or expired');
+          throw new AppError('Reward already claimed or expired', errorCodes.BAD_REQUEST, 400);
         }
 
         transaction.update(redemptionRef, {
@@ -243,7 +243,7 @@ export class LoyaltyService {
     const doc = await tierRef.get();
 
     if (!doc.exists) {
-      throw new AppError('Tier not found', 404);
+      throw new AppError('Tier not found', errorCodes.NOT_FOUND, 404);
     }
 
     const { pointsThreshold, name, benefits } = tierData;
@@ -253,7 +253,7 @@ export class LoyaltyService {
       name,
       benefits,
       updatedAt: new Date()
-    }, tierRef); // Move tierRef to the end
+    });
 
     return {
       ...doc.data(),
@@ -325,7 +325,7 @@ export class LoyaltyService {
     const doc = await redemptionRef.get();
 
     if (!doc.exists) {
-      throw new AppError('Redemption not found', 404);
+      throw new AppError('Redemption not found', errorCodes.NOT_FOUND, 404);
     }
 
     const { userId, rewardId, redemptionDate, verificationCode, shippingAddress } = doc.data() as RewardRedemption;
@@ -334,7 +334,7 @@ export class LoyaltyService {
       status,
       notes,
       updatedAt: new Date()
-    }, redemptionRef); // Move redemptionRef to the end
+    });
 
     // Notify user about redemption status change
     await this.notificationService.sendRedemptionStatusUpdate(userId, status);
