@@ -1,0 +1,3 @@
+{"level":"info","message":"Server is running on port 3000","timestamp":"2024-11-19T03:15:44.984Z"}
+{"level":"info","message":"Starting scheduled jobs","timestamp":"2024-11-19T03:15:44.990Z"}
+{"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-11-19T03:15:44.999Z"}
