@@ -1,11 +1,23 @@
 import { db } from './firebase';
-import { LoyaltyAccount, LoyaltyTier, Reward, RewardRedemption, RewardStatus, RewardType } from '../models/loyalty';
+import { 
+  LoyaltyAccount, 
+  LoyaltyTier, 
+  Reward, 
+  RewardRedemption, 
+  RewardStatus, 
+  RewardType,
+  PointsTransaction,
+  LoyaltyTierConfig
+} from '../models/loyalty';
 import { NotificationService } from './notifications';
+import { AppError } from '../utils/errors';
 
 export class LoyaltyService {
   private readonly loyaltyRef = db.collection('loyalty_accounts');
   private readonly rewardsRef = db.collection('rewards');
   private readonly redemptionsRef = db.collection('reward_redemptions');
+  private readonly pointsHistoryRef = db.collection('points_history');
+  private readonly tiersRef = db.collection('loyalty_tiers');
   private notificationService = new NotificationService();
 
   async calculateTier(points: number): Promise<LoyaltyTier> {
@@ -177,5 +189,148 @@ export class LoyaltyService {
   async getLoyaltyAccount(userId: string): Promise<LoyaltyAccount | null> {
     const doc = await this.loyaltyRef.doc(userId).get();
     return doc.exists ? (doc.data() as LoyaltyAccount) : null;
+  }
+
+  async getPointsHistory(
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ transactions: PointsTransaction[]; total: number }> {
+    const offset = (page - 1) * limit;
+    const query = this.pointsHistoryRef
+      .where('userId', '==', userId)
+      .orderBy('timestamp', 'desc')
+      .limit(limit)
+      .offset(offset);
+
+    const [snapshot, countSnapshot] = await Promise.all([
+      query.get(),
+      this.pointsHistoryRef.where('userId', '==', userId).count().get()
+    ]);
+
+    return {
+      transactions: snapshot.docs.map(doc => doc.data() as PointsTransaction),
+      total: countSnapshot.data().count
+    };
+  }
+
+  async createReward(rewardData: Partial<Reward>): Promise<Reward> {
+    const reward: Reward = {
+      ...rewardData,
+      createdAt: new Date(),
+      isActive: true,
+      redemptionCount: 0
+    } as Reward;
+
+    const rewardRef = this.rewardsRef.doc();
+    await rewardRef.set(reward);
+
+    return {
+      id: rewardRef.id,
+      ...reward
+    };
+  }
+
+  async updateLoyaltyTier(
+    tierId: string,
+    tierData: Partial<LoyaltyTierConfig>
+  ): Promise<LoyaltyTierConfig> {
+    const tierRef = this.tiersRef.doc(tierId);
+    const doc = await tierRef.get();
+
+    if (!doc.exists) {
+      throw new AppError('Tier not found', 404);
+    }
+
+    const updatedTier = {
+      ...doc.data(),
+      ...tierData,
+      updatedAt: new Date()
+    } as LoyaltyTierConfig;
+
+    await tierRef.update(updatedTier);
+    return updatedTier;
+  }
+
+  async getLoyaltyTiers(): Promise<LoyaltyTierConfig[]> {
+    const snapshot = await this.tiersRef.orderBy('pointsThreshold', 'asc').get();
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as LoyaltyTierConfig));
+  }
+
+  async getRewardRedemptions(options: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<{ redemptions: RewardRedemption[]; total: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      startDate,
+      endDate
+    } = options;
+
+    let query = this.redemptionsRef.orderBy('redemptionDate', 'desc');
+
+    if (status) {
+      query = query.where('status', '==', status);
+    }
+
+    if (startDate) {
+      query = query.where('redemptionDate', '>=', startDate);
+    }
+
+    if (endDate) {
+      query = query.where('redemptionDate', '<=', endDate);
+    }
+
+    const offset = (page - 1) * limit;
+    query = query.limit(limit).offset(offset);
+
+    const [snapshot, countSnapshot] = await Promise.all([
+      query.get(),
+      this.redemptionsRef.count().get()
+    ]);
+
+    return {
+      redemptions: snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as RewardRedemption)),
+      total: countSnapshot.data().count
+    };
+  }
+
+  async updateRedemptionStatus(
+    redemptionId: string,
+    status: RewardStatus,
+    notes?: string
+  ): Promise<RewardRedemption> {
+    const redemptionRef = this.redemptionsRef.doc(redemptionId);
+    const doc = await redemptionRef.get();
+
+    if (!doc.exists) {
+      throw new AppError('Redemption not found', 404);
+    }
+
+    const updatedRedemption = {
+      ...doc.data(),
+      status,
+      notes,
+      updatedAt: new Date()
+    } as RewardRedemption;
+
+    await redemptionRef.update(updatedRedemption);
+
+    // Notify user about redemption status change
+    const userId = updatedRedemption.userId;
+    await this.notificationService.sendRedemptionStatusUpdate(userId, status);
+
+    return updatedRedemption;
   }
 }

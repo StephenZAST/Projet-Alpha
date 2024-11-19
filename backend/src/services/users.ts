@@ -3,9 +3,176 @@ import { User, UserRole, UserStatus, AccountCreationMethod, CreateUserInput } fr
 import { hash } from 'bcrypt';
 import { generateToken } from '../utils/tokens';
 import { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } from './emailService';
+import { AppError, errorCodes } from '../utils/errors';
+import { NotificationService } from './notifications';
 
 const SALT_ROUNDS = 10;
 const USERS_COLLECTION = 'users';
+
+export class UserService {
+  private usersRef = db.collection(USERS_COLLECTION);
+  private notificationService = new NotificationService();
+
+  async getUserProfile(userId: string): Promise<UserProfile> {
+    try {
+      const userDoc = await this.usersRef.doc(userId).get();
+      
+      if (!userDoc.exists) {
+        throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
+      }
+
+      const userData = userDoc.data() as User;
+      return {
+        id: userDoc.id,
+        displayName: userData.displayName,
+        email: userData.email,
+        phoneNumber: userData.phoneNumber,
+        avatar: userData.avatar,
+        language: userData.language,
+        createdAt: userData.createdAt,
+        updatedAt: userData.updatedAt
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(500, 'Failed to fetch user profile', errorCodes.DATABASE_ERROR);
+    }
+  }
+
+  async updateProfile(userId: string, updateData: Partial<UserProfile>): Promise<UserProfile> {
+    try {
+      const userRef = this.usersRef.doc(userId);
+      const userDoc = await userRef.get();
+
+      if (!userDoc.exists) {
+        throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
+      }
+
+      const updatedData = {
+        ...updateData,
+        updatedAt: new Date()
+      };
+
+      await userRef.update(updatedData);
+
+      // Notify user about profile update
+      await this.notificationService.sendNotification(userId, {
+        type: 'PROFILE_UPDATE',
+        title: 'Profile Updated',
+        message: 'Your profile has been successfully updated'
+      });
+
+      return {
+        ...(userDoc.data() as User),
+        ...updatedData,
+        id: userId
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(500, 'Failed to update profile', errorCodes.DATABASE_ERROR);
+    }
+  }
+
+  async updateAddress(userId: string, address: UserAddress): Promise<UserAddress> {
+    try {
+      const userRef = this.usersRef.doc(userId);
+      const userDoc = await userRef.get();
+
+      if (!userDoc.exists) {
+        throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
+      }
+
+      await userRef.update({
+        address,
+        updatedAt: new Date()
+      });
+
+      return address;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(500, 'Failed to update address', errorCodes.DATABASE_ERROR);
+    }
+  }
+
+  async updatePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences> {
+    try {
+      const userRef = this.usersRef.doc(userId);
+      const userDoc = await userRef.get();
+
+      if (!userDoc.exists) {
+        throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
+      }
+
+      const userData = userDoc.data() as User;
+      const updatedPreferences = {
+        ...userData.preferences,
+        ...preferences,
+      };
+
+      await userRef.update({
+        preferences: updatedPreferences,
+        updatedAt: new Date()
+      });
+
+      return updatedPreferences;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(500, 'Failed to update preferences', errorCodes.DATABASE_ERROR);
+    }
+  }
+
+  async getUserById(userId: string): Promise<User> {
+    try {
+      const userDoc = await this.usersRef.doc(userId).get();
+      
+      if (!userDoc.exists) {
+        throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
+      }
+
+      return {
+        id: userDoc.id,
+        ...(userDoc.data() as User)
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(500, 'Failed to fetch user', errorCodes.DATABASE_ERROR);
+    }
+  }
+
+  async getUsers({ page = 1, limit = 10, search = '' }): Promise<{ users: User[], total: number, page: number, totalPages: number }> {
+    try {
+      let query = this.usersRef;
+
+      if (search) {
+        query = query.where('displayName', '>=', search)
+                    .where('displayName', '<=', search + '\uf8ff');
+      }
+
+      const totalDocs = await query.count().get();
+      const total = totalDocs.data().count;
+      const totalPages = Math.ceil(total / limit);
+
+      const snapshot = await query
+        .orderBy('createdAt', 'desc')
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .get();
+
+      const users = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as User)
+      }));
+
+      return {
+        users,
+        total,
+        page,
+        totalPages
+      };
+    } catch (error) {
+      throw new AppError(500, 'Failed to fetch users', errorCodes.DATABASE_ERROR);
+    }
+  }
+}
 
 export async function createUser(userData: CreateUserInput): Promise<User> {
   try {
@@ -217,6 +384,7 @@ export async function updateUser(uid: string, updates: Partial<User>): Promise<U
     throw error;
   }
 }
+
 export async function deleteUser(uid: string): Promise<void> {
   try {
     const userRef = db.collection(USERS_COLLECTION)

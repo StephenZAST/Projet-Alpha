@@ -5,10 +5,19 @@ export interface RewardRedemption {
   rewardId: string;
   redemptionDate: Date;
   status: RewardStatus;
+  verificationCode: string;
+  shippingAddress?: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    phoneNumber: string;
+  };
   claimedDate?: Date;
   claimedByAdminId?: string;
-  verificationCode: string;
   notes?: string;
+  updatedAt?: Date;
 }
 
 export interface LoyaltyAccount {
@@ -38,54 +47,61 @@ function calculateLoyaltyTier(points: number): LoyaltyTier {
   throw new Error("Points exceed defined tiers");
 }
 
-export interface Reward {
-  pointsCost: number;
+export interface PointsTransaction {
   id: string;
-  clientId: string;
-  type: RewardType;
-  value: number;                // Points ou pourcentage de réduction
-  source: 'REFERRAL' | 'PURCHASE' | 'PROMOTION';
-  description: string;
-  expiresAt?: Timestamp;
-  status: 'ACTIVE' | 'USED' | 'EXPIRED';
-  createdAt: Timestamp;
-  usedAt?: Timestamp;
-}
-
-export enum RewardType {
-  POINTS = 'POINTS',
-  DISCOUNT = 'DISCOUNT',
-  GIFT = 'GIFT'
-}
-
-// Add new status for rewards
-export enum RewardStatus {
-  AVAILABLE = 'available',
-  REDEEMED = 'redeemed',
-  CLAIMED = 'claimed',
-  EXPIRED = 'expired'
-}
-
-import { Timestamp } from 'firebase-admin/firestore';
-
-export enum LoyaltyTransactionType {
-  EARNED = 'EARNED',
-  REDEEMED = 'REDEEMED',
-  EXPIRED = 'EXPIRED',
-  BONUS = 'BONUS',
-  ADJUSTED = "ADJUSTED"
-}
-
-export interface LoyaltyTransaction {
-  id?: string;
   userId: string;
-  type: LoyaltyTransactionType;
-  points: number;
-  orderId?: string;
-  rewardId?: string;
+  amount: number;
+  type: 'EARNED' | 'REDEEMED' | 'EXPIRED' | 'ADJUSTED';
+  source: 'PURCHASE' | 'REFERRAL' | 'PROMOTION' | 'MANUAL' | 'SYSTEM';
   description: string;
-  createdAt: Timestamp;
-  expiresAt?: Timestamp;
+  metadata?: {
+    orderId?: string;
+    promotionId?: string;
+    referralId?: string;
+    adminId?: string;
+  };
+  timestamp: Date;
+}
+
+export interface LoyaltyTierConfig {
+  id: string;
+  name: string;
+  description: string;
+  pointsThreshold: number;
+  benefits: TierBenefit[];
+  icon?: string;
+  color?: string;
+  status: 'active' | 'inactive';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TierBenefit {
+  type: 'discount' | 'freeShipping' | 'pointsMultiplier' | 'exclusiveAccess';
+  value: number | boolean;
+  description: string;
+}
+
+export interface Reward {
+  id: string;
+  name: string;
+  description: string;
+  type: 'physical' | 'digital' | 'discount';
+  category: string;
+  pointsCost: number;
+  quantity: number;
+  startDate: Date;
+  endDate?: Date;
+  tier?: LoyaltyTier;
+  metadata: {
+    discountPercentage?: number;
+    digitalCode?: string;
+    shippingWeight?: number;
+  };
+  isActive: boolean;
+  redemptionCount: number;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface LoyaltyReward {
@@ -134,4 +150,40 @@ export interface LoyaltyTierDefinition {
     pointsMultiplier: number;
     additionalPerks: string[];
   };
+}
+
+import { Timestamp } from 'firebase-admin/firestore';
+
+export enum RewardType {
+  POINTS = 'POINTS',
+  DISCOUNT = 'DISCOUNT',
+  GIFT = 'GIFT'
+}
+
+// Add new status for rewards
+export enum RewardStatus {
+  AVAILABLE = 'available',
+  REDEEMED = 'redeemed',
+  CLAIMED = 'claimed',
+  EXPIRED = 'expired'
+}
+
+export enum LoyaltyTransactionType {
+  EARNED = 'EARNED',
+  REDEEMED = 'REDEEMED',
+  EXPIRED = 'EXPIRED',
+  BONUS = 'BONUS',
+  ADJUSTED = "ADJUSTED"
+}
+
+export interface LoyaltyTransaction {
+  id?: string;
+  userId: string;
+  type: LoyaltyTransactionType;
+  points: number;
+  orderId?: string;
+  rewardId?: string;
+  description: string;
+  createdAt: Timestamp;
+  expiresAt?: Timestamp;
 }

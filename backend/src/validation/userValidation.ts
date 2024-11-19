@@ -67,3 +67,72 @@ export const emailVerificationSchema = Joi.object({
     'any.required': 'Le token de vérification est requis'
   })
 });
+
+export const updateProfileSchema = Joi.object({
+  displayName: Joi.string().min(2).messages({
+    'string.min': 'Le nom doit contenir au moins 2 caractères'
+  }),
+  phoneNumber: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).messages({
+    'string.pattern.base': 'Le numéro de téléphone n\'est pas valide'
+  }),
+  email: Joi.string().email().messages({
+    'string.email': 'Veuillez fournir une adresse email valide'
+  }),
+  avatar: Joi.string().uri().messages({
+    'string.uri': 'L\'URL de l\'avatar n\'est pas valide'
+  }),
+  language: Joi.string().valid('fr', 'en').messages({
+    'any.only': 'La langue doit être "fr" ou "en"'
+  })
+}).min(1).messages({
+  'object.min': 'Au moins un champ doit être fourni pour la mise à jour'
+});
+
+export const updateAddressSchema = Joi.object({
+  street: Joi.string().required().messages({
+    'any.required': 'La rue est requise'
+  }),
+  city: Joi.string().required().messages({
+    'any.required': 'La ville est requise'
+  }),
+  postalCode: Joi.string().required().messages({
+    'any.required': 'Le code postal est requis'
+  }),
+  country: Joi.string().required().messages({
+    'any.required': 'Le pays est requis'
+  }),
+  quartier: Joi.string().required().messages({
+    'any.required': 'Le quartier est requis'
+  }),
+  location: Joi.object({
+    latitude: Joi.number().required().messages({
+      'any.required': 'La latitude est requise'
+    }),
+    longitude: Joi.number().required().messages({
+      'any.required': 'La longitude est requise'
+    }),
+    zoneId: Joi.string().required().messages({
+      'any.required': 'L\'ID de la zone est requis'
+    })
+  }).required(),
+  additionalInfo: Joi.string()
+});
+
+export const updatePreferencesSchema = Joi.object({
+  notifications: Joi.object({
+    email: Joi.boolean(),
+    push: Joi.boolean(),
+    sms: Joi.boolean()
+  }),
+  orderPreferences: Joi.object({
+    defaultPaymentMethod: Joi.string().valid('cash', 'card', 'mobile_money'),
+    defaultPickupTime: Joi.string(),
+    defaultDeliveryTime: Joi.string()
+  }),
+  marketingPreferences: Joi.object({
+    receivePromotions: Joi.boolean(),
+    receiveNewsletter: Joi.boolean()
+  })
+}).min(1).messages({
+  'object.min': 'Au moins une préférence doit être fournie pour la mise à jour'
+});
