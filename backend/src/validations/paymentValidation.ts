@@ -1,38 +1,38 @@
-import { z } from 'zod';
+import Joi from 'joi';
 
-const paymentMethodSchema = z.object({
-  type: z.enum(['CARD', 'BANK_ACCOUNT']),
-  token: z.string(),
-  isDefault: z.boolean().optional(),
+const paymentMethodSchema = Joi.object({
+  type: Joi.string().valid('CARD', 'BANK_ACCOUNT').required(),
+  token: Joi.string().required(),
+  isDefault: Joi.boolean().optional(),
 });
 
-const processPaymentSchema = z.object({
-  orderId: z.string(),
-  amount: z.number().positive(),
-  currency: z.enum(['USD', 'EUR', 'GBP']),
-  paymentMethodId: z.string(),
-  description: z.string().optional(),
+const processPaymentSchema = Joi.object({
+  orderId: Joi.string().required(),
+  amount: Joi.number().positive().required(),
+  currency: Joi.string().valid('USD', 'EUR', 'GBP').required(),
+  paymentMethodId: Joi.string().required(),
+  description: Joi.string().optional(),
 });
 
-const refundSchema = z.object({
-  paymentId: z.string(),
-  amount: z.number().positive().optional(),
-  reason: z.enum(['REQUESTED_BY_CUSTOMER', 'DUPLICATE', 'FRAUDULENT']).optional(),
+const refundSchema = Joi.object({
+  paymentId: Joi.string().required(),
+  amount: Joi.number().positive().optional(),
+  reason: Joi.string().valid('REQUESTED_BY_CUSTOMER', 'DUPLICATE', 'FRAUDULENT').optional(),
 });
 
-const paymentHistoryQuerySchema = z.object({
-  page: z.number().int().positive().optional().default(1),
-  limit: z.number().int().positive().max(100).optional().default(10),
-  status: z.enum(['SUCCEEDED', 'PENDING', 'FAILED']).optional(),
+const paymentHistoryQuerySchema = Joi.object({
+  page: Joi.number().integer().positive().optional().default(1),
+  limit: Joi.number().integer().positive().max(100).optional().default(10),
+  status: Joi.string().valid('SUCCEEDED', 'PENDING', 'FAILED').optional(),
 });
 
 export const paymentValidation = {
   addPaymentMethod: paymentMethodSchema,
-  removePaymentMethod: z.object({
-    id: z.string(),
+  removePaymentMethod: Joi.object({
+    id: Joi.string().required(),
   }),
-  setDefaultPaymentMethod: z.object({
-    id: z.string(),
+  setDefaultPaymentMethod: Joi.object({
+    id: Joi.string().required(),
   }),
   processPayment: processPaymentSchema,
   processRefund: refundSchema,

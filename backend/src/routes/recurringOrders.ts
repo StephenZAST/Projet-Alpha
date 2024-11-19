@@ -52,7 +52,7 @@ const router = express.Router();
 router.post(
   '/',
   authenticateUser,
-  validateRequest(recurringOrderValidation.create),
+  validateRequest(recurringOrderValidation.create as any),
   recurringOrderController.createRecurringOrder
 );
 
@@ -99,11 +99,10 @@ router.post(
 router.put(
   '/:id',
   authenticateUser,
-  validateRequest(recurringOrderValidation.params),
-  validateRequest(recurringOrderValidation.update),
+  validateRequest(recurringOrderValidation.params as any),
+  validateRequest(recurringOrderValidation.update as any),
   recurringOrderController.updateRecurringOrder
 );
-
 /**
  * @swagger
  * /api/recurring-orders/{id}/cancel:
@@ -131,10 +130,9 @@ router.put(
 router.post(
   '/:id/cancel',
   authenticateUser,
-  validateRequest(recurringOrderValidation.params),
+  validateRequest(recurringOrderValidation.params as any),
   recurringOrderController.cancelRecurringOrder
 );
-
 /**
  * @swagger
  * /api/recurring-orders:
