@@ -1,12 +1,7 @@
 import Joi from 'joi';
-import { OrderStatus, OrderType, MainService, AdditionalService, PriceType, PaymentMethod, ServiceType } from '../models/order';
+import { OrderStatus, OrderType, MainService, AdditionalService, PriceType, PaymentMethod } from '../models/order';
+import { ServiceType } from '../models/service';
 
-// Define the ServiceType enum
-export enum ServiceType {
-  STANDARD = 'standard',
-  EXPRESS = 'express',
-  // Add any other service types you need
-}
 
 // Schéma pour les articles de la commande
 export const orderItemSchema = Joi.object({

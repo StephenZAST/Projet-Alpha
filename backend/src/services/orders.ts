@@ -6,10 +6,7 @@ import { getUserProfile } from './users';
 import { optimizeRoute, RouteStop } from '../utils/routeOptimization';
 import { validateOrderData } from '../validation/orders';
 import { checkDeliverySlotAvailability } from './delivery';
-import { 
-  Query, 
-  CollectionReference
-} from 'firebase-admin/firestore';
+import { Query, CollectionReference } from 'firebase-admin/firestore';
 import { Address } from '../models/user';
 import { db } from './firebase'; // Import db
 
