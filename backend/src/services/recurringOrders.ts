@@ -3,6 +3,7 @@ import { RecurringOrder, RecurringFrequency } from '../types/recurring';
 import { OrderService } from './orders';
 import { NotificationService } from './notifications';
 import { addDays, addWeeks, addMonths } from 'date-fns';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export class RecurringOrderService {
   private recurringOrdersRef = db.collection('recurringOrders');
@@ -11,7 +12,7 @@ export class RecurringOrderService {
 
   async createRecurringOrder(userId: string, orderData: Partial<RecurringOrder>): Promise<RecurringOrder> {
     const now = new Date();
-    
+
     const recurringOrder: RecurringOrder = {
       id: '', // Will be set after creation
       userId,
@@ -32,13 +33,20 @@ export class RecurringOrderService {
       ...recurringOrder.baseOrder,
       userId,
       recurringOrderId: recurringOrder.id,
-      scheduledDate: now
+      scheduledPickupTime: Timestamp.fromDate(now),
+      scheduledDeliveryTime: Timestamp.fromDate(new Date(now.getTime() + 24 * 60 * 60 * 1000)), // Next day delivery
+      items: recurringOrder.baseOrder.items.map(item => ({
+        ...item,
+        productId: item.id || '', // Provide a default value if id is missing
+        productName: item.name || '' // Provide a default value if name is missing
+      }))
     });
 
     // Update the recurring order with the first order reference
     await docRef.update({
       lastOrderId: firstOrder.id,
-      lastProcessedDate: now
+      lastProcessedDate: now,
+      updatedAt: now
     });
 
     recurringOrder.lastOrderId = firstOrder.id;
@@ -119,7 +127,13 @@ export class RecurringOrderService {
           ...recurringOrder.baseOrder,
           userId: recurringOrder.userId,
           recurringOrderId: recurringOrder.id,
-          scheduledDate: now
+          scheduledPickupTime: Timestamp.fromDate(now),
+          scheduledDeliveryTime: Timestamp.fromDate(new Date(now.getTime() + 24 * 60 * 60 * 1000)), // Next day delivery
+          items: recurringOrder.baseOrder.items.map(item => ({
+            ...item,
+            productId: item.id || '', // Provide a default value if id is missing
+            productName: item.name || '' // Provide a default value if name is missing
+          }))
         });
 
         // Calculate next scheduled date

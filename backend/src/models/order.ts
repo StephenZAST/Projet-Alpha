@@ -58,9 +58,6 @@ export interface OrderItem {
   id?: string;
   itemType: string;
   quantity: number;
-  mainService: MainService;
-  additionalServices?: AdditionalService[];
-  notes?: string;
   price: number;
   priceType: PriceType;
   weight?: number;

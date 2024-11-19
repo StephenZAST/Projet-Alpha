@@ -1,5 +1,5 @@
 import { db } from '../config/firebase';
-import { PaymentMethod, Payment, PaymentStatus, RefundReason } from '../types/payment';
+import { PaymentMethod, Payment, PaymentStatus, RefundReason, Currency, PaymentMethodType } from '../types/payment';
 
 export class PaymentService {
   private paymentMethodsRef = db.collection('paymentMethods');
@@ -18,14 +18,14 @@ export class PaymentService {
   }
 
   async addPaymentMethod(userId: string, data: {
-    type: string;
+    type: PaymentMethodType;
     token: string;
     isDefault?: boolean;
   }): Promise<PaymentMethod> {
     // Here you would typically interact with a payment processor (e.g., Stripe)
     // to create a payment method and get back a token/ID
 
-    const paymentMethodData = {
+    const paymentMethodData: Omit<PaymentMethod, 'id'> = {
       userId,
       type: data.type,
       token: data.token,
@@ -44,7 +44,6 @@ export class PaymentService {
       ...paymentMethodData,
     };
   }
-
   private async updateOtherPaymentMethodsDefault(userId: string, excludeId: string) {
     const batch = db.batch();
     const snapshot = await this.paymentMethodsRef
@@ -96,21 +95,21 @@ export class PaymentService {
     userId: string;
     orderId: string;
     amount: number;
-    currency: string;
+    currency: Currency;
     paymentMethodId: string;
     description?: string;
   }): Promise<Payment> {
     // Here you would typically interact with a payment processor (e.g., Stripe)
     // to process the actual payment
 
-    const paymentData = {
+    const paymentData: Omit<Payment, 'id'> = {
       userId: data.userId,
       orderId: data.orderId,
       amount: data.amount,
       currency: data.currency,
       paymentMethodId: data.paymentMethodId,
       description: data.description,
-      status: 'SUCCEEDED' as PaymentStatus,
+      status: 'SUCCEEDED',
       createdAt: new Date(),
     };
 
@@ -121,7 +120,6 @@ export class PaymentService {
       ...paymentData,
     };
   }
-
   async getPaymentHistory(userId: string, options: {
     page: number;
     limit: number;
