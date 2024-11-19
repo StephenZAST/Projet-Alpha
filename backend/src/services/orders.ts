@@ -1,6 +1,6 @@
 import { Timestamp, GeoPoint } from 'firebase-admin/firestore';
 import { db } from './firebase';
-import { Order, OrderStatus, OrderType, Location, OrderItem, MainService, PriceType } from '../models/order';
+import { Order, OrderStatus, OrderType, Location, OrderItem, MainService, PriceType, ItemType } from '../models/order';
 import { AppError, errorCodes } from '../utils/errors';
 import { getUserProfile } from './users';
 import { optimizeRoute, RouteStop } from '../utils/routeOptimization';
@@ -8,6 +8,19 @@ import { validateOrderData } from '../validation/orders';
 import { checkDeliverySlotAvailability } from './delivery';
 import { Query, CollectionReference } from 'firebase-admin/firestore';
 import { Address } from '../models/user';
+
+interface OrderStatistics {
+  total: number;
+  byStatus: Record<OrderStatus, number>;
+  averageDeliveryTime: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  period: {
+    start: Timestamp;
+    end: Timestamp;
+  };
+}
+
 
 export class OrderService {
   private ordersRef: CollectionReference;
@@ -95,7 +108,7 @@ export class OrderService {
         items: (userProfile.defaultItems || []).map(item => ({
           id: item.id,
           quantity: item.quantity,
-          itemType: 'default', // Provide a default value or handle this based on your logic
+          itemType: ItemType.PRODUCT, // Use ItemType enum
           mainService: MainService.PRESSING, // Provide a default MainService value
           price: 0, // Provide a default value or handle this based on your logic
           priceType: PriceType.FIXED // Provide a default PriceType value

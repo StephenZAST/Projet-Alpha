@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '../config/firebase';
+import { auth as firebaseAuth } from '../config/firebase'; // Rename imported auth to firebaseAuth
 import { User, UserRole } from '../models/user';
 
 declare global {
@@ -23,7 +23,7 @@ export const isAuthenticated = async (
     }
 
     const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await auth.verifyIdToken(token);
+    const decodedToken = await firebaseAuth.verifyIdToken(token); // Use firebaseAuth here
     
     if (!decodedToken) {
       return res.status(401).json({ error: 'Invalid token' });
@@ -48,6 +48,7 @@ export const isAuthenticated = async (
 };
 
 export const authenticateUser = isAuthenticated;
+export const authMiddleware = isAuthenticated; // Rename to authMiddleware
 
 export const requireRole = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {

@@ -143,12 +143,15 @@ export const errorCodes = {
 } as const;
 
 export class AppError extends Error {
+  public errorCode: keyof typeof errorCodes; // Add errorCode property
+
   constructor(
     public statusCode: number,
     message: string,
-    public code: keyof typeof errorCodes
+    code: keyof typeof errorCodes
   ) {
     super(message);
     this.name = 'AppError';
+    this.errorCode = code; // Assign errorCode
   }
 }
