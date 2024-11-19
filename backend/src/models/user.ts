@@ -142,4 +142,5 @@ export type CreateUserInput = Omit<User, 'id' | 'createdAt' | 'updatedAt'> & {
   id?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  password: string;
 };

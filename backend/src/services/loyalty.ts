@@ -63,7 +63,7 @@ export class LoyaltyService {
           lifetimePoints: updatedAccount.lifetimePoints,
           tier: updatedAccount.tier,
           lastUpdated: updatedAccount.lastUpdated
-        });
+        }); // Pass individual field updates
       }
     });
 
@@ -107,16 +107,19 @@ export class LoyaltyService {
           userId,
           rewardId,
           redemptionDate: new Date(),
-          status: reward.type === RewardType.GIFT ? RewardStatus.REDEEMED : RewardStatus.CLAIMED,
+          status: reward.type === 'physical' ? RewardStatus.REDEEMED : RewardStatus.CLAIMED,
           verificationCode,
-          shippingAddress
+          shippingAddress: {
+            ...shippingAddress,
+            phoneNumber: shippingAddress.phoneNumber || '' // Provide a default value for phoneNumber
+          }
         };
 
         // Update points balance
         transaction.update(accountRef, {
           points: account.points - reward.pointsCost,
           lastUpdated: new Date()
-        });
+        }); // Pass individual field updates
 
         // Save redemption record
         transaction.set(redemptionRef, redemption);
@@ -153,7 +156,7 @@ export class LoyaltyService {
           claimedDate: new Date(),
           claimedByAdminId: adminId,
           notes
-        });
+        }); // Pass individual field updates
       });
 
       return true;
@@ -184,7 +187,6 @@ export class LoyaltyService {
       .get();
 
     return rewardsSnapshot.docs.map(doc => ({
-      id: doc.id,
       ...doc.data()
     } as Reward));
   }
@@ -229,7 +231,6 @@ export class LoyaltyService {
     await rewardRef.set(reward);
 
     return {
-      id: rewardRef.id,
       ...reward
     };
   }
@@ -245,14 +246,20 @@ export class LoyaltyService {
       throw new AppError('Tier not found', 404);
     }
 
-    const updatedTier = {
+    const { pointsThreshold, name, benefits } = tierData;
+
+    await tierRef.update({
+      pointsThreshold,
+      name,
+      benefits,
+      updatedAt: new Date()
+    }, tierRef); // Move tierRef to the end
+
+    return {
       ...doc.data(),
       ...tierData,
       updatedAt: new Date()
     } as LoyaltyTierConfig;
-
-    await tierRef.update(updatedTier);
-    return updatedTier;
   }
 
   async getLoyaltyTiers(): Promise<LoyaltyTierConfig[]> {
@@ -321,19 +328,27 @@ export class LoyaltyService {
       throw new AppError('Redemption not found', 404);
     }
 
-    const updatedRedemption = {
-      ...doc.data(),
+    const { userId, rewardId, redemptionDate, verificationCode, shippingAddress } = doc.data() as RewardRedemption;
+
+    await redemptionRef.update({
       status,
       notes,
       updatedAt: new Date()
-    } as RewardRedemption;
-
-    await redemptionRef.update(updatedRedemption);
+    }, redemptionRef); // Move redemptionRef to the end
 
     // Notify user about redemption status change
-    const userId = updatedRedemption.userId;
     await this.notificationService.sendRedemptionStatusUpdate(userId, status);
 
-    return updatedRedemption;
+    return {
+      id: redemptionId,
+      userId,
+      rewardId,
+      redemptionDate,
+      status,
+      verificationCode,
+      shippingAddress,
+      notes,
+      updatedAt: new Date()
+    };
   }
 }

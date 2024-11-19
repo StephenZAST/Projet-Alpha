@@ -1,8 +1,12 @@
 import { db } from './firebase';
 import { Notification, NotificationType } from '../models/notification';
 import * as admin from 'firebase-admin';
+import { RewardStatus } from '../models/loyalty';
 
 export class NotificationService {
+  sendRedemptionStatusUpdate(userId: string, status: RewardStatus) {
+    throw new Error('Method not implemented.');
+  }
   sendNotification(userId: string, arg1: { type: string; title: string; message: string; data: { orderId: any; recurringOrderId: string; }; }) {
     throw new Error('Method not implemented.');
   }
