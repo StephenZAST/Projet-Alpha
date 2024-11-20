@@ -7,7 +7,7 @@ import { optimizeRoute, RouteStop } from '../utils/routeOptimization';
 import { validateOrderData } from '../validation/orders';
 import { checkDeliverySlotAvailability } from './delivery';
 import { Query, CollectionReference } from 'firebase-admin/firestore';
-import { Address } from '../models/user';
+import { Address, User } from '../models/user';
 import { db } from './firebase'; // Import db
 
 interface OrderStatistics {
@@ -96,12 +96,12 @@ export class OrderService {
     zoneId: string
   ): Promise<Order> {
     try {
-      const userProfile = await getUserProfile(userId);
-      if (!userProfile || !userProfile.defaultAddress) {
+      const userProfile = await getUserProfile(userId) as User;
+      if (!userProfile || !userProfile.profile.address) {
         throw new AppError(404, 'User profile or default address not found', errorCodes.INVALID_USER_PROFILE);
       }
 
-      const defaultAddress = userProfile.defaultAddress as Address;
+      const defaultAddress = userProfile.profile.address as Address;
       if (!defaultAddress.coordinates) {
         throw new AppError(400, 'Default address coordinates not found', errorCodes.INVALID_ADDRESS_DATA);
       }
@@ -141,41 +141,41 @@ export class OrderService {
     options: GetOrdersOptions = {}
   ): Promise<Order[]> {
     try {
-      let queryBuilder = this.ordersRef;
+      let queryBuilder: Query = this.ordersRef;
 
       // Chain the where clauses
       if (options.status) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('status', '==', options.status));
+        queryBuilder = queryBuilder.where('status', '==', options.status);
       }
       if (options.userId) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('userId', '==', options.userId));
+        queryBuilder = queryBuilder.where('userId', '==', options.userId);
       }
       if (options.startDate) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('creationDate', '>=', options.startDate));
+        queryBuilder = queryBuilder.where('creationDate', '>=', options.startDate);
       }
       if (options.endDate) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('creationDate', '<=', options.endDate));
+        queryBuilder = queryBuilder.where('creationDate', '<=', options.endDate);
       }
 
       // Apply ordering
       if (options.sortBy) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.orderBy(options.sortBy, options.sortOrder || 'desc'));
+        queryBuilder = queryBuilder.orderBy(options.sortBy, options.sortOrder || 'desc');
       }
 
       // Apply startAfter if provided
       if (options.startAfter) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.startAfter(options.startAfter));
+        queryBuilder = queryBuilder.startAfter(options.startAfter);
       }
 
       // Apply limit if provided
       if (options.limit) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.limit(options.limit));
+        queryBuilder = queryBuilder.limit(options.limit);
       }
 
       // Apply pagination offset
       if (options.page && options.limit) {
         const offsetValue = (options.page - 1) * options.limit;
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.offset(offsetValue));
+        queryBuilder = queryBuilder.offset(offsetValue);
       }
 
       const ordersSnapshot = await queryBuilder.get();
@@ -191,16 +191,16 @@ export class OrderService {
     status?: OrderStatus[]
   ): Promise<Order[]> {
     try {
-      let queryBuilder = this.ordersRef;
+      let queryBuilder: Query = this.ordersRef;
 
       // Chain the where clauses
-      queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('zoneId', '==', zoneId));
+      queryBuilder = queryBuilder.where('zoneId', '==', zoneId);
       if (status && status.length > 0) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('status', 'in', status));
+        queryBuilder = queryBuilder.where('status', 'in', status);
       }
 
       // Apply ordering
-      queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.orderBy('creationDate', 'desc'));
+      queryBuilder = queryBuilder.orderBy('creationDate', 'desc');
 
       const ordersSnapshot = await queryBuilder.get();
       return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
@@ -414,36 +414,36 @@ export class OrderService {
 
   async getAllOrders(options: GetOrdersOptions = {}): Promise<Order[]> {
     try {
-      let queryBuilder = this.ordersRef;
+      let queryBuilder: Query = this.ordersRef;
 
       // Chain the where clauses
       if (options.status) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('status', '==', options.status));
+        queryBuilder = queryBuilder.where('status', '==', options.status);
       }
       if (options.userId) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('userId', '==', options.userId));
+        queryBuilder = queryBuilder.where('userId', '==', options.userId);
       }
       if (options.startDate) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('creationDate', '>=', options.startDate));
+        queryBuilder = queryBuilder.where('creationDate', '>=', options.startDate);
       }
       if (options.endDate) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.where('creationDate', '<=', options.endDate));
+        queryBuilder = queryBuilder.where('creationDate', '<=', options.endDate);
       }
 
       // Apply ordering
       if (options.sortBy) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.orderBy(options.sortBy, options.sortOrder || 'desc'));
+        queryBuilder = queryBuilder.orderBy(options.sortBy, options.sortOrder || 'desc');
       }
 
       // Apply limit if provided
       if (options.limit) {
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.limit(options.limit));
+        queryBuilder = queryBuilder.limit(options.limit);
       }
 
       // Apply pagination offset
       if (options.page && options.limit) {
         const offsetValue = (options.page - 1) * options.limit;
-        queryBuilder = admin.firestore.query(queryBuilder, admin.firestore.offset(offsetValue));
+        queryBuilder = queryBuilder.offset(offsetValue);
       }
 
       const ordersSnapshot = await queryBuilder.get();
