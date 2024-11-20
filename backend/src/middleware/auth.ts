@@ -6,7 +6,6 @@ declare global {
   namespace Express {
     interface Request {
       user?: User;
-      token?: string;
     }
   }
 }
@@ -95,6 +94,3 @@ export const validateOneClickOrder = (req: Request, res: Response, next: NextFun
   if (!req.user) {
     return res.status(401).json({ error: 'Authentication required for one-click orders.' });
   }
-
-  next();
-};
