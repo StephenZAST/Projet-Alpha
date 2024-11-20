@@ -85,14 +85,14 @@ export class LoyaltyService {
         const accountDoc = await transaction.get(accountRef);
 
         if (!rewardDoc.exists || !accountDoc.exists) {
-          throw new AppError('Reward or account not found', errorCodes.NOT_FOUND, 404);
+          throw new AppError(404, 'Reward or account not found', errorCodes.NOT_FOUND);
         }
 
         const reward = rewardDoc.data() as Reward;
         const account = accountDoc.data() as LoyaltyAccount;
 
         if (account.points < reward.pointsCost) {
-          throw new AppError('Insufficient points', errorCodes.INSUFFICIENT_POINTS, 400);
+          throw new AppError(400, 'Insufficient points', errorCodes.INSUFFICIENT_POINTS);
         }
 
         // Generate unique verification code
@@ -143,12 +143,12 @@ export class LoyaltyService {
       await db.runTransaction(async (transaction) => {
         const doc = await transaction.get(redemptionRef);
         if (!doc.exists) {
-          throw new AppError('Redemption not found', errorCodes.NOT_FOUND, 404);
+          throw new AppError(404, 'Redemption not found', errorCodes.NOT_FOUND);
         }
 
         const redemption = doc.data() as RewardRedemption;
         if (redemption.status !== RewardStatus.REDEEMED) {
-          throw new AppError('Reward already claimed or expired', errorCodes.BAD_REQUEST, 400);
+          throw new AppError(400, 'Reward already claimed or expired', errorCodes.VALIDATION_ERROR);
         }
 
         transaction.update(redemptionRef, {
@@ -243,7 +243,7 @@ export class LoyaltyService {
     const doc = await tierRef.get();
 
     if (!doc.exists) {
-      throw new AppError('Tier not found', errorCodes.NOT_FOUND, 404);
+      throw new AppError(404, 'Tier not found', errorCodes.NOT_FOUND);
     }
 
     const { pointsThreshold, name, benefits } = tierData;
@@ -325,7 +325,7 @@ export class LoyaltyService {
     const doc = await redemptionRef.get();
 
     if (!doc.exists) {
-      throw new AppError('Redemption not found', errorCodes.NOT_FOUND, 404);
+      throw new AppError(404, 'Redemption not found', errorCodes.NOT_FOUND);
     }
 
     const { userId, rewardId, redemptionDate, verificationCode, shippingAddress } = doc.data() as RewardRedemption;
