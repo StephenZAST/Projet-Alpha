@@ -114,6 +114,8 @@ export interface UserProfile {
 }
 
 export interface User {
+  lastName: any;
+  firstName: any;
   id: string;
   uid: string; // Firebase Auth UID
   profile: UserProfile;
