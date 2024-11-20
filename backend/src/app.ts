@@ -14,6 +14,7 @@ import orderRoutes from './routes/orders';
 import zoneRoutes from './routes/zones';
 import billingRoutes from './routes/billing';
 import authRoutes from './routes/authRoutes';
+import websocketRoutes from './routes/websocket';
 
 const app = express();
 const jobScheduler = new JobScheduler();
@@ -41,6 +42,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/zones', zoneRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/websocket', websocketRoutes);
 
 // Route de base pour vérifier que le serveur fonctionne
 app.get('/', (req, res) => {
@@ -49,13 +51,19 @@ app.get('/', (req, res) => {
 
 // Gestion des erreurs 404
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route non trouvée' });
+  res.status(404).json({ 
+    message: 'Route non trouvée', 
+    status: 404 
+  });
 });
 
-// Gestion globale des erreurs
+// Gestion des erreurs globales
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Erreur interne du serveur' });
+  logger.error(err.stack);
+  res.status(500).json({ 
+    message: 'Erreur interne du serveur', 
+    status: 500 
+  });
 });
 
 // Start the server

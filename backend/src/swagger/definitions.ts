@@ -87,6 +87,46 @@ const swaggerDefinition = {
           code: { type: 'string' },
           message: { type: 'string' }
         }
+      },
+      WebSocketEvent: {
+        type: 'object',
+        properties: {
+          event: {
+            type: 'string',
+            description: 'WebSocket event name',
+            enum: [
+              'delivery:track', 
+              'delivery:status', 
+              'order:status', 
+              'order:update'
+            ]
+          },
+          data: {
+            type: 'object',
+            description: 'Event payload data'
+          }
+        }
+      }
+    }
+  },
+  paths: {
+    '/socket.io': {
+      get: {
+        summary: 'WebSocket Connection',
+        description: 'Establish a real-time WebSocket connection',
+        tags: ['WebSocket'],
+        responses: {
+          '101': {
+            description: 'WebSocket connection established',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/WebSocketEvent'
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
