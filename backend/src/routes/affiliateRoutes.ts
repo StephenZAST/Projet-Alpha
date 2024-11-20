@@ -1,6 +1,6 @@
 import express from 'express';
 import { AffiliateController } from '../controllers/affiliateController';
-import { authenticateUser, requireAdminRole, requireSecretaire } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole, auth } from '../middleware/auth';
 
 const router = express.Router();
 const affiliateController = new AffiliateController();
@@ -73,7 +73,7 @@ router.post('/register', affiliateController.register);
 router.post('/login', affiliateController.login);
 
 // Routes protégées pour les affiliés
-router.use(authenticateUser);
+router.use(isAuthenticated);
 
 /**
  * @swagger
@@ -193,7 +193,7 @@ router.post('/withdrawal/request', affiliateController.requestWithdrawal);
 router.get('/withdrawals', affiliateController.getWithdrawalHistory);
 
 // Routes admin/secrétaire
-router.use(requireSecretaire);
+router.use(auth);
 
 /**
  * @swagger

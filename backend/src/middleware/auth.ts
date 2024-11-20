@@ -58,6 +58,16 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     res.status(401).send({ error: 'Not authorized' });
   }
 };
+
+export const isAuthenticated = auth;
+export const requireAdminRole = (req: Request, res: Response, next: NextFunction) => {
+  if (req.user && req.user.role === UserRole.SUPER_ADMIN) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Forbidden - Admin role required' });
+  }
+};
+
 enum UserStatus {
   PENDING = 'PENDING',
   ACTIVE = 'ACTIVE',

@@ -1,6 +1,6 @@
 import express from 'express';
 import { AdminController } from '../controllers/adminController';
-import { authenticateUser, requireRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { AdminRole } from '../models/admin';
 import { UserRole } from '../models/user';
 
@@ -14,15 +14,15 @@ router.post('/login', adminController.login);
 router.post('/master/create', adminController.createMasterAdmin);
 
 // Protected routes requiring authentication
-router.use(authenticateUser);
+router.use(isAuthenticated);
 
 // Routes for Super Admin Master and Super Admin
-router.use(requireRole([AdminRole.SUPER_ADMIN_MASTER, AdminRole.SUPER_ADMIN] as unknown as UserRole[]));
+router.use(requireAdminRole);
 router.get('/all', adminController.getAllAdmins);
 router.post('/create', adminController.createAdmin);
 
 // Super Admin Master specific routes
-router.use('/super-admin', requireRole([AdminRole.SUPER_ADMIN_MASTER] as unknown as UserRole[]));
+// router.use('/super-admin', requireRole([AdminRole.SUPER_ADMIN_MASTER] as unknown as UserRole[]));
 router.post('/super-admin/create', adminController.createAdmin);
 router.delete('/super-admin/:id', adminController.deleteAdmin);
 router.put('/super-admin/:id', adminController.updateAdmin);
