@@ -10,3 +10,7 @@
 {"level":"info","message":"Server is running on port 3000","timestamp":"2024-11-20T06:05:59.725Z"}
 {"level":"info","message":"Starting scheduled jobs","timestamp":"2024-11-20T06:05:59.728Z"}
 {"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-11-20T06:05:59.732Z"}
+{"level":"info","message":"SIGINT received. Starting graceful shutdown...","timestamp":"2024-11-20T06:10:55.805Z"}
+{"level":"info","message":"Server is running on port 3000","timestamp":"2024-11-20T06:11:08.361Z"}
+{"level":"info","message":"Starting scheduled jobs","timestamp":"2024-11-20T06:11:08.365Z"}
+{"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-11-20T06:11:08.369Z"}
