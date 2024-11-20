@@ -114,6 +114,9 @@ export interface UserProfile {
 }
 
 export interface User {
+  phoneNumber: any;
+  displayName: any;
+  email: any;
   lastName: any;
   firstName: any;
   id: string;

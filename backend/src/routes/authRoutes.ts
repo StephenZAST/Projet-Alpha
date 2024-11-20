@@ -15,7 +15,7 @@ import {
   sendVerificationEmail
 } from '../services/users';
 import { AccountCreationMethod, UserRole } from '../models/user';
-import { isAuthenticated } from '../middleware/auth';
+import { auth } from '../middleware/auth';
 import { hasRole } from '../middleware/rbac';
 
 const router = Router();
@@ -163,7 +163,7 @@ router.post('/register', validateRequest(customerRegistrationSchema), async (req
  */
 router.post(
   '/admin/create-customer',
-  isAuthenticated,
+  auth,
   hasRole([UserRole.SUPER_ADMIN, UserRole.SECRETAIRE]),
   validateRequest(adminCustomerCreationSchema),
   async (req, res, next) => {

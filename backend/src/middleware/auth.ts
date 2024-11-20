@@ -48,6 +48,9 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
       updatedAt: new Date(),
       firstName: decodedToken.name?.split(' ')[0] || '',
       lastName: decodedToken.name?.split(' ')[1] || '',
+      phoneNumber: decodedToken.phone_number || '',
+      displayName: decodedToken.name || '',
+      email: decodedToken.email || '',
     };
 
     next();
@@ -55,7 +58,6 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     res.status(401).send({ error: 'Not authorized' });
   }
 };
-
 enum UserStatus {
   PENDING = 'PENDING',
   ACTIVE = 'ACTIVE',
