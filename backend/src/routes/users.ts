@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateUser, requireSuperAdmin } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
 import { 
   updateProfileSchema,
@@ -24,7 +24,7 @@ const userService = new UserService();
  *       200:
  *         description: User profile retrieved successfully
  */
-router.get('/profile', authenticateUser, async (req, res, next) => {
+router.get('/profile', isAuthenticated, async (req, res, next) => {
   try {
     const profile = await userService.getUserProfile(req.user!.uid);
     res.json(profile);
@@ -49,7 +49,7 @@ router.get('/profile', authenticateUser, async (req, res, next) => {
  *             $ref: '#/components/schemas/UpdateProfileRequest'
  */
 router.put('/profile', 
-  authenticateUser, 
+  isAuthenticated, 
   validateRequest(updateProfileSchema),
   async (req, res, next) => {
     try {
@@ -70,7 +70,7 @@ router.put('/profile',
  *       - bearerAuth: []
  */
 router.put('/address',
-  authenticateUser,
+  isAuthenticated,
   validateRequest(updateAddressSchema),
   async (req, res, next) => {
     try {
@@ -91,7 +91,7 @@ router.put('/address',
  *       - bearerAuth: []
  */
 router.put('/preferences',
-  authenticateUser,
+  isAuthenticated,
   validateRequest(updatePreferencesSchema),
   async (req, res, next) => {
     try {
@@ -112,8 +112,8 @@ router.put('/preferences',
  *       - bearerAuth: []
  */
 router.get('/:id',
-  authenticateUser,
-  requireSuperAdmin,
+  isAuthenticated,
+  requireAdminRole,
   async (req, res, next) => {
     try {
       const user = await userService.getUserById(req.params.id);
@@ -133,8 +133,8 @@ router.get('/:id',
  *       - bearerAuth: []
  */
 router.get('/',
-  authenticateUser,
-  requireSuperAdmin,
+  isAuthenticated,
+  requireAdminRole,
   async (req, res, next) => {
     try {
       const { page = 1, limit = 10, search } = req.query;

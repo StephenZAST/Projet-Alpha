@@ -1,12 +1,11 @@
 import express from 'express';
-import { authenticateUser } from '../middleware/auth';
-import { requireSuperAdmin as requireAdmin } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { AnalyticsService } from '../services/analytics';
 
 const router = express.Router();
 const analyticsService = new AnalyticsService();
 
-router.get('/revenue', authenticateUser, requireAdmin, async (req, res) => {
+router.get('/revenue', isAuthenticated, requireAdminRole, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const metrics = await analyticsService.getRevenueMetrics(
@@ -19,7 +18,7 @@ router.get('/revenue', authenticateUser, requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/customers', authenticateUser, requireAdmin, async (req, res) => {
+router.get('/customers', isAuthenticated, requireAdminRole, async (req, res) => {
   try {
     const metrics = await analyticsService.getCustomerMetrics();
     res.json(metrics);
@@ -28,7 +27,7 @@ router.get('/customers', authenticateUser, requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/affiliates', authenticateUser, requireAdmin, async (req, res) => {
+router.get('/affiliates', isAuthenticated, requireAdminRole, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const metrics = await analyticsService.getAffiliateMetrics(
@@ -42,4 +41,3 @@ router.get('/affiliates', authenticateUser, requireAdmin, async (req, res) => {
 });
 
 export default router;
-

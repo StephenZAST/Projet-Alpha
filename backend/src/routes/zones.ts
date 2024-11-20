@@ -1,14 +1,14 @@
 import express from 'express';
-import { authenticateUser, requireRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { UserRole } from '../models/user';
 
 const router = express.Router();
 
 // Middleware d'authentification pour toutes les routes
-router.use(authenticateUser);
+router.use(isAuthenticated);
 
 // Route pour créer une nouvelle zone
-router.post('/', requireRole([UserRole.SUPER_ADMIN]), async (req, res) => {
+router.post('/', requireAdminRole, async (req, res) => {
   try {
     const { name, coordinates, description } = req.body;
     // Logique pour créer une zone
@@ -20,7 +20,7 @@ router.post('/', requireRole([UserRole.SUPER_ADMIN]), async (req, res) => {
 });
 
 // Route pour obtenir toutes les zones
-router.get('/', requireRole([UserRole.SUPERVISEUR, UserRole.LIVREUR, UserRole.SUPER_ADMIN]), async (req, res) => {
+router.get('/', isAuthenticated, async (req, res) => {
   try {
     // Logique pour récupérer toutes les zones
     res.status(200).json({ zones: [] });
@@ -31,7 +31,7 @@ router.get('/', requireRole([UserRole.SUPERVISEUR, UserRole.LIVREUR, UserRole.SU
 });
 
 // Route pour obtenir une zone spécifique
-router.get('/:zoneId', requireRole([UserRole.SUPERVISEUR, UserRole.LIVREUR, UserRole.SUPER_ADMIN]), async (req, res) => {
+router.get('/:zoneId', isAuthenticated, async (req, res) => {
   try {
     const zoneId = req.params.zoneId;
     // Logique pour récupérer une zone spécifique
@@ -43,7 +43,7 @@ router.get('/:zoneId', requireRole([UserRole.SUPERVISEUR, UserRole.LIVREUR, User
 });
 
 // Route pour mettre à jour une zone
-router.put('/:zoneId', requireRole([UserRole.SUPER_ADMIN]), async (req, res) => {
+router.put('/:zoneId', requireAdminRole, async (req, res) => {
   try {
     const zoneId = req.params.zoneId;
     const updates = req.body;
@@ -56,7 +56,7 @@ router.put('/:zoneId', requireRole([UserRole.SUPER_ADMIN]), async (req, res) => 
 });
 
 // Route pour supprimer une zone
-router.delete('/:zoneId', requireRole([UserRole.SUPER_ADMIN]), async (req, res) => {
+router.delete('/:zoneId', requireAdminRole, async (req, res) => {
   try {
     const zoneId = req.params.zoneId;
     // Logique pour supprimer une zone
@@ -68,7 +68,7 @@ router.delete('/:zoneId', requireRole([UserRole.SUPER_ADMIN]), async (req, res) 
 });
 
 // Route pour assigner un livreur à une zone
-router.post('/:zoneId/assign', requireRole([UserRole.SUPERVISEUR, UserRole.SUPER_ADMIN]), async (req, res) => {
+router.post('/:zoneId/assign', requireAdminRole, async (req, res) => {
   try {
     const zoneId = req.params.zoneId;
     const { deliveryPersonId } = req.body;
@@ -81,7 +81,7 @@ router.post('/:zoneId/assign', requireRole([UserRole.SUPERVISEUR, UserRole.SUPER
 });
 
 // Route pour obtenir les statistiques d'une zone
-router.get('/:zoneId/stats', requireRole([UserRole.SUPERVISEUR, UserRole.SUPER_ADMIN]), async (req, res) => {
+router.get('/:zoneId/stats', requireAdminRole, async (req, res) => {
   try {
     const zoneId = req.params.zoneId;
     const { startDate, endDate } = req.query;

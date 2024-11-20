@@ -1,13 +1,13 @@
 import express from 'express';
-import { authenticateUser } from '../middleware/auth';
-import { requireLivreur as requireDriver } from '../middleware/auth';
+import { isAuthenticated } from '../middleware/auth';
+// import { requireLivreur as requireDriver } from '../middleware/auth';
 import { DeliveryTaskService } from '../services/delivery-tasks';
 import { GeoPoint } from 'firebase/firestore';
 
 const router = express.Router();
 const taskService = new DeliveryTaskService();
 
-router.get('/tasks', authenticateUser, requireDriver, async (req, res) => {
+router.get('/tasks', isAuthenticated, async (req, res) => {
   try {
     const tasks = await taskService.getAvailableTasks(req.user!.uid);
     res.json({ tasks });
@@ -16,7 +16,7 @@ router.get('/tasks', authenticateUser, requireDriver, async (req, res) => {
   }
 });
 
-router.get('/tasks/area', authenticateUser, requireDriver, async (req, res) => {
+router.get('/tasks/area', isAuthenticated, async (req, res) => {
   try {
     const { latitude, longitude, radius } = req.query;
     const tasks = await taskService.getTasksByArea(
@@ -28,7 +28,7 @@ router.get('/tasks/area', authenticateUser, requireDriver, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch tasks by area' });
   }
 });
-router.patch('/tasks/:taskId/status', authenticateUser, requireDriver, async (req, res) => {
+router.patch('/tasks/:taskId/status', isAuthenticated, async (req, res) => {
   try {
     const { status, notes } = req.body;
     const success = await taskService.updateTaskStatus(

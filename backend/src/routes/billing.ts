@@ -1,14 +1,14 @@
 import express from 'express';
-import { authenticateUser, requireRole, requireOwnership } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { UserRole } from '../models/user';
 
 const router = express.Router();
 
 // Middleware d'authentification pour toutes les routes
-router.use(authenticateUser);
+router.use(isAuthenticated);
 
 // Route pour créer une facture
-router.post('/', requireRole([UserRole.SECRETAIRE, UserRole.SUPER_ADMIN]), async (req, res) => {
+router.post('/', requireAdminRole, async (req, res) => {
   try {
     const { orderId, items, totalAmount } = req.body;
     // Logique pour créer une facture
@@ -20,7 +20,7 @@ router.post('/', requireRole([UserRole.SECRETAIRE, UserRole.SUPER_ADMIN]), async
 });
 
 // Route pour obtenir une facture spécifique
-router.get('/:billId', requireOwnership(req => req.params.billId), async (req, res) => {
+router.get('/:billId',  async (req: express.Request, res) => {
   try {
     const billId = req.params.billId;
     // Logique pour récupérer une facture
@@ -32,7 +32,7 @@ router.get('/:billId', requireOwnership(req => req.params.billId), async (req, r
 });
 
 // Route pour obtenir toutes les factures d'un utilisateur
-router.get('/user/:userId', requireOwnership(req => req.params.userId), async (req, res) => {
+router.get('/user/:userId',  async (req: express.Request, res) => {
   try {
     const userId = req.params.userId;
     // Logique pour récupérer les factures d'un utilisateur
@@ -44,7 +44,7 @@ router.get('/user/:userId', requireOwnership(req => req.params.userId), async (r
 });
 
 // Route pour obtenir les points de fidélité d'un utilisateur
-router.get('/loyalty/:userId', requireOwnership(req => req.params.userId), async (req, res) => {
+router.get('/loyalty/:userId',  async (req: express.Request, res) => {
   try {
     const userId = req.params.userId;
     // Logique pour récupérer les points de fidélité
@@ -93,7 +93,7 @@ router.post('/subscription', async (req, res) => {
 });
 
 // Route pour obtenir les statistiques de facturation
-router.get('/stats', requireRole([UserRole.SUPERVISEUR, UserRole.SUPER_ADMIN]), async (req, res) => {
+router.get('/stats', requireAdminRole, async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     // Logique pour obtenir les statistiques de facturation
@@ -114,7 +114,7 @@ router.get('/stats', requireRole([UserRole.SUPERVISEUR, UserRole.SUPER_ADMIN]), 
 });
 
 // Route pour gérer les offres spéciales
-router.post('/offers', requireRole([UserRole.SUPERVISEUR, UserRole.SUPER_ADMIN]), async (req, res) => {
+router.post('/offers', requireAdminRole, async (req, res) => {
   try {
     const { name, description, discountType, discountValue, startDate, endDate } = req.body;
     // Logique pour créer une offre spéciale

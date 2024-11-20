@@ -2,8 +2,8 @@ import express from 'express';
 import { validateRequest } from '../middleware/validateRequest';
 import { recurringOrderValidation } from '../validations/recurringOrderValidation';
 import { recurringOrderController } from '../controllers/recurringOrderController';
-import { authenticateUser } from '../middleware/auth';
-import { isAdmin } from '../middleware/adminAuth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+// import { isAdmin } from '../middleware/adminAuth';
 
 const router = express.Router();
 
@@ -51,7 +51,7 @@ const router = express.Router();
  */
 router.post(
   '/',
-  authenticateUser,
+  isAuthenticated,
   validateRequest(recurringOrderValidation.create as any),
   recurringOrderController.createRecurringOrder
 );
@@ -98,7 +98,7 @@ router.post(
  */
 router.put(
   '/:id',
-  authenticateUser,
+  isAuthenticated,
   validateRequest(recurringOrderValidation.params as any),
   validateRequest(recurringOrderValidation.update as any),
   recurringOrderController.updateRecurringOrder
@@ -129,7 +129,7 @@ router.put(
  */
 router.post(
   '/:id/cancel',
-  authenticateUser,
+  isAuthenticated,
   validateRequest(recurringOrderValidation.params as any),
   recurringOrderController.cancelRecurringOrder
 );
@@ -160,7 +160,7 @@ router.post(
  */
 router.get(
   '/',
-  authenticateUser,
+  isAuthenticated,
   recurringOrderController.getRecurringOrders
 );
 
@@ -182,8 +182,8 @@ router.get(
  */
 router.post(
   '/process',
-  authenticateUser,
-  isAdmin,
+  isAuthenticated,
+  requireAdminRole,
   recurringOrderController.processRecurringOrders
 );
 

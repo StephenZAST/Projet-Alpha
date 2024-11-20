@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateUser } from '../middleware/auth';
+import { isAuthenticated } from '../middleware/auth';
 import { NotificationService } from '../services/notifications';
 
 const router = express.Router();
@@ -45,7 +45,7 @@ const notificationService = new NotificationService();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', authenticateUser, async (req, res) => {
+router.get('/', isAuthenticated, async (req, res) => {
   try {
     const notifications = await notificationService.getUserNotifications(req.user!.uid);
     res.json({ notifications });
@@ -89,7 +89,7 @@ router.get('/', authenticateUser, async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/:notificationId/read', authenticateUser, async (req, res) => {
+router.patch('/:notificationId/read', isAuthenticated, async (req, res) => {
   try {
     const success = await notificationService.markAsRead(
       req.params.notificationId,

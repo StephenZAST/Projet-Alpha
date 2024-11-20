@@ -1,6 +1,5 @@
 import express from 'express';
-import { authenticateUser } from '../middleware/auth';
-import { requireSuperAdmin as requireAdmin } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { createCategory, getCategories, updateCategory, deleteCategory } from '../services/categories';
 
 const router = express.Router();
@@ -14,7 +13,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.post('/', authenticateUser, requireAdmin, async (req, res, next) => {
+router.post('/', isAuthenticated, requireAdminRole, async (req, res, next) => {
   try {
     const category = await createCategory(req.body);
     res.status(201).json(category);
@@ -23,7 +22,7 @@ router.post('/', authenticateUser, requireAdmin, async (req, res, next) => {
   }
 });
 
-router.put('/:id', authenticateUser, requireAdmin, async (req, res, next) => {
+router.put('/:id', isAuthenticated, requireAdminRole, async (req, res, next) => {
   try {
     const categoryId = req.params.id;
     const updatedCategory = await updateCategory(categoryId, req.body);
@@ -36,7 +35,7 @@ router.put('/:id', authenticateUser, requireAdmin, async (req, res, next) => {
   }
 });
 
-router.delete('/:id', authenticateUser, requireAdmin, async (req, res, next) => {
+router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res, next) => {
   try {
     const categoryId = req.params.id;
     await deleteCategory(categoryId);

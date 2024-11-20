@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticateUser, requireSuperAdmin } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
 import { 
   redeemRewardSchema,
@@ -21,7 +21,7 @@ const loyaltyService = new LoyaltyService();
  *     security:
  *       - bearerAuth: []
  */
-router.get('/account', authenticateUser, async (req, res, next) => {
+router.get('/account', isAuthenticated, async (req, res, next) => {
   try {
     const account = await loyaltyService.getLoyaltyAccount(req.user!.uid);
     res.json(account);
@@ -39,7 +39,7 @@ router.get('/account', authenticateUser, async (req, res, next) => {
  *     security:
  *       - bearerAuth: []
  */
-router.get('/points/history', authenticateUser, async (req, res, next) => {
+router.get('/points/history', isAuthenticated, async (req, res, next) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     const history = await loyaltyService.getPointsHistory(
@@ -62,7 +62,7 @@ router.get('/points/history', authenticateUser, async (req, res, next) => {
  *     security:
  *       - bearerAuth: []
  */
-router.get('/rewards', authenticateUser, async (req, res, next) => {
+router.get('/rewards', isAuthenticated, async (req, res, next) => {
   try {
     const { type, category, status } = req.query;
     const rewards = await loyaltyService.getAvailableRewards(req.user!.uid, {
@@ -87,7 +87,7 @@ router.get('/rewards', authenticateUser, async (req, res, next) => {
  */
 router.post(
   '/rewards/:rewardId/redeem',
-  authenticateUser,
+  isAuthenticated,
   validateRequest(redeemRewardSchema),
   async (req, res, next) => {
     try {
@@ -113,7 +113,7 @@ router.post(
  *     security:
  *       - bearerAuth: []
  */
-router.get('/tiers', authenticateUser, async (req, res, next) => {
+router.get('/tiers', isAuthenticated, async (req, res, next) => {
   try {
     const tiers = await loyaltyService.getLoyaltyTiers();
     res.json(tiers);
@@ -133,8 +133,8 @@ router.get('/tiers', authenticateUser, async (req, res, next) => {
  */
 router.post(
   '/admin/rewards',
-  authenticateUser,
-  requireSuperAdmin,
+  isAuthenticated,
+  requireAdminRole,
   validateRequest(createRewardSchema),
   async (req, res, next) => {
     try {
@@ -157,8 +157,8 @@ router.post(
  */
 router.put(
   '/admin/tiers/:tierId',
-  authenticateUser,
-  requireSuperAdmin,
+  isAuthenticated,
+  requireAdminRole,
   validateRequest(updateLoyaltyTierSchema),
   async (req, res, next) => {
     try {
@@ -184,8 +184,8 @@ router.put(
  */
 router.get(
   '/admin/redemptions',
-  authenticateUser,
-  requireSuperAdmin,
+  isAuthenticated,
+  requireAdminRole,
   async (req, res, next) => {
     try {
       const { 
@@ -221,8 +221,8 @@ router.get(
  */
 router.patch(
   '/admin/redemptions/:redemptionId/status',
-  authenticateUser,
-  requireSuperAdmin,
+  isAuthenticated,
+  requireAdminRole,
   async (req, res, next) => {
     try {
       const { status, notes } = req.body;
@@ -239,7 +239,7 @@ router.patch(
 );
 
 // Admin routes for physical rewards
-router.get('/admin/pending-rewards', authenticateUser, requireSuperAdmin, async (req, res, next) => {
+router.get('/admin/pending-rewards', isAuthenticated, requireAdminRole, async (req, res, next) => {
   try {
     const pendingRewards = await loyaltyService.getPendingPhysicalRewards();
     res.json({ pendingRewards });
@@ -248,7 +248,7 @@ router.get('/admin/pending-rewards', authenticateUser, requireSuperAdmin, async 
   }
 });
 
-router.post('/admin/claim-reward/:redemptionId', authenticateUser, requireSuperAdmin, async (req, res, next) => {
+router.post('/admin/claim-reward/:redemptionId', isAuthenticated, requireAdminRole, async (req, res, next) => {
   try {
     const success = await loyaltyService.verifyAndClaimPhysicalReward(
       req.params.redemptionId,

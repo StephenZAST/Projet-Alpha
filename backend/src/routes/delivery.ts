@@ -1,6 +1,6 @@
 import express from 'express';
-import { authenticateUser } from '../middleware/auth';
-import { requireLivreur as requireDriver } from '../middleware/auth';
+import { isAuthenticated } from '../middleware/auth';
+// import { requireLivreur as requireDriver } from '../middleware/auth';
 import { DeliveryService } from '../services/delivery';
 
 const router = express.Router();
@@ -42,7 +42,7 @@ const deliveryService = new DeliveryService();
  *                       start: { type: string, format: date-time }
  *                       end: { type: string, format: date-time }
  */
-router.get('/timeslots', authenticateUser, async (req, res) => {
+router.get('/timeslots', isAuthenticated, async (req, res) => {
   try {
     const { date, zoneId } = req.query;
     const slots = await deliveryService.getAvailableTimeSlots(
@@ -92,7 +92,7 @@ router.get('/timeslots', authenticateUser, async (req, res) => {
  *       200:
  *         description: Pickup scheduled successfully
  */
-router.post('/schedule-pickup', authenticateUser, async (req, res) => {
+router.post('/schedule-pickup', isAuthenticated, async (req, res) => {
   try {
     const { orderId, date, timeSlot, address } = req.body;
     await deliveryService.schedulePickup(
@@ -139,7 +139,7 @@ router.post('/schedule-pickup', authenticateUser, async (req, res) => {
  *       200:
  *         description: Location updated successfully
  */
-router.post('/update-location', authenticateUser, requireDriver, async (req, res) => {
+router.post('/update-location', isAuthenticated, async (req, res) => {
   try {
     const { orderId, location, status } = req.body;
     await deliveryService.updateOrderLocation(
@@ -198,7 +198,7 @@ router.post('/update-location', authenticateUser, requireDriver, async (req, res
  */
 router.get(
   '/tasks',
-  authenticateUser,
+  isAuthenticated,
   async (req, res) => {
     try {
       const tasks = await deliveryService.getTasks(req.query);
@@ -241,7 +241,7 @@ router.get(
  */
 router.get(
   '/tasks/:id',
-  authenticateUser,
+  isAuthenticated,
   async (req, res) => {
     try {
       const task = await deliveryService.getTaskById(req.params.id);
@@ -308,7 +308,7 @@ router.get(
  */
 router.post(
   '/tasks',
-  authenticateUser,
+  isAuthenticated,
   async (req, res) => {
     try {
       const task = await deliveryService.createTask(req.body);
@@ -375,7 +375,7 @@ router.post(
  */
 router.put(
   '/tasks/:id',
-  authenticateUser,
+  isAuthenticated,
   async (req, res) => {
     try {
       const task = await deliveryService.updateTask(req.params.id, req.body);
@@ -450,7 +450,7 @@ router.put(
  */
 router.post(
   '/optimize-tasks', // Renamed endpoint
-  authenticateUser,
+  isAuthenticated,
   async (req, res) => {
     try {
       const { taskIds, driverId, startLocation, endLocation, maxTasks, considerTraffic } = req.body;
@@ -509,8 +509,7 @@ router.post(
  */
 router.post(
   '/location',
-  authenticateUser,
-  requireDriver,
+  isAuthenticated,
   async (req, res) => {
     try {
       await deliveryService.updateLocation(req.body);
@@ -558,7 +557,7 @@ router.post(
  */
 router.get(
   '/zones',
-  authenticateUser,
+  isAuthenticated,
   async (req, res) => {
     try {
       const zones = await deliveryService.getZones();

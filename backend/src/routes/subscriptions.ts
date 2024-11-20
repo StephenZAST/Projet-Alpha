@@ -1,6 +1,5 @@
 import express from 'express';
-import { authenticateUser } from '../middleware/auth';
-import { requireSuperAdmin as requireAdmin } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { createSubscription, getSubscriptions, updateSubscription, deleteSubscription, getUserSubscription } from '../services/subscriptions';
 
 const router = express.Router();
@@ -16,7 +15,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // User routes
-router.get('/user/:userId', authenticateUser, async (req, res, next) => {
+router.get('/user/:userId', isAuthenticated, async (req, res, next) => {
   try {
     const subscription = await getUserSubscription(req.params.userId);
     res.json(subscription);
@@ -26,7 +25,7 @@ router.get('/user/:userId', authenticateUser, async (req, res, next) => {
 });
 
 // Admin routes
-router.post('/', authenticateUser, requireAdmin, async (req, res, next) => {
+router.post('/', isAuthenticated, requireAdminRole, async (req, res, next) => {
   try {
     const subscription = await createSubscription(req.body);
     res.status(201).json(subscription);
@@ -35,7 +34,7 @@ router.post('/', authenticateUser, requireAdmin, async (req, res, next) => {
   }
 });
 
-router.put('/:id', authenticateUser, requireAdmin, async (req, res, next) => {
+router.put('/:id', isAuthenticated, requireAdminRole, async (req, res, next) => {
   try {
     const subscriptionId = req.params.id;
     const updatedSubscription = await updateSubscription(subscriptionId, req.body);
@@ -48,7 +47,7 @@ router.put('/:id', authenticateUser, requireAdmin, async (req, res, next) => {
   }
 });
 
-router.delete('/:id', authenticateUser, requireAdmin, async (req, res, next) => {
+router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res, next) => {
   try {
     const subscriptionId = req.params.id;
     await deleteSubscription(subscriptionId);

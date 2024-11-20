@@ -1,6 +1,6 @@
 import express from 'express';
 import { OrderService } from '../services/orders';
-import { authMiddleware, requireSuperAdmin } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
 import { 
   createOrderSchema, 
@@ -30,7 +30,7 @@ const orderService = new OrderService();
  */
 router.post(
   '/',
-  authMiddleware,
+  isAuthenticated,
   validateRequest(createOrderSchema),
   async (req, res) => {
     try {
@@ -59,7 +59,7 @@ router.post(
  *     security:
  *       - bearerAuth: []
  */
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.uid;
     const { 
@@ -101,7 +101,7 @@ router.get('/', authMiddleware, async (req, res) => {
  *     security:
  *       - bearerAuth: []
  */
-router.get('/:id', authMiddleware, async (req, res) => {
+router.get('/:id', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user!.uid;
     const order = await orderService.getOrderById(req.params.id, userId);
@@ -125,7 +125,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
  *       - bearerAuth: []
  */
 router.put('/:id',
-  authMiddleware,
+  isAuthenticated,
   validateRequest(updateOrderSchema),
   async (req, res) => {
     try {
@@ -151,7 +151,7 @@ router.put('/:id',
  *       - bearerAuth: []
  */
 router.patch('/:id/status',
-  authMiddleware,
+  isAuthenticated,
   validateRequest(updateOrderStatusSchema),
   async (req, res) => {
     try {
@@ -178,7 +178,7 @@ router.patch('/:id/status',
  *       - bearerAuth: []
  */
 router.post('/:id/cancel',
-  authMiddleware,
+  isAuthenticated,
   async (req, res) => {
     try {
       const userId = req.user!.uid;
@@ -203,8 +203,8 @@ router.post('/:id/cancel',
  *       - bearerAuth: []
  */
 router.get('/admin/all',
-  authMiddleware,
-  requireSuperAdmin,
+  isAuthenticated,
+  requireAdminRole,
   async (req, res) => {
     try {
       const { 

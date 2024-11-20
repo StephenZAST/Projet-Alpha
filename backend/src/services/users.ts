@@ -202,6 +202,11 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
       defaultInstructions: '',
       createdAt: now,
       updatedAt: now,
+      phoneNumber: undefined,
+      displayName: undefined,
+      email: undefined,
+      lastName: undefined,
+      firstName: undefined
     };
 
     await userRef.set(newUser);
