@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -31,7 +31,7 @@ const Permissions: FC = () => {
   });
   const { enqueueSnackbar } = useSnackbar();
 
-  const loadPermissions = async () => {
+  const loadPermissions = useCallback(async () => {
     try {
       const response = await permissionService.getAllPermissions();
       setPermissions(response.data);
@@ -39,11 +39,11 @@ const Permissions: FC = () => {
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors du chargement des permissions';
       enqueueSnackbar(errorMessage, { variant: 'error' });
     }
-  };
+  }, [enqueueSnackbar]);
 
   useEffect(() => {
     loadPermissions();
-  }, []);
+  }, [loadPermissions]);
 
   const handleCreatePermission = async () => {
     try {
