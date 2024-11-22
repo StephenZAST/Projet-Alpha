@@ -8,6 +8,7 @@ import {
 } from '@mui/icons-material';
 import StatCard from './components/StatCard';
 import ActivityChart from './components/ActivityChart';
+import RecentActivities from './components/RecentActivities';
 import adminService from '../../../../../services/admin.service';
 import logsService from '../../../../../services/logs.service';
 
@@ -21,6 +22,14 @@ interface DashboardStats {
   revenueTrend: number;
 }
 
+interface Activity {
+  id: string;
+  type: 'user' | 'order' | 'delivery' | 'system';
+  description: string;
+  timestamp: string;
+  user: string;
+}
+
 const Dashboard: FC = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalAdmins: 0,
@@ -31,6 +40,8 @@ const Dashboard: FC = () => {
     ordersTrend: 0,
     revenueTrend: 0,
   });
+
+  const [activities, setActivities] = useState<Activity[]>([]);
 
   const [activityData, setActivityData] = useState({
     labels: [],
@@ -63,6 +74,16 @@ const Dashboard: FC = () => {
         revenueTrend: adminStats.data.revenueTrend,
       });
 
+      // Transformer les logs en activités
+      const transformedActivities = recentLogs.data.map((log: any) => ({
+        id: log.id,
+        type: log.type,
+        description: log.message,
+        timestamp: log.timestamp,
+        user: log.user,
+      }));
+      setActivities(transformedActivities);
+
       // Préparer les données pour le graphique d'activité
       const labels = recentLogs.data.map((log: any) => 
         new Date(log.timestamp).toLocaleDateString()
@@ -89,6 +110,9 @@ const Dashboard: FC = () => {
 
   useEffect(() => {
     loadDashboardData();
+    // Rafraîchir les données toutes les 5 minutes
+    const interval = setInterval(loadDashboardData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -134,8 +158,12 @@ const Dashboard: FC = () => {
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid item xs={12} md={8}>
           <ActivityChart data={activityData} />
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <RecentActivities activities={activities} />
         </Grid>
       </Grid>
     </Box>
