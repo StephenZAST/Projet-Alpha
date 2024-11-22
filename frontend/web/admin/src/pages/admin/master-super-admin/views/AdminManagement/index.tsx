@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -26,7 +26,7 @@ const AdminManagement: FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
-  const loadAdmins = async () => {
+  const loadAdmins = useCallback(async () => {
     try {
       const response = await adminService.getAllAdmins();
       setAdmins(response.data);
@@ -37,11 +37,11 @@ const AdminManagement: FC = () => {
         enqueueSnackbar('Erreur inconnue', { variant: 'error' });
       }
     }
-  };
+  }, [enqueueSnackbar]);
 
   useEffect(() => {
     loadAdmins();
-  }, []);
+  }, [loadAdmins]);
 
   const handleCreateAdmin = async () => {
     setIsCreateDialogOpen(true);
