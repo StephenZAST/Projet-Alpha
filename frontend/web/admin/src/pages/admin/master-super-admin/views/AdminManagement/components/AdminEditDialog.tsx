@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react';
+import { FC } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -56,7 +56,11 @@ const AdminEditDialog: FC<Props> = ({ open, admin, onClose, onSuccess }) => {
         enqueueSnackbar('Administrateur mis à jour avec succès', { variant: 'success' });
         onSuccess();
       } catch (error) {
-        enqueueSnackbar('Erreur lors de la mise à jour', { variant: 'error' });
+        if (error instanceof Error) {
+          enqueueSnackbar(error.message, { variant: 'error' });
+        } else {
+          enqueueSnackbar('Erreur inconnue', { variant: 'error' });
+        }
       }
     },
     enableReinitialize: true,

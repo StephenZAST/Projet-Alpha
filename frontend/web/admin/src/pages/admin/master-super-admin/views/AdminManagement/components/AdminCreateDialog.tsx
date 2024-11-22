@@ -56,6 +56,7 @@ const AdminCreateDialog: FC<Props> = ({ open, onClose, onSuccess }) => {
         await adminService.createAdmin(values);
         enqueueSnackbar('Administrateur créé avec succès', { variant: 'success' });
         onSuccess();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         enqueueSnackbar('Erreur lors de la création', { variant: 'error' });
       }

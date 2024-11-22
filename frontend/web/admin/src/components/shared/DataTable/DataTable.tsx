@@ -23,26 +23,25 @@ import {
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 
-export interface Column {
-  id: string;
+export interface Column<T> {
+  id: keyof T;
   label: string;
   minWidth?: number;
   align?: 'right' | 'left' | 'center';
-  format?: (value: any) => string;
+  format?: (value: T[keyof T]) => string;
 }
 
-interface DataTableProps {
-  columns: Column[];
-  rows: any[];
+interface DataTableProps<T> {
+  columns: Column<T>[];
+  rows: T[];
   title?: string;
-  onEdit?: (row: any) => void;
-  onDelete?: (row: any) => void;
-  onView?: (row: any) => void;
+  onEdit?: (row: T) => void;
+  onDelete?: (row: T) => void;
+  onView?: (row: T) => void;
   selectable?: boolean;
-  loading?: boolean;
 }
 
-const DataTable: React.FC<DataTableProps> = ({
+const DataTable = <T extends Record<string, unknown>>({
   columns,
   rows,
   title,
@@ -50,11 +49,10 @@ const DataTable: React.FC<DataTableProps> = ({
   onDelete,
   onView,
   selectable = false,
-  loading = false,
-}) => {
+}: DataTableProps<T>) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<T[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleChangePage = (_: unknown, newPage: number) => {
@@ -68,19 +66,19 @@ const DataTable: React.FC<DataTableProps> = ({
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelected = rows.map((n) => n.id);
+      const newSelected = rows;
       setSelected(newSelected);
       return;
     }
     setSelected([]);
   };
 
-  const handleClick = (_: React.MouseEvent<unknown>, id: string) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected: string[] = [];
+  const handleClick = (_: React.MouseEvent<unknown>, row: T) => {
+    const selectedIndex = selected.indexOf(row as T);
+    let newSelected: T[] = [];
 
     if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
+      newSelected = newSelected.concat(selected, row);
     } else if (selectedIndex === 0) {
       newSelected = newSelected.concat(selected.slice(1));
     } else if (selectedIndex === selected.length - 1) {
@@ -95,7 +93,7 @@ const DataTable: React.FC<DataTableProps> = ({
     setSelected(newSelected);
   };
 
-  const isSelected = (id: string) => selected.indexOf(id) !== -1;
+  const isSelected = (row: T) => selected.indexOf(row as T) !== -1;
 
   const filteredRows = rows.filter((row) =>
     Object.values(row).some(
@@ -147,7 +145,7 @@ const DataTable: React.FC<DataTableProps> = ({
                 )}
                 {columns.map((column) => (
                   <TableCell
-                    key={column.id}
+                    key={column.id as string}
                     align={column.align}
                     style={{ minWidth: column.minWidth }}
                   >
@@ -163,7 +161,7 @@ const DataTable: React.FC<DataTableProps> = ({
               {filteredRows
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row) => {
-                  const isItemSelected = isSelected(row.id);
+                  const isItemSelected = isSelected(row);
 
                   return (
                     <TableRow
@@ -171,22 +169,22 @@ const DataTable: React.FC<DataTableProps> = ({
                       role="checkbox"
                       aria-checked={isItemSelected}
                       tabIndex={-1}
-                      key={row.id}
+                      key={JSON.stringify(row)}
                       selected={isItemSelected}
                     >
                       {selectable && (
                         <TableCell padding="checkbox">
                           <Checkbox
                             checked={isItemSelected}
-                            onClick={(event) => handleClick(event, row.id)}
+                            onClick={(event) => handleClick(event, row)}
                           />
                         </TableCell>
                       )}
                       {columns.map((column) => {
                         const value = row[column.id];
                         return (
-                          <TableCell key={column.id} align={column.align}>
-                            {column.format ? column.format(value) : value}
+                          <TableCell key={column.id as string} align={column.align}>
+                            {column.format ? column.format(value) : String(value)}
                           </TableCell>
                         );
                       })}

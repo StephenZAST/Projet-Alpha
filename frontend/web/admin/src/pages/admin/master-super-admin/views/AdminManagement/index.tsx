@@ -31,7 +31,11 @@ const AdminManagement: FC = () => {
       const response = await adminService.getAllAdmins();
       setAdmins(response.data);
     } catch (error) {
-      enqueueSnackbar('Erreur lors du chargement des administrateurs', { variant: 'error' });
+      if (error instanceof Error) {
+        enqueueSnackbar(error.message, { variant: 'error' });
+      } else {
+        enqueueSnackbar('Erreur inconnue', { variant: 'error' });
+      }
     }
   };
 
@@ -55,7 +59,11 @@ const AdminManagement: FC = () => {
         enqueueSnackbar('Administrateur supprimé avec succès', { variant: 'success' });
         loadAdmins();
       } catch (error) {
-        enqueueSnackbar('Erreur lors de la suppression', { variant: 'error' });
+        if (error instanceof Error) {
+          enqueueSnackbar(error.message, { variant: 'error' });
+        } else {
+          enqueueSnackbar('Erreur inconnue', { variant: 'error' });
+        }
       }
     }
   };
@@ -66,7 +74,11 @@ const AdminManagement: FC = () => {
       enqueueSnackbar('Statut mis à jour avec succès', { variant: 'success' });
       loadAdmins();
     } catch (error) {
-      enqueueSnackbar('Erreur lors de la mise à jour du statut', { variant: 'error' });
+      if (error instanceof Error) {
+        enqueueSnackbar(error.message, { variant: 'error' });
+      } else {
+        enqueueSnackbar('Erreur inconnue', { variant: 'error' });
+      }
     }
   };
 

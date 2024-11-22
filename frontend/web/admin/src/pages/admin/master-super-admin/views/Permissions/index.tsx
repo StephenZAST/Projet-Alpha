@@ -18,22 +18,16 @@ import {
   TextField,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import permissionService from '../../../../../services/permission.service';
+import permissionService, { Permission, PermissionCreateInput } from '../../../../../services/permission.service';
 import { useSnackbar } from 'notistack';
-
-interface Permission {
-  id: string;
-  name: string;
-  description: string;
-  roles: string[];
-}
 
 const Permissions: FC = () => {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [newPermission, setNewPermission] = useState({
-    name: '',
-    description: '',
+  const [newPermission, setNewPermission] = useState<PermissionCreateInput>({
+    role: '',
+    resource: '',
+    actions: []
   });
   const { enqueueSnackbar } = useSnackbar();
 
@@ -41,8 +35,9 @@ const Permissions: FC = () => {
     try {
       const response = await permissionService.getAllPermissions();
       setPermissions(response.data);
-    } catch (error) {
-      enqueueSnackbar('Erreur lors du chargement des permissions', { variant: 'error' });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors du chargement des permissions';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
     }
   };
 
@@ -56,27 +51,31 @@ const Permissions: FC = () => {
       enqueueSnackbar('Permission créée avec succès', { variant: 'success' });
       setOpenDialog(false);
       loadPermissions();
-      setNewPermission({ name: '', description: '' });
-    } catch (error) {
-      enqueueSnackbar('Erreur lors de la création de la permission', { variant: 'error' });
+      setNewPermission({ role: '', resource: '', actions: [] });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création de la permission';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
     }
   };
 
-  const handleToggleRole = async (permissionId: string, role: string) => {
+  const handleUpdatePermission = async (permissionId: string, role: string) => {
     try {
       const permission = permissions.find(p => p.id === permissionId);
       if (!permission) return;
 
-      const hasRole = permission.roles.includes(role);
-      if (hasRole) {
-        await permissionService.removeRoleFromPermission(permissionId, role);
-      } else {
-        await permissionService.addRoleToPermission(permissionId, role);
-      }
-      
+      const updatedPermission: Partial<PermissionCreateInput> = {
+        role: permission.role,
+        resource: permission.resource,
+        actions: permission.actions.includes(role)
+          ? permission.actions.filter(a => a !== role)
+          : [...permission.actions, role]
+      };
+
+      await permissionService.updatePermission(permissionId, updatedPermission);
       loadPermissions();
-    } catch (error) {
-      enqueueSnackbar('Erreur lors de la modification des rôles', { variant: 'error' });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la modification des rôles';
+      enqueueSnackbar(errorMessage, { variant: 'error' });
     }
   };
 
@@ -99,8 +98,9 @@ const Permissions: FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Nom</TableCell>
-              <TableCell>Description</TableCell>
+              <TableCell>Ressource</TableCell>
+              <TableCell>Rôle</TableCell>
+              <TableCell>Actions</TableCell>
               {roles.map(role => (
                 <TableCell key={role} align="center">{role}</TableCell>
               ))}
@@ -109,13 +109,14 @@ const Permissions: FC = () => {
           <TableBody>
             {permissions.map(permission => (
               <TableRow key={permission.id}>
-                <TableCell>{permission.name}</TableCell>
-                <TableCell>{permission.description}</TableCell>
+                <TableCell>{permission.resource}</TableCell>
+                <TableCell>{permission.role}</TableCell>
+                <TableCell>{permission.actions.join(', ')}</TableCell>
                 {roles.map(role => (
                   <TableCell key={role} align="center">
                     <Checkbox
-                      checked={permission.roles.includes(role)}
-                      onChange={() => handleToggleRole(permission.id, role)}
+                      checked={permission.actions.includes(role)}
+                      onChange={() => handleUpdatePermission(permission.id, role)}
                     />
                   </TableCell>
                 ))}
@@ -131,24 +132,39 @@ const Permissions: FC = () => {
           <TextField
             autoFocus
             margin="dense"
-            label="Nom"
+            label="Ressource"
             fullWidth
-            value={newPermission.name}
-            onChange={(e) => setNewPermission({ ...newPermission, name: e.target.value })}
+            value={newPermission.resource}
+            onChange={(e) => setNewPermission({ ...newPermission, resource: e.target.value })}
           />
           <TextField
             margin="dense"
-            label="Description"
+            label="Rôle"
+            fullWidth
+            value={newPermission.role}
+            onChange={(e) => setNewPermission({ ...newPermission, role: e.target.value })}
+          />
+          <TextField
+            margin="dense"
+            label="Actions (séparées par des virgules)"
             fullWidth
             multiline
-            rows={3}
-            value={newPermission.description}
-            onChange={(e) => setNewPermission({ ...newPermission, description: e.target.value })}
+            rows={2}
+            value={newPermission.actions.join(', ')}
+            onChange={(e) => setNewPermission({ 
+              ...newPermission, 
+              actions: e.target.value.split(',').map(action => action.trim()).filter(Boolean)
+            })}
+            helperText="Entrez les actions séparées par des virgules"
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
-          <Button onClick={handleCreatePermission} variant="contained">
+          <Button 
+            onClick={handleCreatePermission} 
+            variant="contained"
+            disabled={!newPermission.resource || !newPermission.role || newPermission.actions.length === 0}
+          >
             Créer
           </Button>
         </DialogActions>
