@@ -49,6 +49,8 @@ const refreshAuthLogic = async (failedRequest: any) => {
 createAuthRefreshInterceptor(axiosInstance, refreshAuthLogic);
 
 export const AuthService = {
+  api: axiosInstance,
+
   async login(credentials: { email: string; password: string }) {
     const response = await axiosInstance.post('/auth/login', credentials);
     return response.data;
@@ -69,6 +71,17 @@ export const AuthService = {
       refreshToken,
     });
     return response.data;
+  },
+
+  async forgotPassword(email: string): Promise<void> {
+    await axiosInstance.post('/auth/forgot-password', { email });
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await axiosInstance.post('/auth/reset-password', {
+      token,
+      newPassword,
+    });
   },
 };
 
