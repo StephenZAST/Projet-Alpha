@@ -14,6 +14,12 @@ import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import authService from '../../services/auth.service';
+import { AxiosError } from 'axios';
+
+interface ApiErrorResponse {
+  message: string;
+  statusCode?: number;
+}
 
 // Schéma de validation
 const schema = yup.object().shape({
@@ -53,9 +59,10 @@ const ForgotPassword: React.FC = () => {
       setTimeout(() => {
         navigate('/auth/login');
       }, 5000);
-    } catch (err: any) {
+    } catch (err) {
+      const error = err as AxiosError<ApiErrorResponse>;
       setError(
-        err.response?.data?.message ||
+        error.response?.data?.message ||
         'Une erreur est survenue lors de la réinitialisation du mot de passe'
       );
     } finally {

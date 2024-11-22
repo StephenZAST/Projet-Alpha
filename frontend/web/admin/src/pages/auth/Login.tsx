@@ -1,165 +1,188 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Container,
+  TextField,
+  Typography,
+  Paper,
+  Alert,
+  InputAdornment,
+  IconButton,
+} from '@mui/material';
+import { Link, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import authService from '../../services/auth.service';
+import { AxiosError } from 'axios';
 import { useDispatch } from 'react-redux';
 import { login } from '../../store/slices/authSlice';
 import { AppDispatch } from '../../store';
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Container,
-  InputAdornment,
-  IconButton,
-  Alert,
-} from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  Email as EmailIcon,
-  Lock as LockIcon,
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
 
-const StyledCard = styled(Card)(({ theme }) => ({
-  marginTop: theme.spacing(8),
-  padding: theme.spacing(3),
-  boxShadow: '0 8px 40px -12px rgba(0,0,0,0.3)',
-  '&:hover': {
-    boxShadow: '0 16px 70px -12.125px rgba(0,0,0,0.3)',
-  },
-}));
+interface ApiErrorResponse {
+  message: string;
+  statusCode?: number;
+}
 
-const StyledForm = styled('form')(({ theme }) => ({
-  width: '100%',
-  marginTop: theme.spacing(1),
-}));
+// Schéma de validation
+const schema = yup.object().shape({
+  email: yup
+    .string()
+    .email('Adresse email invalide')
+    .required('L\'email est requis'),
+  password: yup
+    .string()
+    .required('Le mot de passe est requis'),
+});
+
+interface LoginForm {
+  email: string;
+  password: string;
+}
 
 const Login: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+  const [showPassword, setShowPassword] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    resolver: yupResolver(schema),
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const onSubmit = async (data: LoginForm) => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+      
+      const response = await authService.login(data);
+      dispatch(login(response));
+      
+      navigate('/dashboard');
+    } catch (err) {
+      const error = err as AxiosError<ApiErrorResponse>;
+      setError(
+        error.response?.data?.message ||
+        'Une erreur est survenue lors de la connexion'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const result = await dispatch(login(formData)).unwrap();
-      if (result) {
-        navigate('/dashboard');
-      }
-    } catch (error: any) {
-      setError(error.message || 'Une erreur est survenue lors de la connexion');
-    }
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
     <Container component="main" maxWidth="xs">
-      <StyledCard>
-        <CardContent>
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          <Typography component="h1" variant="h5" gutterBottom>
+            Connexion
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
           <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
+            component="form"
+            onSubmit={handleSubmit(onSubmit)}
+            sx={{ width: '100%' }}
           >
-            <Typography component="h1" variant="h5" gutterBottom>
-              Connexion
-            </Typography>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Adresse email"
+              autoComplete="email"
+              autoFocus
+              {...register('email')}
+              error={!!errors.email}
+              helperText={errors.email?.message}
+              disabled={isSubmitting}
+            />
 
-            {error && (
-              <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-                {error}
-              </Alert>
-            )}
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Mot de passe"
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              autoComplete="current-password"
+              {...register('password')}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              disabled={isSubmitting}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
 
-            <StyledForm onSubmit={handleSubmit}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label="Adresse email"
-                name="email"
-                autoComplete="email"
-                autoFocus
-                value={formData.email}
-                onChange={handleChange}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon />
-                    </InputAdornment>
-                  ),
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Connexion...' : 'Se connecter'}
+            </Button>
+
+            <Box sx={{ textAlign: 'center' }}>
+              <Link
+                to="/auth/forgot-password"
+                style={{
+                  textDecoration: 'none',
+                  color: 'inherit',
                 }}
-              />
-
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="password"
-                label="Mot de passe"
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                autoComplete="current-password"
-                value={formData.password}
-                onChange={handleChange}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                color="primary"
-                sx={{ mt: 3, mb: 2 }}
               >
-                Se connecter
-              </Button>
-
-              <Box sx={{ mt: 2, textAlign: 'center' }}>
-                <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
-                  <Typography variant="body2" color="primary">
-                    Mot de passe oublié ?
-                  </Typography>
-                </Link>
-              </Box>
-            </StyledForm>
+                <Typography variant="body2" color="primary">
+                  Mot de passe oublié ?
+                </Typography>
+              </Link>
+            </Box>
           </Box>
-        </CardContent>
-      </StyledCard>
+        </Paper>
+      </Box>
     </Container>
   );
 };

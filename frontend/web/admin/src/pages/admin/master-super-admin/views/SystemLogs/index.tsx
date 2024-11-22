@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -39,7 +39,7 @@ const SystemLogs: FC = () => {
   const [totalLogs, setTotalLogs] = useState(0);
   const { enqueueSnackbar } = useSnackbar();
 
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/logs?page=${page}&limit=${rowsPerPage}&search=${searchTerm}`);
       const data = await response.json();
@@ -55,11 +55,11 @@ const SystemLogs: FC = () => {
         variant: 'error' 
       });
     }
-  };
+  }, [page, rowsPerPage, searchTerm, enqueueSnackbar]);
 
   useEffect(() => {
     loadLogs();
-  }, [page, rowsPerPage, searchTerm]);
+  }, [loadLogs]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
