@@ -58,8 +58,8 @@ createAuthRefreshInterceptor(axiosInstance, refreshAuthLogic);
 export const AuthService = {
   api: axiosInstance,
 
-  async login(credentials: { email: string; password: string }): Promise<{ token: string; refreshToken: string }> {
-    const response = await axiosInstance.post<{ token: string; refreshToken: string }>('/auth/login', credentials);
+  async login(credentials: { email: string; password: string }): Promise<{ user: User; token: string; refreshToken: string; }> {
+    const response = await axiosInstance.post<{ user: User; token: string; refreshToken: string; }>('/auth/login', credentials);
     return response.data;
   },
 

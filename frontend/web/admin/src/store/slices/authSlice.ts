@@ -25,8 +25,11 @@ export const login = createAsyncThunk(
       const response = await AuthService.login(credentials);
       localStorage.setItem('token', response.token);
       return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Erreur de connexion');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue('Erreur de connexion');
     }
   }
 );
@@ -42,8 +45,11 @@ export const getCurrentUser = createAsyncThunk(
     try {
       const user = await AuthService.getCurrentUser();
       return user;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Erreur de chargement du profil');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue('Erreur de chargement du profil');
     }
   }
 );
