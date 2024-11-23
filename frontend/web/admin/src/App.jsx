@@ -20,7 +20,7 @@ import theme from "./assets/theme/index";
 import themeRTL from "./assets/theme/theme-rtl";
 
 // Material Dashboard 2 React Dark Mode themes
-import themeDark from "assets/theme-dark";
+import themeDark from "./assets/theme-dark";
 import themeDarkRTL from "assets/theme-dark/theme-rtl";
 
 // RTL plugins
