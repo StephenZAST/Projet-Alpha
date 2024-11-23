@@ -1,18 +1,3 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
 import { useState, useEffect } from "react";
 
 // react-router components
@@ -26,19 +11,19 @@ import Container from "@mui/material/Container";
 import Icon from "@mui/material/Icon";
 
 // Material Dashboard 2 React components
-import MDBox from "components/MDBox";
-import MDTypography from "components/MDTypography";
-import MDButton from "components/MDButton";
+import MDBox from "../../../components/MDBox/index";
+import MDTypography from "../../../components/MDTypography/MDTypographyRoot";
+import MDButton from "../../../components/MDButton/index";
 
 // Material Dashboard 2 React example components
-import DefaultNavbarLink from "examples/Navbars/DefaultNavbar/DefaultNavbarLink";
-import DefaultNavbarMobile from "examples/Navbars/DefaultNavbar/DefaultNavbarMobile";
+import DefaultNavbarLink from "../../../examples/Navbars/DefaultNavbar/DefaultNavbarLink";
+import DefaultNavbarMobile from "../../../examples/Navbars/DefaultNavbar/DefaultNavbarMobile";
 
 // Material Dashboard 2 React base styles
-import breakpoints from "assets/theme/base/breakpoints";
+import breakpoints from "../../../assets/theme/base/breakpoints";
 
 // Material Dashboard 2 React context
-import { useMaterialUIController } from "context";
+import { useMaterialUIController } from "../../../context/index";
 
 function DefaultNavbar({ transparent, light, action }) {
   const [controller] = useMaterialUIController();

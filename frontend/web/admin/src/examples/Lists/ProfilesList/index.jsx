@@ -1,19 +1,3 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-// react-routers components
 import { Link } from "react-router-dom";
 
 // prop-types is library for typechecking of props
@@ -23,10 +7,10 @@ import PropTypes from "prop-types";
 import Card from "@mui/material/Card";
 
 // Material Dashboard 2 React components
-import MDBox from "components/MDBox";
-import MDTypography from "components/MDTypography";
-import MDAvatar from "components/MDAvatar";
-import MDButton from "components/MDButton";
+import MDBox from "../../../components/MDBox/index";
+import MDTypography from "../../../components/MDTypography/MDTypographyRoot";
+import MDAvatar from "../../../components/MDAvatar/index";
+import MDButton from "../../../components/MDButton/index";
 
 function ProfilesList({ title, profiles, shadow }) {
   const renderProfiles = profiles.map(({ image, name, description, action }) => (

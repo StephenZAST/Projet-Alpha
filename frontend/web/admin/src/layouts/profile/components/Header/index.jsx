@@ -1,17 +1,3 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
 
 import { useState, useEffect } from "react";
 
@@ -27,16 +13,16 @@ import Tab from "@mui/material/Tab";
 import Icon from "@mui/material/Icon";
 
 // Material Dashboard 2 React components
-import MDBox from "components/MDBox";
-import MDTypography from "components/MDTypography";
-import MDAvatar from "components/MDAvatar";
+import MDBox from "../../../../components/MDBox/index";
+import MDTypography from "../../../../components/MDTypography/MDTypographyRoot";
+import MDAvatar from "../../../../components/MDAvatar/index";
 
 // Material Dashboard 2 React base styles
-import breakpoints from "assets/theme/base/breakpoints";
+import breakpoints from "../../../../assets/theme/base/breakpoints";
 
 // Images
-import burceMars from "assets/images/bruce-mars.jpg";
-import backgroundImage from "assets/images/bg-profile.jpeg";
+import burceMars from "../../../../assets/images/bruce-mars.jpg";
+import backgroundImage from "../../../../assets/images/bg-profile.jpeg";
 
 function Header({ children }) {
   const [tabsOrientation, setTabsOrientation] = useState("horizontal");

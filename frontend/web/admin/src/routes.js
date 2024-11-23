@@ -1,4 +1,4 @@
-import Dashboard from "layouts/dashboard";
+import Dashboard from "./layouts/dashboard";
 import Tables from "layouts/tables";
 import Billing from "layouts/billing";
 import RTL from "layouts/rtl";
