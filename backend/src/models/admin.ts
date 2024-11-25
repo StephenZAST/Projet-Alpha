@@ -12,6 +12,7 @@ export enum AdminRole {
 
 // Define IAdmin interface before adminSchema
 export interface IAdmin {
+    _id: string; // Added _id property
     userId: string;
     email: string;
     password: string;

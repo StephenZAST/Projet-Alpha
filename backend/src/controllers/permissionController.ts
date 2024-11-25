@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { db } from '../config/firebase';
 import { PermissionService } from '../services/permissionService';
 import { catchAsync } from '../utils/catchAsync';
@@ -7,7 +7,7 @@ import { AdminRole } from '../models/admin';
 import { PermissionResource, PermissionAction } from '../models/permission';
 
 export class PermissionController {
-  initializePermissions = catchAsync(async (req: Request, res: Response) => {
+  initializePermissions = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     await PermissionService.initializeDefaultPermissions();
     
     res.status(200).json({
@@ -16,7 +16,7 @@ export class PermissionController {
     });
   });
 
-  getPermissionsByRole = catchAsync(async (req: Request, res: Response) => {
+  getPermissionsByRole = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { role } = req.params;
 
     if (!Object.values(AdminRole).includes(role as AdminRole)) {
@@ -31,7 +31,7 @@ export class PermissionController {
     });
   });
 
-  addPermission = catchAsync(async (req: Request, res: Response) => {
+  addPermission = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { role, resource, actions, description, conditions } = req.body;
 
     // Validation
@@ -67,7 +67,7 @@ export class PermissionController {
     });
   });
 
-  updatePermission = catchAsync(async (req: Request, res: Response) => {
+  updatePermission = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { role, resource } = req.params;
     const { actions, description, conditions } = req.body;
 
@@ -103,7 +103,7 @@ export class PermissionController {
     });
   });
 
-  removePermission = catchAsync(async (req: Request, res: Response) => {
+  removePermission = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { role, resource } = req.params;
 
     if (!Object.values(AdminRole).includes(role as AdminRole)) {
@@ -129,7 +129,7 @@ export class PermissionController {
     });
   });
 
-  getRoleMatrix = catchAsync(async (req: Request, res: Response) => {
+  getRoleMatrix = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const matrix = await PermissionService.getRoleMatrix();
 
     res.status(200).json({
@@ -138,7 +138,7 @@ export class PermissionController {
     });
   });
 
-  getResourcePermissions = catchAsync(async (req: Request, res: Response) => {
+  getResourcePermissions = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { resource } = req.params;
 
     if (!Object.values(PermissionResource).includes(resource as PermissionResource)) {
@@ -155,7 +155,7 @@ export class PermissionController {
     });
   });
 
-  async getAllPermissions(req: Request, res: Response) {
+  async getAllPermissions(req: Request, res: Response, next: NextFunction) {
     try {
       const permissionsSnapshot = await db.collection('permissions').get();
       const permissions = permissionsSnapshot.docs.map(doc => ({
@@ -170,7 +170,7 @@ export class PermissionController {
     }
   }
 
-  async getPermissionById(req: Request, res: Response) {
+  async getPermissionById(req: Request, res: Response, next: NextFunction) {
     try {
       const permissionDoc = await db.collection('permissions').doc(req.params.id).get();
       
@@ -188,7 +188,7 @@ export class PermissionController {
     }
   }
 
-  async createPermission(req: Request, res: Response) {
+  async createPermission(req: Request, res: Response, next: NextFunction) {
     try {
       const { name, description, actions } = req.body;
       const permissionRef = db.collection('permissions').doc();
@@ -213,7 +213,7 @@ export class PermissionController {
     }
   }
 
-  async updatePermissionById(req: Request, res: Response) {
+  async updatePermissionById(req: Request, res: Response, next: NextFunction) {
     try {
       const { name, description, actions } = req.body;
       const permissionRef = db.collection('permissions').doc(req.params.id);
@@ -240,7 +240,7 @@ export class PermissionController {
     }
   }
 
-  async deletePermission(req: Request, res: Response) {
+  async deletePermission(req: Request, res: Response, next: NextFunction) {
     try {
       const permissionRef = db.collection('permissions').doc(req.params.id);
       
@@ -260,7 +260,7 @@ export class PermissionController {
     }
   }
 
-  async getRolePermissions(req: Request, res: Response) {
+  async getRolePermissions(req: Request, res: Response, next: NextFunction) {
     try {
       const { roleId } = req.params;
       const rolePermissionsSnapshot = await db.collection('role_permissions')
@@ -279,7 +279,7 @@ export class PermissionController {
     }
   }
 
-  async assignPermissionToRole(req: Request, res: Response) {
+  async assignPermissionToRole(req: Request, res: Response, next: NextFunction) {
     try {
       const { roleId } = req.params;
       const { permissionId } = req.body;
@@ -305,7 +305,7 @@ export class PermissionController {
     }
   }
 
-  async removePermissionFromRole(req: Request, res: Response) {
+  async removePermissionFromRole(req: Request, res: Response, next: NextFunction) {
     try {
       const { roleId, permissionId } = req.params;
       const rolePermissionSnapshot = await db.collection('role_permissions')

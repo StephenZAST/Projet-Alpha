@@ -4,7 +4,7 @@ import { createCategory, getCategories, updateCategory, deleteCategory } from '.
 
 const router = express.Router();
 
-router.get('/', async (req, res, next) => {
+router.get('/', async (req, res, next): Promise<void> => {
   try {
     const categories = await getCategories();
     res.json(categories);
@@ -13,7 +13,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.post('/', isAuthenticated, requireAdminRole, async (req, res, next) => {
+router.post('/', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
   try {
     const category = await createCategory(req.body);
     res.status(201).json(category);
@@ -22,12 +22,12 @@ router.post('/', isAuthenticated, requireAdminRole, async (req, res, next) => {
   }
 });
 
-router.put('/:id', isAuthenticated, requireAdminRole, async (req, res, next) => {
+router.put('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
   try {
     const categoryId = req.params.id;
     const updatedCategory = await updateCategory(categoryId, req.body);
     if (!updatedCategory) {
-      return res.status(404).json({ error: 'Category not found' });
+      res.status(404).json({ error: 'Category not found' }); // Removed return
     }
     res.json(updatedCategory);
   } catch (error) {
@@ -35,7 +35,7 @@ router.put('/:id', isAuthenticated, requireAdminRole, async (req, res, next) => 
   }
 });
 
-router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res, next) => {
+router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
   try {
     const categoryId = req.params.id;
     await deleteCategory(categoryId);
