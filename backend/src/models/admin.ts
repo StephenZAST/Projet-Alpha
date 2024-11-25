@@ -1,4 +1,5 @@
-import { Schema, model, Document, Types } from 'mongoose'; // Import Types
+import { db } from '../config/firebase';
+import { AppError, errorCodes } from '../utils/errors';
 
 export enum AdminRole {
     SUPER_ADMIN_MASTER = 'super_admin_master', // Votre compte unique
@@ -10,7 +11,7 @@ export enum AdminRole {
 }
 
 // Define IAdmin interface before adminSchema
-export interface IAdmin extends Document {
+export interface IAdmin {
     userId: string;
     email: string;
     password: string;
@@ -19,7 +20,7 @@ export interface IAdmin extends Document {
     role: AdminRole;
     phoneNumber: string;
     isActive: boolean;
-    createdBy: Types.ObjectId;      // Change createdBy type to Types.ObjectId
+    createdBy: string;      // Change createdBy type to string
     lastLogin?: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -27,80 +28,62 @@ export interface IAdmin extends Document {
     isMasterAdmin: boolean; // Pour identifier le super admin principal
 }
 
-const adminSchema = new Schema<IAdmin>({
-    userId: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    email: {
-        type: String,
-        required: true,
-        unique: true
-    },
-    password: {
-        type: String,
-        required: true
-    },
-    firstName: {
-        type: String,
-        required: true
-    },
-    lastName: {
-        type: String,
-        required: true
-    },
-    role: {
-        type: String,
-        enum: Object.values(AdminRole),
-        required: true
-    },
-    phoneNumber: {
-        type: String,
-        required: true
-    },
-    isActive: {
-        type: Boolean,
-        default: true
-    },
-    createdBy: {
-        type: Schema.Types.ObjectId,
-        ref: 'Admin',
-        required: true
-    },
-    lastLogin: {
-        type: Date
-    },
-    permissions: [{
-        type: String
-    }],
-    isMasterAdmin: {
-        type: Boolean,
-        default: false
-    }
-}, {
-    timestamps: true
-});
+// Use Firebase Firestore to store admin data
+const adminsRef = db.collection('admins');
 
-// Middleware pour empêcher la suppression du Master Admin
-adminSchema.pre('deleteOne', async function(next) {
-    const adminId = this.getQuery()["_id"];
-    const admin = await this.model.findOne({ _id: adminId });
-    
-    if (admin?.isMasterAdmin) {
-        throw new Error("Le compte Master Admin ne peut pas être supprimé");
+// Function to get admin data
+export async function getAdmin(userId: string): Promise<IAdmin | null> {
+    const adminDoc = await adminsRef.doc(userId).get();
+    if (!adminDoc.exists) {
+        return null;
     }
-    next();
-});
+    return adminDoc.data() as IAdmin;
+}
 
-// Middleware pour empêcher la modification du rôle du Master Admin
-adminSchema.pre('save', function(next) {
-    // Type cast this to IAdmin
-    const admin = this as IAdmin; 
-    if (admin.isModified('isMasterAdmin') && admin.isMasterAdmin) {
-        throw new Error("Le statut Master Admin ne peut pas être modifié");
+// Function to create admin
+export async function createAdmin(adminData: IAdmin): Promise<IAdmin> {
+    // Check if master admin already exists
+    if (adminData.isMasterAdmin) {
+        const masterAdmin = await adminsRef.where('isMasterAdmin', '==', true).get();
+        if (!masterAdmin.empty) {
+            throw new AppError(400, 'A master admin already exists', errorCodes.MASTER_ADMIN_EXISTS);
+        }
     }
-    next();
-});
 
-export const Admin = model<IAdmin>('Admin', adminSchema);
+    const adminRef = await adminsRef.add(adminData);
+    return adminRef.get().then(doc => doc.data() as IAdmin);
+}
+
+// Function to update admin
+export async function updateAdmin(userId: string, adminData: Partial<IAdmin>): Promise<IAdmin> {
+    const adminRef = adminsRef.doc(userId);
+    const currentAdmin = await getAdmin(userId);
+
+    if (!currentAdmin) {
+        throw new AppError(404, 'Admin not found', errorCodes.ADMIN_NOT_FOUND);
+    }
+
+    // Prevent modification of master admin status
+    if (adminData.isMasterAdmin !== undefined && currentAdmin.isMasterAdmin) {
+        throw new AppError(400, 'Cannot modify master admin status', errorCodes.MASTER_ADMIN_MODIFICATION);
+    }
+
+    await adminRef.update(adminData);
+    return adminRef.get().then(doc => doc.data() as IAdmin);
+}
+
+// Function to delete admin
+export async function deleteAdmin(userId: string): Promise<void> {
+    const admin = await getAdmin(userId);
+
+    if (!admin) {
+        throw new AppError(404, 'Admin not found', errorCodes.ADMIN_NOT_FOUND);
+    }
+
+    // Prevent deletion of master admin
+    if (admin.isMasterAdmin) {
+        throw new AppError(400, 'Cannot delete master admin', errorCodes.MASTER_ADMIN_DELETION);
+    }
+
+    await adminsRef.doc(userId).delete();
+}

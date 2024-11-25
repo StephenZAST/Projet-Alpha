@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { db } from '../config/firebase';
 import { IAdmin } from './admin';
 
 export enum AdminAction {
@@ -11,51 +11,33 @@ export enum AdminAction {
     FAILED_LOGIN = 'FAILED_LOGIN'
 }
 
-export interface IAdminLog extends Document {
-    adminId: IAdmin['_id'];
+export interface IAdminLog {
+    adminId: string; // Changed to string for Firebase compatibility
     action: AdminAction;
-    targetAdminId?: IAdmin['_id'];
+    targetAdminId?: string; // Changed to string for Firebase compatibility
     details: string;
     ipAddress: string;
     userAgent: string;
     createdAt: Date;
 }
 
-const adminLogSchema = new Schema({
-    adminId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Admin',
-        required: true
-    },
-    action: {
-        type: String,
-        enum: Object.values(AdminAction),
-        required: true
-    },
-    targetAdminId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Admin'
-    },
-    details: {
-        type: String,
-        required: true
-    },
-    ipAddress: {
-        type: String,
-        required: true
-    },
-    userAgent: {
-        type: String,
-        required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
+const adminLogsRef = db.collection('adminLogs');
+
+// Function to create admin log
+export async function createAdminLog(logData: IAdminLog): Promise<IAdminLog> {
+    const logRef = await adminLogsRef.add({
+        ...logData,
+        createdAt: new Date() // Ensure createdAt is a Date object
+    });
+    return logRef.get().then(doc => doc.data() as IAdminLog);
+}
+
+// Function to get admin logs
+export async function getAdminLogs(adminId?: string): Promise<IAdminLog[]> {
+    let query = adminLogsRef.orderBy('createdAt', 'desc');
+    if (adminId) {
+        query = query.where('adminId', '==', adminId);
     }
-});
-
-// Index pour une recherche rapide
-adminLogSchema.index({ adminId: 1, createdAt: -1 });
-adminLogSchema.index({ action: 1, createdAt: -1 });
-
-export const AdminLog = mongoose.model<IAdminLog>('AdminLog', adminLogSchema);
+    const snapshot = await query.get();
+    return snapshot.docs.map(doc => doc.data() as IAdminLog);
+}
