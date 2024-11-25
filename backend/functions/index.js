@@ -185,4 +185,17 @@ app.delete('/teams/:teamId/members/:memberId', async (req, res) => {
   }
 });
 
+// Users endpoints
+// /users
+app.get('/users', async (req, res) => {
+  try {
+    const usersSnapshot = await db.collection('users').get();
+    const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.status(200).json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
 exports.api = functions.https.onRequest(app);
