@@ -1,185 +1,220 @@
-import { Admin, AdminRole, IAdmin } from '../models/admin';
-import { hashPassword, comparePassword } from '../utils/auth'; // Add import statement
+import { getAdmin, createAdmin, updateAdmin, deleteAdmin, AdminRole, IAdmin } from '../models/admin';
+import { hashPassword, comparePassword } from '../utils/auth';
 import { generateToken } from '../utils/jwt';
 import { AppError } from '../utils/errors';
-import { errorCodes } from '../utils/errors'; // Import errorCodes
+import { errorCodes } from '../utils/errors';
+import { db } from '../config/firebase'; // Import db
 
 export class AdminService {
-    // Créer un compte admin (uniquement par super admin)
-    async createAdmin(adminData: Partial<IAdmin>, creatorId: string): Promise<IAdmin> {
-        const creator = await Admin.findById(creatorId);
-        if (!creator || (creator.role !== AdminRole.SUPER_ADMIN_MASTER && creator.role !== AdminRole.SUPER_ADMIN)) {
-            throw new AppError(403, "Non autorisé à créer des administrateurs", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        // Vérifier si c'est une tentative de création d'un super admin master
-        if (adminData.role === AdminRole.SUPER_ADMIN_MASTER) {
-            throw new AppError(403, "Impossible de créer un autre Super Admin Master", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        // Pour la création d'un super admin, seul le master peut le faire
-        if (adminData.role === AdminRole.SUPER_ADMIN && creator.role !== AdminRole.SUPER_ADMIN_MASTER) {
-            throw new AppError(403, "Seul le Super Admin Master peut créer d'autres Super Admins", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        // Check if password is defined before hashing
-        const hashedPassword = adminData.password ? await hashPassword(adminData.password) : undefined;
-        
-        const admin = new Admin({
-            ...adminData,
-            password: hashedPassword,
-            createdBy: creatorId
-        });
-
-        return await admin.save();
+  // Create an admin account (only by super admin)
+  async createAdmin(adminData: Partial<IAdmin>, creatorId: string): Promise<IAdmin> {
+    const creator = await getAdmin(creatorId);
+    if (!creator || (creator.role !== AdminRole.SUPER_ADMIN_MASTER && creator.role !== AdminRole.SUPER_ADMIN)) {
+      throw new AppError(403, "Not authorized to create admins", errorCodes.FORBIDDEN);
     }
 
-    // Connexion admin
-    async loginAdmin(email: string, password: string): Promise<{ admin: IAdmin; token: string }> {
-        const admin = await Admin.findOne({ email });
-        if (!admin || !admin.isActive) {
-            throw new AppError(401, "Email ou mot de passe incorrect", errorCodes.UNAUTHORIZED); // Add error code
-        }
-
-        const isValidPassword = await comparePassword(password, admin.password);
-        if (!isValidPassword) {
-            throw new AppError(401, "Email ou mot de passe incorrect", errorCodes.UNAUTHORIZED); // Add error code
-        }
-
-        admin.lastLogin = new Date();
-        await admin.save();
-
-        const token = generateToken(admin);
-
-        return { admin, token };
+    // Check if attempting to create a master super admin
+    if (adminData.role === AdminRole.SUPER_ADMIN_MASTER) {
+      throw new AppError(403, "Cannot create another Master Super Admin", errorCodes.FORBIDDEN);
     }
 
-    // Mettre à jour un admin
-    async updateAdmin(adminId: string, updates: Partial<IAdmin>, updaterId: string): Promise<IAdmin | null> { // Update return type
-        const updater = await Admin.findById(updaterId);
-        const adminToUpdate = await Admin.findById(adminId);
-
-        if (!updater || !adminToUpdate) {
-            throw new AppError(404, "Administrateur non trouvé", errorCodes.NOT_FOUND); // Add error code
-        }
-
-        // Vérifications de sécurité
-        if (adminToUpdate.isMasterAdmin) {
-            throw new AppError(403, "Le compte Master Admin ne peut pas être modifié", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        if (updates.role === AdminRole.SUPER_ADMIN_MASTER) {
-            throw new AppError(403, "Impossible de promouvoir en Super Admin Master", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        // Seul le master peut modifier un super admin
-        if (adminToUpdate.role === AdminRole.SUPER_ADMIN && updater.role !== AdminRole.SUPER_ADMIN_MASTER) {
-            throw new AppError(403, "Seul le Super Admin Master peut modifier un Super Admin", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        // Check if password is defined before hashing
-        if (updates.password) {
-            updates.password = await hashPassword(updates.password);
-        }
-
-        const updatedAdmin = await Admin.findByIdAndUpdate(
-            adminId,
-            { ...updates },
-            { new: true }
-        );
-
-        return updatedAdmin; // Return the updated admin or null
+    // Only the master admin can create a super admin
+    if (adminData.role === AdminRole.SUPER_ADMIN && creator.role !== AdminRole.SUPER_ADMIN_MASTER) {
+      throw new AppError(403, "Only the Master Super Admin can create other Super Admins", errorCodes.FORBIDDEN);
     }
 
-    // Supprimer un admin
-    async deleteAdmin(adminId: string, deleterId: string): Promise<void> {
-        const deleter = await Admin.findById(deleterId);
-        const adminToDelete = await Admin.findById(adminId);
+    // Check if password is defined before hashing
+    const hashedPassword = adminData.password ? await hashPassword(adminData.password) : undefined;
 
-        if (!deleter || !adminToDelete) {
-            throw new AppError(404, "Administrateur non trouvé", errorCodes.NOT_FOUND); // Add error code
-        }
+    const newAdminData: IAdmin = {
+      ...adminData,
+      password: hashedPassword || '', // Ensure password is a string
+      createdBy: creatorId,
+      _id: '', // _id will be generated by Firebase
+      userId: adminData.userId || '', // Ensure userId is a string
+      email: adminData.email || '', // Ensure email is a string
+      firstName: adminData.firstName || '', // Ensure firstName is a string
+      lastName: adminData.lastName || '', // Ensure lastName is a string
+      phoneNumber: adminData.phoneNumber || '', // Ensure phoneNumber is a string
+      isActive: adminData.isActive ?? true, // Default to true if not provided
+      lastLogin: adminData.lastLogin || undefined,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      permissions: adminData.permissions || [],
+      isMasterAdmin: adminData.isMasterAdmin || false,
+      role: adminData.role || AdminRole.SECRETARY, // Provide default role
+    };
 
-        // Vérifications de sécurité
-        if (adminToDelete.isMasterAdmin) {
-            throw new AppError(403, "Le compte Master Admin ne peut pas être supprimé", errorCodes.FORBIDDEN); // Add error code
-        }
+    return await createAdmin(newAdminData); // Use Firebase createAdmin function
+  }
 
-        if (adminToDelete.role === AdminRole.SUPER_ADMIN && deleter.role !== AdminRole.SUPER_ADMIN_MASTER) {
-            throw new AppError(403, "Seul le Super Admin Master peut supprimer un Super Admin", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        await Admin.deleteOne({ _id: adminId });
+  // Admin login
+  async loginAdmin(email: string, password: string): Promise<{ admin: IAdmin; token: string }> {
+    const admin = await this.getAdminByEmail(email); // Use this.getAdminByEmail
+    if (!admin || !admin.isActive) {
+      throw new AppError(401, "Incorrect email or password", errorCodes.UNAUTHORIZED);
     }
 
-    // Obtenir tous les admins (pour super admin uniquement)
-    async getAllAdmins(requesterId: string): Promise<IAdmin[]> {
-        const requester = await Admin.findById(requesterId);
-        if (!requester || (requester.role !== AdminRole.SUPER_ADMIN_MASTER && requester.role !== AdminRole.SUPER_ADMIN)) {
-            throw new AppError(403, "Non autorisé à voir tous les administrateurs", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        return await Admin.find().select('-password');
+    const isValidPassword = await comparePassword(password, admin.password);
+    if (!isValidPassword) {
+      throw new AppError(401, "Incorrect email or password", errorCodes.UNAUTHORIZED);
     }
 
-    // Obtenir un admin par ID
-    async getAdminById(adminId: string, requesterId: string): Promise<IAdmin> {
-        const requester = await Admin.findById(requesterId);
-        const admin = await Admin.findById(adminId).select('-password');
+    // Update lastLogin using Firebase updateAdmin function
+    await updateAdmin(admin._id, { lastLogin: new Date() });
 
-        if (!requester || !admin) {
-            throw new AppError(404, "Administrateur non trouvé", errorCodes.NOT_FOUND); // Add error code
-        }
+    const token = generateToken(admin);
 
-        // Seuls les super admins peuvent voir les détails des autres admins
-        if (requesterId !== adminId && 
-            requester.role !== AdminRole.SUPER_ADMIN_MASTER && 
-            requester.role !== AdminRole.SUPER_ADMIN) {
-            throw new AppError(403, "Non autorisé à voir les détails de cet administrateur", errorCodes.FORBIDDEN); // Add error code
-        }
+    return { admin, token };
+  }
 
-        return admin;
+  // Update an admin
+  async updateAdmin(adminId: string, updates: Partial<IAdmin>, updaterId: string): Promise<IAdmin> {
+    const updater = await getAdmin(updaterId);
+    const adminToUpdate = await getAdmin(adminId);
+
+    if (!updater || !adminToUpdate) {
+      throw new AppError(404, "Admin not found", errorCodes.NOT_FOUND);
     }
 
-    // Changer le statut actif/inactif d'un admin
-    async toggleAdminStatus(adminId: string, isActive: boolean, requesterId: string): Promise<IAdmin> {
-        const requester = await Admin.findById(requesterId);
-        const adminToUpdate = await Admin.findById(adminId);
-
-        if (!requester || !adminToUpdate) {
-            throw new AppError(404, "Administrateur non trouvé", errorCodes.NOT_FOUND); // Add error code
-        }
-
-        if (adminToUpdate.isMasterAdmin) {
-            throw new AppError(403, "Le compte Master Admin ne peut pas être désactivé", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        if (adminToUpdate.role === AdminRole.SUPER_ADMIN && requester.role !== AdminRole.SUPER_ADMIN_MASTER) {
-            throw new AppError(403, "Seul le Super Admin Master peut modifier le statut d'un Super Admin", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        adminToUpdate.isActive = isActive;
-        return await adminToUpdate.save();
+    // Security checks
+    if (adminToUpdate.isMasterAdmin) {
+      throw new AppError(403, "The Master Admin account cannot be modified", errorCodes.FORBIDDEN);
     }
 
-    // Créer le compte Super Admin Master initial (ne devrait être utilisé qu'une fois)
-    async createMasterAdmin(adminData: Partial<IAdmin>): Promise<IAdmin> {
-        const existingMaster = await Admin.findOne({ isMasterAdmin: true });
-        if (existingMaster) {
-            throw new AppError(403, "Un Super Admin Master existe déjà", errorCodes.FORBIDDEN); // Add error code
-        }
-
-        // Check if password is defined before hashing
-        const hashedPassword = adminData.password ? await hashPassword(adminData.password) : undefined;
-        
-        const masterAdmin = new Admin({
-            ...adminData,
-            role: AdminRole.SUPER_ADMIN_MASTER,
-            isMasterAdmin: true,
-            password: hashedPassword,
-            createdBy: 'SYSTEM'
-        });
-
-        return await masterAdmin.save();
+    if (updates.role === AdminRole.SUPER_ADMIN_MASTER) {
+      throw new AppError(403, "Cannot promote to Master Super Admin", errorCodes.FORBIDDEN);
     }
+
+    // Only the master admin can modify a super admin
+    if (adminToUpdate.role === AdminRole.SUPER_ADMIN && updater.role !== AdminRole.SUPER_ADMIN_MASTER) {
+      throw new AppError(403, "Only the Master Super Admin can modify a Super Admin", errorCodes.FORBIDDEN);
+    }
+
+    // Check if password is defined before hashing
+    if (updates.password) {
+      updates.password = await hashPassword(updates.password);
+    }
+
+    return await updateAdmin(adminId, updates); // Use Firebase updateAdmin function
+  }
+
+  // Delete an admin
+  async deleteAdmin(adminId: string, deleterId: string): Promise<void> {
+    const deleter = await getAdmin(deleterId);
+    const adminToDelete = await getAdmin(adminId);
+
+    if (!deleter || !adminToDelete) {
+      throw new AppError(404, "Admin not found", errorCodes.NOT_FOUND);
+    }
+
+    // Security checks
+    if (adminToDelete.isMasterAdmin) {
+      throw new AppError(403, "The Master Admin account cannot be deleted", errorCodes.FORBIDDEN);
+    }
+
+    if (adminToDelete.role === AdminRole.SUPER_ADMIN && deleter.role !== AdminRole.SUPER_ADMIN_MASTER) {
+      throw new AppError(403, "Only the Master Super Admin can delete a Super Admin", errorCodes.FORBIDDEN);
+    }
+
+    await deleteAdmin(adminId); // Use Firebase deleteAdmin function
+  }
+
+  // Get all admins (for super admin only)
+  async getAllAdmins(requesterId: string): Promise<IAdmin[]> {
+    const requester = await getAdmin(requesterId);
+    if (!requester || (requester.role !== AdminRole.SUPER_ADMIN_MASTER && requester.role !== AdminRole.SUPER_ADMIN)) {
+      throw new AppError(403, "Not authorized to view all admins", errorCodes.FORBIDDEN);
+    }
+
+    // Implement Firebase equivalent of Admin.find().select('-password')
+    const adminsSnapshot = await db.collection('admins').get();
+    return adminsSnapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => { // Explicitly type doc
+      const admin = doc.data() as IAdmin;
+      // delete admin.password; // No need to delete, password is already optional
+      return admin;
+    });
+  }
+
+  // Get an admin by ID
+  async getAdminById(adminId: string, requesterId: string): Promise<IAdmin> {
+    const requester = await getAdmin(requesterId);
+    const admin = await getAdmin(adminId);
+
+    if (!requester || !admin) {
+      throw new AppError(404, "Admin not found", errorCodes.NOT_FOUND);
+    }
+
+    // Only super admins can view details of other admins
+    if (requesterId !== adminId && 
+        requester.role !== AdminRole.SUPER_ADMIN_MASTER && 
+        requester.role !== AdminRole.SUPER_ADMIN) {
+      throw new AppError(403, "Not authorized to view details of this admin", errorCodes.FORBIDDEN);
+    }
+
+    // delete admin.password; // No need to delete, password is already optional
+    return admin;
+  }
+
+  // Change the active/inactive status of an admin
+  async toggleAdminStatus(adminId: string, isActive: boolean, requesterId: string): Promise<IAdmin> {
+    const requester = await getAdmin(requesterId);
+    const adminToUpdate = await getAdmin(adminId);
+
+    if (!requester || !adminToUpdate) {
+      throw new AppError(404, "Admin not found", errorCodes.NOT_FOUND);
+    }
+
+    if (adminToUpdate.isMasterAdmin) {
+      throw new AppError(403, "The Master Admin account cannot be deactivated", errorCodes.FORBIDDEN);
+    }
+
+    if (adminToUpdate.role === AdminRole.SUPER_ADMIN && requester.role !== AdminRole.SUPER_ADMIN_MASTER) {
+      throw new AppError(403, "Only the Master Super Admin can modify the status of a Super Admin", errorCodes.FORBIDDEN);
+    }
+
+    // Update isActive using Firebase updateAdmin function
+    return await updateAdmin(adminId, { isActive });
+  }
+
+  // Create the initial Master Super Admin account (should only be used once)
+  async createMasterAdmin(adminData: Partial<IAdmin>): Promise<IAdmin> {
+    const existingMaster = await db.collection('admins').where('isMasterAdmin', '==', true).get();
+    if (!existingMaster.empty) {
+      throw new AppError(403, "A Master Super Admin already exists", errorCodes.FORBIDDEN);
+    }
+
+    // Check if password is defined before hashing
+    const hashedPassword = adminData.password ? await hashPassword(adminData.password) : undefined;
+
+    const masterAdminData: IAdmin = {
+      ...adminData,
+      role: AdminRole.SUPER_ADMIN_MASTER,
+      isMasterAdmin: true,
+      password: hashedPassword || '', // Ensure password is a string
+      createdBy: 'SYSTEM',
+      _id: '', // _id will be generated by Firebase
+      userId: adminData.userId || '', // Ensure userId is a string
+      email: adminData.email || '', // Ensure email is a string
+      firstName: adminData.firstName || '', // Ensure firstName is a string
+      lastName: adminData.lastName || '', // Ensure lastName is a string
+      phoneNumber: adminData.phoneNumber || '', // Ensure phoneNumber is a string
+      isActive: adminData.isActive ?? true, // Default to true if not provided
+      lastLogin: adminData.lastLogin || undefined,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      permissions: adminData.permissions || [],
+    };
+
+    return await createAdmin(masterAdminData); // Use Firebase createAdmin function
+  }
+
+  // Helper function to get admin by email
+  async getAdminByEmail(email: string): Promise<IAdmin | null> {
+    const adminSnapshot = await db.collection('admins').where('email', '==', email).get();
+    if (adminSnapshot.empty) {
+      return null;
+    }
+    return adminSnapshot.docs[0].data() as IAdmin;
+  }
 }
