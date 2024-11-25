@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import app from '../../firebaseConfig'; // Import the initialized Firebase app
-import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import app from '../../../firebaseConfig'; // Import the initialized Firebase app
+import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, DocumentData } from 'firebase/firestore';
 
 interface Team {
-  id?: string;
+  id: string; // Make id required
   name: string;
   description: string;
   members: string[];
@@ -28,7 +28,7 @@ export const fetchTeams = createAsyncThunk('teams/fetchTeams', async () => {
   try {
     const querySnapshot = await getDocs(collection(db, 'teams'));
     return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Team));
-  } catch (error: any) {
+  } catch (error: unknown) { // Use unknown type
     console.error('Error fetching teams:', error);
     throw new Error('Failed to fetch teams');
   }
@@ -37,8 +37,8 @@ export const fetchTeams = createAsyncThunk('teams/fetchTeams', async () => {
 export const addTeam = createAsyncThunk('teams/addTeam', async (team: Team) => {
   try {
     const docRef = await addDoc(collection(db, 'teams'), team);
-    return { id: docRef.id, ...team };
-  } catch (error: any) {
+    return { ...team, id: docRef.id }; // Remove duplicate id
+  } catch (error: unknown) { // Use unknown type
     console.error('Error adding team:', error);
     throw new Error('Failed to add team');
   }
@@ -46,11 +46,11 @@ export const addTeam = createAsyncThunk('teams/addTeam', async (team: Team) => {
 
 export const updateTeam = createAsyncThunk(
   'teams/updateTeam',
-  async ({ id, ...updatedTeam }: Team) => {
+  async (updatedTeam: Team) => { // Require id in the argument
     try {
-      await updateDoc(doc(db, 'teams', id), updatedTeam);
-      return { id, ...updatedTeam };
-    } catch (error: any) {
+      await updateDoc(doc(db, 'teams', updatedTeam.id), updatedTeam as DocumentData); // Cast to DocumentData
+      return updatedTeam;
+    } catch (error: unknown) { // Use unknown type
       console.error('Error updating team:', error);
       throw new Error('Failed to update team');
     }
@@ -61,7 +61,7 @@ export const deleteTeam = createAsyncThunk('teams/deleteTeam', async (id: string
   try {
     await deleteDoc(doc(db, 'teams', id));
     return id;
-  } catch (error: any) {
+  } catch (error: unknown) { // Use unknown type
     console.error('Error deleting team:', error);
     throw new Error('Failed to delete team');
   }

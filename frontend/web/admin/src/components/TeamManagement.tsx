@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  fetchTeams,
+  addTeam,
+  updateTeam,
+  deleteTeam,
+} from '../redux/slices/teamSlice';
 import styles from './style/TeamManagement.module.css';
+import { RootState, AppDispatch } from '../redux/store';
 
 interface Team {
   id: string;
@@ -9,21 +17,10 @@ interface Team {
 }
 
 const TeamManagement: React.FC = () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [teams, setTeams] = useState<Team[]>([
-    {
-      id: '1',
-      name: 'Team A',
-      description: 'This is Team A',
-      members: ['John Doe', 'Jane Doe'],
-    },
-    {
-      id: '2',
-      name: 'Team B',
-      description: 'This is Team B',
-      members: ['Peter Pan', 'Wendy Darling'],
-    },
-  ]);
+  const dispatch: AppDispatch = useDispatch();
+  const teams = useSelector((state: RootState) => state.teams.teams);
+  const status = useSelector((state: RootState) => state.teams.status);
+  const error = useSelector((state: RootState) => state.teams.error);
 
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamDescription, setNewTeamDescription] = useState('');
@@ -31,15 +28,21 @@ const TeamManagement: React.FC = () => {
   const [editTeamName, setEditTeamName] = useState('');
   const [editTeamDescription, setEditTeamDescription] = useState('');
 
+  useEffect(() => {
+    if (status === 'idle') {
+      dispatch(fetchTeams());
+    }
+  }, [status, dispatch]);
+
   const handleAddTeam = () => {
     const newTeam: Team = {
-      id: (teams.length + 1).toString(),
+      id: '', // Let Firebase generate the ID
       name: newTeamName,
       description: newTeamDescription,
       members: [],
     };
 
-    setTeams([...teams, newTeam]);
+    dispatch(addTeam(newTeam));
     setNewTeamName('');
     setNewTeamDescription('');
   };
@@ -54,16 +57,19 @@ const TeamManagement: React.FC = () => {
   };
 
   const handleSaveEdit = () => {
-    setTeams(
-      teams.map((team) =>
-        team.id === editingTeamId
-          ? { ...team, name: editTeamName, description: editTeamDescription }
-          : team
-      )
-    );
-    setEditingTeamId(null);
-    setEditTeamName('');
-    setEditTeamDescription('');
+    if (editingTeamId) {
+      const updatedTeam: Team = {
+        id: editingTeamId,
+        name: editTeamName,
+        description: editTeamDescription,
+        members: [], // Assuming members are not edited here
+      };
+
+      dispatch(updateTeam(updatedTeam));
+      setEditingTeamId(null);
+      setEditTeamName('');
+      setEditTeamDescription('');
+    }
   };
 
   const handleCancelEdit = () => {
@@ -74,13 +80,16 @@ const TeamManagement: React.FC = () => {
 
   const handleDeleteTeam = (id: string) => {
     if (window.confirm('Are you sure you want to delete this team?')) {
-      setTeams(teams.filter((team) => team.id !== id));
+      dispatch(deleteTeam(id));
     }
   };
 
-  return (
-    <div className={styles['team-management']}>
-      <h2>Team Management</h2>
+  let content;
+
+  if (status === 'loading') {
+    content = <div>Loading...</div>;
+  } else if (status === 'succeeded') {
+    content = (
       <table>
         <thead>
           <tr>
@@ -135,6 +144,15 @@ const TeamManagement: React.FC = () => {
           ))}
         </tbody>
       </table>
+    );
+  } else if (status === 'failed') {
+    content = <div>{error}</div>;
+  }
+
+  return (
+    <div className={styles['team-management']}>
+      <h2>Team Management</h2>
+      {content}
       <h3>Add New Team</h3>
       <div>
         <label htmlFor="teamName">Team Name:</label>
