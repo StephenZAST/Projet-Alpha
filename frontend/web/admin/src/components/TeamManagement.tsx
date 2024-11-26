@@ -34,7 +34,7 @@ const TeamManagement: React.FC = () => {
     }
   }, [status, dispatch]);
 
-  const handleAddTeam = () => {
+  const handleAddTeam = async () => {
     const newTeam: Team = {
       id: '', // Let Firebase generate the ID
       name: newTeamName,
@@ -42,9 +42,14 @@ const TeamManagement: React.FC = () => {
       members: [],
     };
 
-    dispatch(addTeam(newTeam));
-    setNewTeamName('');
-    setNewTeamDescription('');
+    try {
+      await dispatch(addTeam(newTeam));
+      setNewTeamName('');
+      setNewTeamDescription('');
+    } catch (error) {
+      console.error('Error adding team:', error);
+      // Handle error, e.g., display an error message to the user
+    }
   };
 
   const handleEditTeam = (id: string) => {
@@ -56,7 +61,7 @@ const TeamManagement: React.FC = () => {
     }
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editingTeamId) {
       const updatedTeam: Team = {
         id: editingTeamId,
@@ -65,10 +70,15 @@ const TeamManagement: React.FC = () => {
         members: [], // Assuming members are not edited here
       };
 
-      dispatch(updateTeam(updatedTeam));
-      setEditingTeamId(null);
-      setEditTeamName('');
-      setEditTeamDescription('');
+      try {
+        await dispatch(updateTeam(updatedTeam));
+        setEditingTeamId(null);
+        setEditTeamName('');
+        setEditTeamDescription('');
+      } catch (error) {
+        console.error('Error updating team:', error);
+        // Handle error, e.g., display an error message to the user
+      }
     }
   };
 
@@ -78,9 +88,14 @@ const TeamManagement: React.FC = () => {
     setEditTeamDescription('');
   };
 
-  const handleDeleteTeam = (id: string) => {
+  const handleDeleteTeam = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this team?')) {
-      dispatch(deleteTeam(id));
+      try {
+        await dispatch(deleteTeam(id));
+      } catch (error) {
+        console.error('Error deleting team:', error);
+        // Handle error, e.g., display an error message to the user
+      }
     }
   };
 
