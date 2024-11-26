@@ -17,7 +17,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // Protected admin routes
-router.post('/', isAuthenticated, requireAdminRole, validateArticleInput, async (req, res, next) => {
+router.post('/', isAuthenticated, requireAdminRole, validateArticleInput, async (req, res, next): Promise<void> => {
   try {
     const article = await createArticle(req.body);
     res.status(201).json(article);
@@ -26,12 +26,12 @@ router.post('/', isAuthenticated, requireAdminRole, validateArticleInput, async 
   }
 });
 
-router.put('/:id', isAuthenticated, requireAdminRole, validateArticleInput, async (req, res, next) => {
+router.put('/:id', isAuthenticated, requireAdminRole, validateArticleInput, async (req, res, next): Promise<void> => {
   try {
     const articleId = req.params.id;
     const updatedArticle = await updateArticle(articleId, req.body);
     if (!updatedArticle) {
-      return res.status(404).json({ error: 'Article not found' });
+      res.status(404).json({ error: 'Article not found' }); // Removed return
     }
     res.json(updatedArticle);
   } catch (error) {
@@ -39,12 +39,12 @@ router.put('/:id', isAuthenticated, requireAdminRole, validateArticleInput, asyn
   }
 });
 
-router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res, next) => {
+router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
   try {
     const articleId = req.params.id;
     const deletedArticle = await deleteArticle(articleId);
     if (!deletedArticle) {
-      return res.status(404).json({ error: 'Article not found' });
+      res.status(404).json({ error: 'Article not found' }); // Removed return
     }
     res.json({ message: 'Article deleted successfully' });
   } catch (error) {

@@ -1,89 +1,105 @@
 import { Request } from 'express';
-import { AdminLog, AdminAction, IAdminLog } from '../models/adminLog';
+import { AdminAction, IAdminLog, adminLogsRef } from '../models/adminLog';
 import { IAdmin } from '../models/admin';
+import { Query } from '@google-cloud/firestore';
 
 export class AdminLogService {
-    static async logAction(
-        adminId: IAdmin['_id'],
-        action: AdminAction,
-        details: string,
-        req: Request,
-        targetAdminId?: IAdmin['_id']
-    ): Promise<IAdminLog> {
-        const log = new AdminLog({
-            adminId,
-            action,
-            details,
-            targetAdminId,
-            ipAddress: req.ip,
-            userAgent: req.get('user-agent') || 'Unknown'
-        });
+  static async logAction(
+    adminId: string,
+    action: AdminAction,
+    details: string,
+    req: Request,
+    targetAdminId: string = ''
+  ): Promise<IAdminLog> {
+    const newLog: IAdminLog = {
+      adminId,
+      action,
+      details,
+      targetAdminId: targetAdminId || '',
+      ipAddress: req.ip || '', // Provide default empty string for ipAddress
+      userAgent: req.get('user-agent') || 'Unknown',
+      createdAt: new Date(),
+    };
 
-        return await log.save();
+    const logRef = await adminLogsRef.add(newLog);
+    await logRef.set(newLog);
+    return newLog;
+  }
+
+  static async getAdminLogs(
+    adminId?: string,
+    action?: AdminAction,
+    startDate?: Date,
+    endDate?: Date,
+    limit: number = 50,
+    skip: number = 0
+  ): Promise<IAdminLog[]> {
+    let query: Query = adminLogsRef.orderBy('createdAt', 'desc');
+
+    if (adminId) {
+      query = query.where('adminId', '==', adminId);
+    }
+    if (action) {
+      query = query.where('action', '==', action);
+    }
+    if (startDate) {
+      query = query.where('createdAt', '>=', startDate);
+    }
+    if (endDate) {
+      query = query.where('createdAt', '<=', endDate);
     }
 
-    static async getAdminLogs(
-        adminId?: string,
-        action?: AdminAction,
-        startDate?: Date,
-        endDate?: Date,
-        limit: number = 50,
-        skip: number = 0
-    ): Promise<IAdminLog[]> {
-        const query: any = {};
+    const snapshot = await query.limit(limit).offset(skip).get();
+    return snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => doc.data() as IAdminLog);
+  }
 
-        if (adminId) query.adminId = adminId;
-        if (action) query.action = action;
-        if (startDate || endDate) {
-            query.createdAt = {};
-            if (startDate) query.createdAt.$gte = startDate;
-            if (endDate) query.createdAt.$lte = endDate;
-        }
+  static async getLogCount(
+    adminId?: string,
+    action?: AdminAction,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<number> {
+    let query: Query = adminLogsRef;
 
-        return await AdminLog.find(query)
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .populate('adminId', 'email firstName lastName role')
-            .populate('targetAdminId', 'email firstName lastName role');
+    if (adminId) {
+      query = query.where('adminId', '==', adminId);
+    }
+    if (action) {
+      query = query.where('action', '==', action);
+    }
+    if (startDate) {
+      query = query.where('createdAt', '>=', startDate);
+    }
+    if (endDate) {
+      query = query.where('createdAt', '<=', endDate);
     }
 
-    static async getLogCount(
-        adminId?: string,
-        action?: AdminAction,
-        startDate?: Date,
-        endDate?: Date
-    ): Promise<number> {
-        const query: any = {};
+    const snapshot = await query.get();
+    return snapshot.size;
+  }
 
-        if (adminId) query.adminId = adminId;
-        if (action) query.action = action;
-        if (startDate || endDate) {
-            query.createdAt = {};
-            if (startDate) query.createdAt.$gte = startDate;
-            if (endDate) query.createdAt.$lte = endDate;
-        }
+  static async getRecentActivityByAdmin(adminId: string, limit: number = 10): Promise<IAdminLog[]> {
+    const snapshot = await adminLogsRef
+      .where('adminId', '==', adminId)
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get();
 
-        return await AdminLog.countDocuments(query);
-    }
+    return snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => {
+      const log = doc.data() as IAdminLog;
+      return log;
+    });
+  }
 
-    static async getRecentActivityByAdmin(adminId: string, limit: number = 10): Promise<IAdminLog[]> {
-        return await AdminLog.find({ adminId })
-            .sort({ createdAt: -1 })
-            .limit(limit)
-            .populate('targetAdminId', 'email firstName lastName role');
-    }
+  static async getFailedLoginAttempts(adminId: string, timeWindow: number = 15): Promise<number> {
+    const windowStart = new Date(Date.now() - timeWindow * 60 * 1000);
 
-    static async getFailedLoginAttempts(
-        adminId: string,
-        timeWindow: number = 15 // minutes
-    ): Promise<number> {
-        const windowStart = new Date(Date.now() - timeWindow * 60 * 1000);
-        
-        return await AdminLog.countDocuments({
-            adminId,
-            action: AdminAction.FAILED_LOGIN,
-            createdAt: { $gte: windowStart }
-        });
-    }
+    const snapshot = await adminLogsRef
+      .where('adminId', '==', adminId)
+      .where('action', '==', AdminAction.FAILED_LOGIN)
+      .where('createdAt', '>=', windowStart)
+      .get();
+
+    return snapshot.size;
+  }
 }

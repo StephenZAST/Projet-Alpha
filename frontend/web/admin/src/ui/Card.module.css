@@ -1,0 +1,10 @@
+.card {
+    background-color: var(--white);
+    border-radius: 16px;
+    box-shadow: var(--pripary-box-shadow);
+    overflow: hidden;
+  }
+  
+  body[data-theme="dark"] .card {
+    background-color: var(--gray-50);
+  }
