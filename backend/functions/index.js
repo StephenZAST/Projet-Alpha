@@ -43,4 +43,48 @@ app.use('/articles', articlesRoutes);
 const billingRoutes = require('./routes/billing');
 app.use('/billing', billingRoutes);
 
+// Import and use the categories routes
+const categoriesRoutes = require('./routes/categories');
+app.use('/categories', categoriesRoutes);
+
+// Import and use the delivery-tasks routes
+const deliveryTasksRoutes = require('./routes/delivery-tasks');
+app.use('/delivery-tasks', deliveryTasksRoutes);
+
+// Import and use the delivery routes
+const deliveryRoutes = require('./routes/delivery');
+app.use('/delivery', deliveryRoutes);
+
+// Import and use the loyalty routes
+const loyaltyRoutes = require('./routes/loyalty');
+app.use('/loyalty', loyaltyRoutes);
+
+// Import and use the notifications routes
+const notificationsRoutes = require('./routes/notifications');
+app.use('/notifications', notificationsRoutes);
+
+// Import and use the orders routes
+const ordersRoutes = require('./routes/orders');
+app.use('/orders', ordersRoutes);
+
+// Import and use the payments routes
+const paymentsRoutes = require('./routes/payments');
+app.use('/payments', paymentsRoutes);
+
+// Import and use the permissions routes
+const permissionsRoutes = require('./routes/permissions');
+app.use('/permissions', permissionsRoutes);
+
+// Import and use the recurringOrders routes
+const recurringOrdersRoutes = require('./routes/recurringOrders');
+app.use('/recurringOrders', recurringOrdersRoutes);
+
+// Import and use the subscriptions routes
+const subscriptionsRoutes = require('./routes/subscriptions');
+app.use('/subscriptions', subscriptionsRoutes);
+
+// Import and use the users routes
+const usersRoutes = require('./routes/users');
+app.use('/users', usersRoutes);
+
 exports.api = functions.https.onRequest(app);
