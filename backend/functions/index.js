@@ -23,4 +23,24 @@ app.use('/teams', teamsRoutes);
 const adminsRoutes = require('./routes/admins');
 app.use('/admins', adminsRoutes);
 
+// Import and use the admin logs routes
+const adminLogsRoutes = require('./routes/adminLogs');
+app.use('/adminLogs', adminLogsRoutes);
+
+// Import and use the affiliate routes
+const affiliateRoutes = require('./routes/affiliates');
+app.use('/affiliates', affiliateRoutes);
+
+// Import and use the analytics routes
+const analyticsRoutes = require('./routes/analytics');
+app.use('/analytics', analyticsRoutes);
+
+// Import and use the articles routes
+const articlesRoutes = require('./routes/articles');
+app.use('/articles', articlesRoutes);
+
+// Import and use the billing routes
+const billingRoutes = require('./routes/billing');
+app.use('/billing', billingRoutes);
+
 exports.api = functions.https.onRequest(app);
