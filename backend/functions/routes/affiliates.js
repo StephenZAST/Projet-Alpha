@@ -2,6 +2,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 const { AffiliateService } = require('../../src/services/affiliateService');
 const { CommissionService } = require('../../src/services/commissionService');
+// eslint-disable-next-line no-unused-vars
 const { AppError } = require('../../src/utils/errors');
 
 const router = express.Router();

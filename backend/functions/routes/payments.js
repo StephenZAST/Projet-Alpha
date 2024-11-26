@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable max-len */
 const express = require('express');
 const admin = require('firebase-admin');
 const { paymentController } = require('../../src/controllers/paymentController');

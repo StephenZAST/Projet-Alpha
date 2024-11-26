@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+/* eslint-disable no-unused-vars */
 const express = require('express');
 const admin = require('firebase-admin');
 const { createSubscription, getSubscriptions, updateSubscription, deleteSubscription, getUserSubscription } = require('../../src/services/subscriptions');

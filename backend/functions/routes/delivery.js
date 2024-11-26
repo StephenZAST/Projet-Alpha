@@ -2,6 +2,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 const { DeliveryService } = require('../../src/services/delivery');
 const { AppError } = require('../../src/utils/errors');
+// eslint-disable-next-line no-unused-vars
 const { db } = require('../../src/services/firebase');
 
 const router = express.Router();

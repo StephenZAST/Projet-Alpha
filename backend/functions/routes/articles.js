@@ -4,6 +4,7 @@ const { createArticle, getArticles, updateArticle, deleteArticle } = require('..
 const { validateArticleInput } = require('../../src/middleware/validation/index');
 const { AppError } = require('../../src/utils/errors');
 
+// eslint-disable-next-line no-unused-vars
 const db = admin.firestore();
 const router = express.Router();
 

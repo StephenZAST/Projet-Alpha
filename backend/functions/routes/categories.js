@@ -3,6 +3,7 @@ const admin = require('firebase-admin');
 const { createCategory, getCategories, updateCategory, deleteCategory } = require('../../src/services/categories');
 const { AppError } = require('../../src/utils/errors');
 
+// eslint-disable-next-line no-unused-vars
 const db = admin.firestore();
 const router = express.Router();
 

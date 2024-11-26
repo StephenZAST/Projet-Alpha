@@ -1,6 +1,7 @@
 const express = require('express');
 const admin = require('firebase-admin');
 const { AdminService } = require('../../src/services/adminService');
+// eslint-disable-next-line no-unused-vars
 const { AppError } = require('../../src/utils/errors');
 
 const router = express.Router();
