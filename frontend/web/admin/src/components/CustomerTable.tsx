@@ -1,6 +1,7 @@
 import React from 'react';
 import { TableRowProps } from '../types';
 import styles from './style/CustomerTable.module.css';
+import Table from './Table'; 
 
 const tableData: TableRowProps[] = [
   {
@@ -15,6 +16,23 @@ const tableData: TableRowProps[] = [
 ];
 
 export const CustomerTable: React.FC = () => {
+  const columns = [
+    { key: 'customerName', label: 'Customer Name' },
+    { key: 'company', label: 'Company' },
+    { key: 'phoneNumber', label: 'Phone Number' },
+    { key: 'email', label: 'Email' },
+    { key: 'country', label: 'Country' },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (item: TableRowProps) => (
+        <span className={`${styles.status} ${styles[item.status]}`}>
+          {item.status}
+        </span>
+      )
+    },
+  ];
+
   return (
     <section className={styles.tableContainer}>
       <header className={styles.tableHeader}>
@@ -28,34 +46,7 @@ export const CustomerTable: React.FC = () => {
       </header>
       
       <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Customer Name</th>
-              <th>Company</th>
-              <th>Phone Number</th>
-              <th>Email</th>
-              <th>Country</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tableData.map((row, index) => (
-              <tr key={index}>
-                <td>{row.customerName}</td>
-                <td>{row.company}</td>
-                <td>{row.phoneNumber}</td>
-                <td>{row.email}</td>
-                <td>{row.country}</td>
-                <td>
-                  <span className={`${styles.status} ${styles[row.status]}`}>
-                    {row.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table data={tableData} columns={columns} /> {/* Use the Table component */}
       </div>
     </section>
   );

@@ -1,6 +1,15 @@
 import React from 'react';
-import { MetricCardProps } from '../types';
-import styles from './MetricCard.module.css';
+import styles from './style/MetricCard.module.css';
+
+export interface MetricCardProps { // Export MetricCardProps
+  title: string;
+  value: string;
+  change?: {
+    value: string;
+    type: 'increase' | 'decrease' | 'neutral';
+    baseline?: string;
+  };
+}
 
 export const MetricCard: React.FC<MetricCardProps> = ({ title, value, change }) => {
   const getBadgeClass = () => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MetricCard } from '../components/MetricCard';
-import { AdminTable } from '../components/AdminTable';
+import { MetricCard, MetricCardProps } from '../components/MetricCard'; // Import MetricCardProps
+import AdminTable from '../components/AdminTable';
 import { CompanyMetrics } from '../components/CompanyMetrics';
 import { SystemAlerts } from '../components/SystemAlerts';
 import { DashboardLayout } from './DashboardLayout';
@@ -20,7 +20,7 @@ export const MasterSuperAdminDashboard: React.FC = () => {
     { icon: '/icons/finance.svg', label: 'Finance Globale', value: 'finance' }
   ];
 
-  const metrics = [
+  const metrics: MetricCardProps[] = [ // Type the metrics array
     {
       title: "Total Commandes",
       value: "12,456",
