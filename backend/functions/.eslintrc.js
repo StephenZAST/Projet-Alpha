@@ -14,7 +14,8 @@ module.exports = {
     "max-len": ["warn", {"code": 120}],
     "arrow-parens": ["off"],
     "object-curly-spacing": ["off"],
-    "no-unused-vars": ["warn"], // Add missing comma
+    "no-unused-vars": ["warn"],
+    "new-cap": ["off"], // Disable the new-cap rule
   },
   parserOptions: {
     ecmaVersion: 2020,
