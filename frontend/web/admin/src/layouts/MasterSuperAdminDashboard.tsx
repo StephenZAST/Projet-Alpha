@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { MetricCard, MetricCardProps } from '../components/MetricCard'; // Import MetricCardProps
+import { MetricCard, MetricCardProps } from '../components/MetricCard';
 import AdminTable from '../components/AdminTable';
 import { CompanyMetrics } from '../components/CompanyMetrics';
 import { SystemAlerts } from '../components/SystemAlerts';
 import { DashboardLayout } from './DashboardLayout';
-import { AdminActivityLog } from '../components/AdminActivityLog';
+import AdminActivityLog from '../components/AdminActivityLog'; // Import the AdminActivityLog component
 import styles from './style/MasterSuperAdminDashboard.module.css';
 
 export const MasterSuperAdminDashboard: React.FC = () => {
@@ -20,7 +20,7 @@ export const MasterSuperAdminDashboard: React.FC = () => {
     { icon: '/icons/finance.svg', label: 'Finance Globale', value: 'finance' }
   ];
 
-  const metrics: MetricCardProps[] = [ // Type the metrics array
+  const metrics: MetricCardProps[] = [
     {
       title: "Total Commandes",
       value: "12,456",
@@ -64,7 +64,7 @@ export const MasterSuperAdminDashboard: React.FC = () => {
           </section>
 
           <aside className={styles.secondaryContent}>
-            <AdminActivityLog />
+            <AdminActivityLog /> {/* Use the AdminActivityLog component here */}
           </aside>
         </div>
 
