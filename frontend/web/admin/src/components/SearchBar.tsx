@@ -1,6 +1,6 @@
 import React from 'react';
 import { SearchBarProps } from '../types';
-import styles from './SearchBar.module.css';
+import styles from './style/SearchBar.module.css';
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   placeholder = 'Search...',
