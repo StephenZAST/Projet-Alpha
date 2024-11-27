@@ -1,9 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Chart } from '@shadcn/ui/chart';
+import styles from './style/BusinessAnalytics.module.css';
 
-export const BusinessAnalytics: React.FC = () => {
+const BusinessAnalytics: React.FC = () => {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get('/api/business-analytics');
+        setData(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
-    <div>
-      {/* BusinessAnalytics component content will go here */}
+    <div className={styles.businessAnalyticsContainer}>
+      <h2>Business Analytics</h2>
+      <Chart data={data} />
     </div>
   );
 };
+
+export default BusinessAnalytics;
