@@ -1,23 +1,23 @@
-.customerContactContainer {
+.customerDatabaseContainer {
   background-color: var(--white);
   border-radius: 1rem;
   padding: 1.5rem;
   box-shadow: var(--primary-box-shadow);
 }
 
-.customerContactContainer h2 {
+.customerDatabaseContainer h2 {
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--gray-900);
   margin-bottom: 1rem;
 }
 
-.customerContactContainer table {
+.customerDatabaseContainer table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.customerContactContainer th {
+.customerDatabaseContainer th {
   padding: 1rem;
   text-align: left;
   font-weight: 500;
@@ -25,12 +25,12 @@
   border-bottom: 1px solid var(--gray-200);
 }
 
-.customerContactContainer td {
+.customerDatabaseContainer td {
   padding: 1rem;
   color: var(--gray-700);
   border-bottom: 1px solid var(--gray-200);
 }
 
-.customerContactContainer tr:hover {
+.customerDatabaseContainer tr:hover {
   background-color: var(--gray-50);
 }

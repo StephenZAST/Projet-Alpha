@@ -12,17 +12,16 @@
   margin-bottom: 1rem;
 }
 
-/* Styles for the datepicker can be added here */
-
-.appointmentSchedulingContainer div {
-  margin-top: 1rem;
+.appointmentSchedulingContainer .date-picker {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 0.5rem;
 }
 
-.appointmentSchedulingContainer h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--gray-900);
-  margin-bottom: 0.5rem;
+.appointmentSchedulingContainer .time-slot-picker {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--gray-200);
+  border-radius: 0.5rem;
 }
-
-/* Styles for time slot selection can be added here */

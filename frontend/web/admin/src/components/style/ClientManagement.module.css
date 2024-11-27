@@ -12,4 +12,25 @@
   margin-bottom: 1rem;
 }
 
-/* Styles for the table can be added here */
+.clientManagementContainer table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.clientManagementContainer th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 500;
+  color: var(--gray-500);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.clientManagementContainer td {
+  padding: 1rem;
+  color: var(--gray-700);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.clientManagementContainer tr:hover {
+  background-color: var(--gray-50);
+}
