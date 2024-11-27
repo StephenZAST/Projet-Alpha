@@ -1,9 +1,14 @@
 import React from 'react';
+import { Calendar } from 'react-big-calendar';
+import styles from './style/Schedule.module.css';
 
-export const Schedule: React.FC = () => {
+const Schedule: React.FC = () => {
   return (
-    <div>
-      {/* Schedule component content will go here */}
+    <div className={styles.scheduleContainer}>
+      <h2>Schedule</h2>
+      <Calendar />
     </div>
   );
 };
+
+export default Schedule;
