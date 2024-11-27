@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ThemeProvider } from '../theme/ThemeProvider';
+import { ThemeProvider } from '../theme/ThemeProvider'; // Specifying the named export
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import styles from './DashboardLayout.module.css';

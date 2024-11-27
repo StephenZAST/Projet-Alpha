@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from './DashboardLayout';
-import { StaffManagement } from '../components/StaffManagement';
-import { OrdersManagement } from '../components/OrdersManagement';
-import { CustomerManagement } from '../components/CustomerManagement';
-import { ReportsView } from '../components/ReportsView';
-import { Settings } from '../components/Settings';
+import StaffManagement from '../components/StaffManagement'; // Corrected import
+import OrdersManagement from '../components/OrdersManagement'; // Corrected import
+import CustomerManagement from '../components/CustomerManagement'; // Corrected import
+import ReportsView from '../components/ReportsView'; // Corrected import
+import Settings from '../components/Settings'; // Corrected import
 import styles from './style/SuperAdminDashboard.module.css';
 
 export const SuperAdminDashboard: React.FC = () => {

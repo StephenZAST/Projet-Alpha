@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from './DashboardLayout';
-import { TeamPerformance } from '../components/TeamPerformance';
-import { TeamManagement } from '../components/TeamManagement';
-import { SupervisorReports } from '../components/SupervisorReports';
-import { SupervisorConfig } from '../components/SupervisorConfig';
+import { TeamPerformance } from '../components/TeamPerformance'; // Corrected import
+import TeamManagement from '../components/TeamManagement';
+import SupervisorReports from '../components/SupervisorReports';
+import SupervisorConfig from '../components/SupervisorConfig';
 import styles from './style/SupervisorDashboard.module.css';
 
 export const SupervisorDashboard: React.FC = () => {
