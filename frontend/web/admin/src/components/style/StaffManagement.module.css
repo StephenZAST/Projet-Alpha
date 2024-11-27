@@ -1,0 +1,37 @@
+.staffManagementContainer {
+  background-color: var(--white);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: var(--primary-box-shadow);
+}
+
+.staffManagementContainer h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 1rem;
+}
+
+/* Styles for the staff management can be added here */
+.staffManagementContainer table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.staffManagementContainer th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 500;
+  color: var(--gray-500);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.staffManagementContainer td {
+  padding: 1rem;
+  color: var(--gray-700);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.staffManagementContainer tr:hover {
+  background-color: var(--gray-50);
+}

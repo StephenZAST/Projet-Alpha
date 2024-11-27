@@ -1,0 +1,15 @@
+.clientManagementContainer {
+  background-color: var(--white);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: var(--primary-box-shadow);
+}
+
+.clientManagementContainer h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 1rem;
+}
+
+/* Styles for the table can be added here */
