@@ -10,6 +10,18 @@ const App: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/" element={
+          <DashboardLayout
+            children={<div>Dashboard content</div>}
+            sidebarItems={[
+              { icon: '/icons/dashboard.svg', label: 'Dashboard', value: 'dashboard' },
+              { icon: '/icons/teams.svg', label: 'Teams', value: 'teams' },
+            ]}
+            selectedView="dashboard"
+            onViewChange={(view) => console.log(view)}
+            userRole="Admin"
+          />
+        } /> {/* Default route moved outside PrivateRoute */}
         <Route element={<PrivateRoute />}>
           <Route path="/dashboard" element={
             <DashboardLayout
