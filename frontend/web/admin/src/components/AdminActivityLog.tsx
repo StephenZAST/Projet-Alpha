@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Table from './Table';
 import styles from './style/AdminActivityLog.module.css';
 
@@ -9,17 +10,30 @@ interface ActivityLogItem {
   details?: string;
 }
 
-const activityLogData: ActivityLogItem[] = [
-  {
-    timestamp: '2023-12-28T10:00:00Z',
-    adminName: 'John Doe',
-    action: 'Created a new user',
-    details: 'User ID: 123',
-  },
-  // ... more activity log data
-];
-
 const AdminActivityLog: React.FC = () => {
+  const [activityLogData, setActivityLogData] = useState<ActivityLogItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchActivityLogData = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get('/api/admin-activity-log');
+        setActivityLogData(response.data);
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(error);
+        } else {
+          setError(new Error('Unknown error'));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchActivityLogData();
+  }, []);
+
   const columns = [
     { key: 'timestamp', label: 'Timestamp' },
     { key: 'adminName', label: 'Admin' },
@@ -30,7 +44,13 @@ const AdminActivityLog: React.FC = () => {
   return (
     <div className={styles.adminActivityLogContainer}>
       <h2>Admin Activity Log</h2>
-      <Table data={activityLogData} columns={columns} />
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p>Error: {error.message}</p>
+      ) : (
+        <Table data={activityLogData} columns={columns} />
+      )}
     </div>
   );
 };
