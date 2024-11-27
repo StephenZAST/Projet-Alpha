@@ -9,3 +9,7 @@ API_Doc/
 API_Firebase/
 description/
 endpointsDescription
+.env
+.env.example
+.env.test
+serviceAccountKey.json
