@@ -6,10 +6,11 @@ import { Table } from '../../../components/Table';
 import { MetricChart } from '../../../components/MetricChart';
 import { fetchDashboardMetrics } from '../../../redux/slices/dashboardSlice';
 import styles from './styles/Overview.module.css';
+import { DashboardMetrics, ChartData } from '../../../types/metrics';
 
 export const Overview: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { metrics, status } = useSelector((state: RootState) => state.dashboard);
+  const metrics = useSelector((state: RootState) => state.dashboard) as DashboardMetrics;
 
   useEffect(() => {
     dispatch(fetchDashboardMetrics());
@@ -19,18 +20,18 @@ export const Overview: React.FC = () => {
     {
       title: "Total Customers",
       value: metrics.totalCustomers || "5,423",
-      change: { value: "+12%", type: "increase", baseline: "vs last month" }
+      change: { value: "+12%", type: 'increase' as const, baseline: "vs last month" }
     },
     {
       title: "Active Members",
       value: metrics.activeMembers || "1,893",
-      change: { value: "+8%", type: "increase", baseline: "vs last month" }
+      change: { value: "+8%", type: 'increase' as const, baseline: "vs last month" }
     },
     // ... autres métriques
   ];
 
   const tableHeaders = ["Customer Name", "Company", "Phone Number", "Email", "Country", "Status"];
-  const chartData = [/* données pour le graphique */];
+  const chartData: ChartData[] = [/* données pour le graphique */];
 
   return (
     <div className={styles.overviewContainer}>
@@ -43,7 +44,6 @@ export const Overview: React.FC = () => {
       <section className={styles.chartsSection}>
         <MetricChart
           data={chartData}
-          type="area"
           color="#0045CE"
         />
       </section>

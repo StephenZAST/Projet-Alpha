@@ -1,17 +1,15 @@
 import React from 'react';
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, TooltipProps } from 'recharts';
 import { ChartData } from '../types/metrics';
 import styles from './MetricChart.module.css';
 
 interface MetricChartProps {
   data: ChartData[];
-  type: 'area' | 'bar' | 'line';
   color: string;
 }
 
 export const MetricChart: React.FC<MetricChartProps> = ({ 
   data, 
-  type, 
   color 
 }) => {
   return (
@@ -31,7 +29,7 @@ export const MetricChart: React.FC<MetricChartProps> = ({
             tickLine={false}
           />
           <Tooltip 
-            content={({ active, payload }) => {
+            content={({ active, payload }: TooltipProps) => {
               if (active && payload && payload.length) {
                 return (
                   <div className={styles.tooltip}>
