@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './components/Login';
 import TeamManagement from './components/TeamManagement';
 import PrivateRoute from './components/PrivateRoute';
-import { DashboardLayout } from './layouts/DashboardLayout';
+import { DashboardLayout } from './layouts/DashboardLayout/DashboardLayout';
 
 const App: React.FC = () => {
   return (

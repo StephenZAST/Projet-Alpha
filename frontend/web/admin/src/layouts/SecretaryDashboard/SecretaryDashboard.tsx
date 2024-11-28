@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { DashboardLayout } from './DashboardLayout';
-import DailyOverview from '../components/DailyOverview'; // Corrected import
-import OrderManagement from '../components/OrderManagement'; // Corrected import
-import ClientManagement from '../components/ClientManagement'; // Corrected import
-import InvoiceManagement from '../components/InvoiceManagement'; // Corrected import
-import Schedule from '../components/Schedule'; // Corrected import
+import { DashboardLayout } from '../DashboardLayout/DashboardLayout';
+import DailyOverview from '../../components/DailyOverview'; // Corrected import
+import OrderManagement from '../../components/OrderManagement'; // Corrected import
+import ClientManagement from '../../components/ClientManagement'; // Corrected import
+import InvoiceManagement from '../../components/InvoiceManagement'; // Corrected import
+import Schedule from '../../components/Schedule'; // Corrected import
 import styles from './style/SecretaryDashboard.module.css';
 
 export const SecretaryDashboard: React.FC = () => {

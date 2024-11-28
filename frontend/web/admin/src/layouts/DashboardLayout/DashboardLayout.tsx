@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { SidebarItem } from '../components/SidebarItem';
-import { TopBar } from '../components/TopBar';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { SidebarItem } from '../../components/SidebarItem';
+import { TopBar } from '../../components/TopBar';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import styles from './style/DashboardLayout.module.css';
 
 interface DashboardLayoutProps {
@@ -20,9 +20,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
   sidebarItems,
   selectedView,
-  onViewChange,
-  userRole
-}) => {
+  onViewChange}) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -32,12 +30,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   return (
     <div className={styles.dashboardContainer}>
       <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : ''}`}>
-        <div className={styles.sidebarHeader}>
+        <div className={styles.logoContainer}>
           <img src="/logo.svg" alt="Logo" className={styles.logo} />
-          <h2 className={styles.roleTitle}>{userRole}</h2>
+          <h1 className={styles.logoText}>
+            <span className={styles.brandName}>ALPHA</span>
+            <span className={styles.brandType}>LAUNDRY</span>
+          </h1>
         </div>
 
-        <nav className={styles.sidebarNav}>
+        <nav className={styles.navigation}>
           {sidebarItems.map((item) => (
             <SidebarItem
               key={item.value}

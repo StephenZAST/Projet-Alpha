@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { DashboardLayout } from './DashboardLayout';
-import { TeamPerformance } from '../components/TeamPerformance'; // Corrected import
-import TeamManagement from '../components/TeamManagement';
-import SupervisorReports from '../components/SupervisorReports';
-import SupervisorConfig from '../components/SupervisorConfig';
+import { DashboardLayout } from '../DashboardLayout/DashboardLayout';
+import  TeamPerformance  from '../../components/TeamPerformance'; // Corrected import
+import TeamManagement from '../../components/TeamManagement';
+import SupervisorReports from '../../components/SupervisorReports';
+import SupervisorConfig from '../../components/SupervisorConfig';
 import styles from './style/SupervisorDashboard.module.css';
 
 export const SupervisorDashboard: React.FC = () => {
@@ -25,7 +25,7 @@ export const SupervisorDashboard: React.FC = () => {
       case 'config':
         return <SupervisorConfig />;
       default:
-        return <TeamPerformance />;
+        return <TeamPerformance teamName={''} teamMembers={[]} teamPerformance={0} />;
     }
   };
 
