@@ -1,0 +1,79 @@
+.statCard {
+  background: var(--primary-gradient);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--pripary-box-shadow);
+}
+
+.cardContent {
+  display: flex;
+  gap: 20px;
+}
+
+.cardIcon {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardTitle {
+  color: var(--gray-100);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.cardValue {
+  color: var(--absolute-white);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.cardTrend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.trendIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.trendValue {
+  font-weight: 700;
+}
+
+.trendValue.up {
+  color: var(--success);
+}
+
+.trendValue.down {
+  color: var(--error);
+}
+
+.trendText {
+  color: var(--white);
+}
+
+@media (max-width: 768px) {
+  .statCard {
+    padding: 16px;
+  }
+
+  .cardIcon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .cardValue {
+    font-size: 24px;
+  }
+}
