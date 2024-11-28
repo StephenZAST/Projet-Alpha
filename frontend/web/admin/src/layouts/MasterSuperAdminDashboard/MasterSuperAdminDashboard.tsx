@@ -1,75 +1,115 @@
-import React, { useState } from 'react';
-import { MetricCard, MetricCardProps } from '../../components/MetricCard';
-import AdminTable from '../../components/MasterSuperAdminDashboard/AdminTable';
-import CompanyMetrics from '../../components/MasterSuperAdminDashboard/CompanyMetrics'; // Corrected import
-import { SystemAlerts } from '../../components/MasterSuperAdminDashboard/SystemAlerts';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { DashboardLayout } from '../DashboardLayout/DashboardLayout';
-import AdminActivityLog from '../../components/MasterSuperAdminDashboard/AdminActivityLog';
+import { Overview } from './views/Overview';
+import { AdminManagement } from './views/AdminManagement';
+import { CompanyManagement } from './views/CompanyManagement';
+import { GlobalStats } from './views/GlobalStats';
+import { GlobalFinance } from './views/GlobalFinance';
+import { SystemConfig } from './views/SystemConfig';
+import { PermissionManagement } from './views/PermissionManagement';
+import { Settings } from './views/Settings';
+import { AppDispatch, RootState } from '../../redux/store';
+import { fetchDashboardMetrics } from '../../redux/slices/dashboardSlice';
 import styles from './style/MasterSuperAdminDashboard.module.css';
 
 export const MasterSuperAdminDashboard: React.FC = () => {
   const [selectedView, setSelectedView] = useState('overview');
+  const dispatch = useDispatch<AppDispatch>();
+  const { status } = useSelector((state: RootState) => state.dashboard);
+
+  useEffect(() => {
+    if (status === 'idle') {
+      dispatch(fetchDashboardMetrics());
+    }
+  }, [status, dispatch]);
 
   const sidebarItems = [
-    { icon: '/icons/overview.svg', label: 'Vue d\'ensemble', value: 'overview' },
-    { icon: '/icons/admin.svg', label: 'Gestion des Administrateurs', value: 'admins' },
-    { icon: '/icons/company.svg', label: 'Gestion des Entreprises', value: 'companies' },
-    { icon: '/icons/stats.svg', label: 'Statistiques Globales', value: 'stats' },
-    { icon: '/icons/config.svg', label: 'Configuration Système', value: 'config' },
-    { icon: '/icons/permissions.svg', label: 'Gestion des Permissions', value: 'permissions' },
-    { icon: '/icons/finance.svg', label: 'Finance Globale', value: 'finance' }
-  ];
-
-  const metrics: MetricCardProps[] = [
-    {
-      title: "Total Commandes",
-      value: "12,456",
-      change: { value: "+23%", type: "increase", baseline: "vs last month" }
+    { 
+      icon: '/icons/overview.svg', 
+      label: 'Vue d\'ensemble', 
+      value: 'overview' 
     },
-    {
-      title: "Revenus Globaux",
-      value: "€234,567",
-      change: { value: "+15%", type: "increase", baseline: "vs last month" }
+    { 
+      icon: '/icons/admin.svg', 
+      label: 'Gestion des Administrateurs', 
+      value: 'admins' 
     },
-    {
-      title: "Utilisateurs Actifs",
-      value: "8,892",
-      change: { value: "+5%", type: "increase", baseline: "vs last week" }
+    { 
+      icon: '/icons/company.svg', 
+      label: 'Gestion des Entreprises', 
+      value: 'companies' 
     },
-    {
-      title: "Taux de Conversion",
-      value: "2.4%",
-      change: { value: "-0.2%", type: "decrease", baseline: "vs last week" }
+    { 
+      icon: '/icons/stats.svg', 
+      label: 'Statistiques Globales', 
+      value: 'stats' 
+    },
+    { 
+      icon: '/icons/finance.svg', 
+      label: 'Finance Globale', 
+      value: 'finance' 
+    },
+    { 
+      icon: '/icons/config.svg', 
+      label: 'Configuration Système', 
+      value: 'config' 
+    },
+    { 
+      icon: '/icons/permissions.svg', 
+      label: 'Gestion des Permissions', 
+      value: 'permissions' 
+    },
+    { 
+      icon: '/icons/settings.svg', 
+      label: 'Paramètres', 
+      value: 'settings' 
     }
   ];
 
+  const renderContent = () => {
+    if (status === 'loading') {
+      return <div className={styles.loading}>Loading...</div>;
+    }
+
+    if (status === 'failed') {
+      return <div className={styles.error}>Error loading dashboard data</div>;
+    }
+
+    switch(selectedView) {
+      case 'overview':
+        return <Overview />;
+      case 'admins':
+        return <AdminManagement />;
+      case 'companies':
+        return <CompanyManagement />;
+      case 'stats':
+        return <GlobalStats />;
+      case 'finance':
+        return <GlobalFinance />;
+      case 'config':
+        return <SystemConfig />;
+      case 'permissions':
+        return <PermissionManagement />;
+      case 'settings':
+        return <Settings />;
+      default:
+        return <Overview />;
+    }
+  };
+
   return (
-    <DashboardLayout 
+    <DashboardLayout
       sidebarItems={sidebarItems}
       selectedView={selectedView}
       onViewChange={setSelectedView}
       userRole="Master Super Admin"
     >
       <div className={styles.dashboardContent}>
-        <section className={styles.metricsGrid}>
-          {metrics.map((metric, index) => (
-            <MetricCard key={index} {...metric} />
-          ))}
-        </section>
-
-        <div className={styles.mainContent}>
-          <section className={styles.primaryContent}>
-            <CompanyMetrics />
-            <SystemAlerts />
-          </section>
-
-          <aside className={styles.secondaryContent}>
-            <AdminActivityLog /> {/* Use the AdminActivityLog component here */}
-          </aside>
-        </div>
-
-        {selectedView === 'admins' && <AdminTable />}
+        {renderContent()}
       </div>
     </DashboardLayout>
   );
 };
+
+export default MasterSuperAdminDashboard;

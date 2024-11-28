@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../../../redux/store';
-import styles from './Settings.module.css';
+import { RootState } from '../../../redux/store';
+import styles from './styles/Settings.module.css';
 
 export const Settings: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);

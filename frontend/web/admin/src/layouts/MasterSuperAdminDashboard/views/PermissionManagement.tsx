@@ -1,7 +1,7 @@
 import React from 'react';
-import { MetricCard } from '../../../../components/MetricCard';
-import { Table } from '../../../../components/Table';
-import styles from './PermissionManagement.module.css';
+import { MetricCard } from '../../../components/MetricCard';
+import { Table } from '../../../components/Table';
+import styles from './styles/PermissionManagement.module.css';
 
 export const PermissionManagement: React.FC = () => {
   const permissionMetrics = [

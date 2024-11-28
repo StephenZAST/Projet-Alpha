@@ -1,8 +1,7 @@
 import React from 'react';
-import { MetricCard } from '../../../../components/MetricCard';
-import { Table } from '../../../../components/Table';
-import { MetricChart } from '../../../../components/MetricChart';
-import styles from './SystemConfig.module.css';
+import { MetricCard } from '../../../components/MetricCard';
+import { MetricChart } from '../../../components/MetricChart';
+import styles from './styles/SystemConfig.module.css';
 
 export const SystemConfig: React.FC = () => {
   const systemMetrics = [

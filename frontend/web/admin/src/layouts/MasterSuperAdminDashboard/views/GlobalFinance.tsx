@@ -1,8 +1,8 @@
 import React from 'react';
-import { MetricCard } from '../../components/MetricCard';
-import { MetricChart } from '../../components/MetricChart';
-import { Table } from '../../components/Table';
-import styles from './GlobalFinance.module.css';
+import { MetricCard } from '../../../components/MetricCard';
+import { MetricChart } from '../../../components/MetricChart';
+import { Table } from '../../../components/Table';
+import styles from './styles/GlobalFinance.module.css';
 
 export const GlobalFinance: React.FC = () => {
   const financialMetrics = [

@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../redux/store';
-import { MetricCard } from '../../components/MetricCard';
-import { Table } from '../../components/Tablecontainer';
-import { MetricChart } from '../../components/MetricChart';
-import { fetchDashboardMetrics } from '../../redux/slices/dashboardSlice';
-import styles from './Overview.module.css';
+import { AppDispatch, RootState } from '../../../redux/store';
+import { MetricCard } from '../../../components/MetricCard';
+import { Table } from '../../../components/Table';
+import { MetricChart } from '../../../components/MetricChart';
+import { fetchDashboardMetrics } from '../../../redux/slices/dashboardSlice';
+import styles from './styles/Overview.module.css';
 
 export const Overview: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();

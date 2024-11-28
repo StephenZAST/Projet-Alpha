@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../redux/store';
-import { MetricCard } from '../../components/MetricCard';
-import { Table } from '../../components/Table';
-import styles from './AdminManagement.module.css';
+import { AppDispatch, RootState } from '../../../redux/store';
+import { MetricCard } from '../../../components/MetricCard';
+import { Table } from '../../../components/Table';
+import styles from './styles/AdminManagement.module.css';
 
 export const AdminManagement: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
