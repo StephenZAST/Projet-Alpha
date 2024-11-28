@@ -1,0 +1,33 @@
+.overviewContainer {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .topMetrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+  
+  .chartsSection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+  }
+  
+  .tableSection {
+    margin-top: 24px;
+  }
+  
+  @media (max-width: 768px) {
+    .overviewContainer {
+      padding: 16px;
+    }
+    
+    .chartsSection {
+      grid-template-columns: 1fr;
+    }
+  }
+  
