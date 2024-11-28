@@ -24,5 +24,5 @@ export interface MetricGroup {
 export interface DashboardMetrics {
   totalCustomers: number;
   activeMembers: number;
-  customers: any[];
+  customers: unknown[];
 }

@@ -8,17 +8,17 @@ export const PermissionManagement: React.FC = () => {
     {
       title: "Total Roles",
       value: "8",
-      change: { value: "+1", type: "increase", baseline: "nouveau rôle" }
+      change: { value: "+1", type: 'increase' as const, baseline: "nouveau rôle" }
     },
     {
       title: "Active Permissions",
       value: "156",
-      change: { value: "+12", type: "increase", baseline: "ce mois" }
+      change: { value: "+12", type: 'increase' as const, baseline: "ce mois" }
     },
     {
       title: "Permission Updates",
       value: "24",
-      change: { value: "+5", type: "increase", baseline: "aujourd'hui" }
+      change: { value: "+5", type: 'increase' as const, baseline: "aujourd'hui" }
     }
   ];
 

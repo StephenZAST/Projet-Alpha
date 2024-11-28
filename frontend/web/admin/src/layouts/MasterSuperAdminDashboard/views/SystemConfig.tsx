@@ -2,29 +2,30 @@ import React from 'react';
 import { MetricCard } from '../../../components/MetricCard';
 import { MetricChart } from '../../../components/MetricChart';
 import styles from './styles/SystemConfig.module.css';
+import { ChartData } from '../../../types/metrics';
 
 export const SystemConfig: React.FC = () => {
   const systemMetrics = [
     {
       title: "System Uptime",
       value: "99.9%",
-      change: { value: "+0.1%", type: "increase", baseline: "vs last month" }
+      change: { value: "+0.1%", type: 'increase' as const, baseline: "vs last month" }
     },
     {
       title: "API Performance",
       value: "45ms",
-      change: { value: "-5ms", type: "increase", baseline: "response time" }
+      change: { value: "-5ms", type: 'decrease' as const, baseline: "response time" }
     },
     {
       title: "Active Services",
       value: "28/28",
-      change: { value: "100%", type: "neutral", baseline: "operational" }
+      change: { value: "100%", type: 'neutral' as const, baseline: "operational" }
     }
   ];
 
-  const systemLogs = [
-    { name: 'Jan', value: 100 },
-    { name: 'Feb', value: 120 },
+  const systemLogs: ChartData[] = [
+    { name: 'Jan', value: 100, date: '2023-01-01' },
+    { name: 'Feb', value: 120, date: '2023-02-01' },
     // ... autres données
   ];
 
@@ -48,7 +49,6 @@ export const SystemConfig: React.FC = () => {
           <h3>Moniteur API</h3>
           <MetricChart
             data={systemLogs}
-            type="area"
             color="#0045CE"
           />
         </div>

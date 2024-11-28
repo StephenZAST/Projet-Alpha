@@ -10,7 +10,7 @@ import { DashboardMetrics, ChartData } from '../../../types/metrics';
 
 export const Overview: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const metrics = useSelector((state: RootState) => state.dashboard) as DashboardMetrics;
+  const metrics = useSelector((state: RootState) => state.dashboard) as unknown as DashboardMetrics;
 
   useEffect(() => {
     dispatch(fetchDashboardMetrics());
@@ -19,12 +19,12 @@ export const Overview: React.FC = () => {
   const topMetrics = [
     {
       title: "Total Customers",
-      value: metrics.totalCustomers || "5,423",
+      value: metrics.totalCustomers ? metrics.totalCustomers.toString() : "5,423",
       change: { value: "+12%", type: 'increase' as const, baseline: "vs last month" }
     },
     {
       title: "Active Members",
-      value: metrics.activeMembers || "1,893",
+      value: metrics.activeMembers ? metrics.activeMembers.toString() : "1,893",
       change: { value: "+8%", type: 'increase' as const, baseline: "vs last month" }
     },
     // ... autres métriques

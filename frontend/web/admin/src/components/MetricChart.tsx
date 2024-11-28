@@ -29,7 +29,7 @@ export const MetricChart: React.FC<MetricChartProps> = ({
             tickLine={false}
           />
           <Tooltip 
-            content={({ active, payload }: TooltipProps) => {
+            content={({ active, payload }: TooltipProps<number, string>) => {
               if (active && payload && payload.length) {
                 return (
                   <div className={styles.tooltip}>
