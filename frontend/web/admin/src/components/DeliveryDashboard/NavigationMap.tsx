@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, LoadScript } from '@react-google-maps/api';
 import axios from 'axios';
-import styles from './style/NavigationMap.module.css';
+import styles from '../style/NavigationMap.module.css';
 
 interface Marker {
   name: string;

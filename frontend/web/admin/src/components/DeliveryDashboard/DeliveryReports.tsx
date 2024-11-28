@@ -1,26 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Table from './Table';
-import styles from './style/DeliveryList.module.css';
+import Table from '../Table';
+import styles from '../style/DeliveryReports.module.css';
 
-interface Delivery {
+interface DeliveryReport {
   id: string;
-  taskId: string;
   deliveryDate: string;
-  status: string;
+  deliveryStatus: string;
 }
 
-const DeliveryList: React.FC = () => {
-  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+const DeliveryReports: React.FC = () => {
+  const [deliveryReports, setDeliveryReports] = useState<DeliveryReport[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchDeliveries = async () => {
+    const fetchDeliveryReports = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('/delivery');
-        setDeliveries(response.data);
+        const response = await axios.get('/api/delivery-reports');
+        setDeliveryReports(response.data);
       } catch (error) {
         if (error instanceof Error) {
           setError(error);
@@ -31,28 +30,27 @@ const DeliveryList: React.FC = () => {
         setLoading(false);
       }
     };
-    fetchDeliveries();
+    fetchDeliveryReports();
   }, []);
 
   const columns = [
-    { key: 'id', label: 'Delivery ID' },
-    { key: 'taskId', label: 'Task ID' },
+    { key: 'id', label: 'Report ID' },
     { key: 'deliveryDate', label: 'Delivery Date' },
-    { key: 'status', label: 'Status' },
+    { key: 'deliveryStatus', label: 'Delivery Status' },
   ];
 
   return (
-    <div className={styles.deliveryListContainer}>
-      <h2>Delivery List</h2>
+    <div className={styles.deliveryReportsContainer}>
+      <h2>Delivery Reports</h2>
       {loading ? (
         <p>Loading...</p>
       ) : error ? (
         <p>Error: {error.message}</p>
       ) : (
-        <Table data={deliveries} columns={columns} />
+        <Table data={deliveryReports} columns={columns} />
       )}
     </div>
   );
 };
 
-export default DeliveryList;
+export default DeliveryReports;

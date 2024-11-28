@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from '../DashboardLayout/DashboardLayout';
-import DeliveryList from '../../components/DeliveryList';
-import NavigationMap from '../../components/NavigationMap';
+import DeliveryList from '../../components/DeliveryDashboard/DeliveryList';
+import NavigationMap from '../../components/DeliveryDashboard/NavigationMap';
 import CustomerContact from '../../components/CustomerContact';
-import DeliveryReports from '../../components/DeliveryReports';
+import DeliveryReports from '../../components/DeliveryDashboard/DeliveryReports';
 import styles from './style/DeliveryDashboard.module.css';
 
 export const DeliveryDashboard: React.FC = () => {

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { DashboardLayout } from '../DashboardLayout/DashboardLayout';
-import SupportTickets from '../../components/SupportTickets';
-import CustomerDatabase from '../../components/CustomerDatabase';
-import ServiceStatistics from '../../components/ServiceStatistics';
-import ServiceReports from '../../components/ServiceReports';
+import SupportTickets from '../../components/CustomerServiceDashboard/SupportTickets';
+import CustomerDatabase from '../../components/CustomerServiceDashboard/CustomerDatabase';
+import ServiceStatistics from '../../components/CustomerServiceDashboard/ServiceStatistics';
+import ServiceReports from '../../components/CustomerServiceDashboard/ServiceReports';
 import styles from './CustomerServiceDashboard.module.css';
 
 export const CustomerServiceDashboard: React.FC = () => {

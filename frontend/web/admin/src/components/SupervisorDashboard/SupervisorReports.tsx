@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Table from './Table';
-import styles from './style/InvoiceManagement.module.css';
+import Table from '../Table';
+import styles from '../style/SupervisorReports.module.css';
 
-interface Invoice {
+interface SupervisorReport {
   id: string;
-  customerName: string;
+  name: string;
   date: string;
 }
 
-const InvoiceManagement: React.FC = () => {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+const SupervisorReports: React.FC = () => {
+  const [supervisorReports, setSupervisorReports] = useState<SupervisorReport[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchInvoices = async () => {
+    const fetchSupervisorReports = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('/api/invoices');
-        setInvoices(response.data);
+        const response = await axios.get('/api/supervisor-reports');
+        setSupervisorReports(response.data);
       } catch (error) {
         if (error instanceof Error) {
           setError(error);
@@ -30,27 +30,27 @@ const InvoiceManagement: React.FC = () => {
         setLoading(false);
       }
     };
-    fetchInvoices();
+    fetchSupervisorReports();
   }, []);
 
   const columns = [
-    { key: 'id', label: 'Invoice ID' },
-    { key: 'customerName', label: 'Customer Name' },
+    { key: 'id', label: 'Report ID' },
+    { key: 'name', label: 'Name' },
     { key: 'date', label: 'Date' },
   ];
 
   return (
-    <div className={styles.invoiceManagementContainer}>
-      <h2>Invoice Management</h2>
+    <div className={styles.supervisorReportsContainer}>
+      <h2>Supervisor Reports</h2>
       {loading ? (
         <p>Loading...</p>
       ) : error ? (
         <p>Error: {error.message}</p>
       ) : (
-        <Table data={invoices} columns={columns} />
+        <Table data={supervisorReports} columns={columns} />
       )}
     </div>
   );
 };
 
-export default InvoiceManagement;
+export default SupervisorReports;

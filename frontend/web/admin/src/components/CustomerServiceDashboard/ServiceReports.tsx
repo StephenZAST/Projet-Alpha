@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Table from './Table';
-import styles from './style/ServiceStatistics.module.css';
+import Table from '../Table';
+import styles from '../style/ServiceReports.module.css';
 
-interface ServiceStatistic {
+interface ServiceReport {
   id: string;
   name: string;
-  value: number;
+  date: string;
 }
 
-const ServiceStatistics: React.FC = () => {
-  const [serviceStatistics, setServiceStatistics] = useState<ServiceStatistic[]>([]);
+const ServiceReports: React.FC = () => {
+  const [serviceReports, setServiceReports] = useState<ServiceReport[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchServiceStatistics = async () => {
+    const fetchServiceReports = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('/api/service-statistics');
-        setServiceStatistics(response.data);
+        const response = await axios.get('/api/service-reports');
+        setServiceReports(response.data);
       } catch (error) {
         if (error instanceof Error) {
           setError(error);
@@ -30,27 +30,27 @@ const ServiceStatistics: React.FC = () => {
         setLoading(false);
       }
     };
-    fetchServiceStatistics();
+    fetchServiceReports();
   }, []);
 
   const columns = [
-    { key: 'id', label: 'Statistic ID' },
+    { key: 'id', label: 'Report ID' },
     { key: 'name', label: 'Name' },
-    { key: 'value', label: 'Value' },
+    { key: 'date', label: 'Date' },
   ];
 
   return (
-    <div className={styles.serviceStatisticsContainer}>
-      <h2>Service Statistics</h2>
+    <div className={styles.serviceReportsContainer}>
+      <h2>Service Reports</h2>
       {loading ? (
         <p>Loading...</p>
       ) : error ? (
         <p>Error: {error.message}</p>
       ) : (
-        <Table data={serviceStatistics} columns={columns} />
+        <Table data={serviceReports} columns={columns} />
       )}
     </div>
   );
 };
 
-export default ServiceStatistics;
+export default ServiceReports;

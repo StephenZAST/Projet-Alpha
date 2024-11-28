@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { MetricCard, MetricCardProps } from '../../components/MetricCard';
-import AdminTable from '../../components/AdminTable';
-import CompanyMetrics from '../../components/CompanyMetrics'; // Corrected import
-import { SystemAlerts } from '../../components/SystemAlerts';
+import AdminTable from '../../components/MasterSuperAdminDashboard/AdminTable';
+import CompanyMetrics from '../../components/MasterSuperAdminDashboard/CompanyMetrics'; // Corrected import
+import { SystemAlerts } from '../../components/MasterSuperAdminDashboard/SystemAlerts';
 import { DashboardLayout } from '../DashboardLayout/DashboardLayout';
-import AdminActivityLog from '../../components/AdminActivityLog';
+import AdminActivityLog from '../../components/MasterSuperAdminDashboard/AdminActivityLog';
 import styles from './style/MasterSuperAdminDashboard.module.css';
 
 export const MasterSuperAdminDashboard: React.FC = () => {

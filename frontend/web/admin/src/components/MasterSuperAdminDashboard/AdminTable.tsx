@@ -1,6 +1,6 @@
 import React from 'react';
-import Table from './Table';
-import styles from './style/AdminTable.module.css';
+import Table from '../Table';
+import styles from '../style/AdminTable.module.css';
 
 interface Admin {
   id: string;

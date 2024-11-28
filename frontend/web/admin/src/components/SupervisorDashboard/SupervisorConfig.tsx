@@ -1,6 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import styles from './style/SupervisorConfig.module.css';
+import styles from '../style/SupervisorConfig.module.css';
 
 interface SupervisorConfigForm {
   supervisorName: string;

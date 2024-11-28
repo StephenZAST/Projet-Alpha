@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Table from './Table';
-import styles from './style/SystemAlerts.module.css';
+import Table from '../Table';
+import styles from '../style/SystemAlerts.module.css';
 
 interface SystemAlert {
   id: string;

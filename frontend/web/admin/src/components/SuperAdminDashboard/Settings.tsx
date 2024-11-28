@@ -1,6 +1,6 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import styles from './style/Settings.module.css';
+import styles from '../style/Settings.module.css';
 
 interface SettingsForm {
   username: string;

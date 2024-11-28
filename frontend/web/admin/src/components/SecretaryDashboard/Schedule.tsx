@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import moment from 'moment';
-import styles from './style/Schedule.module.css';
+import styles from '../style/Schedule.module.css';
 
 const Schedule: React.FC = () => {
   return (
