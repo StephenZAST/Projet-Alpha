@@ -1,28 +1,25 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../../redux/store';
+import React from 'react';
 import { MetricCard } from '../../../components/MetricCard';
 import { Table } from '../../../components/Table';
 import styles from './styles/AdminManagement.module.css';
 
 export const AdminManagement: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
   
   const adminMetrics = [
     {
       title: "Total Admins",
       value: "234",
-      change: { value: "+12", type: "increase", baseline: "ce mois" }
+      change: { value: "+12", type: 'increase' as const, baseline: "ce mois" }
     },
     {
       title: "Active Admins",
       value: "189",
-      change: { value: "+5", type: "increase", baseline: "cette semaine" }
+      change: { value: "+5", type: 'increase' as const, baseline: "cette semaine" }
     },
     {
       title: "Pending Approvals",
       value: "15",
-      change: { value: "-3", type: "decrease", baseline: "vs hier" }
+      change: { value: "-3", type: 'decrease' as const, baseline: "vs hier" }
     }
   ];
 

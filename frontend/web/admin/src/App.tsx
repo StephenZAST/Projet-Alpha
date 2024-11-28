@@ -1,45 +1,34 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import store from './redux/store';
 import Login from './components/Login';
-import TeamManagement from './components/TeamManagement';
 import PrivateRoute from './components/PrivateRoute';
-import { DashboardLayout } from './layouts/DashboardLayout/DashboardLayout';
+import { MasterSuperAdminDashboard } from './layouts/MasterSuperAdminDashboard/MasterSuperAdminDashboard';
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={
-          <DashboardLayout
-            children={<div>Dashboard content</div>}
-            sidebarItems={[
-              { icon: '/icons/dashboard.svg', label: 'Dashboard', value: 'dashboard' },
-              { icon: '/icons/teams.svg', label: 'Teams', value: 'teams' },
-            ]}
-            selectedView="dashboard"
-            onViewChange={(view) => console.log(view)}
-            userRole="Admin"
-          />
-        } /> {/* Default route moved outside PrivateRoute */}
-        <Route element={<PrivateRoute />}>
-          <Route path="/dashboard" element={
-            <DashboardLayout
-              children={<div>Dashboard content</div>}
-              sidebarItems={[
-                { icon: '/icons/dashboard.svg', label: 'Dashboard', value: 'dashboard' },
-                { icon: '/icons/teams.svg', label: 'Teams', value: 'teams' },
-              ]}
-              selectedView="dashboard"
-              onViewChange={(view) => console.log(view)}
-              userRole="Admin"
+    <Provider store={store}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route element={<PrivateRoute />}>
+            <Route 
+              path="/" 
+              element={<MasterSuperAdminDashboard />} 
             />
-          } />
-          <Route path="/teams" element={<TeamManagement />} />
-          {/* Add other protected routes here */}
-        </Route>
-      </Routes>
-    </BrowserRouter>
+            <Route 
+              path="/dashboard" 
+              element={<MasterSuperAdminDashboard />} 
+            />
+            <Route 
+              path="/master-admin/*" 
+              element={<MasterSuperAdminDashboard />} 
+            />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </Provider>
   );
 };
 

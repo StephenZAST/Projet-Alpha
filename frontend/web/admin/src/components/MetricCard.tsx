@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './style/MetricCard.module.css';
 
-export interface MetricCardProps { // Export MetricCardProps
+export interface MetricCardProps {
   title: string;
   value: string;
   change?: {
