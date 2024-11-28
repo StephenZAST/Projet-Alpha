@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Table from './Table';
+import Table from './Tablecontainer';
 import styles from './style/DocumentManagement.module.css';
 
 interface Document {

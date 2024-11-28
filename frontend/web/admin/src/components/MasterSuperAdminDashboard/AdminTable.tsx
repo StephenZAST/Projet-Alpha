@@ -1,5 +1,5 @@
 import React from 'react';
-import Table from '../Table';
+import Table from '../Tablecontainer';
 import styles from '../style/AdminTable.module.css';
 
 interface Admin {
