@@ -14,7 +14,7 @@ import { config } from './config';
 import { AppError } from './utils/errors';
 
 const app = express();
-const port = process.env.PORT || config.port || 3001;
+const port = process.env.PORT || config.port || 5000;
 
 // Rate limiting configuration
 const limiter = rateLimit({
