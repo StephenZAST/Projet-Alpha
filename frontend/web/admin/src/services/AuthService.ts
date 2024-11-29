@@ -95,7 +95,22 @@ class AuthService {
       if (error instanceof AppError) {
         throw error;
       }
-      throw AppError.fromAxiosError(error);
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          throw new AppError(
+            error.response.data.message || 'Failed to create master admin',
+            error.response.status,
+            error.response.data.code || 'CREATION_FAILED'
+          );
+        } else if (error.request) {
+          throw new AppError(
+            'Network error - unable to reach the server',
+            500,
+            'NETWORK_ERROR'
+          );
+        }
+      }
+      throw new AppError('An unexpected error occurred', 500, 'UNEXPECTED_ERROR');
     }
   }
 

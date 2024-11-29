@@ -2,6 +2,7 @@ import express from 'express';
 import { auth } from '../services/firebase';
 import { AppError } from '../utils/errors';
 import { generateToken, comparePassword } from '../utils/auth';
+import { sendEmail } from '../utils/email';
 
 const router = express.Router();
 
@@ -83,6 +84,26 @@ router.post('/google', async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+// Add test email endpoint
+router.post('/test-email', async (req, res) => {
+    try {
+        await sendEmail({
+            to: 'alphalaundry.service1@gmail.com', // Send to your email
+            subject: 'Test Email from Alpha Laundry',
+            html: `
+                <h1>Test Email</h1>
+                <p>This is a test email from Alpha Laundry system.</p>
+                <p>If you received this, the email system is working correctly!</p>
+                <p>Time sent: ${new Date().toLocaleString()}</p>
+            `
+        });
+        res.json({ message: 'Test email sent successfully!' });
+    } catch (error) {
+        console.error('Error sending test email:', error);
+        res.status(500).json({ error: 'Failed to send test email' });
+    }
 });
 
 export default router;
