@@ -10,15 +10,20 @@ const transporter = nodemailer.createTransport({
         user: emailConfig.user,
         pass: emailConfig.password
     },
-    tls: {
-        rejectUnauthorized: false // For development only, remove in production
-    }
+    tls: emailConfig.tls,
+    debug: true // Enable debug logs
 });
 
 // Verify connection configuration
 transporter.verify(function (error, success) {
     if (error) {
         console.log('SMTP connection error:', error);
+        // Log more details about the error
+        console.log('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
     } else {
         console.log('SMTP server is ready to take our messages');
     }
@@ -38,13 +43,20 @@ interface EmailOptions {
  */
 export async function sendEmail({ to, subject, html }: EmailOptions): Promise<void> {
     try {
-        await transporter.sendMail({
+        const mailOptions = {
             from: `"${emailConfig.fromName}" <${emailConfig.fromAddress}>`,
             to,
             subject,
             html
+        };
+        
+        console.log('Attempting to send email with options:', {
+            ...mailOptions,
+            html: '[HTML Content]' // Don't log the full HTML for security
         });
-        console.log('Email sent successfully to:', to);
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', info.messageId);
     } catch (error) {
         console.error('Failed to send email:', error);
         throw error;
