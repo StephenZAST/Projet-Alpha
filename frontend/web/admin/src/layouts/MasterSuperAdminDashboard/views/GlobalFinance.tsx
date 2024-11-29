@@ -9,22 +9,22 @@ export const GlobalFinance: React.FC = () => {
     {
       title: "Total Revenue",
       value: "125M FCFA",
-      change: { value: "+23%", type: "increase", baseline: "vs last month" }
+      change: { value: "+23%", type: 'increase' as const , baseline: "vs last month" }
     },
     {
       title: "Monthly Growth",
       value: "15.4%",
-      change: { value: "+2.1%", type: "increase", baseline: "vs last month" }
+      change: { value: "+2.1%", type: 'increase' as const , baseline: "vs last month" }
     },
     {
       title: "Pending Payments",
       value: "2.3M FCFA",
-      change: { value: "-5%", type: "decrease", baseline: "vs last month" }
+      change: { value: "-5%", type: 'decrease' as const, baseline: "vs last month" }
     },
     {
       title: "Outstanding Invoices",
       value: "4.7M FCFA",
-      change: { value: "+12%", type: "increase", baseline: "vs last month" }
+      change: { value: "+12%", type: 'increase' as const, baseline: "vs last month" }
     }
   ];
 
@@ -38,9 +38,9 @@ export const GlobalFinance: React.FC = () => {
   ];
 
   const revenueData = [
-    { name: 'Jan', value: 4000000 },
-    { name: 'Feb', value: 3000000 },
-    // ... autres données
+    { name: 'Jan', value: 4000000, date: '2023-01-01' },
+    { name: 'Feb', value: 3000000, date: '2023-02-01' },
+    // ... other data
   ];
 
   return (
@@ -56,7 +56,6 @@ export const GlobalFinance: React.FC = () => {
           <h3>Tendance des Revenus</h3>
           <MetricChart
             data={revenueData}
-            type="area"
             color="#0045CE"
           />
         </div>
@@ -64,7 +63,6 @@ export const GlobalFinance: React.FC = () => {
           <h3>Distribution des Revenus</h3>
           <MetricChart
             data={revenueData}
-            type="area"
             color="#00AC4F"
           />
         </div>
