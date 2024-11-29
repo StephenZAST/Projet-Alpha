@@ -5,7 +5,7 @@ import { MetricCard } from '../../../components/MetricCard';
 import { Table } from '../../../components/Table';
 import { MetricChart } from '../../../components/MetricChart';
 import { fetchDashboardMetrics } from '../../../redux/slices/dashboardSlice';
-import styles from './styles/Overview.module.css';
+import styles from '../styles/Overview.module.css';
 import { DashboardMetrics, ChartData } from '../../../types/metrics';
 
 export const Overview: React.FC = () => {

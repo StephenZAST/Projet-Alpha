@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { SidebarItem } from '../../components/SidebarItem';
 import { TopBar } from '../../components/TopBar';
 import { ThemeToggle } from '../../components/ThemeToggle';
-import styles from './style/DashboardLayout.module.css';
+import styles from '../style/DashboardLayout.module.css';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

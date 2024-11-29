@@ -1,7 +1,7 @@
 import React from 'react';
 import { MetricCard } from '../../../components/MetricCard';
 import { Table } from '../../../components/Table';
-import styles from './styles/AdminManagement.module.css';
+import styles from '../styles/AdminManagement.module.css';
 
 export const AdminManagement: React.FC = () => {
   
