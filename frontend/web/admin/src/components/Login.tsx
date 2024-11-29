@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { login } from '../redux/slices/authSlice';
 import { RootState, AppDispatch } from '../redux/store';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import styles from './style/Login.module.css';
 
 const Login: React.FC = () => {
@@ -32,14 +33,9 @@ const Login: React.FC = () => {
     <div className={styles.loginContainer}>
       <div className={styles.loginCard}>
         <h2 className={styles.loginTitle}>Connexion</h2>
-        
-        {status === 'loading' && (
-          <div className={styles.loadingState}>Chargement...</div>
-        )}
-        
-        {error && (
-          <div className={styles.errorMessage}>{error}</div>
-        )}
+
+        {status === 'loading' && <div className={styles.loadingState}>Chargement...</div>}
+        {error && <div className={styles.errorMessage}>{error}</div>}
 
         <form onSubmit={handleSubmit} className={styles.loginForm}>
           <div className={styles.formGroup}>
@@ -74,6 +70,12 @@ const Login: React.FC = () => {
             Se connecter
           </button>
         </form>
+
+        <div className={styles.masterAdminLink}>
+          <Link to="/create-master-admin">
+            Première connexion ? Créer un compte Master Admin
+          </Link>
+        </div>
       </div>
     </div>
   );
