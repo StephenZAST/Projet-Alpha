@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
-import styles from '../styles/CustomerTable.module.css';
+import styles from './style/Table.module.css';
 
 interface TableProps {
   headers: string[];

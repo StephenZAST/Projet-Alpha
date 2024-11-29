@@ -1,7 +1,7 @@
 import React from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, TooltipProps } from 'recharts';
 import { ChartData } from '../types/metrics';
-import styles from './MetricChart.module.css';
+import styles from './style/MetricChart.module.css';
 
 interface MetricChartProps {
   data: ChartData[];

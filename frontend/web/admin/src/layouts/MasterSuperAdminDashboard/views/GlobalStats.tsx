@@ -1,7 +1,7 @@
 import React from 'react';
 import { MetricCard } from '../../../components/MetricCard';
 import { MetricChart } from '../../../components/MetricChart';
-import styles from './styles/GlobalStats.module.css';
+import styles from '../styles/GlobalStats.module.css';
 import { ChartData } from '../../../types/metrics';
 
 export const GlobalStats: React.FC = () => {
