@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import store from './redux/store';
 import Login from './components/Login';
+import MasterAdminCreation from './components/MasterAdminCreation';
 import PrivateRoute from './components/PrivateRoute';
 import { MasterSuperAdminDashboard } from './layouts/MasterSuperAdminDashboard/MasterSuperAdminDashboard';
 
@@ -12,6 +13,7 @@ const App: React.FC = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/create-master-admin" element={<MasterAdminCreation />} />
           <Route element={<PrivateRoute />}>
             <Route 
               path="/" 

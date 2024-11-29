@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import authService from '../../services/authService';
+import authService from '../../services/AuthService';
 import { AdminRole } from '../../types/admin';
 
 interface AdminUser {
@@ -44,6 +44,20 @@ export const logout = createAsyncThunk('auth/logout', async () => {
   authService.logout();
 });
 
+export const createMasterAdmin = createAsyncThunk(
+  'auth/createMasterAdmin',
+  async (adminData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+  }) => {
+    const response = await authService.createMasterAdmin(adminData);
+    return response;
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -68,6 +82,16 @@ const authSlice = createSlice({
         state.user = null;
         state.isLoggedIn = false;
         state.status = 'succeeded';
+      })
+      .addCase(createMasterAdmin.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(createMasterAdmin.fulfilled, (state) => {
+        state.status = 'succeeded';
+      })
+      .addCase(createMasterAdmin.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || null;
       });
   },
 });

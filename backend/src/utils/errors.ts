@@ -148,7 +148,10 @@ export const errorCodes = {
   ADMIN_NOT_IN_TEAM: 'ADMIN_NOT_IN_TEAM',
 
   // Internal Server Error
-  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR'
+  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+
+  // Custom error for invalid request
+  INVALID_REQUEST: 'INVALID_REQUEST'
 } as const;
 
 export class AppError extends Error {

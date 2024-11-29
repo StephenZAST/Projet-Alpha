@@ -1,48 +1,88 @@
-import axios from 'axios';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import axios, { AxiosError } from 'axios';
+import { AppError } from '../utils/errors';
+import { auth, googleProvider } from '../config/firebase';
+import { signInWithPopup } from 'firebase/auth';
 
-const apiBaseUrl = 'https://us-central1-alpha-79c09.cloudfunctions.net/api'; // Replace with your actual base URL
+const apiBaseUrl = 'https://us-central1-alpha-79c09.cloudfunctions.net/api';
 
 class AuthService {
   async login(email: string, password: string) {
     try {
-      const response = await axios.post(`${apiBaseUrl}/admins/login`, { email, password });
+      const response = await axios.post(`${apiBaseUrl}/admin/login`, { email, password });
       if (response.data.success) {
         const { token, admin } = response.data.data;
         localStorage.setItem('token', token);
-        // You might want to store the admin data in local storage or Redux as well
+        localStorage.setItem('adminRole', admin.role);
         return admin;
       } else {
-        throw new Error(response.data.message);
+        throw new AppError(
+          response.data.message || 'Login failed',
+          response.data.statusCode || 400,
+          response.data.code || 'UNAUTHORIZED'
+        );
       }
-    } catch (error: unknown) {
-      console.error('Login failed:', error);
-      throw new Error('Login failed. Please check your credentials.');
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw AppError.fromAxiosError(error);
+    }
+  }
+
+  async createMasterAdmin(adminData: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+  }) {
+    try {
+      const response = await axios.post(`${apiBaseUrl}/admin/master/create`, adminData);
+      return response.data.data;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw AppError.fromAxiosError(error);
+    }
+  }
+
+  async signInWithGoogle(): Promise<any> {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      
+      const response = await axios.post(`${apiBaseUrl}/admin/google-auth`, {
+        idToken
+      });
+
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        return response.data;
+      }
+      throw new AppError('Failed to authenticate with Google', 401, 'GOOGLE_AUTH_FAILED');
+    } catch (error) {
+      throw AppError.fromAxiosError(error);
     }
   }
 
   logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('adminRole');
   }
 
   getCurrentUser() {
     const token = localStorage.getItem('token');
-    if (token) {
-      // Decode the JWT token to get user information
-      // You might need to use a library like jwt-decode for this
-      return null; // Replace with the decoded user information
-    } else {
-      return null;
+    const role = localStorage.getItem('adminRole');
+    if (token && role) {
+      return { token, role };
     }
+    return null;
   }
 
   isAuthenticated() {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Verify the token's validity (e.g., check expiration date)
-      return true; // Replace with actual token validation logic
-    } else {
-      return false;
-    }
+    return !!localStorage.getItem('token');
   }
 }
 

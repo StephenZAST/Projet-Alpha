@@ -1,9 +1,16 @@
 import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
 import AppError from './AppError'; // Correct import
 import { errorCodes } from './errors';
 
 // Number of salt rounds for bcrypt
 const SALT_ROUNDS = 12;
+
+interface TokenPayload {
+  uid: string;
+  email?: string | null;
+  role?: string;
+}
 
 /**
  * Hash a password using bcrypt
@@ -137,4 +144,21 @@ export function generateSecurePassword(length: number = 12): string {
     
     // Shuffle the password
     return password.split('').sort(() => Math.random() - 0.5).join('');
+}
+
+/**
+ * Generate a JWT token for authentication
+ * @param payload User information to encode in the token
+ * @returns JWT token string
+ */
+export function generateToken(payload: TokenPayload): string {
+  const secret = process.env.JWT_SECRET || 'fallback_secret_key';
+  
+  if (!payload.uid) {
+    throw new AppError('User ID is required for token generation', 400, errorCodes.INVALID_INPUT);
+  }
+
+  return jwt.sign(payload, secret, { 
+    expiresIn: '24h' 
+  });
 }

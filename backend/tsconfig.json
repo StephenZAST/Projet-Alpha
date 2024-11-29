@@ -12,9 +12,9 @@
     "isolatedModules": true,
     "typeRoots": [
       "node_modules/@types",
-      "node_modules/firebase/types"
+      "node_modules/firebase-admin"
     ],
-    "types": ["node"]
+    "types": ["node", "firebase-admin"]
   },
   "include": [
     "src/**/*"

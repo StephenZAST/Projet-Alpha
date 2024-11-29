@@ -1,3 +1,5 @@
+import { AxiosResponse } from 'axios';
+
 export const errorCodes = {
   // General errors
   UNAUTHORIZED: 'UNAUTHORIZED',
@@ -81,8 +83,9 @@ export class AppError extends Error {
 
   static fromAxiosError(error: unknown): AppError {
     if (error instanceof Error) {
-      if ('response' in error && error.response?.data) {
-        const { message, statusCode, code } = error.response.data;
+      if ('response' in error && error.response) {
+        const response = error.response as AxiosResponse;
+        const { message, statusCode, code } = response.data || {};
         return new AppError(
           message || 'An unexpected error occurred',
           statusCode || 500,
