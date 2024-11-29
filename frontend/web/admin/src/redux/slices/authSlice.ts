@@ -1,14 +1,19 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
+import { AdminRole } from '../../types/admin';
 
-interface User {
-  // Define the user object structure based on your backend response
-  _id: string;
-  // ... other user properties
+interface AdminUser {
+  id: string;
+  role: AdminRole;
+  name: string;
+  email: string;
+  phone: string;
+  permissions: string[];
+  lastActive: Date;
 }
 
 interface AuthState {
-  user: User | null;
+  user: AdminUser | null;
   isLoggedIn: boolean;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;

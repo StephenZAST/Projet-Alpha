@@ -1,10 +1,11 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../redux/store';
+import { AdminUser } from '../../../types/admin';
 import styles from './styles/Settings.module.css';
 
 export const Settings: React.FC = () => {
-  const user = useSelector((state: RootState) => state.auth.user);
+  const user: AdminUser | null = useSelector((state: RootState) => state.auth.user);
 
   return (
     <div className={styles.settingsContainer}>
@@ -14,15 +15,15 @@ export const Settings: React.FC = () => {
           <div className={styles.profileForm}>
             <div className={styles.formGroup}>
               <label>Email</label>
-              <input type="email" defaultValue={user?.email} />
+              <input type="email" defaultValue={user?.email || ''} />
             </div>
             <div className={styles.formGroup}>
               <label>Téléphone</label>
-              <input type="tel" defaultValue={user?.phone} />
+              <input type="tel" defaultValue={user?.phone || ''} />
             </div>
             <div className={styles.formGroup}>
               <label>Nom</label>
-              <input type="text" defaultValue={user?.name} disabled />
+              <input type="text" defaultValue={user?.name || ''} disabled />
             </div>
             <div className={styles.formGroup}>
               <label>Type Admin</label>
