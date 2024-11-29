@@ -7,10 +7,10 @@ export const emailConfig = {
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.EMAIL_PORT || '587', 10),
   secure: process.env.EMAIL_SECURE === 'true',
-  user: process.env.EMAIL_USER || 'alphalaundry.service@gmail.com',
+  user: process.env.EMAIL_USER || 'alphalaundry.service1@gmail.com',
   password: process.env.EMAIL_PASSWORD || 'irrq sram tlcm ygfs',  // Your Gmail App Password
   fromName: process.env.EMAIL_FROM_NAME || 'Alpha Laundry',
-  fromAddress: process.env.EMAIL_FROM_ADDRESS || 'alphalaundry.service@gmail.com'
+  fromAddress: process.env.EMAIL_FROM_ADDRESS || 'alphalaundry.service1@gmail.com'
 };
 
 export const appConfig = {
