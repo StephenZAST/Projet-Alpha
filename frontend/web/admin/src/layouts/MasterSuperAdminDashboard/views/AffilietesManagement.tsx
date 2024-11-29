@@ -4,7 +4,7 @@ import { RootState } from '../../../redux/store';
 import { AdminUser } from '../../../types/admin';
 import styles from './styles/Settings.module.css';
 
-export const Settings: React.FC = () => {
+export const AffilietesSettings: React.FC = () => {
   const user: AdminUser | null = useSelector((state: RootState) => state.auth.user);
 
   return (

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { DashboardLayout } from '../DashboardLayout/DashboardLayout';
 import { Overview } from './views/Overview';
 import { AdminManagement } from './views/AdminManagement';
-import { CompanyManagement } from './views/CompanyManagement';
+import { AffilietesSettings } from './views/AffilietesManagement';
 import { GlobalStats } from './views/GlobalStats';
 import { GlobalFinance } from './views/GlobalFinance';
 import { SystemConfig } from './views/SystemConfig';
@@ -82,7 +82,7 @@ export const MasterSuperAdminDashboard: React.FC = () => {
       case 'admins':
         return <AdminManagement />;
       case 'companies':
-        return <CompanyManagement />;
+        return <AffilietesSettings />;
       case 'stats':
         return <GlobalStats />;
       case 'finance':
