@@ -14,7 +14,7 @@ import { config } from './config';
 import { AppError } from './utils/errors';
 
 const app = express();
-const port = process.env.PORT || config.port || 3001;
+const port = config.port;
 
 // Rate limiting configuration
 const limiter = rateLimit({
@@ -30,7 +30,7 @@ app.use(helmet({
 })); 
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],  
+  origin: config.allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],

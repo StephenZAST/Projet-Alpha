@@ -5,8 +5,8 @@ import { AppError } from '../utils/errors';
 import { auth, googleProvider } from '../config/firebase';
 import { signInWithPopup } from 'firebase/auth';
 
-// Use environment variable for API URL
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Use environment variable for API URL, with correct fallback
+const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // Configure axios defaults
 axios.defaults.headers.common['Content-Type'] = 'application/json';
