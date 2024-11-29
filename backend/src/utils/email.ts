@@ -1,14 +1,26 @@
 import nodemailer from 'nodemailer';
-import { config } from '../config';
+import { emailConfig } from '../config/email';
 
 // Create reusable transporter object using SMTP transport
 const transporter = nodemailer.createTransport({
-    host: config.email.host,
-    port: config.email.port,
-    secure: config.email.secure,
+    host: emailConfig.host,
+    port: emailConfig.port,
+    secure: emailConfig.secure,
     auth: {
-        user: config.email.user,
-        pass: config.email.password
+        user: emailConfig.user,
+        pass: emailConfig.password
+    },
+    tls: {
+        rejectUnauthorized: false // For development only, remove in production
+    }
+});
+
+// Verify connection configuration
+transporter.verify(function (error, success) {
+    if (error) {
+        console.log('SMTP connection error:', error);
+    } else {
+        console.log('SMTP server is ready to take our messages');
     }
 });
 
@@ -27,11 +39,12 @@ interface EmailOptions {
 export async function sendEmail({ to, subject, html }: EmailOptions): Promise<void> {
     try {
         await transporter.sendMail({
-            from: `"${config.email.fromName}" <${config.email.fromAddress}>`,
+            from: `"${emailConfig.fromName}" <${emailConfig.fromAddress}>`,
             to,
             subject,
             html
         });
+        console.log('Email sent successfully to:', to);
     } catch (error) {
         console.error('Failed to send email:', error);
         throw error;

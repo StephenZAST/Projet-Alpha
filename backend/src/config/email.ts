@@ -3,16 +3,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const emailConfig = {
-  provider: process.env.EMAIL_PROVIDER || 'resend',
-  defaultFrom: {
-    name: process.env.EMAIL_FROM_NAME || 'Alpha Laundry',
-    address: process.env.EMAIL_FROM_ADDRESS || 'alpha@resend.dev',
-  },
+  provider: process.env.EMAIL_PROVIDER || 'smtp',
+  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.EMAIL_PORT || '587', 10),
+  secure: process.env.EMAIL_SECURE === 'true',
+  user: process.env.EMAIL_USER || 'alphalaundry.service@gmail.com',
+  password: process.env.EMAIL_PASSWORD || 'irrq sram tlcm ygfs',  // Your Gmail App Password
+  fromName: process.env.EMAIL_FROM_NAME || 'Alpha Laundry',
+  fromAddress: process.env.EMAIL_FROM_ADDRESS || 'alphalaundry.service@gmail.com'
 };
 
 export const appConfig = {
-  frontendUrl: process.env.APP_URL || 'http://localhost:3000',
-  apiUrl: process.env.API_URL || 'http://localhost:3001',
+  frontendUrl: process.env.APP_URL || 'http://localhost:5173',
+  apiUrl: process.env.API_URL || 'http://localhost:5000',
 };
 
 // Email templates configuration
@@ -32,7 +35,6 @@ export const emailTemplates = {
 
 // Validate required environment variables
 const requiredEnvVars = [
-  'RESEND_API_KEY',
   'EMAIL_FROM_NAME',
   'EMAIL_FROM_ADDRESS',
 ];

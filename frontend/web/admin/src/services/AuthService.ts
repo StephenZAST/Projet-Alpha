@@ -8,13 +8,45 @@ import { signInWithPopup } from 'firebase/auth';
 // Use environment variable for API URL
 const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Add axios default headers
+// Configure axios defaults
 axios.defaults.headers.common['Content-Type'] = 'application/json';
+axios.defaults.withCredentials = true; // Enable credentials
+
+// Create axios instance with default config
+const axiosInstance = axios.create({
+  baseURL: apiBaseUrl,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
+  }
+});
+
+// Add response interceptor for error handling
+axiosInstance.interceptors.response.use(
+  response => response,
+  error => {
+    console.error('API Error:', error);
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('Response data:', error.response.data);
+      console.error('Response status:', error.response.status);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received:', error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Request setup error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 class AuthService {
   async login(email: string, password: string) {
     try {
-      const response = await axios.post(`${apiBaseUrl}/auth/login`, { email, password });
+      const response = await axiosInstance.post('/auth/login', { email, password });
       if (response.data.success) {
         const { token, admin } = response.data.data;
         localStorage.setItem('token', token);
@@ -48,7 +80,7 @@ class AuthService {
         throw new AppError('Email and password are required', 400, 'INVALID_ADMIN_DATA');
       }
 
-      const response = await axios.post(`${apiBaseUrl}/admins/master/create`, adminData);
+      const response = await axiosInstance.post('/admins/master/create', adminData);
       
       if (response.data.success) {
         return response.data.data;
@@ -72,7 +104,7 @@ class AuthService {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
       
-      const response = await axios.post(`${apiBaseUrl}/auth/google`, {
+      const response = await axiosInstance.post('/auth/google', {
         idToken
       });
 

@@ -14,7 +14,7 @@ import { config } from './config';
 import { AppError } from './utils/errors';
 
 const app = express();
-const port = process.env.PORT || config.port || 5000;
+const port = process.env.PORT || 5000;
 
 // Rate limiting configuration
 const limiter = rateLimit({
@@ -25,15 +25,17 @@ const limiter = rateLimit({
 
 // Security middleware
 app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-  crossOriginOpenerPolicy: false
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "unsafe-none" }
 })); 
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],  
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  origin: ['http://localhost:5174', 'http://localhost:5173', 'http://localhost:5000'],  
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  credentials: true,
+  maxAge: 86400
 }));
 
 // Apply rate limiting to all requests
