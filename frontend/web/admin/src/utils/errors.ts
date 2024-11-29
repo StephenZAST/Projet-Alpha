@@ -69,7 +69,13 @@ export const errorCodes = {
   GOOGLE_AUTH_FAILED: 'GOOGLE_AUTH_FAILED',
 
   // Internal Server Error
-  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR'
+  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+
+  // Network Error
+  NETWORK_ERROR: 'NETWORK_ERROR',
+
+  // Unexpected Error
+  UNEXPECTED_ERROR: 'UNEXPECTED_ERROR'
 } as const;
 
 export type ErrorCode = keyof typeof errorCodes;
