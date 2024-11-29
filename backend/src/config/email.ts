@@ -1,23 +1,15 @@
 import dotenv from 'dotenv';
-
 dotenv.config();
 
 export const emailConfig = {
-  provider: process.env.EMAIL_PROVIDER || 'smtp',
-  host: 'smtp.gmail.com',  // Hardcoded for Gmail
-  port: 587,  // Hardcoded Gmail SMTP port
-  secure: false,  // Must be false for port 587
-  user: process.env.EMAIL_USER || 'alphalaundry.service1@gmail.com',
-  password: process.env.EMAIL_PASSWORD || 'irrq sram tlcm ygfs',  // Your Gmail App Password
-  fromName: process.env.EMAIL_FROM_NAME || 'Alpha Laundry',
-  fromAddress: process.env.EMAIL_FROM_ADDRESS || 'alphalaundry.service1@gmail.com',
-  auth: {  // Added explicit auth configuration
-    type: 'login'
-  },
-  tls: {  // Added explicit TLS configuration
-    ciphers: 'SSLv3',
-    rejectUnauthorized: true
-  }
+  provider: 'smtp',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  user: 'alphalaundry.service1@gmail.com',
+  password: 'irrq sram tlcm ygfs',
+  fromName: 'Alpha Laundry',
+  fromAddress: 'alphalaundry.service1@gmail.com'
 };
 
 export const appConfig = {
