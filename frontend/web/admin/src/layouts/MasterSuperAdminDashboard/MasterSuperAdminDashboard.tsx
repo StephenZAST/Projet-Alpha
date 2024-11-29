@@ -11,7 +11,7 @@ import { PermissionManagement } from './views/PermissionManagement';
 import { Settings } from './views/Settings';
 import { AppDispatch, RootState } from '../../redux/store';
 import { fetchDashboardMetrics } from '../../redux/slices/dashboardSlice';
-import styles from './style/MasterSuperAdminDashboard.module.css';
+import styles from '../style/MasterSuperAdminDashboard.module.css';
 
 export const MasterSuperAdminDashboard: React.FC = () => {
   const [selectedView, setSelectedView] = useState('overview');
