@@ -10,7 +10,6 @@ const transporter = nodemailer.createTransport({
         user: emailConfig.user,
         pass: emailConfig.password
     },
-    tls: emailConfig.tls,
     debug: true // Enable debug logs
 });
 
@@ -35,12 +34,6 @@ interface EmailOptions {
     html: string;
 }
 
-/**
- * Send an email
- * @param to Recipient email address
- * @param subject Email subject
- * @param html HTML content of the email
- */
 export async function sendEmail({ to, subject, html }: EmailOptions): Promise<void> {
     try {
         const mailOptions = {

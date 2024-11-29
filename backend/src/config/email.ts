@@ -1,7 +1,18 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const emailConfig = {
+interface EmailConfig {
+  provider: string;
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  password: string;
+  fromName: string;
+  fromAddress: string;
+}
+
+export const emailConfig: EmailConfig = {
   provider: 'smtp',
   host: 'smtp.gmail.com',
   port: 587,
