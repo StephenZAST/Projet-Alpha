@@ -11,6 +11,7 @@ import subscriptionsRouter from './routes/subscriptions';
 import adminRouter from './routes/admins';  
 import authRouter from './routes/auth';     
 import { config } from './config';
+import { AppError } from './utils/errors';
 
 const app = express();
 const port = process.env.PORT || config.port || 3001;
@@ -58,29 +59,29 @@ app.get('/', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err: AppError, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
-  res.status(err.status || 500).json({
+  res.status(err.statusCode || 500).json({
     success: false,
     message: err.message || 'Internal Server Error',
-    code: err.code || 'SERVER_ERROR'
+    code: err.errorCode || 'SERVER_ERROR'
   });
 });
 
 // Handle specific errors
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: Error) => {
   console.error('Uncaught Exception:', error);
   process.exit(1);
 });
 
-process.on('unhandledRejection', (error) => {
+process.on('unhandledRejection', (error: Error) => {
   console.error('Unhandled Rejection:', error);
 });
 
 // Start server with error handling
 const server = app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-}).on('error', (err: any) => {
+}).on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`Port ${port} is already in use. Please try a different port.`);
     process.exit(1);

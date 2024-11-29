@@ -12,7 +12,7 @@ router.post('/master/create', async (req, res, next) => {
 
     // Validate required fields
     if (!email || !password) {
-      throw new AppError('Email and password are required', 400, 'INVALID_ADMIN_DATA');
+      throw new AppError(400, 'Email and password are required', 'INVALID_ADMIN_DATA');
     }
 
     // Validate password strength
