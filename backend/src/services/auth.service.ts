@@ -76,6 +76,15 @@ class AuthService {
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword as User;
   }
+
+  getUser(uid: string): User | null {
+    const user = this.users.get(uid);
+    if (!user) return null;
+    
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = user;
+    return userWithoutPassword as User;
+  }
 }
 
 export const authService = new AuthService();
