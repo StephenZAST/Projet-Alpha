@@ -75,7 +75,12 @@ export const errorCodes = {
   NETWORK_ERROR: 'NETWORK_ERROR',
 
   // Unexpected Error
-  UNEXPECTED_ERROR: 'UNEXPECTED_ERROR'
+  UNEXPECTED_ERROR: 'UNEXPECTED_ERROR',
+
+  // New error codes
+  API_ERROR: 'API_ERROR',
+  LOGIN_FAILED: 'LOGIN_FAILED',
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR'
 } as const;
 
 export type ErrorCode = keyof typeof errorCodes;
