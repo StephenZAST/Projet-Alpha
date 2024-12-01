@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from '../styles/Settings.module.css';
 
-export const Settings: React.FC = () => {
+const Settings: React.FC = () => {
   const mockUser = {
     email: 'admin@example.com',
     phone: '+33 123 456 789',
@@ -19,134 +19,120 @@ export const Settings: React.FC = () => {
       mobile: true
     },
     language: 'Français',
-    timezone: 'UTC+1',
-    theme: 'Light'
-  };
-
-  const mockSecuritySettings = {
-    twoFactorAuth: true,
-    lastPasswordChange: '2023-11-15',
-    sessionTimeout: '30 minutes',
-    ipWhitelist: ['192.168.1.*', '10.0.0.*']
+    theme: 'light',
+    timeZone: 'Europe/Paris'
   };
 
   return (
     <div className={styles.settingsContainer}>
-      <section className={styles.profileSection}>
-        <div className={styles.profileCard}>
-          <h3>Informations Personnelles</h3>
-          <div className={styles.profileForm}>
-            <div className={styles.formGroup}>
-              <label>Email</label>
-              <input type="email" defaultValue={mockUser.email} />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Téléphone</label>
-              <input type="tel" defaultValue={mockUser.phone} />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Nom</label>
-              <input type="text" defaultValue={mockUser.name} disabled />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Type Admin</label>
-              <input type="text" defaultValue={mockUser.role} disabled />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Dernière Connexion</label>
-              <input type="text" defaultValue={mockUser.lastLogin} disabled />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Compte Créé le</label>
-              <input type="text" defaultValue={mockUser.accountCreated} disabled />
-            </div>
-            <button className={styles.updateButton}>
-              Mettre à jour
-            </button>
+      <h1>Paramètres du système</h1>
+      
+      <section className={styles.section}>
+        <h2>Profil utilisateur</h2>
+        <div className={styles.profileInfo}>
+          <div className={styles.infoGroup}>
+            <label>Email</label>
+            <input type="email" value={mockUser.email} readOnly />
+          </div>
+          <div className={styles.infoGroup}>
+            <label>Téléphone</label>
+            <input type="tel" value={mockUser.phone} readOnly />
+          </div>
+          <div className={styles.infoGroup}>
+            <label>Nom</label>
+            <input type="text" value={mockUser.name} readOnly />
+          </div>
+          <div className={styles.infoGroup}>
+            <label>Rôle</label>
+            <input type="text" value={mockUser.role} readOnly />
           </div>
         </div>
       </section>
 
-      <section className={styles.preferencesSection}>
-        <div className={styles.preferencesCard}>
-          <h3>Préférences</h3>
-          <div className={styles.preferencesList}>
-            <div className={styles.preferenceItem}>
-              <label>Notifications Email</label>
-              <input type="checkbox" defaultChecked={mockPreferences.notifications.email} />
+      <section className={styles.section}>
+        <h2>Préférences</h2>
+        <div className={styles.preferences}>
+          <div className={styles.preferenceGroup}>
+            <h3>Notifications</h3>
+            <div className={styles.checkboxGroup}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={mockPreferences.notifications.email}
+                  readOnly
+                />
+                Email
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={mockPreferences.notifications.sms}
+                  readOnly
+                />
+                SMS
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={mockPreferences.notifications.browser}
+                  readOnly
+                />
+                Navigateur
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={mockPreferences.notifications.mobile}
+                  readOnly
+                />
+                Mobile
+              </label>
             </div>
-            <div className={styles.preferenceItem}>
-              <label>Notifications SMS</label>
-              <input type="checkbox" defaultChecked={mockPreferences.notifications.sms} />
-            </div>
-            <div className={styles.preferenceItem}>
-              <label>Notifications Navigateur</label>
-              <input type="checkbox" defaultChecked={mockPreferences.notifications.browser} />
-            </div>
-            <div className={styles.preferenceItem}>
-              <label>Notifications Mobile</label>
-              <input type="checkbox" defaultChecked={mockPreferences.notifications.mobile} />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Langue</label>
-              <select defaultValue={mockPreferences.language}>
-                <option value="Français">Français</option>
-                <option value="English">English</option>
-              </select>
-            </div>
-            <div className={styles.formGroup}>
-              <label>Fuseau Horaire</label>
-              <select defaultValue={mockPreferences.timezone}>
-                <option value="UTC+1">UTC+1 (Paris)</option>
-                <option value="UTC+0">UTC+0 (London)</option>
-              </select>
-            </div>
-            <div className={styles.formGroup}>
-              <label>Thème</label>
-              <select defaultValue={mockPreferences.theme}>
-                <option value="Light">Clair</option>
-                <option value="Dark">Sombre</option>
-              </select>
-            </div>
+          </div>
+
+          <div className={styles.preferenceGroup}>
+            <h3>Langue</h3>
+            <select value={mockPreferences.language} disabled>
+              <option value="Français">Français</option>
+              <option value="English">English</option>
+            </select>
+          </div>
+
+          <div className={styles.preferenceGroup}>
+            <h3>Thème</h3>
+            <select value={mockPreferences.theme} disabled>
+              <option value="light">Clair</option>
+              <option value="dark">Sombre</option>
+            </select>
+          </div>
+
+          <div className={styles.preferenceGroup}>
+            <h3>Fuseau horaire</h3>
+            <select value={mockPreferences.timeZone} disabled>
+              <option value="Europe/Paris">Europe/Paris</option>
+              <option value="UTC">UTC</option>
+            </select>
           </div>
         </div>
       </section>
 
-      <section className={styles.securitySection}>
-        <div className={styles.securityCard}>
-          <h3>Sécurité</h3>
-          <div className={styles.securitySettings}>
-            <div className={styles.preferenceItem}>
-              <label>Authentification à Deux Facteurs</label>
-              <input type="checkbox" defaultChecked={mockSecuritySettings.twoFactorAuth} />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Dernier Changement de Mot de Passe</label>
-              <input type="text" defaultValue={mockSecuritySettings.lastPasswordChange} disabled />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Expiration de Session</label>
-              <select defaultValue={mockSecuritySettings.sessionTimeout}>
-                <option value="15 minutes">15 minutes</option>
-                <option value="30 minutes">30 minutes</option>
-                <option value="1 hour">1 heure</option>
-              </select>
-            </div>
-            <div className={styles.ipWhitelist}>
-              <label>Liste Blanche IP</label>
-              <div className={styles.ipList}>
-                {mockSecuritySettings.ipWhitelist.map((ip, index) => (
-                  <div key={index} className={styles.ipItem}>
-                    <input type="text" defaultValue={ip} />
-                    <button className={styles.removeButton}>Supprimer</button>
-                  </div>
-                ))}
-                <button className={styles.addButton}>Ajouter une IP</button>
-              </div>
-            </div>
-          </div>
+      <section className={styles.section}>
+        <h2>Informations du compte</h2>
+        <div className={styles.accountInfo}>
+          <p>
+            <strong>Dernière connexion:</strong> {mockUser.lastLogin}
+          </p>
+          <p>
+            <strong>Compte créé le:</strong> {mockUser.accountCreated}
+          </p>
         </div>
       </section>
+
+      <div className={styles.actions}>
+        <button className={styles.button}>Sauvegarder les modifications</button>
+      </div>
     </div>
   );
 };
+
+export default Settings;

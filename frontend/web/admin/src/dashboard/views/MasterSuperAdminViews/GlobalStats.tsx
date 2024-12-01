@@ -3,7 +3,7 @@ import { MetricCard } from '../../components/MetricCard';
 import { MetricChart } from '../../components/MetricChart';
 import styles from './styles/GlobalStats.module.css';
 
-export const GlobalStats: React.FC = () => {
+const GlobalStats: React.FC = () => {
   const performanceMetrics = [
     {
       title: "System Performance",
@@ -116,3 +116,5 @@ export const GlobalStats: React.FC = () => {
     </div>
   );
 };
+
+export default GlobalStats;

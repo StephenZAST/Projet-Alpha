@@ -22,7 +22,7 @@ interface Role {
   level: number;
 }
 
-export const UserManagement: React.FC = () => {
+const UserManagement: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -311,3 +311,5 @@ export const UserManagement: React.FC = () => {
     </div>
   );
 };
+
+export default UserManagement;

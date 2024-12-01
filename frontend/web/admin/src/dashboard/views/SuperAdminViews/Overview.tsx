@@ -24,7 +24,7 @@ interface Alert {
   timestamp: string;
 }
 
-export const SuperAdminOverview: React.FC = () => {
+const SuperAdminOverview: React.FC = () => {
   // Mock data
   const stats: AdminStats = {
     totalAdmins: 45,
@@ -237,3 +237,5 @@ export const SuperAdminOverview: React.FC = () => {
     </div>
   );
 };
+
+export default SuperAdminOverview;
