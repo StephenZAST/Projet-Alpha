@@ -1,68 +1,28 @@
-import * as React from 'react';
+import React, { createContext } from 'react';
 
-type AdminType = 'master' | 'super' | 'secretary' | 'delivery' | 'customer' | 'supervisor';
-
-interface AdminUser {
-  id: string;
-  type: AdminType;
-  name: string;
-  email: string;
-  permissions: string[];
+interface AuthContextProps {
+  children: React.ReactNode;
 }
 
-interface AuthContextType {
-  user: AdminUser | null;
-  login: (credentials: { email: string; password: string }) => Promise<void>;
-  logout: () => void;
+interface AuthContextValue {
   isAuthenticated: boolean;
+  // Add other authentication-related properties and methods here
 }
 
-export const AuthContext = React.createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextValue>({
+  isAuthenticated: true, // Set to true to disable authentication
+});
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<AdminUser | null>(null);
+const useAuth = () => {
+  return { isAuthenticated: true }; // Set to true to disable authentication
+};
 
-  const login = async (credentials: { email: string; password: string }) => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-      
-      if (!response.ok) throw new Error('Authentication failed');
-      
-      const userData = await response.json();
-      setUser(userData);
-      localStorage.setItem('authToken', userData.token);
-    } catch (error) {
-      throw new Error('Login failed');
-    }
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('authToken');
-  };
-
-  const value = {
-    user,
-    login,
-    logout,
-    isAuthenticated: !!user,
-  };
-
+const AuthProvider: React.FC<AuthContextProps> = ({ children }) => {
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ isAuthenticated: true }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
-  const context = React.useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+export { AuthProvider, AuthContext, useAuth };
