@@ -113,6 +113,18 @@ export const mockMasterAdminData = {
         timestamp: new Date('2024-01-15T12:15:00').getTime()
       }
     ]
+  },
+  adminManagement: {
+    totalAdmins: 45,
+    activeAdmins: 38,
+    recentActions: [
+      {
+        id: '1',
+        admin: 'Sarah Manager',
+        action: 'Modified user permissions',
+        timestamp: new Date('2024-01-15T15:00:00').getTime()
+      }
+    ]
   }
 };
 

@@ -1,6 +1,6 @@
 import React from 'react';
-import { MetricCard } from '../../../components/MetricCard';
-import { MetricChart } from '../../../components/MetricChart';
+import { MetricCard } from '../../components/MetricCard';
+import { MetricChart } from '../../components/MetricChart';
 import styles from '../styles/SystemConfig.module.css';
 
 export const SystemConfig: React.FC = () => {
@@ -110,7 +110,20 @@ export const SystemConfig: React.FC = () => {
     <div className={styles.systemConfigContainer}>
       <section className={styles.metricsGrid}>
         {systemMetrics.map((metric, index) => (
-          <MetricCard key={index} {...metric} />
+          <MetricCard
+            key={index}
+            title={metric.title}
+            value={metric.value}
+            change={{
+              ...metric.change,
+              type:
+                metric.change.type === 'increase'
+                  ? 'positive'
+                  : metric.change.type === 'decrease'
+                  ? 'negative'
+                  : 'neutral',
+            }}
+          />
         ))}
       </section>
 

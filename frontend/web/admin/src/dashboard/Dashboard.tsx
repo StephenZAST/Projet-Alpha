@@ -10,16 +10,16 @@ import ErrorBoundary from '../components/ErrorBoundary';
 // Import statique des vues pour chaque type d'admin
 const MasterSuperAdminViews = {
   Overview: React.lazy(() => import('./views/MasterSuperAdminViews/Overview')),
-  AdminManagement: React.lazy(() => import('./views/MasterSuperAdminViews/AdminManagement')),
-  Analytics: React.lazy(() => import('./views/MasterSuperAdminViews/Analytics')),
-  SystemSettings: React.lazy(() => import('./views/MasterSuperAdminViews/SystemSettings')),
-  AuditLogs: React.lazy(() => import('./views/MasterSuperAdminViews/AuditLogs'))
+  'Admin-management': React.lazy(() => import('./views/MasterSuperAdminViews/AdminManagement')),
+  Company: React.lazy(() => import('./views/MasterSuperAdminViews/Company')),
+  'Global-stats': React.lazy(() => import('./views/MasterSuperAdminViews/Analytics')),
+  Settings: React.lazy(() => import('./views/MasterSuperAdminViews/SystemSettings'))
 } as const;
 
 const SuperAdminViews = {
   Overview: React.lazy(() => import('./views/SuperAdminViews/Overview')),
-  UserManagement: React.lazy(() => import('./views/SuperAdminViews/UserManagement')),
-  ContentManagement: React.lazy(() => import('./views/SuperAdminViews/ContentManagement')),
+  'User-management': React.lazy(() => import('./views/SuperAdminViews/UserManagement')),
+  Content: React.lazy(() => import('./views/SuperAdminViews/ContentManagement')),
   Reports: React.lazy(() => import('./views/SuperAdminViews/Reports'))
 } as const;
 
@@ -72,7 +72,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
                 
                 {/* Map all nav items to routes */}
                 {navConfig.navItems.map((item) => {
-                  const viewId = item.id.charAt(0).toUpperCase() + item.id.slice(1);
+                  const viewId = item.id;
                   const ViewComponent = getViewComponent(viewId);
                   
                   if (!ViewComponent) {

@@ -7,7 +7,7 @@ interface StatCardProps {
   icon?: string;
   trend?: {
     value: string;
-    direction: 'up' | 'down';
+    direction: string; // Update the type of direction to string
     text?: string;
   };
   className?: string;

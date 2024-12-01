@@ -1,36 +1,25 @@
 import React, { useState } from 'react';
 import { StatCard } from '../../components/common/StatCard/StatCard';
-import { mockMasterAdminData } from '../../services/mockData';
-import styles from './AdminManagement.module.css';
+import styles from './Company.module.css';
 
-interface Admin {
+interface Company {
   id: number;
   name: string;
-  role: string;
-  company: string;
-  lastActive: string;
+  industry: string;
+  employees: number;
   status: 'active' | 'inactive';
-  email: string;
+  subscription: string;
+  lastBilling: string;
 }
 
-const AdminManagement: React.FC = () => {
+const Company: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const adminStats = [
+  const companyStats = [
     {
-      title: "Total Admins",
-      value: mockMasterAdminData.adminManagement.totalAdmins.toString(),
-      icon: "admin_panel_settings",
-      trend: {
-        value: "8%",
-        direction: "up" as const,
-        text: "vs last month"
-      }
-    },
-    {
-      title: "Active Admins",
-      value: mockMasterAdminData.adminManagement.activeAdmins.toString(),
-      icon: "verified_user",
+      title: "Total Companies",
+      value: "156",
+      icon: "business",
       trend: {
         value: "12%",
         direction: "up" as const,
@@ -38,48 +27,58 @@ const AdminManagement: React.FC = () => {
       }
     },
     {
-      title: "Pending Actions",
-      value: "5",
-      icon: "pending_actions"
+      title: "Active Subscriptions",
+      value: "142",
+      icon: "verified",
+      trend: {
+        value: "8%",
+        direction: "up" as const,
+        text: "vs last month"
+      }
+    },
+    {
+      title: "Pending Approvals",
+      value: "7",
+      icon: "pending"
     }
   ];
 
-  const mockAdmins: Admin[] = [
+  const mockCompanies: Company[] = [
     {
       id: 1,
-      name: "Jean Dupont",
-      role: "Super Admin",
-      company: "TechCorp",
-      lastActive: "2024-01-15 14:30",
+      name: "TechCorp Solutions",
+      industry: "Technology",
+      employees: 250,
       status: "active",
-      email: "jean.dupont@techcorp.com"
+      subscription: "Enterprise",
+      lastBilling: "2024-01-15"
     },
     {
       id: 2,
-      name: "Marie Martin",
-      role: "Admin",
-      company: "DataSys",
-      lastActive: "2024-01-15 12:45",
+      name: "DataSys International",
+      industry: "Data Analytics",
+      employees: 120,
       status: "active",
-      email: "marie.martin@datasys.com"
+      subscription: "Professional",
+      lastBilling: "2024-01-14"
     }
   ];
 
   return (
-    <div className={styles.adminManagement}>
+    <div className={styles.companyManagement}>
       <div className={styles.header}>
-        <h1>Gestion des Administrateurs</h1>
+        <h1>Gestion des Entreprises</h1>
         <button 
           className={styles.addButton}
           onClick={() => setIsAddModalOpen(true)}
         >
           <span className="material-icons">add</span>
-          Nouvel Admin
+          Nouvelle Entreprise
         </button>
       </div>
 
       <div className={styles.statsGrid}>
-        {adminStats.map((stat, index) => (
+        {companyStats.map((stat, index) => (
           <StatCard
             key={index}
             {...stat}
@@ -87,9 +86,9 @@ const AdminManagement: React.FC = () => {
         ))}
       </div>
 
-      <div className={styles.adminList}>
+      <div className={styles.companyList}>
         <div className={styles.listHeader}>
-          <h2>Liste des Administrateurs</h2>
+          <h2>Liste des Entreprises</h2>
           <div className={styles.filters}>
             <input
               type="text"
@@ -107,31 +106,32 @@ const AdminManagement: React.FC = () => {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Nom</th>
-              <th>Rôle</th>
               <th>Entreprise</th>
-              <th>Dernière activité</th>
+              <th>Industrie</th>
+              <th>Employés</th>
               <th>Statut</th>
+              <th>Abonnement</th>
+              <th>Dernière Facturation</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {mockAdmins.map(admin => (
-              <tr key={admin.id}>
+            {mockCompanies.map(company => (
+              <tr key={company.id}>
                 <td>
-                  <div className={styles.adminInfo}>
-                    <span className={styles.adminName}>{admin.name}</span>
-                    <span className={styles.adminEmail}>{admin.email}</span>
+                  <div className={styles.companyInfo}>
+                    <span className={styles.companyName}>{company.name}</span>
                   </div>
                 </td>
-                <td>{admin.role}</td>
-                <td>{admin.company}</td>
-                <td>{admin.lastActive}</td>
+                <td>{company.industry}</td>
+                <td>{company.employees}</td>
                 <td>
-                  <span className={`${styles.status} ${styles[admin.status]}`}>
-                    {admin.status}
+                  <span className={`${styles.status} ${styles[company.status]}`}>
+                    {company.status}
                   </span>
                 </td>
+                <td>{company.subscription}</td>
+                <td>{company.lastBilling}</td>
                 <td>
                   <div className={styles.actions}>
                     <button className={styles.actionButton}>
@@ -157,4 +157,4 @@ const AdminManagement: React.FC = () => {
   );
 };
 
-export default AdminManagement;
+export default Company;
