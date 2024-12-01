@@ -4,8 +4,13 @@ import { Sidebar } from './components/Sidebar';
 import { StatCard } from './components/StatCard';
 import { MetricCard } from './components/MetricCard';
 import { Table as CustomerTable } from './components/Table';
+import { TopBar } from './topbar/TopBar';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  handleThemeToggle: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ handleThemeToggle }) => {
   const customers = [
     {
       name: 'Jane Cooper',
@@ -30,21 +35,7 @@ const Dashboard: React.FC = () => {
       <Sidebar />
       
       <main className={styles.mainContent}>
-        <header className={styles.dashboardHeader}>
-          <h1 className={styles.greeting}>Hello Evano 👋🏼,</h1>
-          <form className={styles.searchForm}>
-            <label htmlFor="mainSearch" className="sr-only">
-              Search
-            </label>
-            <input
-              id="mainSearch"
-              type="search"
-              placeholder="Search..."
-              className={styles.searchInput}
-            />
-          </form>
-        </header>
-
+        <TopBar handleThemeToggle={handleThemeToggle} />
         <section className={styles.statsSection}>
           <StatCard
             icon="https://cdn.builder.io/api/v1/image/assets/315113f1f03b4ff2a19c7d36a40da083/ec5cae7011ce5ad7f2584e22fe383f0a91409836b57f3c17f7ac496d3933bca8?apiKey=315113f1f03b4ff2a19c7d36a40da083&"
