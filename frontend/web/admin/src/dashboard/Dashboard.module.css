@@ -6,7 +6,7 @@
 
 .mainContent {
   flex: 1;
-  margin-left: 280px; /* Correspond à la largeur de la Sidebar */
+  margin-left: 0px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
