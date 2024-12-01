@@ -1,6 +1,6 @@
 import React from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, TooltipProps } from 'recharts';
-import styles from './style/MetricChart.module.css';
+import styles from './styles/MetricChart.module.css';
 
 interface MetricChartProps {
   data: { name: string; value: number }[];

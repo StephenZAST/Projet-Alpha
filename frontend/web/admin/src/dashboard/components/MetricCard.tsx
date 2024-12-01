@@ -6,7 +6,6 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   title,
   value,
   change,
-  changeType = 'neutral',
   comparison
 }) => {
   return (
@@ -17,7 +16,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       </header>
       {change && (
         <footer className={styles.cardFooter}>
-          <span className={`${styles.badge} ${styles[changeType]}`}>
+          <span className={`${styles.badge} ${styles[change.type]}`}>
             {change.value} ({change.type})
           </span>
           {comparison && (

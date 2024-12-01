@@ -17,6 +17,22 @@
 
 
   --primary-gradient: linear-gradient(195deg, rgb(73, 163, 241), rgb(26, 115, 232));
+
+  --theme-background-color: #ffffff; /* Light theme background color */
+  --theme-text-color: #213547; /* Light theme text color */
+  --white: #FFFFFF;
+  --gray-50: #F9FBFF;
+  --gray-100: #F0F5F8;
+  --gray-200: #EAECF0;
+  --gray-300: #D0D5DD;
+  --gray-400: #B5B7C0;
+  --gray-500: #737791;
+  --gray-600: #5F6980;
+  --gray-700: #404B52;
+  --gray-800: #282828;
+  --gray-900: #000000;
+
+  --pripary-box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
 }
 
 * {
