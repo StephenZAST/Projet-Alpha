@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styles from './style/Login.module.css';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import AuthService from '../services/AuthService';
 import { AppError } from '../utils/errors';
+import { RootState } from '../redux/store';
+import styles from './style/Login.module.css';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+  
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -13,16 +18,27 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Check if user is already logged in
+  useEffect(() => {
+    // Try to restore session from localStorage
+    const isAuthenticated = AuthService.checkAuth();
+    
+    if (isAuthenticated || isLoggedIn) {
+      // Get the intended destination from location state, or default to dashboard
+      const destination = location.state?.from?.pathname || '/dashboard';
+      navigate(destination, { replace: true });
+    }
+  }, [isLoggedIn, navigate, location]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      console.log('Attempting login with:', formData.email);
-      const result = await AuthService.login(formData.email, formData.password);
-      console.log('Login successful:', result);
-      navigate('/dashboard');
+      await AuthService.login(formData.email, formData.password);
+      // After successful login, redirect to dashboard
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
       if (err instanceof AppError) {
@@ -73,11 +89,7 @@ const Login: React.FC = () => {
               disabled={loading}
             />
           </div>
-          <button 
-            type="submit" 
-            className={styles.submitButton}
-            disabled={loading}
-          >
+          <button type="submit" disabled={loading} className={styles.submitButton}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>

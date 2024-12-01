@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState } from 'react';
 import { DashboardLayout } from '../DashboardLayout/DashboardLayout';
 import { Overview } from './views/Overview';
 import { AdminManagement } from './views/AdminManagement';
@@ -9,20 +8,10 @@ import { GlobalFinance } from './views/GlobalFinance';
 import { SystemConfig } from './views/SystemConfig';
 import { PermissionManagement } from './views/PermissionManagement';
 import { Settings } from './views/Settings';
-import { AppDispatch, RootState } from '../../redux/store';
-import { fetchDashboardMetrics } from '../../redux/slices/dashboardSlice';
 import styles from '../style/MasterSuperAdminDashboard.module.css';
 
 export const MasterSuperAdminDashboard: React.FC = () => {
-  const [selectedView, setSelectedView] = useState('overview');
-  const dispatch = useDispatch<AppDispatch>();
-  const { status } = useSelector((state: RootState) => state.dashboard);
-
-  useEffect(() => {
-    if (status === 'idle') {
-      dispatch(fetchDashboardMetrics());
-    }
-  }, [status, dispatch]);
+  const [selectedView, setSelectedView] = useState<string>('overview');
 
   const sidebarItems = [
     { 
@@ -67,15 +56,11 @@ export const MasterSuperAdminDashboard: React.FC = () => {
     }
   ];
 
+  const handleViewChange = (view: string) => {
+    setSelectedView(view);
+  };
+
   const renderContent = () => {
-    if (status === 'loading') {
-      return <div className={styles.loading}>Loading...</div>;
-    }
-
-    if (status === 'failed') {
-      return <div className={styles.error}>Error loading dashboard data</div>;
-    }
-
     switch(selectedView) {
       case 'overview':
         return <Overview />;
@@ -102,8 +87,8 @@ export const MasterSuperAdminDashboard: React.FC = () => {
     <DashboardLayout
       sidebarItems={sidebarItems}
       selectedView={selectedView}
-      onViewChange={setSelectedView}
-      userRole="Master Super Admin"
+      onViewChange={handleViewChange}
+      userRole="superAdmin"
     >
       <div className={styles.dashboardContent}>
         {renderContent()}

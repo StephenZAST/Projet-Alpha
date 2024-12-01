@@ -20,11 +20,20 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
   sidebarItems,
   selectedView,
-  onViewChange}) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  onViewChange,
+  userRole
+}) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleItemClick = (value: string) => {
+    onViewChange(value);
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
   };
 
   return (
@@ -45,27 +54,21 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               icon={item.icon}
               label={item.label}
               isActive={selectedView === item.value}
-              onClick={() => {
-                onViewChange(item.value);
-                if (window.innerWidth < 768) {
-                  setIsSidebarOpen(false);
-                }
-              }}
+              onClick={() => handleItemClick(item.value)}
             />
           ))}
         </nav>
 
         <div className={styles.sidebarFooter}>
           <ThemeToggle />
-          <button className={styles.logoutButton}>
-            <img src="/icons/logout.svg" alt="" />
-            <span>Déconnexion</span>
-          </button>
         </div>
       </aside>
 
-      <main className={styles.mainContainer}>
-        <TopBar onMenuClick={toggleSidebar} />
+      <main className={styles.mainContent}>
+        <TopBar
+          onMenuClick={toggleSidebar}
+          userRole={userRole}
+        />
         <div className={styles.contentWrapper}>
           {children}
         </div>

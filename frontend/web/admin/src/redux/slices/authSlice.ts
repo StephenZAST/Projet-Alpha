@@ -1,99 +1,95 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import authService from '../../services/AuthService';
 import { AdminRole } from '../../types/admin';
 
 interface AdminUser {
-  id: string;
+  uid: string;
   role: AdminRole;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  phone: string;
-  permissions: string[];
-  lastActive: Date;
+  phoneNumber: string;
 }
 
 interface AuthState {
   user: AdminUser | null;
+  token: string | null;
   isLoggedIn: boolean;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
 
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
 const initialState: AuthState = {
   user: null,
+  token: null,
   isLoggedIn: false,
   status: 'idle',
   error: null,
 };
 
-export const login = createAsyncThunk('auth/login', async (credentials: LoginCredentials) => {
-  try {
-    const user = await authService.login(credentials.email, credentials.password);
-    return user;
-  } catch (error: unknown) {
-    throw new Error((error as Error).message);
-  }
-});
-
-export const logout = createAsyncThunk('auth/logout', async () => {
-  authService.logout();
-});
-
-export const createMasterAdmin = createAsyncThunk(
-  'auth/createMasterAdmin',
-  async (adminData: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
-  }) => {
-    const response = await authService.createMasterAdmin(adminData);
-    return response;
-  }
-);
-
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // Other reducers if needed
+    setUser: (state, action: PayloadAction<AdminUser | null>) => {
+      state.user = action.payload;
+    },
+    setToken: (state, action: PayloadAction<string | null>) => {
+      state.token = action.payload;
+    },
+    setIsLoggedIn: (state, action: PayloadAction<boolean>) => {
+      state.isLoggedIn = action.payload;
+    },
+    resetAuth: (state) => {
+      state.user = null;
+      state.token = null;
+      state.isLoggedIn = false;
+      state.status = 'idle';
+      state.error = null;
+    },
   },
-  extraReducers(builder) {
+  extraReducers: (builder) => {
     builder
       .addCase(login.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.user = action.payload;
         state.isLoggedIn = true;
+        state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message || null;
+        state.error = action.error.message || 'Login failed';
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
+        state.token = null;
         state.isLoggedIn = false;
-        state.status = 'succeeded';
-      })
-      .addCase(createMasterAdmin.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(createMasterAdmin.fulfilled, (state) => {
-        state.status = 'succeeded';
-      })
-      .addCase(createMasterAdmin.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.error.message || null;
+        state.status = 'idle';
+        state.error = null;
       });
   },
 });
+
+export const login = createAsyncThunk(
+  'auth/login',
+  async (credentials: { email: string; password: string }) => {
+    try {
+      const response = await authService.login(credentials.email, credentials.password);
+      return response.data.admin;
+    } catch (error: unknown) {
+      throw new Error((error as Error).message);
+    }
+  }
+);
+
+export const logout = createAsyncThunk('auth/logout', async () => {
+  await authService.logout();
+});
+
+export const { setUser, setToken, setIsLoggedIn, resetAuth } = authSlice.actions;
 
 export default authSlice.reducer;

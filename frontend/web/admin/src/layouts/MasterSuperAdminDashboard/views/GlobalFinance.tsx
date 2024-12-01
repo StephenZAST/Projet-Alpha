@@ -37,10 +37,60 @@ export const GlobalFinance: React.FC = () => {
     "Type"
   ];
 
-  const revenueData = [
+  const mockTransactions = [
+    {
+      id: "TRX-001",
+      company: "Tech Solutions SA",
+      amount: "2.5M FCFA",
+      date: "2023-11-28",
+      status: "Completed",
+      type: "Payment"
+    },
+    {
+      id: "TRX-002",
+      company: "Digital Services SARL",
+      amount: "1.8M FCFA",
+      date: "2023-11-27",
+      status: "Pending",
+      type: "Invoice"
+    },
+    {
+      id: "TRX-003",
+      company: "Web Experts SAS",
+      amount: "3.2M FCFA",
+      date: "2023-11-26",
+      status: "Completed",
+      type: "Payment"
+    },
+    {
+      id: "TRX-004",
+      company: "Marketing Pro SARL",
+      amount: "950K FCFA",
+      date: "2023-11-25",
+      status: "Failed",
+      type: "Payment"
+    }
+  ];
+
+  const mockRevenueData = [
     { name: 'Jan', value: 4000000, date: '2023-01-01' },
     { name: 'Feb', value: 3000000, date: '2023-02-01' },
-    // ... other data
+    { name: 'Mar', value: 4500000, date: '2023-03-01' },
+    { name: 'Apr', value: 3800000, date: '2023-04-01' },
+    { name: 'May', value: 5200000, date: '2023-05-01' },
+    { name: 'Jun', value: 4800000, date: '2023-06-01' },
+    { name: 'Jul', value: 6000000, date: '2023-07-01' },
+    { name: 'Aug', value: 5500000, date: '2023-08-01' },
+    { name: 'Sep', value: 6500000, date: '2023-09-01' },
+    { name: 'Oct', value: 7200000, date: '2023-10-01' },
+    { name: 'Nov', value: 6800000, date: '2023-11-01' }
+  ];
+
+  const mockRevenueDistribution = [
+    { name: 'Subscriptions', value: 45, date: '2023-11-01' },
+    { name: 'Services', value: 30, date: '2023-11-01' },
+    { name: 'Products', value: 15, date: '2023-11-01' },
+    { name: 'Other', value: 10, date: '2023-11-01' }
   ];
 
   return (
@@ -55,14 +105,14 @@ export const GlobalFinance: React.FC = () => {
         <div className={styles.chartCard}>
           <h3>Tendance des Revenus</h3>
           <MetricChart
-            data={revenueData}
+            data={mockRevenueData}
             color="#0045CE"
           />
         </div>
         <div className={styles.chartCard}>
           <h3>Distribution des Revenus</h3>
           <MetricChart
-            data={revenueData}
+            data={mockRevenueDistribution}
             color="#00AC4F"
           />
         </div>
@@ -71,7 +121,7 @@ export const GlobalFinance: React.FC = () => {
       <section className={styles.transactionsSection}>
         <Table
           headers={transactionHeaders}
-          data={[]} // Will be populated with real data
+          data={mockTransactions}
           onSearch={(value) => console.log('Search:', value)}
           onSort={(field) => console.log('Sort by:', field)}
           title="Historique des Transactions"

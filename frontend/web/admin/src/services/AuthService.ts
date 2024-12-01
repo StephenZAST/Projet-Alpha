@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import axios from 'axios';
 import { AppError } from '../utils/errors';
+import store from '../redux/store';
+import { setUser, setToken, setIsLoggedIn, resetAuth } from '../redux/slices/authSlice';
 
 // Use environment variable for API URL, with correct fallback
 const apiBaseUrl = 'http://localhost:5000/api';
@@ -49,73 +51,90 @@ class AuthService {
         throw new AppError('Email and password are required', 400, 'INVALID_ADMIN_DATA');
       }
 
-      console.log('Sending request to:', `${apiBaseUrl}/admins/master/create`);
-      console.log('Admin data:', adminData);
-
       const response = await axiosInstance.post('/admins/master/create', adminData);
-      
-      console.log('Response:', response.data);
+      const { token, admin } = response.data.data;
 
-      if (response.data.success) {
-        return response.data.data;
-      } else {
+      // Update Redux store
+      store.dispatch(setToken(token));
+      store.dispatch(setUser(admin));
+      store.dispatch(setIsLoggedIn(true));
+
+      // Set token in axios headers
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Create master admin error:', error);
+      if (error.response) {
         throw new AppError(
-          response.data.message || 'Failed to create master admin',
-          response.data.statusCode || 400,
-          response.data.code || 'CREATION_FAILED'
+          error.response.data.message || 'Failed to create master admin',
+          error.response.status,
+          error.response.data.code || 'CREATE_ADMIN_ERROR'
         );
       }
-    } catch (error: any) {
-      console.error('Error creating master admin:', error);
-      
-      if (error instanceof AppError) {
-        throw error;
-      }
-
-      if (axios.isAxiosError(error)) {
-        const message = error.response?.data?.message || 'Failed to create master admin';
-        const statusCode = error.response?.status || 500;
-        throw new AppError(message, statusCode, 'API_ERROR');
-      }
-
-      throw new AppError('An unexpected error occurred', 500, 'UNKNOWN_ERROR');
+      throw new AppError('Network error', 500, 'NETWORK_ERROR');
     }
   }
 
   async login(email: string, password: string) {
     try {
       const response = await axiosInstance.post('/auth/login', { email, password });
-      if (response.data.success) {
-        const { token, admin } = response.data.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('adminRole', admin.role);
-        return admin;
-      } else {
+      const { token, admin } = response.data.data;
+
+      // Update Redux store
+      store.dispatch(setToken(token));
+      store.dispatch(setUser(admin));
+      store.dispatch(setIsLoggedIn(true));
+
+      // Set token in axios headers
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      // Store in localStorage for persistence
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(admin));
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Login error:', error);
+      if (error.response) {
         throw new AppError(
-          response.data.message || 'Login failed',
-          response.data.statusCode || 400,
-          response.data.code || 'UNAUTHORIZED'
+          error.response.data.message || 'Login failed',
+          error.response.status,
+          error.response.data.code || 'LOGIN_ERROR'
         );
       }
-    } catch (error: any) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-      throw new AppError(error.message || 'Login failed', 400, 'LOGIN_FAILED');
+      throw new AppError('Network error', 500, 'NETWORK_ERROR');
     }
   }
 
   logout() {
+    // Clear Redux store
+    store.dispatch(resetAuth());
+
+    // Clear localStorage
     localStorage.removeItem('token');
-    localStorage.removeItem('adminRole');
+    localStorage.removeItem('user');
+
+    // Clear axios headers
+    delete axiosInstance.defaults.headers.common['Authorization'];
   }
 
-  isAuthenticated() {
-    return !!localStorage.getItem('token');
-  }
+  checkAuth() {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
 
-  getAdminRole() {
-    return localStorage.getItem('adminRole');
+    if (token && user) {
+      // Update Redux store
+      store.dispatch(setToken(token));
+      store.dispatch(setUser(JSON.parse(user)));
+      store.dispatch(setIsLoggedIn(true));
+
+      // Set token in axios headers
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      return true;
+    }
+
+    return false;
   }
 }
 
