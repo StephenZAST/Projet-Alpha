@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../styles/Sidebar.module.css';
+import styles from './styles/Sidebar.module.css';
 import { SidebarItemProps } from '../types';
 
 const SidebarItem: React.FC<SidebarItemProps> = ({

@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../styles/StatCard.module.css';
+import styles from './styles/StatCard.module.css';
 import { StatCardProps } from '../types';
 
 export const StatCard: React.FC<StatCardProps> = ({

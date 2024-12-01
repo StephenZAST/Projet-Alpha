@@ -1,15 +1,23 @@
 import React from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, TooltipProps } from 'recharts';
-import { ChartData } from '../types/metrics';
 import styles from './style/MetricChart.module.css';
 
 interface MetricChartProps {
-  data: ChartData[];
+  data: { name: string; value: number }[];
   color: string;
 }
 
+const mockData = [
+  { name: 'Jan', value: 100 },
+  { name: 'Feb', value: 120 },
+  { name: 'Mar', value: 140 },
+  { name: 'Apr', value: 160 },
+  { name: 'May', value: 180 },
+  { name: 'Jun', value: 200 },
+];
+
 export const MetricChart: React.FC<MetricChartProps> = ({ 
-  data, 
+  data = mockData, 
   color 
 }) => {
   return (

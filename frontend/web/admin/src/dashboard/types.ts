@@ -6,6 +6,7 @@ export interface MetricCardProps {
     type: 'positive' | 'negative' | 'neutral';
     baseline?: string;
   };
+  changeType?: 'positive' | 'negative' | 'neutral';
   comparison?: string;
 }
 

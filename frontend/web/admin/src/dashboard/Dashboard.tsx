@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './styles/Dashboard.module.css';
+import styles from './Dashboard.module.css';
 import { Sidebar } from './components/Sidebar';
 import { StatCard } from './components/StatCard';
 import { MetricCard } from './components/MetricCard';

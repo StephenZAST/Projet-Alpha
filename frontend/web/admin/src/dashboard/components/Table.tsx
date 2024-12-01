@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../styles/CustomerTable.module.css';
+import styles from './styles/CustomerTable.module.css';
 import { Pagination } from './Pagination';
 import { CustomerTableProps } from '../types';
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../styles/MetricCard.module.css';
+import styles from './styles/MetricCard.module.css';
 import { MetricCardProps } from '../types';
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -18,7 +18,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       {change && (
         <footer className={styles.cardFooter}>
           <span className={`${styles.badge} ${styles[changeType]}`}>
-            {change}
+            {change.value} ({change.type})
           </span>
           {comparison && (
             <span className={styles.comparison}>{comparison}</span>
