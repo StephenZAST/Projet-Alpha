@@ -11,7 +11,7 @@ export interface MetricCardProps {
 }
 
 export interface CustomerTableProps {
-  customers: Customer[];
+  customers: Customer[] | Role[];
   headers: string[];
   onSearch?: (value: string) => void;
   onSort?: (field: string) => void;
@@ -25,6 +25,16 @@ export interface Customer {
   email: string;
   country: string;
   status: 'active' | 'inactive';
+}
+
+export interface Role {
+  id: number;
+  roleName: string;
+  accessLevel: string;
+  usersCount: string;
+  lastModified: string;
+  status: string;
+  actions: string;
 }
 
 export interface PaginationProps {

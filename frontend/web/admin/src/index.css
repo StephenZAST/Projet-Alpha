@@ -20,6 +20,10 @@
 
   --theme-background-color: #ffffff; /* Light theme background color */
   --theme-text-color: #213547; /* Light theme text color */
+  --theme-card-bg: #ffffff;
+  --theme-border-color: #EAECF0;
+  --theme-sidebar-bg: #ffffff;
+  --theme-hover: #F0F5F8;
   --white: #FFFFFF;
   --gray-50: #F9FBFF;
   --gray-100: #F0F5F8;
@@ -31,8 +35,31 @@
   --gray-700: #404B52;
   --gray-800: #282828;
   --gray-900: #000000;
+  --theme-shadow: rgba(149, 157, 165, 0.2);
 
-  --pripary-box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  --primary-box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
+
+[data-theme='dark'] {
+  --theme-background-color: #1a1a1a;
+  --theme-text-color: #ffffff;
+  --theme-card-bg: #242424;
+  --theme-border-color: #2d2d2d;
+  --theme-sidebar-bg: #242424;
+  --theme-hover: #2d2d2d;
+  --white: #1F283E;
+  --gray-900: #F9FBFF;    
+  --gray-800: #F0F5F8;    
+  --gray-700: #EAECF0;    
+  --gray-600: #D0D5DD;    
+  --gray-500: #B5B7C0;    
+  --gray-400: #737791;    
+  --gray-300: #5F6980;    
+  --gray-200: #404B52;    
+  --gray-100: #282828;    
+  --gray-50: #1A2035;     
+  --theme-shadow: rgba(0, 0, 0, 0.3);
+  --primary-box-shadow: rgba(149, 157, 165, 0) 0px 8px 24px;
 }
 
 * {
@@ -41,14 +68,23 @@
   padding: 0;
 }
 
+:root,
+[data-theme='light'],
+[data-theme='dark'] {
+  transition-property: background-color, color, border-color, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--gray-900);
+  color: var(--theme-text-color);
   line-height: 1.5;
   background-color: var(--theme-background-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 button {
@@ -75,46 +111,6 @@ button {
     scroll-behavior: auto !important;
   }
 }
-
-/* Define theme-specific styles */
-body[data-theme="light"] {
-  --theme-background-color: #ffffff; /* Light theme background color */
-  --theme-text-color: #213547; /* Light theme text color */
-  --white: #FFFFFF;
-  --gray-50: #F9FBFF;
-  --gray-100: #F0F5F8;
-  --gray-200: #EAECF0;
-  --gray-300: #D0D5DD;
-  --gray-400: #B5B7C0;
-  --gray-500: #737791;
-  --gray-600: #5F6980;
-  --gray-700: #404B52;
-  --gray-800: #282828;
-  --gray-900: #000000;
-  /* --pripary-box-shadow: 1px 1px 12px 1px #000000; */
-
-  --pripary-box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
-}
-
-body[data-theme="dark"] {
-  --theme-background-color: #242424; /* Dark theme background color */
-  --theme-text-color: #ffffff; /* Dark theme text color */
-  --white: #1F283E;
-  --gray-900: #F9FBFF;    
-  --gray-800: #F0F5F8;    
-  --gray-700: #EAECF0;    
-  --gray-600: #D0D5DD;    
-  --gray-500: #B5B7C0;    
-  --gray-400: #737791;    
-  --gray-300: #5F6980;    
-  --gray-200: #404B52;    
-  --gray-100: #282828;    
-  --gray-50: #1A2035;     
-  /* --pripary-box-shadow: 1px 1px 12px 1px #ffffff; */
-
-  --pripary-box-shadow: rgba(149, 157, 165, 0) 0px 8px 24px;
-}
-
 
 /* Add a button or other element to trigger theme switching */
 /* <button id="theme-toggle">Toggle Theme</button> */

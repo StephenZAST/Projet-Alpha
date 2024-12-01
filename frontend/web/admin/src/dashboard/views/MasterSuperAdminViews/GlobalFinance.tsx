@@ -1,7 +1,7 @@
 import React from 'react';
-import { MetricCard } from '../../../components/MetricCard';
-import { MetricChart } from '../../../components/MetricChart';
-import { Table } from '../../../components/Table';
+import { MetricCard } from '../../components/MetricCard';
+import { MetricChart } from '../../components/MetricChart';
+import { Table } from '../../components/Table';
 import styles from '../styles/GlobalFinance.module.css';
 
 export const GlobalFinance: React.FC = () => {
@@ -9,22 +9,22 @@ export const GlobalFinance: React.FC = () => {
     {
       title: "Total Revenue",
       value: "125M FCFA",
-      change: { value: "+23%", type: 'increase' as const , baseline: "vs last month" }
+      change: { value: "+23%", type: 'positive' as const , baseline: "vs last month" }
     },
     {
       title: "Monthly Growth",
       value: "15.4%",
-      change: { value: "+2.1%", type: 'increase' as const , baseline: "vs last month" }
+      change: { value: "+2.1%", type: 'positive' as const , baseline: "vs last month" }
     },
     {
       title: "Pending Payments",
       value: "2.3M FCFA",
-      change: { value: "-5%", type: 'decrease' as const, baseline: "vs last month" }
+      change: { value: "-5%", type: 'negative' as const, baseline: "vs last month" }
     },
     {
       title: "Outstanding Invoices",
       value: "4.7M FCFA",
-      change: { value: "+12%", type: 'increase' as const, baseline: "vs last month" }
+      change: { value: "+12%", type: 'positive' as const, baseline: "vs last month" }
     }
   ];
 
@@ -40,34 +40,50 @@ export const GlobalFinance: React.FC = () => {
   const mockTransactions = [
     {
       id: "TRX-001",
+      name: "John Doe",
       company: "Tech Solutions SA",
+      phone: "123456789",
+      email: "john.doe@example.com",
+      country: "Cameroon",
       amount: "2.5M FCFA",
       date: "2023-11-28",
-      status: "Completed",
+      status: "active" as const,
       type: "Payment"
     },
     {
       id: "TRX-002",
+      name: "Jane Doe",
       company: "Digital Services SARL",
+      phone: "987654321",
+      email: "jane.doe@example.com",
+      country: "Cameroon",
       amount: "1.8M FCFA",
       date: "2023-11-27",
-      status: "Pending",
+      status: "inactive" as const,
       type: "Invoice"
     },
     {
       id: "TRX-003",
+      name: "John Smith",
       company: "Web Experts SAS",
+      phone: "555555555",
+      email: "john.smith@example.com",
+      country: "Cameroon",
       amount: "3.2M FCFA",
       date: "2023-11-26",
-      status: "Completed",
+      status: "active" as const,
       type: "Payment"
     },
     {
       id: "TRX-004",
+      name: "Jane Smith",
       company: "Marketing Pro SARL",
+      phone: "444444444",
+      email: "jane.smith@example.com",
+      country: "Cameroon",
       amount: "950K FCFA",
       date: "2023-11-25",
-      status: "Failed",
+      status: "inactive" as const,
       type: "Payment"
     }
   ];
@@ -121,7 +137,7 @@ export const GlobalFinance: React.FC = () => {
       <section className={styles.transactionsSection}>
         <Table
           headers={transactionHeaders}
-          data={mockTransactions}
+          customers={mockTransactions}
           onSearch={(value) => console.log('Search:', value)}
           onSort={(field) => console.log('Sort by:', field)}
           title="Historique des Transactions"

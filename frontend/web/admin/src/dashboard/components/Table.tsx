@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './styles/Table.module.css';
 import { Pagination } from './Pagination';
-import { CustomerTableProps } from '../types';
+import { CustomerTableProps, Customer, Role } from '../types';
 
 export const Table: React.FC<CustomerTableProps> = ({
   customers,
@@ -10,6 +10,10 @@ export const Table: React.FC<CustomerTableProps> = ({
   onSort,
   title = "All Data"
 }) => {
+  const isCustomer = (customer: Customer | Role): customer is Customer => {
+    return (customer as Customer).name !== undefined;
+  };
+
   return (
     <section className={styles.tableContainer}>
       <header className={styles.tableHeader}>
@@ -51,16 +55,29 @@ export const Table: React.FC<CustomerTableProps> = ({
           <tbody>
             {customers.map((customer, index) => (
               <tr key={index}>
-                <td>{customer.name}</td>
-                <td>{customer.company}</td>
-                <td>{customer.phone}</td>
-                <td>{customer.email}</td>
-                <td>{customer.country}</td>
-                <td>
-                  <span className={`${styles.status} ${styles[customer.status]}`}>
-                    {customer.status}
-                  </span>
-                </td>
+                {isCustomer(customer) ? (
+                  <>
+                    <td>{customer.name}</td>
+                    <td>{customer.company}</td>
+                    <td>{customer.phone}</td>
+                    <td>{customer.email}</td>
+                    <td>{customer.country}</td>
+                    <td>
+                      <span className={`${styles.status} ${styles[customer.status]}`}>
+                        {customer.status}
+                      </span>
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td>{customer.roleName}</td>
+                    <td>{customer.accessLevel}</td>
+                    <td>{customer.usersCount}</td>
+                    <td>{customer.lastModified}</td>
+                    <td>{customer.status}</td>
+                    <td>{customer.actions}</td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>

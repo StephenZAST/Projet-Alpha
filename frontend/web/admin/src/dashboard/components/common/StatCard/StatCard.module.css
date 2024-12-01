@@ -1,0 +1,81 @@
+.statCard {
+  background: var(--theme-card-bg);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--theme-shadow);
+  transition: all 0.3s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--theme-shadow);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.iconWrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.title {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.content {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--theme-text-color);
+}
+
+.trend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.trend.up {
+  background-color: var(--success-light);
+  color: var(--success);
+}
+
+.trend.down {
+  background-color: var(--error-light);
+  color: var(--error);
+}
+
+.trendValue {
+  font-weight: 600;
+}
+
+.trendText {
+  color: var(--gray-500);
+  font-size: 0.75rem;
+}
