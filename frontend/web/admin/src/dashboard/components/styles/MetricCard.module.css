@@ -1,0 +1,67 @@
+.metricCard {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--pripary-box-shadow);
+  }
+  
+  .cardHeader {
+    margin-bottom: 16px;
+  }
+  
+  .cardTitle {
+    color: var(--gray-600);
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 8px;
+  }
+  
+  .cardValue {
+    color: var(--gray-900);
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  
+  .cardFooter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .badge {
+    padding: 4px 8px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+  .positive {
+    background-color: var(--success-light);
+    color: var(--success);
+  }
+  
+  .negative {
+    background-color: var(--error-light);
+    color: var(--error);
+  }
+  
+  .neutral {
+    background-color: var(--gray-100);
+    color: var(--gray-600);
+  }
+  
+  .comparison {
+    color: var(--gray-500);
+    font-size: 12px;
+  }
+  
+  @media (max-width: 768px) {
+    .metricCard {
+      padding: 16px;
+    }
+  
+    .cardValue {
+      font-size: 22px;
+    }
+  }

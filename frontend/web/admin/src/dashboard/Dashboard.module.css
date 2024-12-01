@@ -1,0 +1,77 @@
+.dashboardLayout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--gray-50);
+  }
+  
+  .mainContent {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+  }
+  
+  .dashboardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+  }
+  
+  .greeting {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--gray-900);
+  }
+  
+  .searchForm {
+    position: relative;
+    width: 280px;
+  }
+  
+  .searchInput {
+    width: 100%;
+    padding: 8px 16px 8px 40px;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    background: var(--white);
+  }
+  
+  .searchInput::placeholder {
+    color: var(--gray-400);
+  }
+  
+  .statsSection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  
+  .metricsSection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  
+  @media (max-width: 768px) {
+    .mainContent {
+      padding: 16px;
+    }
+  
+    .dashboardHeader {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  
+    .searchForm {
+      width: 100%;
+    }
+  
+    .statsSection,
+    .metricsSection {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
