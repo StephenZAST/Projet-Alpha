@@ -20,7 +20,7 @@ interface TopItem {
   change: number;
 }
 
-export const Reports: React.FC = () => {
+const Reports: React.FC = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
   const [selectedMetric, setSelectedMetric] = useState('users');
 
@@ -238,3 +238,5 @@ export const Reports: React.FC = () => {
     </div>
   );
 };
+
+export default Reports;

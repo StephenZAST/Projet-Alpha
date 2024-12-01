@@ -5,7 +5,7 @@ import { TransferList } from '../../components/common/TransferList/TransferList'
 import { mockStats, mockChartData, mockTransfers, mockMasterAdminData } from '../../services/mockData';
 import styles from './Overview.module.css';
 
-export const Overview: React.FC = () => {
+const Overview: React.FC = () => {
   return (
     <div className={styles.overview}>
       <div className={styles.header}>
@@ -72,3 +72,5 @@ export const Overview: React.FC = () => {
     </div>
   );
 };
+
+export default Overview;

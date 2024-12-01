@@ -6,31 +6,56 @@ import { TopBar } from './topbar/TopBar';
 import { useAuth } from '../auth/AuthContext';
 import { AdminType, adminNavConfigs } from './types/adminTypes';
 
+// Import des vues Master Super Admin
+const MasterSuperAdminViews = {
+  'overview': React.lazy(() => import('./views/MasterSuperAdminViews/Overview')),
+  'admin-management': React.lazy(() => import('./views/MasterSuperAdminViews/AdminManagement')),
+  'company': React.lazy(() => import('./views/MasterSuperAdminViews/Company')),
+  'global-stats': React.lazy(() => import('./views/MasterSuperAdminViews/GlobalStats')),
+  'settings': React.lazy(() => import('./views/MasterSuperAdminViews/Settings'))
+};
+
+// Import des vues Super Admin
+const SuperAdminViews = {
+  'overview': React.lazy(() => import('./views/SuperAdminViews/Overview')),
+  'user-management': React.lazy(() => import('./views/SuperAdminViews/UserManagement')),
+  'content': React.lazy(() => import('./views/SuperAdminViews/ContentManagement')),
+  'reports': React.lazy(() => import('./views/SuperAdminViews/Reports'))
+};
+
+// Mapping des vues par type d'admin
+const ViewsMap = {
+  MASTER_SUPER_ADMIN: MasterSuperAdminViews,
+  SUPER_ADMIN: SuperAdminViews
+} as const;
+
 interface DashboardProps {
   onThemeToggle: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
   const { user } = useAuth();
-  const adminType = (user?.adminType as AdminType) || 'CUSTOMER_SERVICE';
+  const adminType = (user?.adminType as keyof typeof ViewsMap) || 'CUSTOMER_SERVICE';
   const navConfig = adminNavConfigs[adminType];
 
   const getViewComponent = (viewId: string) => {
-    // Convertir l'ID en format PascalCase pour le nom du fichier
-    const viewName = viewId
-      .split(/[-_]/)
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-      .join('');
+    const views = ViewsMap[adminType];
+    if (!views) {
+      console.error(`No views found for admin type: ${adminType}`);
+      return React.lazy(() => Promise.resolve({
+        default: () => <div>No views available for this admin type</div>
+      }));
+    }
 
-    console.log('Loading view:', viewName, 'for admin type:', adminType);
-    
-    return React.lazy(() => 
-      import(`./views/${adminType}Views/${viewName}`)
-        .catch(error => {
-          console.error(`Error loading view ${viewName}:`, error);
-          return { default: () => <div>Error loading view {viewName}</div> };
-        })
-    );
+    const ViewComponent = views[viewId as keyof typeof views];
+    if (!ViewComponent) {
+      console.error(`View not found: ${viewId} for admin type: ${adminType}`);
+      return React.lazy(() => Promise.resolve({
+        default: () => <div>View not found: {viewId}</div>
+      }));
+    }
+
+    return ViewComponent;
   };
 
   const routes = useMemo(() => 
@@ -46,7 +71,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
         )
       };
     }),
-    [navConfig.navItems]
+    [navConfig.navItems, adminType]
   );
 
   return (

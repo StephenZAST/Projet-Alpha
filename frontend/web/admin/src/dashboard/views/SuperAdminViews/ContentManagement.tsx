@@ -19,7 +19,7 @@ interface Category {
   count: number;
 }
 
-export const ContentManagement: React.FC = () => {
+const ContentManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
@@ -349,3 +349,5 @@ export const ContentManagement: React.FC = () => {
     </div>
   );
 };
+
+export default ContentManagement;
