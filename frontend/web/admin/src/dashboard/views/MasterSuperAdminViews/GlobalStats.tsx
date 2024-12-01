@@ -1,29 +1,29 @@
 import React from 'react';
-import { MetricCard } from '../../../components/MetricCard';
-import { MetricChart } from '../../../components/MetricChart';
-import styles from '../styles/GlobalStats.module.css';
+import { MetricCard } from '../../components/MetricCard';
+import { MetricChart } from '../../components/MetricChart';
+import styles from './styles/GlobalStats.module.css';
 
 export const GlobalStats: React.FC = () => {
   const performanceMetrics = [
     {
       title: "System Performance",
       value: "98.5%",
-      change: { value: "+2.1%", type: 'increase' as const, baseline: "vs last month" }
+      change: { value: "+2.1%", type: 'positive' as const, baseline: "vs last month" }
     },
     {
       title: "User Engagement",
       value: "76.3%",
-      change: { value: "+5.4%", type: 'increase' as const, baseline: "vs last month" }
+      change: { value: "+5.4%", type: 'positive' as const, baseline: "vs last month" }
     },
     {
       title: "Service Usage",
       value: "12,456",
-      change: { value: "+15%", type: 'increase' as const, baseline: "vs last month" }
+      change: { value: "+15%", type: 'positive' as const, baseline: "vs last month" }
     },
     {
       title: "Geographic Coverage",
       value: "28 Regions",
-      change: { value: "+3", type: 'increase' as const, baseline: "nouvelles régions" }
+      change: { value: "+3", type: 'positive' as const, baseline: "nouvelles régions" }
     }
   ];
 

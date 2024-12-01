@@ -21,5 +21,8 @@
   },
   "peerDependencies": {
     "firebase": "^10.14.0"
+  },
+  "dependencies": {
+    "@firebasegen/default-connector": "file:"
   }
 }

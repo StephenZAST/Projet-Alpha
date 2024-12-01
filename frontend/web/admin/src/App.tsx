@@ -4,6 +4,17 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import PrivateRoute from './components/PrivateRoute';
 import Dashboard from './dashboard/Dashboard';
+import ErrorBoundary from './components/ErrorBoundary';
+import { AuthProvider } from './auth/AuthContext'; // Import AuthProvider
+
+const Login = () => {
+  return (
+    <div>
+      <h1>Login</h1>
+      {/* Add login form here */}
+    </div>
+  );
+};
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState(() => {
@@ -27,21 +38,33 @@ const App: React.FC = () => {
 
   return (
     <Provider store={store}>
-      <BrowserRouter>
-        <div className="app-container" data-theme={theme}>
-          <Routes>
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Dashboard and its nested routes */}
-            <Route path="/dashboard/*" element={
-              <PrivateRoute>
-                <Dashboard onThemeToggle={handleThemeToggle} />
-              </PrivateRoute>
-            } />
-          </Routes>
-        </div>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <AuthProvider> {/* Wrap authenticated routes with AuthProvider */}
+          <BrowserRouter>
+            <div className="app-container" data-theme={theme}>
+              <Routes>
+                {/* Redirect root to dashboard */}
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                
+                {/* Dashboard and its nested routes */}
+                <Route 
+                  path="/dashboard/*" 
+                  element={
+                    <ErrorBoundary>
+                      <PrivateRoute>
+                        <Dashboard onThemeToggle={handleThemeToggle} />
+                      </PrivateRoute>
+                    </ErrorBoundary>
+                  } 
+                />
+
+                {/* Login route */}
+                <Route path="/login" element={<Login />} />
+              </Routes>
+            </div>
+          </BrowserRouter>
+        </AuthProvider>
+      </ErrorBoundary>
     </Provider>
   );
 };

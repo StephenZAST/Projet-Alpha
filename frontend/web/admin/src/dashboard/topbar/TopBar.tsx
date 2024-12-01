@@ -5,10 +5,10 @@ import { SearchInput } from './SearchInput';
 import { UserAvatar } from './UserAvatar';
 
 interface TopBarProps {
-  handleThemeToggle: () => void;
+  onThemeToggle: () => void;
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ handleThemeToggle }) => {
+export const TopBar: React.FC<TopBarProps> = ({ onThemeToggle }) => {
   const handleSearch = (value: string) => {
     console.log('Search:', value);
   };
@@ -36,7 +36,7 @@ export const TopBar: React.FC<TopBarProps> = ({ handleThemeToggle }) => {
               alt={button.alt}
             />
           ))}
-          <button className={styles.themeToggle} onClick={handleThemeToggle}>
+          <button className={styles.themeToggle} onClick={onThemeToggle}>
             Toggle Theme
           </button>
         </div>

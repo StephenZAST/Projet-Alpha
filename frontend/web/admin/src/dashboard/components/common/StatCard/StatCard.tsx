@@ -25,7 +25,7 @@ export const StatCard: React.FC<StatCardProps> = ({
       <div className={styles.header}>
         {icon && (
           <div className={styles.iconWrapper}>
-            <img src={icon} alt="" className={styles.icon} />
+            <span className="material-icons">{icon}</span>
           </div>
         )}
         <h3 className={styles.title}>{title}</h3>
@@ -35,6 +35,9 @@ export const StatCard: React.FC<StatCardProps> = ({
         <div className={styles.value}>{value}</div>
         {trend && (
           <div className={`${styles.trend} ${styles[trend.direction]}`}>
+            <span className="material-icons">
+              {trend.direction === 'up' ? 'arrow_upward' : 'arrow_downward'}
+            </span>
             <span className={styles.trendValue}>{trend.value}</span>
             {trend.text && <span className={styles.trendText}>{trend.text}</span>}
           </div>

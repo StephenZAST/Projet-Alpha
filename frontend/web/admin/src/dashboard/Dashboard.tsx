@@ -5,6 +5,28 @@ import { Sidebar } from './components/Sidebar';
 import { TopBar } from './topbar/TopBar';
 import { useAuth } from '../auth/AuthContext';
 import { AdminType, adminNavConfigs } from './types/adminTypes';
+import ErrorBoundary from '../components/ErrorBoundary';
+
+// Import statique des vues pour chaque type d'admin
+const MasterSuperAdminViews = {
+  Overview: React.lazy(() => import('./views/MasterSuperAdminViews/Overview')),
+  AdminManagement: React.lazy(() => import('./views/MasterSuperAdminViews/AdminManagement')),
+  Analytics: React.lazy(() => import('./views/MasterSuperAdminViews/Analytics')),
+  SystemSettings: React.lazy(() => import('./views/MasterSuperAdminViews/SystemSettings')),
+  AuditLogs: React.lazy(() => import('./views/MasterSuperAdminViews/AuditLogs'))
+} as const;
+
+const SuperAdminViews = {
+  Overview: React.lazy(() => import('./views/SuperAdminViews/Overview')),
+  UserManagement: React.lazy(() => import('./views/SuperAdminViews/UserManagement')),
+  ContentManagement: React.lazy(() => import('./views/SuperAdminViews/ContentManagement')),
+  Reports: React.lazy(() => import('./views/SuperAdminViews/Reports'))
+} as const;
+
+const ViewComponents = {
+  MASTER_SUPER_ADMIN: MasterSuperAdminViews,
+  SUPER_ADMIN: SuperAdminViews
+} as const;
 
 interface DashboardProps {
   onThemeToggle: () => void;
@@ -12,11 +34,23 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
   const { user } = useAuth();
-  const adminType = (user?.adminType as AdminType) || 'CUSTOMER_SERVICE';
+  const adminType = (user?.adminType as keyof typeof ViewComponents) || 'CUSTOMER_SERVICE';
   const navConfig = adminNavConfigs[adminType];
 
-  const loadView = (viewName: string) => {
-    return React.lazy(() => import(`./views/${adminType}Views/${viewName}`));
+  const getViewComponent = (viewId: string) => {
+    const views = ViewComponents[adminType as keyof typeof ViewComponents];
+    if (!views) {
+      console.error(`No views found for admin type: ${adminType}`);
+      return null;
+    }
+
+    const ViewComponent = views[viewId as keyof typeof views];
+    if (!ViewComponent) {
+      console.error(`View not found: ${viewId} for admin type: ${adminType}`);
+      return null;
+    }
+
+    return ViewComponent;
   };
 
   return (
@@ -27,37 +61,48 @@ const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
         <TopBar onThemeToggle={onThemeToggle} />
         
         <div className={styles.viewContainer}>
-          <React.Suspense fallback={<div>Loading...</div>}>
-            <Routes>
-              {/* Default route redirects to the default path */}
-              <Route 
-                index 
-                element={<Navigate to={navConfig.defaultPath} replace />} 
-              />
-              
-              {/* Map all nav items to routes */}
-              {navConfig.navItems.map((item) => {
-                const ViewComponent = loadView(item.id.charAt(0).toUpperCase() + item.id.slice(1));
-                return (
-                  <Route
-                    key={item.id}
-                    path={item.path}
-                    element={
-                      <React.Suspense fallback={<div>Loading view...</div>}>
-                        <ViewComponent />
-                      </React.Suspense>
-                    }
-                  />
-                );
-              })}
-              
-              {/* Catch all unmatched routes */}
-              <Route 
-                path="*" 
-                element={<Navigate to={navConfig.defaultPath} replace />} 
-              />
-            </Routes>
-          </React.Suspense>
+          <ErrorBoundary>
+            <React.Suspense fallback={<div>Loading...</div>}>
+              <Routes>
+                {/* Default route redirects to the default path */}
+                <Route 
+                  index 
+                  element={<Navigate to={navConfig.defaultPath} replace />} 
+                />
+                
+                {/* Map all nav items to routes */}
+                {navConfig.navItems.map((item) => {
+                  const viewId = item.id.charAt(0).toUpperCase() + item.id.slice(1);
+                  const ViewComponent = getViewComponent(viewId);
+                  
+                  if (!ViewComponent) {
+                    console.warn(`Skipping route for ${viewId} - component not found`);
+                    return null;
+                  }
+
+                  return (
+                    <Route
+                      key={item.id}
+                      path={item.path}
+                      element={
+                        <ErrorBoundary>
+                          <React.Suspense fallback={<div>Loading view...</div>}>
+                            <ViewComponent />
+                          </React.Suspense>
+                        </ErrorBoundary>
+                      }
+                    />
+                  );
+                })}
+                
+                {/* Catch all unmatched routes */}
+                <Route 
+                  path="*" 
+                  element={<Navigate to={navConfig.defaultPath} replace />} 
+                />
+              </Routes>
+            </React.Suspense>
+          </ErrorBoundary>
         </div>
       </main>
     </div>

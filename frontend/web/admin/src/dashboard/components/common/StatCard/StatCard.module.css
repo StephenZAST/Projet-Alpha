@@ -1,9 +1,11 @@
 .statCard {
   background: var(--theme-card-bg);
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px var(--theme-shadow);
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px var(--theme-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .statCard:hover {
@@ -21,11 +23,16 @@
 .iconWrapper {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--primary-light);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.iconWrapper .material-icons {
+  color: var(--primary);
+  font-size: 24px;
 }
 
 .icon {
@@ -38,11 +45,12 @@
   color: var(--gray-500);
   font-size: 0.875rem;
   font-weight: 500;
+  margin: 0;
 }
 
 .content {
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
 }
 
@@ -55,20 +63,25 @@
 .trend {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  gap: 0.25rem;
   font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
 }
 
 .trend.up {
-  background-color: var(--success-light);
   color: var(--success);
+  background: var(--success-light);
 }
 
 .trend.down {
-  background-color: var(--error-light);
   color: var(--error);
+  background: var(--error-light);
+}
+
+.trend .material-icons {
+  font-size: 16px;
 }
 
 .trendValue {
@@ -77,5 +90,19 @@
 
 .trendText {
   color: var(--gray-500);
-  font-size: 0.75rem;
+  margin-left: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .statCard {
+    padding: 1rem;
+  }
+
+  .value {
+    font-size: 1.25rem;
+  }
+
+  .trend {
+    font-size: 0.75rem;
+  }
 }

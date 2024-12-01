@@ -50,60 +50,68 @@ export const mockChartData = [
 
 export const mockStats = [
   {
-    title: 'Total Customers',
-    value: '5,423',
-    icon: '/icons/customers.svg',
+    title: 'Total Revenue',
+    value: '$54,375',
+    icon: 'trending_up',
     trend: {
-      value: '16%',
-      direction: 'up' as const,
-      text: 'this month'
+      value: '12%',
+      direction: 'up',
+      text: 'vs last month'
     }
   },
   {
-    title: 'Active Now',
-    value: '189',
-    icon: '/icons/active.svg'
+    title: 'Active Users',
+    value: '2,345',
+    icon: 'group',
+    trend: {
+      value: '8%',
+      direction: 'up',
+      text: 'vs last month'
+    }
   },
   {
-    title: 'Total Revenue',
-    value: '$682.5',
-    icon: '/icons/revenue.svg',
+    title: 'New Clients',
+    value: '321',
+    icon: 'person_add',
     trend: {
-      value: '2.45%',
-      direction: 'up' as const,
+      value: '5%',
+      direction: 'down',
+      text: 'vs last month'
+    }
+  },
+  {
+    title: 'Satisfaction Rate',
+    value: '95%',
+    icon: 'sentiment_satisfied',
+    trend: {
+      value: '3%',
+      direction: 'up',
       text: 'vs last month'
     }
   }
 ];
 
-// Données mock pour MasterSuperAdmin
 export const mockMasterAdminData = {
   overview: {
-    totalOrders: 15234,
-    totalRevenue: 1523400,
-    activeUsers: 5423,
-    systemHealth: 98.5,
     recentActivities: [
       {
         id: '1',
-        user: 'John Admin',
-        action: 'Created new admin account',
-        timestamp: '2024-01-15T14:30:00'
+        user: 'John Doe',
+        action: ' added a new admin user',
+        timestamp: new Date('2024-01-15T14:30:00').getTime()
       },
-      // ... plus d'activités
-    ]
-  },
-  adminManagement: {
-    totalAdmins: 45,
-    activeAdmins: 38,
-    recentActions: [
       {
-        id: '1',
-        admin: 'Sarah Manager',
-        action: 'Modified user permissions',
-        timestamp: '2024-01-15T15:00:00'
+        id: '2',
+        user: 'Jane Smith',
+        action: ' modified system settings',
+        timestamp: new Date('2024-01-15T13:45:00').getTime()
       },
-      // ... plus d'actions
+      {
+        id: '3',
+        user: 'Mike Johnson',
+        action: ' reviewed security logs',
+        timestamp: new Date('2024-01-15T12:15:00').getTime()
+      }
     ]
   }
 };

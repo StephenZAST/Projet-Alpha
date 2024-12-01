@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 import { AdminType, adminNavConfigs } from '../../types/adminTypes';
-import { useAuth } from '../../../hooks/useAuth'; // Vous devrez créer ce hook
+import { useAuth } from '../../../auth/AuthContext'; // Vous devrez créer ce hook
 
 interface SidebarProps {
   className?: string;
@@ -59,7 +59,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
           <img src={user?.avatar || '/default-avatar.png'} alt="User avatar" />
         </div>
         <div className={styles.userDetails}>
-          <span className={styles.userName}>{user?.name || 'User'}</span>
+          <span className={styles.userName}>{user?.firstName} {user?.lastName}</span>
           <span className={styles.userRole}>{adminType}</span>
         </div>
       </div>
