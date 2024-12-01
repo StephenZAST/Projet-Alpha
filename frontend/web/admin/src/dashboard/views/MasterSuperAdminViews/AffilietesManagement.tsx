@@ -1,9 +1,10 @@
 import React from 'react';
 import styles from '../styles/Settings.module.css';
-import { MetricCard } from '../../../components/MetricCard';
-import { Table } from '../../../components/Table';
+import { MetricCard } from '../../components/MetricCard';
+import { Table } from '../../components/Table';
+import { Customer, MetricCardProps } from '../../types';
 
-export const AffilietesSettings: React.FC = () => {
+export const AffilietesManagement: React.FC = () => {
   const mockUser = {
     email: 'admin@example.com',
     phone: '+33 123 456 789',
@@ -11,21 +12,21 @@ export const AffilietesSettings: React.FC = () => {
     role: 'Master Super Admin'
   };
 
-  const affiliateMetrics = [
+  const affiliateMetrics: MetricCardProps[] = [
     {
       title: "Total Affiliates",
       value: "156",
-      change: { value: "+8", type: 'increase' as const, baseline: "ce mois" }
+      change: { value: "+8", type: 'positive', baseline: "ce mois" }
     },
     {
       title: "Active Affiliates",
       value: "134",
-      change: { value: "+12", type: 'increase' as const, baseline: "cette semaine" }
+      change: { value: "+12", type: 'positive', baseline: "cette semaine" }
     },
     {
       title: "Revenue Generated",
       value: "€89,450",
-      change: { value: "+15%", type: 'increase' as const, baseline: "vs dernier mois" }
+      change: { value: "+15%", type: 'positive', baseline: "vs dernier mois" }
     }
   ];
 
@@ -39,36 +40,30 @@ export const AffilietesSettings: React.FC = () => {
     "Actions"
   ];
 
-  const mockAffiliateData = [
+  const mockAffiliateData: Customer[] = [
     {
-      id: 1,
-      companyName: "Tech Solutions SA",
-      contactPerson: "Marie Lambert",
-      email: "marie@techsolutions.com",
+      name: "Tech Solutions SA",
+      company: "Tech Solutions SA",
       phone: "+33 123 456 789",
-      status: "Active",
-      revenue: "€23,450",
-      actions: "Edit | Delete"
+      email: "marie@techsolutions.com",
+      country: "France",
+      status: "active"
     },
     {
-      id: 2,
-      companyName: "Digital Services SARL",
-      contactPerson: "Pierre Martin",
-      email: "pierre@digitalservices.com",
+      name: "Digital Services SARL",
+      company: "Digital Services SARL",
       phone: "+33 234 567 890",
-      status: "Active",
-      revenue: "€18,670",
-      actions: "Edit | Delete"
+      email: "pierre@digitalservices.com",
+      country: "France",
+      status: "active"
     },
     {
-      id: 3,
-      companyName: "Web Experts SAS",
-      contactPerson: "Sophie Bernard",
-      email: "sophie@webexperts.com",
+      name: "Web Experts SAS",
+      company: "Web Experts SAS",
       phone: "+33 345 678 901",
-      status: "Inactive",
-      revenue: "€12,890",
-      actions: "Edit | Delete"
+      email: "sophie@webexperts.com",
+      country: "France",
+      status: "inactive"
     }
   ];
 
@@ -82,10 +77,10 @@ export const AffilietesSettings: React.FC = () => {
 
       <section className={styles.mainContent}>
         <Table
+          customers={mockAffiliateData}
           headers={affiliateTableHeaders}
-          data={mockAffiliateData}
-          onSearch={(value) => console.log('Search:', value)}
-          onSort={(field) => console.log('Sort by:', field)}
+          onSearch={(value: string) => console.log('Search:', value)}
+          onSort={(field: string) => console.log('Sort by:', field)}
           title="Gestion des Affiliés"
         />
       </section>

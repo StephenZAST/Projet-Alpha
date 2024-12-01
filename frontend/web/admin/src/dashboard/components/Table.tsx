@@ -1,29 +1,19 @@
 import React from 'react';
 import styles from '../styles/CustomerTable.module.css';
-import { TableProps } from '../types.ts';
-import { Pagination } from './Pagination.tsx';
+import { Pagination } from './Pagination';
+import { CustomerTableProps } from '../types';
 
-
-
-interface TableProps {
-  headers: string[];
-  data: any[];
-  onSort?: (field: string) => void;
-  onSearch?: (value: string) => void;
-  title?: string;
-}
-
-export const Table: React.FC<TableProps> = ({
+export const Table: React.FC<CustomerTableProps> = ({
+  customers,
   headers,
-  data,
-  onSort,
   onSearch,
+  onSort,
   title = "All Data"
 }) => {
   return (
     <section className={styles.tableContainer}>
       <header className={styles.tableHeader}>
-        <h2 className={styles.tableTitle}>All Customers</h2>
+        <h2 className={styles.tableTitle}>{title}</h2>
         <div className={styles.tableActions}>
           <form className={styles.searchForm}>
             <label htmlFor="customerSearch" className="sr-only">
@@ -34,11 +24,12 @@ export const Table: React.FC<TableProps> = ({
               type="search"
               placeholder="Search"
               className={styles.searchInput}
+              onChange={(e) => onSearch?.(e.target.value)}
             />
           </form>
           <div className={styles.sortDropdown}>
             <span>Sort by: </span>
-            <select className={styles.sortSelect}>
+            <select className={styles.sortSelect} onChange={(e) => onSort?.(e.target.value)}>
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
             </select>
@@ -50,12 +41,11 @@ export const Table: React.FC<TableProps> = ({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Customer Name</th>
-              <th>Company</th>
-              <th>Phone Number</th>
-              <th>Email</th>
-              <th>Country</th>
-              <th>Status</th>
+              {headers.map((header, index) => (
+                <th key={index} onClick={() => onSort?.(header)}>
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>

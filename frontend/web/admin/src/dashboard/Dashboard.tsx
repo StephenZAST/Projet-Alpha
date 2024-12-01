@@ -3,9 +3,9 @@ import styles from './styles/Dashboard.module.css';
 import { Sidebar } from './components/Sidebar';
 import { StatCard } from './components/StatCard';
 import { MetricCard } from './components/MetricCard';
-import { CustomerTable } from './components/Table';
+import { Table as CustomerTable } from './components/Table';
 
-export const Dashboard_two: React.FC = () => {
+const Dashboard: React.FC = () => {
   const customers = [
     {
       name: 'Jane Cooper',
@@ -77,16 +77,12 @@ export const Dashboard_two: React.FC = () => {
           <MetricCard
             title="Commandes en cours"
             value="125"
-            change="+45%"
-            changeType="positive"
-            comparison="From 4.6%"
+            change={{ value: "+45%", type: 'positive', baseline: "From 4.6%" }}
           />
           <MetricCard
             title="Client affilié actif"
             value="215"
-            change="+45%"
-            changeType="negative"
-            comparison="From 4.6%"
+            change={{ value: "+45%", type: 'negative', baseline: "From 4.6%" }}
           />
           <MetricCard
             title="Gains en cours"
@@ -95,14 +91,14 @@ export const Dashboard_two: React.FC = () => {
           <MetricCard
             title="Performance"
             value="12.67%"
-            change="+45%"
-            changeType="positive"
-            comparison="From 4.6%"
+            change={{ value: "+45%", type: 'positive', baseline: "From 4.6%" }}
           />
         </section>
 
-        <CustomerTable customers={customers} />
+        <CustomerTable customers={customers} headers={['Customer Name', 'Company', 'Phone Number', 'Email', 'Country', 'Status']} />
       </main>
     </div>
   );
 };
+
+export default Dashboard;
