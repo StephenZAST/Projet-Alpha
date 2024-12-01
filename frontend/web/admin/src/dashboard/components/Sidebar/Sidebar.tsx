@@ -30,6 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   }, [location.pathname, navConfig.navItems]);
 
   const handleNavigation = (path: string, id: string) => {
+    console.log('Navigating to:', path, 'with active item:', id); // Log the navigation
     setActiveItem(id);
     navigate(path);
   };

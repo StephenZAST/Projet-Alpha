@@ -51,7 +51,7 @@ export const adminNavConfigs: Record<AdminType, AdminNavConfig> = {
         path: 'company-management'
       },
       {
-        id: 'stats',
+        id: 'globalStats',
         title: 'Statistiques',
         label: 'Statistiques',
         icon: 'analytics',
