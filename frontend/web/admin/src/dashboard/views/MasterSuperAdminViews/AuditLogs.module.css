@@ -1,0 +1,314 @@
+.auditLogs {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.titleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--theme-text-color);
+}
+
+.subtitle {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.exportButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.exportButton:hover {
+  background: var(--primary-light);
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  background: var(--theme-card-bg);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--theme-shadow);
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--theme-bg);
+  border: 1px solid var(--theme-border-color);
+  border-radius: 8px;
+  flex: 1;
+}
+
+.searchBar span {
+  color: var(--gray-500);
+}
+
+.searchBar input {
+  border: none;
+  background: none;
+  color: var(--theme-text-color);
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.searchBar input::placeholder {
+  color: var(--gray-500);
+}
+
+.filterControls {
+  display: flex;
+  gap: 1rem;
+}
+
+.filterSelect {
+  padding: 0.5rem;
+  border: 1px solid var(--theme-border-color);
+  border-radius: 8px;
+  background: var(--theme-bg);
+  color: var(--theme-text-color);
+  min-width: 150px;
+}
+
+.logList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.logItem {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--theme-card-bg);
+  border-radius: 12px;
+  border-left: 4px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.logItem:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px var(--theme-shadow);
+}
+
+.logItem.success {
+  border-left-color: var(--success);
+}
+
+.logItem.warning {
+  border-left-color: var(--warning);
+}
+
+.logItem.error {
+  border-left-color: var(--error);
+}
+
+.logIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--theme-bg);
+  color: var(--primary);
+}
+
+.logMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.logHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.logAction {
+  font-weight: 600;
+  color: var(--theme-text-color);
+}
+
+.logMeta {
+  display: flex;
+  gap: 1rem;
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
+
+.logUser,
+.logIp,
+.logTime {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.logUser span,
+.logIp span,
+.logTime span {
+  font-size: 1rem;
+}
+
+.logDetails {
+  color: var(--gray-500);
+  font-size: 0.875rem;
+}
+
+.logStatus {
+  display: flex;
+  align-items: center;
+}
+
+.logStatus span {
+  font-size: 1.25rem;
+}
+
+.success .logStatus span {
+  color: var(--success);
+}
+
+.warning .logStatus span {
+  color: var(--warning);
+}
+
+.error .logStatus span {
+  color: var(--error);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.pageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--theme-border-color);
+  border-radius: 8px;
+  background: var(--theme-bg);
+  color: var(--theme-text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pageButton:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pageButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageButton.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.pageEllipsis {
+  color: var(--gray-500);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .filters {
+    flex-direction: column;
+  }
+
+  .filterControls {
+    width: 100%;
+  }
+
+  .filterSelect {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .exportButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .logHeader {
+    flex-direction: column;
+  }
+
+  .logMeta {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .logItem {
+    flex-direction: column;
+  }
+
+  .logIcon {
+    width: 100%;
+    height: 32px;
+    border-radius: 6px;
+  }
+
+  .pagination {
+    gap: 0.25rem;
+  }
+
+  .pageButton {
+    width: 32px;
+    height: 32px;
+  }
+}

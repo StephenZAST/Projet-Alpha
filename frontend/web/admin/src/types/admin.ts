@@ -5,36 +5,37 @@ export enum AdminRole {
     DELIVERY = 'DELIVERY_PERSON',
     CUSTOMER_SERVICE = 'CUSTOMER_SERVICE',
     SUPERVISOR = 'SUPERVISOR'
-  }
-  
-  export interface AdminUser {
+}
+
+export interface AdminUser {
     id: string;
     role: AdminRole;
     name: string;
     email: string;
+    phone: string; // Added phone property
     permissions: string[];
     lastActive: Date;
-  }
-  
-  export interface DashboardConfig {
+}
+
+export interface DashboardConfig {
     metrics: MetricConfig[];
     features: string[];
     permissions: string[];
     theme: ThemeConfig;
-  }
-  
-  export interface MetricConfig {
+}
+
+export interface MetricConfig {
     id: string;
     type: 'number' | 'currency' | 'percentage';
     label: string;
     value: number;
     change?: number;
     trend?: 'up' | 'down' | 'neutral';
-  }
-  
-  export interface ThemeConfig {
+}
+
+export interface ThemeConfig {
     primaryColor: string;
     secondaryColor: string;
     accentColor: string;
     isDark: boolean;
-  }
+}

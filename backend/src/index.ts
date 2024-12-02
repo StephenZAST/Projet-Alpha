@@ -8,7 +8,10 @@ import articlesRouter from './routes/articles';
 import notificationsRouter from './routes/notifications';
 import categoriesRouter from './routes/categories';
 import subscriptionsRouter from './routes/subscriptions';
+import adminRouter from './routes/admins';  
+import authRouter from './routes/auth';     
 import { config } from './config';
+import { AppError } from './utils/errors';
 
 const app = express();
 const port = process.env.PORT || config.port || 3001;
@@ -21,11 +24,16 @@ const limiter = rateLimit({
 });
 
 // Security middleware
-app.use(helmet()); // Adds various HTTP headers for security
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false
+})); 
+
 app.use(cors({
-  origin: config.allowedOrigins || '*',
+  origin: ['http://localhost:5173', 'http://localhost:3000'],  
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
   credentials: true
 }));
 
@@ -37,6 +45,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.use('/api/auth', authRouter);         
+app.use('/api/admins', adminRouter);      
 app.use('/api/users', usersRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/articles', articlesRouter);
@@ -50,28 +60,29 @@ app.get('/', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: AppError, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || 'Internal Server Error',
+    code: err.errorCode || 'SERVER_ERROR'
   });
 });
 
 // Handle specific errors
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: Error) => {
   console.error('Uncaught Exception:', error);
   process.exit(1);
 });
 
-process.on('unhandledRejection', (error) => {
+process.on('unhandledRejection', (error: Error) => {
   console.error('Unhandled Rejection:', error);
 });
 
 // Start server with error handling
 const server = app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-}).on('error', (err: any) => {
+}).on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`Port ${port} is already in use. Please try a different port.`);
     process.exit(1);

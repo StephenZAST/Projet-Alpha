@@ -1,0 +1,139 @@
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.topBar {
+  border-bottom: 1px solid var(--gray-300);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 31px;
+  background: var(--theme-background-color);
+}
+
+.userGreeting {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.greeting {
+  color: var(--theme-text-color);
+  font: 500 24px Poppins, sans-serif;
+  margin: 0;
+}
+
+.searchForm {
+  flex: 1;
+  max-width: 873px;
+  margin: 0 20px;
+}
+
+.searchInputWrapper {
+  border-radius: 6px;
+  border: 1px solid var(--gray-300);
+  background-color: var(--white);
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  gap: 8px;
+}
+
+.searchInput {
+  border: none;
+  outline: none;
+  width: 100%;
+  font: 400 14px/2 Inter, sans-serif;
+  color: var(--gray-600);
+}
+
+.searchIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.actionsContainer {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.iconButtonsGroup {
+  display: flex;
+  gap: 32px;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton:focus {
+  outline: 2px solid var(--primary);
+  border-radius: 4px;
+}
+
+.iconImage {
+  width: 24px;
+  height: 24px;
+}
+
+.brandLogo {
+  width: 40px;
+  padding: 8px 0;
+}
+
+.logoImage {
+  width: 40px;
+  aspect-ratio: 1.6;
+}
+
+.userAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.themeToggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--primary);
+  font: 500 16px/1 Inter, sans-serif;
+}
+
+@media (max-width: 991px) {
+  .topBar {
+    padding: 10px 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .searchForm {
+    order: 3;
+    width: 100%;
+    margin: 0;
+  }
+
+  .actionsContainer {
+    gap: 20px;
+  }
+
+  .iconButtonsGroup {
+    gap: 20px;
+  }
+}

@@ -1,55 +1,94 @@
-import * as React from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { AdminType } from '../dashboard/types/adminTypes';
+import { mockUsers, findUserByEmail } from './mockData';
+import { User, AuthContextType, LoginCredentials } from './types';
 
-type AdminType = 'master' | 'super' | 'secretary' | 'delivery' | 'customer' | 'supervisor';
-
-interface AdminUser {
-  id: string;
-  type: AdminType;
-  name: string;
-  email: string;
-  permissions: string[];
+interface AuthContextProps {
+  children: React.ReactNode;
 }
 
-interface AuthContextType {
-  user: AdminUser | null;
-  login: (credentials: { email: string; password: string }) => Promise<void>;
-  logout: () => void;
-  isAuthenticated: boolean;
-}
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthContext = React.createContext<AuthContextType | null>(null);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<AdminUser | null>(null);
+export const AuthProvider: React.FC<AuthContextProps> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Set to true for development
+  const [user, setUser] = useState<User | null>(() => mockUsers[0]); // Use first mock user for development
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const login = async (credentials: { email: string; password: string }) => {
+  const login = useCallback(async (credentials: LoginCredentials) => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
+      setLoading(true);
+      setError(null);
       
-      if (!response.ok) throw new Error('Authentication failed');
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const userData = await response.json();
-      setUser(userData);
-      localStorage.setItem('authToken', userData.token);
-    } catch (error) {
-      throw new Error('Login failed');
-    }
-  };
+      const user = findUserByEmail(credentials.email);
+      if (!user) {
+        throw new Error('Invalid credentials');
+      }
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('authToken');
-  };
+      setUser(user);
+      setIsAuthenticated(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateUser = useCallback(async (updates: Partial<User>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setUser(prev => prev ? { ...prev, ...updates } : null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const value = {
+    isAuthenticated,
     user,
+    loading,
+    error,
     login,
     logout,
-    isAuthenticated: !!user,
+    updateUser
   };
 
   return (
@@ -57,12 +96,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
-  const context = React.useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+export { AuthContext };
