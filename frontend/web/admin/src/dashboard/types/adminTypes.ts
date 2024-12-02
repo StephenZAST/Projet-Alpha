@@ -44,25 +44,25 @@ export const adminNavConfigs: Record<AdminType, AdminNavConfig> = {
         path: 'admin-management'
       },
       {
-        id: 'company',
+        id: 'company-management',
         title: 'Entreprises',
         label: 'Entreprises',
         icon: 'business',
         path: 'company-management'
       },
       {
-        id: 'globalStats',
-        title: 'Statistiques',
-        label: 'Statistiques',
+        id: 'global-stats',
+        title: 'Statistiques Globales',
+        label: 'Statistiques Globales',
         icon: 'analytics',
         path: 'global-stats'
       },
       {
-        id: 'settings',
-        title: 'Paramètres',
-        label: 'Paramètres',
+        id: 'system-settings',
+        title: 'Paramètres Système',
+        label: 'Paramètres Système',
         icon: 'settings',
-        path: 'settings'
+        path: 'system-settings'
       }
     ]
   },
@@ -86,11 +86,11 @@ export const adminNavConfigs: Record<AdminType, AdminNavConfig> = {
         path: 'user-management'
       },
       {
-        id: 'content',
-        title: 'Contenu',
-        label: 'Contenu',
+        id: 'content-management',
+        title: 'Gestion Contenu',
+        label: 'Gestion Contenu',
         icon: 'article',
-        path: 'content'
+        path: 'content-management'
       },
       {
         id: 'reports',
@@ -105,112 +105,24 @@ export const adminNavConfigs: Record<AdminType, AdminNavConfig> = {
     type: 'SUPERVISOR',
     defaultPath: 'overview',
     defaultView: 'Overview',
-    navItems: [
-      {
-        id: 'overview',
-        title: 'Vue d\'ensemble',
-        label: 'Vue d\'ensemble',
-        icon: 'dashboard',
-        path: 'overview'
-      },
-      {
-        id: 'team',
-        title: 'Équipe',
-        label: 'Équipe',
-        icon: 'groups',
-        path: 'team'
-      },
-      {
-        id: 'tasks',
-        title: 'Tâches',
-        label: 'Tâches',
-        icon: 'task',
-        path: 'tasks'
-      }
-    ]
+    navItems: []
   },
   SECRETARY: {
     type: 'SECRETARY',
     defaultPath: 'overview',
     defaultView: 'Overview',
-    navItems: [
-      {
-        id: 'overview',
-        title: 'Vue d\'ensemble',
-        label: 'Vue d\'ensemble',
-        icon: 'dashboard',
-        path: 'overview'
-      },
-      {
-        id: 'calendar',
-        title: 'Calendrier',
-        label: 'Calendrier',
-        icon: 'calendar_today',
-        path: 'calendar'
-      },
-      {
-        id: 'documents',
-        title: 'Documents',
-        label: 'Documents',
-        icon: 'folder',
-        path: 'documents'
-      }
-    ]
+    navItems: []
   },
   CUSTOMER_SERVICE: {
     type: 'CUSTOMER_SERVICE',
     defaultPath: 'overview',
     defaultView: 'Overview',
-    navItems: [
-      {
-        id: 'overview',
-        title: 'Vue d\'ensemble',
-        label: 'Vue d\'ensemble',
-        icon: 'dashboard',
-        path: 'overview'
-      },
-      {
-        id: 'tickets',
-        title: 'Tickets',
-        label: 'Tickets',
-        icon: 'confirmation_number',
-        path: 'tickets'
-      },
-      {
-        id: 'chat',
-        title: 'Chat',
-        label: 'Chat',
-        icon: 'chat',
-        path: 'chat'
-      }
-    ]
+    navItems: []
   },
   DELIVERY: {
     type: 'DELIVERY',
     defaultPath: 'overview',
     defaultView: 'Overview',
-    navItems: [
-      {
-        id: 'overview',
-        title: 'Vue d\'ensemble',
-        label: 'Vue d\'ensemble',
-        icon: 'dashboard',
-        path: 'overview'
-      },
-      {
-        id: 'deliveries',
-        title: 'Livraisons',
-        label: 'Livraisons',
-        icon: 'local_shipping',
-        path: 'deliveries'
-      },
-      {
-        id: 'route',
-        title: 'Itinéraire',
-        label: 'Itinéraire',
-        icon: 'map',
-        path: 'route'
-      }
-    ]
+    navItems: []
   }
 };

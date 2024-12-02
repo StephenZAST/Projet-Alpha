@@ -4,22 +4,22 @@ import styles from './Dashboard.module.css';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './topbar/TopBar';
 import { useAuth } from '../auth/AuthContext';
-import { AdminType, adminNavConfigs } from './types/adminTypes';
+import { adminNavConfigs } from './types/adminTypes';
 
 // Import des vues Master Super Admin
 const MasterSuperAdminViews = {
   'overview': React.lazy(() => import('./views/MasterSuperAdminViews/Overview')),
   'admin-management': React.lazy(() => import('./views/MasterSuperAdminViews/AdminManagement')),
-  'company': React.lazy(() => import('./views/MasterSuperAdminViews/Company')),
+  'company-management': React.lazy(() => import('./views/MasterSuperAdminViews/Company')),
   'global-stats': React.lazy(() => import('./views/MasterSuperAdminViews/GlobalStats')),
-  'settings': React.lazy(() => import('./views/MasterSuperAdminViews/Settings'))
+  'system-settings': React.lazy(() => import('./views/MasterSuperAdminViews/Settings'))
 };
 
 // Import des vues Super Admin
 const SuperAdminViews = {
   'overview': React.lazy(() => import('./views/SuperAdminViews/Overview')),
   'user-management': React.lazy(() => import('./views/SuperAdminViews/UserManagement')),
-  'content': React.lazy(() => import('./views/SuperAdminViews/ContentManagement')),
+  'content-management': React.lazy(() => import('./views/SuperAdminViews/ContentManagement')),
   'reports': React.lazy(() => import('./views/SuperAdminViews/Reports'))
 };
 
@@ -47,9 +47,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
       }));
     }
 
-    const ViewComponent = views[viewId as keyof typeof views];
+    // Convert path to view ID (remove trailing numbers and convert to kebab case)
+    const normalizedViewId = viewId.replace(/-\d+$/, '');
+    console.log('Looking for view:', normalizedViewId);
+
+    const ViewComponent = views[normalizedViewId as keyof typeof views];
     if (!ViewComponent) {
-      console.error(`View not found: ${viewId} for admin type: ${adminType}`);
+      console.error(`View not found: ${normalizedViewId} for admin type: ${adminType}`);
       return React.lazy(() => Promise.resolve({
         default: () => <div>View not found: {viewId}</div>
       }));
@@ -60,7 +64,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
 
   const routes = useMemo(() => 
     navConfig.navItems.map(item => {
-      const ViewComponent = getViewComponent(item.id);
+      const ViewComponent = getViewComponent(item.path);
       return {
         key: item.id,
         path: item.path,
@@ -76,7 +80,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
 
   return (
     <div className={styles.dashboardLayout}>
-      <Sidebar navConfig={navConfig} />
+      <div className={styles.sidebar}>
+        <Sidebar navConfig={navConfig} />
+      </div>
       
       <main className={styles.mainContent}>
         <TopBar onThemeToggle={onThemeToggle} />
