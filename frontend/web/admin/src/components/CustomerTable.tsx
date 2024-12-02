@@ -1,7 +1,7 @@
 import React from 'react';
 import { TableRowProps } from '../types';
 import styles from './style/CustomerTable.module.css';
-import Table from './Table'; 
+import Table from './Tablecontainer'; 
 
 const tableData: TableRowProps[] = [
   {

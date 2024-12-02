@@ -28,10 +28,10 @@ Ce document détaille la structure et les éléments des dashboards pour chaque 
 - Historique des actions administratives
 
 #### Gestion des Entreprises
-- Vue d'ensemble des entreprises affiliées
-- Statistiques par entreprise
-- Gestion des contrats et licences
-- Configuration des services par entreprise
+- Vue d'ensemble des partenair affiliées
+- Statistiques par partenaire affiliées
+- Gestion des ressource  de chaques affilier
+- Configuration des services
 
 ## 2. Super Admin Dashboard
 

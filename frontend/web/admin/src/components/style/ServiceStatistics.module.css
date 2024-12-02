@@ -1,0 +1,33 @@
+.serviceStatisticsContainer {
+  background-color: var(--white);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: var(--primary-box-shadow);
+}
+
+.serviceStatisticsContainer h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 1rem;
+}
+
+/* Styles for the service statistics can be added here */
+.serviceStatisticsContainer .stat {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.serviceStatisticsContainer .stat .stat-label {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-right: 1rem;
+}
+
+.serviceStatisticsContainer .stat .stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}

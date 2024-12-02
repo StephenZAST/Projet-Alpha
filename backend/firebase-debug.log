@@ -1,0 +1,25 @@
+[debug] [2024-11-30T02:10:18.095Z] ----------------------------------------------------------------------
+[debug] [2024-11-30T02:10:18.097Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\HP OMEN\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2024-11-30T02:10:18.098Z] CLI Version:   13.27.0
+[debug] [2024-11-30T02:10:18.098Z] Platform:      win32
+[debug] [2024-11-30T02:10:18.098Z] Node Version:  v20.11.0
+[debug] [2024-11-30T02:10:18.098Z] Time:          Sat Nov 30 2024 03:10:18 GMT+0100 (Central European Standard Time)
+[debug] [2024-11-30T02:10:18.098Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-11-30T02:10:18.171Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-11-30T02:10:18.171Z] > authorizing via signed-in user (contacteasytec@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\HP OMEN\Desktop\Codes\Important\Alpha\backend
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+

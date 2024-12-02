@@ -1,32 +1,58 @@
-import app from './app';
-import { config } from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import { config } from './config';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { WebSocketManager } from './services/websocket.service';
+import adminRoutes from './routes/admins';
+import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
+import orderRoutes from './routes/orders';
 
-// Charger les variables d'environnement
-config();
+const app = express();
 
-const port = process.env.PORT || 3001; // Change default port to 3001
+// Middleware de base
+app.use(cors({
+  origin: config.allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
+}));
 
-// Créer un serveur HTTP à partir de l'application Express
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/admins', adminRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/orders', orderRoutes);
+
+// Créer un serveur HTTP
 const httpServer = createServer(app);
 
-// Initialiser Socket.IO
+// Initialiser Socket.IO avec CORS
 const io = new Server(httpServer, {
   cors: {
-    origin: '*', // À personnaliser selon vos besoins de sécurité
-    methods: ['GET', 'POST']
+    origin: config.allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
-// Initialiser le gestionnaire WebSocket
+// Initialiser WebSocket
 const websocketManager = new WebSocketManager(io);
 
-// Démarrer le serveur
-httpServer.listen(port, () => {
-  console.log(`🚀 Serveur démarré sur le port ${port}`);
-  console.log(`📚 Documentation API disponible sur http://localhost:${port}/api-docs`);
+// Route de test
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Server is running' });
 });
 
-export { io, websocketManager };
+// Démarrer le serveur
+const PORT = config.port || 5000;
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
+});
+
+export { app, io, websocketManager };

@@ -1,0 +1,40 @@
+.sidebarItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 4px 0;
+}
+
+.sidebarItem:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.sidebarItem.active {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+  opacity: 0.8;
+}
+
+.active .icon {
+  opacity: 1;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}

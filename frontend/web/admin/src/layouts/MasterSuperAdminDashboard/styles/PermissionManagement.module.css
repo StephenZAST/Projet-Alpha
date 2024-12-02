@@ -1,0 +1,84 @@
+.permissionContainer {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  
+  .metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+  }
+  
+  .roleMatrix {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--pripary-box-shadow);
+  }
+  
+  .matrixCard {
+    padding: 24px;
+  }
+  
+  .matrixCard h3 {
+    color: var(--gray-800);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  
+  .permissionConfig {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--pripary-box-shadow);
+  }
+  
+  .configCard {
+    padding: 24px;
+  }
+  
+  .configCard h3 {
+    color: var(--gray-800);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  
+  .permissionGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  
+  .auditLog {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--pripary-box-shadow);
+  }
+  
+  .logCard {
+    padding: 24px;
+  }
+  
+  .logCard h3 {
+    color: var(--gray-800);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  
+  @media (max-width: 768px) {
+    .permissionContainer {
+      padding: 16px;
+    }
+  
+    .metricsGrid {
+      grid-template-columns: 1fr;
+    }
+  
+    .permissionGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+  

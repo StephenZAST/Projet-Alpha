@@ -1,61 +1,68 @@
-import React, { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React from 'react';
 import styles from './style/Table.module.css';
 
-interface TableProps<T> {
-  data: T[];
-  columns: {
-    key: string;
-    label: string;
-    render?: (item: T) => React.ReactNode;
-  }[];
+interface TableProps {
+  headers: string[];
+  data: any[];
+  onSort?: (field: string) => void;
+  onSearch?: (value: string) => void;
+  title?: string;
 }
 
-const Table: React.FC<TableProps<T>> = ({ data, columns }) => { // Add <T> here
-  const [sortOrder, setSortOrder] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
-
-  const handleSort = (key: string) => {
-    if (sortOrder && sortOrder.key === key) {
-      setSortOrder({ key, direction: sortOrder.direction === 'asc' ? 'desc' : 'asc' });
-    } else {
-      setSortOrder({ key, direction: 'asc' });
-    }
-  };
-
-  const sortedData = sortOrder
-    ? [...data].sort((a, b) => {
-        const aValue = a[sortOrder.key];
-        const bValue = b[sortOrder.key];
-        if (aValue < bValue) return sortOrder.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortOrder.direction === 'asc' ? 1 : -1;
-        return 0;
-      })
-    : data;
-
+export const Table: React.FC<TableProps> = ({
+  headers,
+  data,
+  onSort,
+  onSearch,
+  title = "All Data"
+}) => {
   return (
-    <table className={styles.table}>
-      <thead>
-        <tr>
-          {columns.map((column) => (
-            <th key={column.key} onClick={() => handleSort(column.key)}>
-              {column.label}
-              {sortOrder && sortOrder.key === column.key && (
-                <span>{sortOrder.direction === 'asc' ? ' ▲' : ' ▼'}</span>
-              )}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {sortedData.map((item, index) => (
-          <tr key={index}>
-            {columns.map((column) => (
-              <td key={column.key}>{column.render ? column.render(item) : item[column.key]}</td>
+    <section className={styles.tableContainer}>
+      <header className={styles.tableHeader}>
+        <h2 className={styles.tableTitle}>{title}</h2>
+        <div className={styles.tableActions}>
+          {onSearch && (
+            <form className={styles.searchForm}>
+              <input
+                type="search"
+                placeholder="Search"
+                className={styles.searchInput}
+                onChange={(e) => onSearch(e.target.value)}
+              />
+            </form>
+          )}
+          {onSort && (
+            <div className={styles.sortDropdown}>
+              <select className={styles.sortSelect} onChange={(e) => onSort(e.target.value)}>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+              </select>
+            </div>
+          )}
+        </div>
+      </header>
+
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              {headers.map((header, index) => (
+                <th key={index}>{header}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((row, index) => (
+              <tr key={index}>
+                {Object.values(row).map((cell: any, cellIndex) => (
+                  <td key={cellIndex}>{cell}</td>
+                ))}
+              </tr>
             ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 };
-
-export default Table;
