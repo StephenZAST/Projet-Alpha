@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Link } from '@tanstack/react-router';
 import styles from './Sidebar.module.css';
 import { AdminNavConfig } from '../../types/adminTypes';
 
@@ -8,27 +8,6 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ navConfig }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [activeItem, setActiveItem] = useState<string>('');
-
-  useEffect(() => {
-    // Mise à jour de l'item actif basé sur le path actuel
-    const currentPath = location.pathname.split('/').pop() || '';
-    const activeNavItem = navConfig.navItems.find(item => item.path === currentPath);
-    
-    if (activeNavItem) {
-      setActiveItem(activeNavItem.id);
-    }
-  }, [location.pathname, navConfig.navItems]);
-
-  const handleNavigation = (path: string, id: string) => {
-    console.log('Navigating to:', path);
-    setActiveItem(id);
-    // Navigation relative au dashboard
-    navigate(path);
-  };
-
   return (
     <aside className={styles.sidebar}>
       <div className={styles.logo}>
@@ -38,14 +17,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ navConfig }) => {
 
       <nav className={styles.navigation}>
         {navConfig.navItems.map((item) => (
-          <button
+          <Link
             key={item.id}
-            className={`${styles.navItem} ${activeItem === item.id ? styles.active : ''}`}
-            onClick={() => handleNavigation(item.path, item.id)}
+            to={`/dashboard/${item.path}`}
+            className={styles.navItem}
+            activeProps={{ className: `${styles.navItem} ${styles.active}` }}
           >
             <span className="material-icons">{item.icon}</span>
             <span className={styles.navLabel}>{item.label}</span>
-          </button>
+          </Link>
         ))}
       </nav>
     </aside>

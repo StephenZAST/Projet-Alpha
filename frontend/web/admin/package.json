@@ -13,6 +13,7 @@
     "@react-google-maps/api": "^2.20.3",
     "@reduxjs/toolkit": "^2.3.0",
     "@shadcn/ui": "^0.0.4",
+    "@tanstack/react-router": "^1.85.0",
     "@types/recharts": "^1.8.29",
     "admin": "file:",
     "chart.js": "^4.4.6",

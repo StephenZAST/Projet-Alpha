@@ -1,26 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Provider } from 'react-redux';
 import store from './redux/store';
-import PrivateRoute from './components/PrivateRoute';
-import Dashboard from './dashboard/Dashboard';
 import ErrorBoundary from './components/ErrorBoundary';
-import { AuthProvider } from './auth/AuthContext'; // Import AuthProvider
+import { AuthProvider } from './auth/AuthContext';
+import './App.css';
 
-const Login = () => {
-  return (
-    <div>
-      <h1>Login</h1>
-      {/* Add login form here */}
-    </div>
-  );
-};
+// Créer un contexte pour le thème
+interface ThemeContextType {
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+}
 
-const App: React.FC = () => {
-  const [theme, setTheme] = useState(() => {
+export const ThemeContext = createContext<ThemeContextType>({
+  theme: 'light',
+  toggleTheme: () => {},
+});
+
+// Hook personnalisé pour utiliser le thème
+export const useTheme = () => useContext(ThemeContext);
+
+const App: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme');
-      return savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      return (savedTheme as 'light' | 'dark') || 
+             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     }
     return 'light';
   });
@@ -32,37 +36,19 @@ const App: React.FC = () => {
     }
   }, [theme]);
 
-  const handleThemeToggle = () => {
+  const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
   return (
     <Provider store={store}>
       <ErrorBoundary>
-        <AuthProvider> {/* Wrap authenticated routes with AuthProvider */}
-          <BrowserRouter>
+        <AuthProvider>
+          <ThemeContext.Provider value={{ theme, toggleTheme }}>
             <div className="app-container" data-theme={theme}>
-              <Routes>
-                {/* Redirect root to dashboard */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                
-                {/* Dashboard and its nested routes */}
-                <Route 
-                  path="/dashboard/*" 
-                  element={
-                    <ErrorBoundary>
-                      <PrivateRoute>
-                        <Dashboard onThemeToggle={handleThemeToggle} />
-                      </PrivateRoute>
-                    </ErrorBoundary>
-                  } 
-                />
-
-                {/* Login route */}
-                <Route path="/login" element={<Login />} />
-              </Routes>
+              {children}
             </div>
-          </BrowserRouter>
+          </ThemeContext.Provider>
         </AuthProvider>
       </ErrorBoundary>
     </Provider>
