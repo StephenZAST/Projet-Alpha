@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import styles from './Dashboard.module.css';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './topbar/TopBar';
@@ -35,48 +35,14 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
   const { user } = useAuth();
+  const location = useLocation();
   const adminType = (user?.adminType as keyof typeof ViewsMap) || 'CUSTOMER_SERVICE';
   const navConfig = adminNavConfigs[adminType];
 
-  const getViewComponent = (viewId: string) => {
-    const views = ViewsMap[adminType];
-    if (!views) {
-      console.error(`No views found for admin type: ${adminType}`);
-      return React.lazy(() => Promise.resolve({
-        default: () => <div>No views available for this admin type</div>
-      }));
-    }
-
-    // Convert path to view ID (remove trailing numbers and convert to kebab case)
-    const normalizedViewId = viewId.replace(/-\d+$/, '');
-    console.log('Looking for view:', normalizedViewId);
-
-    const ViewComponent = views[normalizedViewId as keyof typeof views];
-    if (!ViewComponent) {
-      console.error(`View not found: ${normalizedViewId} for admin type: ${adminType}`);
-      return React.lazy(() => Promise.resolve({
-        default: () => <div>View not found: {viewId}</div>
-      }));
-    }
-
-    return ViewComponent;
-  };
-
-  const routes = useMemo(() => 
-    navConfig.navItems.map(item => {
-      const ViewComponent = getViewComponent(item.path);
-      return {
-        key: item.id,
-        path: item.path,
-        element: (
-          <React.Suspense fallback={<div>Loading view...</div>}>
-            <ViewComponent />
-          </React.Suspense>
-        )
-      };
-    }),
-    [navConfig.navItems, adminType]
-  );
+  // Log pour le débogage
+  console.log('Current location:', location.pathname);
+  console.log('Admin type:', adminType);
+  console.log('Nav config:', navConfig);
 
   return (
     <div className={styles.dashboardLayout}>
@@ -88,30 +54,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onThemeToggle }) => {
         <TopBar onThemeToggle={onThemeToggle} />
         
         <div className={styles.viewContainer}>
-          <React.Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<div>Loading...</div>}>
             <Routes>
-              {/* Default route redirects to the default path */}
+              {/* Route par défaut */}
               <Route 
-                index 
+                index
                 element={<Navigate to={navConfig.defaultPath} replace />} 
               />
               
-              {/* Map all nav items to routes */}
-              {routes.map(route => (
-                <Route
-                  key={route.key}
-                  path={route.path}
-                  element={route.element}
-                />
-              ))}
-              
-              {/* Catch all unmatched routes */}
+              {/* Routes dynamiques basées sur la configuration */}
+              {navConfig.navItems.map((item) => {
+                const views = ViewsMap[adminType];
+                const ViewComponent = views[item.path as keyof typeof views];
+                
+                return ViewComponent ? (
+                  <Route
+                    key={item.id}
+                    path={item.path}
+                    element={<ViewComponent />}
+                  />
+                ) : null;
+              })}
+
+              {/* Redirection pour les routes non trouvées */}
               <Route 
                 path="*" 
                 element={<Navigate to={navConfig.defaultPath} replace />} 
               />
             </Routes>
-          </React.Suspense>
+          </Suspense>
         </div>
       </main>
     </div>
