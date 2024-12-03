@@ -64,6 +64,18 @@ flutter:
     - assets/Nettoyage_à_sec.png
     - assets/Pliage.png
     - assets/Repassage.png
+    - assets/source-sans-pro/
+
+  fonts:
+    - family: SourceSansPro
+      fonts:
+        - asset: assets/source-sans-pro/SourceSansPro-Regular.ttf
+        - asset: assets/source-sans-pro/SourceSansPro-Italic.ttf
+          style: italic
+        - asset: assets/source-sans-pro/SourceSansPro-Bold.ttf
+          weight: 700
+        - asset: assets/source-sans-pro/SourceSansPro-Black.ttf
+          weight: 900
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

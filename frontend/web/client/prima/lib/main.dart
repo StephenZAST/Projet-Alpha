@@ -16,6 +16,7 @@ class MyApp extends StatelessWidget {
       title: 'ZS Laundry',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        fontFamily: 'SourceSansPro', // Apply the custom font here
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
         useMaterial3: true,
       ),
