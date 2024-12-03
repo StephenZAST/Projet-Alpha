@@ -3,6 +3,9 @@ import 'package:prima/layouts/ReductionSection.dart';
 import 'package:prima/layouts/ServiceSection.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/components/app_bar.dart'; // Import the new AppBarComponent
+import 'package:prima/components/address_section.dart'; // Import the new AddressSectionComponent
+import 'package:prima/components/recent_orders_section.dart'; // Import the new RecentOrdersSectionComponent
+import 'package:prima/components/services_title.dart'; // Import the new ServicesTitleComponent
 
 void main() {
   runApp(const MyApp());
@@ -40,88 +43,23 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground, // Set the background color here
-      body: SafeArea(
+      body: const SafeArea(
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(), // Added BouncingScrollPhysics
+          physics: BouncingScrollPhysics(), // Added BouncingScrollPhysics
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const AppBarComponent(), // Use the new AppBarComponent
-              // Address Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, color: AppColors.gray500),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Ajouter une adresse',
-                      style: TextStyle(color: AppColors.gray600),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [AppColors.primaryShadow],
-                      ),
-                      child: const Icon(Icons.map, color: AppColors.white),
-                    ),
-                  ],
-                ),
-              ),
+              AppBarComponent(), // Use the new AppBarComponent
+              AddressSectionComponent(), // Use the new AddressSectionComponent
+              SizedBox(height: 16),
+              ReductionSection(),
+              SizedBox(height: 16),
 
-              const SizedBox(height: 16),
-              const ReductionSection(),
-              const SizedBox(height: 16),
+              ServicesTitleComponent(), // Use the new ServicesTitleComponent
 
-              // Services Title
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  'Services',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              ServiceSection(),
 
-              const ServiceSection(),
-
-              // Recent Orders Section
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Commandes Récentes',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: const Row(
-                            children: [
-                              Text('Voir plus'),
-                              Icon(Icons.arrow_forward),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    _buildOrderItem('Order #1024', 'Nov 15, 2023', true),
-                    _buildOrderItem('Order #1024', 'Nov 15, 2023', false),
-                  ],
-                ),
-              ),
+              RecentOrdersSectionComponent(), // Use the new RecentOrdersSectionComponent
             ],
           ),
         ),
@@ -160,47 +98,6 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
-
-  Widget _buildOrderItem(String orderNumber, String date, bool isWaiting) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isWaiting ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.access_time,
-            color: isWaiting ? Colors.orange : Colors.green,
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                orderNumber,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                date,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            isWaiting ? 'En attente' : 'Terminée',
-            style: TextStyle(
-              color: isWaiting ? Colors.orange : Colors.green,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
