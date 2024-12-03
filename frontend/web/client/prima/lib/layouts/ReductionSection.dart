@@ -14,7 +14,7 @@ class ReductionSection extends StatelessWidget {
         boxShadow: [AppColors.primaryShadow],
       ),
       child: SizedBox(
-        width: 350,
+        width: 390,
         child: Row(
           children: [
             Expanded(
@@ -31,7 +31,6 @@ class ReductionSection extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 2), // Spacing between children
                     const Text(
                       'Promo Special',
                       style: TextStyle(
@@ -39,7 +38,6 @@ class ReductionSection extends StatelessWidget {
                         fontSize: 16,
                       ),
                     ),
-                    const SizedBox(height: 2), // Spacing between children
                     const Text(
                       'Sur vos premiers commandes',
                       style: TextStyle(
@@ -86,6 +84,7 @@ class ReductionSection extends StatelessWidget {
             Image.asset(
               'assets/promo-img1.png',
               height: 120,
+              width: 150,
               fit: BoxFit.cover,
             ),
           ],
