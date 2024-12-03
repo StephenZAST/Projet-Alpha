@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  flutter_svg: ^1.1.6 # Added flutter_svg package
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -66,6 +66,8 @@ flutter:
     - assets/Repassage.png
     - assets/source-sans-pro/
     - assets/promo-img1.png
+    - assets/AlphaLogo.png
+    - assets/menu-icon.svg # Added SVG icon
 
   fonts:
     - family: SourceSansPro

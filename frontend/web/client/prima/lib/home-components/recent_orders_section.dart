@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 
 class RecentOrdersSectionComponent extends StatelessWidget {
-  const RecentOrdersSectionComponent({Key? key}) : super(key: key);
+  const RecentOrdersSectionComponent({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:prima/layouts/ReductionSection.dart';
 import 'package:prima/layouts/ServiceSection.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:prima/components/app_bar.dart'; // Import the new AppBarComponent
-import 'package:prima/components/address_section.dart'; // Import the new AddressSectionComponent
-import 'package:prima/components/recent_orders_section.dart'; // Import the new RecentOrdersSectionComponent
-import 'package:prima/components/services_title.dart'; // Import the new ServicesTitleComponent
+import 'package:prima/home-components/app_bar.dart';
+import 'package:prima/home-components/address_section.dart';
+import 'package:prima/home-components/recent_orders_section.dart';
+import 'package:prima/home-components/services_title.dart';
 
 void main() {
   runApp(const MyApp());
@@ -93,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
               gradient: AppColors.primaryGradient,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.add, color: AppColors.white),
+            child: const Icon(Icons.add, color: AppColors.white),
           ),
         ),
       ),
