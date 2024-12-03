@@ -57,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           height: 40,
                           decoration: BoxDecoration(
                             gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(14),
                             boxShadow: [AppColors.primaryShadow],
                           ),
                           child: const Center(

@@ -15,6 +15,7 @@ class ServiceSection extends StatelessWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(), // Added BouncingScrollPhysics
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
