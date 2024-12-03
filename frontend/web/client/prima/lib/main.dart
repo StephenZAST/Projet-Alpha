@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prima/layouts/ReductionSection.dart';
 import 'package:prima/layouts/ServiceSection.dart';
+import 'package:prima/theme/colors.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
       title: 'ZS Laundry',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
         useMaterial3: true,
       ),
       home: const MyHomePage(),
@@ -36,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.dashboardBackground, // Set the background color here
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -53,14 +55,15 @@ class _MyHomePageState extends State<MyHomePage> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.blue,
+                            gradient: AppColors.primaryGradient,
                             borderRadius: BorderRadius.circular(8),
+                            boxShadow: [AppColors.primaryShadow],
                           ),
                           child: const Center(
                             child: Text(
                               'ZS',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -75,12 +78,13 @@ class _MyHomePageState extends State<MyHomePage> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
+                                color: AppColors.gray800,
                               ),
                             ),
                             Text(
                               'Mr ZAKANE',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: AppColors.gray500,
                               ),
                             ),
                           ],
@@ -88,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.menu),
+                      icon: Icon(Icons.menu, color: AppColors.gray700),
                       onPressed: () {},
                     ),
                   ],
@@ -100,20 +104,21 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, color: Colors.grey),
+                    const Icon(Icons.location_on_outlined, color: AppColors.gray500),
                     const SizedBox(width: 8),
-                    Text(
+                    const Text(
                       'Ajouter une adresse',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: AppColors.gray600),
                     ),
                     const Spacer(),
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.blue,
+                        gradient: AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(8),
+                        boxShadow: [AppColors.primaryShadow],
                       ),
-                      child: const Icon(Icons.map, color: Colors.white),
+                      child: const Icon(Icons.map, color: AppColors.white),
                     ),
                   ],
                 ),
@@ -176,6 +181,8 @@ class _MyHomePageState extends State<MyHomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.gray500,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.local_offer), label: 'Offres'),
@@ -192,9 +199,16 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: Container(
         margin: const EdgeInsets.only(top: 30),
         child: FloatingActionButton(
-          backgroundColor: Colors.blue,
-          child: const Icon(Icons.add, color: Colors.white),
           onPressed: () {},
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: const BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.add, color: AppColors.white),
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

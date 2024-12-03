@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/theme/colors.dart';
 
 class ReductionSection extends StatelessWidget {
   const ReductionSection({Key? key}) : super(key: key);
@@ -8,8 +9,9 @@ class ReductionSection extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.blue,
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [AppColors.primaryShadow],
       ),
       child: Stack(
         children: [
@@ -29,7 +31,7 @@ class ReductionSection extends StatelessWidget {
                 const Text(
                   '50% de Réduction',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -38,34 +40,47 @@ class ReductionSection extends StatelessWidget {
                 const Text(
                   'Promo Special',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontSize: 16,
                   ),
                 ),
                 const Text(
                   'Sur vos premiers commandes',
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: AppColors.gray100,
                     fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [AppColors.primaryShadow],
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Commander'),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_forward, size: 16),
-                    ],
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {},
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Commander',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward, size: 16, color: AppColors.primary),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/theme/colors.dart';
 
 class ServiceSection extends StatelessWidget {
   const ServiceSection({Key? key}) : super(key: key);
@@ -26,8 +27,9 @@ class ServiceSection extends StatelessWidget {
         itemBuilder: (context, index) {
           return Container(
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: AppColors.gray50,
               borderRadius: BorderRadius.circular(12),
+              boxShadow: [AppColors.primaryShadow],
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -35,12 +37,13 @@ class ServiceSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue,
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(8),
+                    boxShadow: [AppColors.primaryShadow],
                   ),
                   child: Icon(
                     services[index]['icon'] as IconData,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: 24,
                   ),
                 ),
@@ -51,6 +54,7 @@ class ServiceSection extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    color: AppColors.gray800,
                   ),
                 ),
               ],
