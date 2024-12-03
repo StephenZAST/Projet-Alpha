@@ -65,6 +65,7 @@ flutter:
     - assets/Pliage.png
     - assets/Repassage.png
     - assets/source-sans-pro/
+    - assets/assets/promo-img1.png
 
   fonts:
     - family: SourceSansPro

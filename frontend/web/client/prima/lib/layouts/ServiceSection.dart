@@ -20,8 +20,8 @@ class ServiceSection extends StatelessWidget {
         child: Row(
           children: List.generate(services.length, (index) {
             return Container(
-              width: 105,
-              height: 150,
+              width: 120,
+              height: 180,
               margin: const EdgeInsets.only(right: 16),
               padding: const EdgeInsets.symmetric(vertical: 28),
               decoration: BoxDecoration(

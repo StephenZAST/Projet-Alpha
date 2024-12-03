@@ -17,8 +17,8 @@ class ReductionSection extends StatelessWidget {
         children: [
           Positioned(
             right: 0,
-            child: Image.network(
-              'https://raw.githubusercontent.com/your-repo/assets/main/laundry.png',
+            child: Image.asset( 
+              'assets/promo-img1.png', 
               height: 120,
               fit: BoxFit.cover,
             ),
