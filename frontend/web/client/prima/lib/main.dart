@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:prima/layouts/ReductionSection.dart';
 import 'package:prima/layouts/ServiceSection.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/components/app_bar.dart'; // Import the new AppBarComponent
 
 void main() {
   runApp(const MyApp());
@@ -41,65 +42,11 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: AppColors.dashboardBackground, // Set the background color here
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(), // Added BouncingScrollPhysics
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // App Bar
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [AppColors.primaryShadow],
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'ZS',
-                              style: TextStyle(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Bienvenue',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.gray800,
-                              ),
-                            ),
-                            Text(
-                              'Mr ZAKANE',
-                              style: TextStyle(
-                                color: AppColors.gray500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.menu, color: AppColors.gray700),
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
-              ),
-
+              const AppBarComponent(), // Use the new AppBarComponent
               // Address Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
