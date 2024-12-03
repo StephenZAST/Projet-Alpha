@@ -7,60 +7,60 @@ class ServiceSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final services = [
-      {'name': 'Repassage', 'icon': Icons.iron},
-      {'name': 'Lavage', 'icon': Icons.local_laundry_service},
-      {'name': 'Nettoyage\nà sec', 'icon': Icons.dry_cleaning},
+      {'name': 'Repassage', 'image': 'assets/Repassage.png'},
+      {'name': 'Lavage', 'image': 'assets/Lavage.png'},
+      {'name': 'Nettoyage à sec', 'image': 'assets/Nettoyage_à_sec.png'},
+      {'name': 'Pliage', 'image': 'assets/Pliage.png'},
     ];
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: List.generate(services.length, (index) {
+            return Container(
+              width: 105,
+              height: 150,
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    services[index]['image'] as String,
+                    width: 75,
+                    height: 75,
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: Text(
+                      services[index]['name'] as String,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ),
-        itemCount: services.length,
-        itemBuilder: (context, index) {
-          return Container(
-            decoration: BoxDecoration(
-              color: AppColors.gray50,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [AppColors.primaryShadow],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [AppColors.primaryShadow],
-                  ),
-                  child: Icon(
-                    services[index]['icon'] as IconData,
-                    color: AppColors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  services[index]['name'] as String,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.gray800,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }
