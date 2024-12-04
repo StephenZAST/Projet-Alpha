@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:spring_button/spring_button.dart';
 
 class AddressSectionComponent extends StatelessWidget {
   const AddressSectionComponent({Key? key}) : super(key: key);
@@ -17,14 +18,20 @@ class AddressSectionComponent extends StatelessWidget {
             style: TextStyle(color: AppColors.gray600),
           ),
           const Spacer(),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [AppColors.primaryShadow],
+          SpringButton(
+            SpringButtonType.OnlyScale,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [AppColors.primaryShadow],
+              ),
+              child: const Icon(Icons.map, color: AppColors.white),
             ),
-            child: const Icon(Icons.map, color: AppColors.white),
+            onTap: () {},
+            scaleCoefficient: 0.9,
+            useCache: false,
           ),
         ],
       ),

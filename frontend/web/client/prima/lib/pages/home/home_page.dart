@@ -7,6 +7,7 @@ import 'package:prima/home-components/address_section.dart';
 import 'package:prima/home-components/recent_orders_section.dart';
 import 'package:prima/home-components/services_title.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
+import 'package:spring_button/spring_button.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -41,29 +42,50 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.gray500,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.local_offer), label: 'Offres'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.gray500,
+            backgroundColor: Colors.white,
+            elevation: 0,
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            iconSize: 24,
+            items: [
+              _buildNavItem(Icons.home_rounded, 'Home', 0),
+              _buildNavItem(Icons.local_offer_rounded, 'Offres', 1),
+              const BottomNavigationBarItem(icon: SizedBox(width: 30), label: ''),
+              _buildNavItem(Icons.chat_bubble_rounded, 'Chat', 3),
+              _buildNavItem(Icons.person_rounded, 'Profile', 4),
+            ],
+            onTap: (index) {
+              if (index != 2) { // Skip the middle item (add button)
+                setState(() {
+                  _selectedIndex = index;
+                });
+              }
+            },
+          ),
+        ),
       ),
       floatingActionButton: Container(
         margin: const EdgeInsets.only(top: 30),
-        child: FloatingActionButton(
-          onPressed: () {},
-          child: Container(
+        child: SpringButton(
+          SpringButtonType.OnlyScale,
+          Container(
             width: 60,
             height: 60,
             decoration: const BoxDecoration(
@@ -72,9 +94,29 @@ class _HomePageState extends State<HomePage> {
             ),
             child: const Icon(Icons.add, color: AppColors.white),
           ),
+          onTap: () {},
+          scaleCoefficient: 0.9,
+          useCache: false,
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  BottomNavigationBarItem _buildNavItem(IconData icon, String label, int index) {
+    return BottomNavigationBarItem(
+      icon: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.all(_selectedIndex == index ? 12 : 8),
+        decoration: BoxDecoration(
+          color: _selectedIndex == index 
+              ? AppColors.primary.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon),
+      ),
+      label: label,
     );
   }
 }

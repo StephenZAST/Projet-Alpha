@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:spring_button/spring_button.dart';
 
 class RecentOrdersSectionComponent extends StatelessWidget {
   const RecentOrdersSectionComponent({super.key});
@@ -32,8 +33,20 @@ class RecentOrdersSectionComponent extends StatelessWidget {
               ),
             ],
           ),
-          _buildOrderItem('Order #1024', 'Nov 15, 2023', true),
-          _buildOrderItem('Order #1024', 'Nov 15, 2023', false),
+          SpringButton(
+            SpringButtonType.OnlyScale,
+            _buildOrderItem('Order #1024', 'Nov 15, 2023', true),
+            onTap: () {},
+            scaleCoefficient: 0.95,
+            useCache: false,
+          ),
+          SpringButton(
+            SpringButtonType.OnlyScale,
+            _buildOrderItem('Order #1024', 'Nov 15, 2023', false),
+            onTap: () {},
+            scaleCoefficient: 0.95,
+            useCache: false,
+          ),
         ],
       ),
     );
