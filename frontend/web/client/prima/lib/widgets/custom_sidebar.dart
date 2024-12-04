@@ -60,7 +60,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Services',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Implement services page
+              Navigator.pushReplacementNamed(context, '/services');
             },
           ),
           _buildDrawerItem(
@@ -68,7 +68,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Commandes',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Implement orders page
+              Navigator.pushReplacementNamed(context, '/orders');
             },
           ),
           _buildDrawerItem(
@@ -76,7 +76,8 @@ class CustomSidebar extends StatelessWidget {
             text: 'Notifications',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Implement notifications page
+              // Afficher l'overlay des notifications au lieu d'une page
+              // TODO: Implement notifications overlay
             },
           ),
           _buildDrawerItem(
@@ -92,7 +93,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Parrainage',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Implement referral page
+              Navigator.pushReplacementNamed(context, '/referral');
             },
           ),
           _buildDrawerItem(
@@ -105,16 +106,16 @@ class CustomSidebar extends StatelessWidget {
           ),
           _buildDrawerItem(
             icon: Icons.settings_outlined,
-            text: 'Settings',
+            text: 'Réglages',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to Settings page
+              Navigator.pushReplacementNamed(context, '/settings');
             },
           ),
           const Divider(height: 1, color: AppColors.gray200),
           _buildDrawerItem(
             icon: Icons.logout,
-            text: 'Sign Out',
+            text: 'Déconnexion',
             onTap: () {
               Navigator.pop(context);
               // TODO: Handle sign out

@@ -4,6 +4,10 @@ import 'package:prima/pages/home/home_page.dart';
 import 'package:prima/pages/profile/profile_page.dart';
 import 'package:prima/pages/offers/offers_page.dart';
 import 'package:prima/pages/chat/chat_page.dart';
+import 'package:prima/pages/services/services_page.dart';
+import 'package:prima/pages/orders/orders_page.dart';
+import 'package:prima/pages/referral/referral_page.dart';
+import 'package:prima/pages/settings/settings_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,6 +32,10 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfilePage(),
         '/offers': (context) => const OffersPage(),
         '/chat': (context) => const ChatPage(),
+        '/services': (context) => const ServicesPage(),
+        '/orders': (context) => const OrdersPage(),
+        '/referral': (context) => const ReferralPage(),
+        '/settings': (context) => const SettingsPage(),
       },
     );
   }
