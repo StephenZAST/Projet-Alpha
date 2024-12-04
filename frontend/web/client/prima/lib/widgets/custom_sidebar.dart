@@ -76,8 +76,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Notifications',
             onTap: () {
               Navigator.pop(context);
-              // Afficher l'overlay des notifications au lieu d'une page
-              // TODO: Implement notifications overlay
+              Navigator.pushReplacementNamed(context, '/notifications');
             },
           ),
           _buildDrawerItem(

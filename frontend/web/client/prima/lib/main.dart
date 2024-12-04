@@ -8,6 +8,7 @@ import 'package:prima/pages/services/services_page.dart';
 import 'package:prima/pages/orders/orders_page.dart';
 import 'package:prima/pages/referral/referral_page.dart';
 import 'package:prima/pages/settings/settings_page.dart';
+import 'package:prima/pages/notifications/notifications_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
         '/orders': (context) => const OrdersPage(),
         '/referral': (context) => const ReferralPage(),
         '/settings': (context) => const SettingsPage(),
+        '/notifications': (context) => const NotificationsPage(),
       },
     );
   }
