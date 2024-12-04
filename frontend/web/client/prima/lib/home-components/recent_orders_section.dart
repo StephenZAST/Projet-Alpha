@@ -35,14 +35,14 @@ class RecentOrdersSectionComponent extends StatelessWidget {
           ),
           SpringButton(
             SpringButtonType.OnlyScale,
-            _buildOrderItem('Order #1024', 'Nov 15, 2023', true),
+            _buildOrderItem('Commande #1024', 'Nov 15, 2023', true),
             onTap: () {},
             scaleCoefficient: 0.95,
             useCache: false,
           ),
           SpringButton(
             SpringButtonType.OnlyScale,
-            _buildOrderItem('Order #1024', 'Nov 15, 2023', false),
+            _buildOrderItem('Commande #1024', 'Nov 15, 2023', false),
             onTap: () {},
             scaleCoefficient: 0.95,
             useCache: false,

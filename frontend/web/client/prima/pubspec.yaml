@@ -68,7 +68,8 @@ flutter:
     - assets/source-sans-pro/
     - assets/promo-img1.png
     - assets/AlphaLogo.png
-    - assets/menu-icon.svg # Added SVG icon
+    - assets/menu-icon.svg
+    - assets/map-icon.svg
 
   fonts:
     - family: SourceSansPro

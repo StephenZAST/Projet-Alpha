@@ -27,7 +27,7 @@ class AppColors {
   static const Color gray800 = Color(0xFF282828);
   static const Color gray900 = Color(0xFF000000);
   static const Color dashboardBackground = Color(0xFFF4F7FE); // Added dashboard background color
-
+  static const Color labelColor = Color(0xFF99AED7);
 
   // Gradient
   static const Gradient primaryGradient = LinearGradient(

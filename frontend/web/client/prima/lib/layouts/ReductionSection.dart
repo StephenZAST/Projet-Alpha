@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:spring_button/spring_button.dart';
 
 class ReductionSection extends StatelessWidget {
   const ReductionSection({Key? key}) : super(key: key);
@@ -19,7 +20,7 @@ class ReductionSection extends StatelessWidget {
           children: [
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(20.0), // Padding for the group
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -29,6 +30,7 @@ class ReductionSection extends StatelessWidget {
                         color: AppColors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
                     const Text(
@@ -36,6 +38,7 @@ class ReductionSection extends StatelessWidget {
                       style: TextStyle(
                         color: AppColors.white,
                         fontSize: 16,
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
                     const Text(
@@ -43,39 +46,37 @@ class ReductionSection extends StatelessWidget {
                       style: TextStyle(
                         color: AppColors.gray100,
                         fontSize: 14,
+                        fontStyle: FontStyle.italic,
                       ),
                     ),
-                    const SizedBox(height: 16), // Spacing between children
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [AppColors.primaryShadow],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () {},
+                    const SizedBox(height: 16),
+                    SpringButton(
+                      SpringButtonType.OnlyScale,
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
                           borderRadius: BorderRadius.circular(8),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Commander',
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Icon(Icons.arrow_forward, size: 16, color: AppColors.primary),
-                              ],
+                          boxShadow: [AppColors.primaryShadow],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Commander',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward, size: 16, color: AppColors.primary),
+                          ],
                         ),
                       ),
+                      onTap: () {},
+                      scaleCoefficient: 0.95,
+                      useCache: false,
                     ),
                   ],
                 ),
