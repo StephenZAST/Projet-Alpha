@@ -1,12 +1,19 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 
-const PrivateRoute: React.FC = () => {
-  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
+interface PrivateRouteProps {
+  children: React.ReactNode;
+}
 
-  return isLoggedIn ? <Outlet /> : <Navigate to="/login" />;
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  return <>{children}</>;
 };
 
 export default PrivateRoute;

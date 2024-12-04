@@ -1,0 +1,130 @@
+.dashboardLayout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--theme-background-color);
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px; /* Adjust the width as needed */
+  height: 100vh;
+  background-color: var(--theme-background-color);
+  padding: 1rem;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 250px; /* Match the width of the sidebar */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--theme-background-color);
+  transition: all 0.3s ease;
+}
+
+.viewContainer {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background-color: var(--theme-background-color);
+}
+
+/* Styles pour la scrollbar du contenu principal */
+.viewContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.viewContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.viewContainer::-webkit-scrollbar-thumb {
+  background: var(--theme-border-color);
+  border-radius: 6px;
+}
+
+/* Animation pour les transitions de vue */
+.viewContainer > div {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.greeting {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--gray-900);
+}
+
+.searchForm {
+  position: relative;
+  width: 280px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 16px 8px 40px;
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  background: var(--white);
+}
+
+.searchInput::placeholder {
+  color: var(--gray-400);
+}
+
+.statsSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.metricsSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 0;
+  }
+
+  .dashboardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .searchForm {
+    width: 100%;
+  }
+
+  .statsSection,
+  .metricsSection {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

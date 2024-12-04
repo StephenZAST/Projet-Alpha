@@ -1,0 +1,158 @@
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--theme-text-color);
+}
+
+.period {
+  display: flex;
+  align-items: center;
+}
+
+.periodButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--theme-card-bg);
+  border: 1px solid var(--theme-border-color);
+  border-radius: 8px;
+  color: var(--theme-text-color);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.periodButton:hover {
+  background: var(--theme-hover);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.chartsSection {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+.mainChart {
+  min-height: 400px;
+}
+
+.sideStats {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--theme-text-color);
+  margin-bottom: 1rem;
+}
+
+.recentActivity {
+  background: var(--theme-card-bg);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--theme-shadow);
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.activityItem:hover {
+  background-color: var(--theme-hover);
+}
+
+.activityIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.activityContent {
+  flex: 1;
+}
+
+.activityText {
+  color: var(--theme-text-color);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.activityUser {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.activityTime {
+  color: var(--gray-500);
+  font-size: 0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .chartsSection {
+    grid-template-columns: 1fr;
+  }
+  
+  .mainChart {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .period {
+    width: 100%;
+  }
+  
+  .periodButton {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

@@ -117,6 +117,7 @@ export const errorCodes = {
   ADMIN_NOT_FOUND: 'ADMIN_NOT_FOUND',
   MASTER_ADMIN_MODIFICATION: 'MASTER_ADMIN_MODIFICATION',
   MASTER_ADMIN_DELETION: 'MASTER_ADMIN_DELETION',
+  INVALID_ADMIN_DATA: 'INVALID_ADMIN_DATA', // Added missing error code
 
   // Security-related errors
   INVALID_JSON: 'INVALID_JSON',
@@ -141,6 +142,8 @@ export const errorCodes = {
   INVALID_INPUT: 'INVALID_INPUT',
   PASSWORD_HASH_ERROR: 'PASSWORD_HASH_ERROR',
   PASSWORD_COMPARE_ERROR: 'PASSWORD_COMPARE_ERROR',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS', // Added missing error code
+  INVALID_TOKEN: 'INVALID_TOKEN', // Added missing error code
 
   // Team-related errors
   TEAM_NOT_FOUND: 'TEAM_NOT_FOUND',
@@ -148,7 +151,10 @@ export const errorCodes = {
   ADMIN_NOT_IN_TEAM: 'ADMIN_NOT_IN_TEAM',
 
   // Internal Server Error
-  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR'
+  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+
+  // Custom error for invalid request
+  INVALID_REQUEST: 'INVALID_REQUEST'
 } as const;
 
 export class AppError extends Error {

@@ -28,3 +28,14 @@ export interface MetricCardProps {
     placeholder?: string;
     onSearch: (value: string) => void;
   }
+
+  export interface StatCardProps {
+    icon: string;
+    title: string;
+    value: string;
+    trend?: {
+      value: string;
+      direction: 'up' | 'down';
+      text: string;
+    };
+  }

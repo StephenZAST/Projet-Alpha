@@ -1,0 +1,104 @@
+.settingsContainer {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+  
+  .profileSection,
+  .preferencesSection {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--pripary-box-shadow);
+  }
+  
+  .profileCard,
+  .preferencesCard {
+    padding: 24px;
+  }
+  
+  .profileCard h3,
+  .preferencesCard h3 {
+    color: var(--gray-800);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+  
+  .profileForm {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+  
+  .formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .formGroup label {
+    color: var(--gray-600);
+    font-size: 14px;
+  }
+  
+  .formGroup input {
+    padding: 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  
+  .formGroup input:disabled {
+    background: var(--gray-50);
+    cursor: not-allowed;
+  }
+  
+  .updateButton {
+    grid-column: span 2;
+    padding: 12px;
+    background: var(--primary);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+  
+  .updateButton:hover {
+    opacity: 0.9;
+  }
+  
+  .preferencesList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .preferenceItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  
+  .preferenceItem label {
+    color: var(--gray-700);
+  }
+  
+  @media (max-width: 768px) {
+    .settingsContainer {
+      padding: 16px;
+    }
+  
+    .profileForm {
+      grid-template-columns: 1fr;
+    }
+  
+    .updateButton {
+      grid-column: span 1;
+    }
+  }
+  
