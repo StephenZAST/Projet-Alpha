@@ -42,14 +42,17 @@ class CustomSidebar extends StatelessWidget {
             icon: Icons.home,
             text: 'Home',
             isSelected: true,
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/');
+            },
           ),
           _buildDrawerItem(
             icon: Icons.local_offer_outlined,
             text: 'Offres',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to Offers page
+              Navigator.pushReplacementNamed(context, '/offers');
             },
           ),
           _buildDrawerItem(
@@ -57,7 +60,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Services',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to Services page
+              // TODO: Implement services page
             },
           ),
           _buildDrawerItem(
@@ -65,7 +68,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Commandes',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to Orders page
+              // TODO: Implement orders page
             },
           ),
           _buildDrawerItem(
@@ -73,7 +76,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Notifications',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to Notifications page
+              // TODO: Implement notifications page
             },
           ),
           _buildDrawerItem(
@@ -81,7 +84,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Messages',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to Messages page
+              Navigator.pushReplacementNamed(context, '/chat');
             },
           ),
           _buildDrawerItem(
@@ -89,7 +92,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Parrainage',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to Referral page
+              // TODO: Implement referral page
             },
           ),
           _buildDrawerItem(
@@ -97,7 +100,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Profile',
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to Profile page
+              Navigator.pushReplacementNamed(context, '/profile');
             },
           ),
           _buildDrawerItem(

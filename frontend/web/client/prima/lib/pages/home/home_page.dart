@@ -72,10 +72,25 @@ class _HomePageState extends State<HomePage> {
               _buildNavItem(Icons.person_rounded, 'Profile', 4),
             ],
             onTap: (index) {
-              if (index != 2) { // Skip the middle item (add button)
-                setState(() {
-                  _selectedIndex = index;
-                });
+              setState(() {
+                _selectedIndex = index;
+              });
+              switch (index) {
+                case 0: // Home
+                  Navigator.pushReplacementNamed(context, '/');
+                  break;
+                case 1: // Offers
+                  Navigator.pushReplacementNamed(context, '/offers');
+                  break;
+                case 2: // Add (center button)
+                  // TODO: Implement add order functionality
+                  break;
+                case 3: // Chat
+                  Navigator.pushReplacementNamed(context, '/chat');
+                  break;
+                case 4: // Profile
+                  Navigator.pushReplacementNamed(context, '/profile');
+                  break;
               }
             },
           ),
