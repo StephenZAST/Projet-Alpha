@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // Import flutter_svg package
-import 'package:spring_button/spring_button.dart'; // Import spring_button package
+import 'package:spring_button/spring_button.dart';
 
 class AppBarComponent extends StatelessWidget {
-  const AppBarComponent({Key? key}) : super(key: key);
+  final String title;
+  final VoidCallback? onMenuPressed;
+
+  const AppBarComponent({
+    super.key,
+    this.title = '',
+    this.onMenuPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -41,18 +47,18 @@ class AppBarComponent extends StatelessWidget {
                 useCache: false,
               ),
               const SizedBox(width: 12),
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Bienvenue',
-                    style: TextStyle(
+                    title.isEmpty ? 'Bienvenue' : title,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.gray800,
                     ),
                   ),
-                  Text(
+                  const Text(
                     'Mr ZAKANE',
                     style: TextStyle(
                       color: AppColors.gray500,
@@ -64,12 +70,29 @@ class AppBarComponent extends StatelessWidget {
           ),
           SpringButton(
             SpringButtonType.OnlyScale,
-            SizedBox(
-              width: 35, // Set width to match IconButton size
-              height: 35, // Set height to match IconButton size
-              child: SvgPicture.asset('assets/menu-icon.svg'),
+            Container(
+              width: 35,
+              height: 35,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.menu,
+                color: AppColors.gray800,
+                size: 20,
+              ),
             ),
-            onTap: () {},
+            onTap: onMenuPressed ?? () {
+              Scaffold.of(context).openDrawer();
+            },
             scaleCoefficient: 0.9,
             useCache: false,
           ),
