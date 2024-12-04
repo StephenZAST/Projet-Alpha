@@ -31,11 +31,9 @@ class _ReferralPageState extends State<ReferralPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppHeader(
+              PageHeader(
                 title: 'Parrainage',
-                onMenuPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
+                showAddressSection: true,
               ),
               Padding(
                 padding: const EdgeInsets.all(16.0),

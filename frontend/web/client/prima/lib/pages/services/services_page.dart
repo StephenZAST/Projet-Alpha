@@ -30,14 +30,12 @@ class _ServicesPageState extends State<ServicesPage> {
           physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppHeader(
+            children: const [
+              PageHeader(
                 title: 'Services',
-                onMenuPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
+                showAddressSection: true,
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Text(
                   'Nos Services',

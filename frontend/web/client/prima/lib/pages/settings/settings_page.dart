@@ -84,11 +84,9 @@ class _SettingsPageState extends State<SettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppHeader(
+              const PageHeader(
                 title: 'Réglages',
-                onMenuPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
+                showAddressSection: true,
               ),
               Padding(
                 padding: const EdgeInsets.all(16.0),

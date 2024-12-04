@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:prima/widgets/custom_bottom_navigation.dart';
-import 'package:prima/home-components/app_header.dart'; // Import AppHeader
+import 'package:prima/widgets/page_header.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -30,34 +30,20 @@ class _OrdersPageState extends State<OrdersPage> {
           physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppHeader(
+            children: const [
+              PageHeader(
                 title: 'Commandes',
-                onMenuPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
+                showAddressSection: true,
               ),
               Padding(
                 padding: EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Mes Commandes',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.gray800,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Historique et suivi de vos commandes',
-                      style: TextStyle(
-                        color: AppColors.gray500,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Mes Commandes',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.gray800,
+                  ),
                 ),
               ),
               // TODO: Add orders list here
@@ -66,8 +52,8 @@ class _OrdersPageState extends State<OrdersPage> {
         ),
       ),
       bottomNavigationBar: CustomBottomNavigation(
-        selectedIndex: _selectedIndex,
-        onItemSelected: _onNavigationItemSelected,
+        currentIndex: _selectedIndex,
+        onTap: _onNavigationItemSelected,
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:prima/home-components/app_bar.dart';
-import 'package:prima/home-components/address_section.dart';
+import 'package:prima/home-components/app_bar.dart' as app_bar;
+import 'package:prima/home-components/address_section.dart' as address;
 
 class PageHeader extends StatelessWidget {
   final String title;
@@ -18,13 +18,13 @@ class PageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        AppBarComponent(
+        app_bar.AppBarComponent(
           title: title,
           onMenuPressed: onMenuPressed ?? () {
             Scaffold.of(context).openDrawer();
           },
         ),
-        if (showAddressSection) const AddressSectionComponent(),
+        if (showAddressSection) const address.AddressSectionComponent(),
       ],
     );
   }
