@@ -63,22 +63,6 @@ class _OffersPageState extends State<OffersPage> {
         selectedIndex: _selectedIndex,
         onItemSelected: _onNavigationItemSelected,
       ),
-      floatingActionButton: Container(
-        margin: const EdgeInsets.only(top: 30),
-        child: FloatingActionButton(
-          onPressed: () {},
-          child: Container(
-            width: 60,
-            height: 60,
-            decoration: const BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.add, color: AppColors.white),
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
