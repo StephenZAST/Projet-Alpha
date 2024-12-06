@@ -1,3 +1,4 @@
+// Removed Swagger comments
 import express from 'express';
 import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
@@ -12,18 +13,6 @@ import { AppError } from '../utils/errors';
 const router = express.Router();
 const userService = new UserService();
 
-/**
- * @swagger
- * /api/users/profile:
- *   get:
- *     tags: [Users]
- *     summary: Get user profile
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: User profile retrieved successfully
- */
 router.get('/profile', isAuthenticated, async (req, res, next) => {
   try {
     const profile = await userService.getUserProfile(req.user!.uid);
@@ -33,21 +22,6 @@ router.get('/profile', isAuthenticated, async (req, res, next) => {
   }
 });
 
-/**
- * @swagger
- * /api/users/profile:
- *   put:
- *     tags: [Users]
- *     summary: Update user profile
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateProfileRequest'
- */
 router.put('/profile', 
   isAuthenticated, 
   validateRequest(updateProfileSchema),
@@ -60,15 +34,6 @@ router.put('/profile',
     }
 });
 
-/**
- * @swagger
- * /api/users/address:
- *   put:
- *     tags: [Users]
- *     summary: Update user address
- *     security:
- *       - bearerAuth: []
- */
 router.put('/address',
   isAuthenticated,
   validateRequest(updateAddressSchema),
@@ -81,15 +46,6 @@ router.put('/address',
     }
 });
 
-/**
- * @swagger
- * /api/users/preferences:
- *   put:
- *     tags: [Users]
- *     summary: Update user preferences
- *     security:
- *       - bearerAuth: []
- */
 router.put('/preferences',
   isAuthenticated,
   validateRequest(updatePreferencesSchema),
@@ -102,15 +58,6 @@ router.put('/preferences',
     }
 });
 
-/**
- * @swagger
- * /api/users/{id}:
- *   get:
- *     tags: [Users]
- *     summary: Get user by ID (Admin only)
- *     security:
- *       - bearerAuth: []
- */
 router.get('/:id',
   isAuthenticated,
   requireAdminRole,
@@ -123,15 +70,6 @@ router.get('/:id',
     }
 });
 
-/**
- * @swagger
- * /api/users:
- *   get:
- *     tags: [Users]
- *     summary: Get all users (Admin only)
- *     security:
- *       - bearerAuth: []
- */
 router.get('/',
   isAuthenticated,
   requireAdminRole,
