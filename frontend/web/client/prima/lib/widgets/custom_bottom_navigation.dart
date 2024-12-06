@@ -18,7 +18,7 @@ class CustomBottomNavigation extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Container(
-          padding: const EdgeInsets.only(top: 15), 
+          padding: const EdgeInsets.only(top: 8), 
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: [
@@ -74,13 +74,13 @@ class CustomBottomNavigation extends StatelessWidget {
         Positioned(
           left: 0,
           right: 0,
-          top: -22, 
+          top: -12, 
           child: Center(
             child: SpringButton(
               SpringButtonType.OnlyScale,
               Container(
-                width: 56,
-                height: 56,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   shape: BoxShape.circle,
