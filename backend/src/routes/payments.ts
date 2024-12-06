@@ -1,15 +1,23 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../middleware/auth';
-import { validateRequest } from '../middleware/validateRequest';
-import { paymentValidation } from '../validations/paymentValidation';
-import { PaymentService } from '../services/payment'; // Import PaymentService
+import { 
+  validateGetPaymentMethods,
+  validateAddPaymentMethod,
+  validateRemovePaymentMethod,
+  validateSetDefaultPaymentMethod,
+  validateProcessPayment,
+  validateProcessRefund,
+  validateGetPaymentHistory
+} from '../middleware/paymentValidation';
+import { PaymentService } from '../services/payment'; 
 
 const router = Router();
-const paymentService = new PaymentService(); // Create instance
+const paymentService = new PaymentService(); 
 
 router.get(
   '/methods',
   isAuthenticated,
+  validateGetPaymentMethods, // Apply validation directly
   async (req, res, next) => {
     try {
       const userId = req.user!.uid;
@@ -24,7 +32,7 @@ router.get(
 router.post(
   '/methods',
   isAuthenticated,
-  validateRequest(paymentValidation.addPaymentMethod),
+  validateAddPaymentMethod, // Apply validation directly
   async (req, res, next) => {
     try {
       const userId = req.user!.uid;
@@ -39,7 +47,7 @@ router.post(
 router.delete(
   '/methods/:id',
   isAuthenticated,
-  validateRequest(paymentValidation.removePaymentMethod),
+  validateRemovePaymentMethod, // Apply validation directly
   async (req, res, next) => {
     try {
       const userId = req.user!.uid;
@@ -55,7 +63,7 @@ router.delete(
 router.put(
   '/methods/:id/default',
   isAuthenticated,
-  validateRequest(paymentValidation.setDefaultPaymentMethod),
+  validateSetDefaultPaymentMethod, // Apply validation directly
   async (req, res, next) => {
     try {
       const userId = req.user!.uid;
@@ -71,7 +79,7 @@ router.put(
 router.post(
   '/process',
   isAuthenticated,
-  validateRequest(paymentValidation.processPayment),
+  validateProcessPayment, // Apply validation directly
   async (req, res, next) => {
     try {
       const userId = req.user!.uid;
@@ -86,7 +94,7 @@ router.post(
 router.post(
   '/refund',
   isAuthenticated,
-  validateRequest(paymentValidation.processRefund),
+  validateProcessRefund, // Apply validation directly
   async (req, res, next) => {
     try {
       const userId = req.user!.uid;
@@ -101,16 +109,16 @@ router.post(
 router.get(
   '/history',
   isAuthenticated,
-  validateRequest(paymentValidation.getPaymentHistory),
+  validateGetPaymentHistory, // Apply validation directly
   async (req, res, next) => {
     try {
       const userId = req.user!.uid;
-      const { page, limit, status } = req.query; // Extract properties from req.query
+      const { page, limit, status } = req.query; 
       const paymentHistory = await paymentService.getPaymentHistory(userId, {
         page: Number(page),
         limit: Number(limit),
         status: status as string
-      }); // Pass an object with the correct type
+      }); 
       res.json(paymentHistory);
     } catch (error) {
       next(error);
