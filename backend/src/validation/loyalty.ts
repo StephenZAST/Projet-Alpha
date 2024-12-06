@@ -77,3 +77,9 @@ export const updateLoyaltyTierSchema = Joi.object({
   color: Joi.string().pattern(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/),
   status: Joi.string().valid('active', 'inactive')
 });
+
+export const loyaltyValidation = {
+  redeemRewardSchema,
+  createRewardSchema,
+  updateLoyaltyTierSchema
+};

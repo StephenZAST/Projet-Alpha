@@ -1,49 +1,28 @@
 import express from 'express';
 import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
-import { 
-  redeemRewardSchema,
-  updateLoyaltyTierSchema,
-  createRewardSchema
-} from '../validation/loyalty';
-import { LoyaltyService } from '../services/loyalty';
-import { AppError } from '../utils/errors';
+import { loyaltyValidation } from '../validation/loyalty';
+import { LoyaltyService } from '../services/loyalty'; // Correct import
 
 const router = express.Router();
-const loyaltyService = new LoyaltyService();
+const loyaltyService = new LoyaltyService(); // Create instance
 
-/**
- * @swagger
- * /api/loyalty/account:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get user's loyalty account details
- *     security:
- *       - bearerAuth: []
- */
 router.get('/account', isAuthenticated, async (req, res, next) => {
   try {
-    const account = await loyaltyService.getLoyaltyAccount(req.user!.uid);
+    const userId = req.user!.uid;
+    const account = await loyaltyService.getLoyaltyAccount(userId);
     res.json(account);
   } catch (error) {
     next(error);
   }
 });
 
-/**
- * @swagger
- * /api/loyalty/points/history:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get user's points history
- *     security:
- *       - bearerAuth: []
- */
 router.get('/points/history', isAuthenticated, async (req, res, next) => {
   try {
+    const userId = req.user!.uid;
     const { page = 1, limit = 10 } = req.query;
     const history = await loyaltyService.getPointsHistory(
-      req.user!.uid,
+      userId,
       Number(page),
       Number(limit)
     );
@@ -53,19 +32,11 @@ router.get('/points/history', isAuthenticated, async (req, res, next) => {
   }
 });
 
-/**
- * @swagger
- * /api/loyalty/rewards:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get available rewards
- *     security:
- *       - bearerAuth: []
- */
 router.get('/rewards', isAuthenticated, async (req, res, next) => {
   try {
+    const userId = req.user!.uid;
     const { type, category, status } = req.query;
-    const rewards = await loyaltyService.getAvailableRewards(req.user!.uid, {
+    const rewards = await loyaltyService.getAvailableRewards(userId, {
       type: type as string,
       category: category as string,
       status: status as string
@@ -76,24 +47,15 @@ router.get('/rewards', isAuthenticated, async (req, res, next) => {
   }
 });
 
-/**
- * @swagger
- * /api/loyalty/rewards/{rewardId}/redeem:
- *   post:
- *     tags: [Loyalty]
- *     summary: Redeem a reward
- *     security:
- *       - bearerAuth: []
- */
-router.post(
-  '/rewards/:rewardId/redeem',
-  isAuthenticated,
-  validateRequest(redeemRewardSchema),
+router.post('/rewards/:rewardId/redeem', 
+  isAuthenticated, 
+  validateRequest(loyaltyValidation.redeemRewardSchema),
   async (req, res, next) => {
     try {
+      const userId = req.user!.uid;
       const { shippingAddress } = req.body;
       const redemption = await loyaltyService.redeemReward(
-        req.user!.uid,
+        userId,
         req.params.rewardId,
         shippingAddress
       );
@@ -104,38 +66,19 @@ router.post(
   }
 );
 
-/**
- * @swagger
- * /api/loyalty/tiers:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get all loyalty tiers
- *     security:
- *       - bearerAuth: []
- */
 router.get('/tiers', isAuthenticated, async (req, res, next) => {
   try {
-    const tiers = await loyaltyService.getLoyaltyTiers();
-    res.json(tiers);
+    const tiers = await loyaltyService.getLoyaltyTiers(); // Await the promise
+    res.json(tiers); // Return the resolved data
   } catch (error) {
     next(error);
   }
 });
 
-/**
- * @swagger
- * /api/loyalty/admin/rewards:
- *   post:
- *     tags: [Loyalty]
- *     summary: Create a new reward (Admin only)
- *     security:
- *       - bearerAuth: []
- */
-router.post(
-  '/admin/rewards',
-  isAuthenticated,
-  requireAdminRole,
-  validateRequest(createRewardSchema),
+router.post('/admin/rewards', 
+  isAuthenticated, 
+  requireAdminRole, 
+  validateRequest(loyaltyValidation.createRewardSchema),
   async (req, res, next) => {
     try {
       const reward = await loyaltyService.createReward(req.body);
@@ -146,20 +89,10 @@ router.post(
   }
 );
 
-/**
- * @swagger
- * /api/loyalty/admin/tiers/{tierId}:
- *   put:
- *     tags: [Loyalty]
- *     summary: Update loyalty tier (Admin only)
- *     security:
- *       - bearerAuth: []
- */
-router.put(
-  '/admin/tiers/:tierId',
-  isAuthenticated,
-  requireAdminRole,
-  validateRequest(updateLoyaltyTierSchema),
+router.put('/admin/tiers/:tierId', 
+  isAuthenticated, 
+  requireAdminRole, 
+  validateRequest(loyaltyValidation.updateLoyaltyTierSchema),
   async (req, res, next) => {
     try {
       const tier = await loyaltyService.updateLoyaltyTier(
@@ -173,19 +106,9 @@ router.put(
   }
 );
 
-/**
- * @swagger
- * /api/loyalty/admin/redemptions:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get all reward redemptions (Admin only)
- *     security:
- *       - bearerAuth: []
- */
-router.get(
-  '/admin/redemptions',
-  isAuthenticated,
-  requireAdminRole,
+router.get('/admin/redemptions', 
+  isAuthenticated, 
+  requireAdminRole, 
   async (req, res, next) => {
     try {
       const { 
@@ -210,19 +133,9 @@ router.get(
   }
 );
 
-/**
- * @swagger
- * /api/loyalty/admin/redemptions/{redemptionId}/status:
- *   patch:
- *     tags: [Loyalty]
- *     summary: Update redemption status (Admin only)
- *     security:
- *       - bearerAuth: []
- */
-router.patch(
-  '/admin/redemptions/:redemptionId/status',
-  isAuthenticated,
-  requireAdminRole,
+router.patch('/admin/redemptions/:redemptionId/status', 
+  isAuthenticated, 
+  requireAdminRole, 
   async (req, res, next) => {
     try {
       const { status, notes } = req.body;
@@ -238,32 +151,39 @@ router.patch(
   }
 );
 
-// Admin routes for physical rewards
-router.get('/admin/pending-rewards', isAuthenticated, requireAdminRole, async (req, res, next) => {
-  try {
-    const pendingRewards = await loyaltyService.getPendingPhysicalRewards();
-    res.json({ pendingRewards });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/admin/claim-reward/:redemptionId', isAuthenticated, requireAdminRole, async (req, res, next) => {
-  try {
-    const success = await loyaltyService.verifyAndClaimPhysicalReward(
-      req.params.redemptionId,
-      req.user!.uid,
-      req.body.notes
-    );
-
-    if (success) {
-      res.json({ message: 'Reward claimed successfully' });
-    } else {
-      res.status(400).json({ error: 'Failed to claim reward' });
+router.get('/admin/pending-rewards', 
+  isAuthenticated, 
+  requireAdminRole, 
+  async (req, res, next) => {
+    try {
+      const pendingRewards = await loyaltyService.getPendingPhysicalRewards(); // Await the promise
+      res.json({ pendingRewards }); // Return the resolved data
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
+
+router.post('/admin/claim-reward/:redemptionId', 
+  isAuthenticated, 
+  requireAdminRole, 
+  async (req, res, next) => {
+    try {
+      const success = await loyaltyService.verifyAndClaimPhysicalReward(
+        req.params.redemptionId,
+        req.user!.uid,
+        req.body.notes
+      );
+
+      if (success) {
+        res.json({ message: 'Reward claimed successfully' });
+      } else {
+        res.status(400).json({ error: 'Failed to claim reward' });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

@@ -5,34 +5,22 @@ import { validateRequest } from '../middleware/validateRequest';
 import { 
   createOrderSchema, 
   updateOrderSchema,
-  updateOrderStatusSchema 
+  updateOrderStatusSchema,
+  searchOrdersSchema,
+  orderStatsSchema
 } from '../validation/orders';
 import { OrderStatus } from '../models/order';
 import { AppError, errorCodes } from '../utils/errors';
+import { Timestamp } from 'firebase-admin/firestore'; // Import Timestamp
 
 const router = express.Router();
 const orderService = new OrderService();
 
-/**
- * @swagger
- * /api/orders:
- *   post:
- *     tags: [Orders]
- *     summary: Create a new order
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateOrderRequest'
- */
 router.post(
   '/',
   isAuthenticated,
   validateRequest(createOrderSchema),
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const userId = req.user!.uid;
       const order = await orderService.createOrder({
@@ -41,25 +29,12 @@ router.post(
       });
       res.status(201).json(order);
     } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
+      next(error);
     }
   }
 );
 
-/**
- * @swagger
- * /api/orders:
- *   get:
- *     tags: [Orders]
- *     summary: Get user orders with pagination and filters
- *     security:
- *       - bearerAuth: []
- */
-router.get('/', isAuthenticated, async (req, res) => {
+router.get('/', isAuthenticated, async (req, res, next) => {
   try {
     const userId = req.user!.uid;
     const { 
@@ -84,128 +59,64 @@ router.get('/', isAuthenticated, async (req, res) => {
 
     res.json(orders);
   } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
+    next(error);
   }
 });
 
-/**
- * @swagger
- * /api/orders/{id}:
- *   get:
- *     tags: [Orders]
- *     summary: Get order by ID
- *     security:
- *       - bearerAuth: []
- */
-router.get('/:id', isAuthenticated, async (req, res) => {
+router.get('/:id', isAuthenticated, async (req, res, next) => {
   try {
     const userId = req.user!.uid;
     const order = await orderService.getOrderById(req.params.id, userId);
     res.json(order);
   } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
+    next(error);
   }
 });
 
-/**
- * @swagger
- * /api/orders/{id}:
- *   put:
- *     tags: [Orders]
- *     summary: Update order details
- *     security:
- *       - bearerAuth: []
- */
 router.put('/:id',
   isAuthenticated,
   validateRequest(updateOrderSchema),
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const userId = req.user!.uid;
       const order = await orderService.updateOrder(req.params.id, userId, req.body);
       res.json(order);
     } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
+      next(error);
     }
 });
 
-/**
- * @swagger
- * /api/orders/{id}/status:
- *   patch:
- *     tags: [Orders]
- *     summary: Update order status
- *     security:
- *       - bearerAuth: []
- */
 router.patch('/:id/status',
   isAuthenticated,
   validateRequest(updateOrderStatusSchema),
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const userId = req.user!.uid;
-      const { status } = req.body;
-      const order = await orderService.updateOrderStatus(req.params.id, status, userId);
+      const { status, deliveryPersonId } = req.body;
+      const order = await orderService.updateOrderStatus(req.params.id, status, deliveryPersonId);
       res.json(order);
     } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
+      next(error);
     }
 });
 
-/**
- * @swagger
- * /api/orders/{id}/cancel:
- *   post:
- *     tags: [Orders]
- *     summary: Cancel an order
- *     security:
- *       - bearerAuth: []
- */
 router.post('/:id/cancel',
   isAuthenticated,
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const userId = req.user!.uid;
       const order = await orderService.cancelOrder(req.params.id, userId);
       res.json(order);
     } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
+      next(error);
     }
 });
 
-/**
- * @swagger
- * /api/orders/admin/all:
- *   get:
- *     tags: [Orders]
- *     summary: Get all orders (Admin only)
- *     security:
- *       - bearerAuth: []
- */
 router.get('/admin/all',
   isAuthenticated,
   requireAdminRole,
-  async (req, res) => {
+  validateRequest(searchOrdersSchema),
+  async (req, res, next) => {
     try {
       const { 
         page = 1, 
@@ -231,12 +142,27 @@ router.get('/admin/all',
 
       res.json(orders);
     } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
+      next(error);
     }
 });
+
+router.get('/admin/stats',
+  isAuthenticated,
+  requireAdminRole,
+  validateRequest(orderStatsSchema),
+  async (req, res, next) => {
+    try {
+      const { startDate, endDate, zoneId, deliveryPersonId, groupBy } = req.query;
+      const stats = await orderService.getOrderStatistics({
+        zoneId: zoneId as string,
+        startDate: startDate ? Timestamp.fromDate(new Date(startDate as string)) : undefined, // Convert to Timestamp
+        endDate: endDate ? Timestamp.fromDate(new Date(endDate as string)) : undefined // Convert to Timestamp
+      });
+      res.json(stats);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;
