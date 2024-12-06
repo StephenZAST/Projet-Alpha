@@ -1,100 +1,137 @@
 import Joi from 'joi';
 import { NotificationType, NotificationPriority, NotificationStatus, DeliveryChannel } from '../../models/notification';
+import { errorCodes } from '../../utils/errors';
 
 // Notification content schema
 const notificationContentSchema = Joi.object({
-  title: Joi.string().required().messages({
-    'any.required': 'Le titre est requis'
-  }),
-  body: Joi.string().required().messages({
-    'any.required': 'Le corps du message est requis'
-  }),
-  image: Joi.string().uri().messages({
-    'string.uri': 'L\'URL de l\'image n\'est pas valide'
-  }),
+  title: Joi.string().required().max(100)
+    .messages({
+      'any.required': errorCodes.VALIDATION_ERROR,
+      'string.empty': errorCodes.VALIDATION_ERROR,
+      'string.max': errorCodes.VALIDATION_ERROR
+    }),
+  body: Joi.string().required().max(500)
+    .messages({
+      'any.required': errorCodes.VALIDATION_ERROR,
+      'string.empty': errorCodes.VALIDATION_ERROR,
+      'string.max': errorCodes.VALIDATION_ERROR
+    }),
+  image: Joi.string().uri()
+    .messages({
+      'string.uri': errorCodes.VALIDATION_ERROR
+    }),
   data: Joi.object().pattern(
     Joi.string(),
     Joi.any()
   ).messages({
-    'object.base': 'Les données additionnelles doivent être un objet'
+    'object.base': errorCodes.VALIDATION_ERROR
   })
 });
 
 // Create notification schema
 export const createNotificationSchema = Joi.object({
-  userId: Joi.string().required().messages({
-    'any.required': 'L\'ID de l\'utilisateur est requis'
-  }),
-  type: Joi.string().valid(...Object.values(NotificationType)).required().messages({
-    'any.only': 'Type de notification invalide',
-    'any.required': 'Le type de notification est requis'
-  }),
-  priority: Joi.string().valid(...Object.values(NotificationPriority)).default(NotificationPriority.NORMAL).messages({
-    'any.only': 'Priorité invalide'
-  }),
+  userId: Joi.string().required()
+    .messages({
+      'any.required': errorCodes.USER_NOT_FOUND,
+      'string.empty': errorCodes.USER_NOT_FOUND
+    }),
+  type: Joi.string().valid(...Object.values(NotificationType)).required()
+    .messages({
+      'any.required': errorCodes.VALIDATION_ERROR,
+      'any.only': errorCodes.VALIDATION_ERROR
+    }),
+  priority: Joi.string().valid(...Object.values(NotificationPriority)).default(NotificationPriority.NORMAL)
+    .messages({
+      'any.only': errorCodes.VALIDATION_ERROR
+    }),
   content: notificationContentSchema.required(),
   channels: Joi.array().items(
     Joi.string().valid(...Object.values(DeliveryChannel))
-  ).min(1).required().messages({
-    'array.min': 'Au moins un canal de livraison est requis',
-    'any.required': 'Les canaux de livraison sont requis'
-  }),
-  scheduledFor: Joi.date().min('now').messages({
-    'date.min': 'La date programmée doit être dans le futur'
-  }),
-  expiresAt: Joi.date().min(Joi.ref('scheduledFor')).messages({
-    'date.min': 'La date d\'expiration doit être après la date programmée'
-  })
+  ).min(1).required()
+    .messages({
+      'array.min': errorCodes.VALIDATION_ERROR,
+      'any.required': errorCodes.VALIDATION_ERROR
+    }),
+  scheduledFor: Joi.date().min('now')
+    .messages({
+      'date.min': errorCodes.VALIDATION_ERROR
+    }),
+  expiresAt: Joi.date().min(Joi.ref('scheduledFor'))
+    .messages({
+      'date.min': errorCodes.VALIDATION_ERROR
+    })
 });
 
 // Create bulk notifications schema
 export const createBulkNotificationsSchema = Joi.object({
-  userIds: Joi.array().items(Joi.string()).min(1).required().messages({
-    'array.min': 'Au moins un ID d\'utilisateur est requis',
-    'any.required': 'Les IDs des utilisateurs sont requis'
-  }),
-  notification: createNotificationSchema.fork(['userId'], schema => schema.forbidden()).required().messages({
-    'any.required': 'Les détails de la notification sont requis'
-  })
+  userIds: Joi.array().items(Joi.string()).min(1).required()
+    .messages({
+      'array.min': errorCodes.VALIDATION_ERROR,
+      'any.required': errorCodes.VALIDATION_ERROR
+    }),
+  notification: createNotificationSchema.fork(['userId'], schema => schema.forbidden()).required()
+    .messages({
+      'any.required': errorCodes.VALIDATION_ERROR
+    })
 });
 
 // Update notification schema
 export const updateNotificationSchema = Joi.object({
-  status: Joi.string().valid(...Object.values(NotificationStatus)).required().messages({
-    'any.only': 'Statut invalide',
-    'any.required': 'Le statut est requis'
-  }),
+  status: Joi.string().valid(...Object.values(NotificationStatus)).required()
+    .messages({
+      'any.only': errorCodes.INVALID_STATUS,
+      'any.required': errorCodes.VALIDATION_ERROR
+    }),
   readAt: Joi.date().when('status', {
     is: NotificationStatus.READ,
     then: Joi.required(),
     otherwise: Joi.forbidden()
   }).messages({
-    'any.required': 'La date de lecture est requise pour le statut READ',
-    'any.unknown': 'La date de lecture n\'est pas autorisée pour ce statut'
+    'any.required': errorCodes.VALIDATION_ERROR,
+    'any.unknown': errorCodes.VALIDATION_ERROR
   })
+}).min(1).messages({
+  'object.min': errorCodes.VALIDATION_ERROR
 });
 
 // Search notifications schema
 export const searchNotificationsSchema = Joi.object({
-  userId: Joi.string(),
-  type: Joi.string().valid(...Object.values(NotificationType)),
-  status: Joi.string().valid(...Object.values(NotificationStatus)),
-  priority: Joi.string().valid(...Object.values(NotificationPriority)),
+  userId: Joi.string()
+    .messages({
+      'string.empty': errorCodes.USER_NOT_FOUND
+    }),
+  type: Joi.string().valid(...Object.values(NotificationType))
+    .messages({
+      'any.only': errorCodes.VALIDATION_ERROR
+    }),
+  status: Joi.string().valid(...Object.values(NotificationStatus))
+    .messages({
+      'any.only': errorCodes.INVALID_STATUS
+    }),
+  priority: Joi.string().valid(...Object.values(NotificationPriority))
+    .messages({
+      'any.only': errorCodes.VALIDATION_ERROR
+    }),
   startDate: Joi.date(),
-  endDate: Joi.date().min(Joi.ref('startDate')).messages({
-    'date.min': 'La date de fin doit être après la date de début'
-  }),
+  endDate: Joi.date().min(Joi.ref('startDate'))
+    .messages({
+      'date.min': errorCodes.VALIDATION_ERROR
+    }),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
   sortBy: Joi.string().valid('createdAt', 'scheduledFor', 'priority').default('createdAt'),
   sortOrder: Joi.string().valid('asc', 'desc').default('desc')
+}).messages({
+  'object.unknown': errorCodes.VALIDATION_ERROR
 });
 
 // Notification preferences schema
 export const updateNotificationPreferencesSchema = Joi.object({
-  userId: Joi.string().required().messages({
-    'any.required': 'L\'ID de l\'utilisateur est requis'
-  }),
+  userId: Joi.string().required()
+    .messages({
+      'any.required': errorCodes.USER_NOT_FOUND,
+      'string.empty': errorCodes.USER_NOT_FOUND
+    }),
   preferences: Joi.object().pattern(
     Joi.string().valid(...Object.values(NotificationType)),
     Joi.object({
@@ -107,8 +144,9 @@ export const updateNotificationPreferencesSchema = Joi.object({
         otherwise: Joi.array().max(0)
       })
     })
-  ).min(1).required().messages({
-    'object.min': 'Au moins une préférence doit être spécifiée',
-    'any.required': 'Les préférences sont requises'
-  })
+  ).min(1).required()
+    .messages({
+      'object.min': errorCodes.VALIDATION_ERROR,
+      'any.required': errorCodes.VALIDATION_ERROR
+    })
 });

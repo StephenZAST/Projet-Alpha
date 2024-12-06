@@ -1,120 +1,133 @@
 import Joi from 'joi';
+import { errorCodes } from '../../utils/errors';
 import { OrderStatus, OrderType, MainService, AdditionalService, PriceType, PaymentMethod } from '../../models/order';
 import { ServiceType } from '../../models/service';
 
 // Location schema that can be reused
 const locationSchema = Joi.object({
   latitude: Joi.number().min(-90).max(90).required().messages({
-    'number.min': 'La latitude doit être supérieure à -90',
-    'number.max': 'La latitude doit être inférieure à 90',
-    'any.required': 'La latitude est requise'
+    'number.min': errorCodes.GEOCODING_FAILED,
+    'number.max': errorCodes.GEOCODING_FAILED,
+    'any.required': errorCodes.GEOCODING_FAILED
   }),
   longitude: Joi.number().min(-180).max(180).required().messages({
-    'number.min': 'La longitude doit être supérieure à -180',
-    'number.max': 'La longitude doit être inférieure à 180',
-    'any.required': 'La longitude est requise'
+    'number.min': errorCodes.GEOCODING_FAILED,
+    'number.max': errorCodes.GEOCODING_FAILED,
+    'any.required': errorCodes.GEOCODING_FAILED
   })
 });
 
 // Order item schema
 export const orderItemSchema = Joi.object({
   itemType: Joi.string().required().messages({
-    'any.required': 'Le type d\'article est requis'
+    'any.required': errorCodes.INVALID_ORDER_DATA,
+    'string.empty': errorCodes.INVALID_ORDER_DATA
   }),
-  quantity: Joi.number().min(1).required().messages({
-    'number.min': 'La quantité doit être supérieure à 0',
-    'any.required': 'La quantité est requise'
+  quantity: Joi.number().integer().min(1).required().messages({
+    'number.base': errorCodes.INVALID_ORDER_DATA,
+    'number.integer': errorCodes.INVALID_ORDER_DATA,
+    'number.min': errorCodes.INVALID_ORDER_DATA,
+    'any.required': errorCodes.INVALID_ORDER_DATA
   }),
   mainService: Joi.string().valid(...Object.values(MainService)).required().messages({
-    'any.only': 'Service principal invalide',
-    'any.required': 'Le service principal est requis'
+    'any.only': errorCodes.INVALID_ORDER_DATA,
+    'any.required': errorCodes.INVALID_ORDER_DATA
   }),
   additionalServices: Joi.array().items(
     Joi.string().valid(...Object.values(AdditionalService))
   ).messages({
-    'array.base': 'Les services additionnels doivent être une liste'
+    'array.base': errorCodes.INVALID_ORDER_DATA
   }),
   notes: Joi.string().max(500).messages({
-    'string.max': 'Les notes ne peuvent pas dépasser 500 caractères'
+    'string.max': errorCodes.VALIDATION_ERROR
   }),
   price: Joi.number().min(0).required().messages({
-    'number.min': 'Le prix doit être supérieur ou égal à 0',
-    'any.required': 'Le prix est requis'
+    'number.min': errorCodes.INVALID_PRICE_RANGE,
+    'any.required': errorCodes.INVALID_PRICE_RANGE
   }),
   priceType: Joi.string().valid(...Object.values(PriceType)).required().messages({
-    'any.only': 'Type de prix invalide',
-    'any.required': 'Le type de prix est requis'
+    'any.only': errorCodes.INVALID_PRICE_RANGE,
+    'any.required': errorCodes.INVALID_PRICE_RANGE
   })
 });
 
 // Create order schema
 export const createOrderSchema = Joi.object({
   type: Joi.string().valid(...Object.values(OrderType)).required().messages({
-    'any.only': 'Type de commande invalide',
-    'any.required': 'Le type de commande est requis'
+    'any.only': errorCodes.INVALID_ORDER_DATA,
+    'any.required': errorCodes.INVALID_ORDER_DATA
   }),
   items: Joi.array().items(orderItemSchema).min(1).required().messages({
-    'array.min': 'Au moins un article est requis',
-    'any.required': 'Les articles sont requis'
+    'array.min': errorCodes.INVALID_ORDER_DATA,
+    'any.required': errorCodes.INVALID_ORDER_DATA
   }),
   pickupAddress: Joi.string().required().messages({
-    'any.required': 'L\'adresse de ramassage est requise'
+    'any.required': errorCodes.INVALID_ADDRESS_DATA,
+    'string.empty': errorCodes.INVALID_ADDRESS_DATA
   }),
   pickupLocation: locationSchema,
   deliveryAddress: Joi.string().required().messages({
-    'any.required': 'L\'adresse de livraison est requise'
+    'any.required': errorCodes.INVALID_ADDRESS_DATA,
+    'string.empty': errorCodes.INVALID_ADDRESS_DATA
   }),
   deliveryLocation: locationSchema,
   scheduledPickupTime: Joi.date().greater('now').required().messages({
-    'date.greater': 'L\'heure de ramassage doit être dans le futur',
-    'any.required': 'L\'heure de ramassage est requise'
+    'date.greater': errorCodes.SLOT_NOT_AVAILABLE,
+    'any.required': errorCodes.SLOT_NOT_AVAILABLE
   }),
   scheduledDeliveryTime: Joi.date().greater(Joi.ref('scheduledPickupTime')).required().messages({
-    'date.greater': 'L\'heure de livraison doit être après l\'heure de ramassage',
-    'any.required': 'L\'heure de livraison est requise'
+    'date.greater': errorCodes.SLOT_NOT_AVAILABLE,
+    'any.required': errorCodes.SLOT_NOT_AVAILABLE
   }),
   specialInstructions: Joi.string().max(500).messages({
-    'string.max': 'Les instructions spéciales ne peuvent pas dépasser 500 caractères'
+    'string.max': errorCodes.VALIDATION_ERROR
   }),
   serviceType: Joi.string().valid(...Object.values(ServiceType)).required().messages({
-    'any.only': 'Type de service invalide',
-    'any.required': 'Le type de service est requis'
+    'any.only': errorCodes.INVALID_ORDER_DATA,
+    'any.required': errorCodes.INVALID_ORDER_DATA
   }),
   zoneId: Joi.string().required().messages({
-    'any.required': 'L\'ID de la zone est requis'
+    'any.required': errorCodes.INVALID_ADDRESS_DATA,
+    'string.empty': errorCodes.INVALID_ADDRESS_DATA
   }),
   paymentMethod: Joi.string().valid(...Object.values(PaymentMethod)).required().messages({
-    'any.only': 'Méthode de paiement invalide',
-    'any.required': 'La méthode de paiement est requise'
+    'any.only': errorCodes.PAYMENT_PROCESSING_FAILED,
+    'any.required': errorCodes.PAYMENT_PROCESSING_FAILED
   })
 });
 
 // Update order status schema
 export const updateOrderStatusSchema = Joi.object({
   status: Joi.string().valid(...Object.values(OrderStatus)).required().messages({
-    'any.only': 'Statut invalide',
-    'any.required': 'Le statut est requis'
+    'any.only': errorCodes.INVALID_ORDER_STATUS,
+    'any.required': errorCodes.INVALID_ORDER_STATUS
   }),
   deliveryPersonId: Joi.string().when('status', {
     is: Joi.string().valid(OrderStatus.PICKED_UP, OrderStatus.DELIVERING),
     then: Joi.required(),
     otherwise: Joi.optional()
   }).messages({
-    'any.required': 'L\'ID du livreur est requis pour ce statut'
+    'any.required': errorCodes.INVALID_ORDER_STATUS
   })
 });
 
 // Search orders schema
 export const searchOrdersSchema = Joi.object({
   userId: Joi.string(),
-  status: Joi.string().valid(...Object.values(OrderStatus)),
-  type: Joi.string().valid(...Object.values(OrderType)),
-  serviceType: Joi.string().valid(...Object.values(ServiceType)),
+  status: Joi.string().valid(...Object.values(OrderStatus)).messages({
+    'any.only': errorCodes.INVALID_ORDER_STATUS
+  }),
+  type: Joi.string().valid(...Object.values(OrderType)).messages({
+    'any.only': errorCodes.INVALID_ORDER_DATA
+  }),
+  serviceType: Joi.string().valid(...Object.values(ServiceType)).messages({
+    'any.only': errorCodes.INVALID_ORDER_DATA
+  }),
   zoneId: Joi.string(),
   deliveryPersonId: Joi.string(),
   startDate: Joi.date(),
   endDate: Joi.date().min(Joi.ref('startDate')).messages({
-    'date.min': 'La date de fin doit être après la date de début'
+    'date.min': errorCodes.VALIDATION_ERROR
   }),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
@@ -125,16 +138,17 @@ export const searchOrdersSchema = Joi.object({
 // Order statistics schema
 export const orderStatsSchema = Joi.object({
   startDate: Joi.date().required().messages({
-    'any.required': 'La date de début est requise'
+    'any.required': errorCodes.VALIDATION_ERROR,
+    'date.base': errorCodes.VALIDATION_ERROR
   }),
   endDate: Joi.date().min(Joi.ref('startDate')).required().messages({
-    'date.min': 'La date de fin doit être après la date de début',
-    'any.required': 'La date de fin est requise'
+    'date.min': errorCodes.VALIDATION_ERROR,
+    'any.required': errorCodes.VALIDATION_ERROR
   }),
   zoneId: Joi.string(),
   deliveryPersonId: Joi.string(),
   groupBy: Joi.string().valid('day', 'week', 'month').required().messages({
-    'any.only': 'Groupe invalide',
-    'any.required': 'Le groupement est requis'
+    'any.only': errorCodes.VALIDATION_ERROR,
+    'any.required': errorCodes.VALIDATION_ERROR
   })
 });

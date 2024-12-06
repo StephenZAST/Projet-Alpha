@@ -6,6 +6,17 @@ export enum AffiliateStatus {
     SUSPENDED = 'SUSPENDED'
 }
 
+export enum CommissionType {
+    FIXED = 'FIXED',
+    PERCENTAGE = 'PERCENTAGE'
+}
+
+export enum PayoutStatus {
+    PENDING = 'PENDING',
+    COMPLETED = 'COMPLETED',
+    REJECTED = 'REJECTED'
+}
+
 export enum PaymentMethod {
     MOBILE_MONEY = 'MOBILE_MONEY',
     BANK_TRANSFER = 'BANK_TRANSFER',
