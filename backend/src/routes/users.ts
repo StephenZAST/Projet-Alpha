@@ -5,15 +5,17 @@ import {
   updateProfileSchema,
   updateAddressSchema,
   updatePreferencesSchema,
+  emailVerificationSchema
+} from '../validation/userValidation';
+import { 
   createUserSchema,
   updateUserSchema,
   loginSchema,
   changePasswordSchema,
   resetPasswordSchema,
-  emailVerificationSchema,
   searchUsersSchema,
   updateRoleSchema
-} from '../validation/userValidation';
+} from '../validation/users'; // Import missing schemas from users.ts
 import { UserService, createUser, verifyEmail, requestPasswordReset, resetPassword } from '../services/users';
 import { AppError } from '../utils/errors';
 
