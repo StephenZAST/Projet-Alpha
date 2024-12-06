@@ -105,7 +105,12 @@ router.get(
   async (req, res, next) => {
     try {
       const userId = req.user!.uid;
-      const paymentHistory = await paymentService.getPaymentHistory(userId, req.query);
+      const { page, limit, status } = req.query; // Extract properties from req.query
+      const paymentHistory = await paymentService.getPaymentHistory(userId, {
+        page: Number(page),
+        limit: Number(limit),
+        status: status as string
+      }); // Pass an object with the correct type
       res.json(paymentHistory);
     } catch (error) {
       next(error);

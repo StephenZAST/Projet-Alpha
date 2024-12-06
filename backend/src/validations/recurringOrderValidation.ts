@@ -1,52 +1,52 @@
-import { z } from 'zod';
+import Joi from 'joi';
 import { RecurringFrequency } from '../types/recurring';
 
-const addressSchema = z.object({
-  street: z.string(),
-  city: z.string(),
-  zipCode: z.string(),
-  zone: z.string(),
-  additionalInfo: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+const addressSchema = Joi.object({
+  street: Joi.string().required(),
+  city: Joi.string().required(),
+  zipCode: Joi.string().required(),
+  zone: Joi.string().required(),
+  additionalInfo: Joi.string().optional(),
+  latitude: Joi.number().optional(),
+  longitude: Joi.number().optional(),
 });
 
-const orderItemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  quantity: z.number().positive(),
-  price: z.number().positive(),
-  notes: z.string().optional(),
+const orderItemSchema = Joi.object({
+  id: Joi.string().required(),
+  name: Joi.string().required(),
+  quantity: Joi.number().positive().required(),
+  price: Joi.number().positive().required(),
+  notes: Joi.string().optional(),
 });
 
-const orderPreferencesSchema = z.object({
-  specialInstructions: z.string().optional(),
-  preferredTimeSlot: z.object({
-    start: z.string(),
-    end: z.string(),
+const orderPreferencesSchema = Joi.object({
+  specialInstructions: Joi.string().optional(),
+  preferredTimeSlot: Joi.object({
+    start: Joi.string().required(),
+    end: Joi.string().required(),
   }).optional(),
-  contactPreference: z.enum(['SMS', 'EMAIL', 'CALL']).optional(),
+  contactPreference: Joi.string().valid('SMS', 'EMAIL', 'CALL').optional(),
 });
 
-const baseOrderSchema = z.object({
-  items: z.array(orderItemSchema),
-  address: addressSchema,
-  preferences: orderPreferencesSchema,
+const baseOrderSchema = Joi.object({
+  items: Joi.array().items(orderItemSchema).required(),
+  address: addressSchema.required(),
+  preferences: orderPreferencesSchema.required(),
 });
 
 export const recurringOrderValidation = {
-  create: z.object({
-    frequency: z.nativeEnum(RecurringFrequency),
+  create: Joi.object({
+    frequency: Joi.string().valid(...Object.values(RecurringFrequency)).required(),
     baseOrder: baseOrderSchema,
   }),
 
-  update: z.object({
-    frequency: z.nativeEnum(RecurringFrequency).optional(),
+  update: Joi.object({
+    frequency: Joi.string().valid(...Object.values(RecurringFrequency)).optional(),
     baseOrder: baseOrderSchema.optional(),
-    isActive: z.boolean().optional(),
+    isActive: Joi.boolean().optional(),
   }),
 
-  params: z.object({
-    id: z.string(),
+  params: Joi.object({
+    id: Joi.string().required(),
   }),
 };
