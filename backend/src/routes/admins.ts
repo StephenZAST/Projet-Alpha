@@ -1,65 +1,90 @@
 import express from 'express';
-import { auth } from '../services/firebase';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { validateRequest } from '../middleware/validateRequest';
+import { 
+  validateGetAdminById,
+  validateGetAdmins,
+  validateCreateAdmin,
+  validateUpdateAdmin,
+  validateDeleteAdmin,
+  validateUpdateAdminRole
+} from '../middleware/adminValidation';
+import { AdminService } from '../services/adminService';
 import { AppError } from '../utils/errors';
-import { generateToken, hashPassword, validatePasswordStrength } from '../utils/auth';
 
 const router = express.Router();
+const adminService = new AdminService();
 
-// Create Master Admin
-router.post('/master/create', async (req, res, next) => {
+// Protect all routes
+router.use(isAuthenticated);
+router.use(requireAdminRole);
+
+// Define route handler functions using async/await
+const getAdmins = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
-    const { email, password, firstName, lastName, phoneNumber } = req.body;
-
-    // Validate required fields
-    if (!email || !password) {
-      throw new AppError(400, 'Email and password are required', 'INVALID_ADMIN_DATA');
-    }
-
-    // Validate password strength
-    validatePasswordStrength(password);
-
-    // Hash the password
-    const hashedPassword = await hashPassword(password);
-
-    // Create user in Firebase
-    const userRecord = await auth.createUser({
-      email,
-      password: hashedPassword, // Use the hashed password
-      displayName: `${firstName} ${lastName}`,
-      phoneNumber,
+    const { page = 1, limit = 10, search } = req.query;
+    const admins = await adminService.getAdmins({
+      page: Number(page),
+      limit: Number(limit),
+      search: search as string
     });
-
-    // Add custom claims for master admin
-    await auth.setCustomUserClaims(userRecord.uid, {
-      role: 'master_admin',
-      firstName,
-      lastName,
-    });
-
-    // Generate JWT token using our utility
-    const token = generateToken({
-      uid: userRecord.uid,
-      email: userRecord.email,
-      role: 'master_admin',
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        token,
-        admin: {
-          uid: userRecord.uid,
-          email: userRecord.email,
-          firstName,
-          lastName,
-          phoneNumber,
-          role: 'master_admin',
-        },
-      },
-    });
+    res.json(admins);
   } catch (error) {
     next(error);
   }
-});
+};
+
+const getAdminById = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
+  try {
+    const admin = await adminService.getAdminById(req.params.id);
+    res.json(admin);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  try {
+    const admin = await adminService.createAdmin(req.body);
+    res.status(201).json(admin);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateAdmin = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
+  try {
+    const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body);
+    res.json(updatedAdmin);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteAdmin = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
+  try {
+    await adminService.deleteAdmin(req.params.id);
+    res.json({ message: 'Admin deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateAdminRole = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
+  try {
+    const updatedAdmin = await adminService.updateAdminRole(req.params.id, req.body.role);
+    res.json(updatedAdmin);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Routes using route handler functions
+router.get('/', validateGetAdmins, getAdmins); // Apply validation directly
+router.get('/:id', validateGetAdminById, getAdminById); // Apply validation directly
+router.post('/', validateCreateAdmin, createAdmin); // Apply validation directly
+router.put('/:id', validateUpdateAdmin, updateAdmin); // Apply validation directly
+router.delete('/:id', validateDeleteAdmin, deleteAdmin); // Apply validation directly
+router.put('/:id/role', validateUpdateAdminRole, updateAdminRole); // Apply validation directly
 
 export default router;

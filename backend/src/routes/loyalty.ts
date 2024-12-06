@@ -1,189 +1,40 @@
 import express from 'express';
 import { isAuthenticated, requireAdminRole } from '../middleware/auth';
-import { validateRequest } from '../middleware/validateRequest';
-import { loyaltyValidation } from '../validation/loyalty';
-import { LoyaltyService } from '../services/loyalty'; // Correct import
+import { LoyaltyController } from '../controllers/loyaltyController';
+import { 
+  validateCreateReward,
+  validateUpdateReward,
+  validateDeleteReward,
+  validateGetRewards,
+  validateGetRewardById,
+  validateRedeemReward,
+  validateGetLoyaltyProgram,
+  validateUpdateLoyaltyProgram,
+  validateGetUserPoints,
+  validateAdjustUserPoints
+} from '../middleware/loyaltyValidation';
 
 const router = express.Router();
-const loyaltyService = new LoyaltyService(); // Create instance
+const loyaltyController = new LoyaltyController();
 
-router.get('/account', isAuthenticated, async (req, res, next) => {
-  try {
-    const userId = req.user!.uid;
-    const account = await loyaltyService.getLoyaltyAccount(userId);
-    res.json(account);
-  } catch (error) {
-    next(error);
-  }
-});
+// Protected routes requiring authentication
+router.use(isAuthenticated);
 
-router.get('/points/history', isAuthenticated, async (req, res, next) => {
-  try {
-    const userId = req.user!.uid;
-    const { page = 1, limit = 10 } = req.query;
-    const history = await loyaltyService.getPointsHistory(
-      userId,
-      Number(page),
-      Number(limit)
-    );
-    res.json(history);
-  } catch (error) {
-    next(error);
-  }
-});
+// Admin-specific routes
+router.use(requireAdminRole);
+router.post('/rewards', validateCreateReward, loyaltyController.createReward); // Apply validation directly
+router.put('/rewards/:id', validateUpdateReward, loyaltyController.updateReward); // Apply validation directly
+router.delete('/rewards/:id', validateDeleteReward, loyaltyController.deleteReward); // Apply validation directly
+router.get('/rewards', validateGetRewards, loyaltyController.getRewards); // Apply validation directly
+router.get('/rewards/:id', validateGetRewardById, loyaltyController.getRewardById); // Apply validation directly
+router.put('/program', validateUpdateLoyaltyProgram, loyaltyController.updateLoyaltyProgram); // Apply validation directly
 
-router.get('/rewards', isAuthenticated, async (req, res, next) => {
-  try {
-    const userId = req.user!.uid;
-    const { type, category, status } = req.query;
-    const rewards = await loyaltyService.getAvailableRewards(userId, {
-      type: type as string,
-      category: category as string,
-      status: status as string
-    });
-    res.json(rewards);
-  } catch (error) {
-    next(error);
-  }
-});
+// User-specific routes
+router.post('/redeem/:rewardId', validateRedeemReward, loyaltyController.redeemReward); // Apply validation directly
+router.get('/program', validateGetLoyaltyProgram, loyaltyController.getLoyaltyProgram); // Apply validation directly
+router.get('/points', validateGetUserPoints, loyaltyController.getUserPoints); // Apply validation directly
 
-router.post('/rewards/:rewardId/redeem', 
-  isAuthenticated, 
-  validateRequest(loyaltyValidation.redeemRewardSchema),
-  async (req, res, next) => {
-    try {
-      const userId = req.user!.uid;
-      const { shippingAddress } = req.body;
-      const redemption = await loyaltyService.redeemReward(
-        userId,
-        req.params.rewardId,
-        shippingAddress
-      );
-      res.json(redemption);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.get('/tiers', isAuthenticated, async (req, res, next) => {
-  try {
-    const tiers = await loyaltyService.getLoyaltyTiers(); // Await the promise
-    res.json(tiers); // Return the resolved data
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/admin/rewards', 
-  isAuthenticated, 
-  requireAdminRole, 
-  validateRequest(loyaltyValidation.createRewardSchema),
-  async (req, res, next) => {
-    try {
-      const reward = await loyaltyService.createReward(req.body);
-      res.status(201).json(reward);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.put('/admin/tiers/:tierId', 
-  isAuthenticated, 
-  requireAdminRole, 
-  validateRequest(loyaltyValidation.updateLoyaltyTierSchema),
-  async (req, res, next) => {
-    try {
-      const tier = await loyaltyService.updateLoyaltyTier(
-        req.params.tierId,
-        req.body
-      );
-      res.json(tier);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.get('/admin/redemptions', 
-  isAuthenticated, 
-  requireAdminRole, 
-  async (req, res, next) => {
-    try {
-      const { 
-        page = 1, 
-        limit = 10,
-        status,
-        startDate,
-        endDate 
-      } = req.query;
-
-      const redemptions = await loyaltyService.getRewardRedemptions({
-        page: Number(page),
-        limit: Number(limit),
-        status: status as string,
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined
-      });
-      res.json(redemptions);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.patch('/admin/redemptions/:redemptionId/status', 
-  isAuthenticated, 
-  requireAdminRole, 
-  async (req, res, next) => {
-    try {
-      const { status, notes } = req.body;
-      const redemption = await loyaltyService.updateRedemptionStatus(
-        req.params.redemptionId,
-        status,
-        notes
-      );
-      res.json(redemption);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.get('/admin/pending-rewards', 
-  isAuthenticated, 
-  requireAdminRole, 
-  async (req, res, next) => {
-    try {
-      const pendingRewards = await loyaltyService.getPendingPhysicalRewards(); // Await the promise
-      res.json({ pendingRewards }); // Return the resolved data
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post('/admin/claim-reward/:redemptionId', 
-  isAuthenticated, 
-  requireAdminRole, 
-  async (req, res, next) => {
-    try {
-      const success = await loyaltyService.verifyAndClaimPhysicalReward(
-        req.params.redemptionId,
-        req.user!.uid,
-        req.body.notes
-      );
-
-      if (success) {
-        res.json({ message: 'Reward claimed successfully' });
-      } else {
-        res.status(400).json({ error: 'Failed to claim reward' });
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+// Admin route for adjusting user points
+router.post('/adjust/:userId', validateAdjustUserPoints, loyaltyController.adjustUserPoints); // Apply validation directly
 
 export default router;

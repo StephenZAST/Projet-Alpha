@@ -85,3 +85,57 @@ export const validateToggleStatus = (req: Request, res: Response, next: NextFunc
 
   next();
 };
+
+export const validateGetAdminById = (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+
+  // Vérification de l'ID
+  if (!id) {
+    throw new AppError(400, 'L\'ID est requis', errorCodes.INVALID_ID);
+  }
+
+  next();
+};
+
+export const validateGetAdmins = (req: Request, res: Response, next: NextFunction) => {
+  const { page, limit, search } = req.query;
+
+  // Vérification des champs de pagination
+  if (page && isNaN(Number(page))) {
+    throw new AppError(400, 'Le champ "page" doit être un nombre', errorCodes.INVALID_PAGINATION);
+  }
+
+  if (limit && isNaN(Number(limit))) {
+    throw new AppError(400, 'Le champ "limit" doit être un nombre', errorCodes.INVALID_PAGINATION);
+  }
+
+  next();
+};
+
+export const validateDeleteAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+
+  // Vérification de l'ID
+  if (!id) {
+    throw new AppError(400, 'L\'ID est requis', errorCodes.INVALID_ID);
+  }
+
+  next();
+};
+
+export const validateUpdateAdminRole = (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  // Vérification de l'ID
+  if (!id) {
+    throw new AppError(400, 'L\'ID est requis', errorCodes.INVALID_ID);
+  }
+
+  // Vérification du rôle
+  if (!role || !Object.values(AdminRole).includes(role)) {
+    throw new AppError(400, 'Rôle invalide', errorCodes.INVALID_ROLE);
+  }
+
+  next();
+};
