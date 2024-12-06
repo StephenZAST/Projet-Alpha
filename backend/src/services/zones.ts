@@ -32,7 +32,7 @@ export class ZoneService {
       return { id: zoneDoc.id, ...zoneDoc.data() } as Zone;
     } catch (error) {
       console.error('Error fetching zone:', error);
-      throw new AppError(500, 'Failed to fetch zone', errorCodes.ZONE_FETCH_FAILED);
+      throw new AppError(500, 'Failed to fetch zone', errorCodes.ZONES_FETCH_FAILED); // Fixed typo
     }
   }
 

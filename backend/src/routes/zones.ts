@@ -1,15 +1,15 @@
 import express from 'express';
 import { isAuthenticated, requireAdminRole } from '../middleware/auth';
-import { validateRequest } from '../middleware/validateRequest';
 import { 
-  createZoneSchema,
-  updateZoneSchema,
-  assignDeliveryPersonSchema,
-  searchZonesSchema,
-  zoneStatsSchema
-} from '../validation/zones';
-import { ZoneStatus } from '../models/zone';
-import { zoneService } from '../services/zones'; // Assuming you have a zoneService
+  validateCreateZone,
+  validateGetAllZones,
+  validateGetZoneById,
+  validateUpdateZone,
+  validateDeleteZone,
+  validateAssignDeliveryPerson,
+  validateGetZoneStats
+} from '../middleware/zoneValidation';
+import { zoneService } from '../services/zones'; 
 
 const router = express.Router();
 
@@ -17,7 +17,7 @@ const router = express.Router();
 router.use(isAuthenticated);
 
 // Route pour créer une nouvelle zone
-router.post('/', requireAdminRole, validateRequest(createZoneSchema), async (req, res, next) => {
+router.post('/', requireAdminRole, validateCreateZone, async (req, res, next) => {
   try {
     const zone = await zoneService.createZone(req.body);
     res.status(201).json(zone);
@@ -27,7 +27,7 @@ router.post('/', requireAdminRole, validateRequest(createZoneSchema), async (req
 });
 
 // Route pour obtenir toutes les zones
-router.get('/', validateRequest(searchZonesSchema), async (req, res, next) => {
+router.get('/', validateGetAllZones, async (req, res, next) => {
   try {
     const { name, isActive, deliveryPersonId, location, page, limit } = req.query;
     const zones = await zoneService.getAllZones({
@@ -45,7 +45,7 @@ router.get('/', validateRequest(searchZonesSchema), async (req, res, next) => {
 });
 
 // Route pour obtenir une zone spécifique
-router.get('/:zoneId', async (req, res, next) => {
+router.get('/:zoneId', validateGetZoneById, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     const zone = await zoneService.getZoneById(zoneId);
@@ -59,7 +59,7 @@ router.get('/:zoneId', async (req, res, next) => {
 });
 
 // Route pour mettre à jour une zone
-router.put('/:zoneId', requireAdminRole, validateRequest(updateZoneSchema), async (req, res, next) => {
+router.put('/:zoneId', requireAdminRole, validateUpdateZone, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     const success = await zoneService.updateZone(zoneId, req.body);
@@ -74,22 +74,18 @@ router.put('/:zoneId', requireAdminRole, validateRequest(updateZoneSchema), asyn
 });
 
 // Route pour supprimer une zone
-router.delete('/:zoneId', requireAdminRole, async (req, res, next) => {
+router.delete('/:zoneId', requireAdminRole, validateDeleteZone, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
-    const success = await zoneService.deleteZone(zoneId);
-    if (success) {
-      res.status(200).json({ message: 'Zone deleted successfully' });
-    } else {
-      res.status(404).json({ message: 'Zone not found' });
-    }
+    await zoneService.deleteZone(zoneId); 
+    res.status(200).json({ message: 'Zone deleted successfully' });
   } catch (error) {
     next(error);
   }
 });
 
 // Route pour assigner un livreur à une zone
-router.post('/:zoneId/assign', requireAdminRole, validateRequest(assignDeliveryPersonSchema), async (req, res, next) => {
+router.post('/:zoneId/assign', requireAdminRole, validateAssignDeliveryPerson, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     const { deliveryPersonId } = req.body;
@@ -105,7 +101,7 @@ router.post('/:zoneId/assign', requireAdminRole, validateRequest(assignDeliveryP
 });
 
 // Route pour obtenir les statistiques d'une zone
-router.get('/:zoneId/stats', requireAdminRole, validateRequest(zoneStatsSchema), async (req, res, next) => {
+router.get('/:zoneId/stats', requireAdminRole, validateGetZoneStats, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     const { startDate, endDate } = req.query;

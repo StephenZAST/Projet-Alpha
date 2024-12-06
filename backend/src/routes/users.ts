@@ -1,28 +1,25 @@
 import express from 'express';
 import { isAuthenticated, requireAdminRole } from '../middleware/auth';
-import { validateRequest } from '../middleware/validateRequest';
 import { 
-  updateProfileSchema,
-  updateAddressSchema,
-  updatePreferencesSchema,
-  emailVerificationSchema
-} from '../validation/userValidation';
-import { 
-  createUserSchema,
-  updateUserSchema,
-  loginSchema,
-  changePasswordSchema,
-  resetPasswordSchema,
-  searchUsersSchema,
-  updateRoleSchema
-} from '../validation/users'; // Import missing schemas from users.ts
+  validateGetUserProfile,
+  validateUpdateProfile,
+  validateUpdateAddress,
+  validateUpdatePreferences,
+  validateGetUserById,
+  validateGetUsers,
+  validateCreateUser,
+  validateLogin,
+  validateChangePassword,
+  validateResetPassword,
+  validateVerifyEmail,
+  validateUpdateUserRole
+} from '../middleware/userValidation';
 import { UserService, createUser, verifyEmail, requestPasswordReset, resetPassword } from '../services/users';
-import { AppError } from '../utils/errors';
 
 const router = express.Router();
 const userService = new UserService();
 
-router.get('/profile', isAuthenticated, async (req, res, next) => {
+router.get('/profile', isAuthenticated, validateGetUserProfile, async (req, res, next) => {
   try {
     const profile = await userService.getUserProfile(req.user!.uid);
     res.json(profile);
@@ -33,7 +30,7 @@ router.get('/profile', isAuthenticated, async (req, res, next) => {
 
 router.put('/profile', 
   isAuthenticated, 
-  validateRequest(updateProfileSchema),
+  validateUpdateProfile,
   async (req, res, next) => {
     try {
       const updatedProfile = await userService.updateProfile(req.user!.uid, req.body);
@@ -45,7 +42,7 @@ router.put('/profile',
 
 router.put('/address',
   isAuthenticated,
-  validateRequest(updateAddressSchema),
+  validateUpdateAddress,
   async (req, res, next) => {
     try {
       const updatedAddress = await userService.updateAddress(req.user!.uid, req.body);
@@ -57,7 +54,7 @@ router.put('/address',
 
 router.put('/preferences',
   isAuthenticated,
-  validateRequest(updatePreferencesSchema),
+  validateUpdatePreferences,
   async (req, res, next) => {
     try {
       const updatedPreferences = await userService.updatePreferences(req.user!.uid, req.body);
@@ -70,7 +67,7 @@ router.put('/preferences',
 router.get('/:id',
   isAuthenticated,
   requireAdminRole,
-  validateRequest(searchUsersSchema),
+  validateGetUserById,
   async (req, res, next) => {
     try {
       const user = await userService.getUserById(req.params.id);
@@ -83,7 +80,7 @@ router.get('/:id',
 router.get('/',
   isAuthenticated,
   requireAdminRole,
-  validateRequest(searchUsersSchema),
+  validateGetUsers,
   async (req, res, next) => {
     try {
       const { page = 1, limit = 10, search } = req.query;
@@ -98,7 +95,7 @@ router.get('/',
     }
 });
 
-router.post('/register', validateRequest(createUserSchema), async (req, res, next) => {
+router.post('/register', validateCreateUser, async (req, res, next) => {
   try {
     const user = await createUser(req.body);
     res.status(201).json(user);
@@ -107,7 +104,7 @@ router.post('/register', validateRequest(createUserSchema), async (req, res, nex
   }
 });
 
-router.post('/login', validateRequest(loginSchema), async (req, res, next) => {
+router.post('/login', validateLogin, async (req, res, next) => {
   try {
     // Implement login logic
     res.json({ message: 'Login successful' });
@@ -118,7 +115,7 @@ router.post('/login', validateRequest(loginSchema), async (req, res, next) => {
 
 router.post('/change-password', 
   isAuthenticated, 
-  validateRequest(changePasswordSchema), 
+  validateChangePassword, 
   async (req, res, next) => {
     try {
       // Implement change password logic
@@ -129,7 +126,7 @@ router.post('/change-password',
   }
 );
 
-router.post('/reset-password', validateRequest(resetPasswordSchema), async (req, res, next) => {
+router.post('/reset-password', validateResetPassword, async (req, res, next) => {
   try {
     await requestPasswordReset(req.body.email);
     res.json({ message: 'Password reset email sent' });
@@ -138,7 +135,7 @@ router.post('/reset-password', validateRequest(resetPasswordSchema), async (req,
   }
 });
 
-router.post('/verify-email', validateRequest(emailVerificationSchema), async (req, res, next) => {
+router.post('/verify-email', validateVerifyEmail, async (req, res, next) => {
   try {
     await verifyEmail(req.body.token);
     res.json({ message: 'Email verified successfully' });
@@ -150,7 +147,7 @@ router.post('/verify-email', validateRequest(emailVerificationSchema), async (re
 router.put('/:id/role', 
   isAuthenticated, 
   requireAdminRole, 
-  validateRequest(updateRoleSchema), 
+  validateUpdateUserRole, 
   async (req, res, next) => {
     try {
       // Implement update role logic
