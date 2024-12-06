@@ -1,43 +1,44 @@
 import Joi from 'joi';
 import { CategoryStatus } from '../../models/category';
+import { errorCodes } from '../../utils/errors';
 
 // Image schema
 const categoryImageSchema = Joi.object({
   url: Joi.string().uri().required().messages({
-    'string.uri': 'L\'URL de l\'image n\'est pas valide',
-    'any.required': 'L\'URL de l\'image est requise'
+    'string.uri': errorCodes.INVALID_CATEGORY_DATA,
+    'any.required': errorCodes.INVALID_CATEGORY_DATA
   }),
   alt: Joi.string().required().messages({
-    'any.required': 'Le texte alternatif est requis'
+    'any.required': errorCodes.INVALID_CATEGORY_DATA
   })
 });
 
 // Create category schema
 export const createCategorySchema = Joi.object({
   name: Joi.string().required().messages({
-    'any.required': 'Le nom est requis'
+    'any.required': errorCodes.INVALID_CATEGORY_DATA
   }),
   description: Joi.string().required().messages({
-    'any.required': 'La description est requise'
+    'any.required': errorCodes.INVALID_CATEGORY_DATA
   }),
   parentId: Joi.string().allow(null).messages({
-    'string.base': 'L\'ID parent doit être une chaîne de caractères'
+    'string.base': errorCodes.INVALID_CATEGORY_DATA
   }),
   image: categoryImageSchema,
   icon: Joi.string().messages({
-    'string.base': 'L\'icône doit être une chaîne de caractères'
+    'string.base': errorCodes.INVALID_CATEGORY_DATA
   }),
   status: Joi.string().valid(...Object.values(CategoryStatus)).default(CategoryStatus.ACTIVE).messages({
-    'any.only': 'Statut invalide'
+    'any.only': errorCodes.INVALID_STATUS
   }),
   displayOrder: Joi.number().integer().min(0).default(0).messages({
-    'number.base': 'L\'ordre d\'affichage doit être un nombre',
-    'number.integer': 'L\'ordre d\'affichage doit être un nombre entier',
-    'number.min': 'L\'ordre d\'affichage doit être positif'
+    'number.base': errorCodes.INVALID_CATEGORY_DATA,
+    'number.integer': errorCodes.INVALID_CATEGORY_DATA,
+    'number.min': errorCodes.INVALID_CATEGORY_DATA
   }),
   slug: Joi.string().pattern(/^[a-z0-9-]+$/).required().messages({
-    'string.pattern.base': 'Le slug ne doit contenir que des lettres minuscules, des chiffres et des tirets',
-    'any.required': 'Le slug est requis'
+    'string.pattern.base': errorCodes.INVALID_CATEGORY_DATA,
+    'any.required': errorCodes.INVALID_CATEGORY_DATA
   }),
   metadata: Joi.object({
     title: Joi.string(),
@@ -48,38 +49,57 @@ export const createCategorySchema = Joi.object({
 
 // Update category schema
 export const updateCategorySchema = Joi.object({
-  name: Joi.string(),
-  description: Joi.string(),
-  parentId: Joi.string().allow(null),
+  name: Joi.string().messages({
+    'string.min': errorCodes.INVALID_CATEGORY_DATA,
+    'string.max': errorCodes.INVALID_CATEGORY_DATA
+  }),
+  description: Joi.string().messages({
+    'string.max': errorCodes.INVALID_CATEGORY_DATA
+  }),
+  parentId: Joi.string().allow(null).messages({
+    'string.base': errorCodes.INVALID_CATEGORY_DATA
+  }),
   image: categoryImageSchema,
-  icon: Joi.string(),
-  status: Joi.string().valid(...Object.values(CategoryStatus)),
-  displayOrder: Joi.number().integer().min(0),
-  slug: Joi.string().pattern(/^[a-z0-9-]+$/),
+  icon: Joi.string().messages({
+    'string.uri': errorCodes.INVALID_CATEGORY_DATA
+  }),
+  status: Joi.string().valid(...Object.values(CategoryStatus)).messages({
+    'any.only': errorCodes.INVALID_STATUS
+  }),
+  displayOrder: Joi.number().integer().min(0).messages({
+    'number.base': errorCodes.INVALID_CATEGORY_DATA,
+    'number.integer': errorCodes.INVALID_CATEGORY_DATA,
+    'number.min': errorCodes.INVALID_CATEGORY_DATA
+  }),
+  slug: Joi.string().pattern(/^[a-z0-9-]+$/).messages({
+    'string.pattern.base': errorCodes.INVALID_CATEGORY_DATA
+  }),
   metadata: Joi.object({
     title: Joi.string(),
     description: Joi.string(),
     keywords: Joi.array().items(Joi.string())
   })
 }).min(1).messages({
-  'object.min': 'Au moins un champ doit être fourni pour la mise à jour'
+  'object.min': errorCodes.VALIDATION_ERROR
 });
 
 // Search categories schema
 export const searchCategoriesSchema = Joi.object({
   query: Joi.string(),
   parentId: Joi.string().allow(null),
-  status: Joi.string().valid(...Object.values(CategoryStatus)),
+  status: Joi.string().valid(...Object.values(CategoryStatus)).messages({
+    'any.only': errorCodes.INVALID_STATUS
+  }),
   page: Joi.number().integer().min(1).default(1).messages({
-    'number.base': 'La page doit être un nombre',
-    'number.integer': 'La page doit être un nombre entier',
-    'number.min': 'La page doit être supérieure à 0'
+    'number.base': errorCodes.INVALID_CATEGORY_DATA,
+    'number.integer': errorCodes.INVALID_CATEGORY_DATA,
+    'number.min': errorCodes.INVALID_CATEGORY_DATA
   }),
   limit: Joi.number().integer().min(1).max(100).default(10).messages({
-    'number.base': 'La limite doit être un nombre',
-    'number.integer': 'La limite doit être un nombre entier',
-    'number.min': 'La limite doit être supérieure à 0',
-    'number.max': 'La limite ne peut pas dépasser 100'
+    'number.base': errorCodes.INVALID_CATEGORY_DATA,
+    'number.integer': errorCodes.INVALID_CATEGORY_DATA,
+    'number.min': errorCodes.INVALID_CATEGORY_DATA,
+    'number.max': errorCodes.INVALID_CATEGORY_DATA
   }),
   sortBy: Joi.string().valid('name', 'createdAt', 'displayOrder').default('displayOrder'),
   sortOrder: Joi.string().valid('asc', 'desc').default('asc')
@@ -88,12 +108,12 @@ export const searchCategoriesSchema = Joi.object({
 // Bulk update categories schema
 export const bulkUpdateCategoriesSchema = Joi.object({
   categoryIds: Joi.array().items(Joi.string()).min(1).required().messages({
-    'array.min': 'Au moins un ID de catégorie est requis',
-    'any.required': 'Les IDs des catégories sont requis'
+    'array.min': errorCodes.INVALID_CATEGORY_DATA,
+    'any.required': errorCodes.INVALID_CATEGORY_DATA
   }),
   status: Joi.string().valid(...Object.values(CategoryStatus)).required().messages({
-    'any.only': 'Statut invalide',
-    'any.required': 'Le statut est requis'
+    'any.only': errorCodes.INVALID_STATUS,
+    'any.required': errorCodes.INVALID_CATEGORY_DATA
   })
 });
 
@@ -105,7 +125,7 @@ export const reorderCategoriesSchema = Joi.object({
       displayOrder: Joi.number().integer().min(0).required()
     })
   ).min(1).required().messages({
-    'array.min': 'Au moins une catégorie est requise',
-    'any.required': 'L\'ordre des catégories est requis'
+    'array.min': errorCodes.INVALID_CATEGORY_DATA,
+    'any.required': errorCodes.INVALID_CATEGORY_DATA
   })
 });

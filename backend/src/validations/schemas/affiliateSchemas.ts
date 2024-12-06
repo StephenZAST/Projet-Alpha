@@ -1,19 +1,24 @@
 import Joi from 'joi';
 import { AffiliateStatus, CommissionType, PayoutStatus } from '../../models/affiliate';
+import { errorCodes } from '../../utils/errors';
 
 // Bank account schema
 const bankAccountSchema = Joi.object({
   accountName: Joi.string().required().messages({
-    'any.required': 'Le nom du compte est requis'
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'string.empty': errorCodes.INVALID_USER_DATA
   }),
   accountNumber: Joi.string().required().messages({
-    'any.required': 'Le numéro de compte est requis'
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'string.empty': errorCodes.INVALID_USER_DATA
   }),
   bankName: Joi.string().required().messages({
-    'any.required': 'Le nom de la banque est requis'
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'string.empty': errorCodes.INVALID_USER_DATA
   }),
   bankCode: Joi.string().required().messages({
-    'any.required': 'Le code de la banque est requis'
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'string.empty': errorCodes.INVALID_USER_DATA
   }),
   branchCode: Joi.string(),
   swiftCode: Joi.string()
@@ -22,36 +27,44 @@ const bankAccountSchema = Joi.object({
 // Commission structure schema
 const commissionStructureSchema = Joi.object({
   type: Joi.string().valid(...Object.values(CommissionType)).required().messages({
-    'any.only': 'Type de commission invalide',
-    'any.required': 'Le type de commission est requis'
+    'any.only': errorCodes.INVALID_STATUS,
+    'any.required': errorCodes.INVALID_USER_DATA
   }),
   value: Joi.number().positive().required().messages({
-    'number.positive': 'La valeur doit être positive',
-    'any.required': 'La valeur est requise'
+    'number.positive': errorCodes.INVALID_AMOUNT,
+    'any.required': errorCodes.INVALID_USER_DATA
   }),
   minAmount: Joi.number().min(0),
   maxAmount: Joi.number().greater(Joi.ref('minAmount')).messages({
-    'number.greater': 'Le montant maximum doit être supérieur au montant minimum'
+    'number.greater': errorCodes.INVALID_AMOUNT
   })
 });
 
 // Create affiliate schema
 export const createAffiliateSchema = Joi.object({
   userId: Joi.string().required().messages({
-    'any.required': 'L\'ID de l\'utilisateur est requis'
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'string.empty': errorCodes.INVALID_USER_DATA
   }),
   companyName: Joi.string().required().messages({
-    'any.required': 'Le nom de l\'entreprise est requis'
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'string.empty': errorCodes.INVALID_USER_DATA
   }),
   website: Joi.string().uri().messages({
-    'string.uri': 'L\'URL du site web n\'est pas valide'
+    'string.uri': errorCodes.VALIDATION_ERROR
   }),
   description: Joi.string().max(500),
-  bankAccount: bankAccountSchema.required(),
-  commissionStructure: commissionStructureSchema.required(),
+  bankAccount: bankAccountSchema.required().messages({
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'object.base': errorCodes.INVALID_USER_DATA
+  }),
+  commissionStructure: commissionStructureSchema.required().messages({
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'object.base': errorCodes.INVALID_USER_DATA
+  }),
   referralCode: Joi.string().pattern(/^[A-Z0-9]{6,10}$/).required().messages({
-    'string.pattern.base': 'Le code de parrainage doit contenir entre 6 et 10 caractères alphanumériques majuscules',
-    'any.required': 'Le code de parrainage est requis'
+    'string.pattern.base': errorCodes.INVALID_REFERRAL_CODE,
+    'any.required': errorCodes.INVALID_REFERRAL_CODE
   }),
   documents: Joi.array().items(
     Joi.object({
@@ -69,7 +82,9 @@ export const updateAffiliateSchema = Joi.object({
   description: Joi.string().max(500),
   bankAccount: bankAccountSchema,
   commissionStructure: commissionStructureSchema,
-  status: Joi.string().valid(...Object.values(AffiliateStatus)),
+  status: Joi.string().valid(...Object.values(AffiliateStatus)).messages({
+    'any.only': errorCodes.INVALID_STATUS
+  }),
   documents: Joi.array().items(
     Joi.object({
       type: Joi.string().required(),
@@ -78,34 +93,38 @@ export const updateAffiliateSchema = Joi.object({
     })
   )
 }).min(1).messages({
-  'object.min': 'Au moins un champ doit être fourni pour la mise à jour'
+  'object.min': errorCodes.VALIDATION_ERROR
 });
 
 // Create payout request schema
 export const createPayoutRequestSchema = Joi.object({
   affiliateId: Joi.string().required().messages({
-    'any.required': 'L\'ID de l\'affilié est requis'
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'string.empty': errorCodes.INVALID_USER_DATA
   }),
   amount: Joi.number().positive().required().messages({
-    'number.positive': 'Le montant doit être positif',
-    'any.required': 'Le montant est requis'
+    'number.positive': errorCodes.INVALID_AMOUNT,
+    'any.required': errorCodes.INVALID_USER_DATA
   }),
-  bankAccount: bankAccountSchema.required(),
+  bankAccount: bankAccountSchema.required().messages({
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'object.base': errorCodes.INVALID_USER_DATA
+  }),
   notes: Joi.string().max(500)
 });
 
 // Update payout status schema
 export const updatePayoutStatusSchema = Joi.object({
   status: Joi.string().valid(...Object.values(PayoutStatus)).required().messages({
-    'any.only': 'Statut invalide',
-    'any.required': 'Le statut est requis'
+    'any.only': errorCodes.INVALID_STATUS,
+    'any.required': errorCodes.INVALID_USER_DATA
   }),
   transactionId: Joi.string().when('status', {
     is: PayoutStatus.COMPLETED,
     then: Joi.required(),
     otherwise: Joi.optional()
   }).messages({
-    'any.required': 'L\'ID de transaction est requis pour le statut COMPLETED'
+    'any.required': errorCodes.INVALID_USER_DATA
   }),
   notes: Joi.string().max(500)
 });
@@ -113,14 +132,16 @@ export const updatePayoutStatusSchema = Joi.object({
 // Search affiliates schema
 export const searchAffiliatesSchema = Joi.object({
   query: Joi.string(),
-  status: Joi.string().valid(...Object.values(AffiliateStatus)),
+  status: Joi.string().valid(...Object.values(AffiliateStatus)).messages({
+    'any.only': errorCodes.INVALID_STATUS
+  }),
   minEarnings: Joi.number().min(0),
   maxEarnings: Joi.number().min(Joi.ref('minEarnings')).messages({
-    'number.min': 'Les gains maximum doivent être supérieurs aux gains minimum'
+    'number.min': errorCodes.INVALID_AMOUNT
   }),
   startDate: Joi.date(),
   endDate: Joi.date().min(Joi.ref('startDate')).messages({
-    'date.min': 'La date de fin doit être après la date de début'
+    'date.min': errorCodes.VALIDATION_ERROR
   }),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
@@ -131,14 +152,16 @@ export const searchAffiliatesSchema = Joi.object({
 // Affiliate statistics schema
 export const affiliateStatsSchema = Joi.object({
   affiliateId: Joi.string().required().messages({
-    'any.required': 'L\'ID de l\'affilié est requis'
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'string.empty': errorCodes.INVALID_USER_DATA
   }),
   startDate: Joi.date().required().messages({
-    'any.required': 'La date de début est requise'
+    'any.required': errorCodes.INVALID_USER_DATA,
+    'date.base': errorCodes.VALIDATION_ERROR
   }),
   endDate: Joi.date().min(Joi.ref('startDate')).required().messages({
-    'date.min': 'La date de fin doit être après la date de début',
-    'any.required': 'La date de fin est requise'
+    'date.min': errorCodes.VALIDATION_ERROR,
+    'any.required': errorCodes.INVALID_USER_DATA
   }),
   groupBy: Joi.string().valid('day', 'week', 'month').default('day')
 });
