@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError, errorCodes } from '../utils/errors';
+import { LoyaltyProgram } from '../models/loyalty';
 
 export const validateCreateReward = (req: Request, res: Response, next: NextFunction) => {
   const { name, pointsRequired, discountAmount, description, expiryDate } = req.body;
@@ -144,6 +145,27 @@ export const validateAdjustUserPoints = (req: Request, res: Response, next: Next
   // Vérification de la raison
   if (!reason) {
     throw new AppError(400, 'La raison est requise', errorCodes.INVALID_REASON);
+  }
+
+  next();
+};
+
+export const validateCreateLoyaltyProgram = (req: Request<{}, {}, Omit<LoyaltyProgram, 'id' | 'createdAt' | 'updatedAt'>>, res: Response, next: NextFunction) => {
+  const { clientId, points, tier, referralCode, totalReferrals } = req.body;
+
+  // Vérification des champs obligatoires
+  if (!clientId || !points || !tier || !referralCode || !totalReferrals) {
+    throw new AppError(400, 'Tous les champs sont obligatoires', errorCodes.INVALID_LOYALTY_DATA);
+  }
+
+  // Vérification des points
+  if (isNaN(Number(points)) || Number(points) < 0) {
+    throw new AppError(400, 'Points invalides', errorCodes.INVALID_POINTS);
+  }
+
+  // Vérification du total de parrainages
+  if (isNaN(Number(totalReferrals)) || Number(totalReferrals) < 0) {
+    throw new AppError(400, 'Total de parrainages invalide', errorCodes.INVALID_REFERRAL_POINTS);
   }
 
   next();
