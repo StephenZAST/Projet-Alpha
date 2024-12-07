@@ -50,7 +50,7 @@ router.get('/:zoneId', validateGetZoneById, async (req, res, next) => {
     const zoneId = req.params.zoneId;
     const zone = await zoneService.getZoneById(zoneId);
     if (!zone) {
-      return res.status(404).json({ message: 'Zone not found' });
+      res.status(404).json({ message: 'Zone not found' });
     }
     res.status(200).json(zone);
   } catch (error) {
