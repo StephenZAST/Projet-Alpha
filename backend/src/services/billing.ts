@@ -53,19 +53,24 @@ export class BillingService {
     }
   }
 
-  async payBill(billId: string, paymentMethod: PaymentMethod, amountPaid: number, userId: string): Promise<Bill> { // Fixed type mismatch
+  async payBill(billId: string, paymentMethod: PaymentMethod, amountPaid: number, userId: string): Promise<Bill> {
     try {
       const bill = await this.getBillById(billId);
       if (!bill) {
-        throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND); // Added missing error code
+        throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND);
       }
 
-      if (bill.status === BillStatus.PAID) { // Fixed type mismatch
-        throw new AppError(400, 'Bill is already paid', errorCodes.BILL_ALREADY_PAID); // Added missing error code
+      if (bill.status === BillStatus.PAID) {
+        throw new AppError(400, 'Bill is already paid', errorCodes.BILL_ALREADY_PAID);
       }
 
       if (amountPaid < bill.totalAmount) {
-        throw new AppError(400, 'Insufficient payment amount', errorCodes.INSUFFICIENT_PAYMENT); // Added missing error code
+        throw new AppError(400, 'Insufficient payment amount', errorCodes.INSUFFICIENT_PAYMENT);
+      }
+
+      // Check if paymentMethod is defined
+      if (!paymentMethod) {
+        throw new AppError(400, 'Payment method is required', errorCodes.PAYMENT_METHOD_REQUIRED);
       }
 
       // Process payment (implementation depends on your payment gateway)
@@ -73,14 +78,14 @@ export class BillingService {
 
       if (paymentResult.success) {
         const updatedBill = await this.updateBill(billId, {
-          status: BillStatus.PAID, // Fixed type mismatch
-          paymentMethod: paymentMethod, // Fixed type mismatch
+          status: BillStatus.PAID,
+          paymentMethod: paymentMethod,
           paymentDate: Timestamp.now(),
           paymentReference: paymentResult.transactionId
         });
         return updatedBill;
       } else {
-        throw new AppError(500, 'Payment processing failed', errorCodes.PAYMENT_PROCESSING_FAILED); // Added missing error code
+        throw new AppError(500, 'Payment processing failed', errorCodes.PAYMENT_PROCESSING_FAILED);
       }
     } catch (error) {
       console.error('Error paying bill:', error);
@@ -88,32 +93,44 @@ export class BillingService {
     }
   }
 
-  async refundBill(billId: string, refundReason: string, userId: string): Promise<Bill> {
+  async refundBill(billId: string, refundReason: string, userId: string, refundAmount?: number): Promise<Bill> {
     try {
       const bill = await this.getBillById(billId);
       if (!bill) {
-        throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND); // Added missing error code
+        throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND);
       }
 
-      if (bill.status !== BillStatus.PAID) { // Fixed type mismatch
-        throw new AppError(400, 'Cannot refund an unpaid bill', errorCodes.INVALID_REFUND_REQUEST); // Added missing error code
+      if (bill.status !== BillStatus.PAID) {
+        throw new AppError(400, 'Cannot refund an unpaid bill', errorCodes.INVALID_REFUND_REQUEST);
+      }
+
+      // Check if paymentMethod is defined
+      if (!bill.paymentMethod) {
+        throw new AppError(400, 'Payment method is missing for this bill', errorCodes.PAYMENT_METHOD_MISSING);
+      }
+
+      // Use the provided refundAmount or default to the totalAmount
+      const refundAmountToProcess = refundAmount !== undefined ? refundAmount : bill.totalAmount;
+
+      // Basic validation for refundAmount
+      if (refundAmountToProcess <= 0 || refundAmountToProcess > bill.totalAmount) {
+        throw new AppError(400, 'Invalid refund amount', errorCodes.INVALID_REFUND_AMOUNT);
       }
 
       // Process refund (implementation depends on your payment gateway)
-      const refundAmount = bill.totalAmount; // Assuming full refund
-      const refundResult = await this.processRefund(bill.paymentMethod, refundAmount, userId, billId);
+      const refundResult = await this.processRefund(bill.paymentMethod, refundAmountToProcess, userId, billId);
 
       if (refundResult.success) {
         const updatedBill = await this.updateBill(billId, {
-          status: BillStatus.REFUNDED, // Fixed type mismatch
-          refundAmount: refundAmount, // Assuming full refund
+          status: BillStatus.REFUNDED,
+          refundAmount: refundAmountToProcess,
           refundDate: Timestamp.now(),
           refundReference: refundResult.transactionId,
           refundReason
         });
         return updatedBill;
       } else {
-        throw new AppError(500, 'Refund processing failed', errorCodes.REFUND_PROCESSING_FAILED); // Added missing error code
+        throw new AppError(500, 'Refund processing failed', errorCodes.REFUND_PROCESSING_FAILED);
       }
     } catch (error) {
       console.error('Error refunding bill:', error);
@@ -141,7 +158,7 @@ export class BillingService {
       const rewardData = reward.data() as Reward;
       const userLoyaltyPoints = user.data()?.loyaltyPoints || 0;
 
-      if (userLoyaltyPoints < rewardData.pointsRequired) {
+      if (rewardData.pointsRequired !== undefined && userLoyaltyPoints < rewardData.pointsRequired) {
         throw new AppError(400, 'Insufficient loyalty points', errorCodes.INSUFFICIENT_POINTS); // Added missing error code
       }
 
@@ -151,10 +168,12 @@ export class BillingService {
       const updatedBill = await this.updateBill(billId, { totalAmount: updatedTotalAmount });
 
       // Update user's loyalty points
-      await db.collection('users').doc(userId).update({
-        loyaltyPoints: userLoyaltyPoints - rewardData.pointsRequired,
-        updatedAt: Timestamp.now()
-      });
+      if (rewardData.pointsRequired !== undefined) {
+        await db.collection('users').doc(userId).update({
+          loyaltyPoints: userLoyaltyPoints - (rewardData.pointsRequired || 0),
+          updatedAt: Timestamp.now()
+        });
+      }
 
       return updatedBill;
     } catch (error) {
@@ -284,7 +303,7 @@ export class BillingService {
   }
 
   // Placeholder for payment processing logic
-  private async processPayment(paymentMethod: PaymentMethod, amount: number, userId: string, billId: string): Promise<{ success: boolean; transactionId?: string }> { // Fixed type mismatch
+  private async processPayment(paymentMethod: PaymentMethod, amount: number, userId: string, billId: string): Promise<{ success: boolean; transactionId?: string }> {
     // Implement your payment processing logic here
     // This should interact with your payment gateway
     console.log(`Processing payment for user ${userId}, bill ${billId}, amount ${amount}, using ${paymentMethod}`);
@@ -292,7 +311,7 @@ export class BillingService {
   }
 
   // Placeholder for refund processing logic
-  private async processRefund(paymentMethod: string, amount: number, userId: string, billId: string): Promise<{ success: boolean; transactionId?: string }> {
+  private async processRefund(paymentMethod: PaymentMethod, amount: number, userId: string, billId: string): Promise<{ success: boolean; transactionId?: string }> {
     // Implement your refund processing logic here
     // This should interact with your payment gateway
     console.log(`Processing refund for user ${userId}, bill ${billId}, amount ${amount}, using ${paymentMethod}`);

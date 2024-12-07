@@ -98,6 +98,8 @@ export interface Reward {
     digitalCode?: string;
     shippingWeight?: number;
   };
+  discountAmount?: number; // Added discountAmount property
+  pointsRequired?: number; // Added pointsRequired property
   isActive: boolean;
   redemptionCount: number;
   createdAt: Date;
