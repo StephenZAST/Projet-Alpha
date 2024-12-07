@@ -3,9 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './config/swagger';
-import { setupSwagger } from './swagger/definitions';
 import { JobScheduler } from './jobs/scheduler';
 import { logger } from './utils/logger';
 
@@ -28,16 +25,6 @@ app.use(compression());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Setup Swagger documentation
-setupSwagger(app);
-
-// Documentation Swagger
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: "API Documentation - Pressing Service",
-  customfavIcon: "/assets/favicon.ico"
-}));
 
 // Routes
 app.use('/api/orders', orderRoutes);
