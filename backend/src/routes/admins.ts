@@ -1,6 +1,5 @@
 import express from 'express';
 import { isAuthenticated, requireAdminRole } from '../middleware/auth';
-import { validateRequest } from '../middleware/validateRequest';
 import { 
   validateGetAdminById,
   validateGetAdmins,
@@ -22,12 +21,8 @@ router.use(requireAdminRole);
 // Define route handler functions using async/await
 const getAdmins = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
-    const { page = 1, limit = 10, search } = req.query;
-    const admins = await adminService.getAdmins({
-      page: Number(page),
-      limit: Number(limit),
-      search: search as string
-    });
+    const requesterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const admins = await adminService.getAllAdmins(requesterId);
     res.json(admins);
   } catch (error) {
     next(error);
@@ -36,7 +31,8 @@ const getAdmins = async (req: express.Request, res: express.Response, next: expr
 
 const getAdminById = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
   try {
-    const admin = await adminService.getAdminById(req.params.id);
+    const requesterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const admin = await adminService.getAdminById(req.params.id, requesterId);
     res.json(admin);
   } catch (error) {
     next(error);
@@ -45,7 +41,8 @@ const getAdminById = async (req: express.Request<{ id: string }>, res: express.R
 
 const createAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
-    const admin = await adminService.createAdmin(req.body);
+    const creatorId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const admin = await adminService.createAdmin(req.body, creatorId);
     res.status(201).json(admin);
   } catch (error) {
     next(error);
@@ -54,7 +51,8 @@ const createAdmin = async (req: express.Request, res: express.Response, next: ex
 
 const updateAdmin = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
   try {
-    const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body);
+    const updaterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body, updaterId);
     res.json(updatedAdmin);
   } catch (error) {
     next(error);
@@ -63,7 +61,8 @@ const updateAdmin = async (req: express.Request<{ id: string }>, res: express.Re
 
 const deleteAdmin = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
   try {
-    await adminService.deleteAdmin(req.params.id);
+    const deleterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    await adminService.deleteAdmin(req.params.id, deleterId);
     res.json({ message: 'Admin deleted successfully' });
   } catch (error) {
     next(error);
@@ -72,7 +71,8 @@ const deleteAdmin = async (req: express.Request<{ id: string }>, res: express.Re
 
 const updateAdminRole = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
   try {
-    const updatedAdmin = await adminService.updateAdminRole(req.params.id, req.body.role);
+    const updaterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body, updaterId);
     res.json(updatedAdmin);
   } catch (error) {
     next(error);
@@ -80,11 +80,11 @@ const updateAdminRole = async (req: express.Request<{ id: string }>, res: expres
 };
 
 // Routes using route handler functions
-router.get('/', validateGetAdmins, getAdmins); // Apply validation directly
-router.get('/:id', validateGetAdminById, getAdminById); // Apply validation directly
-router.post('/', validateCreateAdmin, createAdmin); // Apply validation directly
-router.put('/:id', validateUpdateAdmin, updateAdmin); // Apply validation directly
-router.delete('/:id', validateDeleteAdmin, deleteAdmin); // Apply validation directly
-router.put('/:id/role', validateUpdateAdminRole, updateAdminRole); // Apply validation directly
+router.get('/', validateGetAdmins, getAdmins); 
+router.get('/:id', validateGetAdminById, getAdminById); 
+router.post('/', validateCreateAdmin, createAdmin); 
+router.put('/:id', validateUpdateAdmin, updateAdmin); 
+router.delete('/:id', validateDeleteAdmin, deleteAdmin); 
+router.put('/:id/role', validateUpdateAdminRole, updateAdminRole); 
 
 export default router;
