@@ -21,9 +21,8 @@ export const apiLimiter = rateLimit({
 // Rate limiter plus strict pour l'authentification
 export const authLimiter = rateLimit({
     ...baseConfig,
-    windowMs: 60 * 60 * 1000, // 1 heure
     max: 5, // Limite à 5 tentatives par heure
-    message: 'Too many login attempts from this IP, please try again after an hour'
+    windowMs: 60 * 60 * 1000 // 1 heure
 });
 
 // Rate limiter pour les opérations sensibles (ex: création d'admin)
