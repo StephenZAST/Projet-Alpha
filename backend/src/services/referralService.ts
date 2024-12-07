@@ -1,10 +1,9 @@
 import { db } from '../config/firebase';
 import { Referral, ReferralReward, ReferralProgram } from '../models/referral';
 import { CodeGenerator } from '../utils/codeGenerator'; // Correct import
-import { AppError } from '../utils/errors';
-import { errorCodes } from '../utils/errors'; // Import errorCodes
+import { AppError, errorCodes } from '../utils/errors'; // Import errorCodes
 import { Timestamp } from 'firebase-admin/firestore';
-import { notificationService, NotificationType, NotificationStatus } from './notificationService'; // Correct import
+import { notificationService } from './notificationService'; // Correct import
 
 export class ReferralService {
     private referralsRef = db.collection('referrals');
@@ -21,7 +20,7 @@ export class ReferralService {
             .get();
 
         if (!existingReferral.empty) {
-            throw new AppError(400, 'This email has already been referred', errorCodes.REFERRAL_ALREADY_EXISTS); // Add error code
+            throw new AppError(400, 'This email has already been referred', errorCodes.REFERRAL_ALREADY_EXISTS);
         }
 
         const referral: Omit<Referral, 'id'> = {
@@ -50,7 +49,7 @@ export class ReferralService {
             .get();
 
         if (referralQuery.empty) {
-            throw new AppError(404, 'Invalid or expired referral code', errorCodes.INVALID_REFERRAL_CODE); // Add error code
+            throw new AppError(404, 'Invalid or expired referral code', errorCodes.INVALID_REFERRAL_CODE);
         }
 
         const referralDoc = referralQuery.docs[0];
@@ -108,11 +107,11 @@ export class ReferralService {
         const referral = await referralRef.get();
 
         if (!referral.exists) {
-            throw new AppError(404, 'Referral not found', errorCodes.REFERRAL_NOT_FOUND); // Add error code
+            throw new AppError(404, 'Referral not found', errorCodes.REFERRAL_NOT_FOUND);
         }
 
         if (referral.data()?.firstOrderCompleted) {
-            throw new AppError(400, 'First order reward already processed', errorCodes.REWARD_ALREADY_PROCESSED); // Add error code
+            throw new AppError(400, 'First order reward already processed', errorCodes.REWARD_ALREADY_PROCESSED);
         }
 
         // Mettre à jour les récompenses
@@ -148,7 +147,7 @@ export class ReferralService {
             .get();
 
         if (programQuery.empty) {
-            throw new AppError(404, 'No active referral program found', errorCodes.NO_ACTIVE_PROGRAM); // Add error code
+            throw new AppError(404, 'No active referral program found', errorCodes.NO_ACTIVE_PROGRAM);
         }
 
         return { ...programQuery.docs[0].data(), id: programQuery.docs[0].id } as ReferralProgram;
