@@ -12,9 +12,12 @@ export class AffiliateService {
     private withdrawalsRef = db.collection('commission-withdrawals');
 
     async createAffiliate(
-        fullName: string,
+        firstName: string,
+        lastName: string,
         email: string,
-        phone: string,
+        phoneNumber: string,
+        address: string,
+        orderPreferences: Affiliate['orderPreferences'],
         paymentInfo: Affiliate['paymentInfo']
     ): Promise<Affiliate> {
         try {
@@ -28,10 +31,12 @@ export class AffiliateService {
             }
 
             const affiliate: Omit<Affiliate, 'id'> = {
-                firstName: fullName.split(' ')[0],
-                lastName: fullName.split(' ').slice(1).join(' '),
+                firstName,
+                lastName,
                 email,
-                phoneNumber: phone,
+                phoneNumber,
+                address,
+                orderPreferences,
                 status: AffiliateStatus.PENDING,
                 paymentInfo,
                 commissionRate: 10, // 10% default
@@ -39,11 +44,6 @@ export class AffiliateService {
                 availableBalance: 0,
                 referralCode: await CodeGenerator.generateAffiliateCode(),
                 referralClicks: 0,
-                address: '', // You might want to collect this during signup
-                orderPreferences: {
-                    allowedOrderTypes: [], // You might want to collect this during signup
-                    allowedPaymentMethods: [] // You might want to collect this during signup
-                },
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
@@ -88,7 +88,7 @@ export class AffiliateService {
         }
     }
 
-    async requestWithdrawal(
+    async requestCommissionWithdrawal(
         affiliateId: string,
         amount: number,
         paymentMethod: PaymentMethod
@@ -126,7 +126,9 @@ export class AffiliateService {
                 status: PayoutStatus.PENDING,
                 requestedAt: new Date(),
                 processedAt: null,
-                processedBy: null
+                processedBy: null,
+                createdAt: new Date(),
+                updatedAt: new Date()
             };
 
             const docRef = await this.withdrawalsRef.add(withdrawal);
@@ -134,6 +136,43 @@ export class AffiliateService {
         } catch (error) {
             if (error instanceof AppError) throw error;
             throw new AppError(500, 'Failed to create withdrawal request', errorCodes.WITHDRAWAL_REQUEST_NOT_FOUND);
+        }
+    }
+
+    async getCommissionWithdrawals(): Promise<CommissionWithdrawal[]> {
+        try {
+            const snapshot = await this.withdrawalsRef.get();
+            return snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as CommissionWithdrawal[];
+        } catch (error) {
+            throw new AppError(500, 'Failed to get commission withdrawals', errorCodes.WITHDRAWAL_HISTORY_FETCH_FAILED);
+        }
+    }
+
+    async updateCommissionWithdrawalStatus(withdrawalId: string, status: PayoutStatus): Promise<CommissionWithdrawal> {
+        try {
+            const withdrawalRef = this.withdrawalsRef.doc(withdrawalId);
+            const withdrawal = await withdrawalRef.get();
+
+            if (!withdrawal.exists) {
+                throw new AppError(404, 'Withdrawal request not found', errorCodes.WITHDRAWAL_REQUEST_NOT_FOUND);
+            }
+
+            await withdrawalRef.update({
+                status,
+                updatedAt: Timestamp.now()
+            });
+
+            return {
+                id: withdrawalId,
+                ...withdrawal.data(),
+                status
+            } as CommissionWithdrawal;
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError(500, 'Failed to update commission withdrawal status', errorCodes.WITHDRAWAL_PROCESSING_FAILED);
         }
     }
 
@@ -579,6 +618,32 @@ export class AffiliateService {
         } catch (error) {
             if (error instanceof AppError) throw error;
             throw new AppError(500, 'Failed to delete affiliate', errorCodes.AFFILIATE_DELETION_FAILED);
+        }
+    }
+
+    async updateAffiliate(affiliateId: string, affiliateData: Partial<Affiliate>): Promise<Affiliate> {
+        try {
+            const affiliateRef = this.affiliatesRef.doc(affiliateId);
+            const affiliateDoc = await affiliateRef.get();
+    
+            if (!affiliateDoc.exists) {
+                throw new AppError(404, 'Affiliate not found', errorCodes.AFFILIATE_NOT_FOUND);
+            }
+    
+            await affiliateRef.update({
+                ...affiliateData,
+                updatedAt: Timestamp.now()
+            });
+    
+            return {
+                id: affiliateId,
+                ...affiliateDoc.data(),
+                ...affiliateData,
+                updatedAt: new Date()
+            } as Affiliate;
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError(500, 'Failed to update affiliate', errorCodes.AFFILIATE_UPDATE_FAILED);
         }
     }
 }

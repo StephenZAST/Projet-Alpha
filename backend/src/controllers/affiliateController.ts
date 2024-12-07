@@ -54,7 +54,15 @@ class AffiliateController {
                 }
             };
 
-            const newAffiliate = await affiliateService.createAffiliate(affiliateData);
+            const newAffiliate = await affiliateService.createAffiliate(
+                affiliateData.firstName,
+                affiliateData.lastName,
+                affiliateData.email,
+                affiliateData.phoneNumber,
+                affiliateData.address,
+                affiliateData.orderPreferences,
+                affiliateData.paymentInfo
+            );
             res.status(201).json(newAffiliate);
         } catch (error) {
             if (error instanceof Joi.ValidationError) {
@@ -130,10 +138,6 @@ class AffiliateController {
     async deleteAffiliate(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
-            const affiliate = await affiliateService.getAffiliateById(id);
-            if (!affiliate) {
-                throw new AppError(404, 'Affiliate not found', errorCodes.AFFILIATE_NOT_FOUND);
-            }
             await affiliateService.deleteAffiliate(id);
             res.status(204).send();
         } catch (error) {
