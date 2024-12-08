@@ -1,22 +1,9 @@
 const express = require('express');
 const admin = require('firebase-admin');
-const {
-  createUser,
-  registerCustomer,
-  verifyEmail,
-  requestPasswordReset,
-  resetPassword,
-  getUserByEmail,
-  getUserById,
-  getUserProfile,
-  updateUser,
-  deleteUser,
-  UserRole,
-  UserStatus,
-  AccountCreationMethod,
-} = require('../../src/services/users');
-const { UserService } = require('../../src/services/users'); // Import UserService
+const { UserService } = require('../../src/services/users');
 const { validateRequest } = require('../../src/middleware/validateRequest');
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 const {
   updateProfileSchema,
   updateAddressSchema,
@@ -27,11 +14,10 @@ const {
   passwordResetSchema,
 } = require('../../src/validation/userValidation');
 const { AppError } = require('../../src/utils/errors');
-const { requireAdminRolePath } = require('../../src/middleware/auth');
 
 const db = admin.firestore();
 const router = express.Router();
-const userService = new UserService(); // Create an instance of UserService
+const userService = new UserService();
 
 // Middleware to check if the user is authenticated
 const isAuthenticated = (req, res, next) => {
@@ -41,9 +27,7 @@ const isAuthenticated = (req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  admin
-      .auth()
-      .verifyIdToken(idToken)
+  admin.auth().verifyIdToken(idToken)
       .then((decodedToken) => {
         req.user = decodedToken;
         next();
@@ -57,7 +41,7 @@ const isAuthenticated = (req, res, next) => {
 // Public routes
 router.post('/register', validateRequest(createUserSchema), async (req, res) => {
   try {
-    const user = await registerCustomer(req.body, AccountCreationMethod.SELF_REGISTRATION);
+    const user = await userService.createUser(req.body);
     res.status(201).json(user);
   } catch (error) {
     if (error instanceof AppError) {
@@ -70,7 +54,7 @@ router.post('/register', validateRequest(createUserSchema), async (req, res) => 
 
 router.post('/verify-email', validateRequest(emailVerificationSchema), async (req, res) => {
   try {
-    await verifyEmail(req.body.token);
+    await userService.verifyEmail(req.body.token);
     res.json({ message: 'Email verified successfully' });
   } catch (error) {
     if (error instanceof AppError) {
@@ -83,7 +67,7 @@ router.post('/verify-email', validateRequest(emailVerificationSchema), async (re
 
 router.post('/forgot-password', validateRequest(passwordResetRequestSchema), async (req, res) => {
   try {
-    await requestPasswordReset(req.body.email);
+    await userService.requestPasswordReset(req.body.email);
     res.json({ message: 'Password reset email sent' });
   } catch (error) {
     if (error instanceof AppError) {
@@ -96,7 +80,7 @@ router.post('/forgot-password', validateRequest(passwordResetRequestSchema), asy
 
 router.post('/reset-password', validateRequest(passwordResetSchema), async (req, res) => {
   try {
-    await resetPassword(req.body.token, req.body.newPassword);
+    await userService.resetPassword(req.body.token, req.body.newPassword);
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
     if (error instanceof AppError) {
@@ -113,7 +97,7 @@ router.use(isAuthenticated);
 // GET /users/profile
 router.get('/profile', async (req, res) => {
   try {
-    const profile = await getUserProfile(req.user.uid);
+    const profile = await userService.getUserProfile(req.user.uid);
     res.json(profile);
   } catch (error) {
     console.error('Error fetching user profile:', error);
@@ -169,7 +153,8 @@ router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 // GET /users/:id
 router.get('/:id', async (req, res) => {
   try {
-    const user = await getUserById(req.params.id);
+    const userId = req.params.id;
+    const user = await userService.getUserById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -201,7 +186,7 @@ router.put('/:id', async (req, res) => {
   try {
     const userId = req.params.id;
     const updates = req.body;
-    const updatedUser = await updateUser(userId, updates);
+    const updatedUser = await userService.updateUser(userId, updates);
     res.json(updatedUser);
   } catch (error) {
     console.error('Error updating user:', error);
@@ -213,7 +198,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const userId = req.params.id;
-    await deleteUser(userId);
+    await userService.deleteUser(userId);
     res.status(204).send(); // No content
   } catch (error) {
     console.error('Error deleting user:', error);

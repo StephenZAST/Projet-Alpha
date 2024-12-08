@@ -11,30 +11,24 @@ const {
   assignDeliverySchema,
   scheduleDeliverySchema,
 } = require('../../src/validation/orders');
-const { rateLimit } = require('../../src/middleware/rateLimit');
 
 const router = express.Router();
 const orderController = new OrderController();
 
-const createOrderRateLimit = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
+const createOrderRateLimit = require('../../src/middleware/rateLimit')({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
 });
 
-const firebaseAuth = async (req, res, next) => {
-  const idToken = req.headers.authorization?.split('Bearer ')[1];
-  if (!idToken) {
-    return res.status(401).json({ error: 'Token manquant' });
-  }
-  const decodedToken = await admin.auth().verifyIdToken(idToken);
-  req.user = decodedToken;
-  next();
-};
+const resetPasswordRateLimit = require('../../src/middleware/rateLimit')({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+});
 
-router.use(firebaseAuth);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 router.post(
-    '/',
+    '/create',
     createOrderRateLimit,
     validateRequest(createOrderSchema),
     async (req, res) => {
@@ -50,24 +44,11 @@ router.post(
     },
 );
 
-router.get('/my-orders', async (req, res) => {
-  try {
-    const orders = await orderController.getMyOrders(req, res);
-    res.json(orders);
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      error: error.message,
-      code: error.errorCode,
-    });
-  }
-});
-
 router.get(
-    '/',
-    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SUPERVISEUR]),
+    '/get',
     async (req, res) => {
       try {
-        const orders = await orderController.getAllOrders(req, res);
+        const orders = await orderController.getOrders(req, res);
         res.json(orders);
       } catch (error) {
         res.status(error.statusCode || 500).json({
@@ -80,7 +61,6 @@ router.get(
 
 router.put(
     '/:id',
-    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SUPERVISEUR]),
     validateRequest(updateOrderSchema),
     async (req, res) => {
       try {
@@ -95,9 +75,8 @@ router.put(
     },
 );
 
-router.patch(
+router.put(
     '/:id/status',
-    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SUPERVISEUR, UserRole.LIVREUR]),
     validateRequest(updateOrderStatusSchema),
     async (req, res) => {
       try {
@@ -113,8 +92,7 @@ router.patch(
 );
 
 router.post(
-    '/:id/assign-delivery',
-    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR]),
+    '/:id/assign',
     validateRequest(assignDeliverySchema),
     async (req, res) => {
       try {
@@ -130,8 +108,7 @@ router.post(
 );
 
 router.post(
-    '/:id/schedule-delivery',
-    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SUPERVISEUR, UserRole.LIVREUR]),
+    '/:id/schedule',
     validateRequest(scheduleDeliverySchema),
     async (req, res) => {
       try {
@@ -145,17 +122,5 @@ router.post(
       }
     },
 );
-
-router.post('/:id/cancel', async (req, res) => {
-  try {
-    const cancelledOrder = await orderController.cancelOrder(req, res);
-    res.json(cancelledOrder);
-  } catch (error) {
-    res.status(error.statusCode || 500).json({
-      error: error.message,
-      code: error.errorCode,
-    });
-  }
-});
 
 module.exports = router;

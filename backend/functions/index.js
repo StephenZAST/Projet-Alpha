@@ -6,10 +6,10 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 
-const { 
-    errorHandler, 
-    unhandledRejectionHandler, 
-    notFoundHandler 
+const {
+  errorHandler,
+  unhandledRejectionHandler,
+  notFoundHandler,
 } = require('./middleware/errorHandler');
 
 admin.initializeApp();
@@ -76,10 +76,10 @@ app.use('/blog-generator', blogGeneratorRoutes);
 
 // Route de base
 app.get('/', (req, res) => {
-    res.json({ 
-        message: 'Bienvenue sur l\'API du système de gestion de blanchisserie',
-        version: '2.0.0'
-    });
+  res.json({
+    message: 'Bienvenue sur l\'API du système de gestion de blanchisserie',
+    version: '2.0.0',
+  });
 });
 
 // Gestion des erreurs

@@ -1,35 +1,66 @@
 const express = require('express');
 const admin = require('firebase-admin');
-const { paymentController } = require('../../src/controllers/paymentController');
+const { PaymentController } = require('../../src/controllers/paymentController');
+const { validateRequest } = require('../../src/middleware/validateRequest');
 const { requireAdminRolePath } = require('../../src/middleware/auth');
 const { UserRole } = require('../../src/models/user');
-const { validateRequest } = require('../../src/middleware/validateRequest');
-const { paymentValidation } = require('../../src/validations/paymentValidation');
+const {
+  createPaymentSchema,
+  updatePaymentSchema,
+  getPaymentSchema,
+} = require('../../src/validation/payments');
 
 const router = express.Router();
+const paymentController = new PaymentController();
 
-// Apply authentication middleware to all routes
 router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
-// GET /payments/methods
-router.get('/methods', paymentController.getPaymentMethods);
+router.post(
+    '/create',
+    validateRequest(createPaymentSchema),
+    async (req, res) => {
+      try {
+        const newPayment = await paymentController.createPayment(req, res);
+        res.status(201).json(newPayment);
+      } catch (error) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          code: error.errorCode,
+        });
+      }
+    },
+);
 
-// POST /payments/methods
-router.post('/methods', validateRequest(paymentValidation.addPaymentMethod), paymentController.addPaymentMethod);
+router.get(
+    '/get',
+    validateRequest(getPaymentSchema),
+    async (req, res) => {
+      try {
+        const payments = await paymentController.getPayments(req, res);
+        res.json(payments);
+      } catch (error) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          code: error.errorCode,
+        });
+      }
+    },
+);
 
-// DELETE /payments/methods/:id
-router.delete('/methods/:id', validateRequest(paymentValidation.removePaymentMethod), paymentController.removePaymentMethod);
-
-// PUT /payments/methods/:id/default
-router.put('/methods/:id/default', validateRequest(paymentValidation.setDefaultPaymentMethod), paymentController.setDefaultPaymentMethod);
-
-// POST /payments/process
-router.post('/process', validateRequest(paymentValidation.processPayment), paymentController.processPayment);
-
-// GET /payments/history
-router.get('/history', validateRequest(paymentValidation.getPaymentHistory), paymentController.getPaymentHistory);
-
-// POST /payments/refund
-router.post('/refund', validateRequest(paymentValidation.processRefund), paymentController.processRefund);
+router.put(
+    '/:id',
+    validateRequest(updatePaymentSchema),
+    async (req, res) => {
+      try {
+        const updatedPayment = await paymentController.updatePayment(req, res);
+        res.json(updatedPayment);
+      } catch (error) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          code: error.errorCode,
+        });
+      }
+    },
+);
 
 module.exports = router;
