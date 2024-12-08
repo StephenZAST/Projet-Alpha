@@ -1,75 +1,119 @@
 const express = require('express');
 const admin = require('firebase-admin');
+const { AuthController } = require('../../src/controllers/authController');
+const { validateRequest } = require('../../src/middleware/validateRequest');
+const { 
+    loginSchema, 
+    registerSchema, 
+    resetPasswordSchema,
+    updateProfileSchema,
+    changePasswordSchema 
+} = require('../../src/validation/auth');
+const { isAuthenticated } = require('../../src/middleware/auth');
+const { rateLimit } = require('../../src/middleware/rateLimit');
 
-const db = admin.firestore();
-const auth = admin.auth();
 const router = express.Router();
+const authController = new AuthController();
 
-// /auth/login
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    const userRecord = await auth.signInWithEmailAndPassword(email, password);
-    const token = await userRecord.user.getIdToken();
-
-    res.status(200).json({ token });
-  } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ error: 'Failed to log in' });
-  }
+// Middleware de limitation de taux pour les tentatives de connexion
+const loginRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5 // 5 tentatives
 });
 
-// /auth/register
-router.post('/register', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    const userRecord = await auth.createUser({ email, password });
-    const token = await userRecord.uid; // Use uid as token for now
-
-    res.status(201).json({ token });
-  } catch (error) {
-    console.error('Error during registration:', error);
-    res.status(500).json({ error: 'Failed to register' });
-  }
+// Middleware de limitation de taux pour la réinitialisation de mot de passe
+const resetPasswordRateLimit = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 heure
+    max: 3 // 3 tentatives
 });
 
-// /auth/me
-router.get('/me', async (req, res) => {
-  try {
-    // Get the ID token from the Authorization header
-    const idToken = req.headers.authorization?.split('Bearer ')[1];
-
-    if (!idToken) {
-      return res.status(401).json({ error: 'Unauthorized' });
+// Routes publiques
+router.post('/login', loginRateLimit, validateRequest(loginSchema), async (req, res) => {
+    try {
+        const authData = await authController.login(req, res);
+        res.json(authData);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message,
+            code: error.errorCode
+        });
     }
+});
 
-    // Verify the ID token
-    const decodedToken = await auth.verifyIdToken(idToken);
-    const uid = decodedToken.uid;
-
-    // Get user data from Firestore
-    const userDoc = await db.collection('users').doc(uid).get();
-
-    if (!userDoc.exists) {
-      return res.status(404).json({ error: 'User not found' });
+router.post('/register', validateRequest(registerSchema), async (req, res) => {
+    try {
+        const userData = await authController.register(req, res);
+        res.status(201).json(userData);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message,
+            code: error.errorCode
+        });
     }
+});
 
-    const userData = userDoc.data();
-    res.status(200).json(userData);
-  } catch (error) {
-    console.error('Error retrieving user information:', error);
-    res.status(500).json({ error: 'Failed to retrieve user information' });
-  }
+router.post('/reset-password', resetPasswordRateLimit, validateRequest(resetPasswordSchema), async (req, res) => {
+    try {
+        await authController.resetPassword(req, res);
+        res.json({ message: 'Email de réinitialisation envoyé avec succès' });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message,
+            code: error.errorCode
+        });
+    }
+});
+
+// Routes protégées
+router.use(isAuthenticated);
+
+router.put('/profile', validateRequest(updateProfileSchema), async (req, res) => {
+    try {
+        const updatedProfile = await authController.updateProfile(req, res);
+        res.json(updatedProfile);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message,
+            code: error.errorCode
+        });
+    }
+});
+
+router.post('/change-password', validateRequest(changePasswordSchema), async (req, res) => {
+    try {
+        await authController.changePassword(req, res);
+        res.json({ message: 'Mot de passe modifié avec succès' });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message,
+            code: error.errorCode
+        });
+    }
+});
+
+router.post('/logout', async (req, res) => {
+    try {
+        await authController.logout(req, res);
+        res.json({ message: 'Déconnexion réussie' });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message,
+            code: error.errorCode
+        });
+    }
+});
+
+// Vérification du token
+router.get('/verify-token', async (req, res) => {
+    try {
+        const userData = await authController.verifyToken(req, res);
+        res.json(userData);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message,
+            code: error.errorCode
+        });
+    }
 });
 
 module.exports = router;

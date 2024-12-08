@@ -1,105 +1,91 @@
-/* eslint-disable no-unused-vars */
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
+
+const { 
+    errorHandler, 
+    unhandledRejectionHandler, 
+    notFoundHandler 
+} = require('./middleware/errorHandler');
 
 admin.initializeApp();
 const db = admin.firestore();
 const auth = admin.auth();
 
 const app = express();
+
+// Middleware de base
 app.use(cors({ origin: true }));
+app.use(helmet());
+app.use(compression());
+app.use(morgan('dev'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Import and use the auth routes
+// Import des routes
 const authRoutes = require('./routes/auth');
-app.use('/auth', authRoutes);
-
-// Import and use the teams routes
 const teamsRoutes = require('./routes/teams');
-app.use('/teams', teamsRoutes);
-
-// Import and use the admins routes
 const adminsRoutes = require('./routes/admins');
-app.use('/admins', adminsRoutes);
-
-// Import and use the admin logs routes
 const adminLogsRoutes = require('./routes/adminLogs');
-app.use('/adminLogs', adminLogsRoutes);
-
-// Import and use the affiliate routes
 const affiliateRoutes = require('./routes/affiliates');
-app.use('/affiliates', affiliateRoutes);
-
-// Import and use the analytics routes
 const analyticsRoutes = require('./routes/analytics');
-app.use('/analytics', analyticsRoutes);
-
-// Import and use the articles routes
 const articlesRoutes = require('./routes/articles');
-app.use('/articles', articlesRoutes);
-
-// Import and use the billing routes
 const billingRoutes = require('./routes/billing');
-app.use('/billing', billingRoutes);
-
-// Import and use the categories routes
 const categoriesRoutes = require('./routes/categories');
-app.use('/categories', categoriesRoutes);
-
-// Import and use the delivery-tasks routes
 const deliveryTasksRoutes = require('./routes/delivery-tasks');
-app.use('/delivery-tasks', deliveryTasksRoutes);
-
-// Import and use the delivery routes
 const deliveryRoutes = require('./routes/delivery');
-app.use('/delivery', deliveryRoutes);
-
-// Import and use the loyalty routes
 const loyaltyRoutes = require('./routes/loyalty');
-app.use('/loyalty', loyaltyRoutes);
-
-// Import and use the notifications routes
 const notificationsRoutes = require('./routes/notifications');
-app.use('/notifications', notificationsRoutes);
-
-// Import and use the orders routes
 const ordersRoutes = require('./routes/orders');
-app.use('/orders', ordersRoutes);
-
-// Import and use the payments routes
 const paymentsRoutes = require('./routes/payments');
-app.use('/payments', paymentsRoutes);
-
-// Import and use the permissions routes
 const permissionsRoutes = require('./routes/permissions');
-app.use('/permissions', permissionsRoutes);
-
-// Import and use the recurringOrders routes
 const recurringOrdersRoutes = require('./routes/recurringOrders');
-app.use('/recurringOrders', recurringOrdersRoutes);
-
-// Import and use the subscriptions routes
 const subscriptionsRoutes = require('./routes/subscriptions');
-app.use('/subscriptions', subscriptionsRoutes);
-
-// Import and use the users routes
 const usersRoutes = require('./routes/users');
-app.use('/users', usersRoutes);
-
-// Import des nouvelles routes de blog
+const zonesRoutes = require('./routes/zones');
 const blogArticleRoutes = require('./routes/blogArticle');
 const blogGeneratorRoutes = require('./routes/blogGenerator');
 
-// Utilisation des routes existantes
-app.use('/orders', ordersRoutes);
-app.use('/billing', billingRoutes);
+// Utilisation des routes
 app.use('/auth', authRoutes);
+app.use('/teams', teamsRoutes);
+app.use('/admins', adminsRoutes);
 app.use('/adminLogs', adminLogsRoutes);
-
-// Ajout des nouvelles routes de blog
+app.use('/affiliates', affiliateRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/articles', articlesRoutes);
+app.use('/billing', billingRoutes);
+app.use('/categories', categoriesRoutes);
+app.use('/delivery-tasks', deliveryTasksRoutes);
+app.use('/delivery', deliveryRoutes);
+app.use('/loyalty', loyaltyRoutes);
+app.use('/notifications', notificationsRoutes);
+app.use('/orders', ordersRoutes);
+app.use('/payments', paymentsRoutes);
+app.use('/permissions', permissionsRoutes);
+app.use('/recurring-orders', recurringOrdersRoutes);
+app.use('/subscriptions', subscriptionsRoutes);
+app.use('/users', usersRoutes);
+app.use('/zones', zonesRoutes);
 app.use('/blog', blogArticleRoutes);
 app.use('/blog-generator', blogGeneratorRoutes);
 
-exports.api = functions.https.onRequest(app);
+// Route de base
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'Bienvenue sur l\'API du système de gestion de blanchisserie',
+        version: '2.0.0'
+    });
+});
+
+// Gestion des erreurs
+app.use(notFoundHandler);
+app.use(errorHandler);
+app.use(unhandledRejectionHandler);
+
+// Export de la fonction
+exports.api = functions.region('europe-west1').https.onRequest(app);
