@@ -14,6 +14,7 @@ import authRoutes from './routes/authRoutes';
 import websocketRoutes from './routes/websocket';
 import adminLogRoutes from './routes/adminLogRoutes';
 import googleAuthRoutes from './routes/googleAuthRoutes'; // Added import
+import blogArticleRoutes from './routes/blogArticleRoutes'; // Ajout des routes de blog
 
 const app = express();
 const jobScheduler = new JobScheduler();
@@ -34,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/websocket', websocketRoutes);
 app.use('/api/adminLogs', adminLogRoutes);
 app.use('/api/admin', googleAuthRoutes); // Added route
+app.use('/api/blog', blogArticleRoutes); // Ajout des routes de blog
 
 // Route de base pour vérifier que le serveur fonctionne
 app.get('/', (req, res) => {
