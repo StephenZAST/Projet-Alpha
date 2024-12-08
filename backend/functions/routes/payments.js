@@ -1,16 +1,15 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable max-len */
 const express = require('express');
 const admin = require('firebase-admin');
 const { paymentController } = require('../../src/controllers/paymentController');
-const { isAuthenticated } = require('../middleware/auth'); // Assuming you have an auth middleware
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 const { validateRequest } = require('../../src/middleware/validateRequest');
 const { paymentValidation } = require('../../src/validations/paymentValidation');
 
 const router = express.Router();
 
 // Apply authentication middleware to all routes
-router.use(isAuthenticated);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 // GET /payments/methods
 router.get('/methods', paymentController.getPaymentMethods);

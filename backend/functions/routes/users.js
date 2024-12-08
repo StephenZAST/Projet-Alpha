@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 const express = require('express');
 const admin = require('firebase-admin');
 const {
@@ -28,6 +27,7 @@ const {
   passwordResetSchema,
 } = require('../../src/validation/userValidation');
 const { AppError } = require('../../src/utils/errors');
+const { requireAdminRolePath } = require('../../src/middleware/auth');
 
 const db = admin.firestore();
 const router = express.Router();
@@ -52,14 +52,6 @@ const isAuthenticated = (req, res, next) => {
         console.error('Error verifying ID token:', error);
         res.status(401).json({ error: 'Unauthorized' });
       });
-};
-
-// Middleware to check if the user has the admin role
-const requireAdminRole = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
 };
 
 // Public routes
@@ -172,7 +164,7 @@ router.put('/preferences', validateRequest(updatePreferencesSchema), async (req,
 });
 
 // Admin-only routes
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 // GET /users/:id
 router.get('/:id', async (req, res) => {

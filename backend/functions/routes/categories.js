@@ -2,9 +2,9 @@ const express = require('express');
 const admin = require('firebase-admin');
 const { createCategory, getCategories, updateCategory, deleteCategory } = require('../../src/services/categories');
 const { AppError } = require('../../src/utils/errors');
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 
-// eslint-disable-next-line no-unused-vars
-const db = admin.firestore();
 const router = express.Router();
 
 // Middleware to check if the user is authenticated
@@ -26,14 +26,6 @@ const isAuthenticated = (req, res, next) => {
       });
 };
 
-// Middleware to check if the user has the admin role
-const requireAdminRole = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-};
-
 // GET /categories - Get all categories
 router.get('/', async (req, res) => {
   try {
@@ -46,7 +38,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /categories - Create a new category (admin only)
-router.post('/', isAuthenticated, requireAdminRole, async (req, res) => {
+router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const categoryData = req.body;
     const category = await createCategory(categoryData);
@@ -61,7 +53,7 @@ router.post('/', isAuthenticated, requireAdminRole, async (req, res) => {
 });
 
 // PUT /categories/:id - Update an existing category (admin only)
-router.put('/:id', isAuthenticated, requireAdminRole, async (req, res) => {
+router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const categoryId = req.params.id;
     const categoryData = req.body;
@@ -77,7 +69,7 @@ router.put('/:id', isAuthenticated, requireAdminRole, async (req, res) => {
 });
 
 // DELETE /categories/:id - Delete a category (admin only)
-router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res) => {
+router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const categoryId = req.params.id;
     await deleteCategory(categoryId);

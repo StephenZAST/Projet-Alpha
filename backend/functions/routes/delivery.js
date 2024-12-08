@@ -2,8 +2,8 @@ const express = require('express');
 const admin = require('firebase-admin');
 const { DeliveryService } = require('../../src/services/delivery');
 const { AppError } = require('../../src/utils/errors');
-// eslint-disable-next-line no-unused-vars
-const { db } = require('../../src/services/firebase');
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 
 const router = express.Router();
 const deliveryService = new DeliveryService();
@@ -31,7 +31,7 @@ const isAuthenticated = (req, res, next) => {
 router.use(isAuthenticated);
 
 // GET /delivery/timeslots
-router.get('/timeslots', async (req, res) => {
+router.get('/timeslots', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const { date, zoneId } = req.query;
 
@@ -55,7 +55,7 @@ router.get('/timeslots', async (req, res) => {
 });
 
 // POST /delivery/schedule-pickup
-router.post('/schedule-pickup', async (req, res) => {
+router.post('/schedule-pickup', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const { orderId, date, timeSlot, address } = req.body;
 
@@ -86,7 +86,7 @@ router.post('/schedule-pickup', async (req, res) => {
 });
 
 // POST /delivery/update-location
-router.post('/update-location', async (req, res) => {
+router.post('/update-location', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const { orderId, location, status } = req.body;
 
@@ -116,7 +116,7 @@ router.post('/update-location', async (req, res) => {
 });
 
 // GET /delivery/tasks
-router.get('/tasks', async (req, res) => {
+router.get('/tasks', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     // Implement logic to fetch delivery tasks with optional filtering
     // based on req.query (status, driverId, date)
@@ -129,7 +129,7 @@ router.get('/tasks', async (req, res) => {
 });
 
 // GET /delivery/tasks/:id
-router.get('/tasks/:id', async (req, res) => {
+router.get('/tasks/:id', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const taskId = req.params.id;
     // Implement logic to fetch a specific delivery task by ID
@@ -142,7 +142,7 @@ router.get('/tasks/:id', async (req, res) => {
 });
 
 // POST /delivery/tasks
-router.post('/tasks', async (req, res) => {
+router.post('/tasks', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     // Implement logic to create a new delivery task
     const task = await deliveryService.createTask(req.body);
@@ -154,7 +154,7 @@ router.post('/tasks', async (req, res) => {
 });
 
 // PUT /delivery/tasks/:id
-router.put('/tasks/:id', async (req, res) => {
+router.put('/tasks/:id', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const taskId = req.params.id;
     // Implement logic to update an existing delivery task
@@ -167,7 +167,7 @@ router.put('/tasks/:id', async (req, res) => {
 });
 
 // POST /delivery/optimize-tasks
-router.post('/optimize-tasks', async (req, res) => {
+router.post('/optimize-tasks', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const { taskIds, driverId, startLocation, endLocation, maxTasks, considerTraffic } = req.body;
     const route = await deliveryService.optimizeRoute(
@@ -185,7 +185,7 @@ router.post('/optimize-tasks', async (req, res) => {
 });
 
 // POST /delivery/location
-router.post('/location', async (req, res) => {
+router.post('/location', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     // Implement logic to update driver location
     await deliveryService.updateLocation(req.body);
@@ -197,7 +197,7 @@ router.post('/location', async (req, res) => {
 });
 
 // GET /delivery/zones
-router.get('/zones', async (req, res) => {
+router.get('/zones', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     // Implement logic to retrieve all delivery zones
     const zones = await deliveryService.getZones();

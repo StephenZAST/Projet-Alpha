@@ -6,8 +6,6 @@ const { AppError } = require('../../src/utils/errors');
 const { requireAdminRolePath } = require('../../src/middleware/auth');
 const { UserRole } = require('../../src/models/user');
 
-// eslint-disable-next-line no-unused-vars
-const db = admin.firestore();
 const router = express.Router();
 
 // Middleware to check if the user is authenticated

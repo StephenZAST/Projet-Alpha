@@ -1,9 +1,9 @@
-/* eslint-disable max-len */
-/* eslint-disable no-unused-vars */
 const express = require('express');
 const admin = require('firebase-admin');
 const { createSubscription, getSubscriptions, updateSubscription, deleteSubscription, getUserSubscription } = require('../../src/services/subscriptions');
 const { AppError } = require('../../src/utils/errors');
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 
 const db = admin.firestore();
 const router = express.Router();
@@ -25,14 +25,6 @@ const isAuthenticated = (req, res, next) => {
         console.error('Error verifying ID token:', error);
         res.status(401).json({ error: 'Unauthorized' });
       });
-};
-
-// Middleware to check if the user has the admin role
-const requireAdminRole = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
 };
 
 // Public routes
@@ -58,7 +50,7 @@ router.get('/user/:userId', isAuthenticated, async (req, res) => {
 });
 
 // Admin routes
-router.post('/', isAuthenticated, requireAdminRole, async (req, res) => {
+router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const subscriptionData = req.body;
     const subscription = await createSubscription(subscriptionData);
@@ -72,7 +64,7 @@ router.post('/', isAuthenticated, requireAdminRole, async (req, res) => {
   }
 });
 
-router.put('/:id', isAuthenticated, requireAdminRole, async (req, res) => {
+router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const subscriptionId = req.params.id;
     const subscriptionData = req.body;
@@ -87,7 +79,7 @@ router.put('/:id', isAuthenticated, requireAdminRole, async (req, res) => {
   }
 });
 
-router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res) => {
+router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const subscriptionId = req.params.id;
     await deleteSubscription(subscriptionId);
