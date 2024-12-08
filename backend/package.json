@@ -12,11 +12,13 @@
   },
   "dependencies": {
     "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
+    "@google/generative-ai": "^0.21.0",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^22.9.3",
     "@types/nodemailer": "^6.4.17",
     "@types/socket.io": "^3.0.2",
     "alpha-laundry-backend": "file:",
+    "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "compression": "^1.7.5",
     "cors": "^2.8.5",

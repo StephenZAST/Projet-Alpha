@@ -27,6 +27,7 @@ export interface IAdmin {
     updatedAt: Date;
     permissions: string[];  // Liste des permissions spécifiques
     isMasterAdmin: boolean; // Pour identifier le super admin principal
+    googleAIKey?: string;  // Ajout de la clé API Google AI
 }
 
 // Use Firebase Firestore to store admin data
