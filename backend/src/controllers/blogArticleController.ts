@@ -3,17 +3,18 @@ import { BlogArticle, BlogArticleStatus, CreateBlogArticleInput, UpdateBlogArtic
 import { db } from '../config/firebase';
 import { AppError, errorCodes } from '../utils/errors';
 import { UserRole } from '../models/user';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export class BlogArticleController {
-    // Créer un nouvel article
+    // ...
+
     async createArticle(req: Request, res: Response, next: NextFunction) {
         try {
             const articleData: CreateBlogArticleInput = req.body;
             const user = req.user;
 
-            // Vérifier si l'utilisateur est autorisé (pas un livreur)
-            if (user.role === UserRole.LIVREUR) {
-                throw new AppError(403, "Les livreurs ne peuvent pas créer d'articles de blog", errorCodes.FORBIDDEN);
+            if (!user) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
             }
 
             const slug = this.generateSlug(articleData.title);
@@ -21,7 +22,7 @@ export class BlogArticleController {
             const newArticle: BlogArticle = {
                 id: '', // Sera défini par Firebase
                 title: articleData.title,
-                slug,
+                slug: this.generateSlug(articleData.title),
                 content: articleData.content,
                 excerpt: articleData.content.substring(0, 150) + '...',
                 authorId: user.id,
@@ -36,8 +37,8 @@ export class BlogArticleController {
                 seoKeywords: articleData.seoKeywords,
                 views: 0,
                 likes: 0,
-                createdAt: new Date(),
-                updatedAt: new Date()
+                createdAt: Timestamp.now(),
+                updatedAt: Timestamp.now()
             };
 
             const docRef = await db.collection('blog_articles').add(newArticle);
@@ -59,6 +60,10 @@ export class BlogArticleController {
             const updateData: UpdateBlogArticleInput = req.body;
             const user = req.user;
 
+            if (!user) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
+            }
+
             const articleRef = db.collection('blog_articles').doc(id);
             const article = await articleRef.get();
 
@@ -76,7 +81,7 @@ export class BlogArticleController {
             const updatedArticle = {
                 ...updateData,
                 slug: updateData.title ? this.generateSlug(updateData.title) : articleData.slug,
-                updatedAt: new Date()
+                updatedAt: Timestamp.now()
             };
 
             await articleRef.update(updatedArticle);
@@ -95,6 +100,10 @@ export class BlogArticleController {
         try {
             const { id } = req.params;
             const user = req.user;
+
+            if (!user) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
+            }
 
             const articleRef = db.collection('blog_articles').doc(id);
             const article = await articleRef.get();

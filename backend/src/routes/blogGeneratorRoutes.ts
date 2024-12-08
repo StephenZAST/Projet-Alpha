@@ -1,6 +1,6 @@
 import express from 'express';
 import { BlogGeneratorController } from '../controllers/blogGeneratorController';
-import { isAuthenticated, hasRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRole } from '../middleware/auth';
 import { validateBlogGenerationConfig } from '../middleware/blogGeneratorValidation';
 import { UserRole } from '../models/user';
 
@@ -11,7 +11,7 @@ const blogGeneratorController = new BlogGeneratorController();
 router.use(isAuthenticated);
 
 // Routes pour les administrateurs (sauf livreurs)
-router.use(hasRole([
+router.use(requireAdminRole([
     UserRole.SUPER_ADMIN,
     UserRole.SERVICE_CLIENT,
     UserRole.SECRETAIRE,

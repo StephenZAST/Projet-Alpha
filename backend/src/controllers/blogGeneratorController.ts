@@ -4,15 +4,22 @@ import { BlogArticle, BlogArticleStatus, BlogArticleCategory } from '../models/b
 import { db } from '../config/firebase';
 import { AppError, errorCodes } from '../utils/errors';
 import { UserRole } from '../models/user';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export class BlogGeneratorController {
     async updateGoogleAIKey(req: Request, res: Response, next: NextFunction) {
         try {
             const { googleAIKey } = req.body;
-            const adminId = req.user.id;
+            const user = req.user;
+
+            if (!user) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
+            }
+
+            const adminId = user.id;
 
             // Vérifier si l'utilisateur est un admin
-            if (req.user.role === UserRole.LIVREUR) {
+            if (user.role === UserRole.LIVREUR) {
                 throw new AppError(403, "Non autorisé à configurer l'API Google AI", errorCodes.FORBIDDEN);
             }
 
@@ -30,16 +37,16 @@ export class BlogGeneratorController {
             // Mettre à jour la clé API dans la base de données
             await db.collection('admins').doc(adminId).update({
                 googleAIKey: googleAIKey,
-                updatedAt: new Date()
+                updatedAt: Timestamp.now()
             });
 
             res.json({
                 success: true,
                 message: "Clé API Google AI mise à jour avec succès"
             });
-        } catch (error) {
+        } catch (error: any) {
             if (error.message.includes('API key')) {
-                next(new AppError(400, "Clé API Google AI invalide", errorCodes.INVALID_API_KEY));
+                next(new AppError(400, "Clé API Google AI invalide", 'INVALID_API_KEY'));
             } else {
                 next(error);
             }
@@ -48,7 +55,13 @@ export class BlogGeneratorController {
 
     async generateBlogArticle(req: Request, res: Response, next: NextFunction) {
         try {
-            const adminId = req.user.id;
+            const user = req.user;
+
+            if (!user) {
+                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
+            }
+
+            const adminId = user.id;
             const config = req.body;
 
             // Récupérer l'admin et sa clé API
@@ -56,7 +69,7 @@ export class BlogGeneratorController {
             const admin = adminDoc.data();
 
             if (!admin?.googleAIKey) {
-                throw new AppError(400, "Clé API Google AI non configurée", errorCodes.MISSING_API_KEY);
+                throw new AppError(400, "Clé API Google AI non configurée", 'MISSING_API_KEY');
             }
 
             // Générer l'article avec Google AI
@@ -75,8 +88,8 @@ export class BlogGeneratorController {
                 ).join('\n\n'),
                 excerpt: generatedContent.seoDescription,
                 authorId: adminId,
-                authorName: `${req.user.firstName} ${req.user.lastName}`,
-                authorRole: req.user.role,
+                authorName: `${user.firstName} ${user.lastName}`,
+                authorRole: user.role,
                 category: this.determineCategory(generatedContent.tags),
                 tags: generatedContent.tags,
                 status: BlogArticleStatus.DRAFT,
@@ -85,8 +98,8 @@ export class BlogGeneratorController {
                 seoKeywords: generatedContent.seoKeywords,
                 views: 0,
                 likes: 0,
-                createdAt: new Date(),
-                updatedAt: new Date()
+                createdAt: Timestamp.now(),
+                updatedAt: Timestamp.now()
             };
 
             const docRef = await db.collection('blog_articles').add(newArticle);
@@ -96,7 +109,7 @@ export class BlogGeneratorController {
                 success: true,
                 data: newArticle
             });
-        } catch (error) {
+        } catch (error: any) {
             next(error);
         }
     }
