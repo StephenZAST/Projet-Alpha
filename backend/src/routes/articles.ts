@@ -1,8 +1,8 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { createArticle, getArticles, updateArticle, deleteArticle } from '../services/articles';
 import { validateArticleInput } from '../middleware/validation/index';
-
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 
@@ -17,7 +17,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // Protected admin routes
-router.post('/', isAuthenticated, requireAdminRole, validateArticleInput, async (req, res, next): Promise<void> => {
+router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), validateArticleInput, async (req, res, next): Promise<void> => {
   try {
     const article = await createArticle(req.body);
     res.status(201).json(article);
@@ -26,7 +26,7 @@ router.post('/', isAuthenticated, requireAdminRole, validateArticleInput, async 
   }
 });
 
-router.put('/:id', isAuthenticated, requireAdminRole, validateArticleInput, async (req, res, next): Promise<void> => {
+router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), validateArticleInput, async (req, res, next): Promise<void> => {
   try {
     const articleId = req.params.id;
     const updatedArticle = await updateArticle(articleId, req.body);
@@ -39,7 +39,7 @@ router.put('/:id', isAuthenticated, requireAdminRole, validateArticleInput, asyn
   }
 });
 
-router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
+router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
   try {
     const articleId = req.params.id;
     const deletedArticle = await deleteArticle(articleId);

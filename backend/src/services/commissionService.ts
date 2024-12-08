@@ -21,7 +21,7 @@ export class CommissionService {
         const rule = await this.getActiveRule();
 
         if (orderAmount < rule.minimumOrderValue) {
-            throw new AppError(400, `Order amount below minimum value of ${rule.minimumOrderValue}`, errorCodes.INVALID_AMOUNT); // Add error code
+            throw new AppError(400, `Order amount below minimum value of ${rule.minimumOrderValue}`, errorCodes.INVALID_AMOUNT);
         }
 
         // Calculer la commission (toujours en pourcentage)
@@ -60,11 +60,11 @@ export class CommissionService {
         const commission = await commissionRef.get();
 
         if (!commission.exists) {
-            throw new AppError(404, 'Commission not found', errorCodes.COMMISSION_NOT_FOUND); // Add error code
+            throw new AppError(404, 'Commission not found', errorCodes.COMMISSION_NOT_FOUND);
         }
 
         if (commission.data()?.status !== 'PENDING') {
-            throw new AppError(400, 'Commission is not in pending status', errorCodes.INVALID_COMMISSION_STATUS); // Add error code
+            throw new AppError(400, 'Commission is not in pending status', errorCodes.INVALID_COMMISSION_STATUS);
         }
 
         await commissionRef.update({
@@ -134,7 +134,7 @@ export class CommissionService {
         const rule = await ruleRef.get();
 
         if (!rule.exists) {
-            throw new AppError(404, 'Commission rule not found', errorCodes.COMMISSION_RULE_NOT_FOUND); // Add error code
+            throw new AppError(404, 'Commission rule not found', errorCodes.COMMISSION_RULE_NOT_FOUND);
         }
 
         await ruleRef.update({

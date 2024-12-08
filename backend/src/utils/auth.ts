@@ -1,7 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import AppError from './AppError'; // Correct import
-import { errorCodes } from './errors';
+import { AppError, errorCodes } from './errors';
 
 // Number of salt rounds for bcrypt
 const SALT_ROUNDS = 12;
@@ -20,12 +19,12 @@ interface TokenPayload {
 export async function hashPassword(password: string): Promise<string> {
     try {
         if (!password) {
-            throw new AppError('Password is required', 400, errorCodes.INVALID_INPUT);
+            throw new AppError(400, 'Password is required', errorCodes.INVALID_REQUEST);
         }
 
         // Enforce password strength
         if (password.length < 8) {
-            throw new AppError('Password must be at least 8 characters long', 400, errorCodes.INVALID_PASSWORD);
+            throw new AppError(400, 'Password must be at least 8 characters long', errorCodes.INVALID_PASSWORD);
         }
 
         // Generate salt and hash password
@@ -34,7 +33,7 @@ export async function hashPassword(password: string): Promise<string> {
         return hashedPassword;
     } catch (error) {
         if (error instanceof AppError) throw error;
-        throw new AppError('Password hashing failed', 500, errorCodes.PASSWORD_HASH_ERROR);
+        throw new AppError(500, 'Password hashing failed', errorCodes.PASSWORD_HASH_ERROR);
     }
 }
 
@@ -47,13 +46,13 @@ export async function hashPassword(password: string): Promise<string> {
 export async function comparePassword(password: string, hashedPassword: string): Promise<boolean> {
     try {
         if (!password || !hashedPassword) {
-            throw new AppError('Password and hashed password are required', 400, errorCodes.INVALID_INPUT);
+            throw new AppError(400, 'Password and hashed password are required', errorCodes.INVALID_REQUEST);
         }
 
         return await bcrypt.compare(password, hashedPassword);
     } catch (error) {
         if (error instanceof AppError) throw error;
-        throw new AppError('Password comparison failed', 500, errorCodes.PASSWORD_COMPARE_ERROR);
+        throw new AppError(500, 'Password comparison failed', errorCodes.PASSWORD_COMPARE_ERROR);
     }
 }
 
@@ -64,7 +63,7 @@ export async function comparePassword(password: string, hashedPassword: string):
  */
 export function validatePasswordStrength(password: string): boolean {
     if (!password || typeof password !== 'string') {
-        throw new AppError('Password is required', 400, errorCodes.INVALID_INPUT);
+        throw new AppError(400, 'Password is required', errorCodes.INVALID_REQUEST);
     }
 
     // Password requirements
@@ -76,32 +75,32 @@ export function validatePasswordStrength(password: string): boolean {
 
     if (password.length < minLength) {
         throw new AppError(
-            'Password must be at least 8 characters long',
             400,
+            'Password must be at least 8 characters long',
             errorCodes.INVALID_PASSWORD
         );
     }
 
     if (!hasUpperCase || !hasLowerCase) {
         throw new AppError(
-            'Password must contain both uppercase and lowercase letters',
             400,
+            'Password must contain both uppercase and lowercase letters',
             errorCodes.INVALID_PASSWORD
         );
     }
 
     if (!hasNumbers) {
         throw new AppError(
-            'Password must contain at least one number',
             400,
+            'Password must contain at least one number',
             errorCodes.INVALID_PASSWORD
         );
     }
 
     if (!hasSpecialChar) {
         throw new AppError(
-            'Password must contain at least one special character',
             400,
+            'Password must contain at least one special character',
             errorCodes.INVALID_PASSWORD
         );
     }
@@ -117,9 +116,9 @@ export function validatePasswordStrength(password: string): boolean {
 export function generateSecurePassword(length: number = 12): string {
     if (length < 8) {
         throw new AppError(
-            'Password length must be at least 8 characters',
             400,
-            errorCodes.INVALID_INPUT
+            'Password length must be at least 8 characters',
+            errorCodes.INVALID_REQUEST
         );
     }
 
@@ -155,7 +154,7 @@ export function generateToken(payload: TokenPayload): string {
   const secret = process.env.JWT_SECRET || 'fallback_secret_key';
   
   if (!payload.uid) {
-    throw new AppError('User ID is required for token generation', 400, errorCodes.INVALID_INPUT);
+    throw new AppError(400, 'User ID is required for token generation', errorCodes.INVALID_REQUEST);
   }
 
   return jwt.sign(payload, secret, { 

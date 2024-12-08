@@ -58,7 +58,7 @@ const securityHeadersCheck = (req: Request, res: Response, next: NextFunction) =
 // Middleware pour valider le contenu JSON
 const validateJsonContent = (err: any, req: Request, res: Response, next: NextFunction) => {
     if (err instanceof SyntaxError && 'body' in err) {
-        throw new AppError(400, 'Invalid JSON payload', errorCodes.INVALID_JSON); // Add error code
+        throw new AppError(400, 'Invalid JSON payload', errorCodes.INVALID_JSON);
     }
     next();
 };
@@ -116,7 +116,7 @@ export const configureSecurityMiddleware = (app: Express) => {
 export const checkOrigin = (req: Request, res: Response, next: NextFunction) => {
     const origin = req.get('origin');
     if (!origin || !corsOptions.origin.includes(origin)) {
-        throw new AppError(403, 'Origin not allowed', errorCodes.FORBIDDEN_ORIGIN); // Add error code
+        throw new AppError(403, 'Origin not allowed', errorCodes.FORBIDDEN_ORIGIN);
     }
     next();
 };
@@ -124,7 +124,7 @@ export const checkOrigin = (req: Request, res: Response, next: NextFunction) => 
 // Middleware pour vérifier les méthodes HTTP autorisées
 export const checkMethod = (req: Request, res: Response, next: NextFunction) => {
     if (!corsOptions.methods.includes(req.method)) {
-        throw new AppError(405, 'Method not allowed', errorCodes.METHOD_NOT_ALLOWED); // Add error code
+        throw new AppError(405, 'Method not allowed', errorCodes.METHOD_NOT_ALLOWED);
     }
     next();
 };

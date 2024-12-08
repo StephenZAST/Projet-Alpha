@@ -1,5 +1,15 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
+import { 
+  validateCreateZone,
+  validateGetAllZones,
+  validateGetZoneById,
+  validateUpdateZone,
+  validateDeleteZone,
+  validateAssignDeliveryPerson,
+  validateGetZoneStats
+} from '../middleware/zoneValidation';
+import { zoneService } from '../services/zones';
 import { UserRole } from '../models/user';
 
 const router = express.Router();
@@ -8,95 +18,102 @@ const router = express.Router();
 router.use(isAuthenticated);
 
 // Route pour créer une nouvelle zone
-router.post('/', requireAdminRole, async (req, res) => {
+router.post('/', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateCreateZone, async (req, res, next) => {
   try {
-    const { name, coordinates, description } = req.body;
-    // Logique pour créer une zone
-    res.status(201).json({ message: 'Zone created successfully' });
+    const zone = await zoneService.createZone(req.body);
+    res.status(201).json(zone);
   } catch (error) {
-    console.error('Error creating zone:', error);
-    res.status(500).json({ error: 'Failed to create zone' });
+    next(error);
   }
 });
 
 // Route pour obtenir toutes les zones
-router.get('/', isAuthenticated, async (req, res) => {
+router.get('/', validateGetAllZones, async (req, res, next) => {
   try {
-    // Logique pour récupérer toutes les zones
-    res.status(200).json({ zones: [] });
+    const { name, isActive, deliveryPersonId, location, page, limit } = req.query;
+    const zones = await zoneService.getAllZones({
+      name: name as string,
+      isActive: isActive === 'true',
+      deliveryPersonId: deliveryPersonId as string,
+      location: location as any, // Assuming location is a GeoJSON object
+      page: Number(page) || 1,
+      limit: Number(limit) || 10
+    });
+    res.status(200).json(zones);
   } catch (error) {
-    console.error('Error fetching zones:', error);
-    res.status(500).json({ error: 'Failed to fetch zones' });
+    next(error);
   }
 });
 
 // Route pour obtenir une zone spécifique
-router.get('/:zoneId', isAuthenticated, async (req, res) => {
+router.get('/:zoneId', validateGetZoneById, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
-    // Logique pour récupérer une zone spécifique
-    res.status(200).json({ zone: {} });
+    const zone = await zoneService.getZoneById(zoneId);
+    if (!zone) {
+      res.status(404).json({ message: 'Zone not found' });
+    }
+    res.status(200).json(zone);
   } catch (error) {
-    console.error('Error fetching zone:', error);
-    res.status(500).json({ error: 'Failed to fetch zone' });
+    next(error);
   }
 });
 
 // Route pour mettre à jour une zone
-router.put('/:zoneId', requireAdminRole, async (req, res) => {
+router.put('/:zoneId', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateUpdateZone, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
-    const updates = req.body;
-    // Logique pour mettre à jour une zone
-    res.status(200).json({ message: 'Zone updated successfully' });
+    const success = await zoneService.updateZone(zoneId, req.body);
+    if (success) {
+      res.status(200).json({ message: 'Zone updated successfully' });
+    } else {
+      res.status(404).json({ message: 'Zone not found' });
+    }
   } catch (error) {
-    console.error('Error updating zone:', error);
-    res.status(500).json({ error: 'Failed to update zone' });
+    next(error);
   }
 });
 
 // Route pour supprimer une zone
-router.delete('/:zoneId', requireAdminRole, async (req, res) => {
+router.delete('/:zoneId', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateDeleteZone, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
-    // Logique pour supprimer une zone
+    await zoneService.deleteZone(zoneId); 
     res.status(200).json({ message: 'Zone deleted successfully' });
   } catch (error) {
-    console.error('Error deleting zone:', error);
-    res.status(500).json({ error: 'Failed to delete zone' });
+    next(error);
   }
 });
 
 // Route pour assigner un livreur à une zone
-router.post('/:zoneId/assign', requireAdminRole, async (req, res) => {
+router.post('/:zoneId/assign', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateAssignDeliveryPerson, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     const { deliveryPersonId } = req.body;
-    // Logique pour assigner un livreur à une zone
-    res.status(200).json({ message: 'Delivery person assigned to zone successfully' });
+    const success = await zoneService.assignDeliveryPerson(zoneId, deliveryPersonId);
+    if (success) {
+      res.status(200).json({ message: 'Delivery person assigned to zone successfully' });
+    } else {
+      res.status(400).json({ message: 'Failed to assign delivery person to zone' });
+    }
   } catch (error) {
-    console.error('Error assigning delivery person to zone:', error);
-    res.status(500).json({ error: 'Failed to assign delivery person to zone' });
+    next(error);
   }
 });
 
 // Route pour obtenir les statistiques d'une zone
-router.get('/:zoneId/stats', requireAdminRole, async (req, res) => {
+router.get('/:zoneId/stats', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateGetZoneStats, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     const { startDate, endDate } = req.query;
-    // Logique pour obtenir les statistiques d'une zone
-    res.status(200).json({
-      stats: {
-        totalOrders: 0,
-        completedOrders: 0,
-        averageDeliveryTime: 0,
-        revenue: 0
-      }
-    });
+    const stats = await zoneService.getZoneStatistics(
+      zoneId,
+      startDate ? new Date(startDate as string) : undefined,
+      endDate ? new Date(endDate as string) : undefined
+    );
+    res.status(200).json(stats);
   } catch (error) {
-    console.error('Error fetching zone stats:', error);
-    res.status(500).json({ error: 'Failed to fetch zone stats' });
+    next(error);
   }
 });
 

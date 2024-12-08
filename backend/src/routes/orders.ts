@@ -1,242 +1,37 @@
 import express from 'express';
-import { OrderService } from '../services/orders';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
-import { validateRequest } from '../middleware/validateRequest';
+import { OrderController } from '../controllers/orderController';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { 
-  createOrderSchema, 
-  updateOrderSchema,
-  updateOrderStatusSchema 
-} from '../validation/orders';
-import { OrderStatus } from '../models/order';
-import { AppError, errorCodes } from '../utils/errors';
+  validateCreateOrder,
+  validateGetOrders,
+  validateGetOrderById,
+  validateUpdateOrderStatus,
+  validateAssignDeliveryPerson,
+  validateUpdateOrder,
+  validateCancelOrder,
+  validateGetOrderHistory,
+  validateRateOrder
+} from '../middleware/orderValidation';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
-const orderService = new OrderService();
+const orderController = new OrderController();
 
-/**
- * @swagger
- * /api/orders:
- *   post:
- *     tags: [Orders]
- *     summary: Create a new order
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateOrderRequest'
- */
-router.post(
-  '/',
-  isAuthenticated,
-  validateRequest(createOrderSchema),
-  async (req, res) => {
-    try {
-      const userId = req.user!.uid;
-      const order = await orderService.createOrder({
-        ...req.body,
-        userId
-      });
-      res.status(201).json(order);
-    } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
-    }
-  }
-);
+// Protected routes requiring authentication
+router.use(isAuthenticated);
 
-/**
- * @swagger
- * /api/orders:
- *   get:
- *     tags: [Orders]
- *     summary: Get user orders with pagination and filters
- *     security:
- *       - bearerAuth: []
- */
-router.get('/', isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user!.uid;
-    const { 
-      page = 1, 
-      limit = 10, 
-      status, 
-      startDate, 
-      endDate,
-      sortBy = 'createdAt',
-      sortOrder = 'desc'
-    } = req.query;
+// User-specific routes
+router.post('/', validateCreateOrder, orderController.createOrder); // Apply validation directly
+router.get('/history', validateGetOrderHistory, orderController.getOrderHistory); // Apply validation directly
+router.post('/:id/rate', validateRateOrder, orderController.rateOrder); // Apply validation directly
 
-    const orders = await orderService.getOrdersByUser(userId, {
-      page: Number(page),
-      limit: Number(limit),
-      status: status as OrderStatus,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
-      sortBy: sortBy as string,
-      sortOrder: sortOrder as 'asc' | 'desc'
-    });
-
-    res.json(orders);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-});
-
-/**
- * @swagger
- * /api/orders/{id}:
- *   get:
- *     tags: [Orders]
- *     summary: Get order by ID
- *     security:
- *       - bearerAuth: []
- */
-router.get('/:id', isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user!.uid;
-    const order = await orderService.getOrderById(req.params.id, userId);
-    res.json(order);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-});
-
-/**
- * @swagger
- * /api/orders/{id}:
- *   put:
- *     tags: [Orders]
- *     summary: Update order details
- *     security:
- *       - bearerAuth: []
- */
-router.put('/:id',
-  isAuthenticated,
-  validateRequest(updateOrderSchema),
-  async (req, res) => {
-    try {
-      const userId = req.user!.uid;
-      const order = await orderService.updateOrder(req.params.id, userId, req.body);
-      res.json(order);
-    } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
-    }
-});
-
-/**
- * @swagger
- * /api/orders/{id}/status:
- *   patch:
- *     tags: [Orders]
- *     summary: Update order status
- *     security:
- *       - bearerAuth: []
- */
-router.patch('/:id/status',
-  isAuthenticated,
-  validateRequest(updateOrderStatusSchema),
-  async (req, res) => {
-    try {
-      const userId = req.user!.uid;
-      const { status } = req.body;
-      const order = await orderService.updateOrderStatus(req.params.id, status, userId);
-      res.json(order);
-    } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
-    }
-});
-
-/**
- * @swagger
- * /api/orders/{id}/cancel:
- *   post:
- *     tags: [Orders]
- *     summary: Cancel an order
- *     security:
- *       - bearerAuth: []
- */
-router.post('/:id/cancel',
-  isAuthenticated,
-  async (req, res) => {
-    try {
-      const userId = req.user!.uid;
-      const order = await orderService.cancelOrder(req.params.id, userId);
-      res.json(order);
-    } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
-    }
-});
-
-/**
- * @swagger
- * /api/orders/admin/all:
- *   get:
- *     tags: [Orders]
- *     summary: Get all orders (Admin only)
- *     security:
- *       - bearerAuth: []
- */
-router.get('/admin/all',
-  isAuthenticated,
-  requireAdminRole,
-  async (req, res) => {
-    try {
-      const { 
-        page = 1, 
-        limit = 10, 
-        status,
-        userId,
-        startDate,
-        endDate,
-        sortBy = 'createdAt',
-        sortOrder = 'desc'
-      } = req.query;
-
-      const orders = await orderService.getAllOrders({
-        page: Number(page),
-        limit: Number(limit),
-        status: status as OrderStatus,
-        userId: userId as string,
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined,
-        sortBy: sortBy as string,
-        sortOrder: sortOrder as 'asc' | 'desc'
-      });
-
-      res.json(orders);
-    } catch (error) {
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-      } else {
-        res.status(500).json({ message: 'Internal server error' });
-      }
-    }
-});
+// Admin-specific routes
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
+router.get('/', validateGetOrders, orderController.getOrders); // Apply validation directly
+router.get('/:id', validateGetOrderById, orderController.getOrderById); // Apply validation directly
+router.put('/:id/status', validateUpdateOrderStatus, orderController.updateOrderStatus); // Apply validation directly
+router.put('/:id/assign', validateAssignDeliveryPerson, orderController.assignDeliveryPerson); // Apply validation directly
+router.put('/:id', validateUpdateOrder, orderController.updateOrder); // Apply validation directly
+router.post('/:id/cancel', validateCancelOrder, orderController.cancelOrder); // Apply validation directly
 
 export default router;

@@ -1,6 +1,7 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { createSubscription, getSubscriptions, updateSubscription, deleteSubscription, getUserSubscription } from '../services/subscriptions';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.get('/user/:userId', isAuthenticated, async (req, res, next): Promise<voi
 });
 
 // Admin routes
-router.post('/', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
+router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
   try {
     const subscription = await createSubscription(req.body);
     res.status(201).json(subscription);
@@ -34,7 +35,7 @@ router.post('/', isAuthenticated, requireAdminRole, async (req, res, next): Prom
   }
 });
 
-router.put('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
+router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
   try {
     const subscriptionId = req.params.id;
     const updatedSubscription = await updateSubscription(subscriptionId, req.body);
@@ -47,7 +48,7 @@ router.put('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Pr
   }
 });
 
-router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
+router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
   try {
     const subscriptionId = req.params.id;
     await deleteSubscription(subscriptionId);

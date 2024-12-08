@@ -1,30 +1,26 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
-import { validateRequest } from '../middleware/validateRequest';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { 
-  updateProfileSchema,
-  updateAddressSchema,
-  updatePreferencesSchema 
-} from '../validation/userValidation';
-import { UserService } from '../services/users';
-import { AppError } from '../utils/errors';
+  validateGetUserProfile,
+  validateUpdateProfile,
+  validateUpdateAddress,
+  validateUpdatePreferences,
+  validateGetUserById,
+  validateGetUsers,
+  validateCreateUser,
+  validateLogin,
+  validateChangePassword,
+  validateResetPassword,
+  validateVerifyEmail,
+  validateUpdateUserRole
+} from '../middleware/userValidation';
+import { UserService, createUser, verifyEmail, requestPasswordReset, resetPassword } from '../services/users';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 const userService = new UserService();
 
-/**
- * @swagger
- * /api/users/profile:
- *   get:
- *     tags: [Users]
- *     summary: Get user profile
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: User profile retrieved successfully
- */
-router.get('/profile', isAuthenticated, async (req, res, next) => {
+router.get('/profile', isAuthenticated, validateGetUserProfile, async (req, res, next) => {
   try {
     const profile = await userService.getUserProfile(req.user!.uid);
     res.json(profile);
@@ -33,24 +29,9 @@ router.get('/profile', isAuthenticated, async (req, res, next) => {
   }
 });
 
-/**
- * @swagger
- * /api/users/profile:
- *   put:
- *     tags: [Users]
- *     summary: Update user profile
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateProfileRequest'
- */
 router.put('/profile', 
   isAuthenticated, 
-  validateRequest(updateProfileSchema),
+  validateUpdateProfile,
   async (req, res, next) => {
     try {
       const updatedProfile = await userService.updateProfile(req.user!.uid, req.body);
@@ -60,18 +41,9 @@ router.put('/profile',
     }
 });
 
-/**
- * @swagger
- * /api/users/address:
- *   put:
- *     tags: [Users]
- *     summary: Update user address
- *     security:
- *       - bearerAuth: []
- */
 router.put('/address',
   isAuthenticated,
-  validateRequest(updateAddressSchema),
+  validateUpdateAddress,
   async (req, res, next) => {
     try {
       const updatedAddress = await userService.updateAddress(req.user!.uid, req.body);
@@ -81,18 +53,9 @@ router.put('/address',
     }
 });
 
-/**
- * @swagger
- * /api/users/preferences:
- *   put:
- *     tags: [Users]
- *     summary: Update user preferences
- *     security:
- *       - bearerAuth: []
- */
 router.put('/preferences',
   isAuthenticated,
-  validateRequest(updatePreferencesSchema),
+  validateUpdatePreferences,
   async (req, res, next) => {
     try {
       const updatedPreferences = await userService.updatePreferences(req.user!.uid, req.body);
@@ -102,18 +65,10 @@ router.put('/preferences',
     }
 });
 
-/**
- * @swagger
- * /api/users/{id}:
- *   get:
- *     tags: [Users]
- *     summary: Get user by ID (Admin only)
- *     security:
- *       - bearerAuth: []
- */
 router.get('/:id',
   isAuthenticated,
-  requireAdminRole,
+  requireAdminRolePath([UserRole.SUPER_ADMIN]),
+  validateGetUserById,
   async (req, res, next) => {
     try {
       const user = await userService.getUserById(req.params.id);
@@ -123,18 +78,10 @@ router.get('/:id',
     }
 });
 
-/**
- * @swagger
- * /api/users:
- *   get:
- *     tags: [Users]
- *     summary: Get all users (Admin only)
- *     security:
- *       - bearerAuth: []
- */
 router.get('/',
   isAuthenticated,
-  requireAdminRole,
+  requireAdminRolePath([UserRole.SUPER_ADMIN]),
+  validateGetUsers,
   async (req, res, next) => {
     try {
       const { page = 1, limit = 10, search } = req.query;
@@ -148,5 +95,68 @@ router.get('/',
       next(error);
     }
 });
+
+router.post('/register', validateCreateUser, async (req, res, next) => {
+  try {
+    const user = await createUser(req.body);
+    res.status(201).json(user);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/login', validateLogin, async (req, res, next) => {
+  try {
+    // Implement login logic
+    res.json({ message: 'Login successful' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/change-password', 
+  isAuthenticated, 
+  validateChangePassword, 
+  async (req, res, next) => {
+    try {
+      // Implement change password logic
+      res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.post('/reset-password', validateResetPassword, async (req, res, next) => {
+  try {
+    await requestPasswordReset(req.body.email);
+    res.json({ message: 'Password reset email sent' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/verify-email', validateVerifyEmail, async (req, res, next) => {
+  try {
+    await verifyEmail(req.body.token);
+    res.json({ message: 'Email verified successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put('/:id/role', 
+  isAuthenticated, 
+  requireAdminRolePath([UserRole.SUPER_ADMIN]), 
+  validateUpdateUserRole, 
+  async (req, res, next) => {
+    try {
+      // Implement update role logic
+      res.json({ message: 'User role updated successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

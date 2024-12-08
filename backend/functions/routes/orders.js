@@ -1,196 +1,126 @@
 const express = require('express');
 const admin = require('firebase-admin');
-const { OrderService } = require('../../src/services/orders');
+const { OrderController } = require('../../src/controllers/orderController');
 const { validateRequest } = require('../../src/middleware/validateRequest');
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 const {
   createOrderSchema,
   updateOrderSchema,
   updateOrderStatusSchema,
+  assignDeliverySchema,
+  scheduleDeliverySchema,
 } = require('../../src/validation/orders');
-const { AppError } = require('../../src/utils/errors');
 
 const router = express.Router();
-const orderService = new OrderService();
+const orderController = new OrderController();
 
-// Middleware to check if the user is authenticated
-const isAuthenticated = (req, res, next) => {
-  const idToken = req.headers.authorization?.split('Bearer ')[1];
-
-  if (!idToken) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  admin.auth().verifyIdToken(idToken)
-      .then(decodedToken => {
-        req.user = decodedToken;
-        next();
-      })
-      .catch(error => {
-        console.error('Error verifying ID token:', error);
-        res.status(401).json({ error: 'Unauthorized' });
-      });
-};
-
-// Middleware to check if the user has the admin role
-const requireAdminRole = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-};
-
-// Apply authentication middleware to all routes
-router.use(isAuthenticated);
-
-// POST /orders
-router.post('/', validateRequest(createOrderSchema), async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const order = await orderService.createOrder({
-      ...req.body,
-      userId,
-    });
-    res.status(201).json(order);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
+const createOrderRateLimit = require('../../src/middleware/rateLimit')({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
 });
 
-// GET /orders
-router.get('/', async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const {
-      page = 1,
-      limit = 10,
-      status,
-      startDate,
-      endDate,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-    } = req.query;
-
-    const orders = await orderService.getOrdersByUser(userId, {
-      page: Number(page),
-      limit: Number(limit),
-      status: status,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      sortBy: sortBy,
-      sortOrder: sortOrder,
-    });
-
-    res.json(orders);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
+const resetPasswordRateLimit = require('../../src/middleware/rateLimit')({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
 });
 
-// GET /orders/:id
-router.get('/:id', async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const order = await orderService.getOrderById(req.params.id, userId);
-    res.json(order);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-});
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
-// PUT /orders/:id
-router.put('/:id', validateRequest(updateOrderSchema), async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const order = await orderService.updateOrder(req.params.id, userId, req.body);
-    res.json(order);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-});
+router.post(
+    '/create',
+    createOrderRateLimit,
+    validateRequest(createOrderSchema),
+    async (req, res) => {
+      try {
+        const newOrder = await orderController.createOrder(req, res);
+        res.status(201).json(newOrder);
+      } catch (error) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          code: error.errorCode,
+        });
+      }
+    },
+);
 
-// PATCH /orders/:id/status
-router.patch('/:id/status', validateRequest(updateOrderStatusSchema), async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const { status } = req.body;
-    const order = await orderService.updateOrderStatus(req.params.id, status, userId);
-    res.json(order);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-});
+router.get(
+    '/get',
+    async (req, res) => {
+      try {
+        const orders = await orderController.getOrders(req, res);
+        res.json(orders);
+      } catch (error) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          code: error.errorCode,
+        });
+      }
+    },
+);
 
-// POST /orders/:id/cancel
-router.post('/:id/cancel', async (req, res) => {
-  try {
-    const userId = req.user.uid;
-    const order = await orderService.cancelOrder(req.params.id, userId);
-    res.json(order);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-});
+router.put(
+    '/:id',
+    validateRequest(updateOrderSchema),
+    async (req, res) => {
+      try {
+        const updatedOrder = await orderController.updateOrder(req, res);
+        res.json(updatedOrder);
+      } catch (error) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          code: error.errorCode,
+        });
+      }
+    },
+);
 
-// Admin-only routes
-router.use(requireAdminRole);
+router.put(
+    '/:id/status',
+    validateRequest(updateOrderStatusSchema),
+    async (req, res) => {
+      try {
+        const updatedOrder = await orderController.updateOrderStatus(req, res);
+        res.json(updatedOrder);
+      } catch (error) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          code: error.errorCode,
+        });
+      }
+    },
+);
 
-// GET /orders/admin/all
-router.get('/admin/all', async (req, res) => {
-  try {
-    const {
-      page = 1,
-      limit = 10,
-      status,
-      userId,
-      startDate,
-      endDate,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-    } = req.query;
+router.post(
+    '/:id/assign',
+    validateRequest(assignDeliverySchema),
+    async (req, res) => {
+      try {
+        const updatedOrder = await orderController.assignDelivery(req, res);
+        res.json(updatedOrder);
+      } catch (error) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          code: error.errorCode,
+        });
+      }
+    },
+);
 
-    const orders = await orderService.getAllOrders({
-      page: Number(page),
-      limit: Number(limit),
-      status: status,
-      userId: userId,
-      startDate: startDate ? new Date(startDate) : undefined,
-      endDate: endDate ? new Date(endDate) : undefined,
-      sortBy: sortBy,
-      sortOrder: sortOrder,
-    });
-
-    res.json(orders);
-  } catch (error) {
-    if (error instanceof AppError) {
-      res.status(error.statusCode).json({ message: error.message, code: error.errorCode });
-    } else {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  }
-});
+router.post(
+    '/:id/schedule',
+    validateRequest(scheduleDeliverySchema),
+    async (req, res) => {
+      try {
+        const schedule = await orderController.scheduleDelivery(req, res);
+        res.json(schedule);
+      } catch (error) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          code: error.errorCode,
+        });
+      }
+    },
+);
 
 module.exports = router;

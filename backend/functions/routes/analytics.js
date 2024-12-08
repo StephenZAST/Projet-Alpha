@@ -1,6 +1,8 @@
 const express = require('express');
 const admin = require('firebase-admin');
 const { AnalyticsService } = require('../../src/services/analytics');
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 
 const router = express.Router();
 const analyticsService = new AnalyticsService();
@@ -24,15 +26,7 @@ const isAuthenticated = (req, res, next) => {
       });
 };
 
-// Middleware to check if the user has the admin role
-const requireAdminRole = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-};
-
-router.get('/revenue', isAuthenticated, requireAdminRole, async (req, res) => {
+router.get('/revenue', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const metrics = await analyticsService.getRevenueMetrics(
@@ -45,7 +39,7 @@ router.get('/revenue', isAuthenticated, requireAdminRole, async (req, res) => {
   }
 });
 
-router.get('/customers', isAuthenticated, requireAdminRole, async (req, res) => {
+router.get('/customers', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const metrics = await analyticsService.getCustomerMetrics();
     res.json(metrics);
@@ -54,7 +48,7 @@ router.get('/customers', isAuthenticated, requireAdminRole, async (req, res) => 
   }
 });
 
-router.get('/affiliates', isAuthenticated, requireAdminRole, async (req, res) => {
+router.get('/affiliates', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     const metrics = await analyticsService.getAffiliateMetrics(

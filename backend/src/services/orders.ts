@@ -182,7 +182,7 @@ export class OrderService {
       return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
     } catch (error) {
       console.error('Error fetching orders:', error);
-      throw new AppError(500, 'Failed to fetch orders', errorCodes.ORDERS_FETCH_FAILED);
+      throw new AppError(500, 'Failed to fetch orders', errorCodes.ORDER_FETCH_FAILED);
     }
   }
 
@@ -206,7 +206,7 @@ export class OrderService {
       return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
     } catch (error) {
       console.error('Error fetching zone orders:', error);
-      throw new AppError(500, 'Failed to fetch zone orders', errorCodes.ZONE_ORDERS_FETCH_FAILED);
+      throw new AppError(500, 'Failed to fetch zone orders', errorCodes.ZONES_FETCH_FAILED);
     }
   }
 
@@ -366,7 +366,7 @@ export class OrderService {
     } catch (error) {
       if (error instanceof AppError) throw error;
       console.error('Error fetching order:', error);
-      throw new AppError(500, 'Failed to fetch order', errorCodes.ORDERS_FETCH_FAILED);
+      throw new AppError(500, 'Failed to fetch order', errorCodes.ORDER_FETCH_FAILED);
     }
   }
 
@@ -408,7 +408,7 @@ export class OrderService {
     } catch (error) {
       if (error instanceof AppError) throw error;
       console.error('Error cancelling order:', error);
-      throw new AppError(500, 'Failed to cancel order', errorCodes.ORDER_UPDATE_FAILED);
+      throw new AppError(500, 'Failed to cancel order', errorCodes.ORDER_CANCELLATION_FAILED);
     }
   }
 
@@ -450,7 +450,7 @@ export class OrderService {
       return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
     } catch (error) {
       console.error('Error fetching all orders:', error);
-      throw new AppError(500, 'Failed to fetch all orders', errorCodes.ORDERS_FETCH_FAILED);
+      throw new AppError(500, 'Failed to fetch all orders', errorCodes.ORDER_FETCH_FAILED);
     }
   }
 }

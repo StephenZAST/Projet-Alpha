@@ -20,7 +20,7 @@ export class TeamService {
       return { ...newTeam, id: teamRef.id } as Team;
     } catch (error) {
       console.error('Error creating team:', error);
-      throw new AppError(500, 'Failed to create team', errorCodes.DATABASE_ERROR);
+      throw new AppError(500, 'Failed to create team', errorCodes.TEAM_CREATION_FAILED);
     }
   }
 
@@ -35,7 +35,7 @@ export class TeamService {
       return { id: teamDoc.id, ...teamDoc.data() } as Team;
     } catch (error) {
       console.error('Error fetching team:', error);
-      throw new AppError(500, 'Failed to fetch team', errorCodes.DATABASE_ERROR);
+      throw new AppError(500, 'Failed to fetch team', errorCodes.TEAM_NOT_FOUND);
     }
   }
 
@@ -51,7 +51,7 @@ export class TeamService {
       return { id: teamId, ...updatedTeam.data() } as Team;
     } catch (error) {
       console.error('Error updating team:', error);
-      throw new AppError(500, 'Failed to update team', errorCodes.DATABASE_ERROR);
+      throw new AppError(500, 'Failed to update team', errorCodes.TEAM_UPDATE_FAILED);
     }
   }
 
@@ -60,7 +60,7 @@ export class TeamService {
       await this.teamsRef.doc(teamId).delete();
     } catch (error) {
       console.error('Error deleting team:', error);
-      throw new AppError(500, 'Failed to delete team', errorCodes.DATABASE_ERROR);
+      throw new AppError(500, 'Failed to delete team', errorCodes.TEAM_DELETION_FAILED);
     }
   }
 
@@ -90,7 +90,7 @@ export class TeamService {
     } catch (error) {
       if (error instanceof AppError) throw error;
       console.error('Error adding admin to team:', error);
-      throw new AppError(500, 'Failed to add admin to team', errorCodes.DATABASE_ERROR);
+      throw new AppError(500, 'Failed to add admin to team', errorCodes.DATABASE_ERROR); // Retain DATABASE_ERROR here
     }
   }
 
@@ -122,7 +122,7 @@ export class TeamService {
     } catch (error) {
       if (error instanceof AppError) throw error;
       console.error('Error removing admin from team:', error);
-      throw new AppError(500, 'Failed to remove admin from team', errorCodes.DATABASE_ERROR);
+      throw new AppError(500, 'Failed to remove admin from team', errorCodes.DATABASE_ERROR); // Retain DATABASE_ERROR here
     }
   }
 
@@ -132,7 +132,7 @@ export class TeamService {
       return teamsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Team));
     } catch (error) {
       console.error('Error fetching teams for admin:', error);
-      throw new AppError(500, 'Failed to fetch teams for admin', errorCodes.DATABASE_ERROR);
+      throw new AppError(500, 'Failed to fetch teams for admin', errorCodes.DATABASE_ERROR); // Retain DATABASE_ERROR here
     }
   }
 }

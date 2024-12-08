@@ -1,16 +1,15 @@
-/* eslint-disable max-len */
-/* eslint-disable no-unused-vars */
 const express = require('express');
 const admin = require('firebase-admin');
 const { recurringOrderController } = require('../../src/controllers/recurringOrderController');
-const { isAuthenticated, requireAdminRole } = require('../middleware/auth'); // Assuming you have an auth middleware
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 const { validateRequest } = require('../../src/middleware/validateRequest');
 const { recurringOrderValidation } = require('../../src/validations/recurringOrderValidation');
 
 const router = express.Router();
 
 // Apply authentication middleware to all routes
-router.use(isAuthenticated);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 // POST /recurring-orders
 router.post('/', validateRequest(recurringOrderValidation.create), recurringOrderController.createRecurringOrder);
@@ -25,6 +24,6 @@ router.post('/:id/cancel', validateRequest(recurringOrderValidation.params), rec
 router.get('/', recurringOrderController.getRecurringOrders);
 
 // Admin-only route
-router.post('/process', requireAdminRole, recurringOrderController.processRecurringOrders);
+router.post('/process', requireAdminRolePath([UserRole.SUPER_ADMIN]), recurringOrderController.processRecurringOrders);
 
 module.exports = router;

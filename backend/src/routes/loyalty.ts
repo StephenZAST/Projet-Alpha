@@ -1,269 +1,41 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
-import { validateRequest } from '../middleware/validateRequest';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
+import { LoyaltyController } from '../controllers/loyaltyController';
 import { 
-  redeemRewardSchema,
-  updateLoyaltyTierSchema,
-  createRewardSchema
-} from '../validation/loyalty';
-import { LoyaltyService } from '../services/loyalty';
-import { AppError } from '../utils/errors';
+  validateCreateReward,
+  validateUpdateReward,
+  validateDeleteReward,
+  validateGetRewards,
+  validateGetRewardById,
+  validateRedeemReward,
+  validateGetLoyaltyProgram,
+  validateUpdateLoyaltyProgram,
+  validateGetUserPoints,
+  validateAdjustUserPoints
+} from '../middleware/loyaltyValidation';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
-const loyaltyService = new LoyaltyService();
+const loyaltyController = new LoyaltyController();
 
-/**
- * @swagger
- * /api/loyalty/account:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get user's loyalty account details
- *     security:
- *       - bearerAuth: []
- */
-router.get('/account', isAuthenticated, async (req, res, next) => {
-  try {
-    const account = await loyaltyService.getLoyaltyAccount(req.user!.uid);
-    res.json(account);
-  } catch (error) {
-    next(error);
-  }
-});
+// Protected routes requiring authentication
+router.use(isAuthenticated);
 
-/**
- * @swagger
- * /api/loyalty/points/history:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get user's points history
- *     security:
- *       - bearerAuth: []
- */
-router.get('/points/history', isAuthenticated, async (req, res, next) => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
-    const history = await loyaltyService.getPointsHistory(
-      req.user!.uid,
-      Number(page),
-      Number(limit)
-    );
-    res.json(history);
-  } catch (error) {
-    next(error);
-  }
-});
+// Admin-specific routes
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
+router.post('/rewards', validateCreateReward, loyaltyController.createReward); // Apply validation directly
+router.put('/rewards/:id', validateUpdateReward, loyaltyController.updateReward); // Apply validation directly
+router.delete('/rewards/:id', validateDeleteReward, loyaltyController.deleteReward); // Apply validation directly
+router.get('/rewards', validateGetRewards, loyaltyController.getRewards); // Apply validation directly
+router.get('/rewards/:id', validateGetRewardById, loyaltyController.getRewardById); // Apply validation directly
+router.put('/program', validateUpdateLoyaltyProgram, loyaltyController.updateLoyaltyProgram); // Apply validation directly
 
-/**
- * @swagger
- * /api/loyalty/rewards:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get available rewards
- *     security:
- *       - bearerAuth: []
- */
-router.get('/rewards', isAuthenticated, async (req, res, next) => {
-  try {
-    const { type, category, status } = req.query;
-    const rewards = await loyaltyService.getAvailableRewards(req.user!.uid, {
-      type: type as string,
-      category: category as string,
-      status: status as string
-    });
-    res.json(rewards);
-  } catch (error) {
-    next(error);
-  }
-});
+// User-specific routes
+router.post('/redeem/:rewardId', validateRedeemReward, loyaltyController.redeemReward); // Apply validation directly
+router.get('/program', validateGetLoyaltyProgram, loyaltyController.getLoyaltyProgram); // Apply validation directly
+router.get('/points', validateGetUserPoints, loyaltyController.getUserPoints); // Apply validation directly
 
-/**
- * @swagger
- * /api/loyalty/rewards/{rewardId}/redeem:
- *   post:
- *     tags: [Loyalty]
- *     summary: Redeem a reward
- *     security:
- *       - bearerAuth: []
- */
-router.post(
-  '/rewards/:rewardId/redeem',
-  isAuthenticated,
-  validateRequest(redeemRewardSchema),
-  async (req, res, next) => {
-    try {
-      const { shippingAddress } = req.body;
-      const redemption = await loyaltyService.redeemReward(
-        req.user!.uid,
-        req.params.rewardId,
-        shippingAddress
-      );
-      res.json(redemption);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-/**
- * @swagger
- * /api/loyalty/tiers:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get all loyalty tiers
- *     security:
- *       - bearerAuth: []
- */
-router.get('/tiers', isAuthenticated, async (req, res, next) => {
-  try {
-    const tiers = await loyaltyService.getLoyaltyTiers();
-    res.json(tiers);
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * @swagger
- * /api/loyalty/admin/rewards:
- *   post:
- *     tags: [Loyalty]
- *     summary: Create a new reward (Admin only)
- *     security:
- *       - bearerAuth: []
- */
-router.post(
-  '/admin/rewards',
-  isAuthenticated,
-  requireAdminRole,
-  validateRequest(createRewardSchema),
-  async (req, res, next) => {
-    try {
-      const reward = await loyaltyService.createReward(req.body);
-      res.status(201).json(reward);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-/**
- * @swagger
- * /api/loyalty/admin/tiers/{tierId}:
- *   put:
- *     tags: [Loyalty]
- *     summary: Update loyalty tier (Admin only)
- *     security:
- *       - bearerAuth: []
- */
-router.put(
-  '/admin/tiers/:tierId',
-  isAuthenticated,
-  requireAdminRole,
-  validateRequest(updateLoyaltyTierSchema),
-  async (req, res, next) => {
-    try {
-      const tier = await loyaltyService.updateLoyaltyTier(
-        req.params.tierId,
-        req.body
-      );
-      res.json(tier);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-/**
- * @swagger
- * /api/loyalty/admin/redemptions:
- *   get:
- *     tags: [Loyalty]
- *     summary: Get all reward redemptions (Admin only)
- *     security:
- *       - bearerAuth: []
- */
-router.get(
-  '/admin/redemptions',
-  isAuthenticated,
-  requireAdminRole,
-  async (req, res, next) => {
-    try {
-      const { 
-        page = 1, 
-        limit = 10,
-        status,
-        startDate,
-        endDate 
-      } = req.query;
-
-      const redemptions = await loyaltyService.getRewardRedemptions({
-        page: Number(page),
-        limit: Number(limit),
-        status: status as string,
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined
-      });
-      res.json(redemptions);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-/**
- * @swagger
- * /api/loyalty/admin/redemptions/{redemptionId}/status:
- *   patch:
- *     tags: [Loyalty]
- *     summary: Update redemption status (Admin only)
- *     security:
- *       - bearerAuth: []
- */
-router.patch(
-  '/admin/redemptions/:redemptionId/status',
-  isAuthenticated,
-  requireAdminRole,
-  async (req, res, next) => {
-    try {
-      const { status, notes } = req.body;
-      const redemption = await loyaltyService.updateRedemptionStatus(
-        req.params.redemptionId,
-        status,
-        notes
-      );
-      res.json(redemption);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-// Admin routes for physical rewards
-router.get('/admin/pending-rewards', isAuthenticated, requireAdminRole, async (req, res, next) => {
-  try {
-    const pendingRewards = await loyaltyService.getPendingPhysicalRewards();
-    res.json({ pendingRewards });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/admin/claim-reward/:redemptionId', isAuthenticated, requireAdminRole, async (req, res, next) => {
-  try {
-    const success = await loyaltyService.verifyAndClaimPhysicalReward(
-      req.params.redemptionId,
-      req.user!.uid,
-      req.body.notes
-    );
-
-    if (success) {
-      res.json({ message: 'Reward claimed successfully' });
-    } else {
-      res.status(400).json({ error: 'Failed to claim reward' });
-    }
-  } catch (error) {
-    next(error);
-  }
-});
+// Admin route for adjusting user points
+router.post('/adjust/:userId', validateAdjustUserPoints, loyaltyController.adjustUserPoints); // Apply validation directly
 
 export default router;

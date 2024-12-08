@@ -60,12 +60,16 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const isAuthenticated = auth;
-export const requireAdminRole = (req: Request, res: Response, next: NextFunction) => {
-  if (req.user && req.user.role === UserRole.SUPER_ADMIN) {
+export const requireAdminRole = (allowedRoles: UserRole[]) => (req: Request, res: Response, next: NextFunction) => {
+  if (req.user && allowedRoles.includes(req.user.role)) {
     next();
   } else {
-    res.status(403).json({ message: 'Forbidden - Admin role required' });
+    res.status(403).json({ message: 'Forbidden - Insufficient role' });
   }
+};
+
+export const requireAdminRolePath = (allowedRoles: UserRole[]) => {
+  return requireAdminRole(allowedRoles);
 };
 
 enum UserStatus {

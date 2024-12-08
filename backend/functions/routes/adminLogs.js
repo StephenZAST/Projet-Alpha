@@ -1,5 +1,7 @@
 const express = require('express');
 const admin = require('firebase-admin');
+const { requireAdminRolePath } = require('../middleware/auth');
+const { UserRole } = require('../models/user');
 
 const db = admin.firestore();
 const router = express.Router();
@@ -23,17 +25,9 @@ const isAuthenticated = (req, res, next) => {
       });
 };
 
-// Middleware to check if the user has the admin role
-const requireAdminRole = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-};
-
 // Apply middleware to all routes
 router.use(isAuthenticated);
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 // GET /adminLogs - Get all admin logs
 router.get('/', async (req, res) => {

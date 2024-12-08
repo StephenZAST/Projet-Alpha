@@ -1,65 +1,91 @@
 import express from 'express';
-import { auth } from '../services/firebase';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
+import { 
+  validateGetAdminById,
+  validateGetAdmins,
+  validateCreateAdmin,
+  validateUpdateAdmin,
+  validateDeleteAdmin,
+  validateUpdateAdminRole
+} from '../middleware/adminValidation';
+import { AdminService } from '../services/adminService';
 import { AppError } from '../utils/errors';
-import { generateToken, hashPassword, validatePasswordStrength } from '../utils/auth';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
+const adminService = new AdminService();
 
-// Create Master Admin
-router.post('/master/create', async (req, res, next) => {
+// Protect all routes
+router.use(isAuthenticated);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
+
+// Define route handler functions using async/await
+const getAdmins = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
   try {
-    const { email, password, firstName, lastName, phoneNumber } = req.body;
-
-    // Validate required fields
-    if (!email || !password) {
-      throw new AppError(400, 'Email and password are required', 'INVALID_ADMIN_DATA');
-    }
-
-    // Validate password strength
-    validatePasswordStrength(password);
-
-    // Hash the password
-    const hashedPassword = await hashPassword(password);
-
-    // Create user in Firebase
-    const userRecord = await auth.createUser({
-      email,
-      password: hashedPassword, // Use the hashed password
-      displayName: `${firstName} ${lastName}`,
-      phoneNumber,
-    });
-
-    // Add custom claims for master admin
-    await auth.setCustomUserClaims(userRecord.uid, {
-      role: 'master_admin',
-      firstName,
-      lastName,
-    });
-
-    // Generate JWT token using our utility
-    const token = generateToken({
-      uid: userRecord.uid,
-      email: userRecord.email,
-      role: 'master_admin',
-    });
-
-    res.status(201).json({
-      success: true,
-      data: {
-        token,
-        admin: {
-          uid: userRecord.uid,
-          email: userRecord.email,
-          firstName,
-          lastName,
-          phoneNumber,
-          role: 'master_admin',
-        },
-      },
-    });
+    const requesterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const admins = await adminService.getAllAdmins(requesterId);
+    res.json(admins);
   } catch (error) {
     next(error);
   }
-});
+};
+
+const getAdminById = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
+  try {
+    const requesterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const admin = await adminService.getAdminById(req.params.id, requesterId);
+    res.json(admin);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  try {
+    const creatorId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const admin = await adminService.createAdmin(req.body, creatorId);
+    res.status(201).json(admin);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateAdmin = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
+  try {
+    const updaterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body, updaterId);
+    res.json(updatedAdmin);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteAdmin = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
+  try {
+    const deleterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    await adminService.deleteAdmin(req.params.id, deleterId);
+    res.json({ message: 'Admin deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateAdminRole = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
+  try {
+    const updaterId = req.user!.id; // Assuming user ID is available in req.user after authentication
+    const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body, updaterId);
+    res.json(updatedAdmin);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Routes using route handler functions
+router.get('/', validateGetAdmins, getAdmins); 
+router.get('/:id', validateGetAdminById, getAdminById); 
+router.post('/', validateCreateAdmin, createAdmin); 
+router.put('/:id', validateUpdateAdmin, updateAdmin); 
+router.delete('/:id', validateDeleteAdmin, deleteAdmin); 
+router.put('/:id/role', validateUpdateAdminRole, updateAdminRole); 
 
 export default router;

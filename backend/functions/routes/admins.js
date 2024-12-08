@@ -3,6 +3,8 @@ const admin = require('firebase-admin');
 const { AdminService } = require('../../src/services/adminService');
 // eslint-disable-next-line no-unused-vars
 const { AppError } = require('../../src/utils/errors');
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 
 const router = express.Router();
 const adminService = new AdminService();
@@ -26,14 +28,6 @@ const isAuthenticated = (req, res, next) => {
       });
 };
 
-// Middleware to check if the user has the admin role
-const requireAdminRole = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-};
-
 // Public routes
 router.post('/login', adminService.login);
 
@@ -44,7 +38,7 @@ router.post('/master/create', adminService.createMasterAdmin);
 router.use(isAuthenticated);
 
 // Routes for Super Admin Master and Super Admin
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 router.get('/all', adminService.getAllAdmins);
 router.post('/create', adminService.createAdmin);
 

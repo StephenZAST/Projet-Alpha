@@ -3,9 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './config/swagger';
-import { setupSwagger } from './swagger/definitions';
 import { JobScheduler } from './jobs/scheduler';
 import { logger } from './utils/logger';
 
@@ -17,6 +14,8 @@ import authRoutes from './routes/authRoutes';
 import websocketRoutes from './routes/websocket';
 import adminLogRoutes from './routes/adminLogRoutes';
 import googleAuthRoutes from './routes/googleAuthRoutes'; // Added import
+import blogArticleRoutes from './routes/blogArticleRoutes'; // Ajout des routes de blog
+import blogGeneratorRoutes from './routes/blogGeneratorRoutes';
 
 const app = express();
 const jobScheduler = new JobScheduler();
@@ -29,16 +28,6 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Setup Swagger documentation
-setupSwagger(app);
-
-// Documentation Swagger
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: "API Documentation - Pressing Service",
-  customfavIcon: "/assets/favicon.ico"
-}));
-
 // Routes
 app.use('/api/orders', orderRoutes);
 app.use('/api/zones', zoneRoutes);
@@ -47,6 +36,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/websocket', websocketRoutes);
 app.use('/api/adminLogs', adminLogRoutes);
 app.use('/api/admin', googleAuthRoutes); // Added route
+app.use('/api/blog', blogArticleRoutes); // Ajout des routes de blog
+app.use('/api/blog-generator', blogGeneratorRoutes); // Ajout des routes de génération de blog
 
 // Route de base pour vérifier que le serveur fonctionne
 app.get('/', (req, res) => {

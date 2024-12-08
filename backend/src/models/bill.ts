@@ -62,6 +62,12 @@ export interface Bill {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   paidAt?: Timestamp;
+  paymentDate?: Timestamp;
+  refundAmount?: number;
+  paymentReference?: string;
+  refundDate?: Timestamp;
+  refundReason?: string;
+  refundReference?: string; // Added refundReference property
 }
 
 export interface Payment {
