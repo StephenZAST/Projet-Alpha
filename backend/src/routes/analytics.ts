@@ -1,11 +1,12 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { AnalyticsService } from '../services/analytics';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 const analyticsService = new AnalyticsService();
 
-router.get('/revenue', isAuthenticated, requireAdminRole, async (req, res, next) => {
+router.get('/revenue', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query;
     const metrics = await analyticsService.getRevenueMetrics(
@@ -18,4 +19,3 @@ router.get('/revenue', isAuthenticated, requireAdminRole, async (req, res, next)
   }
 });
 
-// ... (rest of the code remains the same)

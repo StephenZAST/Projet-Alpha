@@ -1,15 +1,16 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { AdminLogController } from '../controllers/adminLogController';
 import { validateRequest } from '../middleware/validateRequest';
-import { searchAdminLogsSchema } from '../validation/adminLogs'; 
+import { searchAdminLogsSchema } from '../validation/adminLogs';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 const adminLogController = new AdminLogController();
 
 // Protect all routes
 router.use(isAuthenticated);
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 // Define route handler functions using async/await
 const getLogs = async (req: express.Request, res: express.Response, next: express.NextFunction) => {

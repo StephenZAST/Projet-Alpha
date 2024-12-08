@@ -1,5 +1,5 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { LoyaltyController } from '../controllers/loyaltyController';
 import { 
   validateCreateReward,
@@ -13,6 +13,7 @@ import {
   validateGetUserPoints,
   validateAdjustUserPoints
 } from '../middleware/loyaltyValidation';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 const loyaltyController = new LoyaltyController();
@@ -21,7 +22,7 @@ const loyaltyController = new LoyaltyController();
 router.use(isAuthenticated);
 
 // Admin-specific routes
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 router.post('/rewards', validateCreateReward, loyaltyController.createReward); // Apply validation directly
 router.put('/rewards/:id', validateUpdateReward, loyaltyController.updateReward); // Apply validation directly
 router.delete('/rewards/:id', validateDeleteReward, loyaltyController.deleteReward); // Apply validation directly

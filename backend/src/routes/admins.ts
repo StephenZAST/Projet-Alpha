@@ -1,5 +1,5 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { 
   validateGetAdminById,
   validateGetAdmins,
@@ -10,13 +10,14 @@ import {
 } from '../middleware/adminValidation';
 import { AdminService } from '../services/adminService';
 import { AppError } from '../utils/errors';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 const adminService = new AdminService();
 
 // Protect all routes
 router.use(isAuthenticated);
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 // Define route handler functions using async/await
 const getAdmins = async (req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -1,6 +1,7 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { createCategory, getCategories, updateCategory, deleteCategory } from '../services/categories';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ router.get('/', async (req, res, next): Promise<void> => {
   }
 });
 
-router.post('/', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
+router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
   try {
     const category = await createCategory(req.body);
     res.status(201).json(category);
@@ -22,7 +23,7 @@ router.post('/', isAuthenticated, requireAdminRole, async (req, res, next): Prom
   }
 });
 
-router.put('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
+router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
   try {
     const categoryId = req.params.id;
     const updatedCategory = await updateCategory(categoryId, req.body);
@@ -35,7 +36,7 @@ router.put('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Pr
   }
 });
 
-router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res, next): Promise<void> => {
+router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
   try {
     const categoryId = req.params.id;
     await deleteCategory(categoryId);

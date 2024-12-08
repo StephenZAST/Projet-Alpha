@@ -1,5 +1,5 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { 
   validateGetUserProfile,
   validateUpdateProfile,
@@ -15,6 +15,7 @@ import {
   validateUpdateUserRole
 } from '../middleware/userValidation';
 import { UserService, createUser, verifyEmail, requestPasswordReset, resetPassword } from '../services/users';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 const userService = new UserService();
@@ -66,7 +67,7 @@ router.put('/preferences',
 
 router.get('/:id',
   isAuthenticated,
-  requireAdminRole,
+  requireAdminRolePath([UserRole.SUPER_ADMIN]),
   validateGetUserById,
   async (req, res, next) => {
     try {
@@ -79,7 +80,7 @@ router.get('/:id',
 
 router.get('/',
   isAuthenticated,
-  requireAdminRole,
+  requireAdminRolePath([UserRole.SUPER_ADMIN]),
   validateGetUsers,
   async (req, res, next) => {
     try {
@@ -146,7 +147,7 @@ router.post('/verify-email', validateVerifyEmail, async (req, res, next) => {
 
 router.put('/:id/role', 
   isAuthenticated, 
-  requireAdminRole, 
+  requireAdminRolePath([UserRole.SUPER_ADMIN]), 
   validateUpdateUserRole, 
   async (req, res, next) => {
     try {

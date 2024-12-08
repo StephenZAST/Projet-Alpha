@@ -1,8 +1,9 @@
 import express from 'express';
 import { billingController } from '../controllers/billingController';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
 import { createBillSchema, updateBillSchema } from '../validation/billing';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/:id', billingController.getBillById);
 router.delete('/delete/:id', billingController.deleteBill);
 
 // Admin-specific routes
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 router.post('/generate', billingController.generateInvoices); // No validation needed for this route
 
 export default router;

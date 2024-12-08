@@ -1,6 +1,6 @@
 import express from 'express';
 import { recurringOrderController } from '../controllers/recurringOrderController';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { 
   validateCreateRecurringOrder,
   validateUpdateRecurringOrder,
@@ -8,6 +8,7 @@ import {
   validateGetRecurringOrders,
   validateProcessRecurringOrders
 } from '../middleware/recurringOrderValidation';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 
@@ -42,7 +43,7 @@ router.get(
 router.post(
   '/process',
   isAuthenticated,
-  requireAdminRole,
+  requireAdminRolePath([UserRole.SUPER_ADMIN]),
   validateProcessRecurringOrders, // Apply validation directly
   recurringOrderController.processRecurringOrders
 );

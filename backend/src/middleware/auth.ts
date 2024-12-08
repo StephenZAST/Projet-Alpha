@@ -68,6 +68,10 @@ export const requireAdminRole = (allowedRoles: UserRole[]) => (req: Request, res
   }
 };
 
+export const requireAdminRolePath = (allowedRoles: UserRole[]) => {
+  return requireAdminRole(allowedRoles);
+};
+
 enum UserStatus {
   PENDING = 'PENDING',
   ACTIVE = 'ACTIVE',

@@ -1,5 +1,5 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { 
   validateCreateZone,
   validateGetAllZones,
@@ -9,7 +9,8 @@ import {
   validateAssignDeliveryPerson,
   validateGetZoneStats
 } from '../middleware/zoneValidation';
-import { zoneService } from '../services/zones'; 
+import { zoneService } from '../services/zones';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ const router = express.Router();
 router.use(isAuthenticated);
 
 // Route pour créer une nouvelle zone
-router.post('/', requireAdminRole, validateCreateZone, async (req, res, next) => {
+router.post('/', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateCreateZone, async (req, res, next) => {
   try {
     const zone = await zoneService.createZone(req.body);
     res.status(201).json(zone);
@@ -59,7 +60,7 @@ router.get('/:zoneId', validateGetZoneById, async (req, res, next) => {
 });
 
 // Route pour mettre à jour une zone
-router.put('/:zoneId', requireAdminRole, validateUpdateZone, async (req, res, next) => {
+router.put('/:zoneId', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateUpdateZone, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     const success = await zoneService.updateZone(zoneId, req.body);
@@ -74,7 +75,7 @@ router.put('/:zoneId', requireAdminRole, validateUpdateZone, async (req, res, ne
 });
 
 // Route pour supprimer une zone
-router.delete('/:zoneId', requireAdminRole, validateDeleteZone, async (req, res, next) => {
+router.delete('/:zoneId', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateDeleteZone, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     await zoneService.deleteZone(zoneId); 
@@ -85,7 +86,7 @@ router.delete('/:zoneId', requireAdminRole, validateDeleteZone, async (req, res,
 });
 
 // Route pour assigner un livreur à une zone
-router.post('/:zoneId/assign', requireAdminRole, validateAssignDeliveryPerson, async (req, res, next) => {
+router.post('/:zoneId/assign', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateAssignDeliveryPerson, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     const { deliveryPersonId } = req.body;
@@ -101,7 +102,7 @@ router.post('/:zoneId/assign', requireAdminRole, validateAssignDeliveryPerson, a
 });
 
 // Route pour obtenir les statistiques d'une zone
-router.get('/:zoneId/stats', requireAdminRole, validateGetZoneStats, async (req, res, next) => {
+router.get('/:zoneId/stats', requireAdminRolePath([UserRole.SUPER_ADMIN]), validateGetZoneStats, async (req, res, next) => {
   try {
     const zoneId = req.params.zoneId;
     const { startDate, endDate } = req.query;

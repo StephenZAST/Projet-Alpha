@@ -1,13 +1,14 @@
 import express from 'express';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { PermissionController } from '../controllers/permissionController';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 const permissionController = new PermissionController();
 
 // Protect all routes in this router with authentication and admin role
 router.use(isAuthenticated);
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 // Define route handler functions using async/await
 const getAllPermissions = async (req: express.Request, res: express.Response, next: express.NextFunction) => {

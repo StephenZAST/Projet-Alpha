@@ -1,6 +1,6 @@
 import express from 'express';
 import { BlogArticleController } from '../controllers/blogArticleController';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { validateCreateBlogArticle, validateUpdateBlogArticle } from '../middleware/blogArticleValidation';
 import { UserRole } from '../models/user';
 
@@ -17,21 +17,21 @@ router.use(isAuthenticated);
 // Routes pour la création et la gestion des articles (tous les admins sauf les livreurs)
 router.post(
     '/',
-    requireAdminRole([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
+    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
     validateCreateBlogArticle,
     blogArticleController.createArticle
 );
 
 router.put(
     '/:id',
-    requireAdminRole([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
+    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
     validateUpdateBlogArticle,
     blogArticleController.updateArticle
 );
 
 router.delete(
     '/:id',
-    requireAdminRole([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
+    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
     blogArticleController.deleteArticle
 );
 

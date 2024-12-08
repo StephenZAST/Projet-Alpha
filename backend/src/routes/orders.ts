@@ -1,6 +1,6 @@
 import express from 'express';
 import { OrderController } from '../controllers/orderController';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { 
   validateCreateOrder,
   validateGetOrders,
@@ -12,6 +12,7 @@ import {
   validateGetOrderHistory,
   validateRateOrder
 } from '../middleware/orderValidation';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 const orderController = new OrderController();
@@ -25,7 +26,7 @@ router.get('/history', validateGetOrderHistory, orderController.getOrderHistory)
 router.post('/:id/rate', validateRateOrder, orderController.rateOrder); // Apply validation directly
 
 // Admin-specific routes
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 router.get('/', validateGetOrders, orderController.getOrders); // Apply validation directly
 router.get('/:id', validateGetOrderById, orderController.getOrderById); // Apply validation directly
 router.put('/:id/status', validateUpdateOrderStatus, orderController.updateOrderStatus); // Apply validation directly

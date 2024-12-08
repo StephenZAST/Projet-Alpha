@@ -1,6 +1,7 @@
 import express from 'express';
 import { affiliateController } from '../controllers/affiliateController';
-import { isAuthenticated, requireAdminRole, auth } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath, auth } from '../middleware/auth';
+import { UserRole } from '../models/user';
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.get('/withdrawals/pending', affiliateController.getCommissionWithdrawals)
 router.post('/withdrawal/:id/process', affiliateController.updateCommissionWithdrawalStatus);
 
 // Routes admin uniquement
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 router.get('/all', affiliateController.getAllAffiliates);
 router.post('/commission-rules', affiliateController.updateAffiliate);

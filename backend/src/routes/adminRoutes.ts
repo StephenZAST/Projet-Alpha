@@ -1,6 +1,6 @@
 import express from 'express';
 import { AdminController } from '../controllers/adminController';
-import { isAuthenticated, requireAdminRole } from '../middleware/auth';
+import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { AdminRole } from '../models/admin';
 import { UserRole } from '../models/user';
 import { 
@@ -23,7 +23,7 @@ router.post('/master/create', adminController.createMasterAdmin); // No validati
 router.use(isAuthenticated);
 
 // Routes for Super Admin Master and Super Admin
-router.use(requireAdminRole);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 router.get('/all', adminController.getAllAdmins);
 router.post('/create', validateCreateAdmin, adminController.createAdmin); // Apply validation directly
 
