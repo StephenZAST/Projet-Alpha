@@ -88,4 +88,18 @@ app.use('/subscriptions', subscriptionsRoutes);
 const usersRoutes = require('./routes/users');
 app.use('/users', usersRoutes);
 
+// Import des nouvelles routes de blog
+const blogArticleRoutes = require('./routes/blogArticle');
+const blogGeneratorRoutes = require('./routes/blogGenerator');
+
+// Utilisation des routes existantes
+app.use('/orders', ordersRoutes);
+app.use('/billing', billingRoutes);
+app.use('/auth', authRoutes);
+app.use('/adminLogs', adminLogsRoutes);
+
+// Ajout des nouvelles routes de blog
+app.use('/blog', blogArticleRoutes);
+app.use('/blog-generator', blogGeneratorRoutes);
+
 exports.api = functions.https.onRequest(app);
