@@ -3,6 +3,8 @@ const admin = require('firebase-admin');
 const { createArticle, getArticles, updateArticle, deleteArticle } = require('../../src/services/articles');
 const { validateArticleInput } = require('../../src/middleware/validation/index');
 const { AppError } = require('../../src/utils/errors');
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 
 // eslint-disable-next-line no-unused-vars
 const db = admin.firestore();
@@ -27,14 +29,6 @@ const isAuthenticated = (req, res, next) => {
       });
 };
 
-// Middleware to check if the user has the admin role
-const requireAdminRole = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-};
-
 // Public route - anyone can view articles
 router.get('/', async (req, res) => {
   try {
@@ -47,7 +41,7 @@ router.get('/', async (req, res) => {
 });
 
 // Protected admin routes
-router.post('/', isAuthenticated, requireAdminRole, validateArticleInput, async (req, res) => {
+router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), validateArticleInput, async (req, res) => {
   try {
     const article = await createArticle(req.body);
     if (!article) {
@@ -63,7 +57,7 @@ router.post('/', isAuthenticated, requireAdminRole, validateArticleInput, async 
   }
 });
 
-router.put('/:id', isAuthenticated, requireAdminRole, validateArticleInput, async (req, res) => {
+router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), validateArticleInput, async (req, res) => {
   try {
     const articleId = req.params.id;
     const updatedArticle = await updateArticle(articleId, req.body);
@@ -80,7 +74,7 @@ router.put('/:id', isAuthenticated, requireAdminRole, validateArticleInput, asyn
   }
 });
 
-router.delete('/:id', isAuthenticated, requireAdminRole, async (req, res) => {
+router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const articleId = req.params.id;
     const deleted = await deleteArticle(articleId);

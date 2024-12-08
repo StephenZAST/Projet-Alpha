@@ -2,6 +2,8 @@ const express = require('express');
 const admin = require('firebase-admin');
 const { AppError } = require('../../src/utils/errors');
 const { db } = require('../../src/services/firebase'); // Assuming you have a firebase.ts file for database access
+const { requireAdminRolePath } = require('../../src/middleware/auth');
+const { UserRole } = require('../../src/models/user');
 
 const router = express.Router();
 
@@ -24,19 +26,11 @@ const isAuthenticated = (req, res, next) => {
       });
 };
 
-// Middleware to check if the user has the admin role
-const requireAdminRole = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-};
-
 // Apply authentication middleware to all routes
 router.use(isAuthenticated);
 
 // POST /api/billing
-router.post('/', requireAdminRole, async (req, res) => {
+router.post('/', requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res) => {
   try {
     const { orderId, items, totalAmount } = req.body;
 
@@ -107,7 +101,7 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-// GET /api/billing/loyalty/:userId
+// GET /api/billing/loyalty/{userId}
 router.get('/loyalty/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
