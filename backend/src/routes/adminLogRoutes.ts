@@ -2,9 +2,8 @@ import express from 'express';
 import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { AdminLogController } from '../controllers/adminLogController';
 import { validateRequest } from '../middleware/validateRequest';
-import { searchAdminLogsSchema } from '../validation/adminLogs';
+import { searchAdminLogsSchema, getAdminLogByIdSchema } from '../validations/schemas/adminLogSchemas';
 import { UserRole } from '../models/user';
-import { getAdminLogByIdSchema } from '../validations/schemas/adminLogSchemas';
 
 const router = express.Router();
 const adminLogController = new AdminLogController();
