@@ -3,49 +3,28 @@ import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { createArticle, getArticles, updateArticle, deleteArticle } from '../services/articles';
 import { validateArticleInput } from '../middleware/validation/index';
 import { UserRole } from '../models/user';
+import { PaginationParams } from '../utils/pagination';
 
 const router = express.Router();
 
-// Définir les champs de tri autorisés
-const ALLOWED_SORT_FIELDS = ['createdAt', 'articleName', 'articleCategory', 'updatedAt'];
-
-// Public route - anyone can view articles with pagination
-router.get('/',
-  paginationMiddleware(10, 50, ALLOWED_SORT_FIELDS),
-  async (req, res, next) => {
-    try {
-      const articles = await getArticles(req.pagination);
-      res.json(articles);
-    } catch (error) {
-      next(error);
-    }
+// Public route - anyone can view articles
+router.get('/', async (req, res, next) => {
+  try {
+    const paginationParams: PaginationParams = {
+      page: 1,
+      limit: 10,
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
+    };
+    const articles = await getArticles(paginationParams);
+    res.json(articles);
+  } catch (error) {
+    next(error);
   }
-);
-
-// Route de recherche avec pagination et filtres
-router.get('/search',
-  paginationMiddleware(10, 50, ALLOWED_SORT_FIELDS),
-  validateRequest(searchArticlesSchema),
-  async (req, res, next) => {
-    try {
-      const searchParams = {
-        query: req.query.query as string,
-        category: req.query.category as string,
-        minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
-        maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
-        services: req.query.services ? (req.query.services as string).split(',') : undefined
-      };
-
-      const articles = await searchArticles(req.pagination, searchParams);
-      res.json(articles);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+});
 
 // Protected admin routes
-router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), validateArticleInput, async (req, res, next): Promise<void> => {
+router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), validateArticleInput, async (req, res, next) => {
   try {
     const article = await createArticle(req.body);
     res.status(201).json(article);
@@ -54,12 +33,12 @@ router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), 
   }
 });
 
-router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), validateArticleInput, async (req, res, next): Promise<void> => {
+router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), validateArticleInput, async (req, res, next) => {
   try {
     const articleId = req.params.id;
     const updatedArticle = await updateArticle(articleId, req.body);
     if (!updatedArticle) {
-      res.status(404).json({ error: 'Article not found' }); // Removed return
+      res.status(404).json({ error: 'Article not found' });
     }
     res.json(updatedArticle);
   } catch (error) {
@@ -67,14 +46,11 @@ router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN])
   }
 });
 
-router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
+router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next) => {
   try {
     const articleId = req.params.id;
-    const deletedArticle = await deleteArticle(articleId);
-    if (!deletedArticle) {
-      res.status(404).json({ error: 'Article not found' }); // Removed return
-    }
-    res.json({ message: 'Article deleted successfully' });
+    await deleteArticle(articleId);
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

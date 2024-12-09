@@ -46,27 +46,19 @@ export async function getArticles(params: PaginationParams): Promise<PaginatedRe
     const { page, limit, sortBy, sortOrder } = params;
     const offset = Pagination.getOffset(page, limit);
 
-    // Créer la requête de base
-    let query = db.collection('articles');
+    // Create the base query
+    const querySnapshot = await db.collection('articles').orderBy(sortBy || 'createdAt', sortOrder || 'desc').get();
 
-    // Ajouter le tri
-    query = query.orderBy(sortBy || 'createdAt', sortOrder || 'desc');
+    // Get the total number of articles
+    const totalItems = querySnapshot.docs.length;
 
-    // Obtenir le total des articles
-    const totalSnapshot = await query.count().get();
-    const totalItems = totalSnapshot.data().count;
-
-    // Appliquer la pagination
-    query = query.limit(limit).offset(offset);
-
-    // Exécuter la requête
-    const articlesSnapshot = await query.get();
-    const articles = articlesSnapshot.docs.map((doc) => ({
+    // Apply pagination
+    const articles = querySnapshot.docs.slice(offset, offset + limit).map((doc) => ({
       articleId: doc.id,
       ...doc.data(),
     } as Article));
 
-    // Retourner la réponse paginée
+    // Return the paginated response
     return Pagination.createResponse<Article>(
       articles,
       totalItems,
@@ -120,7 +112,7 @@ export async function deleteArticle(articleId: string): Promise<boolean> {
   }
 }
 
-// Ajouter une fonction de recherche avec pagination
+// Add a search function with pagination
 export async function searchArticles(
   params: PaginationParams,
   searchParams: {
@@ -134,65 +126,64 @@ export async function searchArticles(
   try {
     const { page, limit, sortBy, sortOrder } = params;
     const { query, category, minPrice, maxPrice, services } = searchParams;
-    
-    // Créer la requête de base
-    let dbQuery = db.collection('articles');
 
-    // Appliquer les filtres
+    // Create the base query
+    let queryRef: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db.collection('articles');
+
+    // Apply filters
     if (category) {
-      dbQuery = dbQuery.where('articleCategory', '==', category);
+      queryRef = queryRef.where('articleCategory', '==', category);
     }
 
     if (services && services.length > 0) {
-      dbQuery = dbQuery.where('availableServices', 'array-contains-any', services);
+      queryRef = queryRef.where('availableServices', 'array-contains-any', services);
     }
 
-    // Note: Les filtres de prix et de recherche textuelle nécessitent des index composites
-    // ou doivent être appliqués après avoir récupéré les résultats
+    // Note: Price and text search filters require composite indexes
+    // or should be applied after retrieving the results
 
-    // Ajouter le tri
-    dbQuery = dbQuery.orderBy(sortBy || 'createdAt', sortOrder || 'desc');
+    // Add sorting
+    queryRef = queryRef.orderBy(sortBy || 'createdAt', sortOrder || 'desc');
 
-    // Obtenir le total des résultats
-    const totalSnapshot = await dbQuery.count().get();
-    const totalItems = totalSnapshot.data().count;
+    // Get the total number of results
+    const totalSnapshot = await queryRef.get();
+    const totalItems = totalSnapshot.docs.length;
 
-    // Appliquer la pagination
+    // Apply pagination
     const offset = Pagination.getOffset(page, limit);
-    dbQuery = dbQuery.limit(limit).offset(offset);
+    queryRef = queryRef.limit(limit).offset(offset);
 
-    // Exécuter la requête
-    const articlesSnapshot = await dbQuery.get();
+    // Execute the query
+    const articlesSnapshot = await queryRef.get();
     let articles = articlesSnapshot.docs.map((doc) => ({
       articleId: doc.id,
       ...doc.data(),
     } as Article));
 
-    // Appliquer les filtres de prix et de recherche textuelle en mémoire
+    // Apply price and text search filters in memory
     if (query) {
-      articles = articles.filter(article =>
-        article.articleName.toLowerCase().includes(query.toLowerCase()) ||
-        article.description?.toLowerCase().includes(query.toLowerCase())
+      articles = articles.filter((article) =>
+        article.articleName.toLowerCase().includes(query.toLowerCase())
       );
     }
 
     if (minPrice !== undefined) {
-      articles = articles.filter(article =>
-        Object.values(article.prices).some(price =>
-          Object.values(price).some(value => value >= minPrice)
+      articles = articles.filter((article) =>
+        Object.values(article.prices).some((price) =>
+          Object.values(price).some((value) => value >= minPrice)
         )
       );
     }
 
     if (maxPrice !== undefined) {
-      articles = articles.filter(article =>
-        Object.values(article.prices).some(price =>
-          Object.values(price).some(value => value <= maxPrice)
+      articles = articles.filter((article) =>
+        Object.values(article.prices).some((price) =>
+          Object.values(price).some((value) => value <= maxPrice)
         )
       );
     }
 
-    // Retourner la réponse paginée
+    // Return the paginated response
     return Pagination.createResponse<Article>(
       articles,
       totalItems,
