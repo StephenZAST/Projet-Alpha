@@ -40,7 +40,7 @@ export const createNotificationSchema = Joi.object({
       'any.required': errorCodes.VALIDATION_ERROR,
       'any.only': errorCodes.VALIDATION_ERROR
     }),
-  priority: Joi.string().valid(...Object.values(NotificationPriority)).default(NotificationPriority.NORMAL)
+  priority: Joi.string().valid(...Object.values(NotificationPriority)).default(NotificationPriority.LOW)
     .messages({
       'any.only': errorCodes.VALIDATION_ERROR
     }),
@@ -83,7 +83,7 @@ export const updateNotificationSchema = Joi.object({
       'any.required': errorCodes.VALIDATION_ERROR
     }),
   readAt: Joi.date().when('status', {
-    is: NotificationStatus.READ,
+    is: NotificationStatus.SENT,
     then: Joi.required(),
     otherwise: Joi.forbidden()
   }).messages({

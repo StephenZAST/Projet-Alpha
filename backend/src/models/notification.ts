@@ -22,6 +22,24 @@ export enum NotificationType {
   GENERAL_ANNOUNCEMENT = 'general_announcement'
 }
 
+export enum NotificationPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high'
+}
+
+export enum NotificationStatus {
+  PENDING = 'pending',
+  SENT = 'sent',
+  FAILED = 'failed'
+}
+
+export enum DeliveryChannel {
+  EMAIL = 'email',
+  SMS = 'sms',
+  IN_APP = 'in_app'
+}
+
 export interface Notification {
   id: string;
   type: NotificationType;
@@ -30,6 +48,9 @@ export interface Notification {
   title: string;
   message: string;
   data?: Record<string, any>;
+  priority: NotificationPriority;
+  status: NotificationStatus;
+  deliveryChannel: DeliveryChannel;
   isRead: boolean;
   createdAt: Date;
   expiresAt?: Date;
