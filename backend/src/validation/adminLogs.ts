@@ -1,11 +1,14 @@
-import Joi from 'joi';
-import { AdminAction } from '../models/adminLog';
+import { z } from 'zod';
 
-export const searchAdminLogsSchema = Joi.object({
-  adminId: Joi.string().optional(),
-  action: Joi.string().valid(...Object.values(AdminAction)).optional(),
-  startDate: Joi.date().optional(),
-  endDate: Joi.date().min(Joi.ref('startDate')).optional(),
-  limit: Joi.number().integer().min(1).optional(),
-  skip: Joi.number().integer().min(0).optional()
+/**
+ * Schema for validating the search query parameters for admin logs.
+ */
+export const searchAdminLogsSchema = z.object({
+  query: z.object({
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).optional(),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+    searchTerm: z.string().optional(),
+  }),
 });

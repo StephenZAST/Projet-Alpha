@@ -1,24 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
-import { Schema } from 'joi';
+import { ZodSchema, ZodError } from 'zod';
 import { AppError, errorCodes } from '../utils/errors';
 
-export const validateRequest = (schema: Schema) => {
+export const validateRequest = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true
-    });
+    try {
+      schema.parse({
+        body: req.body,
+        query: req.query,
+        params: req.params,
+      });
+      next();
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const errors = error.errors.map((err) => ({
+          field: err.path.join('.'),
+          message: err.message,
+        }));
 
-    if (error) {
-      const errors = error.details.map(detail => ({
-        field: detail.path.join('.'),
-        message: detail.message
-      }));
-
-      // Pass the error to the error handling middleware
-      next(new AppError(400, 'Validation failed', errorCodes.VALIDATION_ERROR));
+        next(new AppError(400, 'Validation failed', errorCodes.VALIDATION_ERROR));
+      } else {
+        // Handle other types of errors if needed
+        next(new AppError(500, 'Internal server error', errorCodes.SERVER_ERROR));
+      }
     }
-
-    next();
   };
 };

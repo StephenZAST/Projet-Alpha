@@ -11,3 +11,4 @@ export * from './notificationSchemas';
 export * from './affiliateSchemas';
 export * from './analyticsSchemas';
 export * from './recurringOrderSchemas';
+export * from './adminLogSchemas';

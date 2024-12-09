@@ -4,6 +4,7 @@ import { AdminLogController } from '../controllers/adminLogController';
 import { validateRequest } from '../middleware/validateRequest';
 import { searchAdminLogsSchema } from '../validation/adminLogs';
 import { UserRole } from '../models/user';
+import { getAdminLogByIdSchema } from '../validations/schemas/adminLogSchemas';
 
 const router = express.Router();
 const adminLogController = new AdminLogController();
@@ -31,6 +32,6 @@ const getLogById = async (req: express.Request<{ id: string }>, res: express.Res
 
 // Routes using route handler functions
 router.get('/', validateRequest(searchAdminLogsSchema), getLogs);
-router.get('/:id', getLogById);
+router.get('/:id', validateRequest(getAdminLogByIdSchema), getLogById);
 
 export default router;
