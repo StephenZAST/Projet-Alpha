@@ -2,6 +2,7 @@ import { db } from './firebase';
 import { Notification, NotificationType } from '../models/notification';
 import * as admin from 'firebase-admin';
 import { RewardStatus } from '../models/loyalty';
+import { NotificationPriority, NotificationStatus, DeliveryChannel } from '../models/notification';
 
 export class NotificationService {
   sendRedemptionStatusUpdate(userId: string, status: RewardStatus) {
@@ -40,6 +41,9 @@ export class NotificationService {
         status,
         ...additionalData
       },
+      priority: NotificationPriority.MEDIUM,
+      status: NotificationStatus.PENDING,
+      deliveryChannel: DeliveryChannel.IN_APP,
       isRead: false
     };
 
@@ -60,6 +64,9 @@ export class NotificationService {
         orderId,
         amount
       },
+      priority: NotificationPriority.MEDIUM,
+      status: NotificationStatus.PENDING,
+      deliveryChannel: DeliveryChannel.IN_APP,
       isRead: false
     };
 
@@ -79,6 +86,9 @@ export class NotificationService {
       data: {
         points
       },
+      priority: NotificationPriority.MEDIUM,
+      status: NotificationStatus.PENDING,
+      deliveryChannel: DeliveryChannel.IN_APP,
       isRead: false
     };
 
@@ -104,6 +114,9 @@ export class NotificationService {
         recipientRole: userRole,
         title,
         message,
+        priority: NotificationPriority.MEDIUM,
+        status: NotificationStatus.PENDING,
+        deliveryChannel: DeliveryChannel.IN_APP,
         isRead: false,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         expiresAt
