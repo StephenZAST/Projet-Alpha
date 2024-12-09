@@ -17,48 +17,48 @@ const priceSchema = Joi.object({
 // Invoice item schema
 export const invoiceItemSchema = Joi.object({
   description: Joi.string().required().messages({
-    'any.required': errorCodes.INVALID_INVOICE_ITEM
+    'any.required': errorCodes.INVALID_INVOICE_DATA
   }),
   quantity: Joi.number().integer().min(1).required().messages({
-    'number.integer': errorCodes.INVALID_INVOICE_ITEM,
-    'number.min': errorCodes.INVALID_INVOICE_ITEM,
-    'any.required': errorCodes.INVALID_INVOICE_ITEM
+    'number.integer': errorCodes.INVALID_INVOICE_DATA,
+    'number.min': errorCodes.INVALID_INVOICE_DATA,
+    'any.required': errorCodes.INVALID_INVOICE_DATA
   }),
   unitPrice: priceSchema.required().messages({
-    'any.required': errorCodes.INVALID_INVOICE_ITEM
+    'any.required': errorCodes.INVALID_INVOICE_DATA
   }),
   taxRate: Joi.number().min(0).max(100).default(0).messages({
-    'number.min': errorCodes.INVALID_INVOICE_ITEM,
-    'number.max': errorCodes.INVALID_INVOICE_ITEM
+    'number.min': errorCodes.INVALID_INVOICE_DATA,
+    'number.max': errorCodes.INVALID_INVOICE_DATA
   }),
   discountRate: Joi.number().min(0).max(100).default(0).messages({
-    'number.min': errorCodes.INVALID_INVOICE_ITEM,
-    'number.max': errorCodes.INVALID_INVOICE_ITEM
+    'number.min': errorCodes.INVALID_INVOICE_DATA,
+    'number.max': errorCodes.INVALID_INVOICE_DATA
   })
 });
 
 // Create invoice schema
 export const createInvoiceSchema = Joi.object({
   customerId: Joi.string().required().messages({
-    'any.required': errorCodes.INVALID_CUSTOMER_DATA
+    'any.required': errorCodes.INVALID_USER_DATA
   }),
   orderId: Joi.string().required().messages({
     'any.required': errorCodes.INVALID_ORDER_DATA
   }),
   items: Joi.array().items(invoiceItemSchema).min(1).required().messages({
-    'array.min': errorCodes.INVALID_INVOICE_ITEMS,
-    'any.required': errorCodes.INVALID_INVOICE_ITEMS
+    'array.min': errorCodes.INVALID_INVOICE_DATA,
+    'any.required': errorCodes.INVALID_INVOICE_DATA
   }),
   dueDate: Joi.date().greater('now').required().messages({
-    'date.greater': errorCodes.INVALID_DUE_DATE,
-    'any.required': errorCodes.INVALID_DUE_DATE
+    'date.greater': errorCodes.INVALID_DATE,
+    'any.required': errorCodes.INVALID_DATE
   }),
   paymentMethod: Joi.string().valid(...Object.values(PaymentMethod)).required().messages({
     'any.only': errorCodes.PAYMENT_PROCESSING_FAILED,
     'any.required': errorCodes.PAYMENT_PROCESSING_FAILED
   }),
   notes: Joi.string().max(500).messages({
-    'string.max': errorCodes.INVALID_NOTES
+    'string.max': errorCodes.INVALID_ITEMS
   })
 });
 
@@ -72,7 +72,7 @@ export const updateInvoiceSchema = Joi.object({
     'any.only': errorCodes.PAYMENT_PROCESSING_FAILED
   }),
   notes: Joi.string().max(500).messages({
-    'string.max': errorCodes.INVALID_NOTES
+    'string.max': errorCodes.INVALID_ITEMS
   }),
   paidAt: Joi.date().when('status', {
     is: BillingStatus.PAID,

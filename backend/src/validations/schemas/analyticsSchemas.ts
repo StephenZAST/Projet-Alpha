@@ -14,7 +14,7 @@ const dateRangeSchema = Joi.object({
 
 // Metric query schema
 export const metricQuerySchema = Joi.object({
-  ...dateRangeSchema.extract(),
+  ...dateRangeSchema.keys(),
   metricType: Joi.string().valid(...Object.values(MetricType)).required().messages({
     'any.only': 'Type de métrique invalide',
     'any.required': 'Le type de métrique est requis'
@@ -86,7 +86,7 @@ export const customReportSchema = Joi.object({
 
 // Export data schema
 export const exportDataSchema = Joi.object({
-  ...dateRangeSchema.extract(),
+  ...dateRangeSchema.keys(),
   dataType: Joi.string().valid('orders', 'users', 'transactions', 'deliveries').required().messages({
     'any.only': 'Type de données invalide',
     'any.required': 'Le type de données est requis'
