@@ -1,47 +1,10 @@
 import express from 'express';
 import { isAuthenticated } from '../middleware/auth';
-// import { requireLivreur as requireDriver } from '../middleware/auth';
 import { DeliveryService } from '../services/delivery';
 
 const router = express.Router();
 const deliveryService = new DeliveryService();
 
-/**
- * @swagger
- * /api/delivery/timeslots:
- *   get:
- *     tags: [Delivery]
- *     summary: Get available delivery time slots
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: date
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *       - in: query
- *         name: zoneId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of available time slots
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 slots:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       start: { type: string, format: date-time }
- *                       end: { type: string, format: date-time }
- */
 router.get('/timeslots', isAuthenticated, async (req, res) => {
   try {
     const { date, zoneId } = req.query;
@@ -55,43 +18,6 @@ router.get('/timeslots', isAuthenticated, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/delivery/schedule-pickup:
- *   post:
- *     tags: [Delivery]
- *     summary: Schedule a laundry pickup
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - orderId
- *               - date
- *               - timeSlot
- *               - address
- *             properties:
- *               orderId: { type: string }
- *               date: { type: string, format: date }
- *               timeSlot:
- *                 type: object
- *                 properties:
- *                   start: { type: string, format: date-time }
- *                   end: { type: string, format: date-time }
- *               address:
- *                 type: object
- *                 properties:
- *                   street: { type: string }
- *                   city: { type: string }
- *                   zone: { type: string }
- *     responses:
- *       200:
- *         description: Pickup scheduled successfully
- */
 router.post('/schedule-pickup', isAuthenticated, async (req, res) => {
   try {
     const { orderId, date, timeSlot, address } = req.body;
@@ -107,38 +33,6 @@ router.post('/schedule-pickup', isAuthenticated, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/delivery/update-location:
- *   post:
- *     tags: [Delivery]
- *     summary: Update delivery location and status
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - orderId
- *               - location
- *               - status
- *             properties:
- *               orderId: { type: string }
- *               location:
- *                 type: object
- *                 properties:
- *                   latitude: { type: number }
- *                   longitude: { type: number }
- *               status: 
- *                 type: string
- *                 enum: [PENDING, IN_TRANSIT, DELIVERED]
- *     responses:
- *       200:
- *         description: Location updated successfully
- */
 router.post('/update-location', isAuthenticated, async (req, res) => {
   try {
     const { orderId, location, status } = req.body;
@@ -153,49 +47,6 @@ router.post('/update-location', isAuthenticated, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/delivery/tasks:
- *   get:
- *     tags: [Delivery]
- *     summary: Get delivery tasks
- *     description: Retrieve delivery tasks with optional filtering
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED]
- *         description: Filter tasks by status
- *       - in: query
- *         name: driverId
- *         schema:
- *           type: string
- *         description: Filter tasks by driver ID
- *       - in: query
- *         name: date
- *         schema:
- *           type: string
- *           format: date
- *         description: Filter tasks by date
- *     responses:
- *       200:
- *         description: List of delivery tasks
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/DeliveryTask'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.get(
   '/tasks',
   isAuthenticated,
@@ -209,36 +60,6 @@ router.get(
   }
 );
 
-/**
- * @swagger
- * /api/delivery/tasks/{id}:
- *   get:
- *     tags: [Delivery]
- *     summary: Get delivery task by ID
- *     description: Retrieve a specific delivery task by its ID
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Task ID
- *     responses:
- *       200:
- *         description: Delivery task details
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/DeliveryTask'
- *       404:
- *         description: Task not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.get(
   '/tasks/:id',
   isAuthenticated,
@@ -252,60 +73,6 @@ router.get(
   }
 );
 
-/**
- * @swagger
- * /api/delivery/tasks:
- *   post:
- *     tags: [Delivery]
- *     summary: Create delivery task
- *     description: Create a new delivery task
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - orderId
- *               - pickupLocation
- *               - deliveryLocation
- *               - scheduledTime
- *             properties:
- *               orderId:
- *                 type: string
- *               pickupLocation:
- *                 $ref: '#/components/schemas/GeoLocation'
- *               deliveryLocation:
- *                 $ref: '#/components/schemas/GeoLocation'
- *               scheduledTime:
- *                 type: object
- *                 properties:
- *                   date:
- *                     type: string
- *                     format: date-time
- *                   duration:
- *                     type: number
- *                     description: Duration in minutes
- *               priority:
- *                 type: string
- *                 enum: [low, medium, high, urgent]
- *                 default: medium
- *     responses:
- *       201:
- *         description: Task created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/DeliveryTask'
- *       400:
- *         description: Invalid input
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.post(
   '/tasks',
   isAuthenticated,
@@ -319,60 +86,6 @@ router.post(
   }
 );
 
-/**
- * @swagger
- * /api/delivery/tasks/{id}:
- *   put:
- *     tags: [Delivery]
- *     summary: Update delivery task
- *     description: Update an existing delivery task
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Task ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, CANCELLED]
- *               assignedDriver:
- *                 type: string
- *               priority:
- *                 type: string
- *                 enum: [low, medium, high, urgent]
- *               scheduledTime:
- *                 type: object
- *                 properties:
- *                   date:
- *                     type: string
- *                     format: date-time
- *                   duration:
- *                     type: number
- *                     description: Duration in minutes
- *     responses:
- *       200:
- *         description: Task updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/DeliveryTask'
- *       404:
- *         description: Task not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.put(
   '/tasks/:id',
   isAuthenticated,
@@ -386,68 +99,6 @@ router.put(
   }
 );
 
-/**
- * @swagger
- * /api/delivery/optimize-tasks:
- *   post:
- *     tags: [Delivery]
- *     summary: Optimize delivery route for multiple tasks
- *     description: Calculate optimal route for multiple delivery tasks
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - taskIds
- *               - driverId
- *               - startLocation
- *             properties:
- *               taskIds:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Array of task IDs to optimize
- *               driverId:
- *                 type: string
- *               startLocation:
- *                 $ref: '#/components/schemas/GeoLocation'
- *               endLocation:
- *                 $ref: '#/components/schemas/GeoLocation'
- *               maxTasks:
- *                 type: number
- *                 default: 10
- *               considerTraffic:
- *                 type: boolean
- *                 default: true
- *     responses:
- *       200:
- *         description: Optimized route
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 route:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/DeliveryTask'
- *                 totalDistance:
- *                   type: number
- *                   description: Total distance in kilometers
- *                 estimatedDuration:
- *                   type: number
- *                   description: Estimated duration in minutes
- *       400:
- *         description: Invalid input
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.post(
   '/optimize-tasks', // Renamed endpoint
   isAuthenticated,
@@ -469,44 +120,6 @@ router.post(
   }
 );
 
-/**
- * @swagger
- * /api/delivery/location:
- *   post:
- *     tags: [Delivery]
- *     summary: Update driver location
- *     description: Update current location of delivery driver
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - location
- *             properties:
- *               location:
- *                 $ref: '#/components/schemas/GeoLocation'
- *     responses:
- *       200:
- *         description: Location updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Location updated successfully
- *       400:
- *         description: Invalid input
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.post(
   '/location',
   isAuthenticated,
@@ -523,38 +136,6 @@ router.post(
     }
   });
 
-/**
- * @swagger
- * /api/delivery/zones:
- *   get:
- *     tags: [Delivery]
- *     summary: Get delivery zones
- *     description: Retrieve all delivery zones
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of delivery zones
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   name:
- *                     type: string
- *                   boundaries:
- *                     type: array
- *                     items:
- *                       $ref: '#/components/schemas/GeoLocation'
- *                   assignedDrivers:
- *                     type: array
- *                     items:
- *                       type: string
- */
 router.get(
   '/zones',
   isAuthenticated,

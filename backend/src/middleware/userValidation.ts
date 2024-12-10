@@ -81,11 +81,11 @@ export const validateGetUsers = (req: Request, res: Response, next: NextFunction
 };
 
 export const validateCreateUser = (req: Request, res: Response, next: NextFunction) => {
-  const { email, password, displayName, phoneNumber, address, affiliateCode, sponsorCode, creationMethod } = req.body;
+  const { email, password, displayName, phoneNumber, address, affiliateCode, sponsorCode, creationMethod, profile } = req.body;
 
   // Vérification des champs obligatoires
-  if (!email || !password || !displayName || !address || !creationMethod) {
-    throw new AppError(400, 'Tous les champs sont obligatoires', errorCodes.INVALID_USER_DATA);
+  if (!email || !password || !displayName || !profile) {
+    throw new AppError(400, 'Email, password, displayName, and profile are required', errorCodes.INVALID_USER_DATA);
   }
 
   // Vérification du format de l'email
@@ -103,19 +103,14 @@ export const validateCreateUser = (req: Request, res: Response, next: NextFuncti
     throw new AppError(400, 'Format de numéro de téléphone invalide', errorCodes.INVALID_PHONE_NUMBER);
   }
 
-  // Vérification de l'adresse
-  if (!address.street || !address.city || !address.postalCode || !address.country || !address.quartier || !address.location) {
-    throw new AppError(400, 'L\'adresse est invalide', errorCodes.INVALID_ADDRESS_DATA);
+  // Vérification du champ profile
+  if (!profile || typeof profile !== 'object') {
+    throw new AppError(400, 'Le champ "profile" est obligatoire et doit être un objet', errorCodes.INVALID_USER_DATA);
   }
 
-  // Vérification de la localisation
-  if (!address.location.latitude || !address.location.longitude || !address.location.zoneId) {
-    throw new AppError(400, 'La localisation est invalide', errorCodes.INVALID_LOCATION);
-  }
-
-  // Vérification de la méthode de création du compte
-  if (!Object.values(AccountCreationMethod).includes(creationMethod)) {
-    throw new AppError(400, 'Méthode de création du compte invalide', errorCodes.INVALID_ACCOUNT_CREATION_METHOD);
+  // Vérification des champs obligatoires dans profile
+  if (!profile.firstName || !profile.lastName) {
+    throw new AppError(400, 'Les champs "firstName" et "lastName" sont obligatoires dans "profile"', errorCodes.INVALID_USER_DATA);
   }
 
   next();
