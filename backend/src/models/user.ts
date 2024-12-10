@@ -1,151 +1,87 @@
-import { Timestamp } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase/firestore';
 
 export enum UserRole {
-  CLIENT = 'CLIENT',
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  SERVICE_CLIENT = 'SERVICE_CLIENT',
-  SECRETAIRE = 'SECRETAIRE',
-  LIVREUR = 'LIVREUR',
-  SUPERVISEUR = 'SUPERVISEUR'
+  SUPER_ADMIN = 'super_admin',
+  ADMIN = 'admin',
+  CLIENT = 'client',
+  DELIVERY_PERSONNEL = 'delivery_personnel',
+  AFFILIATE = 'affiliate',
 }
 
 export enum UserStatus {
-  PENDING = 'PENDING',
-  ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-  DELETED = 'DELETED'
+  ACTIVE = 'active',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
+  DELETED = 'deleted',
 }
 
 export enum AccountCreationMethod {
-  SELF_REGISTRATION = 'SELF_REGISTRATION',
-  ADMIN_CREATED = 'ADMIN_CREATED',
-  AFFILIATE_REFERRAL = 'AFFILIATE_REFERRAL',
-  CUSTOMER_REFERRAL = 'CUSTOMER_REFERRAL'
-}
-
-export interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
+  SELF_REGISTRATION = 'self_registration',
+  ADMIN_INVITE = 'admin_invite',
+  SOCIAL_MEDIA = 'social_media',
 }
 
 export interface UserAddress {
-  label?: string; // e.g., "Home", "Work", "Vacation Home"
-  type?: 'residential' | 'business' | 'other';
   street: string;
-  unit?: string;
   city: string;
   state: string;
   zipCode: string;
   country: string;
-  phoneNumber?: string;
-  instructions?: string;
-  isDefault?: boolean;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-  validatedAt?: Date;
-  lastUsed?: Date;
+  phoneNumber: string;
 }
 
 export interface UserPreferences {
-  theme?: 'light' | 'dark' | 'system';
-  currency?: string;
-  measurementUnit?: 'metric' | 'imperial';
-  communicationFrequency?: 'daily' | 'weekly' | 'monthly' | 'never';
-  orderNotifications?: {
-    confirmation: boolean;
-    statusUpdates: boolean;
-    delivery: boolean;
-  };
-  marketingPreferences?: {
+  language: string;
+  timezone: string;
+  currency: string;
+  notifications: {
     email: boolean;
     sms: boolean;
     push: boolean;
-    promotions: boolean;
-    newsletters: boolean;
-  };
-  servicePreferences?: {
-    defaultServiceType?: string;
-    preferredPickupTime?: string;
-    preferredDeliveryTime?: string;
-    specialInstructions?: string;
   };
 }
 
 export interface UserProfile {
   firstName: string;
   lastName: string;
-  displayName?: string;
   email: string;
   phoneNumber: string;
-  avatar?: string;
-  dateOfBirth?: Date;
-  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
-  language?: string;
-  timezone?: string;
-  bio?: string;
-  occupation?: string;
-  company?: string;
-  website?: string;
-  socialLinks?: {
-    facebook?: string;
-    twitter?: string;
-    instagram?: string;
-    linkedin?: string;
-  };
-  preferences?: UserPreferences;
-  notificationSettings?: {
-    email: boolean;
-    push: boolean;
-    sms: boolean;
-    marketing: boolean;
-  };
   address?: UserAddress;
-  defaultAddress?: UserAddress;
-  lastUpdated: Date;
+  preferences?: UserPreferences;
+  profilePictureUrl?: string;
+  lastUpdated: Timestamp;
+  defaultItems?: any[];
+  defaultInstructions?: string;
 }
 
 export interface User {
-  phoneNumber: any;
-  displayName: any;
-  email: any;
-  lastName: any;
-  firstName: any;
   id: string;
-  uid: string; // Firebase Auth UID
+  uid: string;
   profile: UserProfile;
   role: UserRole;
   status: UserStatus;
   creationMethod: AccountCreationMethod;
   emailVerified: boolean;
-  emailVerificationToken?: string;
-  emailVerificationExpires?: Date;
-  passwordResetToken?: string;
-  passwordResetExpires?: Date;
   loyaltyPoints: number;
-  referralCode?: string;
-  affiliateId?: string;
-  sponsorId?: string;
-  lastLogin?: Date;
-  zone?: string;
-  createdBy?: string;
-  defaultItems?: Array<{ id: string; quantity: number }>;
-  defaultInstructions?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  phoneNumber?: string;
+  displayName?: string;
+  email?: string;
+  lastName?: string;
+  firstName?: string;
 }
 
-export type CreateUserInput = Omit<User, 'id' | 'createdAt' | 'updatedAt'> & {
-  id?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-  password: string;
-};
+export interface CreateUserInput {
+  uid?: string;
+  profile: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+  };
+  password?: string;
+  role?: UserRole;
+  status?: UserStatus;
+  creationMethod?: AccountCreationMethod;
+}
