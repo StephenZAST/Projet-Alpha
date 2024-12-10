@@ -130,3 +130,11 @@ export interface RouteInfo {
   estimatedTime: number;
   driverNotes?: string;
 }
+
+export interface RouteStop {
+  type: 'pickup' | 'delivery';
+  location: Location;
+  orderId: string;
+  scheduledTime: Timestamp;
+  address: string;
+}
