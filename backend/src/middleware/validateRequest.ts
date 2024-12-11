@@ -37,4 +37,4 @@ export const validateRequest = (schema: Joi.Schema) => {
 
     next();
   };
-};
+};  
