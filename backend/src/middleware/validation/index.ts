@@ -2,11 +2,34 @@ import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { AppError, errorCodes } from '../../utils/errors';
 import { MainService } from '../../models/order';
-import { validateRequest } from './validateRequest';
+import { supabase } from '../../config';
 import { articleValidationSchema, priceRangeValidation } from './articleValidation';
+import { validateRequest } from '../validateRequest';
 
 export const validateArticleInput = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Supabase authentication check
+    const { authorization } = req.headers;
+
+    if (!authorization) {
+      return next(new AppError(401, 'Authorization header is required', errorCodes.UNAUTHORIZED));
+    }
+
+    const token = authorization.split(' ')[1];
+
+    if (!token) {
+      return next(new AppError(401, 'Token is required', errorCodes.UNAUTHORIZED));
+    }
+
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data?.user) {
+      return next(new AppError(401, 'Invalid token', errorCodes.UNAUTHORIZED));
+    }
+
+    (req as any).user = data.user;
+
+    // Existing validation logic
     const validatedData = await articleValidationSchema.validateAsync(req.body);
     
     // Type-safe price validation

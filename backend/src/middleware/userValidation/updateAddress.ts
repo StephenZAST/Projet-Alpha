@@ -1,16 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import Joi from 'joi';
 import { supabase } from '../../config';
 import { AppError, errorCodes } from '../../utils/errors';
 
-// Define a Joi schema for request validation
-const requestValidationSchema = Joi.object({
-  // Add your request validation schema here
-  // Example:
-  // someField: Joi.string().required(),
-});
-
-export const validateRequest = async (req: Request, res: Response, next: NextFunction) => {
+export const validateUpdateAddress = async (req: Request, res: Response, next: NextFunction) => {
   const { authorization } = req.headers;
 
   if (!authorization) {
@@ -31,11 +23,16 @@ export const validateRequest = async (req: Request, res: Response, next: NextFun
 
   (req as any).user = data.user;
 
-  // Validate request body using Joi
-  const { error: validationError } = requestValidationSchema.validate(req.body);
+  const { street, city, postalCode, country, quartier, location, additionalInfo } = req.body;
 
-  if (validationError) {
-    return next(new AppError(400, validationError.message, errorCodes.VALIDATION_ERROR));
+  // Vérification des champs obligatoires
+  if (!street || !city || !postalCode || !country || !quartier || !location) {
+    throw new AppError(400, 'Tous les champs sont obligatoires', errorCodes.INVALID_ADDRESS_DATA);
+  }
+
+  // Vérification de la localisation
+  if (!location.latitude || !location.longitude || !location.zoneId) {
+    throw new AppError(400, 'La localisation est invalide', errorCodes.INVALID_LOCATION);
   }
 
   next();

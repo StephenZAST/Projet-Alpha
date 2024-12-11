@@ -1,16 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import Joi from 'joi';
 import { supabase } from '../../config';
 import { AppError, errorCodes } from '../../utils/errors';
 
-// Define a Joi schema for request validation
-const requestValidationSchema = Joi.object({
-  // Add your request validation schema here
-  // Example:
-  // someField: Joi.string().required(),
-});
-
-export const validateRequest = async (req: Request, res: Response, next: NextFunction) => {
+export const validateGetUsers = async (req: Request, res: Response, next: NextFunction) => {
   const { authorization } = req.headers;
 
   if (!authorization) {
@@ -31,11 +23,15 @@ export const validateRequest = async (req: Request, res: Response, next: NextFun
 
   (req as any).user = data.user;
 
-  // Validate request body using Joi
-  const { error: validationError } = requestValidationSchema.validate(req.body);
+  const { page, limit, search } = req.query;
 
-  if (validationError) {
-    return next(new AppError(400, validationError.message, errorCodes.VALIDATION_ERROR));
+  // Vérification des champs de pagination
+  if (page && isNaN(Number(page))) {
+    throw new AppError(400, 'Le champ "page" doit être un nombre', errorCodes.INVALID_PAGINATION);
+  }
+
+  if (limit && isNaN(Number(limit))) {
+    throw new AppError(400, 'Le champ "limit" doit être un nombre', errorCodes.INVALID_PAGINATION);
   }
 
   next();

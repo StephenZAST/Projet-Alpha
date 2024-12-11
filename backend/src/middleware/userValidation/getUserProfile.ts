@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { supabase } from '../config';
-import { AppError, errorCodes } from '../utils/errors';
+import { supabase } from '../../config';
+import { AppError, errorCodes } from '../../utils/errors';
 
-export const validateAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const validateGetUserProfile = async (req: Request, res: Response, next: NextFunction) => {
   const { authorization } = req.headers;
 
   if (!authorization) {
@@ -19,11 +19,6 @@ export const validateAdmin = async (req: Request, res: Response, next: NextFunct
 
   if (error || !data?.user) {
     return next(new AppError(401, 'Invalid token', errorCodes.UNAUTHORIZED));
-  }
-
-  // Check if the user is an admin
-  if (data.user.app_metadata?.provider !== 'admin') {
-    return next(new AppError(403, 'Forbidden: User is not an admin', errorCodes.FORBIDDEN));
   }
 
   (req as any).user = data.user;

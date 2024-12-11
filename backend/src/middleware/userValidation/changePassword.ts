@@ -1,16 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import Joi from 'joi';
 import { supabase } from '../../config';
 import { AppError, errorCodes } from '../../utils/errors';
 
-// Define a Joi schema for request validation
-const requestValidationSchema = Joi.object({
-  // Add your request validation schema here
-  // Example:
-  // someField: Joi.string().required(),
-});
-
-export const validateRequest = async (req: Request, res: Response, next: NextFunction) => {
+export const validateChangePassword = async (req: Request, res: Response, next: NextFunction) => {
   const { authorization } = req.headers;
 
   if (!authorization) {
@@ -31,11 +23,16 @@ export const validateRequest = async (req: Request, res: Response, next: NextFun
 
   (req as any).user = data.user;
 
-  // Validate request body using Joi
-  const { error: validationError } = requestValidationSchema.validate(req.body);
+  const { oldPassword, newPassword } = req.body;
 
-  if (validationError) {
-    return next(new AppError(400, validationError.message, errorCodes.VALIDATION_ERROR));
+  // Vérification des champs obligatoires
+  if (!oldPassword || !newPassword) {
+    throw new AppError(400, 'L\'ancien et le nouveau mot de passe sont obligatoires', errorCodes.INVALID_PASSWORD_DATA);
+  }
+
+  // Vérification de la longueur du nouveau mot de passe
+  if (newPassword.length < 8) {
+    throw new AppError(400, 'Le nouveau mot de passe doit contenir au moins 8 caractères', errorCodes.INVALID_PASSWORD);
   }
 
   next();

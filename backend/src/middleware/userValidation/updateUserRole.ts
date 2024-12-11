@@ -1,16 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import Joi from 'joi';
 import { supabase } from '../../config';
 import { AppError, errorCodes } from '../../utils/errors';
+import { UserRole } from '../../models/user';
 
-// Define a Joi schema for request validation
-const requestValidationSchema = Joi.object({
-  // Add your request validation schema here
-  // Example:
-  // someField: Joi.string().required(),
-});
-
-export const validateRequest = async (req: Request, res: Response, next: NextFunction) => {
+export const validateUpdateUserRole = async (req: Request, res: Response, next: NextFunction) => {
   const { authorization } = req.headers;
 
   if (!authorization) {
@@ -31,11 +24,16 @@ export const validateRequest = async (req: Request, res: Response, next: NextFun
 
   (req as any).user = data.user;
 
-  // Validate request body using Joi
-  const { error: validationError } = requestValidationSchema.validate(req.body);
+  const { role } = req.body;
 
-  if (validationError) {
-    return next(new AppError(400, validationError.message, errorCodes.VALIDATION_ERROR));
+  // Vérification du champ obligatoire
+  if (!role) {
+    throw new AppError(400, 'Le rôle est obligatoire', errorCodes.INVALID_ROLE);
+  }
+
+  // Vérification du rôle
+  if (!Object.values(UserRole).includes(role)) {
+    throw new AppError(400, 'Rôle invalide', errorCodes.INVALID_ROLE);
   }
 
   next();
