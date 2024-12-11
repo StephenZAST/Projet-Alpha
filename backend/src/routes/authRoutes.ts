@@ -1,147 +1,90 @@
-import { Router } from 'express';
-import { validateRequest } from '../middleware/validateRequest';
-import { 
-  customerRegistrationSchema, 
-  adminCustomerCreationSchema,
-  passwordResetRequestSchema,
-  passwordResetSchema,
-  emailVerificationSchema 
-} from '../validation/userValidation';
-import { 
-  registerCustomer, 
-  verifyEmail, 
-  requestPasswordReset, 
-  resetPassword,
-  sendVerificationEmail
-} from '../services/users';
-import { AccountCreationMethod, UserRole } from '../models/user';
-import { auth } from '../middleware/auth';
-import { hasRole } from '../middleware/rbac';
+import express, { Request, Response } from 'express';
+import { createUser, registerCustomer } from '../services/users/userCreation';
+import { verifyEmail, requestPasswordReset, resetPassword, sendVerificationEmail } from '../services/users/userVerification';
+import { AppError, errorCodes } from '../utils/errors';
+import { validateRequest } from '../middleware/validation/validateRequest';
+import { createUserSchema, resetPasswordSchema } from '../validation/users';
+import { UserRole, AccountCreationMethod } from '../models/user';
+import { generateToken } from '../utils/tokens';
+import { auth } from '../config/firebase';
 
-const router = Router();
+const router = express.Router();
 
-router.post('/register', validateRequest(customerRegistrationSchema), async (req, res, next) => {
+// Register a new user
+router.post('/register', validateRequest(createUserSchema), async (req: Request, res: Response) => {
   try {
-    const userData = req.body;
-    const user = await registerCustomer(userData, AccountCreationMethod.SELF_REGISTRATION);
-    res.status(201).json({
-      message: 'Registration successful. Please check your email to verify your account.',
-      user: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName
-      }
-    });
+    const user = await registerCustomer(req.body, AccountCreationMethod.SELF_REGISTRATION);
+    res.status(201).json(user);
   } catch (error) {
-    next(error);
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ message: error.message, code: errorCodes.SERVER_ERROR });
+    } else {
+      res.status(500).json({ message: 'Internal Server Error', code: errorCodes.SERVER_ERROR });
+    }
   }
 });
 
-router.post(
-  '/admin/create-customer',
-  auth,
-  hasRole([UserRole.SUPER_ADMIN, UserRole.SECRETAIRE]),
-  validateRequest(adminCustomerCreationSchema),
-  async (req, res, next) => {
-    try {
-      if (!req.user) {
-        throw new Error('User not authenticated');
-      }
-      const userData = {
-        ...req.body,
-        createdBy: req.user.uid // From auth middleware
-      };
-      const user = await registerCustomer(userData, AccountCreationMethod.ADMIN_CREATED);
-      res.status(201).json({
-        message: 'Customer account created successfully',
-        user: {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          phoneNumber: user.phoneNumber
-        }
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.post('/verify-email', validateRequest(emailVerificationSchema), async (req, res, next) => {
+// Verify user email
+router.post('/verify-email', async (req: Request, res: Response) => {
   try {
     await verifyEmail(req.body.token);
     res.json({ message: 'Email verified successfully' });
   } catch (error) {
-    next(error);
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ message: error.message, code: errorCodes.SERVER_ERROR });
+    } else {
+      res.status(500).json({ message: 'Internal Server Error', code: errorCodes.SERVER_ERROR });
+    }
   }
 });
 
-router.post('/test-email', async (req, res) => {
-  try {
-    await sendVerificationEmail('alphalaundry.service1@gmail.com', 'test-token-123');
-    res.status(200).json({ message: 'Test email sent successfully' });
-  } catch (error) {
-    console.error('Error sending test email:', error);
-    res.status(500).json({ error: 'Failed to send test email' });
-  }
-});
-
-router.post('/forgot-password', validateRequest(passwordResetRequestSchema), async (req, res, next) => {
+// Request password reset
+router.post('/request-password-reset', async (req: Request, res: Response) => {
   try {
     await requestPasswordReset(req.body.email);
     res.json({ message: 'Password reset instructions sent to your email' });
   } catch (error) {
-    next(error);
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ message: error.message, code: errorCodes.SERVER_ERROR });
+    } else {
+      res.status(500).json({ message: 'Internal Server Error', code: errorCodes.SERVER_ERROR });
+    }
   }
 });
 
-router.post('/reset-password', validateRequest(passwordResetSchema), async (req, res, next) => {
+// Reset password
+router.post('/reset-password', validateRequest(resetPasswordSchema), async (req: Request, res: Response) => {
   try {
-    const { token, newPassword } = req.body;
-    await resetPassword(token, newPassword);
+    await resetPassword(req.body.token, req.body.newPassword);
     res.json({ message: 'Password reset successful' });
   } catch (error) {
-    next(error);
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ message: error.message, code: errorCodes.SERVER_ERROR });
+    } else {
+      res.status(500).json({ message: 'Internal Server Error', code: errorCodes.SERVER_ERROR });
+    }
   }
 });
 
-router.post('/register/affiliate/:code', validateRequest(customerRegistrationSchema), async (req, res, next) => {
+// Send verification email
+router.post('/send-verification-email', async (req: Request, res: Response) => {
   try {
-    const userData = {
-      ...req.body,
-      affiliateCode: req.params.code
-    };
-    const user = await registerCustomer(userData, AccountCreationMethod.AFFILIATE_REFERRAL);
-    res.status(201).json({
-      message: 'Registration successful. Please check your email to verify your account.',
-      user: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName
-      }
-    });
+    const user = await auth.getUserByEmail(req.body.email);
+    if (!user) {
+      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
+    }
+    if (!user.email) {
+      throw new AppError(400, 'User email is undefined', errorCodes.VALIDATION_ERROR);
+    }
+    const verificationToken = await generateToken();
+    await sendVerificationEmail(user.email, verificationToken);
+    res.json({ message: 'Verification email sent successfully' });
   } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/register/referral/:code', validateRequest(customerRegistrationSchema), async (req, res, next) => {
-  try {
-    const userData = {
-      ...req.body,
-      sponsorCode: req.params.code
-    };
-    const user = await registerCustomer(userData, AccountCreationMethod.CUSTOMER_REFERRAL);
-    res.status(201).json({
-      message: 'Registration successful. Please check your email to verify your account.',
-      user: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName
-      }
-    });
-  } catch (error) {
-    next(error);
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ message: error.message, code: errorCodes.SERVER_ERROR });
+    } else {
+      res.status(500).json({ message: 'Internal Server Error', code: errorCodes.SERVER_ERROR });
+    }
   }
 });
 

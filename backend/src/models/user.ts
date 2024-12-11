@@ -1,151 +1,111 @@
 import { Timestamp } from 'firebase-admin/firestore';
 
 export enum UserRole {
-  CLIENT = 'CLIENT',
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  SERVICE_CLIENT = 'SERVICE_CLIENT',
-  SECRETAIRE = 'SECRETAIRE',
-  LIVREUR = 'LIVREUR',
-  SUPERVISEUR = 'SUPERVISEUR'
+  ADMIN = 'admin',
+  CLIENT = 'client',
+  AFFILIATE = 'affiliate'
 }
 
 export enum UserStatus {
-  PENDING = 'PENDING',
-  ACTIVE = 'ACTIVE',
-  SUSPENDED = 'SUSPENDED',
-  DELETED = 'DELETED'
+  PENDING = 'pending',
+  ACTIVE = 'active',
+  DELETED = 'deleted'
 }
 
 export enum AccountCreationMethod {
-  SELF_REGISTRATION = 'SELF_REGISTRATION',
-  ADMIN_CREATED = 'ADMIN_CREATED',
-  AFFILIATE_REFERRAL = 'AFFILIATE_REFERRAL',
-  CUSTOMER_REFERRAL = 'CUSTOMER_REFERRAL'
-}
-
-export interface Address {
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
+  SELF_REGISTRATION = 'self_registration',
+  ADMIN_CREATED = 'admin_created',
+  AFFILIATE_REFERRAL = 'affiliate_referral',
+  CUSTOMER_REFERRAL = 'customer_referral'
 }
 
 export interface UserAddress {
-  label?: string; // e.g., "Home", "Work", "Vacation Home"
-  type?: 'residential' | 'business' | 'other';
   street: string;
-  unit?: string;
   city: string;
   state: string;
-  zipCode: string;
+  zip: string;
   country: string;
-  phoneNumber?: string;
-  instructions?: string;
-  isDefault?: boolean;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-  validatedAt?: Date;
-  lastUsed?: Date;
 }
 
 export interface UserPreferences {
-  theme?: 'light' | 'dark' | 'system';
-  currency?: string;
-  measurementUnit?: 'metric' | 'imperial';
-  communicationFrequency?: 'daily' | 'weekly' | 'monthly' | 'never';
-  orderNotifications?: {
-    confirmation: boolean;
-    statusUpdates: boolean;
-    delivery: boolean;
-  };
-  marketingPreferences?: {
-    email: boolean;
-    sms: boolean;
-    push: boolean;
-    promotions: boolean;
-    newsletters: boolean;
-  };
-  servicePreferences?: {
-    defaultServiceType?: string;
-    preferredPickupTime?: string;
-    preferredDeliveryTime?: string;
-    specialInstructions?: string;
-  };
+  notifications: boolean;
+  defaultItems: OrderItem[];
+  defaultInstructions: string;
 }
 
 export interface UserProfile {
   firstName: string;
   lastName: string;
-  displayName?: string;
   email: string;
   phoneNumber: string;
-  avatar?: string;
-  dateOfBirth?: Date;
-  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
-  language?: string;
-  timezone?: string;
-  bio?: string;
-  occupation?: string;
-  company?: string;
-  website?: string;
-  socialLinks?: {
-    facebook?: string;
-    twitter?: string;
-    instagram?: string;
-    linkedin?: string;
-  };
-  preferences?: UserPreferences;
-  notificationSettings?: {
-    email: boolean;
-    push: boolean;
-    sms: boolean;
-    marketing: boolean;
-  };
-  address?: UserAddress;
-  defaultAddress?: UserAddress;
-  lastUpdated: Date;
+  address: UserAddress | null;
+  defaultInstructions: string | null;
+  defaultItems: OrderItem[] | null;
+  lastUpdated: Timestamp | null;
+  preferences: UserPreferences | null;
 }
 
 export interface User {
-  phoneNumber: any;
-  displayName: any;
-  email: any;
-  lastName: any;
-  firstName: any;
   id: string;
-  uid: string; // Firebase Auth UID
+  uid: string;
   profile: UserProfile;
   role: UserRole;
   status: UserStatus;
   creationMethod: AccountCreationMethod;
   emailVerified: boolean;
-  emailVerificationToken?: string;
-  emailVerificationExpires?: Date;
-  passwordResetToken?: string;
-  passwordResetExpires?: Date;
   loyaltyPoints: number;
-  referralCode?: string;
-  affiliateId?: string;
-  sponsorId?: string;
-  lastLogin?: Date;
-  zone?: string;
-  createdBy?: string;
-  defaultItems?: Array<{ id: string; quantity: number }>;
-  defaultInstructions?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  defaultItems: OrderItem[];
+  defaultInstructions: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  phoneNumber: string | null;
+  displayName: string | null;
+  email: string | null;
+  lastName: string | null;
+  firstName: string | null;
 }
 
-export type CreateUserInput = Omit<User, 'id' | 'createdAt' | 'updatedAt'> & {
-  id?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  itemType: string;
+  priceType: string;
+}
+
+export interface OrderInput {
+  userId: string;
+  items: OrderItem[];
+  totalAmount: number;
+  paymentMethod: string;
+  type?: OrderType;
+  oneClickOrder?: boolean;
+  orderNotes?: string;
+}
+
+export interface CreateUserInput {
+  uid?: string;
+  profile: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+  };
   password: string;
-};
+  role?: UserRole;
+  status?: UserStatus;
+  creationMethod?: AccountCreationMethod;
+}
+
+export enum OrderStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  DELIVERED = 'delivered',
+  CANCELLED = 'cancelled'
+}
+
+export enum OrderType {
+  STANDARD = 'standard',
+  ONE_CLICK = 'one_click'
+}

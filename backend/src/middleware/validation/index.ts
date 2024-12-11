@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { articleValidationSchema, categoryValidationSchema, priceRangeValidation } from './articleValidation';
+import Joi from 'joi';
 import { AppError, errorCodes } from '../../utils/errors';
 import { MainService } from '../../models/order';
+import { validateRequest } from './validateRequest';
+import { articleValidationSchema, priceRangeValidation } from './articleValidation';
 
 export const validateArticleInput = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -30,3 +32,5 @@ export const validateArticleInput = async (req: Request, res: Response, next: Ne
     next(error);
   }
 };
+
+export { validateRequest };
