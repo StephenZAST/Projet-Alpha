@@ -1,11 +1,12 @@
 export default class AppError extends Error {
-    constructor(
-        message: string,
-        public statusCode: number,
-        public code: string = 'INTERNAL_SERVER_ERROR'
-    ) {
-        super(message);
-        this.name = 'AppError';
-        Error.captureStackTrace(this, this.constructor);
-    }
+  public statusCode: number;
+  public errorCode: string;
+  public errors?: any[];
+
+  constructor(statusCode: number, message: string, errorCode: string, errors?: any[]) {
+    super(message);
+    this.statusCode = statusCode;
+    this.errorCode = errorCode;
+    this.errors = errors;
+  }
 }

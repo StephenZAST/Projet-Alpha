@@ -1,8 +1,8 @@
 import Joi from 'joi';
-import { MainService, PriceType } from '../../models/order';
-import { ArticleCategory } from '../../models/article';
-import { supabase } from '../../config';
+import { MainService, ArticleCategory } from '../../models/order';
 import AppError from '../../utils/AppError';
+import { supabase } from '../../config';
+import { Request, Response, NextFunction } from 'express';
 
 export const articleValidationSchema = Joi.object({
   articleName: Joi.string().required().min(2).max(100),
@@ -13,7 +13,7 @@ export const articleValidationSchema = Joi.object({
     .pattern(
       Joi.string().valid(...Object.values(MainService)),
       Joi.object().pattern(
-        Joi.string().valid(...Object.values(PriceType)),
+        Joi.string().valid('base', 'additional'),
         Joi.number().min(0).max(100000)
       )
     )
@@ -35,7 +35,7 @@ export const categoryValidationSchema = Joi.object({
 
 export const priceRangeValidation = (price: number, service: MainService): boolean => {
   const maxPrices: Record<MainService, number> = {
-    [MainService.PRESSING]: 50000,
+    [MainService.LAUNDRY]: 50000,
     [MainService.DRY_CLEANING]: 75000,
     [MainService.IRONING]: 25000,
     [MainService.WASH_AND_IRON]: 75000,
@@ -54,21 +54,46 @@ export const validateArticleRequest = async (req: Request, res: Response, next: 
   const { authorization } = req.headers;
 
   if (!authorization) {
-    return next(new AppError('Authorization header is required', 401));
+    return next(new AppError(401, 'Authorization header is required', 'UNAUTHORIZED'));
   }
 
   const token = authorization.split(' ')[1];
 
   if (!token) {
-    return next(new AppError('Token is required', 401));
+    return next(new AppError(401, 'Token is required', 'UNAUTHORIZED'));
   }
 
   const { data, error } = await supabase.auth.getUser(token);
 
   if (error || !data?.user) {
-    return next(new AppError('Invalid token', 401));
+    return next(new AppError(401, 'Invalid token', 'UNAUTHORIZED'));
   }
 
   (req as any).user = data.user;
+
+  const { error: validationError } = articleValidationSchema.validate(req.body, { abortEarly: false });
+
+  if (validationError) {
+    const errors = validationError.details.map(detail => detail.message);
+    return next(new AppError(400, 'Validation failed', 'VALIDATION_ERROR', errors)); // Pass errors directly
+  }
+
+  // Type-safe price validation
+  const prices = req.body.prices as Record<MainService, Record<string, number>>;
+  Object.entries(prices).forEach(([service, servicePrice]) => {
+    Object.values(servicePrice).forEach(price => {
+      if (!priceRangeValidation(price, service as MainService)) {
+        return next(new AppError(400, `Invalid price range for service: ${service}`, 'INVALID_PRICE_RANGE'));
+      }
+    });
+  });
+
+  // Validate service availability
+  req.body.availableServices.forEach((service: MainService) => {
+    if (!prices[service as MainService]) {
+      return next(new AppError(400, `Price must be set for available service: ${service}`, 'INVALID_SERVICE'));
+    }
+  });
+
   next();
 };

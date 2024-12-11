@@ -15,7 +15,21 @@ export enum OrderType {
 export enum MainService {
   LAUNDRY = 'laundry',
   DRY_CLEANING = 'dry_cleaning',
-  IRONING = 'ironing'
+  IRONING = 'ironing',
+  WASH_AND_IRON = 'wash_and_iron',
+  WASH_ONLY = 'wash_only',
+  IRON_ONLY = 'iron_only',
+  PICKUP_DELIVERY = 'pickup_delivery',
+  REPASSAGE = 'repassage',
+  NETTOYAGE_SEC = 'nettoyage_sec',
+  BLANCHISSERIE = 'blanchisserie'
+}
+
+export enum ArticleCategory {
+  CLOTHING = 'clothing',
+  LINENS = 'linens',
+  ACCESSORIES = 'accessories',
+  OTHER = 'other'
 }
 
 export interface OrderItem {
