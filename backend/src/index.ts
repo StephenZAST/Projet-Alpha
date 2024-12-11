@@ -10,7 +10,7 @@ import categoriesRouter from './routes/categories';
 import subscriptionsRouter from './routes/subscriptions';
 import adminRouter from './routes/admins';  
 import authRouter from './routes/auth';     
-import { config } from './config';
+import config from './config';
 import { AppError } from './utils/errors';
 
 const app = express();
@@ -30,7 +30,7 @@ app.use(helmet({
 })); 
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],  
+  origin: config.allowedOrigins,  
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
@@ -90,4 +90,21 @@ const server = app.listen(port, () => {
     console.error('Server error:', err);
     process.exit(1);
   }
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Starting graceful shutdown...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Starting graceful shutdown...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
