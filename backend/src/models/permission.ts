@@ -1,8 +1,8 @@
 export interface Permission {
-  id: string;
+  id?: string;
   name: string;
   description: string;
   roles: string[];
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
