@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import { JobScheduler } from './jobs/scheduler';
-import { config } from './config';
+import config from './config';
 import { logger } from './utils/logger';
 
 // Import des routes
