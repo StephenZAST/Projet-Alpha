@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import { JobScheduler } from './jobs/scheduler';
+import { config } from './config';
 import { logger } from './utils/logger';
 
 // Import des routes
@@ -21,11 +22,20 @@ const app = express();
 const jobScheduler = new JobScheduler();
 
 // Middleware de base
-app.use(cors());
-app.use(helmet());
+app.use(cors({
+  origin: config.allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  credentials: true
+}));
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false
+}));
 app.use(compression());
 app.use(morgan('dev'));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
@@ -39,7 +49,7 @@ app.use('/api/admin', googleAuthRoutes); // Added route
 app.use('/api/blog', blogArticleRoutes); // Ajout des routes de blog
 app.use('/api/blog-generator', blogGeneratorRoutes); // Ajout des routes de génération de blog
 
-// Route de base pour vérifier que le serveur fonctionne
+// Basic route for testing
 app.get('/', (req, res) => {
   res.json({ message: 'Bienvenue sur l\'API du système de gestion de blanchisserie' });
 });
@@ -61,10 +71,10 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// Start the server
-const PORT = process.env.PORT || 3000;
+// Start server with error handling
+const PORT = process.env.PORT || config.port;
 app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
+  logger.info(`Server is running on http://localhost:${PORT}`);
   jobScheduler.startJobs();
 });
 
