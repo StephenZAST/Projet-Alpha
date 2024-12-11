@@ -20,6 +20,7 @@
     "alpha-laundry-backend": "file:",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "compression": "^1.7.5",
     "cors": "^2.8.5",
     "cron": "^3.2.1",
@@ -40,12 +41,13 @@
     "resend": "^4.0.1",
     "sharp": "^0.33.5",
     "socket.io": "^4.8.1",
-    "supabase": "^2.47.3",
+    "supabase": "^2.0.12",
     "uuid": "^11.0.3",
     "winston": "^3.17.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",
     "@types/cron": "^2.0.1",

@@ -1,245 +1,126 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AdminService } from '../services/adminService';
-import { AppError, errorCodes } from '../utils/errors'; // Import errorCodes
-import { AdminRole } from '../models/admin';
+import { AppError, errorCodes } from '../utils/errors';
+import { createToken } from '../utils/auth';
+import { IAdmin } from '../models/admin';
 
-export class AdminController {
-    private adminService: AdminService;
+export const loginAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body;
 
-    constructor() {
-        this.adminService = new AdminService();
+  try {
+    const admin = await AdminService.loginAdmin(email, password);
+
+    if (!admin) {
+      throw new AppError(401, 'Invalid credentials', 'UNAUTHORIZED');
     }
 
-    // Connexion admin
-    login = async (req: Request, res: Response) => {
-        try {
-            const { email, password } = req.body;
-            const result = await this.adminService.loginAdmin(email, password);
-            
-            res.json({
-                success: true,
-                data: {
-                    admin: result.admin,
-                    token: result.token
-                }
-            });
-        } catch (error) {
-            if (error instanceof AppError) { // Check if error is an instance of AppError
-                res.status(error.statusCode || 500).json({
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({
-                    success: false,
-                    message: 'Internal Server Error'
-                });
-            }
-        }
-    };
+    const token = createToken({ id: admin.id, role: admin.role });
+    res.status(200).json({ message: 'Login successful', admin, token });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    // Créer un nouvel admin
-    createAdmin = async (req: Request, res: Response) => {
-        try {
-            const creatorId = req.user?.id; // Optional chaining for req.user
-            if (!creatorId) {
-                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
-            }
-            const adminData = req.body;
-            
-            const admin = await this.adminService.createAdmin(adminData, creatorId);
-            
-            res.status(201).json({
-                success: true,
-                data: admin
-            });
-        } catch (error) {
-            if (error instanceof AppError) { // Check if error is an instance of AppError
-                res.status(error.statusCode || 500).json({
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({
-                    success: false,
-                    message: 'Internal Server Error'
-                });
-            }
-        }
-    };
+export const registerAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const adminData = req.body;
 
-    // Mettre à jour un admin
-    updateAdmin = async (req: Request, res: Response) => {
-        try {
-            const { id } = req.params;
-            const updates = req.body;
-            const updaterId = req.user?.id; // Optional chaining for req.user
-            if (!updaterId) {
-                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
-            }
+  try {
+    const admin = await AdminService.createAdmin(adminData);
 
-            const admin = await this.adminService.updateAdmin(id, updates, updaterId);
-            
-            res.json({
-                success: true,
-                data: admin
-            });
-        } catch (error) {
-            if (error instanceof AppError) { // Check if error is an instance of AppError
-                res.status(error.statusCode || 500).json({
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({
-                    success: false,
-                    message: 'Internal Server Error'
-                });
-            }
-        }
-    };
+    if (admin) {
+      const token = createToken({ id: admin.id, role: admin.role });
+      res.status(201).json({ message: 'Admin registered successfully', admin, token });
+    } else {
+      throw new AppError(500, 'Failed to register admin', 'INTERNAL_SERVER_ERROR');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
 
-    // Supprimer un admin
-    deleteAdmin = async (req: Request, res: Response) => {
-        try {
-            const { id } = req.params;
-            const deleterId = req.user?.id; // Optional chaining for req.user
-            if (!deleterId) {
-                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
-            }
+export const updateAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+  const adminData = req.body;
 
-            await this.adminService.deleteAdmin(id, deleterId);
-            
-            res.json({
-                success: true,
-                message: "Administrateur supprimé avec succès"
-            });
-        } catch (error) {
-            if (error instanceof AppError) { // Check if error is an instance of AppError
-                res.status(error.statusCode || 500).json({
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({
-                    success: false,
-                    message: 'Internal Server Error'
-                });
-            }
-        }
-    };
+  try {
+    const admin = await AdminService.updateAdmin(id, adminData);
 
-    // Obtenir tous les admins
-    getAllAdmins = async (req: Request, res: Response) => {
-        try {
-            const requesterId = req.user?.id; // Optional chaining for req.user
-            if (!requesterId) {
-                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
-            }
-            const admins = await this.adminService.getAllAdmins(requesterId);
-            
-            res.json({
-                success: true,
-                data: admins
-            });
-        } catch (error) {
-            if (error instanceof AppError) { // Check if error is an instance of AppError
-                res.status(error.statusCode || 500).json({
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({
-                    success: false,
-                    message: 'Internal Server Error'
-                });
-            }
-        }
-    };
+    if (admin) {
+      res.status(200).json({ message: 'Admin updated successfully', admin });
+    } else {
+      throw new AppError(404, 'Admin not found', 'ADMIN_NOT_FOUND');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
 
-    // Obtenir un admin par ID
-    getAdminById = async (req: Request, res: Response) => {
-        try {
-            const { id } = req.params;
-            const requesterId = req.user?.id; // Optional chaining for req.user
-            if (!requesterId) {
-                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
-            }
+export const deleteAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
 
-            const admin = await this.adminService.getAdminById(id, requesterId);
-            
-            res.json({
-                success: true,
-                data: admin
-            });
-        } catch (error) {
-            if (error instanceof AppError) { // Check if error is an instance of AppError
-                res.status(error.statusCode || 500).json({
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({
-                    success: false,
-                    message: 'Internal Server Error'
-                });
-            }
-        }
-    };
+  try {
+    await AdminService.deleteAdmin(id);
+    res.status(200).json({ message: 'Admin deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    // Changer le statut d'un admin
-    toggleAdminStatus = async (req: Request, res: Response) => {
-        try {
-            const { id } = req.params;
-            const { isActive } = req.body;
-            const requesterId = req.user?.id; // Optional chaining for req.user
-            if (!requesterId) {
-                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED); // Add error code
-            }
+export const getAllAdmins = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const admins = await AdminService.getAllAdmins();
+    res.status(200).json({ admins });
+  } catch (error) {
+    next(error);
+  }
+};
 
-            const admin = await this.adminService.toggleAdminStatus(id, isActive, requesterId);
-            
-            res.json({
-                success: true,
-                data: admin
-            });
-        } catch (error) {
-            if (error instanceof AppError) { // Check if error is an instance of AppError
-                res.status(error.statusCode || 500).json({
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({
-                    success: false,
-                    message: 'Internal Server Error'
-                });
-            }
-        }
-    };
+export const getAdminById = async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
 
-    // Créer le compte Super Admin Master (endpoint protégé et à usage unique)
-    createMasterAdmin = async (req: Request, res: Response) => {
-        try {
-            const adminData = req.body;
-            const admin = await this.adminService.createMasterAdmin(adminData);
-            
-            res.status(201).json({
-                success: true,
-                data: admin
-            });
-        } catch (error) {
-            if (error instanceof AppError) { // Check if error is an instance of AppError
-                res.status(error.statusCode || 500).json({
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({
-                    success: false,
-                    message: 'Internal Server Error'
-                });
-            }
-        }
-    };
-}
+  try {
+    const admin = await AdminService.getAdminById(id);
+
+    if (!admin) {
+      throw new AppError(404, 'Admin not found', 'ADMIN_NOT_FOUND');
+    }
+
+    res.status(200).json({ admin });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const toggleAdminStatus = async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+
+  try {
+    const admin = await AdminService.toggleAdminStatus(id, isActive);
+
+    if (admin) {
+      res.status(200).json({ message: 'Admin status toggled successfully', admin });
+    } else {
+      throw new AppError(404, 'Admin not found', 'ADMIN_NOT_FOUND');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createMasterAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const adminData = req.body;
+
+  try {
+    const admin = await AdminService.createMasterAdmin(adminData);
+
+    if (admin) {
+      const token = createToken({ id: admin.id, role: admin.role });
+      res.status(201).json({ message: 'Master admin created successfully', admin, token });
+    } else {
+      throw new AppError(500, 'Failed to create master admin', 'INTERNAL_SERVER_ERROR');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
