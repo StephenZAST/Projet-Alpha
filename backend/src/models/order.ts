@@ -25,6 +25,16 @@ export enum MainService {
   BLANCHISSERIE = 'blanchisserie'
 }
 
+export enum AdditionalService {
+  EXPRESS_DELIVERY = 'express_delivery',
+  SAME_DAY_DELIVERY = 'same_day_delivery',
+  HAND_IRONING = 'hand_ironing',
+  STEAM_CLEANING = 'steam_cleaning',
+  DRYING = 'drying',
+  FOLDING = 'folding',
+  BAGGING = 'bagging'
+}
+
 export enum ArticleCategory {
   CLOTHING = 'clothing',
   LINENS = 'linens',

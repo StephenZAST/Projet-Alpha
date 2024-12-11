@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PermissionService } from '../../services/permissionService';
-import AppError from '../../utils/AppError';
+import { AppError, errorCodes } from '../../utils/errors';
 
 export const createPermission = async (req: Request, res: Response, next: NextFunction) => {
   const { name, description, roles } = req.body;

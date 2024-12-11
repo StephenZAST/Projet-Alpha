@@ -4,11 +4,11 @@ import { getPermissionById } from './permissionService/getPermissionById';
 import { updatePermission } from './permissionService/updatePermission';
 import { deletePermission } from './permissionService/deletePermission';
 import { initializeDefaultPermissions } from './permissionService/initializeDefaultPermissions';
-import { getPermissionsByRole } from './getPermissionsByRole';
-import { addPermission } from './addPermission';
-import { removePermission } from './removePermission';
-import { getRoleMatrix } from './getRoleMatrix';
-import { getResourcePermissions } from './getResourcePermissions';
+import { getPermissionsByRole } from './permissionService/getPermissionsByRole';
+import { addPermission } from './permissionService/addPermission';
+import { removePermission } from './permissionService/removePermission';
+import { getRoleMatrix } from './permissionService/getRoleMatrix';
+import { getResourcePermissions } from './permissionService/getResourcePermissions';
 
 export class PermissionService {
   static createPermission = createPermission;
