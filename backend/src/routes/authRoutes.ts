@@ -1,17 +1,21 @@
 import express from 'express';
 import { AppError, errorCodes } from '../utils/errors';
-import { createAdmin, getAdmin, updateAdmin, deleteAdmin } from '../models/admin';
-import { createToken, verifyToken } from '../utils/auth';
+import { registerAdmin, loginAdmin, updateAdmin, deleteAdmin, getAdminById } from '../controllers/adminController';
 import { validateRequest } from '../middleware/validation';
 import { validateCreateAdmin, validateGetAdmin, validateUpdateAdmin } from '../middleware/adminValidation';
+import { authenticateAdmin } from '../utils/auth';
+import { createToken } from '../utils/auth';
 
 const router = express.Router();
+
+// Middleware to authenticate admin
+router.use(authenticateAdmin);
 
 // Register a new admin
 router.post('/register', validateCreateAdmin, async (req, res, next) => {
   try {
     const adminData = req.body;
-    const admin = await createAdmin(adminData);
+    const admin = await registerAdmin(req, res, next);
 
     if (admin) {
       const token = createToken({ id: admin.id, role: admin.role });
@@ -28,7 +32,7 @@ router.post('/register', validateCreateAdmin, async (req, res, next) => {
 router.post('/login', validateGetAdmin, async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const admin = await getAdmin(email);
+    const admin = await loginAdmin(req, res, next);
 
     if (admin && admin.password === password) {
       const token = createToken({ id: admin.id, role: admin.role });
@@ -46,7 +50,7 @@ router.put('/:id', validateUpdateAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     const adminData = req.body;
-    const admin = await updateAdmin(id, adminData);
+    const admin = await updateAdmin(req, res, next);
 
     if (admin) {
       res.status(200).json({ message: 'Admin updated successfully', admin });
@@ -59,11 +63,27 @@ router.put('/:id', validateUpdateAdmin, async (req, res, next) => {
 });
 
 // Delete admin
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', validateRequest, async (req, res, next) => {
   try {
     const { id } = req.params;
-    await deleteAdmin(id);
+    await deleteAdmin(req, res, next);
     res.status(200).json({ message: 'Admin deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get admin by ID
+router.get('/:id', validateGetAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const admin = await getAdminById(req, res, next);
+
+    if (!admin) {
+      throw new AppError(404, 'Admin not found', 'ADMIN_NOT_FOUND');
+    }
+
+    res.status(200).json({ admin });
   } catch (error) {
     next(error);
   }

@@ -1,31 +1,51 @@
 import { Request, Response, NextFunction } from 'express';
-import { supabase } from '../config';
 import { AppError, errorCodes } from '../utils/errors';
 
-export const validateAdmin = async (req: Request, res: Response, next: NextFunction) => {
-  const { authorization } = req.headers;
+export const validateAdmin = (req: Request, res: Response, next: NextFunction) => {
+  // Example validation logic
+  const { name, email, password } = req.body;
 
-  if (!authorization) {
-    return next(new AppError(401, 'Authorization header is required', errorCodes.UNAUTHORIZED));
+  if (!name || !email || !password) {
+    return next(new AppError(400, 'All fields are required', 'INVALID_ADMIN_DATA'));
   }
 
-  const token = authorization.split(' ')[1];
+  next();
+};
 
-  if (!token) {
-    return next(new AppError(401, 'Token is required', errorCodes.UNAUTHORIZED));
+export const validateCreateAdmin = (req: Request, res: Response, next: NextFunction) => {
+  // Example validation logic for creating an admin
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return next(new AppError(400, 'All fields are required', 'INVALID_ADMIN_DATA'));
   }
 
-  const { data, error } = await supabase.auth.getUser(token);
+  next();
+};
 
-  if (error || !data?.user) {
-    return next(new AppError(401, 'Invalid token', errorCodes.UNAUTHORIZED));
+export const validateGetAdmin = (req: Request, res: Response, next: NextFunction) => {
+  // Example validation logic for getting an admin
+  const { id } = req.params;
+
+  if (!id) {
+    return next(new AppError(400, 'ID is required', 'INVALID_ID'));
   }
 
-  // Check if the user is an admin
-  if (data.user.app_metadata?.provider !== 'admin') {
-    return next(new AppError(403, 'Forbidden: User is not an admin', errorCodes.FORBIDDEN));
+  next();
+};
+
+export const validateUpdateAdmin = (req: Request, res: Response, next: NextFunction) => {
+  // Example validation logic for updating an admin
+  const { id } = req.params;
+  const { name, email, password } = req.body;
+
+  if (!id) {
+    return next(new AppError(400, 'ID is required', 'INVALID_ID'));
   }
 
-  (req as any).user = data.user;
+  if (!name && !email && !password) {
+    return next(new AppError(400, 'At least one field is required for update', 'INVALID_ADMIN_DATA'));
+  }
+
   next();
 };

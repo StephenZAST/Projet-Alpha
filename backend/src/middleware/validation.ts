@@ -1,26 +1,26 @@
-// src/middleware/validation.ts
 import { Request, Response, NextFunction } from 'express';
 import { Schema } from 'joi';
 import * as Joi from 'joi';
+import { AppError, errorCodes } from '../utils/errors';
 
 // Middleware générique de validation
 export const validate = (schema: Schema, property: 'body' | 'query' | 'params' = 'body') => {
   return (req: Request, res: Response, next: NextFunction) => {
     const { error } = schema.validate(req[property], { abortEarly: false });
-    
+
     if (error) {
       const errors = error.details.map(detail => ({
         field: detail.path.join('.'),
         message: detail.message
       }));
-      
+
       return res.status(400).json({
         status: 'error',
         message: 'Validation error',
         errors
       });
     }
-    
+
     next();
   };
 };
@@ -32,20 +32,20 @@ export const validateAndTransform = (schema: Schema, property: 'body' | 'query' 
       abortEarly: false,
       stripUnknown: true // Supprime les champs non définis dans le schéma
     });
-    
+
     if (error) {
       const errors = error.details.map(detail => ({
         field: detail.path.join('.'),
         message: detail.message
       }));
-      
+
       return res.status(400).json({
         status: 'error',
         message: 'Validation error',
         errors
       });
     }
-    
+
     // Met à jour la requête avec les données validées et transformées
     req[property] = value;
     next();
@@ -60,7 +60,7 @@ export const validatePagination = (req: Request, res: Response, next: NextFuncti
   });
 
   const { error, value } = schema.validate(req.query);
-  
+
   if (error) {
     return res.status(400).json({
       status: 'error',
@@ -82,14 +82,14 @@ export const validatePagination = (req: Request, res: Response, next: NextFuncti
 export const validateMongoId = (paramName: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const id = req.params[paramName];
-    
+
     if (!/^[0-9a-fA-F]{24}$/.test(id)) {
       return res.status(400).json({
         status: 'error',
         message: `Invalid ${paramName} format`
       });
     }
-    
+
     next();
   };
 };
@@ -126,4 +126,16 @@ export const validateDateRange = (
 
     next();
   };
+};
+
+// Middleware de validation générique pour les requêtes
+export const validateRequest = (req: Request, res: Response, next: NextFunction) => {
+  // Example validation logic
+  const { body } = req;
+
+  if (!body) {
+    return next(new AppError(400, 'Request body is required', 'INVALID_REQUEST'));
+  }
+
+  next();
 };

@@ -18,7 +18,7 @@ export const getPermissions = async (): Promise<Permission[]> => {
       if (typeof permission.roles === 'string') {
         return {
           ...permission,
-          roles: permission.roles.split(',').map((role: string) => role.trim())
+          roles: (permission.roles as string).split(',').map((role: string) => role.trim())
         };
       } else {
         return permission;
