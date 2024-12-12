@@ -4,7 +4,7 @@ import { AppError, errorCodes } from '../utils/errors';
 import { createToken } from '../utils/auth';
 import { IAdmin } from '../models/admin';
 
-export const loginAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const loginAdmin = async (req: Request, res: Response, next: NextFunction): Promise<IAdmin | null> => {
   const { email, password } = req.body;
 
   try {
@@ -16,12 +16,14 @@ export const loginAdmin = async (req: Request, res: Response, next: NextFunction
 
     const token = createToken({ id: admin.id, role: admin.role });
     res.status(200).json({ message: 'Login successful', admin, token });
+    return admin;
   } catch (error) {
     next(error);
+    return null;
   }
 };
 
-export const registerAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const registerAdmin = async (req: Request, res: Response, next: NextFunction): Promise<IAdmin | null> => {
   const adminData = req.body;
 
   try {
@@ -30,15 +32,17 @@ export const registerAdmin = async (req: Request, res: Response, next: NextFunct
     if (admin) {
       const token = createToken({ id: admin.id, role: admin.role });
       res.status(201).json({ message: 'Admin registered successfully', admin, token });
+      return admin;
     } else {
       throw new AppError(500, 'Failed to register admin', 'INTERNAL_SERVER_ERROR');
     }
   } catch (error) {
     next(error);
+    return null;
   }
 };
 
-export const updateAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const updateAdmin = async (req: Request, res: Response, next: NextFunction): Promise<IAdmin | null> => {
   const { id } = req.params;
   const adminData = req.body;
 
@@ -47,15 +51,17 @@ export const updateAdmin = async (req: Request, res: Response, next: NextFunctio
 
     if (admin) {
       res.status(200).json({ message: 'Admin updated successfully', admin });
+      return admin;
     } else {
       throw new AppError(404, 'Admin not found', 'ADMIN_NOT_FOUND');
     }
   } catch (error) {
     next(error);
+    return null;
   }
 };
 
-export const deleteAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { id } = req.params;
 
   try {
@@ -75,7 +81,7 @@ export const getAllAdmins = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const getAdminById = async (req: Request, res: Response, next: NextFunction) => {
+export const getAdminById = async (req: Request, res: Response, next: NextFunction): Promise<IAdmin | null> => {
   const { id } = req.params;
 
   try {
@@ -86,12 +92,14 @@ export const getAdminById = async (req: Request, res: Response, next: NextFuncti
     }
 
     res.status(200).json({ admin });
+    return admin;
   } catch (error) {
     next(error);
+    return null;
   }
 };
 
-export const toggleAdminStatus = async (req: Request, res: Response, next: NextFunction) => {
+export const toggleAdminStatus = async (req: Request, res: Response, next: NextFunction): Promise<IAdmin | null> => {
   const { id } = req.params;
   const { isActive } = req.body;
 
@@ -100,15 +108,17 @@ export const toggleAdminStatus = async (req: Request, res: Response, next: NextF
 
     if (admin) {
       res.status(200).json({ message: 'Admin status toggled successfully', admin });
+      return admin;
     } else {
       throw new AppError(404, 'Admin not found', 'ADMIN_NOT_FOUND');
     }
   } catch (error) {
     next(error);
+    return null;
   }
 };
 
-export const createMasterAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const createMasterAdmin = async (req: Request, res: Response, next: NextFunction): Promise<IAdmin | null> => {
   const adminData = req.body;
 
   try {
@@ -117,10 +127,12 @@ export const createMasterAdmin = async (req: Request, res: Response, next: NextF
     if (admin) {
       const token = createToken({ id: admin.id, role: admin.role });
       res.status(201).json({ message: 'Master admin created successfully', admin, token });
+      return admin;
     } else {
       throw new AppError(500, 'Failed to create master admin', 'INTERNAL_SERVER_ERROR');
     }
   } catch (error) {
     next(error);
+    return null;
   }
 };
