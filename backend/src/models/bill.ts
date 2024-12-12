@@ -1,121 +1,69 @@
-import { Timestamp } from 'firebase-admin/firestore';
-import { OrderItem } from './order';
-
-export enum BillStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  PARTIALLY_PAID = 'PARTIALLY_PAID',
-  OVERDUE = 'OVERDUE',
-  CANCELLED = 'CANCELLED',
-  REFUNDED = 'REFUNDED',
-  FAILED = 'FAILED'
-}
-
-export enum PaymentMethod {
-  CASH = 'CASH',
-  CREDIT_CARD = 'CREDIT_CARD',
-  DEBIT_CARD = 'DEBIT_CARD',
-  BANK_TRANSFER = 'BANK_TRANSFER',
-  MOBILE_MONEY = 'MOBILE_MONEY',
-  WALLET = 'WALLET',
-  LOYALTY_POINTS = 'LOYALTY_POINTS'
-}
+import supabase from '../config/supabase';
+import { AppError, errorCodes } from '../utils/errors';
 
 export interface Bill {
   id?: string;
-  orderId: string;
   userId: string;
-  items: OrderItem[];
-  subtotal: number;
-  taxAmount: number;
-  taxRate: number;
-  deliveryFee: number;
-  discount?: {
-    type: 'PERCENTAGE' | 'FIXED' | 'LOYALTY',
-    value: number;
-    code?: string;
-  };
-  totalAmount: number;
-  amountPaid: number;
-  remainingAmount: number;
-  status: BillStatus;
-  dueDate: Timestamp;
-  paymentMethod?: PaymentMethod;
-  paymentDetails?: {
-    transactionId?: string;
-    paymentProvider?: string;
-    cardLast4?: string;
-    receiptUrl?: string;
-  };
-  billingAddress: {
-    name: string;
-    address: string;
-    city: string;
-    state: string;
-    country: string;
-    postalCode: string;
-    phone: string;
-    email: string;
-  };
-  invoiceNumber: string;
-  notes?: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  paidAt?: Timestamp;
-  paymentDate?: Timestamp;
-  refundAmount?: number;
-  paymentReference?: string;
-  refundDate?: Timestamp;
-  refundReason?: string;
-  refundReference?: string; // Added refundReference property
-}
-
-export interface Payment {
-  id?: string;
-  billId: string;
   amount: number;
-  method: PaymentMethod;
-  status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
-  transactionId?: string;
-  paymentProvider?: string;
-  paymentDetails?: Record<string, any>;
-  refundReason?: string;
-  createdAt: Timestamp;
-  processedAt?: Timestamp;
+  status: 'pending' | 'paid' | 'failed' | 'refunded';
+  paymentMethod: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface BillingSummary {
-  totalBills: number;
-  totalAmount: number;
-  paidAmount: number;
-  pendingAmount: number;
-  overdueAmount: number;
-  averageBillAmount: number;
-  paymentMethodBreakdown: {
-    method: PaymentMethod;
-    count: number;
-    amount: number;
-  }[];
-  statusBreakdown: {
-    status: BillStatus;
-    count: number;
-    amount: number;
-  }[];
-  period: {
-    startDate: Timestamp;
-    endDate: Timestamp;
-  };
+// Use Supabase to store bill data
+const billsTable = 'bills';
+
+// Function to get bill data
+export async function getBill(id: string): Promise<Bill | null> {
+  const { data, error } = await supabase.from(billsTable).select('*').eq('id', id).single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to fetch bill', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Bill;
 }
 
-export interface Refund {
-  id?: string;
-  billId: string;
-  paymentId: string;
-  amount: number;
-  reason: string;
-  status: 'PENDING' | 'PROCESSED' | 'FAILED';
-  processedBy?: string;
-  notes?: string;
-  createdAt: Timestamp;
-  processedAt?: Timestamp;
+// Function to create bill
+export async function createBill(billData: Bill): Promise<Bill> {
+  const { data, error } = await supabase.from(billsTable).insert([billData]).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to create bill', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Bill;
+}
+
+// Function to update bill
+export async function updateBill(id: string, billData: Partial<Bill>): Promise<Bill> {
+  const currentBill = await getBill(id);
+
+  if (!currentBill) {
+    throw new AppError(404, 'Bill not found', errorCodes.NOT_FOUND);
+  }
+
+  const { data, error } = await supabase.from(billsTable).update(billData).eq('id', id).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to update bill', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Bill;
+}
+
+// Function to delete bill
+export async function deleteBill(id: string): Promise<void> {
+  const bill = await getBill(id);
+
+  if (!bill) {
+    throw new AppError(404, 'Bill not found', errorCodes.NOT_FOUND);
+  }
+
+  const { error } = await supabase.from(billsTable).delete().eq('id', id);
+
+  if (error) {
+    throw new AppError(500, 'Failed to delete bill', 'INTERNAL_SERVER_ERROR');
+  }
 }
