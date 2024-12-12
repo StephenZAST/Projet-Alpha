@@ -1,154 +1,69 @@
-import { Order } from './order';
-import { SubscriptionType } from './subscription';
-import { Timestamp } from 'firebase-admin/firestore';
+import supabase from '../config/supabase';
+import { AppError, errorCodes } from '../utils/errors';
 
-export interface Bill {
-  id?: string;
-  orderId: string;
-  userId: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  dueDate: Timestamp;
-  items: BillItem[];
-  subtotal: number;
-  tax: number;
-  discount?: number;
-  loyaltyPointsUsed?: number;
-  loyaltyPointsEarned: number;
-  total: number;
-  status: BillStatus;
-  subscriptionInfo?: SubscriptionBillingInfo;
-  paymentMethod?: string;
-  paymentStatus: PaymentStatus;
-  paymentDate?: Timestamp;
-  refundStatus?: RefundStatus;
-  refundDate?: Timestamp;
-  refundAmount?: number;
-  notes?: string;
-}
-
-export interface BillItem {
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  weight?: number;
-  category: string;
-  serviceType?: string;
-  additionalNotes?: string;
-}
-
-export interface SubscriptionBillingInfo {
-  type: SubscriptionType;
-  collectionsRemaining: number;
-  nextCollectionDate?: Timestamp;
-  weightLimit: number;
-  currentWeight: number;
-  periodStart: Timestamp;
-  periodEnd: Timestamp;
-}
-
-export enum BillStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  PAID = 'paid',
-  OVERDUE = 'overdue',
-  CANCELLED = 'cancelled',
-  REFUNDED = 'refunded',
-  PARTIALLY_REFUNDED = 'partially_refunded'
-}
-
-export enum PaymentStatus {
-  PENDING = 'pending',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-  CANCELLED = 'cancelled'
-}
-
-export enum RefundStatus {
-  PENDING = 'pending',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-  CANCELLED = 'cancelled'
-}
-
-export interface LoyaltyTransaction {
+export interface Billing {
   id?: string;
   userId: string;
-  orderId?: string;
-  billId?: string;
-  type: LoyaltyTransactionType;
-  points: number;
-  description: string;
-  createdAt: Timestamp;
-  expiryDate?: Timestamp;
+  amount: number;
+  status: 'pending' | 'paid' | 'failed' | 'refunded';
+  paymentMethod: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export enum LoyaltyTransactionType {
-  EARNED = 'earned',
-  REDEEMED = 'redeemed',
-  EXPIRED = 'expired',
-  ADJUSTED = 'adjusted',
-  CANCELLED = 'cancelled'
+// Use Supabase to store billing data
+const billingTable = 'billing';
+
+// Function to get billing data
+export async function getBilling(id: string): Promise<Billing | null> {
+  const { data, error } = await supabase.from(billingTable).select('*').eq('id', id).single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to fetch billing', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Billing;
 }
 
-export interface Offer {
-  id?: string;
-  code: string;
-  type: OfferType;
-  value: number;
-  minOrderValue?: number;
-  maxDiscount?: number;
-  startDate: Timestamp;
-  endDate: Timestamp;
-  description: string;
-  termsAndConditions: string;
-  applicableServices: string[];
-  userType: UserOfferType[];
-  isActive: boolean;
-  usageLimit?: number;
-  usageCount: number;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+// Function to create billing
+export async function createBilling(billingData: Billing): Promise<Billing> {
+  const { data, error } = await supabase.from(billingTable).insert([billingData]).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to create billing', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Billing;
 }
 
-export enum OfferType {
-  PERCENTAGE = 'percentage',
-  FIXED_AMOUNT = 'fixed_amount',
-  FREE_SERVICE = 'free_service',
-  BUY_ONE_GET_ONE = 'buy_one_get_one',
-  LOYALTY_POINTS = 'loyalty_points'
+// Function to update billing
+export async function updateBilling(id: string, billingData: Partial<Billing>): Promise<Billing> {
+  const currentBilling = await getBilling(id);
+
+  if (!currentBilling) {
+    throw new AppError(404, 'Billing not found', errorCodes.NOT_FOUND);
+  }
+
+  const { data, error } = await supabase.from(billingTable).update(billingData).eq('id', id).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to update billing', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Billing;
 }
 
-export enum UserOfferType {
-  ALL = 'all',
-  NEW = 'new',
-  EXISTING = 'existing',
-  PREMIUM = 'premium',
-  VIP = 'vip'
-}
+// Function to delete billing
+export async function deleteBilling(id: string): Promise<void> {
+  const billing = await getBilling(id);
 
-export enum BillingStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  OVERDUE = 'OVERDUE',
-  CANCELLED = 'CANCELLED',
-  REFUNDED = 'REFUNDED',
-}
+  if (!billing) {
+    throw new AppError(404, 'Billing not found', errorCodes.NOT_FOUND);
+  }
 
-export enum PaymentMethod {
-  CASH = 'CASH',
-  CARD = 'CARD',
-  MOBILE_MONEY = 'MOBILE_MONEY',
-  BANK_TRANSFER = 'BANK_TRANSFER',
-}
+  const { error } = await supabase.from(billingTable).delete().eq('id', id);
 
-export enum CurrencyCode {
-  USD = 'USD',
-  EUR = 'EUR',
-  GBP = 'GBP',
+  if (error) {
+    throw new AppError(500, 'Failed to delete billing', 'INTERNAL_SERVER_ERROR');
+  }
 }
-
-export { SubscriptionType };
