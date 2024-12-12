@@ -10,7 +10,6 @@ export enum AdminRole {
   SUPERVISOR = 'supervisor'
 }
 
-// Define IAdmin interface before adminSchema
 export interface IAdmin {
   id: string; // Changed from _id to id
   userId: string;
