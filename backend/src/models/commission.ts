@@ -1,26 +1,69 @@
-import { Timestamp } from 'firebase-admin/firestore';
+import supabase from '../config/supabase';
+import { AppError, errorCodes } from '../utils/errors';
 
 export interface Commission {
-    id: string;
-    affiliateId: string;
-    clientId: string;         // ID du client apporté
-    orderId: string;
-    orderAmount: number;
-    commissionAmount: number;
-    status: 'PENDING' | 'APPROVED' | 'PAID';
-    createdAt: Timestamp;
-    approvedAt?: Timestamp;
-    paidAt?: Timestamp;
+  id?: string;
+  adminId: string;
+  affiliateId: string;
+  amount: number;
+  status: 'pending' | 'paid' | 'failed';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface CommissionRule {
-    id: string;
-    name: string;
-    description: string;
-    type: 'PERCENTAGE';       // Simplifié à pourcentage uniquement
-    value: number;           // Valeur du pourcentage
-    minimumOrderValue: number;
-    isActive: boolean;
-    createdAt: Timestamp;
-    updatedAt: Timestamp;
+// Use Supabase to store commission data
+const commissionsTable = 'commissions';
+
+// Function to get commission data
+export async function getCommission(id: string): Promise<Commission | null> {
+  const { data, error } = await supabase.from(commissionsTable).select('*').eq('id', id).single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to fetch commission', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Commission;
+}
+
+// Function to create commission
+export async function createCommission(commissionData: Commission): Promise<Commission> {
+  const { data, error } = await supabase.from(commissionsTable).insert([commissionData]).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to create commission', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Commission;
+}
+
+// Function to update commission
+export async function updateCommission(id: string, commissionData: Partial<Commission>): Promise<Commission> {
+  const currentCommission = await getCommission(id);
+
+  if (!currentCommission) {
+    throw new AppError(404, 'Commission not found', errorCodes.NOT_FOUND);
+  }
+
+  const { data, error } = await supabase.from(commissionsTable).update(commissionData).eq('id', id).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to update commission', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Commission;
+}
+
+// Function to delete commission
+export async function deleteCommission(id: string): Promise<void> {
+  const commission = await getCommission(id);
+
+  if (!commission) {
+    throw new AppError(404, 'Commission not found', errorCodes.NOT_FOUND);
+  }
+
+  const { error } = await supabase.from(commissionsTable).delete().eq('id', id);
+
+  if (error) {
+    throw new AppError(500, 'Failed to delete commission', 'INTERNAL_SERVER_ERROR');
+  }
 }
