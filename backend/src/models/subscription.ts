@@ -1,64 +1,9 @@
-import { MainService, AdditionalService } from './order';
-import { Timestamp } from 'firebase-admin/firestore';
-
-export interface SubscriptionPlan {
-  id?: string;
-  name: string;
-  description: string;
-  type: SubscriptionType;
-  price: number;
-  duration: number; // in months
-  servicesIncluded: MainService[];
-  additionalServicesIncluded: AdditionalService[];
-  itemsPerMonth: number;
-  weightLimitPerWeek: number;
-  benefits: string[];
-  isActive: boolean;
-  discountPercentage?: number;
-  minimumCommitment?: number; // in months
-  earlyTerminationFee?: number;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-export enum SubscriptionType {
-  NONE = 'NONE',
-  BASIC = 'BASIC',
-  PREMIUM = 'PREMIUM',
-  VIP = 'VIP'
-}
-
-export interface Subscription {
-  id?: string;
-  userId: string;
-  planId: string;
-  type: SubscriptionType;
-  startDate: Timestamp;
-  endDate?: Timestamp;
-  status: SubscriptionStatus;
-  pricePerMonth: number;
-  weightLimitPerWeek: number;
-  description: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  cancellationDate?: Timestamp;
-  cancellationReason?: string;
-  autoRenew: boolean;
-  paymentMethod?: string;
-  lastBillingDate?: Timestamp;
-  nextBillingDate?: Timestamp;
-  pauseHistory?: SubscriptionPause[];
-  billingHistory?: SubscriptionBilling[];
-  usageHistory?: SubscriptionUsageSnapshot[];
-  currentPeriodStart?: Timestamp;
-  currentPeriodEnd?: Timestamp;
-  trialEnd?: Timestamp;
-  discount?: {
-    percentage: number;
-    endDate: Timestamp;
-    reason: string;
-  };
-}
+import supabase from '../config/supabase';
+import { AppError, errorCodes } from '../utils/errors';
+import { SubscriptionType } from './subscriptionPlan';
+import { SubscriptionPause } from './subscriptionPause';
+import { SubscriptionBilling } from './subscriptionBilling';
+import { SubscriptionUsageSnapshot } from './subscriptionUsage';
 
 export enum SubscriptionStatus {
   ACTIVE = 'active',
@@ -70,53 +15,91 @@ export enum SubscriptionStatus {
   TRIAL = 'trial'
 }
 
-export interface SubscriptionUsage {
+export interface Subscription {
   id?: string;
-  subscriptionId: string;
   userId: string;
-  periodStart: Timestamp;
-  periodEnd: Timestamp;
-  itemsUsed: number;
-  weightUsed: number;
-  remainingItems: number;
-  remainingWeight: number;
-  lastUpdated: Timestamp;
-  servicesUsed: {
-    mainServices: { [key: string]: number };
-    additionalServices: { [key: string]: number };
+  planId: string;
+  type: SubscriptionType;
+  startDate: string;
+  endDate?: string;
+  status: SubscriptionStatus;
+  pricePerMonth: number;
+  weightLimitPerWeek: number;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  cancellationDate?: string;
+  cancellationReason?: string;
+  autoRenew: boolean;
+  paymentMethod?: string;
+  lastBillingDate?: string;
+  nextBillingDate?: string;
+  pauseHistory?: SubscriptionPause[];
+  billingHistory?: SubscriptionBilling[];
+  usageHistory?: SubscriptionUsageSnapshot[];
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  trialEnd?: string;
+  discount?: {
+    percentage: number;
+    endDate: string;
+    reason: string;
   };
-  overageCharges?: number;
-  notifications?: SubscriptionNotification[];
 }
 
-export interface SubscriptionPause {
-  startDate: Timestamp;
-  endDate?: Timestamp;
-  reason: string;
-  requestedBy: string;
-  status: 'active' | 'scheduled' | 'completed' | 'cancelled';
+// Use Supabase to store subscription data
+const subscriptionsTable = 'subscriptions';
+
+// Function to get subscription data
+export async function getSubscription(id: string): Promise<Subscription | null> {
+  const { data, error } = await supabase.from(subscriptionsTable).select('*').eq('id', id).single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to fetch subscription', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Subscription;
 }
 
-export interface SubscriptionBilling {
-  date: Timestamp;
-  amount: number;
-  status: 'pending' | 'successful' | 'failed';
-  paymentMethod: string;
-  invoiceUrl?: string;
-  failureReason?: string;
+// Function to create subscription
+export async function createSubscription(subscriptionData: Subscription): Promise<Subscription> {
+  const { data, error } = await supabase.from(subscriptionsTable).insert([subscriptionData]).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to create subscription', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Subscription;
 }
 
-export interface SubscriptionUsageSnapshot {
-  date: Timestamp;
-  itemsUsed: number;
-  weightUsed: number;
-  overageCharges: number;
+// Function to update subscription
+export async function updateSubscription(id: string, subscriptionData: Partial<Subscription>): Promise<Subscription> {
+  const currentSubscription = await getSubscription(id);
+
+  if (!currentSubscription) {
+    throw new AppError(404, 'Subscription not found', errorCodes.NOT_FOUND);
+  }
+
+  const { data, error } = await supabase.from(subscriptionsTable).update(subscriptionData).eq('id', id).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to update subscription', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Subscription;
 }
 
-export interface SubscriptionNotification {
-  type: 'usage_warning' | 'payment_due' | 'renewal_reminder' | 'expiration_warning';
-  message: string;
-  date: Timestamp;
-  isRead: boolean;
-  actionRequired: boolean;
+// Function to delete subscription
+export async function deleteSubscription(id: string): Promise<void> {
+  const subscription = await getSubscription(id);
+
+  if (!subscription) {
+    throw new AppError(404, 'Subscription not found', errorCodes.NOT_FOUND);
+  }
+
+  const { error } = await supabase.from(subscriptionsTable).delete().eq('id', id);
+
+  if (error) {
+    throw new AppError(500, 'Failed to delete subscription', 'INTERNAL_SERVER_ERROR');
+  }
 }

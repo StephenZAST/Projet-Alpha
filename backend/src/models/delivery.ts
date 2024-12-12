@@ -1,11 +1,11 @@
-import { Timestamp } from 'firebase-admin/firestore';
-import { Location } from './order';
+import supabase from '../config/supabase';
+import { AppError, errorCodes } from '../utils/errors';
 
 export interface RouteInfo {
   orderId: string;
-  location: Location;
+  location: any; // Changed to any for now
   type: 'pickup' | 'delivery';
-  scheduledTime: Timestamp;
+  scheduledTime: string;
   status: 'pending' | 'completed';
   address: string;
   contactName?: string;
@@ -15,12 +15,12 @@ export interface RouteInfo {
 export interface OptimizedRoute {
   deliveryPersonId: string;
   zoneId: string;
-  date: Timestamp;
+  date: string;
   stops: RouteInfo[];
   estimatedDuration: number; // en minutes
   estimatedDistance: number; // en kilomètres
-  startLocation: Location;
-  endLocation: Location;
+  startLocation: any; // Changed to any for now
+  endLocation: any; // Changed to any for now
 }
 
 export interface DeliveryTask {
@@ -29,9 +29,9 @@ export interface DeliveryTask {
   orderId: string;
   type: 'pickup' | 'delivery';
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  scheduledTime: Timestamp;
-  completedTime?: Timestamp;
-  location: Location;
+  scheduledTime: string;
+  completedTime?: string;
+  location: any; // Changed to any for now
   address: string;
   notes?: string;
   proof?: {
@@ -39,4 +39,63 @@ export interface DeliveryTask {
     photo?: string;
     notes?: string;
   };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Use Supabase to store delivery data
+const deliveryTasksTable = 'deliveryTasks';
+
+// Function to get delivery task data
+export async function getDeliveryTask(id: string): Promise<DeliveryTask | null> {
+  const { data, error } = await supabase.from(deliveryTasksTable).select('*').eq('id', id).single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to fetch delivery task', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as DeliveryTask;
+}
+
+// Function to create delivery task
+export async function createDeliveryTask(taskData: DeliveryTask): Promise<DeliveryTask> {
+  const { data, error } = await supabase.from(deliveryTasksTable).insert([taskData]).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to create delivery task', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as DeliveryTask;
+}
+
+// Function to update delivery task
+export async function updateDeliveryTask(id: string, taskData: Partial<DeliveryTask>): Promise<DeliveryTask> {
+  const currentTask = await getDeliveryTask(id);
+
+  if (!currentTask) {
+    throw new AppError(404, 'Delivery task not found', errorCodes.NOT_FOUND);
+  }
+
+  const { data, error } = await supabase.from(deliveryTasksTable).update(taskData).eq('id', id).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to update delivery task', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as DeliveryTask;
+}
+
+// Function to delete delivery task
+export async function deleteDeliveryTask(id: string): Promise<void> {
+  const task = await getDeliveryTask(id);
+
+  if (!task) {
+    throw new AppError(404, 'Delivery task not found', errorCodes.NOT_FOUND);
+  }
+
+  const { error } = await supabase.from(deliveryTasksTable).delete().eq('id', id);
+
+  if (error) {
+    throw new AppError(500, 'Failed to delete delivery task', 'INTERNAL_SERVER_ERROR');
+  }
 }

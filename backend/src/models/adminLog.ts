@@ -1,55 +1,71 @@
 import supabase from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
+import { AdminRole } from './admin';
 
-export interface AdminLog {
+export enum AdminAction {
+  LOGIN = 'LOGIN',
+  LOGOUT = 'LOGOUT',
+  CREATE_ADMIN = 'CREATE_ADMIN',
+  UPDATE_ADMIN = 'UPDATE_ADMIN',
+  DELETE_ADMIN = 'DELETE_ADMIN',
+  TOGGLE_STATUS = 'TOGGLE_STATUS',
+  FAILED_LOGIN = 'FAILED_LOGIN'
+}
+
+export interface IAdminLog {
   id?: string;
   adminId: string;
-  action: string;
+  action: AdminAction;
+  targetAdminId?: string;
   details: string;
-  createdAt?: string;
-  updatedAt?: string;
+  ipAddress: string;
+  userAgent: string;
+  createdAt: string;
 }
 
 // Use Supabase to store admin log data
 const adminLogsTable = 'adminLogs';
 
 // Function to get admin log data
-export async function getAdminLog(id: string): Promise<AdminLog | null> {
+export async function getAdminLog(id: string): Promise<IAdminLog | null> {
   const { data, error } = await supabase.from(adminLogsTable).select('*').eq('id', id).single();
 
   if (error) {
     throw new AppError(500, 'Failed to fetch admin log', 'INTERNAL_SERVER_ERROR');
   }
 
-  return data as AdminLog;
+  return data as IAdminLog;
 }
 
 // Function to create admin log
-export async function createAdminLog(adminLogData: AdminLog): Promise<AdminLog> {
-  const { data, error } = await supabase.from(adminLogsTable).insert([adminLogData]).select().single();
+export async function createAdminLog(logData: IAdminLog): Promise<IAdminLog> {
+  const { data, error } = await supabase.from(adminLogsTable).insert([{
+    ...logData,
+    createdAt: new Date().toISOString(),
+  }]).select().single();
 
   if (error) {
     throw new AppError(500, 'Failed to create admin log', 'INTERNAL_SERVER_ERROR');
   }
 
-  return data as AdminLog;
+  return data as IAdminLog;
 }
 
-// Function to update admin log
-export async function updateAdminLog(id: string, adminLogData: Partial<AdminLog>): Promise<AdminLog> {
-  const currentAdminLog = await getAdminLog(id);
+// Function to get admin logs
+export async function getAdminLogs(adminId?: string): Promise<IAdminLog[]> {
+  let query = supabase.from(adminLogsTable).select('*').order('createdAt', { ascending: false });
 
-  if (!currentAdminLog) {
-    throw new AppError(404, 'Admin log not found', errorCodes.NOT_FOUND);
+  if (adminId) {
+    query = query.eq('adminId', adminId);
   }
 
-  const { data, error } = await supabase.from(adminLogsTable).update(adminLogData).eq('id', id).select().single();
+  const { data, error } = await query;
 
   if (error) {
-    throw new AppError(500, 'Failed to update admin log', 'INTERNAL_SERVER_ERROR');
+    throw new AppError(500, 'Failed to fetch admin logs', 'INTERNAL_SERVER_ERROR');
   }
 
-  return data as AdminLog;
+  return data as IAdminLog[];
 }
 
 // Function to delete admin log

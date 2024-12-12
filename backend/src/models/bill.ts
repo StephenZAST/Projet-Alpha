@@ -1,14 +1,79 @@
 import supabase from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
+import { OrderItem } from './order';
+import { SubscriptionType } from './subscriptionPlan';
+import { SubscriptionBilling } from './subscriptionBilling';
+
+export enum BillStatus {
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  PAID = 'paid',
+  OVERDUE = 'overdue',
+  CANCELLED = 'cancelled',
+  REFUNDED = 'refunded',
+  PARTIALLY_REFUNDED = 'partially_refunded'
+}
+
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled'
+}
+
+export enum RefundStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled'
+}
 
 export interface Bill {
   id?: string;
+  orderId: string;
   userId: string;
-  amount: number;
-  status: 'pending' | 'paid' | 'failed' | 'refunded';
-  paymentMethod: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  dueDate: string;
+  items: BillItem[];
+  subtotal: number;
+  tax: number;
+  discount?: number;
+  loyaltyPointsUsed?: number;
+  loyaltyPointsEarned: number;
+  total: number;
+  status: BillStatus;
+  subscriptionInfo?: SubscriptionBillingInfo;
+  paymentMethod?: string;
+  paymentStatus: PaymentStatus;
+  paymentDate?: string;
+  refundStatus?: RefundStatus;
+  refundDate?: string;
+  refundAmount?: number;
+  notes?: string;
+}
+
+export interface BillItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  weight?: number;
+  category: string;
+  serviceType?: string;
+  additionalNotes?: string;
+}
+
+export interface SubscriptionBillingInfo {
+  type: SubscriptionType;
+  collectionsRemaining: number;
+  nextCollectionDate?: string;
+  weightLimit: number;
+  currentWeight: number;
+  periodStart: string;
+  periodEnd: string;
 }
 
 // Use Supabase to store bill data

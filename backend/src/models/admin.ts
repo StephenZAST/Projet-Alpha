@@ -11,7 +11,7 @@ export enum AdminRole {
 }
 
 export interface IAdmin {
-  id: string; // Changed from _id to id
+  id: string; // Changed from _id to id for consistency
   userId: string;
   email: string;
   password: string;
@@ -24,7 +24,7 @@ export interface IAdmin {
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
-  permissions: string[];
+  permissions: string[];  // Liste des permissions spécifiques
   isMasterAdmin: boolean; // Pour identifier le super admin principal
   googleAIKey?: string;  // Ajout de la clé API Google AI
 }
@@ -33,8 +33,8 @@ export interface IAdmin {
 const adminsTable = 'admins';
 
 // Function to get admin data
-export async function getAdmin(userId: string): Promise<IAdmin | null> {
-  const { data, error } = await supabase.from(adminsTable).select('*').eq('userId', userId).single();
+export async function getAdmin(id: string): Promise<IAdmin | null> {
+  const { data, error } = await supabase.from(adminsTable).select('*').eq('id', id).single();
 
   if (error) {
     throw new AppError(500, 'Failed to fetch admin', 'INTERNAL_SERVER_ERROR');
@@ -68,8 +68,8 @@ export async function createAdmin(adminData: IAdmin): Promise<IAdmin> {
 }
 
 // Function to update admin
-export async function updateAdmin(userId: string, adminData: Partial<IAdmin>): Promise<IAdmin> {
-  const currentAdmin = await getAdmin(userId);
+export async function updateAdmin(id: string, adminData: Partial<IAdmin>): Promise<IAdmin> {
+  const currentAdmin = await getAdmin(id);
 
   if (!currentAdmin) {
     throw new AppError(404, 'Admin not found', errorCodes.ADMIN_NOT_FOUND);
@@ -80,7 +80,7 @@ export async function updateAdmin(userId: string, adminData: Partial<IAdmin>): P
     throw new AppError(400, 'Cannot modify master admin status', errorCodes.MASTER_ADMIN_MODIFICATION);
   }
 
-  const { data, error } = await supabase.from(adminsTable).update(adminData).eq('userId', userId).select().single();
+  const { data, error } = await supabase.from(adminsTable).update(adminData).eq('id', id).select().single();
 
   if (error) {
     throw new AppError(500, 'Failed to update admin', 'INTERNAL_SERVER_ERROR');
@@ -90,8 +90,8 @@ export async function updateAdmin(userId: string, adminData: Partial<IAdmin>): P
 }
 
 // Function to delete admin
-export async function deleteAdmin(userId: string): Promise<void> {
-  const admin = await getAdmin(userId);
+export async function deleteAdmin(id: string): Promise<void> {
+  const admin = await getAdmin(id);
 
   if (!admin) {
     throw new AppError(404, 'Admin not found', errorCodes.ADMIN_NOT_FOUND);
@@ -102,7 +102,7 @@ export async function deleteAdmin(userId: string): Promise<void> {
     throw new AppError(400, 'Cannot delete master admin', errorCodes.MASTER_ADMIN_DELETION);
   }
 
-  const { error } = await supabase.from(adminsTable).delete().eq('userId', userId);
+  const { error } = await supabase.from(adminsTable).delete().eq('id', id);
 
   if (error) {
     throw new AppError(500, 'Failed to delete admin', 'INTERNAL_SERVER_ERROR');

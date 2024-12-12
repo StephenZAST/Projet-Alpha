@@ -1,4 +1,5 @@
-import { Timestamp } from 'firebase-admin/firestore';
+import supabase from '../config/supabase';
+import { AppError, errorCodes } from '../utils/errors';
 
 export enum OrderStatus {
   PENDING = 'pending',
@@ -68,12 +69,12 @@ export interface Order {
   totalAmount: number;
   status: OrderStatus;
   type: OrderType;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
   deliveryAddress: string;
   deliveryInstructions: string;
   deliveryPersonId: string | null;
-  deliveryTime: Timestamp | null;
+  deliveryTime: string | null;
   paymentMethod: string;
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   loyaltyPointsUsed: number;
@@ -81,4 +82,61 @@ export interface Order {
   referralCode: string | null;
   oneClickOrder: boolean;
   orderNotes: string;
+}
+
+// Use Supabase to store order data
+const ordersTable = 'orders';
+
+// Function to get order data
+export async function getOrder(id: string): Promise<Order | null> {
+  const { data, error } = await supabase.from(ordersTable).select('*').eq('id', id).single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to fetch order', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Order;
+}
+
+// Function to create order
+export async function createOrder(orderData: Order): Promise<Order> {
+  const { data, error } = await supabase.from(ordersTable).insert([orderData]).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to create order', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Order;
+}
+
+// Function to update order
+export async function updateOrder(id: string, orderData: Partial<Order>): Promise<Order> {
+  const currentOrder = await getOrder(id);
+
+  if (!currentOrder) {
+    throw new AppError(404, 'Order not found', errorCodes.NOT_FOUND);
+  }
+
+  const { data, error } = await supabase.from(ordersTable).update(orderData).eq('id', id).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to update order', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Order;
+}
+
+// Function to delete order
+export async function deleteOrder(id: string): Promise<void> {
+  const order = await getOrder(id);
+
+  if (!order) {
+    throw new AppError(404, 'Order not found', errorCodes.NOT_FOUND);
+  }
+
+  const { error } = await supabase.from(ordersTable).delete().eq('id', id);
+
+  if (error) {
+    throw new AppError(500, 'Failed to delete order', 'INTERNAL_SERVER_ERROR');
+  }
 }

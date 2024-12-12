@@ -1,3 +1,6 @@
+import supabase from '../config/supabase';
+import { AppError, errorCodes } from '../utils/errors';
+
 export enum NotificationType {
   // Order related
   NEW_ORDER = 'new_order',
@@ -52,6 +55,63 @@ export interface Notification {
   status: NotificationStatus;
   deliveryChannel: DeliveryChannel;
   isRead: boolean;
-  createdAt: Date;
-  expiresAt?: Date;
+  createdAt: string;
+  expiresAt?: string;
+}
+
+// Use Supabase to store notification data
+const notificationsTable = 'notifications';
+
+// Function to get notification data
+export async function getNotification(id: string): Promise<Notification | null> {
+  const { data, error } = await supabase.from(notificationsTable).select('*').eq('id', id).single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to fetch notification', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Notification;
+}
+
+// Function to create notification
+export async function createNotification(notificationData: Notification): Promise<Notification> {
+  const { data, error } = await supabase.from(notificationsTable).insert([notificationData]).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to create notification', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Notification;
+}
+
+// Function to update notification
+export async function updateNotification(id: string, notificationData: Partial<Notification>): Promise<Notification> {
+  const currentNotification = await getNotification(id);
+
+  if (!currentNotification) {
+    throw new AppError(404, 'Notification not found', errorCodes.NOT_FOUND);
+  }
+
+  const { data, error } = await supabase.from(notificationsTable).update(notificationData).eq('id', id).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to update notification', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Notification;
+}
+
+// Function to delete notification
+export async function deleteNotification(id: string): Promise<void> {
+  const notification = await getNotification(id);
+
+  if (!notification) {
+    throw new AppError(404, 'Notification not found', errorCodes.NOT_FOUND);
+  }
+
+  const { error } = await supabase.from(notificationsTable).delete().eq('id', id);
+
+  if (error) {
+    throw new AppError(500, 'Failed to delete notification', 'INTERNAL_SERVER_ERROR');
+  }
 }

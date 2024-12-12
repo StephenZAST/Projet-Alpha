@@ -1,26 +1,57 @@
 import supabase from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
+import { Address } from './address';
+
+export interface TimeSlot {
+  // Define the structure of a time slot if needed
+  start: string;
+  end: string;
+}
 
 export interface DeliveryTask {
-  id?: string;
-  deliveryId: string;
-  status: 'assigned' | 'in_progress' | 'completed' | 'failed';
-  assignedTo?: string;
-  TaskType: 'pickup' | 'delivery';
+  estimatedDuration: number;
+  deliveryLocation: any;
+  pickupLocation: any;
+  id: string;
+  orderId: string;
+  type: TaskType;
+  status: TaskStatus;
+  address: Address;
+  scheduledTime: {
+    duration: number;
+    date: string;
+    slot: TimeSlot;
+  };
   customer: {
     id: string;
     name: string;
-    email?: string;
-    phoneNumber?: string;
+    phone: string;
   };
-  deliveryLocation: string;
-  pickupLocation: string;
-  orderId: string;
-  address?: string;
-  scheduledTime?: string;
-  PriorityLevel: 'low' | 'medium' | 'high';
+  assignedDriver?: string;
+  priority: PriorityLevel;
+  notes?: string;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export enum TaskType {
+  PICKUP = 'pickup',
+  DELIVERY = 'delivery'
+}
+
+export enum TaskStatus {
+  PENDING = 'pending',
+  ASSIGNED = 'assigned',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  FAILED = 'failed'
+}
+
+export enum PriorityLevel {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent'
 }
 
 // Use Supabase to store delivery task data
@@ -38,8 +69,8 @@ export async function getDeliveryTask(id: string): Promise<DeliveryTask | null> 
 }
 
 // Function to create delivery task
-export async function createDeliveryTask(deliveryTaskData: DeliveryTask): Promise<DeliveryTask> {
-  const { data, error } = await supabase.from(deliveryTasksTable).insert([deliveryTaskData]).select().single();
+export async function createDeliveryTask(taskData: DeliveryTask): Promise<DeliveryTask> {
+  const { data, error } = await supabase.from(deliveryTasksTable).insert([taskData]).select().single();
 
   if (error) {
     throw new AppError(500, 'Failed to create delivery task', 'INTERNAL_SERVER_ERROR');
@@ -49,14 +80,14 @@ export async function createDeliveryTask(deliveryTaskData: DeliveryTask): Promis
 }
 
 // Function to update delivery task
-export async function updateDeliveryTask(id: string, deliveryTaskData: Partial<DeliveryTask>): Promise<DeliveryTask> {
-  const currentDeliveryTask = await getDeliveryTask(id);
+export async function updateDeliveryTask(id: string, taskData: Partial<DeliveryTask>): Promise<DeliveryTask> {
+  const currentTask = await getDeliveryTask(id);
 
-  if (!currentDeliveryTask) {
+  if (!currentTask) {
     throw new AppError(404, 'Delivery task not found', errorCodes.NOT_FOUND);
   }
 
-  const { data, error } = await supabase.from(deliveryTasksTable).update(deliveryTaskData).eq('id', id).select().single();
+  const { data, error } = await supabase.from(deliveryTasksTable).update(taskData).eq('id', id).select().single();
 
   if (error) {
     throw new AppError(500, 'Failed to update delivery task', 'INTERNAL_SERVER_ERROR');
@@ -67,9 +98,9 @@ export async function updateDeliveryTask(id: string, deliveryTaskData: Partial<D
 
 // Function to delete delivery task
 export async function deleteDeliveryTask(id: string): Promise<void> {
-  const deliveryTask = await getDeliveryTask(id);
+  const task = await getDeliveryTask(id);
 
-  if (!deliveryTask) {
+  if (!task) {
     throw new AppError(404, 'Delivery task not found', errorCodes.NOT_FOUND);
   }
 
