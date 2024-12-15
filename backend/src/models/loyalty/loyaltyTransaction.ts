@@ -1,5 +1,3 @@
-import { Timestamp } from 'firebase-admin/firestore';
-
 export enum LoyaltyTransactionType {
   EARNED = 'earned',
   REDEEMED = 'redeemed',
@@ -13,6 +11,7 @@ export interface LoyaltyTransaction {
   userId: string;
   orderId?: string;
   billId?: string;
+  rewardId?: string; // Added rewardId property
   type: LoyaltyTransactionType;
   points: number;
   description: string;

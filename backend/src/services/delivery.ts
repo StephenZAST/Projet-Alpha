@@ -1,151 +1,92 @@
-import { db } from './firebase';
-import { Order, TimeSlot, RouteInfo } from '../models/order';
-import { NotificationService } from './notifications';
-import { Timestamp } from 'firebase-admin/firestore';
+import { createClient } from '@supabase/supabase-js';
+import { DeliveryTask, RouteInfo, OptimizedRoute } from '../models/delivery';
 import { AppError, errorCodes } from '../utils/errors';
 
-export class DeliveryService {
-  getTasks(query: ParsedQs) {
-    throw new Error('Method not implemented.');
-  }
-  getTaskById(id: string) {
-    throw new Error('Method not implemented.');
-  }
-  createTask(body: any) {
-    throw new Error('Method not implemented.');
-  }
-  updateTask(id: string, body: any) {
-    throw new Error('Method not implemented.');
-  }
-  updateLocation(body: any) {
-    throw new Error('Method not implemented.');
-  }
-  getZones() {
-    throw new Error('Method not implemented.');
-  }
-  private readonly ordersRef = db.collection('orders');
-  private readonly driversRef = db.collection('drivers');
-  private readonly routesRef = db.collection('routes');
-  private notificationService = new NotificationService();
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
 
-  async getAvailableTimeSlots(date: Date, zoneId: string): Promise<TimeSlot[]> {
-    // Implementation for fetching available time slots based on date and zone
-    const slots = await this.routesRef
-      .where('date', '==', date)
-      .where('zoneId', '==', zoneId)
-      .get();
-
-    // Process and return available time slots
-    return slots.docs.map(doc => doc.data() as TimeSlot);
-  }
-
-  async schedulePickup(
-    orderId: string,
-    date: Date,
-    timeSlot: TimeSlot,
-    address: string
-  ): Promise<boolean> {
-    try {
-      await this.ordersRef.doc(orderId).update({
-        'pickup.scheduledDate': date,
-        'pickup.timeSlot': timeSlot,
-        'pickup.address': address,
-        status: 'PICKUP_SCHEDULED',
-        updatedAt: new Date()
-      });
-
-      // Assign driver and potentially update route for this order
-      // Implementation here
-
-      // Send notification to customer
-      // Implementation here
-
-      return true;
-    } catch (error) {
-      console.error('Error scheduling pickup:', error);
-      return false;
-    }
-  }
-
-  async optimizeRoute(
-    taskIds: string[],
-    driverId: string,
-    startLocation: any,
-    endLocation: any,
-    maxTasks: number,
-    considerTraffic: boolean
-  ): Promise<RouteInfo | null> {
-    try {
-      // Implementation for route optimization
-      // This would typically involve:
-      // 1. Fetching tasks based on taskIds
-      // 2. Calculating optimal route using external service (Google Maps, etc.)
-      // 3. Assigning driver (driverId)
-      // 4. Updating route information
-
-      return null; // Placeholder
-    } catch (error) {
-      console.error('Error optimizing route:', error);
-      return null;
-    }
-  }
-
-  async updateOrderLocation(
-    orderId: string,
-    location: string,
-    status: string
-  ): Promise<boolean> {
-    try {
-      const trackingEvent = {
-        status,
-        timestamp: new Date(),
-        location,
-        updatedBy: 'system'
-      };
-
-      await this.ordersRef.doc(orderId).update({
-        'tracking.currentLocation': location,
-        'tracking.currentStatus': status,
-        'tracking.lastUpdated': new Date(),
-        'tracking.events': admin.firestore.FieldValue.arrayUnion(trackingEvent)
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Error updating order location:', error);
-      return false; // Added return statement here
-    }
-  }
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
 }
 
-export async function checkDeliverySlotAvailability(
-  zoneId: string,
-  pickupTime: Timestamp,
-  deliveryTime: Timestamp
-): Promise<boolean> {
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const deliveryTasksTable = 'deliveryTasks';
+
+export async function getDeliveryTask(id: string): Promise<DeliveryTask | null> {
   try {
-    // Vérifier le nombre de commandes déjà programmées pour ce créneau
-    const ordersInSlot = await db.collection('orders')
-      .where('zoneId', '==', zoneId)
-      .where('scheduledPickupTime', '>=', pickupTime)
-      .where('scheduledPickupTime', '<=', deliveryTime)
-      .get();
+    const { data, error } = await supabase.from(deliveryTasksTable).select('*').eq('id', id).single();
 
-    // Récupérer la capacité maximale de la zone
-    const zoneDoc = await db.collection('zones').doc(zoneId).get();
-    if (!zoneDoc.exists) {
-      throw new AppError(404, 'Zone not found', errorCodes.DATABASE_ERROR);
+    if (error) {
+      throw new AppError(500, 'Failed to fetch delivery task', errorCodes.DATABASE_ERROR);
     }
 
-    const zoneData = zoneDoc.data();
-    const maxOrdersPerSlot = zoneData?.maxOrdersPerSlot || 5; // Valeur par défaut
-
-    return ordersInSlot.size < maxOrdersPerSlot;
-  } catch (error) {
-    console.error('Error checking delivery slot availability:', error);
-    if (error instanceof AppError) throw error;
-    throw new AppError(500, 'Failed to check slot availability', errorCodes.DATABASE_ERROR);
+    return data as DeliveryTask;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to fetch delivery task', errorCodes.DATABASE_ERROR);
   }
 }
 
-import * as admin from 'firebase-admin';import { ParsedQs } from 'qs';
+export async function createDeliveryTask(taskData: DeliveryTask): Promise<DeliveryTask> {
+  try {
+    const { data, error } = await supabase.from(deliveryTasksTable).insert([taskData]).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to create delivery task', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as DeliveryTask;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to create delivery task', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function updateDeliveryTask(id: string, taskData: Partial<DeliveryTask>): Promise<DeliveryTask> {
+  try {
+    const currentTask = await getDeliveryTask(id);
+
+    if (!currentTask) {
+      throw new AppError(404, 'Delivery task not found', errorCodes.NOT_FOUND);
+    }
+
+    const { data, error } = await supabase.from(deliveryTasksTable).update(taskData).eq('id', id).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to update delivery task', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as DeliveryTask;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to update delivery task', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function deleteDeliveryTask(id: string): Promise<void> {
+  try {
+    const task = await getDeliveryTask(id);
+
+    if (!task) {
+      throw new AppError(404, 'Delivery task not found', errorCodes.NOT_FOUND);
+    }
+
+    const { error } = await supabase.from(deliveryTasksTable).delete().eq('id', id);
+
+    if (error) {
+      throw new AppError(500, 'Failed to delete delivery task', errorCodes.DATABASE_ERROR);
+    }
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to delete delivery task', errorCodes.DATABASE_ERROR);
+  }
+}

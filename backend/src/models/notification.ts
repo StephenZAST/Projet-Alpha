@@ -33,7 +33,8 @@ export enum NotificationPriority {
 export enum NotificationStatus {
   PENDING = 'pending',
   SENT = 'sent',
-  FAILED = 'failed'
+  FAILED = 'failed',
+  READ = "READ"
 }
 
 export enum DeliveryChannel {

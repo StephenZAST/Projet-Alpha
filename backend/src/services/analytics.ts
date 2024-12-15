@@ -1,6 +1,7 @@
 import { supabase } from '../config';
-import { RevenueMetrics, CustomerMetrics, AffiliateMetrics, getAnalytics, createAnalytics, updateAnalytics, deleteAnalytics, AffiliateSummary } from '../models/analytics';
+import { RevenueMetrics, CustomerMetrics, AffiliateMetrics, AffiliateSummary } from '../models/analytics';
 import { AppError, errorCodes } from '../utils/errors';
+import { getAnalytics, createAnalytics, updateAnalytics, deleteAnalytics } from './analyticsService/analyticsManagement';
 
 export class AnalyticsService {
   private readonly analyticsTable = 'analytics';
@@ -17,11 +18,11 @@ export class AnalyticsService {
         throw new AppError(500, 'Failed to fetch orders', 'REVENUE_METRICS_FETCH_FAILED');
       }
 
-      const totalRevenue = (orders || []).reduce((sum: any, order: { totalAmount: any; }) => sum + order.totalAmount, 0);
+      const totalRevenue = (orders || []).reduce((sum, order) => sum + order.totalAmount, 0);
       const averageOrderValue = totalRevenue / (orders || []).length || 0;
 
-      const revenueByService = (orders || []).reduce((acc: { [x: string]: any; }, order: { items: { service: string; totalPrice: number; }[]; }) => {
-        order.items.forEach((item: { service: string; totalPrice: number; }) => {
+      const revenueByService = (orders || []).reduce((acc, order) => {
+        order.items.forEach((item: { service: string | number; totalPrice: any; }) => {
           acc[item.service] = (acc[item.service] || 0) + item.totalPrice;
         });
         return acc;
@@ -52,15 +53,15 @@ export class AnalyticsService {
         throw new AppError(500, 'Failed to fetch customers', 'CUSTOMER_METRICS_FETCH_FAILED');
       }
 
-      const activeCustomers = customers.filter((customer: { lastOrderDate: string; }) => 
+      const activeCustomers = customers.filter((customer) => 
         customer.lastOrderDate && 
         new Date(customer.lastOrderDate) >= new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
       );
 
       const topCustomers = customers
-        .sort((a: { totalSpent: number; }, b: { totalSpent: number; }) => b.totalSpent - a.totalSpent)
+        .sort((a, b) => b.totalSpent - a.totalSpent)
         .slice(0, 10)
-        .map((customer: { id: string; totalSpent: number; orderCount: number; loyaltyTier: string; lastOrderDate: string; }) => ({
+        .map((customer) => ({
           userId: customer.id,
           totalSpent: customer.totalSpent,
           orderCount: customer.orderCount,
@@ -94,8 +95,8 @@ export class AnalyticsService {
 
       return {
         totalAffiliates: affiliates.length,
-        activeAffiliates: affiliates.filter((a: { activeCustomers: number; }) => a.activeCustomers > 0).length,
-        totalCommissions: affiliates.reduce((sum: any, a: { totalCommission: any; }) => sum + a.totalCommission, 0),
+        activeAffiliates: affiliates.filter((a) => a.activeCustomers > 0).length,
+        totalCommissions: affiliates.reduce((sum, a) => sum + a.totalCommission, 0),
         topAffiliates,
         commissionsPerPeriod: await this.calculateCommissionsPerPeriod(startDate, endDate)
       };
@@ -123,3 +124,5 @@ export class AnalyticsService {
 }
 
 export const analyticsService = new AnalyticsService();
+
+export { getAnalytics, createAnalytics, updateAnalytics, deleteAnalytics } from './analyticsService/analyticsManagement';

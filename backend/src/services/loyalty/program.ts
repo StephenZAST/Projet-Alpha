@@ -1,75 +1,92 @@
-import { db } from '../firebase';
-import { LoyaltyProgram } from '../../models/loyalty';
+import { createClient } from '@supabase/supabase-js';
+import { LoyaltyProgram, LoyaltyTier } from '../../models/loyalty';
 import { AppError, errorCodes } from '../../utils/errors';
-import { Timestamp } from 'firebase-admin/firestore';
 
-const loyaltyRef = db.collection('loyalty_accounts');
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
 
-export async function createLoyaltyProgram(data: Omit<LoyaltyProgram, 'id' | 'createdAt' | 'updatedAt'>): Promise<LoyaltyProgram> {
-  const newLoyaltyProgram: LoyaltyProgram = {
-    ...data,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  } as LoyaltyProgram;
-
-  const docRef = await loyaltyRef.add(newLoyaltyProgram);
-  const doc = await docRef.get();
-
-  return {
-    id: doc.id,
-    ...doc.data(),
-  } as LoyaltyProgram;
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
 }
 
-export async function getLoyaltyProgram(): Promise<LoyaltyProgram | null> {
-  const snapshot = await loyaltyRef.get();
-  if (snapshot.empty) {
-    return null;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const loyaltyProgramsTable = 'loyaltyPrograms';
+
+export async function getLoyaltyProgram(id: string): Promise<LoyaltyProgram | null> {
+  try {
+    const { data, error } = await supabase.from(loyaltyProgramsTable).select('*').eq('id', id).single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch loyalty program', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as LoyaltyProgram;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to fetch loyalty program', errorCodes.DATABASE_ERROR);
   }
-  return snapshot.docs[0].data() as LoyaltyProgram;
 }
 
-export async function getAllLoyaltyPrograms(): Promise<LoyaltyProgram[]> {
-  const snapshot = await loyaltyRef.get();
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LoyaltyProgram));
-}
+export async function createLoyaltyProgram(programData: LoyaltyProgram): Promise<LoyaltyProgram> {
+  try {
+    const { data, error } = await supabase.from(loyaltyProgramsTable).insert([programData]).select().single();
 
-export async function getLoyaltyProgramById(id: string): Promise<LoyaltyProgram | null> {
-  const loyaltyProgramRef = loyaltyRef.doc(id);
-  const loyaltyProgramSnapshot = await loyaltyProgramRef.get();
+    if (error) {
+      throw new AppError(500, 'Failed to create loyalty program', errorCodes.DATABASE_ERROR);
+    }
 
-  if (!loyaltyProgramSnapshot.exists) {
-    return null;
+    return data as LoyaltyProgram;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to create loyalty program', errorCodes.DATABASE_ERROR);
   }
-
-  return { id: loyaltyProgramSnapshot.id, ...loyaltyProgramSnapshot.data() } as LoyaltyProgram;
 }
 
-export async function updateLoyaltyProgram(id: string, data: Partial<LoyaltyProgram>): Promise<LoyaltyProgram> {
-  const loyaltyProgramRef = loyaltyRef.doc(id);
-  const loyaltyProgramSnapshot = await loyaltyProgramRef.get();
+export async function updateLoyaltyProgram(id: string, programData: Partial<LoyaltyProgram>): Promise<LoyaltyProgram> {
+  try {
+    const currentProgram = await getLoyaltyProgram(id);
 
-  if (!loyaltyProgramSnapshot.exists) {
-    throw new AppError(404, 'Loyalty program not found', errorCodes.NOT_FOUND);
+    if (!currentProgram) {
+      throw new AppError(404, 'Loyalty program not found', errorCodes.NOT_FOUND);
+    }
+
+    const { data, error } = await supabase.from(loyaltyProgramsTable).update(programData).eq('id', id).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to update loyalty program', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as LoyaltyProgram;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to update loyalty program', errorCodes.DATABASE_ERROR);
   }
-
-  const updatedLoyaltyProgram: LoyaltyProgram = {
-    ...loyaltyProgramSnapshot.data() as LoyaltyProgram,
-    ...data,
-    updatedAt: Timestamp.now(),
-  };
-
-  await loyaltyProgramRef.update(updatedLoyaltyProgram as Partial<LoyaltyProgram>);
-  return updatedLoyaltyProgram;
 }
 
 export async function deleteLoyaltyProgram(id: string): Promise<void> {
-  const loyaltyProgramRef = loyaltyRef.doc(id);
-  const loyaltyProgramSnapshot = await loyaltyProgramRef.get();
+  try {
+    const program = await getLoyaltyProgram(id);
 
-  if (!loyaltyProgramSnapshot.exists) {
-    throw new AppError(404, 'Loyalty program not found', errorCodes.NOT_FOUND);
+    if (!program) {
+      throw new AppError(404, 'Loyalty program not found', errorCodes.NOT_FOUND);
+    }
+
+    const { error } = await supabase.from(loyaltyProgramsTable).delete().eq('id', id);
+
+    if (error) {
+      throw new AppError(500, 'Failed to delete loyalty program', errorCodes.DATABASE_ERROR);
+    }
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to delete loyalty program', errorCodes.DATABASE_ERROR);
   }
-
-  await loyaltyProgramRef.delete();
 }

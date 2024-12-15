@@ -1,95 +1,171 @@
-import { db } from '../firebase';
-import {
-  LoyaltyAccount,
-  LoyaltyTier,
-  PointsTransaction,
-} from '../../models/loyalty';
-import { NotificationService } from '../notifications';
+import { createClient } from '@supabase/supabase-js';
+import { LoyaltyAccount, LoyaltyTier, LoyaltyTransaction, LoyaltyTransactionType } from '../../models/loyalty';
+import { AppError, errorCodes } from '../../utils/errors';
 
-const loyaltyRef = db.collection('loyalty_accounts');
-const pointsHistoryRef = db.collection('points_history');
-const notificationService = new NotificationService();
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
 
-export async function calculateTier(points: number): Promise<LoyaltyTier> {
-  if (points >= 10001) return LoyaltyTier.PLATINUM;
-  if (points >= 5001) return LoyaltyTier.GOLD;
-  if (points >= 1001) return LoyaltyTier.SILVER;
-  return LoyaltyTier.BRONZE;
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
 }
 
-export async function addPoints(userId: string, points: number, reason: string): Promise<LoyaltyAccount> {
-  const accountRef = loyaltyRef.doc(userId);
-  const account = await accountRef.get();
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-  let updatedAccount: LoyaltyAccount;
+const loyaltyAccountsTable = 'loyaltyAccounts';
+const loyaltyTransactionsTable = 'loyaltyTransactions';
 
-  await db.runTransaction(async (transaction) => {
-    if (!account.exists) {
-      updatedAccount = {
-        userId,
-        points: points,
-        lifetimePoints: points,
-        tier: await calculateTier(points),
-        lastUpdated: new Date()
-      };
-      transaction.set(accountRef, updatedAccount);
-    } else {
-      const currentAccount = account.data() as LoyaltyAccount;
-      const newPoints = currentAccount.points + points;
-      const newLifetimePoints = currentAccount.lifetimePoints + points;
-      const newTier = await calculateTier(newLifetimePoints);
+export async function getLoyaltyAccount(userId: string): Promise<LoyaltyAccount | null> {
+  try {
+    const { data, error } = await supabase.from(loyaltyAccountsTable).select('*').eq('userId', userId).single();
 
-      updatedAccount = {
-        ...currentAccount,
-        points: newPoints,
-        lifetimePoints: newLifetimePoints,
-        tier: newTier,
-        lastUpdated: new Date()
-      };
-      transaction.update(accountRef, {
-        points: updatedAccount.points,
-        lifetimePoints: updatedAccount.lifetimePoints,
-        tier: updatedAccount.tier,
-        lastUpdated: updatedAccount.lastUpdated
-      });
+    if (error) {
+      throw new AppError(500, 'Failed to fetch loyalty account', errorCodes.DATABASE_ERROR);
     }
-  });
 
-  // Send notification about points earned
-  await notificationService.sendLoyaltyPointsReminder(userId, points);
-
-  return updatedAccount!;
+    return data as LoyaltyAccount;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to fetch loyalty account', errorCodes.DATABASE_ERROR);
+  }
 }
 
-export async function getPointsHistory(
-  userId: string,
-  page: number = 1,
-  limit: number = 10
-): Promise<{ transactions: PointsTransaction[]; total: number }> {
-  const offset = (page - 1) * limit;
-  const query = pointsHistoryRef
-    .where('userId', '==', userId)
-    .orderBy('timestamp', 'desc')
-    .limit(limit)
-    .offset(offset);
+export async function createLoyaltyAccount(accountData: LoyaltyAccount): Promise<LoyaltyAccount> {
+  try {
+    const { data, error } = await supabase.from(loyaltyAccountsTable).insert([accountData]).select().single();
 
-  const [snapshot, countSnapshot] = await Promise.all([
-    query.get(),
-    pointsHistoryRef.where('userId', '==', userId).count().get()
-  ]);
+    if (error) {
+      throw new AppError(500, 'Failed to create loyalty account', errorCodes.DATABASE_ERROR);
+    }
 
-  return {
-    transactions: snapshot.docs.map(doc => doc.data() as PointsTransaction),
-    total: countSnapshot.data().count
-  };
+    return data as LoyaltyAccount;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to create loyalty account', errorCodes.DATABASE_ERROR);
+  }
 }
 
-export async function getUserPoints(userId: string): Promise<number> {
-  const doc = await loyaltyRef.doc(userId).get();
-  const account = doc.exists ? (doc.data() as LoyaltyAccount) : null;
-  return account ? account.points : 0;
+export async function updateLoyaltyAccount(userId: string, accountData: Partial<LoyaltyAccount>): Promise<LoyaltyAccount> {
+  try {
+    const currentAccount = await getLoyaltyAccount(userId);
+
+    if (!currentAccount) {
+      throw new AppError(404, 'Loyalty account not found', errorCodes.NOT_FOUND);
+    }
+
+    const { data, error } = await supabase.from(loyaltyAccountsTable).update(accountData).eq('userId', userId).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to update loyalty account', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as LoyaltyAccount;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to update loyalty account', errorCodes.DATABASE_ERROR);
+  }
 }
 
-export async function adjustUserPoints(userId: string, points: number, reason: string): Promise<LoyaltyAccount> {
-  return addPoints(userId, points, reason);
+export async function deleteLoyaltyAccount(userId: string): Promise<void> {
+  try {
+    const account = await getLoyaltyAccount(userId);
+
+    if (!account) {
+      throw new AppError(404, 'Loyalty account not found', errorCodes.NOT_FOUND);
+    }
+
+    const { error } = await supabase.from(loyaltyAccountsTable).delete().eq('userId', userId);
+
+    if (error) {
+      throw new AppError(500, 'Failed to delete loyalty account', errorCodes.DATABASE_ERROR);
+    }
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to delete loyalty account', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function createLoyaltyTransaction(transactionData: LoyaltyTransaction): Promise<LoyaltyTransaction> {
+  try {
+    const { data, error } = await supabase.from(loyaltyTransactionsTable).insert([transactionData]).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to create loyalty transaction', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as LoyaltyTransaction;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to create loyalty transaction', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function getLoyaltyTransaction(id: string): Promise<LoyaltyTransaction | null> {
+  try {
+    const { data, error } = await supabase.from(loyaltyTransactionsTable).select('*').eq('id', id).single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch loyalty transaction', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as LoyaltyTransaction;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to fetch loyalty transaction', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function updateLoyaltyTransaction(id: string, transactionData: Partial<LoyaltyTransaction>): Promise<LoyaltyTransaction> {
+  try {
+    const currentTransaction = await getLoyaltyTransaction(id);
+
+    if (!currentTransaction) {
+      throw new AppError(404, 'Loyalty transaction not found', errorCodes.NOT_FOUND);
+    }
+
+    const { data, error } = await supabase.from(loyaltyTransactionsTable).update(transactionData).eq('id', id).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to update loyalty transaction', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as LoyaltyTransaction;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to update loyalty transaction', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function deleteLoyaltyTransaction(id: string): Promise<void> {
+  try {
+    const transaction = await getLoyaltyTransaction(id);
+
+    if (!transaction) {
+      throw new AppError(404, 'Loyalty transaction not found', errorCodes.NOT_FOUND);
+    }
+
+    const { error } = await supabase.from(loyaltyTransactionsTable).delete().eq('id', id);
+
+    if (error) {
+      throw new AppError(500, 'Failed to delete loyalty transaction', errorCodes.DATABASE_ERROR);
+    }
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to delete loyalty transaction', errorCodes.DATABASE_ERROR);
+  }
 }

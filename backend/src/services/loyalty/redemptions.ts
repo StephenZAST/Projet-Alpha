@@ -1,196 +1,103 @@
-import { db } from '../firebase';
-import {
-  RewardRedemption,
-  RewardStatus,
-} from '../../models/loyalty';
-import { UserAddress } from '../../models/user';
+import { createClient } from '@supabase/supabase-js';
+import { LoyaltyReward, LoyaltyTransaction, LoyaltyTransactionType, LoyaltyAccount } from '../../models/loyalty';
 import { AppError, errorCodes } from '../../utils/errors';
-import { NotificationService } from '../notifications';
 
-const redemptionsRef = db.collection('reward_redemptions');
-const rewardsRef = db.collection('rewards');
-const loyaltyRef = db.collection('loyalty_accounts');
-const notificationService = new NotificationService();
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
 
-export async function redeemReward(userId: string, rewardId: string, shippingAddress: UserAddress): Promise<string> {
-  const rewardRef = rewardsRef.doc(rewardId);
-  const accountRef = loyaltyRef.doc(userId);
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
+}
 
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const loyaltyRewardsTable = 'loyaltyRewards';
+const loyaltyTransactionsTable = 'loyaltyTransactions';
+const loyaltyAccountsTable = 'loyaltyAccounts';
+
+export async function redeemReward(userId: string, rewardId: string): Promise<LoyaltyTransaction> {
   try {
-    let redemptionId: string;
+    const reward = await getLoyaltyReward(rewardId);
 
-    await db.runTransaction(async (transaction) => {
-      const rewardDoc = await transaction.get(rewardRef);
-      const accountDoc = await transaction.get(accountRef);
+    if (!reward) {
+      throw new AppError(404, 'Loyalty reward not found', errorCodes.NOT_FOUND);
+    }
 
-      if (!rewardDoc.exists || !accountDoc.exists) {
-        throw new AppError(404, 'Reward or account not found', errorCodes.NOT_FOUND);
-      }
+    const account = await getLoyaltyAccount(userId);
 
-      const reward = rewardDoc.data() as { type: string; pointsCost: number };
-      const account = accountDoc.data() as { points: number };
+    if (!account) {
+      throw new AppError(404, 'Loyalty account not found', errorCodes.NOT_FOUND);
+    }
 
-      if (account.points < reward.pointsCost) {
-        throw new AppError(400, 'Insufficient points', errorCodes.INSUFFICIENT_POINTS);
-      }
+    if (account.points < reward.pointsCost) {
+      throw new AppError(400, 'Insufficient points to redeem reward', errorCodes.INSUFFICIENT_POINTS);
+    }
 
-      // Generate unique verification code
-      const verificationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const updatedAccount = {
+      points: account.points - reward.pointsCost,
+      lastUpdated: new Date().toISOString()
+    };
 
-      // Create redemption record
-      const redemptionRef = redemptionsRef.doc();
-      redemptionId = redemptionRef.id;
+    const { data: updatedAccountData, error: accountError } = await supabase.from(loyaltyAccountsTable).update(updatedAccount).eq('userId', userId).select().single();
 
-      const redemption: RewardRedemption = {
-        id: redemptionId,
-        userId,
-        rewardId,
-        redemptionDate: new Date(),
-        status: reward.type === 'physical' ? RewardStatus.REDEEMED : RewardStatus.CLAIMED,
-        verificationCode,
-        shippingAddress: {
-          ...shippingAddress,
-          phoneNumber: shippingAddress.phoneNumber || '' // Provide a default value for phoneNumber
-        }
-      };
+    if (accountError) {
+      throw new AppError(500, 'Failed to update loyalty account', errorCodes.DATABASE_ERROR);
+    }
 
-      // Update points balance
-      transaction.update(accountRef, {
-        points: account.points - reward.pointsCost,
-        lastUpdated: new Date()
-      });
+    const transactionData: LoyaltyTransaction = {
+      userId,
+      rewardId,
+      type: LoyaltyTransactionType.REDEEMED,
+      points: -reward.pointsCost,
+      description: `Redeemed reward ${reward.name}`,
+      createdAt: new Date().toISOString()
+    };
 
-      // Save redemption record
-      transaction.set(redemptionRef, redemption);
-    });
+    const { data: transaction, error: transactionError } = await supabase.from(loyaltyTransactionsTable).insert([transactionData]).select().single();
 
-    return redemptionId!;
-  } catch (error) {
-    console.error('Error redeeming reward:', error);
-    throw error;
+    if (transactionError) {
+      throw new AppError(500, 'Failed to create loyalty transaction', errorCodes.DATABASE_ERROR);
+    }
+
+    return transaction as LoyaltyTransaction;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to redeem reward', errorCodes.DATABASE_ERROR);
   }
 }
 
-export async function verifyAndClaimPhysicalReward(
-  redemptionId: string,
-  adminId: string,
-  notes?: string
-): Promise<boolean> {
-  const redemptionRef = redemptionsRef.doc(redemptionId);
-
+async function getLoyaltyReward(rewardId: string): Promise<LoyaltyReward | null> {
   try {
-    await db.runTransaction(async (transaction) => {
-      const doc = await transaction.get(redemptionRef);
-      if (!doc.exists) {
-        throw new AppError(404, 'Redemption not found', errorCodes.NOT_FOUND);
-      }
+    const { data, error } = await supabase.from(loyaltyRewardsTable).select('*').eq('id', rewardId).single();
 
-      const redemption = doc.data() as RewardRedemption;
-      if (redemption.status !== RewardStatus.REDEEMED) {
-        throw new AppError(400, 'Reward already claimed or expired', errorCodes.VALIDATION_ERROR);
-      }
+    if (error) {
+      throw new AppError(500, 'Failed to fetch loyalty reward', errorCodes.DATABASE_ERROR);
+    }
 
-      transaction.update(redemptionRef, {
-        status: RewardStatus.CLAIMED,
-        claimedDate: new Date(),
-        claimedByAdminId: adminId,
-        notes
-      });
-    });
-
-    return true;
-  } catch (error) {
-    console.error('Error claiming reward:', error);
-    return false;
+    return data as LoyaltyReward;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to fetch loyalty reward', errorCodes.DATABASE_ERROR);
   }
 }
 
-export async function getPendingPhysicalRewards(): Promise<RewardRedemption[]> {
-  const snapshot = await redemptionsRef
-    .where('status', '==', RewardStatus.REDEEMED)
-    .get();
+async function getLoyaltyAccount(userId: string): Promise<LoyaltyAccount | null> {
+  try {
+    const { data, error } = await supabase.from(loyaltyAccountsTable).select('*').eq('userId', userId).single();
 
-  return snapshot.docs.map(doc => doc.data() as RewardRedemption);
-}
+    if (error) {
+      throw new AppError(500, 'Failed to fetch loyalty account', errorCodes.DATABASE_ERROR);
+    }
 
-export async function getRewardRedemptions(options: {
-  page?: number;
-  limit?: number;
-  status?: string;
-  startDate?: Date;
-  endDate?: Date;
-}): Promise<{ redemptions: RewardRedemption[]; total: number }> {
-  const {
-    page = 1,
-    limit = 10,
-    status,
-    startDate,
-    endDate
-  } = options;
-
-  let query = redemptionsRef.orderBy('redemptionDate', 'desc');
-
-  if (status) {
-    query = query.where('status', '==', status);
+    return data as LoyaltyAccount;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to fetch loyalty account', errorCodes.DATABASE_ERROR);
   }
-
-  if (startDate) {
-    query = query.where('redemptionDate', '>=', startDate);
-  }
-
-  if (endDate) {
-    query = query.where('redemptionDate', '<=', endDate);
-  }
-
-  const offset = (page - 1) * limit;
-  query = query.limit(limit).offset(offset);
-
-  const [snapshot, countSnapshot] = await Promise.all([
-    query.get(),
-    redemptionsRef.count().get()
-  ]);
-
-  return {
-    redemptions: snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as RewardRedemption)),
-    total: countSnapshot.data().count
-  };
-}
-
-export async function updateRedemptionStatus(
-  redemptionId: string,
-  status: RewardStatus,
-  notes?: string
-): Promise<RewardRedemption> {
-  const redemptionRef = redemptionsRef.doc(redemptionId);
-  const doc = await redemptionRef.get();
-
-  if (!doc.exists) {
-    throw new AppError(404, 'Redemption not found', errorCodes.NOT_FOUND);
-  }
-
-  const { userId, rewardId, redemptionDate, verificationCode, shippingAddress } = doc.data() as RewardRedemption;
-
-  await redemptionRef.update({
-    status,
-    notes,
-    updatedAt: new Date()
-  });
-
-  // Notify user about redemption status change
-  await notificationService.sendRedemptionStatusUpdate(userId, status);
-
-  return {
-    id: redemptionId,
-    userId,
-    rewardId,
-    redemptionDate,
-    status,
-    verificationCode,
-    shippingAddress,
-    notes,
-    updatedAt: new Date()
-  };
 }

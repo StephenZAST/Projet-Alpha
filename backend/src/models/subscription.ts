@@ -1,9 +1,4 @@
-import supabase from '../config/supabase';
-import { AppError, errorCodes } from '../utils/errors';
-import { SubscriptionType } from './subscription/subscriptionPlan';
-import { SubscriptionPause } from './subscription/subscriptionPause';
-import { SubscriptionBilling } from './subscription/subscriptionBilling';
-import { SubscriptionUsageSnapshot } from './subscription/subscriptionUsage';
+import { MainService, AdditionalService } from '../models/order';
 
 export enum SubscriptionStatus {
   ACTIVE = 'active',
@@ -13,6 +8,84 @@ export enum SubscriptionStatus {
   PENDING = 'pending',
   PAUSED = 'paused',
   TRIAL = 'trial'
+}
+
+export enum SubscriptionType {
+  NONE = 'NONE',
+  BASIC = 'BASIC',
+  PREMIUM = 'PREMIUM',
+  VIP = 'VIP'
+}
+
+export interface SubscriptionPlan {
+  id?: string;
+  name: string;
+  description: string;
+  type: SubscriptionType;
+  price: number;
+  duration: number; // in months
+  servicesIncluded: MainService[];
+  additionalServicesIncluded: AdditionalService[];
+  itemsPerMonth: number;
+  weightLimitPerWeek: number;
+  benefits: string[];
+  isActive: boolean;
+  discountPercentage?: number;
+  minimumCommitment?: number; // in months
+  earlyTerminationFee?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubscriptionPause {
+  startDate: string;
+  endDate?: string;
+  reason: string;
+  requestedBy: string;
+  status: 'active' | 'scheduled' | 'completed' | 'cancelled';
+}
+
+export interface SubscriptionBilling {
+  date: string;
+  amount: number;
+  status: 'pending' | 'successful' | 'failed';
+  paymentMethod: string;
+  invoiceUrl?: string;
+  failureReason?: string;
+}
+
+export interface SubscriptionUsage {
+  id?: string;
+  subscriptionId: string;
+  userId: string;
+  periodStart: string;
+  periodEnd: string;
+  itemsUsed: number;
+  weightUsed: number;
+  remainingItems: number;
+  remainingWeight: number;
+  lastUpdated: string;
+  servicesUsed: {
+    mainServices: { [key: string]: number };
+    additionalServices: { [key: string]: number };
+  };
+  overageCharges?: number;
+  notifications?: SubscriptionNotification[];
+}
+
+export interface SubscriptionNotification {
+  type: 'usage_warning' | 'payment_due' | 'renewal_reminder' | 'expiration_warning';
+  message: string;
+  date: string;
+  isRead: boolean;
+  actionRequired: boolean;
+}
+
+export interface SubscriptionUsageSnapshot {
+  date: string;
+  itemsUsed: number;
+  weightUsed: number;
+  overageCharges: number;
 }
 
 export interface Subscription {
@@ -45,61 +118,4 @@ export interface Subscription {
     endDate: string;
     reason: string;
   };
-}
-
-// Use Supabase to store subscription data
-const subscriptionsTable = 'subscriptions';
-
-// Function to get subscription data
-export async function getSubscription(id: string): Promise<Subscription | null> {
-  const { data, error } = await supabase.from(subscriptionsTable).select('*').eq('id', id).single();
-
-  if (error) {
-    throw new AppError(500, 'Failed to fetch subscription', 'INTERNAL_SERVER_ERROR');
-  }
-
-  return data as Subscription;
-}
-
-// Function to create subscription
-export async function createSubscription(subscriptionData: Subscription): Promise<Subscription> {
-  const { data, error } = await supabase.from(subscriptionsTable).insert([subscriptionData]).select().single();
-
-  if (error) {
-    throw new AppError(500, 'Failed to create subscription', 'INTERNAL_SERVER_ERROR');
-  }
-
-  return data as Subscription;
-}
-
-// Function to update subscription
-export async function updateSubscription(id: string, subscriptionData: Partial<Subscription>): Promise<Subscription> {
-  const currentSubscription = await getSubscription(id);
-
-  if (!currentSubscription) {
-    throw new AppError(404, 'Subscription not found', errorCodes.NOT_FOUND);
-  }
-
-  const { data, error } = await supabase.from(subscriptionsTable).update(subscriptionData).eq('id', id).select().single();
-
-  if (error) {
-    throw new AppError(500, 'Failed to update subscription', 'INTERNAL_SERVER_ERROR');
-  }
-
-  return data as Subscription;
-}
-
-// Function to delete subscription
-export async function deleteSubscription(id: string): Promise<void> {
-  const subscription = await getSubscription(id);
-
-  if (!subscription) {
-    throw new AppError(404, 'Subscription not found', errorCodes.NOT_FOUND);
-  }
-
-  const { error } = await supabase.from(subscriptionsTable).delete().eq('id', id);
-
-  if (error) {
-    throw new AppError(500, 'Failed to delete subscription', 'INTERNAL_SERVER_ERROR');
-  }
 }

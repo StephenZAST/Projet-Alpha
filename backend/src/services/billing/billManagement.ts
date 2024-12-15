@@ -1,112 +1,92 @@
-import { db } from '../firebase';
-import { Bill, BillStatus } from '../../models/bill';
+import { createClient } from '@supabase/supabase-js';
+import { Bill, BillItem, BillStatus, PaymentStatus, RefundStatus } from '../../models/bill';
 import { AppError, errorCodes } from '../../utils/errors';
-import { Timestamp } from 'firebase-admin/firestore';
 
-export class BillManagementService {
-  async createBill(billData: Bill): Promise<Bill> {
-    try {
-      const billRef = await db.collection('bills').add({
-        ...billData,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        status: 'pending' // Default status
-      });
-      const billSnapshot = await billRef.get();
-      return { id: billSnapshot.id, ...billSnapshot.data() } as Bill;
-    } catch (error) {
-      console.error('Error creating bill:', error);
-      throw new AppError(500, 'Failed to create bill', errorCodes.BILL_CREATION_FAILED);
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const billsTable = 'bills';
+
+export async function getBill(id: string): Promise<Bill | null> {
+  try {
+    const { data, error } = await supabase.from(billsTable).select('*').eq('id', id).single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch bill', errorCodes.DATABASE_ERROR);
     }
+
+    return data as Bill;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to fetch bill', errorCodes.DATABASE_ERROR);
   }
+}
 
-  async getBillById(billId: string): Promise<Bill | null> {
-    try {
-      const billDoc = await db.collection('bills').doc(billId).get();
-      if (!billDoc.exists) {
-        return null;
-      }
-      return { id: billDoc.id, ...billDoc.data() } as Bill;
-    } catch (error) {
-      console.error('Error getting bill:', error);
-      throw new AppError(500, 'Failed to get bill', errorCodes.BILL_NOT_FOUND);
+export async function createBill(billData: Bill): Promise<Bill> {
+  try {
+    const { data, error } = await supabase.from(billsTable).insert([billData]).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to create bill', errorCodes.DATABASE_ERROR);
     }
+
+    return data as Bill;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to create bill', errorCodes.DATABASE_ERROR);
   }
+}
 
-  async updateBill(billId: string, updates: Partial<Bill>): Promise<Bill> {
-    try {
-      await db.collection('bills').doc(billId).update({
-        ...updates,
-        updatedAt: Timestamp.now()
-      });
-      const updatedBill = await this.getBillById(billId);
-      if (!updatedBill) {
-        throw new AppError(404, 'Bill not found after update', errorCodes.BILL_NOT_FOUND);
-      }
-      return updatedBill;
-    } catch (error) {
-      console.error('Error updating bill:', error);
-      throw new AppError(500, 'Failed to update bill', errorCodes.BILL_UPDATE_FAILED);
+export async function updateBill(id: string, billData: Partial<Bill>): Promise<Bill> {
+  try {
+    const currentBill = await getBill(id);
+
+    if (!currentBill) {
+      throw new AppError(404, 'Bill not found', errorCodes.NOT_FOUND);
     }
+
+    const { data, error } = await supabase.from(billsTable).update(billData).eq('id', id).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to update bill', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as Bill;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to update bill', errorCodes.DATABASE_ERROR);
   }
+}
 
-  async getBillsForUser(userId: string, options: {
-    page?: number;
-    limit?: number;
-    status?: BillStatus;
-  } = {}): Promise<{ bills: Bill[]; total: number }> {
-    try {
-      let query = db.collection('bills').where('userId', '==', userId);
+export async function deleteBill(id: string): Promise<void> {
+  try {
+    const bill = await getBill(id);
 
-      if (options.status) {
-        query = query.where('status', '==', options.status);
-      }
-
-      const totalSnapshot = await query.get();
-      const total = totalSnapshot.size;
-
-      if (options.page && options.limit) {
-        const offset = (options.page - 1) * options.limit;
-        query = query.offset(offset).limit(options.limit);
-      }
-
-      const billsSnapshot = await query.orderBy('createdAt', 'desc').get();
-      const bills = billsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bill));
-
-      return { bills, total };
-    } catch (error) {
-      console.error('Error getting bills for user:', error);
-      throw new AppError(500, 'Failed to get bills for user', errorCodes.BILL_FETCH_FAILED);
+    if (!bill) {
+      throw new AppError(404, 'Bill not found', errorCodes.NOT_FOUND);
     }
-  }
 
-  async getBillsForSubscriptionPlan(planId: string, options: {
-    page?: number;
-    limit?: number;
-    status?: BillStatus;
-  } = {}): Promise<{ bills: Bill[]; total: number }> {
-    try {
-      let query = db.collection('bills').where('subscriptionPlanId', '==', planId);
+    const { error } = await supabase.from(billsTable).delete().eq('id', id);
 
-      if (options.status) {
-        query = query.where('status', '==', options.status);
-      }
-
-      const totalSnapshot = await query.get();
-      const total = totalSnapshot.size;
-
-      if (options.page && options.limit) {
-        const offset = (options.page - 1) * options.limit;
-        query = query.offset(offset).limit(options.limit);
-      }
-
-      const billsSnapshot = await query.orderBy('createdAt', 'desc').get();
-      const bills = billsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bill));
-
-      return { bills, total };
-    } catch (error) {
-      console.error('Error getting bills for subscription plan:', error);
-      throw new AppError(500, 'Failed to get bills for subscription plan', errorCodes.BILL_FETCH_FAILED);
+    if (error) {
+      throw new AppError(500, 'Failed to delete bill', errorCodes.DATABASE_ERROR);
     }
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to delete bill', errorCodes.DATABASE_ERROR);
   }
 }
