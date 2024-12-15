@@ -90,3 +90,20 @@ export async function deleteDeliveryTask(id: string): Promise<void> {
     throw new AppError(500, 'Failed to delete delivery task', errorCodes.DATABASE_ERROR);
   }
 }
+
+export async function checkDeliverySlotAvailability(zoneId: string, date: Date): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.from('deliverySlots').select('id').eq('zoneId', zoneId).eq('date', date.toISOString());
+
+    if (error) {
+      throw new AppError(500, 'Failed to check delivery slot availability', errorCodes.DATABASE_ERROR);
+    }
+
+    return data.length > 0;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to check delivery slot availability', errorCodes.DATABASE_ERROR);
+  }
+}

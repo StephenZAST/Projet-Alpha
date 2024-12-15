@@ -5,7 +5,11 @@ export enum OrderStatus {
   PENDING = 'pending',
   PROCESSING = 'processing',
   DELIVERED = 'delivered',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
+  ACCEPTED = 'accepted',
+  PICKED_UP = 'picked_up',
+  DELIVERING = 'delivering',
+  COMPLETED = 'completed'
 }
 
 export enum OrderType {
@@ -94,4 +98,43 @@ export interface Order {
   referralCode: string | null;
   oneClickOrder: boolean;
   orderNotes: string;
+  pickupLocation: {
+    latitude: number;
+    longitude: number;
+  };
+  deliveryLocation: {
+    latitude: number;
+    longitude: number;
+  };
+  scheduledPickupTime: string;
+  scheduledDeliveryTime: string;
+  completionDate: string | null;
+  creationDate: string;
+}
+
+export interface RouteStop {
+  type: 'pickup' | 'delivery';
+  location: {
+    latitude: number;
+    longitude: number;
+  };
+  orderId: string;
+  scheduledTime: Date;
+  address: string;
+}
+
+export interface GetOrdersOptions {
+  page?: number;
+  limit?: number;
+  status?: OrderStatus;
+  userId?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
+
+export interface OrderStatistics {
+  totalOrders: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  totalOrdersDelivered: number;
 }

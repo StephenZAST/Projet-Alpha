@@ -68,8 +68,8 @@ export class RouteOptimizer {
       location: task.deliveryLocation,
       task: task,
       timeWindow: {
-        start: task.scheduledTime.date,
-        end: new Date(task.scheduledTime.date.getTime() + task.scheduledTime.duration * 60000)
+        start: new Date(task.scheduledTime.date),
+        end: new Date(new Date(task.scheduledTime.date).getTime() + task.scheduledTime.duration * 60000)
       },
       serviceTime: task.estimatedDuration || 15 // default 15 minutes
     }));

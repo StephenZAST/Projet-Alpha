@@ -5,15 +5,7 @@ import { AppError, errorCodes } from '../../utils/errors';
 import { getUserProfile } from '../users/userRetrieval';
 import { checkDeliverySlotAvailability } from '../delivery';
 import { validateOrderData } from '../../validation/orders';
-
-const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY;
-
-if (!supabaseKey) {
-  throw new Error('SUPABASE_KEY environment variable not set.');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+import supabase from '../../config/supabase';
 
 const ordersTable = 'orders';
 
@@ -21,6 +13,10 @@ const ordersTable = 'orders';
  * Create a new order
  */
 export async function createOrder(orderData: OrderInput): Promise<Order> {
+  const validationResult = validateOrderData(orderData);
+  if (!validationResult.isValid) {
+    throw new AppError(400, 'Invalid order data', errorCodes.INVALID_ORDER_DATA);
+  }
   try {
     const now = new Date().toISOString();
 
@@ -30,7 +26,7 @@ export async function createOrder(orderData: OrderInput): Promise<Order> {
     }
 
     const newOrder: Order = {
-      id: undefined,
+      id: '',
       userId: orderData.userId,
       items: orderData.items,
       totalAmount: orderData.totalAmount,
@@ -40,15 +36,27 @@ export async function createOrder(orderData: OrderInput): Promise<Order> {
       updatedAt: now,
       deliveryAddress: userProfile.address ? JSON.stringify(userProfile.address) : '',
       deliveryInstructions: userProfile.defaultInstructions || '',
-      deliveryPersonId: null,
-      deliveryTime: null,
+      deliveryPersonId: '',
+      deliveryTime: '',
       paymentMethod: orderData.paymentMethod || PaymentMethod.CASH,
       paymentStatus: 'PENDING',
       loyaltyPointsUsed: 0,
       loyaltyPointsEarned: 0,
-      referralCode: null,
+      referralCode: '',
       oneClickOrder: orderData.oneClickOrder || false,
-      orderNotes: orderData.orderNotes || ''
+      orderNotes: orderData.orderNotes || '',
+      pickupLocation: {
+        latitude: 0,
+        longitude: 0
+      },
+      deliveryLocation: {
+        latitude: 0,
+        longitude: 0
+      },
+      scheduledPickupTime: '',
+      scheduledDeliveryTime: '',
+      completionDate: null,
+      creationDate: ''
     };
 
     const { data, error } = await supabase.from(ordersTable).insert([newOrder]).select().single();
@@ -57,7 +65,7 @@ export async function createOrder(orderData: OrderInput): Promise<Order> {
       throw new AppError(500, 'Failed to create order', errorCodes.DATABASE_ERROR);
     }
 
-    return { id: data.id, ...newOrder };
+    return { ...data };
   } catch (error) {
     console.error('Error creating order:', error);
     throw error;
@@ -83,7 +91,7 @@ export async function createOneClickOrder(orderData: OrderInput & { zoneId: stri
     }
 
     const newOrder: Order = {
-      id: undefined,
+      id: '',
       userId: orderData.userId,
       items: userProfile.defaultItems || [],
       totalAmount: 0, // Calculate total amount based on default items
@@ -93,19 +101,31 @@ export async function createOneClickOrder(orderData: OrderInput & { zoneId: stri
       updatedAt: now,
       deliveryAddress: userProfile.address ? JSON.stringify(userProfile.address) : '',
       deliveryInstructions: userProfile.defaultInstructions || '',
-      deliveryPersonId: null,
-      deliveryTime: null,
+      deliveryPersonId: '',
+      deliveryTime: '',
       paymentMethod: PaymentMethod.CASH,
       paymentStatus: 'PENDING',
       loyaltyPointsUsed: 0,
       loyaltyPointsEarned: 0,
-      referralCode: null,
+      referralCode: '',
       oneClickOrder: true,
-      orderNotes: ''
+      orderNotes: '',
+      pickupLocation: {
+        latitude: 0,
+        longitude: 0
+      },
+      deliveryLocation: {
+        latitude: 0,
+        longitude: 0
+      },
+      scheduledPickupTime: '',
+      scheduledDeliveryTime: '',
+      completionDate: null,
+      creationDate: ''
     };
 
     // Calculate total amount based on default items
-    newOrder.totalAmount = newOrder.items.reduce((total: number, item: OrderItem) => total + item.price * item.quantity, 0);
+    newOrder.totalAmount = newOrder.items.reduce((sum, item: OrderItem) => sum + item.price * item.quantity, 0);
 
     const { data, error } = await supabase.from(ordersTable).insert([newOrder]).select().single();
 
@@ -113,7 +133,7 @@ export async function createOneClickOrder(orderData: OrderInput & { zoneId: stri
       throw new AppError(500, 'Failed to create one-click order', errorCodes.DATABASE_ERROR);
     }
 
-    return { id: data.id, ...newOrder };
+    return { ...data };
   } catch (error) {
     console.error('Error creating one-click order:', error);
     throw error;

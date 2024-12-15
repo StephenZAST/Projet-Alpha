@@ -2,12 +2,14 @@ import Joi from 'joi';
 import { OrderStatus, OrderType, MainService, AdditionalService, PriceType, PaymentMethod } from '../models/order';
 import { ServiceType } from '../models/service';
 
-
 // Schéma pour les articles de la commande
 export const orderItemSchema = Joi.object({
   itemType: Joi.string().required(),
   quantity: Joi.number().min(1).required(),
-  mainService: Joi.string().valid(...Object.values(MainService)).required(),
+  mainService: Joi.string().valid(...Object.values(MainService)).required().messages({
+    'any.required': 'Le type de service est requis',
+    'any.only': 'Type de service invalide'
+  }),
   additionalServices: Joi.array().items(Joi.string().valid(...Object.values(AdditionalService))),
   notes: Joi.string(),
   price: Joi.number().min(0).required(),

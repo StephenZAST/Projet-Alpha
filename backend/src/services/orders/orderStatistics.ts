@@ -1,8 +1,6 @@
-import { Timestamp } from 'firebase-admin/firestore';
 import { Order, OrderStatus } from '../../models/order';
 import { AppError, errorCodes } from '../../utils/errors';
-import { Query } from 'firebase-admin/firestore';
-import { db } from '../firebase';
+import supabase from '../../config/supabase';
 
 interface OrderStatistics {
   total: number;
@@ -11,38 +9,29 @@ interface OrderStatistics {
   totalRevenue: number;
   averageOrderValue: number;
   period: {
-    start: Timestamp;
-    end: Timestamp;
+    start: Date;
+    end: Date;
   };
 }
 
 export async function getOrderStatistics(
   options: {
     zoneId?: string;
-    startDate?: Timestamp;
-    endDate?: Timestamp;
+    startDate?: Date;
+    endDate?: Date;
   } = {}
 ): Promise<OrderStatistics> {
   try {
-    let query: Query = db.collection('orders');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('status', OrderStatus.COMPLETED);
 
-    if (options.zoneId) {
-      query = query.where('zoneId', '==', options.zoneId);
+    if (error) {
+      throw new AppError(500, 'Failed to fetch order statistics', errorCodes.STATS_FETCH_FAILED);
     }
 
-    if (options.startDate) {
-      query = query.where('creationDate', '>=', options.startDate);
-    }
-
-    if (options.endDate) {
-      query = query.where('creationDate', '<=', options.endDate);
-    }
-
-    const ordersSnapshot = await query.get();
-    const orders = ordersSnapshot.docs.map(doc => ({
-      ...doc.data(),
-      id: doc.id
-    }) as Order);
+    const orders = data;
 
     const byStatus = Object.values(OrderStatus).reduce((acc, status) => {
       acc[status] = orders.filter(o => o.status === status).length;
@@ -58,8 +47,8 @@ export async function getOrderStatistics(
       totalRevenue,
       averageOrderValue: orders.length > 0 ? totalRevenue / orders.length : 0,
       period: {
-        start: options.startDate || Timestamp.fromDate(new Date(0)),
-        end: options.endDate || Timestamp.now()
+        start: options.startDate || new Date(),
+        end: options.endDate || new Date()
       }
     };
   } catch (error) {
@@ -71,14 +60,14 @@ export async function getOrderStatistics(
 function calculateAverageDeliveryTime(orders: Order[]): number {
   const completedOrders = orders.filter(
     order => order.status === OrderStatus.COMPLETED &&
-    order.completionDate &&
-    order.creationDate
+    order.completionDate !== null &&
+    order.creationDate !== null
   );
 
   if (completedOrders.length === 0) return 0;
 
   const totalTime = completedOrders.reduce((sum, order) => {
-    const completionTime = order.completionDate!.toMillis() - order.creationDate!.toMillis();
+    const completionTime = new Date(order.completionDate as string).getTime() - new Date(order.creationDate as string).getTime();
     return sum + completionTime;
   }, 0);
 

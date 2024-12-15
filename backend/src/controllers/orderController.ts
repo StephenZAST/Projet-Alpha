@@ -1,16 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError, errorCodes } from '../utils/errors';
-import { db } from '../config/firebase';
+import  supabase  from '../config/supabase';
 import { Order, OrderStatus } from '../models/order';
-import { Timestamp } from 'firebase-admin/firestore';
 
 export class OrderController {
   async createOrder(req: Request, res: Response, next: NextFunction) {
     try {
       const { items, totalAmount, shippingAddress, billingAddress, paymentMethod } = req.body;
-      const userId = req.user!.uid;
+      const userId = (req as any).user!.uid;
 
-      const orderRef = await db.collection('orders').add({
+      const { data, error } = await supabase.from('orders').insert({
         userId,
         items,
         totalAmount,
@@ -18,14 +17,22 @@ export class OrderController {
         billingAddress,
         paymentMethod,
         status: OrderStatus.PENDING,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       });
 
-      res.status(201).json({
-        id: orderRef.id,
-        message: 'Commande créée avec succès'
-      });
+      if (error) {
+        throw new AppError(500, 'Échec de la création de la commande', errorCodes.ORDER_CREATION_FAILED);
+      }
+
+      if (data && data[0]) {
+        res.status(201).json({
+          id: (data[0] as any).id,
+          message: 'Commande créée avec succès'
+        });
+      } else {
+        throw new AppError(500, 'Échec de la création de la commande', errorCodes.ORDER_CREATION_FAILED);
+      }
     } catch (error) {
       next(new AppError(500, 'Échec de la création de la commande', errorCodes.ORDER_CREATION_FAILED));
     }
@@ -35,35 +42,35 @@ export class OrderController {
     try {
       const { page = 1, limit = 10, status, userId, startDate, endDate } = req.query;
 
-      let query = db.collection('orders').orderBy('createdAt', 'desc');
+      let query = supabase.from('orders').select('*').order('createdAt', { ascending: false });
 
       if (status) {
-        query = query.where('status', '==', status);
+        query = query.eq('status', status);
       }
 
       if (userId) {
-        query = query.where('userId', '==', userId);
+        query = query.eq('userId', userId);
       }
 
       if (startDate) {
-        query = query.where('createdAt', '>=', new Date(startDate as string));
+        query = query.gte('createdAt', startDate);
       }
 
       if (endDate) {
-        query = query.where('createdAt', '<=', new Date(endDate as string));
+        query = query.lte('createdAt', endDate);
       }
 
-      const snapshot = await query
-        .offset((Number(page) - 1) * Number(limit))
-        .limit(Number(limit))
-        .get();
+      const { data, error } = await query.range((Number(page) - 1) * Number(limit), Number(page) * Number(limit));
 
-      const orders = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      if (error) {
+        throw new AppError(500, 'Échec de la récupération des commandes', errorCodes.ORDER_FETCH_FAILED);
+      }
 
-      res.json(orders);
+      if (data) {
+        res.json(data);
+      } else {
+        res.json([]);
+      }
     } catch (error) {
       next(new AppError(500, 'Échec de la récupération des commandes', errorCodes.ORDER_FETCH_FAILED));
     }
@@ -73,15 +80,13 @@ export class OrderController {
     try {
       const { id } = req.params;
 
-      const orderDoc = await db.collection('orders').doc(id).get();
-      if (!orderDoc.exists) {
-        return next(new AppError(404, 'Commande non trouvée', errorCodes.ORDER_NOT_FOUND));
+      const { data, error } = await supabase.from('orders').select('*').eq('id', id).single();
+
+      if (error) {
+        throw new AppError(404, 'Commande non trouvée', errorCodes.ORDER_NOT_FOUND);
       }
 
-      res.json({
-        id: orderDoc.id,
-        ...orderDoc.data()
-      });
+      res.json(data);
     } catch (error) {
       next(new AppError(500, 'Échec de la récupération de la commande', errorCodes.ORDER_FETCH_FAILED));
     }
@@ -92,20 +97,13 @@ export class OrderController {
       const { id } = req.params;
       const { status } = req.body;
 
-      const orderRef = db.collection('orders').doc(id);
+      const { data, error } = await supabase.from('orders').update({ status, updatedAt: new Date().toISOString() }).eq('id', id).select().single();
 
-      const orderDoc = await orderRef.get();
-      if (!orderDoc.exists) {
-        return next(new AppError(404, 'Commande non trouvée', errorCodes.ORDER_NOT_FOUND));
+      if (error) {
+        throw new AppError(500, 'Échec de la mise à jour du statut de la commande', errorCodes.ORDER_UPDATE_FAILED);
       }
 
-      await orderRef.update({
-        status,
-        updatedAt: Timestamp.now()
-      });
-
       res.json({
-        id,
         message: 'Statut de la commande mis à jour avec succès'
       });
     } catch (error) {
@@ -118,20 +116,13 @@ export class OrderController {
       const { id } = req.params;
       const { deliveryPersonId } = req.body;
 
-      const orderRef = db.collection('orders').doc(id);
+      const { data, error } = await supabase.from('orders').update({ deliveryPersonId, updatedAt: new Date().toISOString() }).eq('id', id).select().single();
 
-      const orderDoc = await orderRef.get();
-      if (!orderDoc.exists) {
-        return next(new AppError(404, 'Commande non trouvée', errorCodes.ORDER_NOT_FOUND));
+      if (error) {
+        throw new AppError(500, 'Échec de l\'assignation du livreur à la commande', errorCodes.ORDER_UPDATE_FAILED);
       }
 
-      await orderRef.update({
-        deliveryPersonId,
-        updatedAt: Timestamp.now()
-      });
-
       res.json({
-        id,
         message: 'Livreur assigné à la commande avec succès'
       });
     } catch (error) {
@@ -144,24 +135,13 @@ export class OrderController {
       const { id } = req.params;
       const { items, totalAmount, shippingAddress, billingAddress, paymentMethod } = req.body;
 
-      const orderRef = db.collection('orders').doc(id);
+      const { data, error } = await supabase.from('orders').update({ items, totalAmount, shippingAddress, billingAddress, paymentMethod, updatedAt: new Date().toISOString() }).eq('id', id).select().single();
 
-      const orderDoc = await orderRef.get();
-      if (!orderDoc.exists) {
-        return next(new AppError(404, 'Commande non trouvée', errorCodes.ORDER_NOT_FOUND));
+      if (error) {
+        throw new AppError(500, 'Échec de la mise à jour de la commande', errorCodes.ORDER_UPDATE_FAILED);
       }
 
-      await orderRef.update({
-        items,
-        totalAmount,
-        shippingAddress,
-        billingAddress,
-        paymentMethod,
-        updatedAt: Timestamp.now()
-      });
-
       res.json({
-        id,
         message: 'Commande mise à jour avec succès'
       });
     } catch (error) {
@@ -173,23 +153,11 @@ export class OrderController {
     try {
       const { id } = req.params;
 
-      const orderRef = db.collection('orders').doc(id);
+      const { data, error } = await supabase.from('orders').update({ status: OrderStatus.CANCELLED, updatedAt: new Date().toISOString() }).eq('id', id).select().single();
 
-      const orderDoc = await orderRef.get();
-      if (!orderDoc.exists) {
-        return next(new AppError(404, 'Commande non trouvée', errorCodes.ORDER_NOT_FOUND));
+      if (error) {
+        throw new AppError(500, 'Échec de l\'annulation de la commande', errorCodes.ORDER_CANCELLATION_FAILED);
       }
-
-      // Check if the order can be cancelled (e.g., not already delivered)
-      const orderData = orderDoc.data() as Order;
-      if (orderData.status === OrderStatus.DELIVERED) {
-        return next(new AppError(400, 'Impossible d\'annuler une commande déjà livrée', errorCodes.ORDER_CANCELLATION_FAILED));
-      }
-
-      await orderRef.update({
-        status: OrderStatus.CANCELLED,
-        updatedAt: Timestamp.now()
-      });
 
       res.json({
         message: 'Commande annulée avec succès'
@@ -201,22 +169,20 @@ export class OrderController {
 
   async getOrderHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user!.uid;
+      const userId = (req as any).user!.uid;
       const { page = 1, limit = 10 } = req.query;
 
-      const ordersSnapshot = await db.collection('orders')
-        .where('userId', '==', userId)
-        .orderBy('createdAt', 'desc')
-        .offset((Number(page) - 1) * Number(limit))
-        .limit(Number(limit))
-        .get();
+      const { data, error } = await supabase.from('orders').select('*').eq('userId', userId).order('createdAt', { ascending: false }).range((Number(page) - 1) * Number(limit), Number(page) * Number(limit));
 
-      const orders = ordersSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      if (error) {
+        throw new AppError(500, 'Échec de la récupération de l\'historique des commandes', errorCodes.ORDER_HISTORY_FETCH_FAILED);
+      }
 
-      res.json(orders);
+      if (data) {
+        res.json(data);
+      } else {
+        res.json([]);
+      }
     } catch (error) {
       next(new AppError(500, 'Échec de la récupération de l\'historique des commandes', errorCodes.ORDER_HISTORY_FETCH_FAILED));
     }
@@ -227,24 +193,11 @@ export class OrderController {
       const { id } = req.params;
       const { rating, comment } = req.body;
 
-      const orderRef = db.collection('orders').doc(id);
+      const { data, error } = await supabase.from('orders').update({ rating, comment, updatedAt: new Date().toISOString() }).eq('id', id).select().single();
 
-      const orderDoc = await orderRef.get();
-      if (!orderDoc.exists) {
-        return next(new AppError(404, 'Commande non trouvée', errorCodes.ORDER_NOT_FOUND));
+      if (error) {
+        throw new AppError(500, 'Échec de la notation de la commande', errorCodes.ORDER_RATING_FAILED);
       }
-
-      // Check if the order has already been rated by the user
-      const orderData = orderDoc.data() as Order;
-      if (orderData.rating) {
-        return next(new AppError(400, 'Cette commande a déjà été notée', errorCodes.ORDER_ALREADY_RATED));
-      }
-
-      await orderRef.update({
-        rating,
-        comment,
-        updatedAt: Timestamp.now()
-      });
 
       res.json({
         message: 'Commande notée avec succès'

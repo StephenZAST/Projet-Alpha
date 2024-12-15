@@ -1,13 +1,11 @@
-import { Timestamp } from 'firebase-admin/firestore';
 import { Order, OrderStatus } from '../../models/order';
 import { AppError, errorCodes } from '../../utils/errors';
-import { Query } from 'firebase-admin/firestore';
-import { db } from '../firebase';
+import supabase from '../../config/supabase';
 
 interface GetOrdersOptions {
   status?: OrderStatus;
   limit?: number;
-  startAfter?: Timestamp;
+  startAfter?: any;
   page?: number;
   userId?: string;
   startDate?: Date;
@@ -21,45 +19,16 @@ export async function getOrdersByUser(
   options: GetOrdersOptions = {}
 ): Promise<Order[]> {
   try {
-    let queryBuilder: Query = db.collection('orders');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('userId', userId);
 
-    // Chain the where clauses
-    if (options.status) {
-      queryBuilder = queryBuilder.where('status', '==', options.status);
-    }
-    if (options.userId) {
-      queryBuilder = queryBuilder.where('userId', '==', options.userId);
-    }
-    if (options.startDate) {
-      queryBuilder = queryBuilder.where('creationDate', '>=', options.startDate);
-    }
-    if (options.endDate) {
-      queryBuilder = queryBuilder.where('creationDate', '<=', options.endDate);
+    if (error) {
+      throw new AppError(500, 'Failed to fetch orders', errorCodes.ORDER_FETCH_FAILED);
     }
 
-    // Apply ordering
-    if (options.sortBy) {
-      queryBuilder = queryBuilder.orderBy(options.sortBy, options.sortOrder || 'desc');
-    }
-
-    // Apply startAfter if provided
-    if (options.startAfter) {
-      queryBuilder = queryBuilder.startAfter(options.startAfter);
-    }
-
-    // Apply limit if provided
-    if (options.limit) {
-      queryBuilder = queryBuilder.limit(options.limit);
-    }
-
-    // Apply pagination offset
-    if (options.page && options.limit) {
-      const offsetValue = (options.page - 1) * options.limit;
-      queryBuilder = queryBuilder.offset(offsetValue);
-    }
-
-    const ordersSnapshot = await queryBuilder.get();
-    return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
+    return data;
   } catch (error) {
     console.error('Error fetching orders:', error);
     throw new AppError(500, 'Failed to fetch orders', errorCodes.ORDER_FETCH_FAILED);
@@ -71,19 +40,16 @@ export async function getOrdersByZone(
   status?: OrderStatus[]
 ): Promise<Order[]> {
   try {
-    let queryBuilder: Query = db.collection('orders');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('zoneId', zoneId);
 
-    // Chain the where clauses
-    queryBuilder = queryBuilder.where('zoneId', '==', zoneId);
-    if (status && status.length > 0) {
-      queryBuilder = queryBuilder.where('status', 'in', status);
+    if (error) {
+      throw new AppError(500, 'Failed to fetch zone orders', errorCodes.ZONES_FETCH_FAILED);
     }
 
-    // Apply ordering
-    queryBuilder = queryBuilder.orderBy('creationDate', 'desc');
-
-    const ordersSnapshot = await queryBuilder.get();
-    return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
+    return data;
   } catch (error) {
     console.error('Error fetching zone orders:', error);
     throw new AppError(500, 'Failed to fetch zone orders', errorCodes.ZONES_FETCH_FAILED);
@@ -92,19 +58,22 @@ export async function getOrdersByZone(
 
 export async function getOrderById(orderId: string, userId: string): Promise<Order> {
   try {
-    const orderDoc = await db.collection('orders').doc(orderId).get();
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId);
 
-    if (!orderDoc.exists) {
+    if (error) {
       throw new AppError(404, 'Order not found', errorCodes.ORDER_NOT_FOUND);
     }
 
-    const order = orderDoc.data() as Order;
+    const order = data[0];
 
     if (order.userId !== userId) {
       throw new AppError(403, 'Unauthorized to access this order', errorCodes.UNAUTHORIZED);
     }
 
-    return { ...order, id: orderDoc.id };
+    return order;
   } catch (error) {
     if (error instanceof AppError) throw error;
     console.error('Error fetching order:', error);
@@ -114,40 +83,15 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
 
 export async function getAllOrders(options: GetOrdersOptions = {}): Promise<Order[]> {
   try {
-    let queryBuilder: Query = db.collection('orders');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*');
 
-    // Chain the where clauses
-    if (options.status) {
-      queryBuilder = queryBuilder.where('status', '==', options.status);
-    }
-    if (options.userId) {
-      queryBuilder = queryBuilder.where('userId', '==', options.userId);
-    }
-    if (options.startDate) {
-      queryBuilder = queryBuilder.where('creationDate', '>=', options.startDate);
-    }
-    if (options.endDate) {
-      queryBuilder = queryBuilder.where('creationDate', '<=', options.endDate);
+    if (error) {
+      throw new AppError(500, 'Failed to fetch all orders', errorCodes.ORDER_FETCH_FAILED);
     }
 
-    // Apply ordering
-    if (options.sortBy) {
-      queryBuilder = queryBuilder.orderBy(options.sortBy, options.sortOrder || 'desc');
-    }
-
-    // Apply limit if provided
-    if (options.limit) {
-      queryBuilder = queryBuilder.limit(options.limit);
-    }
-
-    // Apply pagination offset
-    if (options.page && options.limit) {
-      const offsetValue = (options.page - 1) * options.limit;
-      queryBuilder = queryBuilder.offset(offsetValue);
-    }
-
-    const ordersSnapshot = await queryBuilder.get();
-    return ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
+    return data;
   } catch (error) {
     console.error('Error fetching all orders:', error);
     throw new AppError(500, 'Failed to fetch all orders', errorCodes.ORDER_FETCH_FAILED);
