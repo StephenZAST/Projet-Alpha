@@ -21,7 +21,10 @@ export enum NotificationType {
   // Admin broadcasts
   SERVICE_UPDATE = 'service_update',
   GENERAL_ANNOUNCEMENT = 'general_announcement',
-  AFFILIATE_APPROVED = "AFFILIATE_APPROVED"
+  AFFILIATE_APPROVED = "AFFILIATE_APPROVED",
+  SYSTEM = "SYSTEM",
+  REFERRAL_INVITATION = "REFERRAL_INVITATION",
+  COMMISSION_APPROVED = "COMMISSION_APPROVED"
 }
 
 export enum NotificationPriority {
@@ -34,7 +37,8 @@ export enum NotificationStatus {
   PENDING = 'pending',
   SENT = 'sent',
   FAILED = 'failed',
-  READ = "READ"
+  READ = "READ",
+  UNREAD = "UNREAD"
 }
 
 export enum DeliveryChannel {

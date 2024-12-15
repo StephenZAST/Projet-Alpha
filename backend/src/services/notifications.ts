@@ -1,10 +1,22 @@
+import { createClient } from '@supabase/supabase-js';
 import { Notification, NotificationType, NotificationPriority, NotificationStatus, DeliveryChannel } from '../models/notification';
-import supabase from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
+
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export class NotificationService {
   private notificationsTable = 'notifications';
 
+  /**
+   * Create a new notification
+   */
   async createNotification(notification: Omit<Notification, 'id' | 'createdAt'>): Promise<string> {
     const newNotification = {
       ...notification,
@@ -15,12 +27,15 @@ export class NotificationService {
     const { data, error } = await supabase.from(this.notificationsTable).insert([newNotification]).select().single();
 
     if (error) {
-      throw new AppError(500, 'Failed to create notification', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to create notification', errorCodes.NOTIFICATION_CREATE_ERROR);
     }
 
     return data.id;
   }
 
+  /**
+   * Send a notification
+   */
   async sendNotification(userId: string, notification: { type: NotificationType; title: string; message: string; data: { orderId?: string; recurringOrderId?: string; } }): Promise<void> {
     const newNotification = {
       type: notification.type,
@@ -30,7 +45,7 @@ export class NotificationService {
       message: notification.message,
       data: notification.data,
       priority: NotificationPriority.MEDIUM,
-      status: NotificationStatus.PENDING,
+      status: NotificationStatus.UNREAD,
       deliveryChannel: DeliveryChannel.IN_APP,
       isRead: false
     };
@@ -38,6 +53,9 @@ export class NotificationService {
     await this.createNotification(newNotification);
   }
 
+  /**
+   * Send order status notification
+   */
   async sendOrderStatusNotification(
     orderId: string,
     userId: string,
@@ -56,7 +74,7 @@ export class NotificationService {
         ...additionalData
       },
       priority: NotificationPriority.MEDIUM,
-      status: NotificationStatus.PENDING,
+      status: NotificationStatus.UNREAD,
       deliveryChannel: DeliveryChannel.IN_APP,
       isRead: false
     };
@@ -64,23 +82,26 @@ export class NotificationService {
     return this.createNotification(notification);
   }
 
+  /**
+   * Send affiliate commission notification
+   */
   async sendAffiliateCommissionNotification(
     affiliateId: string,
     amount: number,
     orderId: string
   ): Promise<string> {
     const notification = {
-      type: NotificationType.COMMISSION_EARNED,
+      type: NotificationType.COMMISSION_APPROVED,
       recipientId: affiliateId,
       recipientRole: 'affiliate' as 'customer' | 'affiliate' | 'admin',
-      title: 'Commission Earned',
+      title: 'Commission Approved',
       message: `You've earned a commission of ${amount} from order #${orderId}`,
       data: {
         orderId,
         amount
       },
       priority: NotificationPriority.MEDIUM,
-      status: NotificationStatus.PENDING,
+      status: NotificationStatus.UNREAD,
       deliveryChannel: DeliveryChannel.IN_APP,
       isRead: false
     };
@@ -88,6 +109,9 @@ export class NotificationService {
     return this.createNotification(notification);
   }
 
+  /**
+   * Send loyalty points reminder
+   */
   async sendLoyaltyPointsReminder(
     userId: string,
     points: number
@@ -102,7 +126,7 @@ export class NotificationService {
         points
       },
       priority: NotificationPriority.MEDIUM,
-      status: NotificationStatus.PENDING,
+      status: NotificationStatus.UNREAD,
       deliveryChannel: DeliveryChannel.IN_APP,
       isRead: false
     };
@@ -110,6 +134,9 @@ export class NotificationService {
     return this.createNotification(notification);
   }
 
+  /**
+   * Broadcast promotion
+   */
   async broadcastPromotion(
     title: string,
     message: string,
@@ -123,36 +150,31 @@ export class NotificationService {
       .eq('role', userRole);
 
     if (usersError) {
-      throw new AppError(500, 'Failed to fetch users', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to fetch users', errorCodes.DATABASE_ERROR);
     }
 
-    const batch = supabase.from(this.notificationsTable).batch();
+    const notifications = users.map((user: { id: string }) => ({
+      type: NotificationType.PROMOTION_AVAILABLE,
+      recipientId: user.id,
+      recipientRole: userRole,
+      title,
+      message,
+      priority: NotificationPriority.MEDIUM,
+      status: NotificationStatus.UNREAD,
+      deliveryChannel: DeliveryChannel.IN_APP,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      expiresAt: expiresAt?.toISOString()
+    }));
 
-    users.forEach((user: { id: string }) => {
-      const newNotification = {
-        type: NotificationType.PROMOTION_AVAILABLE,
-        recipientId: user.id,
-        recipientRole: userRole,
-        title,
-        message,
-        priority: NotificationPriority.MEDIUM,
-        status: NotificationStatus.PENDING,
-        deliveryChannel: DeliveryChannel.IN_APP,
-        isRead: false,
-        createdAt: new Date().toISOString(),
-        expiresAt: expiresAt?.toISOString()
-      };
-
-      batch.insert([newNotification]);
-    });
-
-    const { error } = await batch.execute();
-
-    if (error) {
-      throw new AppError(500, 'Failed to broadcast promotion', 'INTERNAL_SERVER_ERROR');
+    for (const notification of notifications) {
+      await this.createNotification(notification);
     }
   }
 
+  /**
+   * Mark notification as read
+   */
   async markAsRead(notificationId: string, userId: string): Promise<boolean> {
     try {
       const { error } = await supabase
@@ -162,7 +184,7 @@ export class NotificationService {
         .eq('recipientId', userId);
 
       if (error) {
-        throw new AppError(500, 'Failed to mark notification as read', 'INTERNAL_SERVER_ERROR');
+        throw new AppError(500, 'Failed to mark notification as read', errorCodes.NOTIFICATION_UPDATE_ERROR);
       }
 
       return true;
@@ -172,6 +194,9 @@ export class NotificationService {
     }
   }
 
+  /**
+   * Get user notifications
+   */
   async getUserNotifications(userId: string, limit = 50): Promise<Notification[]> {
     const { data, error } = await supabase
       .from(this.notificationsTable)
@@ -181,13 +206,11 @@ export class NotificationService {
       .limit(limit);
 
     if (error) {
-      throw new AppError(500, 'Failed to fetch user notifications', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to fetch user notifications', errorCodes.NOTIFICATION_FETCH_ERROR);
     }
 
-    return data.map((doc: { id: string; [key: string]: any; }) => ({
-      ...doc
-    }));
+    return data as Notification[];
   }
 }
 
-export { NotificationType };
+export const notificationService = new NotificationService();
