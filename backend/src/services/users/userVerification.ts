@@ -1,92 +1,120 @@
-import { db, auth, CollectionReference, Timestamp } from '../../config/firebase';
+import supabase from '../../config/supabase';
 import { User, UserStatus } from '../../models/user';
-import { hash } from 'bcrypt';
+import { AppError, errorCodes } from '../../utils/errors';
 import { generateToken } from '../../utils/tokens';
 import { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } from '../emailService';
-import { AppError, errorCodes } from '../../utils/errors';
 import { NotificationService } from '../notifications';
 
-const SALT_ROUNDS = 10;
-const USERS_COLLECTION = 'users';
+const usersTable = 'users';
 
 export async function verifyEmail(token: string): Promise<void> {
-  const userSnapshot = await db.collection(USERS_COLLECTION)
-    .where('emailVerificationToken', '==', token)
-    .where('emailVerificationExpires', '>', new Date())
-    .limit(1)
-    .get();
+  try {
+    const { data: user, error: userError } = await supabase
+      .from(usersTable)
+      .select('*')
+      .eq('emailVerificationToken', token)
+      .gte('emailVerificationExpires', new Date())
+      .single();
 
-  if (userSnapshot.empty) {
-    throw new Error('Invalid or expired verification token');
+    if (userError) {
+      throw new AppError(400, 'Invalid or expired verification token', errorCodes.INVALID_TOKEN);
+    }
+
+    const { error } = await supabase
+      .from(usersTable)
+      .update({
+        emailVerified: true,
+        status: UserStatus.ACTIVE,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      throw new AppError(500, 'Failed to verify email', 'INTERNAL_SERVER_ERROR');
+    }
+
+    await sendWelcomeEmail(user.profile.email, user.profile.firstName);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(500, 'Failed to verify email', 'INTERNAL_SERVER_ERROR');
   }
-
-  const userDoc = userSnapshot.docs[0];
-  const user = userDoc.data() as User;
-
-  await userDoc.ref.update({
-    emailVerified: true,
-    status: UserStatus.ACTIVE,
-    emailVerificationToken: null,
-    emailVerificationExpires: null,
-    updatedAt: Timestamp.now()
-  });
-
-  await sendWelcomeEmail(user.profile.email, user.profile.firstName);
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  const user = await getUserByEmail(email);
-  if (!user) {
-    throw new Error('User not found');
+  try {
+    const { data: user, error: userError } = await supabase
+      .from(usersTable)
+      .select('*')
+      .eq('profile.email', email)
+      .single();
+
+    if (userError) {
+      throw new AppError(404, 'User not found', errorCodes.NOT_FOUND);
+    }
+
+    const resetToken = generateToken();
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    const { error } = await supabase
+      .from(usersTable)
+      .update({
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      throw new AppError(500, 'Failed to request password reset', 'INTERNAL_SERVER_ERROR');
+    }
+
+    await sendPasswordResetEmail(email, resetToken);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(500, 'Failed to request password reset', 'INTERNAL_SERVER_ERROR');
   }
-
-  const resetToken = generateToken();
-  const resetExpires = Timestamp.fromDate(new Date(Date.now() + 60 * 60 * 1000)); // 1 hour
-
-  await db.collection(USERS_COLLECTION).doc(user.id).update({
-    passwordResetToken: resetToken,
-    passwordResetExpires: resetExpires,
-    updatedAt: Timestamp.now()
-  });
-
-  await sendPasswordResetEmail(email, resetToken);
 }
 
 export async function resetPassword(token: string, newPassword: string): Promise<void> {
-  const userSnapshot = await db.collection(USERS_COLLECTION)
-    .where('passwordResetToken', '==', token)
-    .where('passwordResetExpires', '>', new Date())
-    .limit(1)
-    .get();
+  try {
+    const { data: user, error: userError } = await supabase
+      .from(usersTable)
+      .select('*')
+      .eq('passwordResetToken', token)
+      .gte('passwordResetExpires', new Date())
+      .single();
 
-  if (userSnapshot.empty) {
-    throw new Error('Invalid or expired reset token');
+    if (userError) {
+      throw new AppError(400, 'Invalid or expired reset token', errorCodes.INVALID_TOKEN);
+    }
+
+    const hashedPassword = await hash(newPassword, 10);
+
+    const { error } = await supabase
+      .from(usersTable)
+      .update({
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', user.id);
+
+    if (error) {
+      throw new AppError(500, 'Failed to reset password', 'INTERNAL_SERVER_ERROR');
+    }
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(500, 'Failed to reset password', 'INTERNAL_SERVER_ERROR');
   }
-
-  const hashedPassword = await hash(newPassword, SALT_ROUNDS);
-
-  await userSnapshot.docs[0].ref.update({
-    password: hashedPassword,
-    passwordResetToken: null,
-    passwordResetExpires: null,
-    updatedAt: Timestamp.now()
-  });
 }
 
-export async function getUserByEmail(email: string): Promise<User | null> {
-  const userSnapshot = await db.collection(USERS_COLLECTION)
-    .where('profile.email', '==', email)
-    .limit(1)
-    .get();
-
-  if (userSnapshot.empty) {
-    return null;
-  }
-
-  const userData = userSnapshot.docs[0].data() as User;
-  return {
-    ...userData
-  };
+// Helper function to hash passwords
+async function hash(password: string, saltRounds: number): Promise<string> {
+  const bcrypt = await import('bcrypt');
+  return bcrypt.hash(password, saltRounds);
 }
 
 export { sendVerificationEmail, NotificationService };

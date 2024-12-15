@@ -1,8 +1,8 @@
 import supabase from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
 import { OrderItem } from './order';
-import { SubscriptionType } from './subscriptionPlan';
-import { SubscriptionBilling } from './subscriptionBilling';
+import { SubscriptionType } from './subscription/subscriptionPlan';
+import { SubscriptionBilling } from './subscription/subscriptionBilling';
 
 export enum BillStatus {
   DRAFT = 'draft',

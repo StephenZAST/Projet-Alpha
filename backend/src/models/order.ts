@@ -43,20 +43,32 @@ export enum ArticleCategory {
   OTHER = 'other'
 }
 
+export enum PaymentMethod {
+  CASH = 'cash',
+  CARD = 'card',
+  MOBILE_MONEY = 'mobile_money',
+  BANK_TRANSFER = 'bank_transfer'
+}
+
+export enum PriceType {
+  FIXED = 'fixed',
+  PER_UNIT = 'per_unit'
+}
+
 export interface OrderItem {
   id: string;
   name: string;
   price: number;
   quantity: number;
   itemType: string;
-  priceType: string;
+  priceType: PriceType;
 }
 
 export interface OrderInput {
   userId: string;
   items: OrderItem[];
   totalAmount: number;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   type?: OrderType;
   oneClickOrder?: boolean;
   orderNotes?: string;
@@ -75,7 +87,7 @@ export interface Order {
   deliveryInstructions: string;
   deliveryPersonId: string | null;
   deliveryTime: string | null;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
   loyaltyPointsUsed: number;
   loyaltyPointsEarned: number;

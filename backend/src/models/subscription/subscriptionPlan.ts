@@ -1,6 +1,6 @@
-import supabase from '../config/supabase';
-import { AppError, errorCodes } from '../utils/errors';
-import { MainService, AdditionalService } from './order';
+import supabase from '../../config/supabase';
+import { AppError, errorCodes } from '../../utils/errors';
+import { MainService, AdditionalService } from '../order';
 
 export enum SubscriptionType {
   NONE = 'NONE',

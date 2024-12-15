@@ -1,5 +1,5 @@
-import supabase from '../config/supabase';
-import { AppError, errorCodes } from '../utils/errors';
+import supabase from '../../config/supabase';
+import { AppError, errorCodes } from '../../utils/errors';
 
 export interface SubscriptionUsage {
   id?: string;

@@ -1,129 +1,125 @@
-import { db } from './firebase';
-import { RevenueMetrics, CustomerMetrics, AffiliateMetrics } from '../models/analytics';
-
-// Add interface for OrderItem
-interface OrderItem {
-  service: string;
-  totalPrice: number;
-}
-
-// Add interface for Order
-interface Order {
-  totalAmount: number;
-  items: OrderItem[];
-}
-
-// Add interface for Customer
-interface Customer {
-  id: string;
-  lastOrderDate: Date;
-  totalSpent: number;
-  orderCount: number;
-  loyaltyTier: string;
-}
-
-// Add interface for Affiliate
-interface Affiliate {
-  id: string;
-  activeCustomers: number;
-  totalCommission: number;
-}
+import { supabase } from '../config';
+import { RevenueMetrics, CustomerMetrics, AffiliateMetrics, getAnalytics, createAnalytics, updateAnalytics, deleteAnalytics, AffiliateSummary } from '../models/analytics';
+import { AppError, errorCodes } from '../utils/errors';
 
 export class AnalyticsService {
-  private readonly ordersRef = db.collection('orders');
-  private readonly usersRef = db.collection('users');
-  private readonly affiliatesRef = db.collection('affiliates');
+  private readonly analyticsTable = 'analytics';
 
   async getRevenueMetrics(startDate: Date, endDate: Date): Promise<RevenueMetrics> {
-    const ordersSnapshot = await this.ordersRef
-      .where('createdAt', '>=', startDate)
-      .where('createdAt', '<=', endDate)
-      .get();
+    try {
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .gte('createdAt', startDate.toISOString())
+        .lte('createdAt', endDate.toISOString());
 
-    const orders = ordersSnapshot.docs.map(doc => doc.data() as Order);
-    
-    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-    const averageOrderValue = totalRevenue / orders.length || 0;
-    
-    const revenueByService = orders.reduce((acc, order) => {
-      order.items.forEach((item: OrderItem) => {
-        acc[item.service] = (acc[item.service] || 0) + item.totalPrice;
-      });
-      return acc;
-    }, {} as Record<string, number>);
+      if (ordersError) {
+        throw new AppError(500, 'Failed to fetch orders', 'REVENUE_METRICS_FETCH_FAILED');
+      }
 
-    return {
-      totalRevenue,
-      periodRevenue: totalRevenue,
-      orderCount: orders.length,
-      averageOrderValue,
-      revenueByService,
-      periodStart: startDate,
-      periodEnd: endDate
-    };
+      const totalRevenue = (orders || []).reduce((sum: any, order: { totalAmount: any; }) => sum + order.totalAmount, 0);
+      const averageOrderValue = totalRevenue / (orders || []).length || 0;
+
+      const revenueByService = (orders || []).reduce((acc: { [x: string]: any; }, order: { items: { service: string; totalPrice: number; }[]; }) => {
+        order.items.forEach((item: { service: string; totalPrice: number; }) => {
+          acc[item.service] = (acc[item.service] || 0) + item.totalPrice;
+        });
+        return acc;
+      }, {} as Record<string, number>);
+
+      return {
+        totalRevenue,
+        periodRevenue: totalRevenue,
+        orderCount: (orders || []).length,
+        averageOrderValue,
+        revenueByService,
+        periodStart: startDate.toISOString(),
+        periodEnd: endDate.toISOString()
+      };
+    } catch (error) {
+      throw new AppError(500, 'Failed to fetch revenue metrics', 'REVENUE_METRICS_FETCH_FAILED');
+    }
   }
 
   async getCustomerMetrics(): Promise<CustomerMetrics> {
-    const customersSnapshot = await this.usersRef
-      .where('role', '==', 'customer')
-      .get();
+    try {
+      const { data: customers, error: customersError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'customer');
 
-    const customers = customersSnapshot.docs.map(doc => doc.data() as Customer);
-    
-    const activeCustomers = customers.filter(customer => 
-      customer.lastOrderDate && 
-      new Date(customer.lastOrderDate) >= new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-    );
+      if (customersError) {
+        throw new AppError(500, 'Failed to fetch customers', 'CUSTOMER_METRICS_FETCH_FAILED');
+      }
 
-    const topCustomers = customers
-      .sort((a, b) => b.totalSpent - a.totalSpent)
-      .slice(0, 10)
-      .map(customer => ({
-        userId: customer.id,
-        totalSpent: customer.totalSpent,
-        orderCount: customer.orderCount,
-        loyaltyTier: customer.loyaltyTier,
-        lastOrderDate: customer.lastOrderDate
-      }));
+      const activeCustomers = customers.filter((customer: { lastOrderDate: string; }) => 
+        customer.lastOrderDate && 
+        new Date(customer.lastOrderDate) >= new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+      );
 
-    return {
-      totalCustomers: customers.length,
-      activeCustomers: activeCustomers.length,
-      customerRetentionRate: (activeCustomers.length / customers.length) * 100,
-      topCustomers,
-      customersByTier: this.groupCustomersByTier(customers)
-    };
+      const topCustomers = customers
+        .sort((a: { totalSpent: number; }, b: { totalSpent: number; }) => b.totalSpent - a.totalSpent)
+        .slice(0, 10)
+        .map((customer: { id: string; totalSpent: number; orderCount: number; loyaltyTier: string; lastOrderDate: string; }) => ({
+          userId: customer.id,
+          totalSpent: customer.totalSpent,
+          orderCount: customer.orderCount,
+          loyaltyTier: customer.loyaltyTier,
+          lastOrderDate: customer.lastOrderDate
+        }));
+
+      return {
+        totalCustomers: customers.length,
+        activeCustomers: activeCustomers.length,
+        customerRetentionRate: (activeCustomers.length / customers.length) * 100,
+        topCustomers,
+        customersByTier: this.groupCustomersByTier(customers)
+      };
+    } catch (error) {
+      throw new AppError(500, 'Failed to fetch customer metrics', 'CUSTOMER_METRICS_FETCH_FAILED');
+    }
   }
 
   async getAffiliateMetrics(startDate: Date, endDate: Date): Promise<AffiliateMetrics> {
-    const affiliatesSnapshot = await this.affiliatesRef.get();
-    const affiliates = affiliatesSnapshot.docs.map(doc => doc.data() as Affiliate);
+    try {
+      const { data: affiliates, error: affiliatesError } = await supabase
+        .from('affiliates')
+        .select('*');
 
-    const topAffiliates = await this.calculateTopAffiliates(affiliates, startDate, endDate);
+      if (affiliatesError) {
+        throw new AppError(500, 'Failed to fetch affiliates', 'AFFILIATE_METRICS_FETCH_FAILED');
+      }
 
-    return {
-      totalAffiliates: affiliates.length,
-      activeAffiliates: affiliates.filter(a => a.activeCustomers > 0).length,
-      totalCommissions: affiliates.reduce((sum, a) => sum + a.totalCommission, 0),
-      topAffiliates,
-      commissionsPerPeriod: await this.calculateCommissionsPerPeriod(startDate, endDate)
-    };
+      const topAffiliates = await this.calculateTopAffiliates(affiliates, startDate, endDate);
+
+      return {
+        totalAffiliates: affiliates.length,
+        activeAffiliates: affiliates.filter((a: { activeCustomers: number; }) => a.activeCustomers > 0).length,
+        totalCommissions: affiliates.reduce((sum: any, a: { totalCommission: any; }) => sum + a.totalCommission, 0),
+        topAffiliates,
+        commissionsPerPeriod: await this.calculateCommissionsPerPeriod(startDate, endDate)
+      };
+    } catch (error) {
+      throw new AppError(500, 'Failed to fetch affiliate metrics', 'AFFILIATE_METRICS_FETCH_FAILED');
+    }
   }
 
-  private async calculateTopAffiliates(affiliates: any[], startDate: Date, endDate: Date) {
+  private async calculateTopAffiliates(affiliates: { id: string; referralCount: number; totalCommission: number; activeCustomers: number; performance: number; }[], startDate: Date, endDate: Date): Promise<AffiliateSummary[]> {
     // Implementation for calculating top affiliate performance
     return [];
   }
 
-  private async calculateCommissionsPerPeriod(startDate: Date, endDate: Date) {
+  private async calculateCommissionsPerPeriod(startDate: Date, endDate: Date): Promise<Record<string, number>> {
     // Implementation for calculating commissions per period
     return {};
   }
 
-  private groupCustomersByTier(customers: any[]) {
+  private groupCustomersByTier(customers: { loyaltyTier: string; }[]): Record<string, number> {
     return customers.reduce((acc, customer) => {
       acc[customer.loyaltyTier] = (acc[customer.loyaltyTier] || 0) + 1;
       return acc;
-    }, {});
+    }, {} as Record<string, number>);
   }
 }
+
+export const analyticsService = new AnalyticsService();

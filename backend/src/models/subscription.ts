@@ -1,9 +1,9 @@
 import supabase from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
-import { SubscriptionType } from './subscriptionPlan';
-import { SubscriptionPause } from './subscriptionPause';
-import { SubscriptionBilling } from './subscriptionBilling';
-import { SubscriptionUsageSnapshot } from './subscriptionUsage';
+import { SubscriptionType } from './subscription/subscriptionPlan';
+import { SubscriptionPause } from './subscription/subscriptionPause';
+import { SubscriptionBilling } from './subscription/subscriptionBilling';
+import { SubscriptionUsageSnapshot } from './subscription/subscriptionUsage';
 
 export enum SubscriptionStatus {
   ACTIVE = 'active',

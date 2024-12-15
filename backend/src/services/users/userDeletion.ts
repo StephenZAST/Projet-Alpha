@@ -1,30 +1,22 @@
-import { db, auth, CollectionReference } from '../../config/firebase';
+import supabase from '../../config/supabase';
 import { User, UserStatus } from '../../models/user';
 import { AppError, errorCodes } from '../../utils/errors';
 
-const USERS_COLLECTION = 'users';
+const usersTable = 'users';
 
-export async function deleteUser(uid: string): Promise<void> {
+export async function deleteUser(id: string): Promise<void> {
   try {
-    const userRef = db.collection(USERS_COLLECTION)
-      .where('uid', '==', uid)
-      .limit(1);
-    const userSnapshot = await userRef.get();
+    const userRef = supabase.from(usersTable).eq('id', id);
+    const { data: user, error: userError } = await userRef.select('*').single();
 
-    if (userSnapshot.empty) {
-      throw new Error('User not found');
+    if (userError) {
+      throw new AppError(404, 'User not found', errorCodes.NOT_FOUND);
     }
 
-    await userSnapshot.docs[0].ref.update({
-      status: UserStatus.DELETED,
-      updatedAt: new Date()
-    });
+    const { error } = await userRef.update({ status: UserStatus.DELETED, updatedAt: new Date().toISOString() });
 
-    // Delete from Firebase Auth
-    try {
-      await auth.deleteUser(uid);
-    } catch (error) {
-      console.error('Error deleting Firebase Auth user:', error);
+    if (error) {
+      throw new AppError(500, 'Failed to delete user', 'INTERNAL_SERVER_ERROR');
     }
   } catch (error) {
     console.error('Error deleting user:', error);

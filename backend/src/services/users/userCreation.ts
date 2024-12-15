@@ -1,4 +1,4 @@
-import { db, auth, CollectionReference, Timestamp } from '../../config/firebase';
+import supabase from '../../config/supabase';
 import { User, UserRole, UserStatus, AccountCreationMethod, CreateUserInput, UserProfile, UserAddress, UserPreferences } from '../../models/user';
 import { hash } from 'bcrypt';
 import { generateToken } from '../../utils/tokens';
@@ -7,35 +7,24 @@ import { AppError, errorCodes } from '../../utils/errors';
 import { getUserByEmail } from '../users/userRetrieval';
 
 const SALT_ROUNDS = 10;
-const USERS_COLLECTION = 'users';
+const usersTable = 'users';
 
 export async function createUser(userData: CreateUserInput): Promise<User> {
   try {
-    const userRef = db.collection(USERS_COLLECTION).doc();
-    const now = Timestamp.now();
+    const now = new Date();
 
-    // Create Firebase Auth user if not exists
-    let firebaseUser;
-    if (!userData.uid) {
-      firebaseUser = await auth.createUser({
-        email: userData.profile.email,
-        password: userData.password,
-        displayName: `${userData.profile.firstName} ${userData.profile.lastName}`,
-        phoneNumber: userData.profile.phoneNumber
-      });
-    }
-
+    // Hash the password
     const hashedPassword = await hash(userData.password, SALT_ROUNDS);
 
     const newUser: User = {
-      id: userRef.id,
-      uid: userData.uid || firebaseUser?.uid || userRef.id,
+      id: '',
+      uid: userData.uid || '',
       profile: {
         ...userData.profile,
         address: null,
         defaultInstructions: '',
         defaultItems: [],
-        lastUpdated: now,
+        lastUpdated: now.toISOString(),
         preferences: {
           notifications: false,
           defaultItems: [],
@@ -49,8 +38,8 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
       loyaltyPoints: 0,
       defaultItems: [],
       defaultInstructions: '',
-      createdAt: now,
-      updatedAt: now,
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
       phoneNumber: null,
       displayName: null,
       email: null,
@@ -58,13 +47,17 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
       firstName: null
     };
 
-    await userRef.set(newUser);
+    const { data, error } = await supabase.from(usersTable).insert([newUser]).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to create user', 'INTERNAL_SERVER_ERROR');
+    }
 
     // Send verification email
     const verificationToken = await generateToken();
-    await sendVerificationEmail(newUser.profile.email, verificationToken);
+    await sendVerificationEmail(data.profile.email, verificationToken);
 
-    return newUser;
+    return data;
   } catch (error) {
     console.error('Error creating user:', error);
     throw error;

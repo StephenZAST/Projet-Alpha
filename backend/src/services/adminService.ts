@@ -3,10 +3,12 @@ import { IAdmin, AdminRole } from '../models/admin';
 import { AppError, errorCodes } from '../utils/errors';
 import { hashPassword, comparePassword } from '../utils/auth';
 
+const adminsTable = 'admins';
+
 export class AdminService {
   static async createAdmin(adminData: IAdmin): Promise<IAdmin> {
     if (adminData.isMasterAdmin) {
-      const { data: masterAdmins, error: masterError } = await supabase.from('admins').select('*').eq('isMasterAdmin', true);
+      const { data: masterAdmins, error: masterError } = await supabase.from(adminsTable).select('*').eq('isMasterAdmin', true);
 
       if (masterError) {
         throw new AppError(500, 'Failed to check for existing master admin', 'INTERNAL_SERVER_ERROR');
@@ -18,12 +20,12 @@ export class AdminService {
     }
 
     const hashedPassword = await hashPassword(adminData.password);
-    const { data, error } = await supabase.from('admins').insert([
+    const { data, error } = await supabase.from(adminsTable).insert([
       {
         ...adminData,
         password: hashedPassword,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
     ]).select().single();
 
@@ -39,7 +41,7 @@ export class AdminService {
   }
 
   static async getAdmin(email: string): Promise<IAdmin | null> {
-    const { data, error } = await supabase.from('admins').select('*').eq('email', email).single();
+    const { data, error } = await supabase.from(adminsTable).select('*').eq('email', email).single();
 
     if (error) {
       throw new AppError(500, 'Failed to fetch admin', 'INTERNAL_SERVER_ERROR');
@@ -63,7 +65,7 @@ export class AdminService {
       adminData.password = await hashPassword(adminData.password);
     }
 
-    const { data, error } = await supabase.from('admins').update(adminData).eq('id', id).select().single();
+    const { data, error } = await supabase.from(adminsTable).update(adminData).eq('id', id).select().single();
 
     if (error) {
       throw new AppError(500, 'Failed to update admin', 'INTERNAL_SERVER_ERROR');
@@ -83,7 +85,7 @@ export class AdminService {
       throw new AppError(400, 'Cannot delete master admin', errorCodes.MASTER_ADMIN_DELETION);
     }
 
-    const { error } = await supabase.from('admins').delete().eq('id', id);
+    const { error } = await supabase.from(adminsTable).delete().eq('id', id);
 
     if (error) {
       throw new AppError(500, 'Failed to delete admin', 'INTERNAL_SERVER_ERROR');
@@ -91,7 +93,7 @@ export class AdminService {
   }
 
   static async getAdminById(id: string): Promise<IAdmin | null> {
-    const { data, error } = await supabase.from('admins').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from(adminsTable).select('*').eq('id', id).single();
 
     if (error) {
       throw new AppError(500, 'Failed to fetch admin', 'INTERNAL_SERVER_ERROR');
@@ -117,7 +119,7 @@ export class AdminService {
   }
 
   static async getAllAdmins(): Promise<IAdmin[]> {
-    const { data, error } = await supabase.from('admins').select('*');
+    const { data, error } = await supabase.from(adminsTable).select('*');
 
     if (error) {
       throw new AppError(500, 'Failed to fetch all admins', 'INTERNAL_SERVER_ERROR');
@@ -137,7 +139,7 @@ export class AdminService {
       throw new AppError(404, 'Admin not found', errorCodes.ADMIN_NOT_FOUND);
     }
 
-    const { data, error } = await supabase.from('admins').update({ isActive }).eq('id', id).select().single();
+    const { data, error } = await supabase.from(adminsTable).update({ isActive }).eq('id', id).select().single();
 
     if (error) {
       throw new AppError(500, 'Failed to toggle admin status', 'INTERNAL_SERVER_ERROR');
@@ -151,7 +153,7 @@ export class AdminService {
       throw new AppError(400, 'Admin must be a master admin', 'INVALID_MASTER_ADMIN_DATA');
     }
 
-    const { data: masterAdmins, error: masterError } = await supabase.from('admins').select('*').eq('isMasterAdmin', true);
+    const { data: masterAdmins, error: masterError } = await supabase.from(adminsTable).select('*').eq('isMasterAdmin', true);
 
     if (masterError) {
       throw new AppError(500, 'Failed to check for existing master admin', 'INTERNAL_SERVER_ERROR');
@@ -162,12 +164,12 @@ export class AdminService {
     }
 
     const hashedPassword = await hashPassword(adminData.password);
-    const { data, error } = await supabase.from('admins').insert([
+    const { data, error } = await supabase.from(adminsTable).insert([
       {
         ...adminData,
         password: hashedPassword,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       }
     ]).select().single();
 

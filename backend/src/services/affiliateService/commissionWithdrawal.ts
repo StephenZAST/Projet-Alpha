@@ -1,170 +1,93 @@
-import { db, Timestamp } from '../../config/firebase';
-import { Affiliate, CommissionWithdrawal, PayoutStatus } from '../../models/affiliate';
+import supabase from '../../config/supabase';
+import { CommissionWithdrawal, PayoutStatus, Affiliate } from '../../models/affiliate';
 import { AppError, errorCodes } from '../../utils/errors';
-import { PaymentMethod } from '../../models/order';
-import { notificationService, NotificationType, NotificationStatus } from '../notificationService';
 
-const affiliatesRef = db.collection('affiliates');
-const withdrawalsRef = db.collection('commission-withdrawals');
+const commissionWithdrawalsTable = 'commissionWithdrawals';
+const affiliatesTable = 'affiliates';
 
 export async function requestCommissionWithdrawal(
     affiliateId: string,
     amount: number,
-    paymentMethod: PaymentMethod
+    paymentMethod: string,
+    paymentDetails: CommissionWithdrawal['paymentDetails']
 ): Promise<CommissionWithdrawal> {
     try {
-        const affiliateRef = affiliatesRef.doc(affiliateId);
-        const affiliate = await affiliateRef.get();
-
-        if (!affiliate.exists) {
-            throw new AppError(404, 'Affiliate not found', errorCodes.AFFILIATE_NOT_FOUND);
-        }
-
-        const affiliateData = affiliate.data() as Affiliate;
-
-        if (affiliateData.availableBalance < amount) {
-            throw new AppError(400, 'Insufficient balance', errorCodes.INSUFFICIENT_BALANCE);
-        }
-
-        if (amount < 1000) {
-            throw new AppError(400, 'Minimum withdrawal amount is 1000 FCFA', errorCodes.MINIMUM_WITHDRAWAL_AMOUNT);
-        }
-
         const withdrawal: Omit<CommissionWithdrawal, 'id'> = {
             affiliateId,
             amount,
             paymentMethod,
-            paymentDetails: {
-                mobileMoneyNumber: paymentMethod === PaymentMethod.MOBILE_MONEY
-                    ? affiliateData.paymentInfo.mobileMoneyNumber
-                    : undefined,
-                bankInfo: paymentMethod === PaymentMethod.BANK_TRANSFER
-                    ? affiliateData.paymentInfo.bankInfo
-                    : undefined
-            },
+            paymentDetails,
             status: PayoutStatus.PENDING,
-            requestedAt: new Date(),
+            requestedAt: new Date().toISOString(),
             processedAt: null,
             processedBy: null,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         };
 
-        const docRef = await withdrawalsRef.add(withdrawal);
-        return { ...withdrawal, id: docRef.id } as CommissionWithdrawal;
+        const { data, error } = await supabase.from(commissionWithdrawalsTable).insert([withdrawal]).select().single();
+
+        if (error) {
+            throw new AppError(500, 'Failed to request commission withdrawal', 'COMMISSION_WITHDRAWAL_REQUEST_FAILED');
+        }
+
+        return data as CommissionWithdrawal;
     } catch (error) {
         if (error instanceof AppError) throw error;
-        throw new AppError(500, 'Failed to create withdrawal request', errorCodes.WITHDRAWAL_REQUEST_NOT_FOUND);
+        throw new AppError(500, 'Failed to request commission withdrawal', 'COMMISSION_WITHDRAWAL_REQUEST_FAILED');
     }
 }
 
 export async function getCommissionWithdrawals(): Promise<CommissionWithdrawal[]> {
     try {
-        const snapshot = await withdrawalsRef.get();
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as CommissionWithdrawal[];
+        const { data, error } = await supabase.from(commissionWithdrawalsTable).select('*').order('requestedAt', { ascending: false });
+
+        if (error) {
+            throw new AppError(500, 'Failed to fetch commission withdrawals', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+        }
+
+        return data as CommissionWithdrawal[];
     } catch (error) {
-        throw new AppError(500, 'Failed to get commission withdrawals', errorCodes.WITHDRAWAL_HISTORY_FETCH_FAILED);
+        throw new AppError(500, 'Failed to fetch commission withdrawals', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
     }
 }
 
 export async function updateCommissionWithdrawalStatus(withdrawalId: string, status: PayoutStatus): Promise<CommissionWithdrawal> {
     try {
-        const withdrawalRef = withdrawalsRef.doc(withdrawalId);
-        const withdrawal = await withdrawalRef.get();
+        const { data: withdrawal, error: withdrawalError } = await supabase
+            .from(commissionWithdrawalsTable)
+            .select('*')
+            .eq('id', withdrawalId)
+            .single();
 
-        if (!withdrawal.exists) {
-            throw new AppError(404, 'Withdrawal request not found', errorCodes.WITHDRAWAL_REQUEST_NOT_FOUND);
+        if (withdrawalError) {
+            throw new AppError(404, 'Commission withdrawal not found', 'COMMISSION_WITHDRAWAL_NOT_FOUND');
         }
 
-        await withdrawalRef.update({
-            status,
-            updatedAt: Timestamp.now()
-        });
+        const { error } = await supabase
+            .from(commissionWithdrawalsTable)
+            .update({
+                status,
+                processedAt: new Date().toISOString(),
+                processedBy: 'admin', // Placeholder for admin ID
+                updatedAt: new Date().toISOString()
+            })
+            .eq('id', withdrawalId);
+
+        if (error) {
+            throw new AppError(500, 'Failed to update commission withdrawal status', 'COMMISSION_WITHDRAWAL_UPDATE_FAILED');
+        }
 
         return {
-            id: withdrawalId,
-            ...withdrawal.data(),
-            status
+            ...withdrawal,
+            status,
+            processedAt: new Date().toISOString(),
+            processedBy: 'admin', // Placeholder for admin ID
+            updatedAt: new Date().toISOString()
         } as CommissionWithdrawal;
     } catch (error) {
         if (error instanceof AppError) throw error;
-        throw new AppError(500, 'Failed to update commission withdrawal status', errorCodes.WITHDRAWAL_PROCESSING_FAILED);
-    }
-}
-
-export async function processWithdrawal(
-    withdrawalId: string,
-    adminId: string,
-    status: PayoutStatus,
-    notes?: string
-): Promise<void> {
-    try {
-        const withdrawalRef = withdrawalsRef.doc(withdrawalId);
-        const withdrawal = await withdrawalRef.get();
-
-        if (!withdrawal.exists) {
-            throw new AppError(404, 'Withdrawal request not found', errorCodes.WITHDRAWAL_REQUEST_NOT_FOUND);
-        }
-
-        const withdrawalData = withdrawal.data() as CommissionWithdrawal;
-        const affiliateRef = affiliatesRef.doc(withdrawalData.affiliateId);
-
-        if (status === PayoutStatus.COMPLETED) {
-            await db.runTransaction(async (transaction) => {
-                const affiliate = await transaction.get(affiliateRef);
-                const currentBalance = affiliate.data()?.availableBalance || 0;
-
-                if (currentBalance < withdrawalData.amount) {
-                    throw new AppError(400, 'Insufficient balance', errorCodes.INSUFFICIENT_BALANCE);
-                }
-
-                // Update affiliate balance
-                transaction.update(affiliateRef, {
-                    availableBalance: currentBalance - withdrawalData.amount,
-                    updatedAt: Timestamp.now()
-                });
-
-                // Mark withdrawal as completed
-                transaction.update(withdrawalRef, {
-                    status,
-                    processedBy: adminId,
-                    processedAt: Timestamp.now(),
-                    notes
-                });
-            });
-
-            // Notify affiliate
-            await notificationService.createNotification({
-                userId: withdrawalData.affiliateId,
-                title: 'Withdrawal Completed',
-                message: `Your withdrawal request for ${withdrawalData.amount} FCFA has been completed.`,
-                type: NotificationType.PAYMENT_STATUS,
-                status: NotificationStatus.UNREAD
-            });
-        } else if (status === PayoutStatus.FAILED) {
-            // Mark withdrawal as rejected
-            await withdrawalRef.update({
-                status,
-                processedBy: adminId,
-                processedAt: Timestamp.now(),
-                notes
-            });
-
-            // Notify affiliate
-            await notificationService.createNotification({
-                userId: withdrawalData.affiliateId,
-                title: 'Withdrawal Rejected',
-                message: `Your withdrawal request for ${withdrawalData.amount} FCFA has been rejected. Reason: ${notes}`,
-                type: NotificationType.PAYMENT_STATUS,
-                status: NotificationStatus.UNREAD
-            });
-        }
-    } catch (error) {
-        if (error instanceof AppError) throw error;
-        throw new AppError(500, 'Failed to process withdrawal', errorCodes.WITHDRAWAL_PROCESSING_FAILED);
+        throw new AppError(500, 'Failed to update commission withdrawal status', 'COMMISSION_WITHDRAWAL_UPDATE_FAILED');
     }
 }
 
@@ -182,47 +105,40 @@ export async function getWithdrawalHistory(
     totalAmount: number;
 }> {
     try {
-        let query = withdrawalsRef
-            .where('affiliateId', '==', affiliateId)
-            .orderBy('requestedAt', 'desc');
+        let query = supabase.from(commissionWithdrawalsTable).select('*').eq('affiliateId', affiliateId).order('requestedAt', { ascending: false });
 
-        // Apply date filters if provided
         if (options.startDate) {
-            query = query.where('requestedAt', '>=', Timestamp.fromDate(options.startDate));
+            query = query.gte('requestedAt', options.startDate.toISOString());
         }
+
         if (options.endDate) {
-            query = query.where('requestedAt', '<=', Timestamp.fromDate(options.endDate));
+            query = query.lte('requestedAt', options.endDate.toISOString());
         }
 
-        // Get total count
-        const totalSnapshot = await query.get();
-        const total = totalSnapshot.size;
-
-        // Apply pagination
         if (options.limit) {
             query = query.limit(options.limit);
         }
+
         if (options.offset) {
-            query = query.offset(options.offset);
+            query = query.range(options.offset, options.offset + (options.limit || 50) - 1);
         }
 
-        const snapshot = await query.get();
+        const { data: withdrawals, error: withdrawalsError } = await query;
 
-        const withdrawals = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as CommissionWithdrawal[];
+        if (withdrawalsError) {
+            throw new AppError(500, 'Failed to fetch withdrawal history', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+        }
 
-        const totalAmount = withdrawals.reduce((sum, w) => sum + w.amount, 0);
+        const total = withdrawals.length;
+        const totalAmount = withdrawals.reduce((sum: any, withdrawal: { amount: any; }) => sum + withdrawal.amount, 0);
 
         return {
-            withdrawals,
+            withdrawals: withdrawals as CommissionWithdrawal[],
             total,
             totalAmount
         };
     } catch (error) {
-        if (error instanceof AppError) throw error;
-        throw new AppError(500, 'Failed to fetch withdrawal history', errorCodes.WITHDRAWAL_HISTORY_FETCH_FAILED);
+        throw new AppError(500, 'Failed to fetch withdrawal history', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
     }
 }
 
@@ -237,51 +153,85 @@ export async function getPendingWithdrawals(
     totalAmount: number;
 }> {
     try {
-        let query = withdrawalsRef
-            .where('status', '==', 'PENDING')
-            .orderBy('requestedAt', 'desc');
+        let query = supabase.from(commissionWithdrawalsTable).select('*').eq('status', PayoutStatus.PENDING).order('requestedAt', { ascending: false });
 
-        // Get total count
-        const totalSnapshot = await query.get();
-        const total = totalSnapshot.size;
-
-        // Apply pagination
         if (options.limit) {
             query = query.limit(options.limit);
         }
+
         if (options.offset) {
-            query = query.offset(options.offset);
+            query = query.range(options.offset, options.offset + (options.limit || 50) - 1);
         }
 
-        const snapshot = await query.get();
+        const { data: withdrawals, error: withdrawalsError } = await query;
 
-        // Get withdrawals with affiliate info
-        const withdrawalsPromises = snapshot.docs.map(async doc => {
-            const withdrawal = { id: doc.id, ...doc.data() } as CommissionWithdrawal;
-            const affiliateDoc = await affiliatesRef.doc(withdrawal.affiliateId).get();
-            const affiliate = affiliateDoc.data() as Affiliate;
+        if (withdrawalsError) {
+            throw new AppError(500, 'Failed to fetch pending withdrawals', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+        }
 
-            return {
-                ...withdrawal,
-                affiliate: {
-                    firstName: affiliate.firstName,
-                    lastName: affiliate.lastName,
-                    email: affiliate.email,
-                    phoneNumber: affiliate.phoneNumber
-                }
-            };
-        });
+        const affiliateIds = withdrawals.map((withdrawal: { affiliateId: any; }) => withdrawal.affiliateId);
+        const { data: affiliates, error: affiliatesError } = await supabase
+            .from(affiliatesTable)
+            .select('id, firstName, lastName, email, phoneNumber')
+            .in('id', affiliateIds);
 
-        const withdrawals = await Promise.all(withdrawalsPromises);
-        const totalAmount = withdrawals.reduce((sum, w) => sum + w.amount, 0);
+        if (affiliatesError) {
+            throw new AppError(500, 'Failed to fetch affiliates', 'AFFILIATE_FETCH_FAILED');
+        }
+
+        const affiliateMap = new Map(affiliates.map((affiliate: { id: any; }) => [affiliate.id, affiliate]));
+
+        const withdrawalsWithAffiliate = withdrawals.map((withdrawal: { affiliateId: unknown; }) => ({
+            ...withdrawal,
+            affiliate: affiliateMap.get(withdrawal.affiliateId) as Pick<Affiliate, 'firstName' | 'lastName' | 'email' | 'phoneNumber'>
+        }));
+
+        const total = withdrawals.length;
+        const totalAmount = withdrawals.reduce((sum: any, withdrawal: { amount: any; }) => sum + withdrawal.amount, 0);
 
         return {
-            withdrawals,
+            withdrawals: withdrawalsWithAffiliate as (CommissionWithdrawal & { affiliate: Pick<Affiliate, 'firstName' | 'lastName' | 'email' | 'phoneNumber'> })[],
             total,
             totalAmount
         };
     } catch (error) {
+        throw new AppError(500, 'Failed to fetch pending withdrawals', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+    }
+}
+
+export async function processWithdrawal(
+    withdrawalId: string,
+    adminId: string,
+    status: PayoutStatus,
+    notes?: string
+): Promise<void> {
+    try {
+        const { data: withdrawal, error: withdrawalError } = await supabase
+            .from(commissionWithdrawalsTable)
+            .select('*')
+            .eq('id', withdrawalId)
+            .single();
+
+        if (withdrawalError) {
+            throw new AppError(404, 'Commission withdrawal not found', 'COMMISSION_WITHDRAWAL_NOT_FOUND');
+        }
+
+        const { error } = await supabase
+            .from(commissionWithdrawalsTable)
+            .update({
+                status,
+                processedAt: new Date().toISOString(),
+                processedBy: adminId,
+                notes,
+                updatedAt: new Date().toISOString()
+            })
+            .eq('id', withdrawalId);
+
+        if (error) {
+            throw new AppError(500, 'Failed to process commission withdrawal', 'COMMISSION_WITHDRAWAL_UPDATE_FAILED');
+        }
+    } catch (error) {
         if (error instanceof AppError) throw error;
-        throw new AppError(500, 'Failed to fetch pending withdrawals', errorCodes.PENDING_WITHDRAWALS_FETCH_FAILED);
+        throw new AppError(500, 'Failed to process commission withdrawal', 'COMMISSION_WITHDRAWAL_UPDATE_FAILED');
     }
 }

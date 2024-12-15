@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config';
+import { UserRole } from '../models/user';
 
 export const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
   const { authorization } = req.headers;
@@ -23,3 +24,22 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
   (req as any).user = data.user;
   next();
 };
+
+export const requireAdminRolePath = (allowedRoles: UserRole[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as any).user;
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    if (!allowedRoles.includes(user.role)) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    next();
+  };
+};
+
+export const isAuthenticated = authenticateUser;
+export const auth = requireAdminRolePath;

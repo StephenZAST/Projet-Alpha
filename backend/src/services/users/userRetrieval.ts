@@ -1,21 +1,20 @@
-import { db, CollectionReference } from '../../config/firebase';
+import supabase from '../../config/supabase';
 import { User, UserProfile } from '../../models/user';
 import { AppError, errorCodes } from '../../utils/errors';
 
-const USERS_COLLECTION = 'users';
+const usersTable = 'users';
 
 export async function getUserProfile(userId: string): Promise<UserProfile> {
   try {
-    const userDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
+    const { data, error } = await supabase.from(usersTable).select('*').eq('id', userId).single();
 
-    if (!userDoc.exists) {
+    if (error) {
       throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
     }
 
-    const userData = userDoc.data() as User;
     return {
-      ...userData.profile,
-      lastUpdated: userData.updatedAt
+      ...data.profile,
+      lastUpdated: data.updatedAt
     };
   } catch (error) {
     if (error instanceof AppError) throw error;
@@ -24,40 +23,46 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
 }
 
 export async function getUserById(userId: string): Promise<User | null> {
-  const userDoc = await db.collection(USERS_COLLECTION).doc(userId).get();
+  const { data, error } = await supabase.from(usersTable).select('*').eq('id', userId).single();
 
-  if (!userDoc.exists) {
+  if (error) {
     return null;
   }
 
-  const userData = userDoc.data() as User;
   return {
-    ...userData
+    ...data
   };
 }
 
 export async function getUsers({ page = 1, limit = 10, search = '' }): Promise<{ users: User[], total: number, page: number, totalPages: number }> {
   try {
-    const totalDocs = await db.collection(USERS_COLLECTION).count().get();
-    const total = totalDocs.data().count;
-    const totalPages = Math.ceil(total / limit);
+    const { count, error: countError } = await supabase
+      .from(usersTable)
+      .select('*', { count: 'exact' });
 
-    let snapshot = db.collection(USERS_COLLECTION)
-      .orderBy('createdAt', 'desc')
-      .offset((page - 1) * limit)
-      .limit(limit);
-
-    if (search) {
-      snapshot = snapshot.where('profile.displayName', '>=', search)
-        .where('profile.displayName', '<=', search + '\uf8ff');
+    if (countError) {
+      throw new AppError(500, 'Failed to fetch user count', errorCodes.DATABASE_ERROR);
     }
 
-    const users = (await snapshot.get()).docs.map(doc => ({
-      ...(doc.data() as User)
-    }));
+    const total = count;
+    const totalPages = Math.ceil(total / limit);
+
+    let { data, error } = await supabase
+      .from(usersTable)
+      .select('*')
+      .order('createdAt', { ascending: false })
+      .range((page - 1) * limit, ((page - 1) * limit) + limit - 1);
+
+    if (search) {
+      data = data.filter((user: { profile: { displayName: string; }; }) => user.profile.displayName?.toLowerCase().includes(search.toLowerCase()));
+    }
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch users', errorCodes.DATABASE_ERROR);
+    }
 
     return {
-      users,
+      users: data,
       total,
       page,
       totalPages
@@ -68,17 +73,17 @@ export async function getUsers({ page = 1, limit = 10, search = '' }): Promise<{
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const userSnapshot = await db.collection(USERS_COLLECTION)
-    .where('profile.email', '==', email)
-    .limit(1)
-    .get();
+  const { data, error } = await supabase
+    .from(usersTable)
+    .select('*')
+    .eq('profile.email', email)
+    .single();
 
-  if (userSnapshot.empty) {
+  if (error) {
     return null;
   }
 
-  const userData = userSnapshot.docs[0].data() as User;
   return {
-    ...userData
+    ...data
   };
 }

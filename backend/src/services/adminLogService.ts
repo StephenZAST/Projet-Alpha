@@ -1,7 +1,10 @@
-import { Request } from 'express';
-import { AdminAction, IAdminLog, adminLogsRef } from '../models/adminLog';
+import supabase from '../config/supabase';
+import { AdminAction, IAdminLog } from '../models/adminLog';
 import { IAdmin } from '../models/admin';
-import { Query } from '@google-cloud/firestore';
+import { AppError, errorCodes } from '../utils/errors';
+import { Request } from 'express';
+
+const adminLogsTable = 'adminLogs';
 
 export class AdminLogService {
   static async logAction(
@@ -17,13 +20,27 @@ export class AdminLogService {
       details,
       targetAdminId: targetAdminId || '',
       ipAddress: req.ip || '', // Provide default empty string for ipAddress
-      userAgent: req.get('user-agent') || 'Unknown',
-      createdAt: new Date(),
+      userAgent: req.headers['user-agent'] || 'Unknown',
+      createdAt: new Date().toISOString(),
     };
 
-    const logRef = await adminLogsRef.add(newLog);
-    await logRef.set(newLog);
-    return newLog;
+    const { data, error } = await supabase.from(adminLogsTable).insert([newLog]).select().single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to log admin action', 'INTERNAL_SERVER_ERROR');
+    }
+
+    return data as IAdminLog;
+  }
+
+  static async getAdminLog(id: string): Promise<IAdminLog | null> {
+    const { data, error } = await supabase.from(adminLogsTable).select('*').eq('id', id).single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch admin log', 'INTERNAL_SERVER_ERROR');
+    }
+
+    return data as IAdminLog;
   }
 
   static async getAdminLogs(
@@ -34,23 +51,28 @@ export class AdminLogService {
     limit: number = 50,
     skip: number = 0
   ): Promise<IAdminLog[]> {
-    let query: Query = adminLogsRef.orderBy('createdAt', 'desc');
+    let query = supabase.from(adminLogsTable).select('*').order('createdAt', { ascending: false });
 
     if (adminId) {
-      query = query.where('adminId', '==', adminId);
+      query = query.eq('adminId', adminId);
     }
     if (action) {
-      query = query.where('action', '==', action);
+      query = query.eq('action', action);
     }
     if (startDate) {
-      query = query.where('createdAt', '>=', startDate);
+      query = query.gte('createdAt', startDate.toISOString());
     }
     if (endDate) {
-      query = query.where('createdAt', '<=', endDate);
+      query = query.lte('createdAt', endDate.toISOString());
     }
 
-    const snapshot = await query.limit(limit).offset(skip).get();
-    return snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => doc.data() as IAdminLog);
+    const { data, error } = await query.range(skip, skip + limit - 1);
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch admin logs', 'INTERNAL_SERVER_ERROR');
+    }
+
+    return data as IAdminLog[];
   }
 
   static async getLogCount(
@@ -59,47 +81,73 @@ export class AdminLogService {
     startDate?: Date,
     endDate?: Date
   ): Promise<number> {
-    let query: Query = adminLogsRef;
+    let query = supabase.from(adminLogsTable).select('*', { count: 'exact' });
 
     if (adminId) {
-      query = query.where('adminId', '==', adminId);
+      query = query.eq('adminId', adminId);
     }
     if (action) {
-      query = query.where('action', '==', action);
+      query = query.eq('action', action);
     }
     if (startDate) {
-      query = query.where('createdAt', '>=', startDate);
+      query = query.gte('createdAt', startDate.toISOString());
     }
     if (endDate) {
-      query = query.where('createdAt', '<=', endDate);
+      query = query.lte('createdAt', endDate.toISOString());
     }
 
-    const snapshot = await query.get();
-    return snapshot.size;
+    const { count, error } = await query;
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch log count', 'INTERNAL_SERVER_ERROR');
+    }
+
+    return count || 0;
   }
 
   static async getRecentActivityByAdmin(adminId: string, limit: number = 10): Promise<IAdminLog[]> {
-    const snapshot = await adminLogsRef
-      .where('adminId', '==', adminId)
-      .orderBy('createdAt', 'desc')
-      .limit(limit)
-      .get();
+    const { data, error } = await supabase
+      .from(adminLogsTable)
+      .select('*')
+      .eq('adminId', adminId)
+      .order('createdAt', { ascending: false })
+      .limit(limit);
 
-    return snapshot.docs.map((doc: FirebaseFirestore.QueryDocumentSnapshot) => {
-      const log = doc.data() as IAdminLog;
-      return log;
-    });
+    if (error) {
+      throw new AppError(500, 'Failed to fetch recent activity', 'INTERNAL_SERVER_ERROR');
+    }
+
+    return data as IAdminLog[];
   }
 
   static async getFailedLoginAttempts(adminId: string, timeWindow: number = 15): Promise<number> {
     const windowStart = new Date(Date.now() - timeWindow * 60 * 1000);
 
-    const snapshot = await adminLogsRef
-      .where('adminId', '==', adminId)
-      .where('action', '==', AdminAction.FAILED_LOGIN)
-      .where('createdAt', '>=', windowStart)
-      .get();
+    const { data, error } = await supabase
+      .from(adminLogsTable)
+      .select('*')
+      .eq('adminId', adminId)
+      .eq('action', AdminAction.FAILED_LOGIN)
+      .gte('createdAt', windowStart.toISOString());
 
-    return snapshot.size;
+    if (error) {
+      throw new AppError(500, 'Failed to fetch failed login attempts', 'INTERNAL_SERVER_ERROR');
+    }
+
+    return data ? data.length : 0;
+  }
+
+  static async deleteAdminLog(id: string): Promise<void> {
+    const adminLog = await this.getAdminLog(id);
+
+    if (!adminLog) {
+      throw new AppError(404, 'Admin log not found', errorCodes.NOT_FOUND);
+    }
+
+    const { error } = await supabase.from(adminLogsTable).delete().eq('id', id);
+
+    if (error) {
+      throw new AppError(500, 'Failed to delete admin log', 'INTERNAL_SERVER_ERROR');
+    }
   }
 }
