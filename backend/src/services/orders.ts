@@ -1,60 +1,50 @@
-import { Order, OrderStatus, OrderType, Location, OrderItem, MainService, PriceType, ItemType } from '../models/order';
+import { createClient } from '@supabase/supabase-js';
+import { Order, OrderStatus, OrderType, MainService, PriceType, PaymentMethod, OrderItem, OrderInput, GetOrdersOptions, OrderStatistics } from '../models/order';
 import { AppError, errorCodes } from '../utils/errors';
 import { getUserProfile } from './users';
 import { optimizeRoute, RouteStop } from '../utils/routeOptimization';
 import { validateOrderData } from '../validation/orders';
 import { checkDeliverySlotAvailability } from './delivery';
-import { Query, CollectionReference, Timestamp } from 'firebase-admin/firestore';
-import { Address, User } from '../models/user';
-import { db } from './firebase'; // Import db
-import { createOrder, createOneClickOrder } from './orders/orderCreation';
+import { createOrder as createOrderService, createOneClickOrder as createOneClickOrderService } from './orders/orderCreation';
 import { getOrdersByUser, getOrdersByZone, getOrderById, getAllOrders } from './orders/orderRetrieval';
 import { updateOrderStatus, updateOrder, cancelOrder } from './orders/orderUpdate';
 import { getDeliveryRoute } from './orders/deliveryRoute';
 import { getOrderStatistics } from './orders/orderStatistics';
 
-interface OrderStatistics {
-  total: number;
-  byStatus: Record<OrderStatus, number>;
-  averageDeliveryTime: number;
-  totalRevenue: number;
-  averageOrderValue: number;
-  period: {
-    start: Timestamp;
-    end: Timestamp;
-  };
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
 }
 
-interface GetOrdersOptions {
-  status?: OrderStatus;
-  limit?: number;
-  startAfter?: Timestamp;
-  page?: number;
-  userId?: string;
-  startDate?: Date;
-  endDate?: Date;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const ordersTable = 'orders';
 
 export class OrderService {
-  private ordersRef: CollectionReference;
+  private ordersTable = 'orders';
 
-  constructor() {
-    this.ordersRef = db.collection('orders');
-  }
-
+  /**
+   * Create a new order
+   */
   async createOrder(orderData: Partial<Order>): Promise<Order> {
-    return createOrder(orderData);
+    return createOrderService(orderData);
   }
 
+  /**
+   * Create a one-click order
+   */
   async createOneClickOrder(
     userId: string,
     zoneId: string
   ): Promise<Order> {
-    return createOneClickOrder(userId, zoneId);
+    return createOneClickOrderService({ userId, zoneId });
   }
 
+  /**
+   * Get orders by user
+   */
   async getOrdersByUser(
     userId: string,
     options: GetOrdersOptions = {}
@@ -62,6 +52,9 @@ export class OrderService {
     return getOrdersByUser(userId, options);
   }
 
+  /**
+   * Get orders by zone
+   */
   async getOrdersByZone(
     zoneId: string,
     status?: OrderStatus[]
@@ -69,6 +62,9 @@ export class OrderService {
     return getOrdersByZone(zoneId, status);
   }
 
+  /**
+   * Update order status
+   */
   async updateOrderStatus(
     orderId: string,
     status: OrderStatus,
@@ -77,33 +73,58 @@ export class OrderService {
     return updateOrderStatus(orderId, status, deliveryPersonId);
   }
 
+  /**
+   * Get delivery route
+   */
   async getDeliveryRoute(deliveryPersonId: string): Promise<RouteStop[]> {
     return getDeliveryRoute(deliveryPersonId);
   }
 
+  /**
+   * Get order statistics
+   */
   async getOrderStatistics(
     options: {
       zoneId?: string;
-      startDate?: Timestamp;
-      endDate?: Timestamp;
+      startDate?: string;
+      endDate?: string;
     } = {}
   ): Promise<OrderStatistics> {
     return getOrderStatistics(options);
   }
 
-  async getOrderById(orderId: string, userId: string): Promise<Order> {
-    return getOrderById(orderId, userId);
+  /**
+   * Get order by id
+   */
+  async getOrderById(orderId: string): Promise<Order | null> {
+    return getOrderById(orderId);
   }
 
-  async updateOrder(orderId: string, userId: string, updates: Partial<Order>): Promise<Order> {
-    return updateOrder(orderId, userId, updates);
+  /**
+   * Update order
+   */
+  async updateOrder(orderId: string, updates: Partial<Order>): Promise<Order> {
+    return updateOrder(orderId, updates);
   }
 
-  async cancelOrder(orderId: string, userId: string): Promise<Order> {
-    return cancelOrder(orderId, userId);
+  /**
+   * Cancel order
+   */
+  async cancelOrder(orderId: string): Promise<Order> {
+    return cancelOrder(orderId);
   }
 
+  /**
+   * Get all orders
+   */
   async getAllOrders(options: GetOrdersOptions = {}): Promise<Order[]> {
     return getAllOrders(options);
+  }
+
+  /**
+   * Delete order
+   */
+  async deleteOrder(orderId: string): Promise<void> {
+    return deleteOrder(orderId);
   }
 }

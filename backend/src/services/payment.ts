@@ -1,96 +1,63 @@
-import { db } from '../config/firebase';
-import { PaymentMethod, Payment, PaymentStatus, RefundReason, Currency, PaymentMethodType } from '../types/payment';
+import { createClient } from '@supabase/supabase-js';
+import { PaymentMethod, Payment, PaymentStatus, RefundReason, Currency, PaymentMethodType } from '../models/payment';
+import { AppError, errorCodes } from '../utils/errors';
+import { getPayment, createPayment, updatePayment, deletePayment } from './paymentService/paymentManagement';
+import { getPaymentMethods, addPaymentMethod, removePaymentMethod, setDefaultPaymentMethod } from './paymentService/paymentMethodManagement';
+import { getRefund, createRefund, updateRefund, deleteRefund } from './paymentService/refundManagement';
+
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const paymentMethodsTable = 'paymentMethods';
+const paymentsTable = 'payments';
+const refundsTable = 'refunds';
 
 export class PaymentService {
-  private paymentMethodsRef = db.collection('paymentMethods');
-  private paymentsRef = db.collection('payments');
-  private refundsRef = db.collection('refunds');
+  private paymentMethodsRef = supabase.from(paymentMethodsTable);
+  private paymentsRef = supabase.from(paymentsTable);
+  private refundsRef = supabase.from(refundsTable);
 
+  /**
+   * Get payment methods for a user
+   */
   async getPaymentMethods(userId: string): Promise<PaymentMethod[]> {
-    const snapshot = await this.paymentMethodsRef
-      .where('userId', '==', userId)
-      .get();
-
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    } as PaymentMethod));
+    return getPaymentMethods(userId);
   }
 
+  /**
+   * Add a new payment method
+   */
   async addPaymentMethod(userId: string, data: {
     type: PaymentMethodType;
     token: string;
     isDefault?: boolean;
   }): Promise<PaymentMethod> {
-    // Here you would typically interact with a payment processor (e.g., Stripe)
-    // to create a payment method and get back a token/ID
-
-    const paymentMethodData: Omit<PaymentMethod, 'id'> = {
-      userId,
-      type: data.type,
-      token: data.token,
-      isDefault: data.isDefault || false,
-      createdAt: new Date(),
-    };
-
-    const docRef = await this.paymentMethodsRef.add(paymentMethodData);
-    
-    if (data.isDefault) {
-      await this.updateOtherPaymentMethodsDefault(userId, docRef.id);
-    }
-
-    return {
-      id: docRef.id,
-      ...paymentMethodData,
-    };
-  }
-  private async updateOtherPaymentMethodsDefault(userId: string, excludeId: string) {
-    const batch = db.batch();
-    const snapshot = await this.paymentMethodsRef
-      .where('userId', '==', userId)
-      .where('isDefault', '==', true)
-      .get();
-
-    snapshot.docs.forEach(doc => {
-      if (doc.id !== excludeId) {
-        batch.update(doc.ref, { isDefault: false });
-      }
-    });
-
-    await batch.commit();
+    return addPaymentMethod(userId, data);
   }
 
+  /**
+   * Remove a payment method
+   */
   async removePaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
-    const docRef = this.paymentMethodsRef.doc(paymentMethodId);
-    const doc = await docRef.get();
-
-    if (!doc.exists) {
-      throw new Error('Payment method not found');
-    }
-
-    if (doc.data()?.userId !== userId) {
-      throw new Error('Unauthorized');
-    }
-
-    await docRef.delete();
+    return removePaymentMethod(userId, paymentMethodId);
   }
 
+  /**
+   * Set default payment method
+   */
   async setDefaultPaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
-    const docRef = this.paymentMethodsRef.doc(paymentMethodId);
-    const doc = await docRef.get();
-
-    if (!doc.exists) {
-      throw new Error('Payment method not found');
-    }
-
-    if (doc.data()?.userId !== userId) {
-      throw new Error('Unauthorized');
-    }
-
-    await this.updateOtherPaymentMethodsDefault(userId, paymentMethodId);
-    await docRef.update({ isDefault: true });
+    return setDefaultPaymentMethod(userId, paymentMethodId);
   }
 
+  /**
+   * Process a payment
+   */
   async processPayment(data: {
     userId: string;
     orderId: string;
@@ -99,9 +66,6 @@ export class PaymentService {
     paymentMethodId: string;
     description?: string;
   }): Promise<Payment> {
-    // Here you would typically interact with a payment processor (e.g., Stripe)
-    // to process the actual payment
-
     const paymentData: Omit<Payment, 'id'> = {
       userId: data.userId,
       orderId: data.orderId,
@@ -109,17 +73,16 @@ export class PaymentService {
       currency: data.currency,
       paymentMethodId: data.paymentMethodId,
       description: data.description,
-      status: 'SUCCEEDED',
-      createdAt: new Date(),
+      status: 'SUCCEEDED' as PaymentStatus,
+      createdAt: new Date().toISOString(),
     };
 
-    const docRef = await this.paymentsRef.add(paymentData);
-
-    return {
-      id: docRef.id,
-      ...paymentData,
-    };
+    return createPayment(paymentData);
   }
+
+  /**
+   * Get payment history
+   */
   async getPaymentHistory(userId: string, options: {
     page: number;
     limit: number;
@@ -133,40 +96,44 @@ export class PaymentService {
       limit: number;
     };
   }> {
-    let query = this.paymentsRef.where('userId', '==', userId);
+    try {
+      let query = this.paymentsRef.select('*').eq('userId', userId);
 
-    if (options.status) {
-      query = query.where('status', '==', options.status);
+      if (options.status) {
+        query = query.eq('status', options.status);
+      }
+
+      const startAt = (options.page - 1) * options.limit;
+
+      const [totalSnapshot, paymentsSnapshot] = await Promise.all([
+        this.paymentsRef.select().count().eq('userId', userId).single(),
+        query
+          .order('createdAt', { ascending: false })
+          .range(startAt, startAt + options.limit - 1)
+          .select()
+      ]);
+
+      const total = totalSnapshot.count;
+      const payments = paymentsSnapshot.data.map(doc => ({ id: doc.id, ...doc } as Payment));
+
+      return {
+        payments,
+        pagination: {
+          total,
+          pages: Math.ceil(total / options.limit),
+          current: options.page,
+          limit: options.limit,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+      throw error;
     }
-
-    const startAt = (options.page - 1) * options.limit;
-    
-    const [totalSnapshot, paymentsSnapshot] = await Promise.all([
-      query.count().get(),
-      query
-        .orderBy('createdAt', 'desc')
-        .offset(startAt)
-        .limit(options.limit)
-        .get(),
-    ]);
-
-    const total = totalSnapshot.data().count;
-    const payments = paymentsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    } as Payment));
-
-    return {
-      payments,
-      pagination: {
-        total,
-        pages: Math.ceil(total / options.limit),
-        current: options.page,
-        limit: options.limit,
-      },
-    };
   }
 
+  /**
+   * Process a refund
+   */
   async processRefund(data: {
     userId: string;
     paymentId: string;
@@ -177,38 +144,23 @@ export class PaymentService {
     status: PaymentStatus;
     amount: number;
   }> {
-    const paymentRef = this.paymentsRef.doc(data.paymentId);
-    const payment = await paymentRef.get();
-
-    if (!payment.exists) {
-      throw new Error('Payment not found');
-    }
-
-    if (payment.data()?.userId !== data.userId) {
-      throw new Error('Unauthorized');
-    }
-
-    // Here you would typically interact with a payment processor (e.g., Stripe)
-    // to process the actual refund
-
-    const refundData = {
+    const refundData: Omit<Refund, 'id'> = {
       userId: data.userId,
       paymentId: data.paymentId,
-      amount: data.amount || payment.data()?.amount,
-      reason: data.reason,
+      amount: data.amount || 0,
+      reason: data.reason || 'OTHER',
       status: 'SUCCEEDED' as PaymentStatus,
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
     };
 
-    const docRef = await this.refundsRef.add(refundData);
-
-    // Update original payment status
-    await paymentRef.update({ status: 'REFUNDED' });
+    const refund = await createRefund(refundData);
 
     return {
-      id: docRef.id,
-      status: refundData.status,
-      amount: refundData.amount,
+      id: refund.id,
+      status: refund.status,
+      amount: refund.amount,
     };
   }
 }
+
+export const paymentService = new PaymentService();

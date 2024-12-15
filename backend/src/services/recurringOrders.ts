@@ -1,174 +1,226 @@
-import { db } from '../config/firebase';
+import { createClient } from '@supabase/supabase-js';
 import { RecurringOrder, RecurringFrequency } from '../types/recurring';
 import { OrderService } from './orders';
 import { NotificationService } from './notifications';
 import { addDays, addWeeks, addMonths } from 'date-fns';
-import { Timestamp } from 'firebase-admin/firestore';
-import { OrderItem, ItemType, PriceType } from '../models/order'; // Import necessary types
+import { OrderItem, PriceType, OrderStatus, OrderType } from '../models/order'; // Import necessary types
+import { AppError, errorCodes } from '../utils/errors';
+import { NotificationType } from '../models/notification';
+
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const recurringOrdersTable = 'recurringOrders';
 
 export class RecurringOrderService {
-  private recurringOrdersRef = db.collection('recurringOrders');
   private orderService = new OrderService();
   private notificationService = new NotificationService();
 
+  /**
+   * Create a new recurring order
+   */
   async createRecurringOrder(userId: string, orderData: Partial<RecurringOrder>): Promise<RecurringOrder> {
-    const now = new Date();
+    try {
+      const now = new Date().toISOString();
 
-    const recurringOrder: RecurringOrder = {
-      id: '', // Will be set after creation
-      userId,
-      frequency: orderData.frequency || RecurringFrequency.ONCE,
-      baseOrder: orderData.baseOrder!,
-      nextScheduledDate: this.calculateNextDate(now, orderData.frequency || RecurringFrequency.ONCE),
-      isActive: true,
-      createdAt: now,
-      updatedAt: now
-    };
+      const recurringOrder: RecurringOrder = {
+        id: '', // Will be set after creation
+        userId,
+        frequency: orderData.frequency || RecurringFrequency.ONCE,
+        baseOrder: orderData.baseOrder!,
+        nextScheduledDate: this.calculateNextDate(new Date(), orderData.frequency || RecurringFrequency.ONCE).toISOString(),
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      };
 
-    // Create the recurring order
-    const docRef = await this.recurringOrdersRef.add(recurringOrder);
-    recurringOrder.id = docRef.id;
+      // Create the recurring order
+      const { data, error } = await supabase.from(recurringOrdersTable).insert([recurringOrder]).select().single();
 
-    // Create the first order immediately
-    const firstOrder = await this.orderService.createOrder({
-      ...recurringOrder.baseOrder,
-      userId,
-      recurringOrderId: recurringOrder.id,
-      scheduledPickupTime: Timestamp.fromDate(now),
-      scheduledDeliveryTime: Timestamp.fromDate(new Date(now.getTime() + 24 * 60 * 60 * 1000)), // Next day delivery
-      items: recurringOrder.baseOrder.items.map(item => ({
-        ...item,
-        productId: item.id || '', // Provide a default value if id is missing
-        productName: item.name || '', // Provide a default value if name is missing
-        itemType: ItemType.PRODUCT, // Set default item type
-        priceType: PriceType.FIXED // Set default price type
-      }))
-    });
-
-    // Update the recurring order with the first order reference
-    await docRef.update({
-      lastOrderId: firstOrder.id,
-      lastProcessedDate: now,
-      updatedAt: now
-    });
-
-    recurringOrder.lastOrderId = firstOrder.id;
-    recurringOrder.lastProcessedDate = now;
-
-    return recurringOrder;
-  }
-
-  async updateRecurringOrder(orderId: string, userId: string, updates: Partial<RecurringOrder>): Promise<RecurringOrder> {
-    const docRef = this.recurringOrdersRef.doc(orderId);
-    const doc = await docRef.get();
-
-    if (!doc.exists) {
-      throw new Error('Recurring order not found');
-    }
-
-    const recurringOrder = doc.data() as RecurringOrder;
-    if (recurringOrder.userId !== userId) {
-      throw new Error('Unauthorized');
-    }
-
-    const updatedOrder = {
-      ...recurringOrder,
-      ...updates,
-      updatedAt: new Date()
-    };
-
-    await docRef.update(updatedOrder);
-    return updatedOrder;
-  }
-
-  async cancelRecurringOrder(orderId: string, userId: string): Promise<void> {
-    const docRef = this.recurringOrdersRef.doc(orderId);
-    const doc = await docRef.get();
-
-    if (!doc.exists) {
-      throw new Error('Recurring order not found');
-    }
-
-    const recurringOrder = doc.data() as RecurringOrder;
-    if (recurringOrder.userId !== userId) {
-      throw new Error('Unauthorized');
-    }
-
-    await docRef.update({
-      isActive: false,
-      updatedAt: new Date()
-    });
-  }
-
-  async getRecurringOrders(userId: string): Promise<RecurringOrder[]> {
-    const snapshot = await this.recurringOrdersRef
-      .where('userId', '==', userId)
-      .where('isActive', '==', true)
-      .get();
-
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as RecurringOrder));
-  }
-
-  async processRecurringOrders(): Promise<void> {
-    const now = new Date();
-    const snapshot = await this.recurringOrdersRef
-      .where('isActive', '==', true)
-      .where('nextScheduledDate', '<=', now)
-      .get();
-
-    const batch = db.batch();
-
-    for (const doc of snapshot.docs) {
-      const recurringOrder = doc.data() as RecurringOrder;
-
-      try {
-        // Create new order from the base order
-        const newOrder = await this.orderService.createOrder({
-          ...recurringOrder.baseOrder,
-          userId: recurringOrder.userId,
-          recurringOrderId: recurringOrder.id,
-          scheduledPickupTime: Timestamp.fromDate(now),
-          scheduledDeliveryTime: Timestamp.fromDate(new Date(now.getTime() + 24 * 60 * 60 * 1000)), // Next day delivery
-          items: recurringOrder.baseOrder.items.map(item => ({
-            ...item,
-            productId: item.id || '', // Provide a default value if id is missing
-            productName: item.name || '', // Provide a default value if name is missing
-            itemType: ItemType.PRODUCT, // Set default item type
-            priceType: PriceType.FIXED // Set default price type
-          }))
-        });
-
-        // Calculate next scheduled date
-        const nextDate = this.calculateNextDate(now, recurringOrder.frequency);
-
-        // Update recurring order
-        batch.update(doc.ref, {
-          lastOrderId: newOrder.id,
-          lastProcessedDate: now,
-          nextScheduledDate: nextDate,
-          updatedAt: now
-        });
-
-        // Notify user
-        await this.notificationService.sendNotification(recurringOrder.userId, {
-          type: 'RECURRING_ORDER_CREATED',
-          title: 'Nouvelle commande récurrente créée',
-          message: `Votre commande récurrente a été automatiquement renouvelée. ID de commande: ${newOrder.id}`,
-          data: {
-            orderId: newOrder.id,
-            recurringOrderId: recurringOrder.id
-          }
-        });
-      } catch (error) {
-        console.error(`Failed to process recurring order ${recurringOrder.id}:`, error);
-        // Continue with other orders even if one fails
+      if (error) {
+        throw new AppError(500, 'Failed to create recurring order', errorCodes.DATABASE_ERROR);
       }
-    }
 
-    await batch.commit();
+      recurringOrder.id = data.id;
+
+      // Create the first order immediately
+      const firstOrder = await this.orderService.createOrder({
+        ...recurringOrder.baseOrder,
+        userId,
+        recurringOrderId: recurringOrder.id,
+        scheduledPickupTime: now,
+        scheduledDeliveryTime: new Date(now).toISOString(), // Next day delivery
+        items: recurringOrder.baseOrder.items.map(item => ({
+          ...item,
+          productId: item.id || '', // Provide a default value if id is missing
+          productName: item.name || '', // Provide a default value if name is missing
+          priceType: PriceType.FIXED // Set default price type
+        }))
+      });
+
+      // Update the recurring order with the first order reference
+      await supabase.from(recurringOrdersTable).update({
+        lastOrderId: firstOrder.id,
+        lastProcessedDate: now,
+        updatedAt: now
+      }).eq('id', recurringOrder.id);
+
+      recurringOrder.lastOrderId = firstOrder.id;
+      recurringOrder.lastProcessedDate = new Date(now);
+
+      return recurringOrder;
+    } catch (error) {
+      console.error('Error creating recurring order:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a recurring order
+   */
+  async updateRecurringOrder(orderId: string, userId: string, updates: Partial<RecurringOrder>): Promise<RecurringOrder> {
+    try {
+      const { data, error } = await supabase.from(recurringOrdersTable).select('*').eq('id', orderId).single();
+
+      if (error) {
+        throw new AppError(404, 'Recurring order not found', errorCodes.NOT_FOUND);
+      }
+
+      const recurringOrder = data as RecurringOrder;
+      if (recurringOrder.userId !== userId) {
+        throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
+      }
+
+      const updatedOrder = {
+        ...recurringOrder,
+        ...updates,
+        updatedAt: new Date().toISOString()
+      };
+
+      await supabase.from(recurringOrdersTable).update(updatedOrder).eq('id', orderId);
+
+      return updatedOrder;
+    } catch (error) {
+      console.error('Error updating recurring order:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel a recurring order
+   */
+  async cancelRecurringOrder(orderId: string, userId: string): Promise<void> {
+    try {
+      const { data, error } = await supabase.from(recurringOrdersTable).select('*').eq('id', orderId).single();
+
+      if (error) {
+        throw new AppError(404, 'Recurring order not found', errorCodes.NOT_FOUND);
+      }
+
+      const recurringOrder = data as RecurringOrder;
+      if (recurringOrder.userId !== userId) {
+        throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
+      }
+
+      await supabase.from(recurringOrdersTable).update({
+        isActive: false,
+        updatedAt: new Date().toISOString()
+      }).eq('id', orderId);
+    } catch (error) {
+      console.error('Error canceling recurring order:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get recurring orders for a user
+   */
+  async getRecurringOrders(userId: string): Promise<RecurringOrder[]> {
+    try {
+      const { data, error } = await supabase.from(recurringOrdersTable)
+        .select('*')
+        .eq('userId', userId)
+        .eq('isActive', true);
+
+      if (error) {
+        throw new AppError(500, 'Failed to fetch recurring orders', errorCodes.DATABASE_ERROR);
+      }
+
+      return data as RecurringOrder[];
+    } catch (error) {
+      console.error('Error fetching recurring orders:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process recurring orders
+   */
+  async processRecurringOrders(): Promise<void> {
+    try {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase.from(recurringOrdersTable)
+        .select('*')
+        .eq('isActive', true)
+        .lte('nextScheduledDate', now);
+
+      if (error) {
+        throw new AppError(500, 'Failed to fetch recurring orders', errorCodes.DATABASE_ERROR);
+      }
+
+      for (const recurringOrder of data as RecurringOrder[]) {
+        try {
+          // Create new order from the base order
+          const newOrder = await this.orderService.createOrder({
+            ...recurringOrder.baseOrder,
+            userId: recurringOrder.userId,
+            recurringOrderId: recurringOrder.id,
+            scheduledPickupTime: now,
+            scheduledDeliveryTime: new Date(now).toISOString(), // Next day delivery
+            items: recurringOrder.baseOrder.items.map(item => ({
+              ...item,
+              productId: item.id || '', // Provide a default value if id is missing
+              productName: item.name || '', // Provide a default value if name is missing
+              priceType: PriceType.FIXED // Set default price type
+            }))
+          });
+
+          // Calculate next scheduled date
+          const nextDate = this.calculateNextDate(new Date(now), recurringOrder.frequency);
+
+          // Update recurring order
+          await supabase.from(recurringOrdersTable).update({
+            lastOrderId: newOrder.id,
+            lastProcessedDate: now,
+            nextScheduledDate: nextDate.toISOString(),
+            updatedAt: now
+          }).eq('id', recurringOrder.id);
+
+          // Notify user
+          await this.notificationService.sendNotification(recurringOrder.userId, {
+            type: NotificationType.RECURRING_ORDER_CREATED,
+            title: 'Nouvelle commande récurrente créée',
+            message: `Votre commande récurrente a été automatiquement renouvelée. ID de commande: ${newOrder.id}`,
+            data: {
+              orderId: newOrder.id,
+              recurringOrderId: recurringOrder.id
+            }
+          });
+        } catch (error) {
+          console.error(`Failed to process recurring order ${recurringOrder.id}:`, error);
+          // Continue with other orders even if one fails
+        }
+      }
+    } catch (error) {
+      console.error('Error processing recurring orders:', error);
+      throw error;
+    }
   }
 
   private calculateNextDate(fromDate: Date, frequency: RecurringFrequency): Date {
@@ -185,3 +237,5 @@ export class RecurringOrderService {
     }
   }
 }
+
+export const recurringOrder

@@ -1,175 +1,226 @@
-import { db } from '../config/firebase';
+import { createClient } from '@supabase/supabase-js';
 import { Referral, ReferralReward, ReferralProgram } from '../models/referral';
 import { CodeGenerator } from '../utils/codeGenerator'; // Correct import
 import { AppError, errorCodes } from '../utils/errors'; // Import errorCodes
-import { Timestamp } from 'firebase-admin/firestore';
-import { notificationService } from './notificationService'; // Correct import
+import { notificationService } from './notifications'; // Correct import
+import { getReferral, createReferral, updateReferral, deleteReferral } from './referral/referralManagement';
+import { getReferralReward, createReferralReward, updateReferralReward, deleteReferralReward } from './referral/rewardManagement';
+import { getReferralProgram, createReferralProgram, updateReferralProgram, deleteReferralProgram } from './referral/programManagement';
+
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const referralsTable = 'referrals';
+const rewardsTable = 'referral-rewards';
+const programsTable = 'referral-programs';
 
 export class ReferralService {
-    private referralsRef = db.collection('referrals');
-    private rewardsRef = db.collection('referral-rewards');
-    private programsRef = db.collection('referral-programs');
+  private referralsRef = supabase.from(referralsTable);
+  private rewardsRef = supabase.from(rewardsTable);
+  private programsRef = supabase.from(programsTable);
 
-    constructor() {
+  constructor() {
+  }
+
+  /**
+   * Create a new referral
+   */
+  async createReferral(referrerId: string, referredEmail: string): Promise<Referral> {
+    try {
+      // Check if the email has already been referred
+      const existingReferral = await getReferral(referredEmail);
+
+      if (existingReferral) {
+        throw new AppError(400, 'This email has already been referred', errorCodes.REFERRAL_ALREADY_EXISTS);
+      }
+
+      const referralData: Omit<Referral, 'id'> = {
+        referrerId,
+        referredId: '', // Will be updated upon registration
+        referralCode: await CodeGenerator.generateAffiliateCode(), // Assuming generateAffiliateCode is the correct function
+        status: 'PENDING',
+        pointsEarned: 0,
+        ordersCount: 0,
+        firstOrderCompleted: false,
+        createdAt: new Date().toISOString()
+      };
+
+      const newReferral = await createReferral(referralData);
+
+      // Send invitation email
+      await notificationService.sendReferralInvitation(referredEmail, newReferral.referralCode);
+
+      return newReferral;
+    } catch (error) {
+      console.error('Error creating referral:', error);
+      throw error;
     }
+  }
 
-    async createReferral(referrerId: string, referredEmail: string): Promise<Referral> {
-        // Vérifier si l'email a déjà été parrainé
-        const existingReferral = await this.referralsRef
-            .where('referredEmail', '==', referredEmail)
-            .get();
+  /**
+   * Activate a referral
+   */
+  async activateReferral(referralCode: string, referredId: string): Promise<void> {
+    try {
+      const referral = await getReferral(referralCode);
 
-        if (!existingReferral.empty) {
-            throw new AppError(400, 'This email has already been referred', errorCodes.REFERRAL_ALREADY_EXISTS);
-        }
+      if (!referral || referral.status !== 'PENDING') {
+        throw new AppError(404, 'Invalid or expired referral code', errorCodes.INVALID_REFERRAL_CODE);
+      }
 
-        const referral: Omit<Referral, 'id'> = {
-            referrerId,
-            referredId: '', // Sera mis à jour lors de l'inscription
-            referralCode: await CodeGenerator.generateAffiliateCode(), // Assuming generateAffiliateCode is the correct function
-            status: 'PENDING',
-            pointsEarned: 0,
-            ordersCount: 0,
-            firstOrderCompleted: false,
-            createdAt: Timestamp.now()
-        };
+      // Activate the referral
+      await updateReferral(referral.id, {
+        referredId,
+        status: 'ACTIVE',
+        activatedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
+      });
 
-        const docRef = await this.referralsRef.add(referral);
-        
-        // Envoyer un email d'invitation
-        await notificationService.sendReferralInvitation(referredEmail, referral.referralCode);
-
-        return { ...referral, id: docRef.id } as Referral;
+      // Create initial rewards
+      await this.createInitialRewards(referral.id, referral.referrerId, referredId);
+    } catch (error) {
+      console.error('Error activating referral:', error);
+      throw error;
     }
+  }
 
-    async activateReferral(referralCode: string, referredId: string): Promise<void> {
-        const referralQuery = await this.referralsRef
-            .where('referralCode', '==', referralCode)
-            .where('status', '==', 'PENDING')
-            .get();
+  private async createInitialRewards(
+    referralId: string,
+    referrerId: string,
+    referredId: string
+  ): Promise<void> {
+    try {
+      const program = await this.getActiveProgram();
 
-        if (referralQuery.empty) {
-            throw new AppError(404, 'Invalid or expired referral code', errorCodes.INVALID_REFERRAL_CODE);
-        }
+      // Reward for the referrer
+      const referrerRewardData: Omit<ReferralReward, 'id'> = {
+        referralId,
+        referrerId,
+        referredId,
+        type: program.referrerReward.type,
+        value: program.referrerReward.value,
+        status: 'PENDING',
+        createdAt: new Date().toISOString()
+      };
 
-        const referralDoc = referralQuery.docs[0];
-        const referral = referralDoc.data() as Referral;
+      // Reward for the referred
+      const referredRewardData: Omit<ReferralReward, 'id'> = {
+        referralId,
+        referrerId,
+        referredId,
+        type: program.referredReward.type,
+        value: program.referredReward.value,
+        status: 'PENDING',
+        createdAt: new Date().toISOString()
+      };
 
-        // Activer le parrainage
-        await referralDoc.ref.update({
-            referredId,
-            status: 'ACTIVE',
-            activatedAt: Timestamp.now(),
-            expiresAt: Timestamp.fromDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)) // 30 jours
+      await Promise.all([
+        createReferralReward(referrerRewardData),
+        createReferralReward(referredRewardData)
+      ]);
+    } catch (error) {
+      console.error('Error creating initial rewards:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process first order reward
+   */
+  async processFirstOrderReward(referralId: string, orderId: string): Promise<void> {
+    try {
+      const referral = await getReferral(referralId);
+
+      if (!referral) {
+        throw new AppError(404, 'Referral not found', errorCodes.REFERRAL_NOT_FOUND);
+      }
+
+      if (referral.firstOrderCompleted) {
+        throw new AppError(400, 'First order reward already processed', errorCodes.REWARD_ALREADY_PROCESSED);
+      }
+
+      // Update rewards
+      const rewards = await this.rewardsRef
+        .select('*')
+        .eq('referralId', referralId)
+        .eq('status', 'PENDING');
+
+      const updatePromises = rewards.data.map((reward: ReferralReward) => {
+        return updateReferralReward(reward.id, {
+          status: 'CREDITED',
+          orderId,
+          creditedAt: new Date().toISOString()
         });
+      });
 
-        // Créer les récompenses initiales
-        await this.createInitialRewards(referralDoc.id, referral.referrerId, referredId);
+      await Promise.all(updatePromises);
+
+      // Update referral
+      await updateReferral(referralId, {
+        firstOrderCompleted: true,
+        ordersCount: 1,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error processing first order reward:', error);
+      throw error;
     }
+  }
 
-    private async createInitialRewards(
-        referralId: string,
-        referrerId: string,
-        referredId: string
-    ): Promise<void> {
-        const program = await this.getActiveProgram();
+  /**
+   * Get active referral program
+   */
+  private async getActiveProgram(): Promise<ReferralProgram> {
+    try {
+      const program = await getReferralProgram();
 
-        // Récompense pour le parrain
-        const referrerReward: Omit<ReferralReward, 'id'> = {
-            referralId,
-            referrerId,
-            referredId,
-            type: program.referrerReward.type,
-            value: program.referrerReward.value,
-            status: 'PENDING',
-            createdAt: Timestamp.now()
-        };
+      if (!program) {
+        throw new AppError(404, 'No active referral program found', errorCodes.NO_ACTIVE_PROGRAM);
+      }
 
-        // Récompense pour le parrainé
-        const referredReward: Omit<ReferralReward, 'id'> = {
-            referralId,
-            referrerId,
-            referredId,
-            type: program.referredReward.type,
-            value: program.referredReward.value,
-            status: 'PENDING',
-            createdAt: Timestamp.now()
-        };
-
-        await Promise.all([
-            this.rewardsRef.add(referrerReward),
-            this.rewardsRef.add(referredReward)
-        ]);
+      return program;
+    } catch (error) {
+      console.error('Error getting active referral program:', error);
+      throw error;
     }
+  }
 
-    async processFirstOrderReward(referralId: string, orderId: string): Promise<void> {
-        const referralRef = this.referralsRef.doc(referralId);
-        const referral = await referralRef.get();
+  /**
+   * Get referral stats
+   */
+  async getReferralStats(userId: string): Promise<{
+    totalReferrals: number;
+    activeReferrals: number;
+    completedReferrals: number;
+    totalRewards: number;
+  }> {
+    try {
+      const referrals = await this.referralsRef
+        .select('*')
+        .eq('referrerId', userId);
 
-        if (!referral.exists) {
-            throw new AppError(404, 'Referral not found', errorCodes.REFERRAL_NOT_FOUND);
-        }
+      const referralStats = referrals.data.map((referral: Referral) => ({
+        ...referral,
+        id: referral.id
+      }));
 
-        if (referral.data()?.firstOrderCompleted) {
-            throw new AppError(400, 'First order reward already processed', errorCodes.REWARD_ALREADY_PROCESSED);
-        }
-
-        // Mettre à jour les récompenses
-        const rewards = await this.rewardsRef
-            .where('referralId', '==', referralId)
-            .where('status', '==', 'PENDING')
-            .get();
-
-        const batch = db.batch();
-        
-        rewards.docs.forEach(doc => {
-            batch.update(doc.ref, {
-                status: 'CREDITED',
-                orderId,
-                creditedAt: Timestamp.now()
-            });
-        });
-
-        // Mettre à jour le parrainage
-        batch.update(referralRef, {
-            firstOrderCompleted: true,
-            ordersCount: 1,
-            updatedAt: Timestamp.now()
-        });
-
-        await batch.commit();
+      return {
+        totalReferrals: referralStats.length,
+        activeReferrals: referralStats.filter(r => r.status === 'ACTIVE').length,
+        completedReferrals: referralStats.filter(r => r.firstOrderCompleted).length,
+        totalRewards: 0 // To be calculated based on credited rewards
+      };
+    } catch (error) {
+      console.error('Error getting referral stats:', error);
+      throw error;
     }
-
-    private async getActiveProgram(): Promise<ReferralProgram> {
-        const programQuery = await this.programsRef
-            .where('isActive', '==', true)
-            .limit(1)
-            .get();
-
-        if (programQuery.empty) {
-            throw new AppError(404, 'No active referral program found', errorCodes.NO_ACTIVE_PROGRAM);
-        }
-
-        return { ...programQuery.docs[0].data(), id: programQuery.docs[0].id } as ReferralProgram;
-    }
-
-    async getReferralStats(userId: string): Promise<{
-        totalReferrals: number;
-        activeReferrals: number;
-        completedReferrals: number;
-        totalRewards: number;
-    }> {
-        const referralsQuery = await this.referralsRef
-            .where('referrerId', '==', userId)
-            .get();
-
-        const referrals = referralsQuery.docs.map(doc => doc.data() as Referral);
-
-        return {
-            totalReferrals: referrals.length,
-            activeReferrals: referrals.filter(r => r.status === 'ACTIVE').length,
-            completedReferrals: referrals.filter(r => r.firstOrderCompleted).length,
-            totalRewards: 0 // À calculer en fonction des récompenses créditées
-        };
-    }
+  }
 }
+
+export const referralService = new ReferralService();

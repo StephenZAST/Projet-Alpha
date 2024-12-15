@@ -1,45 +1,48 @@
-import { db } from './firebase';
-import { Zone, ZoneStatus } from '../models/zone';
+import { createClient } from '@supabase/supabase-js';
+import { Zone, ZoneStatus, Location } from '../models/zone';
 import { AppError, errorCodes } from '../utils/errors';
-import { GeoPoint, FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { Query, CollectionReference } from 'firebase-admin/firestore'; // Import Query and CollectionReference
+import { getZone, createZone, updateZone, deleteZone } from './zones/zoneManagement';
+import { getZoneAssignment, createZoneAssignment, updateZoneAssignment, deleteZoneAssignment } from './zones/zoneAssignmentManagement';
+import { getZoneCapacity, createZoneCapacity, updateZoneCapacity, deleteZoneCapacity } from './zones/zoneCapacityManagement';
+import { getZoneStatistics } from './zones/zoneStatistics';
 
-export class ZoneService {
-  async createZone(zone: Zone): Promise<Zone> {
-    try {
-      const zoneRef = await db.collection('zones').add({
-        ...zone,
-        createdAt: Timestamp.now(),
-        status: ZoneStatus.ACTIVE,
-        updatedAt: Timestamp.now()
-      });
-      
-      return { ...zone, id: zoneRef.id };
-    } catch (error) {
-      console.error('Error creating zone:', error);
-      throw new AppError(500, 'Failed to create zone', errorCodes.ZONE_CREATION_FAILED);
-    }
+const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseKey) {
+  throw new Error('SUPABASE_KEY environment variable not set.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+const zonesTable = 'zones';
+const zoneAssignmentsTable = 'zoneAssignments';
+const zoneCapacitiesTable = 'zoneCapacities';
+const zoneStatsTable = 'zoneStats';
+
+export class ZonesService {
+  private zonesRef = supabase.from(zonesTable);
+  private zoneAssignmentsRef = supabase.from(zoneAssignmentsTable);
+  private zoneCapacitiesRef = supabase.from(zoneCapacitiesTable);
+  private zoneStatsRef = supabase.from(zoneStatsTable);
+
+  /**
+   * Create a new zone
+   */
+  async createZone(zoneData: Omit<Zone, 'id'>): Promise<Zone> {
+    return createZone(zoneData);
   }
 
+  /**
+   * Get zone by id
+   */
   async getZoneById(zoneId: string): Promise<Zone | null> {
-    try {
-      if (zoneId === 'error_test') {
-        throw new Error('Intentional error for testing');
-      }
-
-      const zoneDoc = await db.collection('zones').doc(zoneId).get();
-      
-      if (!zoneDoc.exists) {
-        return null;
-      }
-      
-      return { id: zoneDoc.id, ...zoneDoc.data() } as Zone;
-    } catch (error) {
-      console.error('Error fetching zone:', error);
-      throw new AppError(500, 'Failed to fetch zone', errorCodes.ZONES_FETCH_FAILED);
-    }
+    return getZone(zoneId);
   }
 
+  /**
+   * Get all zones
+   */
   async getAllZones(options: {
     name?: string;
     isActive?: boolean;
@@ -49,208 +52,139 @@ export class ZoneService {
     limit?: number;
   } = {}): Promise<Zone[]> {
     try {
-      let query: Query | CollectionReference = db.collection('zones'); // Start with CollectionReference
+      let query = this.zonesRef.select('*');
 
       if (options.name) {
-        query = query.where('name', '==', options.name); // Apply where on CollectionReference
+        query = query.eq('name', options.name);
       }
 
       if (options.isActive !== undefined) {
-        query = query.where('isActive', '==', options.isActive); // Apply where on CollectionReference
+        query = query.eq('isActive', options.isActive);
       }
 
       if (options.deliveryPersonId) {
-        query = query.where('deliveryPersonId', '==', options.deliveryPersonId); // Apply where on CollectionReference
+        query = query.eq('deliveryPersonId', options.deliveryPersonId);
       }
 
-      // Add geoquery based on location if provided
-
-      // Apply pagination
       if (options.page && options.limit) {
         const offset = (options.page - 1) * options.limit;
-        query = query.offset(offset).limit(options.limit); // Apply offset and limit on Query
+        query = query.range(offset, offset + options.limit - 1);
       }
 
-      const zonesSnapshot = await query.get();
-      return zonesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Zone));
+      const { data, error } = await query;
+
+      if (error) {
+        throw new AppError(500, 'Failed to fetch zones', errorCodes.DATABASE_ERROR);
+      }
+
+      return data.map(doc => ({ id: doc.id, ...doc } as Zone));
     } catch (error) {
       console.error('Error fetching zones:', error);
-      throw new AppError(500, 'Failed to fetch zones', errorCodes.ZONES_FETCH_FAILED);
+      throw error;
     }
   }
 
+  /**
+   * Update a zone
+   */
   async updateZone(zoneId: string, updates: Partial<Zone>): Promise<boolean> {
     try {
-      await db.collection('zones').doc(zoneId).update({
+      await this.zonesRef.update({
         ...updates,
-        updatedAt: Timestamp.now()
-      });
+        updatedAt: new Date().toISOString(),
+      }).eq('id', zoneId);
+
       return true;
     } catch (error) {
       console.error('Error updating zone:', error);
-      throw new AppError(500, 'Failed to update zone', errorCodes.ZONE_UPDATE_FAILED);
+      throw new AppError(500, 'Failed to update zone', errorCodes.DATABASE_ERROR);
     }
   }
 
+  /**
+   * Delete a zone
+   */
   async deleteZone(zoneId: string): Promise<boolean> {
     try {
-      // Vérifier si la zone existe
-      const zoneDoc = await db.collection('zones').doc(zoneId).get();
-      if (!zoneDoc.exists) {
-        throw new AppError(404, 'Zone not found', errorCodes.ZONE_NOT_FOUND);
+      const zone = await this.getZoneById(zoneId);
+
+      if (!zone) {
+        throw new AppError(404, 'Zone not found', errorCodes.NOT_FOUND);
       }
 
-      // Vérifier s'il y a des commandes actives dans la zone
-      const activeOrders = await db.collection('orders')
-        .where('zoneId', '==', zoneId)
-        .where('status', 'in', ['pending', 'processing', 'assigned'])
-        .get();
+      const { data: activeOrders, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('zoneId', zoneId)
+        .in('status', ['pending', 'processing', 'assigned']);
 
-      if (!activeOrders.empty) {
+      if (ordersError) {
+        throw new AppError(500, 'Failed to fetch orders', errorCodes.DATABASE_ERROR);
+      }
+
+      if (activeOrders.length > 0) {
         throw new AppError(400, 'Cannot delete zone with active orders', errorCodes.ZONE_HAS_ACTIVE_ORDERS);
       }
 
-      // Supprimer la zone
-      await db.collection('zones').doc(zoneId).delete();
+      await this.zonesRef.delete().eq('id', zoneId);
+
       return true;
     } catch (error) {
       console.error('Error deleting zone:', error);
-      throw new AppError(500, 'Failed to delete zone', errorCodes.ZONE_DELETION_FAILED);
+      throw error;
     }
   }
 
-  async assignDeliveryPerson(
-    zoneId: string,
-    deliveryPersonId: string
-  ): Promise<boolean> {
+  /**
+   * Assign delivery person to a zone
+   */
+  async assignDeliveryPerson(zoneId: string, deliveryPersonId: string): Promise<boolean> {
     try {
-      const zoneRef = db.collection('zones').doc(zoneId);
-      const deliveryPersonRef = db.collection('deliveryPersons').doc(deliveryPersonId);
+      const zone = await this.getZoneById(zoneId);
 
-      const [zoneDoc, deliveryPersonDoc] = await Promise.all([
-        zoneRef.get(),
-        deliveryPersonRef.get()
-      ]);
-
-      if (!zoneDoc.exists) {
-        throw new AppError(404, 'Zone not found', errorCodes.ZONE_NOT_FOUND);
+      if (!zone) {
+        throw new AppError(404, 'Zone not found', errorCodes.NOT_FOUND);
       }
 
-      if (!deliveryPersonDoc.exists) {
-        throw new AppError(404, 'Delivery person not found', errorCodes.DELIVERY_PERSON_NOT_FOUND);
+      const { data: deliveryPerson, error: deliveryPersonError } = await supabase
+        .from('deliveryPersons')
+        .select('*')
+        .eq('id', deliveryPersonId)
+        .single();
+
+      if (deliveryPersonError) {
+        throw new AppError(404, 'Delivery person not found', errorCodes.NOT_FOUND);
       }
 
-      if (deliveryPersonDoc.data()?.status !== 'available') {
+      if (deliveryPerson.status !== 'available') {
         throw new AppError(400, 'Delivery person is not available', errorCodes.DELIVERY_PERSON_UNAVAILABLE);
       }
 
       await Promise.all([
-        zoneRef.update({
-          deliveryPersonId,
-          updatedAt: Timestamp.now()
-        }),
-        deliveryPersonRef.update({
-          zoneId,
-          status: 'assigned',
-          updatedAt: Timestamp.now()
-        })
+        this.zonesRef.update({ deliveryPersonId, updatedAt: new Date().toISOString() }).eq('id', zoneId),
+        supabase.from('deliveryPersons').update({ zoneId, status: 'assigned', updatedAt: new Date().toISOString() }).eq('id', deliveryPersonId)
       ]);
 
       return true;
     } catch (error) {
       console.error('Error assigning delivery person to zone:', error);
-      throw new AppError(500, 'Failed to assign delivery person', errorCodes.ZONE_ASSIGNMENT_FAILED);
+      throw new AppError(500, 'Failed to assign delivery person', errorCodes.DATABASE_ERROR);
     }
   }
 
-  async getZoneStatistics(
-    zoneId: string,
-    startDate?: Date,
-    endDate?: Date
-  ) {
-    try {
-      const zoneDoc = await db.collection('zones').doc(zoneId).get();
-      if (!zoneDoc.exists) {
-        throw new AppError(404, 'Zone not found', errorCodes.ZONE_NOT_FOUND);
-      }
-
-      let query = db.collection('orders').where('zoneId', '==', zoneId);
-      
-      if (startDate) {
-        query = query.where('createdAt', '>=', startDate);
-      }
-      if (endDate) {
-        query = query.where('createdAt', '<=', endDate);
-      }
-
-      const ordersSnapshot = await query.get();
-      const orders = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      const averageDeliveryTime = this.calculateAverageDeliveryTime(orders);
-      const totalRevenue = this.calculateTotalRevenue(orders);
-      const busyHours = this.calculateBusyHours(orders);
-      const deliveryPersonsStats = await this.getDeliveryPersonsStats(zoneId);
-
-      return {
-        totalOrders: orders.length,
-        averageDeliveryTime,
-        totalRevenue,
-        busyHours,
-        deliveryPersonsStats,
-        period: {
-          start: startDate || null,
-          end: endDate || null
-        }
-      };
-    } catch (error) {
-      console.error('Error fetching zone statistics:', error);
-      throw new AppError(500, 'Failed to fetch zone statistics', errorCodes.ZONE_STATS_FETCH_FAILED);
-    }
-  }
-
-  private calculateAverageDeliveryTime(orders: any[]): number {
-    if (orders.length === 0) return 0;
-
-    const totalTime = orders.reduce((sum, order) => {
-      if (order.deliveredAt && order.pickedUpAt) {
-        return sum + (order.deliveredAt.toMillis() - order.pickedUpAt.toMillis());
-      }
-      return sum;
-    }, 0);
-
-    return totalTime / orders.length / (1000 * 60); // Convert to minutes
-  }
-
-  private calculateTotalRevenue(orders: any[]): number {
-    return orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-  }
-
-  private calculateBusyHours(orders: any[]): { hour: number; count: number }[] {
-    const hourCounts = new Array(24).fill(0);
-
-    orders.forEach(order => {
-      if (order.pickedUpAt) {
-        const hour = order.pickedUpAt.toDate().getHours();
-        hourCounts[hour]++;
-      }
-    });
-
-    return hourCounts.map((count, hour) => ({ hour, count }));
-  }
-
-  private async getDeliveryPersonsStats(zoneId: string) {
-    const deliveryPersonsSnapshot = await db.collection('deliveryPersons')
-      .where('zoneId', '==', zoneId)
-      .get();
-
-    return deliveryPersonsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+  /**
+   * Get zone statistics
+   */
+  async getZoneStatistics(zoneId: string, startDate?: Date, endDate?: Date): Promise<{
+    totalOrders: number;
+    averageDeliveryTime: number;
+    totalRevenue: number;
+    busyHours: { hour: number; count: number }[];
+    deliveryPersonsStats: any[];
+    period: { start: string | null; end: string | null };
+  }> {
+    return getZoneStatistics(zoneId, startDate, endDate);
   }
 }
 
-export const zoneService = new ZoneService();
+export const zonesService = new ZonesService();
