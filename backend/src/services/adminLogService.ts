@@ -19,7 +19,7 @@ export class AdminLogService {
       action,
       details,
       targetAdminId: targetAdminId || '',
-      ipAddress: req.ip || '', // Provide default empty string for ipAddress
+      ipAddress: req.ip || '', 
       userAgent: req.headers['user-agent'] || 'Unknown',
       createdAt: new Date().toISOString(),
     };
@@ -27,7 +27,7 @@ export class AdminLogService {
     const { data, error } = await supabase.from(adminLogsTable).insert([newLog]).select().single();
 
     if (error) {
-      throw new AppError(500, 'Failed to log admin action', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to log admin action', errorCodes.DATABASE_ERROR);
     }
 
     return data as IAdminLog;
@@ -37,7 +37,7 @@ export class AdminLogService {
     const { data, error } = await supabase.from(adminLogsTable).select('*').eq('id', id).single();
 
     if (error) {
-      throw new AppError(500, 'Failed to fetch admin log', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to fetch admin log', errorCodes.DATABASE_ERROR);
     }
 
     return data as IAdminLog;
@@ -69,7 +69,7 @@ export class AdminLogService {
     const { data, error } = await query.range(skip, skip + limit - 1);
 
     if (error) {
-      throw new AppError(500, 'Failed to fetch admin logs', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to fetch admin logs', errorCodes.DATABASE_ERROR);
     }
 
     return data as IAdminLog[];
@@ -99,7 +99,7 @@ export class AdminLogService {
     const { count, error } = await query;
 
     if (error) {
-      throw new AppError(500, 'Failed to fetch log count', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to fetch log count', errorCodes.DATABASE_ERROR);
     }
 
     return count || 0;
@@ -114,7 +114,7 @@ export class AdminLogService {
       .limit(limit);
 
     if (error) {
-      throw new AppError(500, 'Failed to fetch recent activity', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to fetch recent activity', errorCodes.DATABASE_ERROR);
     }
 
     return data as IAdminLog[];
@@ -131,7 +131,7 @@ export class AdminLogService {
       .gte('createdAt', windowStart.toISOString());
 
     if (error) {
-      throw new AppError(500, 'Failed to fetch failed login attempts', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to fetch failed login attempts', errorCodes.DATABASE_ERROR);
     }
 
     return data ? data.length : 0;
@@ -147,7 +147,7 @@ export class AdminLogService {
     const { error } = await supabase.from(adminLogsTable).delete().eq('id', id);
 
     if (error) {
-      throw new AppError(500, 'Failed to delete admin log', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to delete admin log', errorCodes.DATABASE_ERROR);
     }
   }
 }

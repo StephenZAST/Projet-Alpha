@@ -1,17 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import { supabase } from '../../config';
-import AppError from '../../utils/AppError';
+import { AdminLogService } from '../../services/adminLogService';
+import { AppError, errorCodes } from '../../utils/errors';
 
 export const getAdminLogs = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data, error } = await supabase.from('admin_logs').select('*');
+    const adminLogs = await AdminLogService.getAdminLogs();
 
-    if (error) {
-      return next(new AppError(500, 'Failed to fetch admin logs', 'INTERNAL_SERVER_ERROR'));
-    }
-
-    res.status(200).json({ data });
+    res.status(200).json({ adminLogs });
   } catch (error) {
-    next(new AppError(500, 'Failed to fetch admin logs', 'INTERNAL_SERVER_ERROR'));
+    next(new AppError(500, 'Failed to fetch admin logs', errorCodes.DATABASE_ERROR));
   }
 };

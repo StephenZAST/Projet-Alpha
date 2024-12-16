@@ -14,8 +14,8 @@ import billingRoutes from './routes/billing';
 import authRoutes from './routes/authRoutes';
 import websocketRoutes from './routes/websocket';
 import adminLogRoutes from './routes/adminLogRoutes';
-import googleAuthRoutes from './routes/googleAuthRoutes'; // Added import
-import blogArticleRoutes from './routes/blogArticleRoutes'; // Ajout des routes de blog
+import googleAuthRoutes from './routes/googleAuthRoutes'; 
+import blogArticleRoutes from './routes/blogArticleRoutes'; 
 import blogGeneratorRoutes from './routes/blogGeneratorRoutes';
 
 const app = express();
@@ -45,9 +45,9 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/websocket', websocketRoutes);
 app.use('/api/adminLogs', adminLogRoutes);
-app.use('/api/admin', googleAuthRoutes); // Added route
-app.use('/api/blog', blogArticleRoutes); // Ajout des routes de blog
-app.use('/api/blog-generator', blogGeneratorRoutes); // Ajout des routes de génération de blog
+app.use('/api/admin', googleAuthRoutes); 
+app.use('/api/blog', blogArticleRoutes); 
+app.use('/api/blog-generator', blogGeneratorRoutes); 
 
 // Basic route for testing
 app.get('/', (req, res) => {

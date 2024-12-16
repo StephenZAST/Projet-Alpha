@@ -14,11 +14,11 @@ const getAdminLogByIdSchema = Joi.object({
  */
 const searchAdminLogsSchema = Joi.object({
   query: Joi.object({
-    page: Joi.number().integer().min(1),
-    limit: Joi.number().integer().min(1),
-    sortBy: Joi.string(),
-    sortOrder: Joi.string().valid('asc', 'desc'),
-    searchTerm: Joi.string(),
+    page: Joi.number().integer().min(1).optional(),
+    limit: Joi.number().integer().min(1).optional(),
+    sortBy: Joi.string().optional(),
+    sortOrder: Joi.string().valid('asc', 'desc').optional(),
+    searchTerm: Joi.string().optional(),
   }),
 });
 

@@ -1,27 +1,23 @@
 import { Request, Response, NextFunction } from 'express';
-import { supabase } from '../../config';
-import AppError from '../../utils/AppError';
+import { AdminLogService } from '../../services/adminLogService';
+import { AppError, errorCodes } from '../../utils/errors';
 
 export const getAdminLogById = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
 
   if (!id) {
-    return next(new AppError(400, 'ID is required', 'INVALID_ID'));
+    return next(new AppError(400, 'ID is required', errorCodes.INVALID_ID));
   }
 
   try {
-    const { data, error } = await supabase.from('admin_logs').select('*').eq('id', id).single();
+    const adminLog = await AdminLogService.getAdminLog(id);
 
-    if (error) {
-      return next(new AppError(500, 'Failed to fetch admin log', 'INTERNAL_SERVER_ERROR'));
+    if (!adminLog) {
+      return next(new AppError(404, 'Admin log not found', errorCodes.NOT_FOUND));
     }
 
-    if (!data) {
-      return next(new AppError(404, 'Admin log not found', 'NOT_FOUND'));
-    }
-
-    res.status(200).json({ data });
+    res.status(200).json({ adminLog });
   } catch (error) {
-    next(new AppError(500, 'Failed to fetch admin log', 'INTERNAL_SERVER_ERROR'));
+    next(new AppError(500, 'Failed to fetch admin log', errorCodes.DATABASE_ERROR));
   }
 };

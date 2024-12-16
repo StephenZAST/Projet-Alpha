@@ -11,3 +11,11 @@ export {
   updateAdminLog,
   deleteAdminLog
 };
+
+export const adminLogController = {
+  createAdminLog,
+  getAdminLogs,
+  getAdminLogById,
+  updateAdminLog,
+  deleteAdminLog
+};
