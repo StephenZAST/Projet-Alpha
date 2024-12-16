@@ -58,7 +58,7 @@ export class AdminService {
     }
 
     if (adminData.isMasterAdmin !== undefined && currentAdmin.isMasterAdmin) {
-      throw new AppError(400, 'Cannot modify master admin status', errorCodes.MASTER_ADMIN_MODIFICATION);
+      throw new AppError(400, 'Cannot modify master admin status', 'MASTER_ADMIN_MODIFICATION');
     }
 
     if (adminData.password) {
@@ -82,7 +82,7 @@ export class AdminService {
     }
 
     if (admin.isMasterAdmin) {
-      throw new AppError(400, 'Cannot delete master admin', errorCodes.MASTER_ADMIN_DELETION);
+      throw new AppError(400, 'Cannot delete master admin', 'MASTER_ADMIN_DELETION');
     }
 
     const { error } = await supabase.from(adminsTable).delete().eq('id', id);

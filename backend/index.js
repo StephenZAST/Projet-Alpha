@@ -1,15 +1,16 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
 const express = require('express');
 const cors = require('cors');
-
-admin.initializeApp();
-const db = admin.firestore();
-const auth = admin.auth();
+const { createServer } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
+
+const supabaseUrl = 'https://your-supabase-url.supabase.co';
+const supabaseKey = 'your-supabase-key';
+const supabaseSecret = 'your-supabase-secret';
+
+const supabase = createServer(supabaseUrl, supabaseKey, supabaseSecret);
 
 // Authentication endpoints
 // /auth/login
@@ -21,10 +22,14 @@ app.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const userRecord = await auth.signInWithEmailAndPassword(email, password);
-    const token = await userRecord.user.getIdToken();
+    const { data, error } = await supabase.auth.signIn({ email, password });
 
-    res.status(200).json({ token });
+    if (error) {
+      console.error('Error during login:', error);
+      res.status(500).json({ error: 'Failed to log in' });
+    } else {
+      res.status(200).json({ token: data.session.token });
+    }
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ error: 'Failed to log in' });
@@ -40,10 +45,14 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const userRecord = await auth.createUser({ email, password });
-    const token = await userRecord.uid; // Use uid as token for now
+    const { data, error } = await supabase.auth.signUp({ email, password });
 
-    res.status(201).json({ token });
+    if (error) {
+      console.error('Error during registration:', error);
+      res.status(500).json({ error: 'Failed to register' });
+    } else {
+      res.status(201).json({ token: data.session.token });
+    }
   } catch (error) {
     console.error('Error during registration:', error);
     res.status(500).json({ error: 'Failed to register' });
@@ -55,4 +64,4 @@ app.get('/me', async (req, res) => {
   // Implement logic to retrieve current user information
 });
 
-exports.api = functions.https.onRequest(app);
+exports.api = app;

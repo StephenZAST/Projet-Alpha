@@ -2,10 +2,9 @@ import jwt from 'jsonwebtoken';
 import { IAdmin } from '../models/admin';
 import { AppError, errorCodes } from './errors';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; // Use environment variable
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'; 
 const JWT_EXPIRES_IN = '24h';
 
-// Define type for decoded token payload
 interface DecodedToken {
   id: string;
   role: string;
@@ -15,7 +14,7 @@ interface DecodedToken {
 export const generateToken = (admin: IAdmin): string => {
   return jwt.sign(
     {
-      id: admin._id,
+      id: admin.id,
       role: admin.role,
       isMasterAdmin: admin.isMasterAdmin,
     },

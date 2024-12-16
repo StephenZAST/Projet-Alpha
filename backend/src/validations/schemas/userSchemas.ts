@@ -5,7 +5,6 @@ import { UserRole, UserStatus, AccountCreationMethod } from '../../models/user';
 const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-// Base address schema that can be reused
 const addressSchema = Joi.object({
   street: Joi.string().required()
     .messages({
@@ -52,7 +51,6 @@ const addressSchema = Joi.object({
   additionalInfo: Joi.string()
 });
 
-// Base user schema that can be reused
 const baseUserSchema = {
   email: Joi.string().email().required()
     .messages({
@@ -77,7 +75,6 @@ const baseUserSchema = {
     })
 };
 
-// Customer registration schema
 export const customerRegistrationSchema = Joi.object({
   ...baseUserSchema,
   password: Joi.string().pattern(passwordRegex).required()
@@ -96,7 +93,6 @@ export const customerRegistrationSchema = Joi.object({
   ).required()
 });
 
-// Admin customer creation schema
 export const adminCustomerCreationSchema = customerRegistrationSchema.keys({
   createdBy: Joi.string().required()
     .messages({
@@ -105,7 +101,6 @@ export const adminCustomerCreationSchema = customerRegistrationSchema.keys({
     })
 });
 
-// Password related schemas
 export const passwordResetRequestSchema = Joi.object({
   email: Joi.string().email().required()
     .messages({
@@ -129,7 +124,6 @@ export const passwordResetSchema = Joi.object({
     })
 });
 
-// Email verification schema
 export const emailVerificationSchema = Joi.object({
   token: Joi.string().required()
     .messages({
@@ -138,7 +132,6 @@ export const emailVerificationSchema = Joi.object({
     })
 });
 
-// Profile update schemas
 export const updateProfileSchema = Joi.object({
   displayName: Joi.string().min(2)
     .messages({
@@ -166,7 +159,6 @@ export const updateProfileSchema = Joi.object({
 
 export const updateAddressSchema = addressSchema;
 
-// Query params schema for user listing
 export const userListQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
