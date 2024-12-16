@@ -10,7 +10,7 @@ class RecurringOrderController {
 
   createRecurringOrder = async (req: Request, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.body.userId;
       const orderData = req.body;
 
       const recurringOrder = await this.recurringOrderService.createRecurringOrder(
@@ -33,7 +33,7 @@ class RecurringOrderController {
 
   updateRecurringOrder = async (req: Request, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.body.userId;
       const { id } = req.params;
       const updates = req.body;
 
@@ -64,7 +64,7 @@ class RecurringOrderController {
 
   cancelRecurringOrder = async (req: Request, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.body.userId;
       const { id } = req.params;
 
       await this.recurringOrderService.cancelRecurringOrder(id, userId);
@@ -89,7 +89,7 @@ class RecurringOrderController {
 
   getRecurringOrders = async (req: Request, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const userId = req.body.userId;
       const orders = await this.recurringOrderService.getRecurringOrders(userId);
 
       res.json({

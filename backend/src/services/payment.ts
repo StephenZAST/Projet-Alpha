@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { PaymentMethod, Payment, PaymentStatus, RefundReason, Currency, PaymentMethodType } from '../models/payment';
+import { PaymentMethod, Payment, PaymentStatus, RefundReason, Currency, PaymentMethodType, Refund } from '../models/payment';
 import { AppError, errorCodes } from '../utils/errors';
 import { getPayment, createPayment, updatePayment, deletePayment } from './paymentService/paymentManagement';
 import { getPaymentMethods, addPaymentMethod, removePaymentMethod, setDefaultPaymentMethod } from './paymentService/paymentMethodManagement';
@@ -8,8 +8,8 @@ import { getRefund, createRefund, updateRefund, deleteRefund } from './paymentSe
 const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
 const supabaseKey = process.env.SUPABASE_KEY;
 
-if (!supabaseKey) {
-  throw new Error('SUPABASE_KEY environment variable not set.');
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('SUPABASE_URL and SUPABASE_KEY environment variables not set.');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -66,18 +66,43 @@ export class PaymentService {
     paymentMethodId: string;
     description?: string;
   }): Promise<Payment> {
-    const paymentData: Omit<Payment, 'id'> = {
+    // Validate payment method
+    const { data: paymentMethod, error: paymentMethodError } = await this.paymentMethodsRef.select('*').eq('id', data.paymentMethodId).single();
+    if (paymentMethodError) {
+      throw new AppError(404, 'Payment method not found', errorCodes.NOT_FOUND);
+    }
+
+    // Process payment
+    const paymentData: Payment = {
       userId: data.userId,
       orderId: data.orderId,
       amount: data.amount,
       currency: data.currency,
       paymentMethodId: data.paymentMethodId,
       description: data.description,
-      status: 'SUCCEEDED' as PaymentStatus,
+      status: 'PENDING' as PaymentStatus,
       createdAt: new Date().toISOString(),
+      data: {},
+      error: null,
     };
 
-    return createPayment(paymentData);
+    const result = await createPayment(paymentData);
+    if (result.error) {
+      throw new AppError(500, 'Failed to create payment', errorCodes.DATABASE_ERROR);
+    }
+
+    const payment = result.data;
+
+    // Simulate payment processing (replace with actual payment processing logic)
+    const paymentSuccess = true; // Replace with actual payment processing logic
+
+    if (paymentSuccess) {
+      await updatePayment(payment.id, { status: 'SUCCEEDED' });
+    } else {
+      await updatePayment(payment.id, { status: 'FAILED' });
+    }
+
+    return payment;
   }
 
   /**
@@ -96,6 +121,10 @@ export class PaymentService {
       limit: number;
     };
   }> {
+    if (options.page < 1 || options.limit < 1) {
+      throw new AppError(400, 'Invalid pagination parameters', errorCodes.INVALID_PAGINATION);
+    }
+
     try {
       let query = this.paymentsRef.select('*').eq('userId', userId);
 
@@ -103,18 +132,24 @@ export class PaymentService {
         query = query.eq('status', options.status);
       }
 
+      const { count, error: totalError } = await this.paymentsRef.select('*', { count: 'exact' }).eq('userId', userId).single();
+      if (totalError) {
+        throw new AppError(500, 'Failed to fetch payment count', errorCodes.DATABASE_ERROR);
+      }
+
+      const total = count !== null ? count : 0;
+
       const startAt = (options.page - 1) * options.limit;
 
-      const [totalSnapshot, paymentsSnapshot] = await Promise.all([
-        this.paymentsRef.select().count().eq('userId', userId).single(),
-        query
-          .order('createdAt', { ascending: false })
-          .range(startAt, startAt + options.limit - 1)
-          .select()
-      ]);
+      const { data: paymentsSnapshot, error: paymentsError } = await query
+        .order('createdAt', { ascending: false })
+        .range(startAt, startAt + options.limit - 1)
+        .select();
+      if (paymentsError) {
+        throw new AppError(500, 'Failed to fetch payments', errorCodes.DATABASE_ERROR);
+      }
 
-      const total = totalSnapshot.count;
-      const payments = paymentsSnapshot.data.map(doc => ({ id: doc.id, ...doc } as Payment));
+      const payments = paymentsSnapshot.map(doc => ({ id: doc.id, ...doc } as Payment));
 
       return {
         payments,
@@ -144,16 +179,47 @@ export class PaymentService {
     status: PaymentStatus;
     amount: number;
   }> {
-    const refundData: Omit<Refund, 'id'> = {
+    const result = await getPayment(data.paymentId);
+    if (result === null) {
+      throw new AppError(404, 'Payment not found', errorCodes.NOT_FOUND);
+    }
+
+    if (result.error) {
+      throw new AppError(404, 'Payment not found', errorCodes.NOT_FOUND);
+    }
+
+    const payment = result.data;
+
+    if (payment.status !== 'SUCCEEDED') {
+      throw new AppError(400, 'Payment cannot be refunded', errorCodes.INVALID_ID);
+    }
+
+    const refundData: Refund = {
       userId: data.userId,
       paymentId: data.paymentId,
-      amount: data.amount || 0,
-      reason: data.reason || 'OTHER',
-      status: 'SUCCEEDED' as PaymentStatus,
+      amount: data.amount || payment.amount,
+      reason: data.reason || ('OTHER' as RefundReason),
+      status: 'PENDING' as PaymentStatus,
       createdAt: new Date().toISOString(),
+      data: {},
+      error: null,
     };
 
-    const refund = await createRefund(refundData);
+    const refundResult = await createRefund(refundData);
+    if (refundResult.error) {
+      throw new AppError(500, 'Failed to create refund', errorCodes.DATABASE_ERROR);
+    }
+
+    const refund = refundResult.data;
+
+    // Simulate refund processing (replace with actual refund processing logic)
+    const refundSuccess = true; // Replace with actual refund processing logic
+
+    if (refundSuccess) {
+      await updateRefund(refund.id, { status: 'SUCCEEDED' });
+    } else {
+      await updateRefund(refund.id, { status: 'FAILED' });
+    }
 
     return {
       id: refund.id,

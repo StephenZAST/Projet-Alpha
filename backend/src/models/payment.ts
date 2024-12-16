@@ -19,6 +19,8 @@ export interface PaymentMethod {
 }
 
 export interface Payment {
+  error: any;
+  data: any;
   id?: string;
   userId: string;
   orderId: string;
@@ -31,6 +33,8 @@ export interface Payment {
 }
 
 export interface Refund {
+  data: any;
+  error: any;
   id?: string;
   userId: string;
   paymentId: string;

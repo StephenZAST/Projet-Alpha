@@ -3,7 +3,7 @@ import { RecurringOrder, RecurringFrequency } from '../types/recurring';
 import { OrderService } from './orders';
 import { NotificationService } from './notifications';
 import { addDays, addWeeks, addMonths } from 'date-fns';
-import { OrderItem, PriceType, OrderStatus, OrderType } from '../models/order'; // Import necessary types
+import { OrderItem, PriceType, OrderStatus, OrderType, PaymentMethod } from '../models/order'; 
 import { AppError, errorCodes } from '../utils/errors';
 import { NotificationType } from '../models/notification';
 
@@ -27,20 +27,23 @@ export class RecurringOrderService {
    */
   async createRecurringOrder(userId: string, orderData: Partial<RecurringOrder>): Promise<RecurringOrder> {
     try {
-      const now = new Date().toISOString();
+      if (!orderData.baseOrder || !orderData.frequency) {
+        throw new AppError(400, 'Invalid order data', errorCodes.INVALID_ID);
+      }
+
+      const now = new Date();
 
       const recurringOrder: RecurringOrder = {
-        id: '', // Will be set after creation
+        id: '', 
         userId,
-        frequency: orderData.frequency || RecurringFrequency.ONCE,
-        baseOrder: orderData.baseOrder!,
-        nextScheduledDate: this.calculateNextDate(new Date(), orderData.frequency || RecurringFrequency.ONCE).toISOString(),
+        frequency: orderData.frequency,
+        baseOrder: orderData.baseOrder,
+        nextScheduledDate: this.calculateNextDate(now, orderData.frequency),
         isActive: true,
         createdAt: now,
         updatedAt: now
       };
 
-      // Create the recurring order
       const { data, error } = await supabase.from(recurringOrdersTable).insert([recurringOrder]).select().single();
 
       if (error) {
@@ -49,22 +52,20 @@ export class RecurringOrderService {
 
       recurringOrder.id = data.id;
 
-      // Create the first order immediately
       const firstOrder = await this.orderService.createOrder({
         ...recurringOrder.baseOrder,
         userId,
-        recurringOrderId: recurringOrder.id,
-        scheduledPickupTime: now,
-        scheduledDeliveryTime: new Date(now).toISOString(), // Next day delivery
         items: recurringOrder.baseOrder.items.map(item => ({
           ...item,
-          productId: item.id || '', // Provide a default value if id is missing
-          productName: item.name || '', // Provide a default value if name is missing
-          priceType: PriceType.FIXED // Set default price type
-        }))
+          productId: item.id || '',
+          productName: item.name || '',
+          priceType: PriceType.FIXED,
+          itemType: 'PRODUCT' // Add itemType property
+        })),
+        totalAmount: 0,
+        paymentMethod: PaymentMethod.CASH
       });
 
-      // Update the recurring order with the first order reference
       await supabase.from(recurringOrdersTable).update({
         lastOrderId: firstOrder.id,
         lastProcessedDate: now,
@@ -72,7 +73,7 @@ export class RecurringOrderService {
       }).eq('id', recurringOrder.id);
 
       recurringOrder.lastOrderId = firstOrder.id;
-      recurringOrder.lastProcessedDate = new Date(now);
+      recurringOrder.lastProcessedDate = now;
 
       return recurringOrder;
     } catch (error) {
@@ -100,7 +101,7 @@ export class RecurringOrderService {
       const updatedOrder = {
         ...recurringOrder,
         ...updates,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       };
 
       await supabase.from(recurringOrdersTable).update(updatedOrder).eq('id', orderId);
@@ -130,7 +131,7 @@ export class RecurringOrderService {
 
       await supabase.from(recurringOrdersTable).update({
         isActive: false,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date()
       }).eq('id', orderId);
     } catch (error) {
       console.error('Error canceling recurring order:', error);
@@ -164,7 +165,7 @@ export class RecurringOrderService {
    */
   async processRecurringOrders(): Promise<void> {
     try {
-      const now = new Date().toISOString();
+      const now = new Date();
       const { data, error } = await supabase.from(recurringOrdersTable)
         .select('*')
         .eq('isActive', true)
@@ -176,45 +177,39 @@ export class RecurringOrderService {
 
       for (const recurringOrder of data as RecurringOrder[]) {
         try {
-          // Create new order from the base order
           const newOrder = await this.orderService.createOrder({
             ...recurringOrder.baseOrder,
             userId: recurringOrder.userId,
-            recurringOrderId: recurringOrder.id,
-            scheduledPickupTime: now,
-            scheduledDeliveryTime: new Date(now).toISOString(), // Next day delivery
             items: recurringOrder.baseOrder.items.map(item => ({
               ...item,
-              productId: item.id || '', // Provide a default value if id is missing
-              productName: item.name || '', // Provide a default value if name is missing
-              priceType: PriceType.FIXED // Set default price type
-            }))
+              productId: item.id || '',
+              productName: item.name || '',
+              priceType: PriceType.FIXED,
+              itemType: 'PRODUCT' // Add itemType property
+            })),
+            totalAmount: 0,
+            paymentMethod: PaymentMethod.CASH
           });
 
-          // Calculate next scheduled date
-          const nextDate = this.calculateNextDate(new Date(now), recurringOrder.frequency);
+          const nextDate = this.calculateNextDate(now, recurringOrder.frequency);
 
-          // Update recurring order
           await supabase.from(recurringOrdersTable).update({
             lastOrderId: newOrder.id,
             lastProcessedDate: now,
-            nextScheduledDate: nextDate.toISOString(),
+            nextScheduledDate: nextDate,
             updatedAt: now
           }).eq('id', recurringOrder.id);
 
-          // Notify user
           await this.notificationService.sendNotification(recurringOrder.userId, {
-            type: NotificationType.RECURRING_ORDER_CREATED,
-            title: 'Nouvelle commande récurrente créée',
-            message: `Votre commande récurrente a été automatiquement renouvelée. ID de commande: ${newOrder.id}`,
+            type: NotificationType.NEW_ORDER,
+            title: 'Nouvelle commande créée',
+            message: `Votre commande a été créée avec succès. ID de commande: ${newOrder.id}`,
             data: {
-              orderId: newOrder.id,
-              recurringOrderId: recurringOrder.id
+              orderId: newOrder.id
             }
           });
         } catch (error) {
           console.error(`Failed to process recurring order ${recurringOrder.id}:`, error);
-          // Continue with other orders even if one fails
         }
       }
     } catch (error) {
@@ -233,9 +228,9 @@ export class RecurringOrderService {
         return addMonths(fromDate, 1);
       case RecurringFrequency.ONCE:
       default:
-        return addDays(fromDate, 365); // Set far future date for one-time orders
+        return addDays(fromDate, 365); 
     }
   }
 }
 
-export const recurringOrder
+export const recurringOrderService = new RecurringOrderService();
