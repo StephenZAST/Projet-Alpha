@@ -31,7 +31,7 @@ router.post('/withdrawal/:id/process', affiliateController.processWithdrawal);
 router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
 
 router.get('/all', affiliateController.getAllAffiliates);
-router.post('/commission-rules', affiliateController.updateProfile);
+router.post('/commission-rules', affiliateController.updateAffiliate);
 router.get('/analytics', affiliateController.getAnalytics);
 
 export default router;

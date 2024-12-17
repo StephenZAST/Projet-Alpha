@@ -14,7 +14,7 @@ export const requestCommissionWithdrawal = async (req: Request, res: Response, n
         const withdrawal = await affiliateService.requestCommissionWithdrawal(
             affiliateId,
             amount,
-            paymentMethod,
+            paymentMethod as PaymentMethod,
             paymentDetails
         );
         res.status(200).json(withdrawal);

@@ -4,7 +4,7 @@ export enum UserRole {
   ADMIN = 'admin',
   CLIENT = 'client',
   AFFILIATE = 'affiliate',
-  SECRETARY = 'secretary', // Added this role
+  SECRETARY = 'secretary',
   SUPER_ADMIN = 'SUPER_ADMIN'
 }
 

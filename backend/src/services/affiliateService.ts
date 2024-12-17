@@ -1,4 +1,4 @@
-import { Affiliate, AffiliateStatus, PayoutStatus, CommissionWithdrawal } from '../models/affiliate';
+import { Affiliate, AffiliateStatus, PayoutStatus, CommissionWithdrawal, PaymentMethod } from '../models/affiliate';
 import { AppError, errorCodes } from '../utils/errors';
 import { createAffiliate, approveAffiliate, getAffiliateProfile, updateProfile, getPendingAffiliates, getAllAffiliates, getAffiliateById, deleteAffiliate, updateAffiliate } from './affiliateService/affiliateManagement';
 import { requestCommissionWithdrawal, getCommissionWithdrawals, updateCommissionWithdrawalStatus, getWithdrawalHistory, getPendingWithdrawals, processWithdrawal } from './affiliateService/commissionWithdrawal';
@@ -24,7 +24,7 @@ export class AffiliateService {
   async requestCommissionWithdrawal(
     affiliateId: string,
     amount: number,
-    paymentMethod: string,
+    paymentMethod: PaymentMethod,
     paymentDetails: CommissionWithdrawal['paymentDetails']
   ): Promise<CommissionWithdrawal> {
     return requestCommissionWithdrawal(affiliateId, amount, paymentMethod, paymentDetails);

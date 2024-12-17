@@ -8,4 +8,14 @@ import { getAffiliateById } from './getAffiliateById';
 import { deleteAffiliate } from './deleteAffiliate';
 import { updateAffiliate } from './updateAffiliate';
 
-export { createAffiliate, approveAffiliate, getAffiliateProfile, updateProfile, getPendingAffiliates, getAllAffiliates, getAffiliateById, deleteAffiliate, updateAffiliate };
+export {
+  createAffiliate,
+  approveAffiliate,
+  getAffiliateProfile,
+  updateProfile,
+  getPendingAffiliates,
+  getAllAffiliates,
+  getAffiliateById,
+  deleteAffiliate,
+  updateAffiliate
+};

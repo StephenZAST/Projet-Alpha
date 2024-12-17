@@ -14,9 +14,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export class NotificationService {
   private notificationsTable = 'notifications';
 
-  /**
-   * Create a new notification
-   */
   async createNotification(notification: Omit<Notification, 'id' | 'createdAt'>): Promise<string> {
     const newNotification = {
       ...notification,
@@ -33,9 +30,6 @@ export class NotificationService {
     return data.id;
   }
 
-  /**
-   * Send a notification
-   */
   async sendNotification(userId: string, notification: { type: NotificationType; title: string; message: string; data: { orderId?: string; recurringOrderId?: string; } }): Promise<void> {
     const newNotification = {
       type: notification.type,
@@ -53,15 +47,7 @@ export class NotificationService {
     await this.createNotification(newNotification);
   }
 
-  /**
-   * Send order status notification
-   */
-  async sendOrderStatusNotification(
-    orderId: string,
-    userId: string,
-    status: string,
-    additionalData?: Record<string, any>
-  ): Promise<string> {
+  async sendOrderStatusNotification(orderId: string, userId: string, status: string, additionalData?: Record<string, any>): Promise<string> {
     const notification = {
       type: NotificationType.ORDER_STATUS_UPDATE,
       recipientId: userId,
@@ -82,14 +68,7 @@ export class NotificationService {
     return this.createNotification(notification);
   }
 
-  /**
-   * Send affiliate commission notification
-   */
-  async sendAffiliateCommissionNotification(
-    affiliateId: string,
-    amount: number,
-    orderId: string
-  ): Promise<string> {
+  async sendAffiliateCommissionNotification(affiliateId: string, amount: number, orderId: string): Promise<string> {
     const notification = {
       type: NotificationType.COMMISSION_APPROVED,
       recipientId: affiliateId,
@@ -109,13 +88,7 @@ export class NotificationService {
     return this.createNotification(notification);
   }
 
-  /**
-   * Send loyalty points reminder
-   */
-  async sendLoyaltyPointsReminder(
-    userId: string,
-    points: number
-  ): Promise<string> {
+  async sendLoyaltyPointsReminder(userId: string, points: number): Promise<string> {
     const notification = {
       type: NotificationType.LOYALTY_POINTS_REMINDER,
       recipientId: userId,
@@ -134,20 +107,9 @@ export class NotificationService {
     return this.createNotification(notification);
   }
 
-  /**
-   * Broadcast promotion
-   */
-  async broadcastPromotion(
-    title: string,
-    message: string,
-    userRole: 'customer' | 'affiliate',
-    expiresAt?: Date
-  ): Promise<void> {
+  async broadcastPromotion(title: string, message: string, userRole: 'customer' | 'affiliate', expiresAt?: Date): Promise<void> {
     const usersTable = 'users';
-    const { data: users, error: usersError } = await supabase
-      .from(usersTable)
-      .select('id')
-      .eq('role', userRole);
+    const { data: users, error: usersError } = await supabase.from(usersTable).select('id').eq('role', userRole);
 
     if (usersError) {
       throw new AppError(500, 'Failed to fetch users', errorCodes.DATABASE_ERROR);
@@ -172,16 +134,9 @@ export class NotificationService {
     }
   }
 
-  /**
-   * Mark notification as read
-   */
   async markAsRead(notificationId: string, userId: string): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from(this.notificationsTable)
-        .update({ isRead: true, readAt: new Date().toISOString() })
-        .eq('id', notificationId)
-        .eq('recipientId', userId);
+      const { error } = await supabase.from(this.notificationsTable).update({ isRead: true, readAt: new Date().toISOString() }).eq('id', notificationId).eq('recipientId', userId);
 
       if (error) {
         throw new AppError(500, 'Failed to mark notification as read', errorCodes.NOTIFICATION_UPDATE_ERROR);
@@ -194,16 +149,8 @@ export class NotificationService {
     }
   }
 
-  /**
-   * Get user notifications
-   */
   async getUserNotifications(userId: string, limit = 50): Promise<Notification[]> {
-    const { data, error } = await supabase
-      .from(this.notificationsTable)
-      .select('*')
-      .eq('recipientId', userId)
-      .order('createdAt', { ascending: false })
-      .limit(limit);
+    const { data, error } = await supabase.from(this.notificationsTable).select('*').eq('recipientId', userId).order('createdAt', { ascending: false }).limit(limit);
 
     if (error) {
       throw new AppError(500, 'Failed to fetch user notifications', errorCodes.NOTIFICATION_FETCH_ERROR);
@@ -214,3 +161,4 @@ export class NotificationService {
 }
 
 export const notificationService = new NotificationService();
+export { NotificationType };

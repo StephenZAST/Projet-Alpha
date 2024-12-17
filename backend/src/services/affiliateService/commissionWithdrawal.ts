@@ -1,5 +1,5 @@
 import supabase from '../../config/supabase';
-import { CommissionWithdrawal, PayoutStatus, Affiliate } from '../../models/affiliate';
+import { CommissionWithdrawal, PayoutStatus, Affiliate, PaymentMethod } from '../../models/affiliate';
 import { AppError, errorCodes } from '../../utils/errors';
 
 const commissionWithdrawalsTable = 'commissionWithdrawals';
@@ -8,7 +8,7 @@ const affiliatesTable = 'affiliates';
 export async function requestCommissionWithdrawal(
     affiliateId: string,
     amount: number,
-    paymentMethod: string,
+    paymentMethod: PaymentMethod,
     paymentDetails: CommissionWithdrawal['paymentDetails']
 ): Promise<CommissionWithdrawal> {
     try {
@@ -28,13 +28,13 @@ export async function requestCommissionWithdrawal(
         const { data, error } = await supabase.from(commissionWithdrawalsTable).insert([withdrawal]).select().single();
 
         if (error) {
-            throw new AppError(500, 'Failed to request commission withdrawal', 'COMMISSION_WITHDRAWAL_REQUEST_FAILED');
+            throw new AppError(500, 'Failed to request commission withdrawal', errorCodes.COMMISSION_WITHDRAWAL_REQUEST_FAILED);
         }
 
         return data as CommissionWithdrawal;
     } catch (error) {
         if (error instanceof AppError) throw error;
-        throw new AppError(500, 'Failed to request commission withdrawal', 'COMMISSION_WITHDRAWAL_REQUEST_FAILED');
+        throw new AppError(500, 'Failed to request commission withdrawal', errorCodes.COMMISSION_WITHDRAWAL_REQUEST_FAILED);
     }
 }
 
@@ -43,12 +43,12 @@ export async function getCommissionWithdrawals(): Promise<CommissionWithdrawal[]
         const { data, error } = await supabase.from(commissionWithdrawalsTable).select('*').order('requestedAt', { ascending: false });
 
         if (error) {
-            throw new AppError(500, 'Failed to fetch commission withdrawals', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+            throw new AppError(500, 'Failed to fetch commission withdrawals', errorCodes.COMMISSION_WITHDRAWAL_FETCH_FAILED);
         }
 
         return data as CommissionWithdrawal[];
     } catch (error) {
-        throw new AppError(500, 'Failed to fetch commission withdrawals', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+        throw new AppError(500, 'Failed to fetch commission withdrawals', errorCodes.COMMISSION_WITHDRAWAL_FETCH_FAILED);
     }
 }
 
@@ -61,7 +61,7 @@ export async function updateCommissionWithdrawalStatus(withdrawalId: string, sta
             .single();
 
         if (withdrawalError) {
-            throw new AppError(404, 'Commission withdrawal not found', 'COMMISSION_WITHDRAWAL_NOT_FOUND');
+            throw new AppError(404, 'Commission withdrawal not found', errorCodes.COMMISSION_WITHDRAWAL_NOT_FOUND);
         }
 
         const { error } = await supabase
@@ -75,7 +75,7 @@ export async function updateCommissionWithdrawalStatus(withdrawalId: string, sta
             .eq('id', withdrawalId);
 
         if (error) {
-            throw new AppError(500, 'Failed to update commission withdrawal status', 'COMMISSION_WITHDRAWAL_UPDATE_FAILED');
+            throw new AppError(500, 'Failed to update commission withdrawal status', errorCodes.COMMISSION_WITHDRAWAL_UPDATE_FAILED);
         }
 
         return {
@@ -87,7 +87,7 @@ export async function updateCommissionWithdrawalStatus(withdrawalId: string, sta
         } as CommissionWithdrawal;
     } catch (error) {
         if (error instanceof AppError) throw error;
-        throw new AppError(500, 'Failed to update commission withdrawal status', 'COMMISSION_WITHDRAWAL_UPDATE_FAILED');
+        throw new AppError(500, 'Failed to update commission withdrawal status', errorCodes.COMMISSION_WITHDRAWAL_UPDATE_FAILED);
     }
 }
 
@@ -126,7 +126,7 @@ export async function getWithdrawalHistory(
         const { data: withdrawals, error: withdrawalsError } = await query;
 
         if (withdrawalsError) {
-            throw new AppError(500, 'Failed to fetch withdrawal history', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+            throw new AppError(500, 'Failed to fetch withdrawal history', errorCodes.COMMISSION_WITHDRAWAL_FETCH_FAILED);
         }
 
         const total = withdrawals.length;
@@ -138,7 +138,7 @@ export async function getWithdrawalHistory(
             totalAmount
         };
     } catch (error) {
-        throw new AppError(500, 'Failed to fetch withdrawal history', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+        throw new AppError(500, 'Failed to fetch withdrawal history', errorCodes.COMMISSION_WITHDRAWAL_FETCH_FAILED);
     }
 }
 
@@ -166,22 +166,22 @@ export async function getPendingWithdrawals(
         const { data: withdrawals, error: withdrawalsError } = await query;
 
         if (withdrawalsError) {
-            throw new AppError(500, 'Failed to fetch pending withdrawals', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+            throw new AppError(500, 'Failed to fetch pending withdrawals', errorCodes.COMMISSION_WITHDRAWAL_FETCH_FAILED);
         }
 
         const affiliateIds = withdrawals.map((withdrawal: { affiliateId: any; }) => withdrawal.affiliateId);
         const { data: affiliates, error: affiliatesError } = await supabase
             .from(affiliatesTable)
-            .select('id, firstName, lastName, email, phoneNumber')
+            .select('*')
             .in('id', affiliateIds);
 
         if (affiliatesError) {
-            throw new AppError(500, 'Failed to fetch affiliates', 'AFFILIATE_FETCH_FAILED');
+            throw new AppError(500, 'Failed to fetch affiliates', errorCodes.AFFILIATE_FETCH_FAILED);
         }
 
-        const affiliateMap = new Map(affiliates.map((affiliate: { id: any; }) => [affiliate.id, affiliate]));
+        const affiliateMap = new Map(affiliates.map((affiliate: Affiliate) => [affiliate.id, affiliate]));
 
-        const withdrawalsWithAffiliate = withdrawals.map((withdrawal: { affiliateId: unknown; }) => ({
+        const withdrawalsWithAffiliate = withdrawals.map((withdrawal: CommissionWithdrawal) => ({
             ...withdrawal,
             affiliate: affiliateMap.get(withdrawal.affiliateId) as Pick<Affiliate, 'firstName' | 'lastName' | 'email' | 'phoneNumber'>
         }));
@@ -195,7 +195,7 @@ export async function getPendingWithdrawals(
             totalAmount
         };
     } catch (error) {
-        throw new AppError(500, 'Failed to fetch pending withdrawals', 'COMMISSION_WITHDRAWAL_FETCH_FAILED');
+        throw new AppError(500, 'Failed to fetch pending withdrawals', errorCodes.COMMISSION_WITHDRAWAL_FETCH_FAILED);
     }
 }
 
@@ -213,7 +213,7 @@ export async function processWithdrawal(
             .single();
 
         if (withdrawalError) {
-            throw new AppError(404, 'Commission withdrawal not found', 'COMMISSION_WITHDRAWAL_NOT_FOUND');
+            throw new AppError(404, 'Commission withdrawal not found', errorCodes.COMMISSION_WITHDRAWAL_NOT_FOUND);
         }
 
         const { error } = await supabase
@@ -228,10 +228,10 @@ export async function processWithdrawal(
             .eq('id', withdrawalId);
 
         if (error) {
-            throw new AppError(500, 'Failed to process commission withdrawal', 'COMMISSION_WITHDRAWAL_UPDATE_FAILED');
+            throw new AppError(500, 'Failed to process commission withdrawal', errorCodes.COMMISSION_WITHDRAWAL_UPDATE_FAILED);
         }
     } catch (error) {
         if (error instanceof AppError) throw error;
-        throw new AppError(500, 'Failed to process commission withdrawal', 'COMMISSION_WITHDRAWAL_UPDATE_FAILED');
+        throw new AppError(500, 'Failed to process commission withdrawal', errorCodes.COMMISSION_WITHDRAWAL_UPDATE_FAILED);
     }
 }

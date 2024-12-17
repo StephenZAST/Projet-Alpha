@@ -33,7 +33,6 @@ export async function approveAffiliate(affiliateId: string): Promise<void> {
             throw new AppError(500, 'Failed to approve affiliate', errorCodes.AFFILIATE_UPDATE_FAILED);
         }
 
-        // Notify affiliate
         const notificationService = new NotificationService();
         await notificationService.sendNotification(affiliateId, {
             type: NotificationType.AFFILIATE_APPROVED,

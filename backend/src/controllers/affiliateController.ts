@@ -10,6 +10,7 @@ import { getAllAffiliates } from './affiliateController/getAllAffiliates';
 import { requestCommissionWithdrawal } from './affiliateController/requestCommissionWithdrawal';
 import { getCommissionWithdrawals } from './affiliateController/getCommissionWithdrawals';
 import { getAnalytics } from './affiliateController/getAnalytics';
+import { updateAffiliate } from './affiliateController/updateAffiliate';
 
 const affiliateController = {
   createAffiliate,
@@ -23,7 +24,8 @@ const affiliateController = {
   getAllAffiliates,
   requestCommissionWithdrawal,
   getCommissionWithdrawals,
-  getAnalytics
+  getAnalytics,
+  updateAffiliate
 };
 
 export default affiliateController;
