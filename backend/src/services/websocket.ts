@@ -3,7 +3,7 @@ import http from 'http';
 import { isAuthenticated } from '../middleware/auth';
 import { Cache } from '../utils/cache';
 import { GeoLocation } from '../utils/geo';
-import { DeliveryTaskService } from './delivery-tasks';
+import { DeliveryTasksService } from './delivery-tasks';
 
 interface WebSocketMessage {
   type: 'location' | 'geofence' | 'task' | 'error';
@@ -20,7 +20,7 @@ export class WebSocketService {
   private wss: WebSocket.Server;
   private connections: Map<string, DriverConnection>;
   private locationCache: Cache<string, GeoLocation>;
-  private deliveryTaskService: DeliveryTaskService;
+  private deliveryTaskService: DeliveryTasksService;
   private geofenceCache: Cache<string, any>;
 
   constructor(server: http.Server) {
@@ -28,7 +28,7 @@ export class WebSocketService {
     this.connections = new Map();
     this.locationCache = new Cache<string, GeoLocation>(300); // 5 minutes TTL
     this.geofenceCache = new Cache<string, any>(3600); // 1 hour TTL
-    this.deliveryTaskService = new DeliveryTaskService();
+    this.deliveryTaskService = new DeliveryTasksService();
 
     this.setupWebSocket();
     this.startLocationBatchProcessor();

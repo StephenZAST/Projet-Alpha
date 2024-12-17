@@ -12,6 +12,7 @@ export interface LoyaltyTransaction {
   orderId?: string;
   billId?: string;
   rewardId?: string; // Added rewardId property
+  redemptionId?: string; // Added redemptionId property
   type: LoyaltyTransactionType;
   points: number;
   description: string;

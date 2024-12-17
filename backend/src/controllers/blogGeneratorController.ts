@@ -1,10 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { GoogleAIService } from '../services/googleAI';
 import { BlogArticle, BlogArticleStatus, BlogArticleCategory } from '../models/blogArticle';
-import { db } from '../config/firebase';
+import supabase from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
 import { UserRole } from '../models/user';
-import { Timestamp } from 'firebase-admin/firestore';
 
 export class BlogGeneratorController {
     async updateGoogleAIKey(req: Request, res: Response, next: NextFunction) {
@@ -19,7 +18,7 @@ export class BlogGeneratorController {
             const adminId = user.id;
 
             // Vérifier si l'utilisateur est un admin
-            if (user.role === UserRole.LIVREUR) {
+            if (user.role !== UserRole.ADMIN) {
                 throw new AppError(403, "Non autorisé à configurer l'API Google AI", errorCodes.FORBIDDEN);
             }
 
@@ -35,10 +34,10 @@ export class BlogGeneratorController {
             });
 
             // Mettre à jour la clé API dans la base de données
-            await db.collection('admins').doc(adminId).update({
+            await supabase.from('admins').update({
                 googleAIKey: googleAIKey,
-                updatedAt: Timestamp.now()
-            });
+                updatedAt: new Date().toISOString()
+            }).eq('id', adminId);
 
             res.json({
                 success: true,
@@ -65,12 +64,13 @@ export class BlogGeneratorController {
             const config = req.body;
 
             // Récupérer l'admin et sa clé API
-            const adminDoc = await db.collection('admins').doc(adminId).get();
-            const admin = adminDoc.data();
+            const { data: adminData, error: adminError } = await supabase.from('admins').select('googleAIKey').eq('id', adminId).single();
 
-            if (!admin?.googleAIKey) {
-                throw new AppError(400, "Clé API Google AI non configurée", 'MISSING_API_KEY');
+            if (adminError || !adminData?.googleAIKey) {
+                 throw new AppError(400, "Clé API Google AI non configurée", 'MISSING_API_KEY');
             }
+
+            const admin = adminData;
 
             // Générer l'article avec Google AI
             const aiService = new GoogleAIService(admin.googleAIKey);
@@ -98,12 +98,17 @@ export class BlogGeneratorController {
                 seoKeywords: generatedContent.seoKeywords,
                 views: 0,
                 likes: 0,
-                createdAt: Timestamp.now(),
-                updatedAt: Timestamp.now()
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
 
-            const docRef = await db.collection('blog_articles').add(newArticle);
-            newArticle.id = docRef.id;
+            const { data, error } = await supabase.from('blog_articles').insert([newArticle]).select().single();
+
+            if (error) {
+                throw new AppError(500, 'Failed to create blog article', 'INTERNAL_SERVER_ERROR');
+            }
+
+            newArticle.id = data.id;
 
             res.status(201).json({
                 success: true,

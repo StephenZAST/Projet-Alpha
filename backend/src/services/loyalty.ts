@@ -1,7 +1,7 @@
-import { getLoyaltyAccount, createLoyaltyAccount, updateLoyaltyAccount, deleteLoyaltyAccount, createLoyaltyTransaction, getLoyaltyTransaction, updateLoyaltyTransaction, deleteLoyaltyTransaction } from './loyalty/points';
-import { getLoyaltyProgram, createLoyaltyProgram, updateLoyaltyProgram, deleteLoyaltyProgram } from './loyalty/program';
+import { getLoyaltyAccount, createLoyaltyAccount, updateLoyaltyAccount, deleteLoyaltyAccount, createLoyaltyTransaction, getLoyaltyTransaction, updateLoyaltyTransaction, deleteLoyaltyTransaction, addPoints } from './loyalty/points';
+import { getLoyaltyProgram, createLoyaltyProgram, updateLoyaltyProgram, deleteLoyaltyProgram, getAllLoyaltyPrograms, getLoyaltyProgramById } from './loyalty/program';
 import { redeemReward } from './loyalty/redemptions';
-import { getLoyaltyReward, createLoyaltyReward, updateLoyaltyReward, deleteLoyaltyReward } from './loyalty/rewards';
+import { getLoyaltyReward, createLoyaltyReward, updateLoyaltyReward, deleteLoyaltyReward, getRewards, getRewardById } from './loyalty/rewards';
 import { updateLoyaltyTier, getLoyaltyTiers } from './loyalty/tiers';
 import { LoyaltyAccount, LoyaltyTier, LoyaltyTransaction, LoyaltyTransactionType, LoyaltyProgram, LoyaltyReward, LoyaltyTierConfig, LoyaltyTierDefinition } from '../models/loyalty';
 
@@ -38,8 +38,8 @@ export class LoyaltyService {
     return deleteLoyaltyTransaction(id);
   }
 
-  async getLoyaltyProgram(id: string): Promise<LoyaltyProgram | null> {
-    return getLoyaltyProgram(id);
+  async getLoyaltyProgram(): Promise<LoyaltyProgram | null> {
+    return getLoyaltyProgram();
   }
 
   async createLoyaltyProgram(programData: LoyaltyProgram): Promise<LoyaltyProgram> {
@@ -52,6 +52,14 @@ export class LoyaltyService {
 
   async deleteLoyaltyProgram(id: string): Promise<void> {
     return deleteLoyaltyProgram(id);
+  }
+
+  async getAllLoyaltyPrograms(): Promise<LoyaltyProgram[]> {
+      return getAllLoyaltyPrograms();
+  }
+
+  async getLoyaltyProgramById(id: string): Promise<LoyaltyProgram | null> {
+      return getLoyaltyProgramById(id);
   }
 
   async redeemReward(userId: string, rewardId: string): Promise<LoyaltyTransaction> {
@@ -80,6 +88,18 @@ export class LoyaltyService {
 
   async getLoyaltyTiers(): Promise<LoyaltyTierConfig[]> {
     return getLoyaltyTiers();
+  }
+
+  async addPoints(userId: string, points: number, reason: string): Promise<LoyaltyAccount> {
+    return addPoints(userId, points, reason);
+  }
+
+  async getRewards(options: { page?: number, limit?: number, status?: string, startDate?: Date, endDate?: Date }): Promise<{ rewards: LoyaltyReward[], total: number }> {
+    return getRewards(options);
+  }
+
+  async getRewardById(id: string): Promise<LoyaltyReward | null> {
+    return getRewardById(id);
   }
 }
 

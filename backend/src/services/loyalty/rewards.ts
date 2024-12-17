@@ -91,3 +91,112 @@ export async function deleteLoyaltyReward(id: string): Promise<void> {
     throw new AppError(500, 'Failed to delete loyalty reward', errorCodes.DATABASE_ERROR);
   }
 }
+
+export async function getRewards(options: { page?: number, limit?: number, status?: string, startDate?: Date, endDate?: Date }): Promise<{ rewards: LoyaltyReward[], total: number }> {
+    try {
+        const page = options.page || 1;
+        const limit = options.limit || 10;
+        const status = options.status;
+        const startDate = options.startDate;
+        const endDate = options.endDate;
+
+        let query = supabase.from(loyaltyRewardsTable).select('*', { count: 'exact' });
+
+        if (status) {
+            query = query.eq('status', status);
+        }
+
+        if (startDate) {
+            query = query.gte('createdAt', startDate.toISOString());
+        }
+
+        if (endDate) {
+            query = query.lte('createdAt', endDate.toISOString());
+        }
+
+
+        const { data, error, count } = await query
+            .range((page - 1) * limit, page * limit - 1);
+
+
+        if (error) {
+            throw new AppError(500, 'Failed to fetch loyalty rewards', errorCodes.DATABASE_ERROR);
+        }
+
+        return { rewards: data as LoyaltyReward[], total: count || 0 };
+    } catch (err) {
+        if (err instanceof AppError) {
+            throw err;
+        }
+        throw new AppError(500, 'Failed to fetch loyalty rewards', errorCodes.DATABASE_ERROR);
+    }
+}
+
+export async function getRewardById(id: string): Promise<LoyaltyReward | null> {
+    try {
+        const { data, error } = await supabase.from(loyaltyRewardsTable).select('*').eq('id', id).single();
+
+        if (error) {
+            throw new AppError(500, 'Failed to fetch loyalty reward', errorCodes.DATABASE_ERROR);
+        }
+
+        return data as LoyaltyReward;
+    } catch (err) {
+        if (err instanceof AppError) {
+            throw err;
+        }
+        throw new AppError(500, 'Failed to fetch loyalty reward', errorCodes.DATABASE_ERROR);
+    }
+}
+
+export async function getPendingPhysicalRewards(): Promise<LoyaltyReward[]> {
+  try {
+    const { data, error } = await supabase
+      .from(loyaltyRewardsTable)
+      .select('*')
+      .eq('type', 'physical')
+      .eq('status', 'pending');
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch pending physical rewards', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as LoyaltyReward[];
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to fetch pending physical rewards', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function getAvailableRewards(userId: string, options: { type?: string, category?: string, status?: string }): Promise<LoyaltyReward[]> {
+    try {
+        let query = supabase.from(loyaltyRewardsTable).select('*');
+
+        if (options.type) {
+            query = query.eq('type', options.type);
+        }
+
+        if (options.category) {
+            query = query.eq('category', options.category);
+        }
+
+         if (options.status) {
+            query = query.eq('status', options.status);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            throw new AppError(500, 'Failed to fetch available rewards', errorCodes.DATABASE_ERROR);
+        }
+
+        return data as LoyaltyReward[];
+    } catch (err) {
+        if (err instanceof AppError) {
+            throw err;
+        }
+        throw new AppError(500, 'Failed to fetch available rewards', errorCodes.DATABASE_ERROR);
+    }
+}

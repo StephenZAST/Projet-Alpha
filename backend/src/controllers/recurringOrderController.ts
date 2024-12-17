@@ -105,7 +105,7 @@ class RecurringOrderController {
   };
 
   // Cette méthode serait appelée par un job planifié
-  processRecurringOrders = async (_req: Request, res: Response) => {
+  processRecurringOrders = async (res: Response) => {
     try {
       await this.recurringOrderService.processRecurringOrders();
       res.json({

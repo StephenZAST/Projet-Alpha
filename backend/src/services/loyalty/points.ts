@@ -169,3 +169,43 @@ export async function deleteLoyaltyTransaction(id: string): Promise<void> {
     throw new AppError(500, 'Failed to delete loyalty transaction', errorCodes.DATABASE_ERROR);
   }
 }
+
+export async function addPoints(userId: string, points: number, reason: string): Promise<LoyaltyAccount> {
+    try {
+      const account = await getLoyaltyAccount(userId);
+
+      if (!account) {
+        throw new AppError(404, 'Loyalty account not found', errorCodes.NOT_FOUND);
+      }
+
+      const updatedPoints = account.points + points;
+
+      const { data, error } = await supabase
+        .from(loyaltyAccountsTable)
+        .update({ points: updatedPoints, lastUpdated: new Date().toISOString() })
+        .eq('userId', userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw new AppError(500, 'Failed to add points to loyalty account', errorCodes.DATABASE_ERROR);
+      }
+
+      const transactionData: LoyaltyTransaction = {
+        userId,
+        type: LoyaltyTransactionType.EARNED,
+        points,
+        description: reason,
+        createdAt: new Date().toISOString()
+      };
+
+      await createLoyaltyTransaction(transactionData);
+
+      return data as LoyaltyAccount;
+    } catch (err) {
+      if (err instanceof AppError) {
+        throw err;
+      }
+      throw new AppError(500, 'Failed to add points to loyalty account', errorCodes.DATABASE_ERROR);
+    }
+  }

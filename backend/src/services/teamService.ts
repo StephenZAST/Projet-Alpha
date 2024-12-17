@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Team } from '../models/team';
 import { AppError, errorCodes } from '../utils/errors';
+import { PostgrestError } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -51,7 +52,7 @@ export class TeamService {
       const { data, error } = await this.teamsRef.select('*').eq('id', teamId).single();
 
       if (error) {
-        if (error.status === 404) {
+        if ((error as PostgrestError).code === '404') {
           return null;
         }
         throw new AppError(500, 'Failed to fetch team', errorCodes.TEAM_NOT_FOUND);
@@ -109,7 +110,7 @@ export class TeamService {
       const { data, error } = await this.teamsRef.select('*').eq('id', teamId).single();
 
       if (error) {
-        if (error.status === 404) {
+        if ((error as PostgrestError).code === '404') {
           throw new AppError(404, 'Team not found', errorCodes.TEAM_NOT_FOUND);
         }
         throw new AppError(500, 'Failed to fetch team', errorCodes.DATABASE_ERROR);
@@ -144,7 +145,7 @@ export class TeamService {
       const { data, error } = await this.teamsRef.select('*').eq('id', teamId).single();
 
       if (error) {
-        if (error.status === 404) {
+        if ((error as PostgrestError).code === '404') {
           throw new AppError(404, 'Team not found', errorCodes.TEAM_NOT_FOUND);
         }
         throw new AppError(500, 'Failed to fetch team', errorCodes.DATABASE_ERROR);

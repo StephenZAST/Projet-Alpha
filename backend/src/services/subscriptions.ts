@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { AppError, errorCodes } from '../utils/errors';
+import { PostgrestError } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -114,7 +115,7 @@ export async function getUserSubscription(userId: string): Promise<UserSubscript
       .single();
 
     if (error) {
-      if (error.status === 404) {
+      if ((error as PostgrestError).code === '404') {
         return null;
       }
       throw new AppError(500, 'Failed to fetch user subscription', errorCodes.DATABASE_ERROR);

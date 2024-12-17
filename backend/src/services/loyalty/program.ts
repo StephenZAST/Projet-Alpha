@@ -13,7 +13,24 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const loyaltyProgramsTable = 'loyaltyPrograms';
 
-export async function getLoyaltyProgram(id: string): Promise<LoyaltyProgram | null> {
+export async function getLoyaltyProgram(): Promise<LoyaltyProgram | null> {
+  try {
+    const { data, error } = await supabase.from(loyaltyProgramsTable).select('*').single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch loyalty program', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as LoyaltyProgram;
+  } catch (err) {
+    if (err instanceof AppError) {
+      throw err;
+    }
+    throw new AppError(500, 'Failed to fetch loyalty program', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function getLoyaltyProgramById(id: string): Promise<LoyaltyProgram | null> {
   try {
     const { data, error } = await supabase.from(loyaltyProgramsTable).select('*').eq('id', id).single();
 
@@ -29,6 +46,23 @@ export async function getLoyaltyProgram(id: string): Promise<LoyaltyProgram | nu
     throw new AppError(500, 'Failed to fetch loyalty program', errorCodes.DATABASE_ERROR);
   }
 }
+
+export async function getAllLoyaltyPrograms(): Promise<LoyaltyProgram[]> {
+    try {
+      const { data, error } = await supabase.from(loyaltyProgramsTable).select('*');
+  
+      if (error) {
+        throw new AppError(500, 'Failed to fetch loyalty programs', errorCodes.DATABASE_ERROR);
+      }
+  
+      return data as LoyaltyProgram[];
+    } catch (err) {
+      if (err instanceof AppError) {
+        throw err;
+      }
+      throw new AppError(500, 'Failed to fetch loyalty programs', errorCodes.DATABASE_ERROR);
+    }
+  }
 
 export async function createLoyaltyProgram(programData: LoyaltyProgram): Promise<LoyaltyProgram> {
   try {
@@ -49,7 +83,7 @@ export async function createLoyaltyProgram(programData: LoyaltyProgram): Promise
 
 export async function updateLoyaltyProgram(id: string, programData: Partial<LoyaltyProgram>): Promise<LoyaltyProgram> {
   try {
-    const currentProgram = await getLoyaltyProgram(id);
+    const currentProgram = await getLoyaltyProgramById(id);
 
     if (!currentProgram) {
       throw new AppError(404, 'Loyalty program not found', errorCodes.NOT_FOUND);
@@ -72,7 +106,7 @@ export async function updateLoyaltyProgram(id: string, programData: Partial<Loya
 
 export async function deleteLoyaltyProgram(id: string): Promise<void> {
   try {
-    const program = await getLoyaltyProgram(id);
+    const program = await getLoyaltyProgramById(id);
 
     if (!program) {
       throw new AppError(404, 'Loyalty program not found', errorCodes.NOT_FOUND);

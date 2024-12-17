@@ -5,7 +5,8 @@ import { AppError, errorCodes } from '../utils/errors'; // Import errorCodes
 import { notificationService } from './notifications'; // Correct import
 import { getReferral, createReferral, updateReferral, deleteReferral } from './referral/referralManagement';
 import { getReferralReward, createReferralReward, updateReferralReward, deleteReferralReward } from './referral/rewardManagement';
-import { getReferralProgram, createReferralProgram, updateReferralProgram, deleteReferralProgram } from './referral/programManagement';
+import { getActiveReferralProgram } from './referral/programManagement';
+import { referral } from './notification/referral';
 
 const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -54,7 +55,7 @@ export class ReferralService {
       const newReferral = await createReferral(referralData);
 
       // Send invitation email
-      await notificationService.sendReferralInvitation(referredEmail, newReferral.referralCode);
+      await referral.sendReferralInvitation(referredEmail, newReferral.referralCode);
 
       return newReferral;
     } catch (error) {
@@ -151,13 +152,13 @@ export class ReferralService {
         .eq('referralId', referralId)
         .eq('status', 'PENDING');
 
-      const updatePromises = rewards.data.map((reward: ReferralReward) => {
+      const updatePromises = rewards.data ? rewards.data.map((reward: ReferralReward) => {
         return updateReferralReward(reward.id, {
           status: 'CREDITED',
           orderId,
           creditedAt: new Date().toISOString()
         });
-      });
+      }) : [];
 
       await Promise.all(updatePromises);
 
@@ -165,7 +166,6 @@ export class ReferralService {
       await updateReferral(referralId, {
         firstOrderCompleted: true,
         ordersCount: 1,
-        updatedAt: new Date().toISOString()
       });
     } catch (error) {
       console.error('Error processing first order reward:', error);
@@ -178,7 +178,7 @@ export class ReferralService {
    */
   private async getActiveProgram(): Promise<ReferralProgram> {
     try {
-      const program = await getReferralProgram();
+      const program = await getActiveReferralProgram();
 
       if (!program) {
         throw new AppError(404, 'No active referral program found', errorCodes.NO_ACTIVE_PROGRAM);
@@ -205,10 +205,10 @@ export class ReferralService {
         .select('*')
         .eq('referrerId', userId);
 
-      const referralStats = referrals.data.map((referral: Referral) => ({
+      const referralStats = referrals.data ? referrals.data.map((referral: Referral) => ({
         ...referral,
         id: referral.id
-      }));
+      })) : [];
 
       return {
         totalReferrals: referralStats.length,

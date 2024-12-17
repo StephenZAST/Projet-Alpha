@@ -32,6 +32,24 @@ export async function getReferralProgram(id: string): Promise<ReferralProgram | 
 }
 
 /**
+ * Get active referral program
+ */
+export async function getActiveReferralProgram(): Promise<ReferralProgram | null> {
+  try {
+    const { data, error } = await supabase.from(programsTable).select('*').eq('isActive', true).single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch active referral program', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as ReferralProgram;
+  } catch (error) {
+    console.error('Error getting active referral program:', error);
+    throw error;
+  }
+}
+
+/**
  * Create a new referral program
  */
 export async function createReferralProgram(programData: Omit<ReferralProgram, 'id'>): Promise<ReferralProgram> {

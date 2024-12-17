@@ -8,6 +8,7 @@ import { ClientReferral } from './clientReferral';
 import { LoyaltyTierDefinition } from './loyalty/loyaltyTierDefinition';
 import { LoyaltyEvent, LoyaltyEventType } from './loyalty/loyaltyEvent';
 import { LoyaltyTransaction, LoyaltyTransactionType } from './loyalty/loyaltyTransaction';
+import { RewardRedemption, RewardRedemptionStatus } from './loyalty/rewardRedemption';
 
 // This file serves as an index to import and re-export all loyalty-related models and functions
 export * from './loyalty/loyaltyAccount';
@@ -20,3 +21,4 @@ export * from './clientReferral';
 export * from './loyalty/loyaltyTierDefinition';
 export * from './loyalty/loyaltyEvent';
 export * from './loyalty/loyaltyTransaction';
+export * from './loyalty/rewardRedemption';
