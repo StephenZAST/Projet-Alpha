@@ -25,7 +25,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
     (req as any).user = data.user;
     next();
   } catch (error) {
-    return next(error);
+    next(error); // Call next with the error object
   }
 };
 
@@ -44,7 +44,7 @@ export const requireAdminRolePath = (allowedRoles: UserRole[]) => {
 
       next();
     } catch (error) {
-      return next(error);
+      next(error); // Call next with the error object
     }
   };
 };
