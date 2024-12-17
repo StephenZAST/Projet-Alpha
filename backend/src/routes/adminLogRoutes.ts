@@ -3,7 +3,6 @@ import { adminLogController } from '../controllers/adminLogController';
 import { isAuthenticated } from '../middleware/auth';
 import { validateRequest } from '../middleware/validateRequest';
 import { searchAdminLogsSchema, getAdminLogByIdSchema, updateAdminLogSchema } from '../validations/schemas/adminLogSchemas';
-import { UserRole } from '../models/user';
 
 const router: Router = express.Router();
 

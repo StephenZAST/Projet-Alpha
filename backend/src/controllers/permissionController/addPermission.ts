@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PermissionService } from '../../services/permissionService';
+import { permissionService } from '../../services/permissionService';
 import { AppError, errorCodes } from '../../utils/errors';
 import { Permission } from '../../models/permission';
 
@@ -11,9 +11,11 @@ export const addPermission = async (req: Request, res: Response, next: NextFunct
   }
 
   try {
-    const permission = await PermissionService.addPermission({ name, description, roles });
-    res.status(201).json({ message: 'Permission added successfully', permission });
+    const permission: Permission = { name, description, roles };
+    const result = await permissionService.createPermission(permission);
+    res.status(201).json({ message: 'Permission added successfully', result });
   } catch (error) {
     next(new AppError(500, 'Failed to add permission', 'INTERNAL_SERVER_ERROR'));
   }
 };
+  

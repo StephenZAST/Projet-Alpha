@@ -1,91 +1,66 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { 
-  validateGetAdminById,
-  validateGetAdmins,
-  validateCreateAdmin,
-  validateUpdateAdmin,
-  validateDeleteAdmin,
-  validateUpdateAdminRole
+  validateCreateAdmin, 
+  validateUpdateAdmin, 
+  validateGetAdmin 
 } from '../middleware/adminValidation';
 import { AdminService } from '../services/adminService';
 import { AppError } from '../utils/errors';
 import { UserRole } from '../models/user';
 
 const router = express.Router();
-const adminService = new AdminService();
 
 // Protect all routes
-router.use(isAuthenticated);
-router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
+router.use(isAuthenticated as express.RequestHandler);
+router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]) as express.RequestHandler);
 
-// Define route handler functions using async/await
-const getAdmins = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  try {
-    const requesterId = req.user!.id; // Assuming user ID is available in req.user after authentication
-    const admins = await adminService.getAllAdmins(requesterId);
-    res.json(admins);
-  } catch (error) {
+// Define route handler functions using .then()
+const getAdmins = (req: Request, res: Response, next: NextFunction) => {
+  AdminService.getAllAdmins().then((admins) => {
+    res.status(200).json({ admins });
+  }).catch((error) => {
     next(error);
-  }
+  });
 };
 
-const getAdminById = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
-  try {
-    const requesterId = req.user!.id; // Assuming user ID is available in req.user after authentication
-    const admin = await adminService.getAdminById(req.params.id, requesterId);
-    res.json(admin);
-  } catch (error) {
+const getAdminById = (req: Request, res: Response, next: NextFunction) => {
+  AdminService.getAdminById(req.params.id).then((admin) => {
+    res.status(200).json({ admin });
+  }).catch((error) => {
     next(error);
-  }
+  });
 };
 
-const createAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  try {
-    const creatorId = req.user!.id; // Assuming user ID is available in req.user after authentication
-    const admin = await adminService.createAdmin(req.body, creatorId);
-    res.status(201).json(admin);
-  } catch (error) {
+const createAdmin = (req: Request, res: Response, next: NextFunction) => {
+  AdminService.createAdmin(req.body).then((admin) => {
+    res.status(201).json({ admin });
+  }).catch((error) => {
     next(error);
-  }
+  });
 };
 
-const updateAdmin = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
-  try {
-    const updaterId = req.user!.id; // Assuming user ID is available in req.user after authentication
-    const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body, updaterId);
-    res.json(updatedAdmin);
-  } catch (error) {
+const updateAdmin = (req: Request, res: Response, next: NextFunction) => {
+  AdminService.updateAdmin(req.params.id, req.body).then((updatedAdmin) => {
+    res.status(200).json({ updatedAdmin });
+  }).catch((error) => {
     next(error);
-  }
+  });
 };
 
-const deleteAdmin = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
-  try {
-    const deleterId = req.user!.id; // Assuming user ID is available in req.user after authentication
-    await adminService.deleteAdmin(req.params.id, deleterId);
-    res.json({ message: 'Admin deleted successfully' });
-  } catch (error) {
+const deleteAdmin = (req: Request, res: Response, next: NextFunction) => {
+  AdminService.deleteAdmin(req.params.id).then(() => {
+    res.status(200).json({ message: 'Admin deleted successfully' });
+  }).catch((error) => {
     next(error);
-  }
-};
-
-const updateAdminRole = async (req: express.Request<{ id: string }>, res: express.Response, next: express.NextFunction) => {
-  try {
-    const updaterId = req.user!.id; // Assuming user ID is available in req.user after authentication
-    const updatedAdmin = await adminService.updateAdmin(req.params.id, req.body, updaterId);
-    res.json(updatedAdmin);
-  } catch (error) {
-    next(error);
-  }
+  });
 };
 
 // Routes using route handler functions
-router.get('/', validateGetAdmins, getAdmins); 
-router.get('/:id', validateGetAdminById, getAdminById); 
+router.get('/', validateGetAdmin, getAdmins); 
+router.get('/:id', validateGetAdmin, getAdminById); 
 router.post('/', validateCreateAdmin, createAdmin); 
 router.put('/:id', validateUpdateAdmin, updateAdmin); 
-router.delete('/:id', validateDeleteAdmin, deleteAdmin); 
-router.put('/:id/role', validateUpdateAdminRole, updateAdminRole); 
+router.delete('/:id', validateGetAdmin, deleteAdmin); 
 
 export default router;

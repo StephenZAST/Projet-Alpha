@@ -3,23 +3,21 @@ import { AppError, errorCodes } from '../utils/errors';
 import { registerAdmin, loginAdmin, updateAdmin, deleteAdmin, getAdminById } from '../controllers/adminController';
 import { validateRequest } from '../middleware/validation';
 import { validateCreateAdmin, validateGetAdmin, validateUpdateAdmin } from '../middleware/adminValidation';
-import { authenticateAdmin } from '../utils/auth';
-import { createToken } from '../utils/auth';
+import { authenticateAdmin } from '../authModules/adminAuth';
+import { createToken } from '../authModules/tokenUtils';
+import { registerWithSupabase, loginWithSupabase } from '../authModules/supabaseAuth';
 
 const router = express.Router();
 
-// Middleware to authenticate admin
-router.use(authenticateAdmin);
-
-// Register a new admin
+// Register a new admin with Supabase
 router.post('/register', validateCreateAdmin, async (req, res, next) => {
   try {
     const adminData = req.body;
-    const admin = await registerAdmin(req, res, next);
+    const data = await registerWithSupabase(adminData);
 
-    if (admin) {
-      const token = createToken({ id: admin.id, role: admin.role });
-      res.status(201).json({ message: 'Admin registered successfully', admin, token });
+    if (data) {
+      const token = createToken({ id: data.user?.id || '', role: 'admin' });
+      res.status(201).json({ message: 'Admin registered successfully', data, token });
     } else {
       throw new AppError(500, 'Failed to register admin', 'INTERNAL_SERVER_ERROR');
     }
@@ -28,15 +26,15 @@ router.post('/register', validateCreateAdmin, async (req, res, next) => {
   }
 });
 
-// Login an admin
+// Login an admin with Supabase
 router.post('/login', validateGetAdmin, async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const admin = await loginAdmin(req, res, next);
+    const data = await loginWithSupabase({ email, password });
 
-    if (admin && admin.password === password) {
-      const token = createToken({ id: admin.id, role: admin.role });
-      res.status(200).json({ message: 'Login successful', admin, token });
+    if (data) {
+      const token = createToken({ id: data.user?.id || '', role: 'admin' });
+      res.status(200).json({ message: 'Login successful', data, token });
     } else {
       throw new AppError(401, 'Invalid credentials', 'UNAUTHORIZED');
     }
@@ -46,7 +44,7 @@ router.post('/login', validateGetAdmin, async (req, res, next) => {
 });
 
 // Update admin
-router.put('/:id', validateUpdateAdmin, async (req, res, next) => {
+router.put('/:id', validateUpdateAdmin, authenticateAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     const adminData = req.body;
@@ -63,7 +61,7 @@ router.put('/:id', validateUpdateAdmin, async (req, res, next) => {
 });
 
 // Delete admin
-router.delete('/:id', validateRequest, async (req, res, next) => {
+router.delete('/:id', validateRequest, authenticateAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     await deleteAdmin(req, res, next);
@@ -74,7 +72,7 @@ router.delete('/:id', validateRequest, async (req, res, next) => {
 });
 
 // Get admin by ID
-router.get('/:id', validateGetAdmin, async (req, res, next) => {
+router.get('/:id', validateGetAdmin, authenticateAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
     const admin = await getAdminById(req, res, next);

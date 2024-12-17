@@ -45,3 +45,28 @@ export const validateUpdateAdmin = (req: Request, res: Response, next: NextFunct
 
   next();
 };
+
+export const validateLogin = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return next(new AppError(400, 'Email and password are required', errorCodes.INVALID_LOGIN_DATA));
+  }
+
+  next();
+};
+
+export const validateToggleStatus = (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+
+  if (!id) {
+    return next(new AppError(400, 'ID is required', errorCodes.INVALID_ID));
+  }
+
+  if (isActive === undefined) {
+    return next(new AppError(400, 'isActive is required', errorCodes.INVALID_STATUS));
+  }
+
+  next();
+};

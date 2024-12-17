@@ -17,6 +17,7 @@ import adminLogRoutes from './routes/adminLogRoutes';
 import googleAuthRoutes from './routes/googleAuthRoutes'; 
 import blogArticleRoutes from './routes/blogArticleRoutes'; 
 import blogGeneratorRoutes from './routes/blogGeneratorRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 const app = express();
 const jobScheduler = new JobScheduler();
@@ -45,7 +46,7 @@ app.use('/api/billing', billingRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/websocket', websocketRoutes);
 app.use('/api/adminLogs', adminLogRoutes);
-app.use('/api/admin', googleAuthRoutes); 
+app.use('/api/admin', adminRoutes); 
 app.use('/api/blog', blogArticleRoutes); 
 app.use('/api/blog-generator', blogGeneratorRoutes); 
 
