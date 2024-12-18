@@ -10,6 +10,8 @@ export enum UserRole {
   CUSTOMER_SERVICE = 'customer_service',
   SUPERVISEUR = 'SUPERVISEUR',
   CLIENT = 'CLIENT',
+  SECRETARY = "SECRETARY",
+  SERVICE_CLIENT = "SERVICE_CLIENT",
 }
 
 export enum UserStatus {
@@ -77,6 +79,7 @@ export interface User {
 }
 
 export interface CreateUserInput {
+  uid: string;
   firstName: string;
   lastName: string;
   email: string;

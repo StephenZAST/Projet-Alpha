@@ -48,13 +48,7 @@ router.put('/:id', validateUpdateAdmin, authenticateAdmin, async (req, res, next
   try {
     const { id } = req.params;
     const adminData = req.body;
-    const admin = await updateAdmin(req, res, next);
-
-    if (admin) {
-      res.status(200).json({ message: 'Admin updated successfully', admin });
-    } else {
-      throw new AppError(404, 'Admin not found', 'ADMIN_NOT_FOUND');
-    }
+    updateAdmin(req, res, next);
   } catch (error) {
     next(error);
   }
@@ -64,8 +58,7 @@ router.put('/:id', validateUpdateAdmin, authenticateAdmin, async (req, res, next
 router.delete('/:id', validateRequest, authenticateAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
-    await deleteAdmin(req, res, next);
-    res.status(200).json({ message: 'Admin deleted successfully' });
+    deleteAdmin(req, res, next);
   } catch (error) {
     next(error);
   }
@@ -75,13 +68,7 @@ router.delete('/:id', validateRequest, authenticateAdmin, async (req, res, next)
 router.get('/:id', validateGetAdmin, authenticateAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const admin = await getAdminById(req, res, next);
-
-    if (!admin) {
-      throw new AppError(404, 'Admin not found', 'ADMIN_NOT_FOUND');
-    }
-
-    res.status(200).json({ admin });
+    getAdminById(req, res, next);
   } catch (error) {
     next(error);
   }

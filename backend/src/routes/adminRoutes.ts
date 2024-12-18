@@ -10,7 +10,6 @@ import {
   toggleAdminStatus 
 } from '../controllers/adminController';
 import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
-import { AdminRole } from '../models/admin';
 import { UserRole } from '../models/user';
 import { 
   validateCreateAdmin, 
@@ -23,24 +22,12 @@ const router = express.Router();
 
 // Public routes
 router.post('/login', validateLogin, (req, res, next) => {
-  loginAdmin(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(200).json({ message: 'Login successful', admin });
-    } else {
-      res.status(401).json({ message: 'Invalid credentials' });
-    }
-  });
+  loginAdmin(req, res, next);
 });
 
 // Protected route for Master Admin creation
 router.post('/master/create', (req, res, next) => {
-  createMasterAdmin(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(201).json({ message: 'Master Admin created successfully', admin });
-    } else {
-      res.status(500).json({ message: 'Failed to create Master Admin' });
-    }
-  });
+  createMasterAdmin(req, res, next);
 });
 
 // Protected routes requiring authentication
@@ -49,97 +36,43 @@ router.use(isAuthenticated as express.RequestHandler);
 // Routes for Super Admin Master and Super Admin
 router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]) as express.RequestHandler);
 router.get('/all', (req, res, next) => {
-  getAllAdmins(req, res, next).then((admins) => {
-    res.status(200).json({ admins });
-  });
+  getAllAdmins(req, res, next);
 });
 router.post('/create', validateCreateAdmin, (req, res, next) => {
-  registerAdmin(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(201).json({ message: 'Admin created successfully', admin });
-    } else {
-      res.status(500).json({ message: 'Failed to create admin' });
-    }
-  });
+  registerAdmin(req, res, next);
 });
 
 // Super Admin Master specific routes
 router.post('/super-admin/create', validateCreateAdmin, (req, res, next) => {
-  registerAdmin(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(201).json({ message: 'Super Admin created successfully', admin });
-    } else {
-      res.status(500).json({ message: 'Failed to create Super Admin' });
-    }
-  });
+  registerAdmin(req, res, next);
 }); 
 router.delete('/super-admin/:id', (req, res, next) => {
-  deleteAdmin(req, res, next).then(() => {
-    res.status(200).json({ message: 'Super Admin deleted successfully' });
-  });
+  deleteAdmin(req, res, next);
 });
 router.put('/super-admin/:id', validateUpdateAdmin, (req, res, next) => {
-  updateAdmin(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(200).json({ message: 'Super Admin updated successfully', admin });
-    } else {
-      res.status(404).json({ message: 'Super Admin not found' });
-    }
-  });
+  updateAdmin(req, res, next);
 }); 
 
 // Routes for all admins (view/modify their own profile)
 router.get('/profile', (req, res, next) => {
-  getAdminById(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(200).json({ admin });
-    } else {
-      res.status(404).json({ message: 'Admin not found' });
-    }
-  });
+  getAdminById(req, res, next);
 });
 router.put('/profile', validateUpdateAdmin, (req, res, next) => {
-  updateAdmin(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(200).json({ message: 'Admin updated successfully', admin });
-    } else {
-      res.status(404).json({ message: 'Admin not found' });
-    }
-  });
+  updateAdmin(req, res, next);
 }); 
 
 // Routes for managing other admins
 router.get('/:id', (req, res, next) => {
-  getAdminById(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(200).json({ admin });
-    } else {
-      res.status(404).json({ message: 'Admin not found' });
-    }
-  });
+  getAdminById(req, res, next);
 });
 router.put('/:id', validateUpdateAdmin, (req, res, next) => {
-  updateAdmin(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(200).json({ message: 'Admin updated successfully', admin });
-    } else {
-      res.status(404).json({ message: 'Admin not found' });
-    }
-  });
+  updateAdmin(req, res, next);
 }); 
 router.delete('/:id', (req, res, next) => {
-  deleteAdmin(req, res, next).then(() => {
-    res.status(200).json({ message: 'Admin deleted successfully' });
-  });
+  deleteAdmin(req, res, next);
 });
 router.put('/:id/status', validateToggleStatus, (req, res, next) => {
-  toggleAdminStatus(req, res, next).then((admin) => {
-    if (admin) {
-      res.status(200).json({ message: 'Admin status toggled successfully', admin });
-    } else {
-      res.status(404).json({ message: 'Admin not found' });
-    }
-  });
+  toggleAdminStatus(req, res, next);
 }); 
 
 export default router;
