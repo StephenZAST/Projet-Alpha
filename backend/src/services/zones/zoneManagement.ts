@@ -21,10 +21,11 @@ export async function getZone(id: string): Promise<Zone | null> {
     const { data, error } = await supabase.from(zonesTable).select('*').eq('id', id).single();
 
     if (error) {
-      if (error.status === 404) {
-        return null;
-      }
       throw new AppError(500, 'Failed to fetch zone', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
+      return null;
     }
 
     return data as Zone;
@@ -42,6 +43,10 @@ export async function createZone(zoneData: Omit<Zone, 'id'>): Promise<Zone> {
     const { data, error } = await supabase.from(zonesTable).insert([zoneData]).select().single();
 
     if (error) {
+      throw new AppError(500, 'Failed to create zone', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
       throw new AppError(500, 'Failed to create zone', errorCodes.DATABASE_ERROR);
     }
 
@@ -66,6 +71,10 @@ export async function updateZone(id: string, zoneData: Partial<Zone>): Promise<Z
     const { data, error } = await supabase.from(zonesTable).update(zoneData).eq('id', id).select().single();
 
     if (error) {
+      throw new AppError(500, 'Failed to update zone', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
       throw new AppError(500, 'Failed to update zone', errorCodes.DATABASE_ERROR);
     }
 

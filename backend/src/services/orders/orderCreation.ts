@@ -36,13 +36,13 @@ export async function createOrder(orderData: OrderInput): Promise<Order> {
       updatedAt: now,
       deliveryAddress: userProfile.address ? JSON.stringify(userProfile.address) : '',
       deliveryInstructions: userProfile.defaultInstructions || '',
-      deliveryPersonId: '',
-      deliveryTime: '',
+      deliveryPersonId: null,
+      deliveryTime: null,
       paymentMethod: orderData.paymentMethod || PaymentMethod.CASH,
       paymentStatus: 'PENDING',
       loyaltyPointsUsed: 0,
       loyaltyPointsEarned: 0,
-      referralCode: '',
+      referralCode: null,
       oneClickOrder: orderData.oneClickOrder || false,
       orderNotes: orderData.orderNotes || '',
       pickupLocation: {
@@ -56,7 +56,7 @@ export async function createOrder(orderData: OrderInput): Promise<Order> {
       scheduledPickupTime: '',
       scheduledDeliveryTime: '',
       completionDate: null,
-      creationDate: ''
+      creationDate: '',
     };
 
     const { data, error } = await supabase.from(ordersTable).insert([newOrder]).select().single();
@@ -65,7 +65,7 @@ export async function createOrder(orderData: OrderInput): Promise<Order> {
       throw new AppError(500, 'Failed to create order', errorCodes.DATABASE_ERROR);
     }
 
-    return { ...data };
+    return { ...data } as Order;
   } catch (error) {
     console.error('Error creating order:', error);
     throw error;
@@ -101,13 +101,13 @@ export async function createOneClickOrder(orderData: OrderInput & { zoneId: stri
       updatedAt: now,
       deliveryAddress: userProfile.address ? JSON.stringify(userProfile.address) : '',
       deliveryInstructions: userProfile.defaultInstructions || '',
-      deliveryPersonId: '',
-      deliveryTime: '',
+      deliveryPersonId: null,
+      deliveryTime: null,
       paymentMethod: PaymentMethod.CASH,
       paymentStatus: 'PENDING',
       loyaltyPointsUsed: 0,
       loyaltyPointsEarned: 0,
-      referralCode: '',
+      referralCode: null,
       oneClickOrder: true,
       orderNotes: '',
       pickupLocation: {
@@ -133,7 +133,7 @@ export async function createOneClickOrder(orderData: OrderInput & { zoneId: stri
       throw new AppError(500, 'Failed to create one-click order', errorCodes.DATABASE_ERROR);
     }
 
-    return { ...data };
+    return { ...data } as Order;
   } catch (error) {
     console.error('Error creating one-click order:', error);
     throw error;

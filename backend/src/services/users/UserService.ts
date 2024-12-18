@@ -9,7 +9,11 @@ export class UserService {
 
   async getUserProfile(userId: string): Promise<UserProfile> {
     try {
-      return await getUserProfile(userId);
+      const userProfile = await getUserProfile(userId);
+      if (!userProfile) {
+        throw new AppError(404, 'User profile not found', errorCodes.NOT_FOUND);
+      }
+      return userProfile;
     } catch (error) {
       if (error instanceof AppError) throw error;
       throw new AppError(500, 'Failed to fetch user profile', errorCodes.DATABASE_ERROR);
@@ -25,10 +29,7 @@ export class UserService {
         type: NotificationType.PROFILE_UPDATE,
         title: 'Profile Updated',
         message: 'Your profile has been successfully updated',
-        data: {
-          orderId: undefined,
-          recurringOrderId: ''
-        }
+        data: {}
       });
 
       return updatedProfile;
@@ -56,11 +57,11 @@ export class UserService {
     }
   }
 
-  async getUserById(userId: string): Promise<User> {
+  async getUserById(userId: string): Promise<Omit<User, 'password'> | null> {
     try {
       const user = await getUserById(userId);
       if (!user) {
-        throw new AppError(404, 'User not found', errorCodes.NOT_FOUND);
+        return null;
       }
       return user;
     } catch (error) {
@@ -69,7 +70,7 @@ export class UserService {
     }
   }
 
-  async getUsers({ page = 1, limit = 10, search = '' }): Promise<{ users: User[], total: number, page: number, totalPages: number }> {
+  async getUsers({ page = 1, limit = 10, search = '' }): Promise<{ users: (Omit<User, 'password'>)[]; total: number; page: number; totalPages: number }> {
     try {
       return await getUsers({ page, limit, search });
     } catch (error) {

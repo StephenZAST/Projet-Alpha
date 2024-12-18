@@ -1,7 +1,8 @@
 import supabase from '../config/supabase';
-import { IAdmin, AdminRole } from '../models/admin';
+import { IAdmin } from '../models/admin';
+import { UserRole } from '../models/user';
 import { AppError, errorCodes } from '../utils/errors';
-import { hashPassword, comparePassword } from '../utils/auth';
+import { hashPassword, comparePassword } from '../authModules/passwordUtils';
 
 const adminsTable = 'admins';
 

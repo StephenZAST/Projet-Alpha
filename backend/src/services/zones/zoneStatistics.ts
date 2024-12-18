@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { Zone, Order } from '../../models/zone';
+import { Zone } from '../../models/zone';
+import { Order } from '../../models/order';
 import { AppError, errorCodes } from '../../utils/errors';
 
 const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
@@ -122,6 +123,10 @@ async function getDeliveryPersonsStats(zoneId: string): Promise<any[]> {
     throw new AppError(500, 'Failed to fetch delivery persons', errorCodes.DATABASE_ERROR);
   }
 
+  if (!deliveryPersons) {
+    return [];
+  }
+
   return deliveryPersons.map(doc => ({ id: doc.id, ...doc }));
 }
 
@@ -133,10 +138,11 @@ async function getZone(id: string): Promise<Zone | null> {
     const { data, error } = await supabase.from(zonesTable).select('*').eq('id', id).single();
 
     if (error) {
-      if (error.status === 404) {
-        return null;
-      }
       throw new AppError(500, 'Failed to fetch zone', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
+      return null;
     }
 
     return data as Zone;

@@ -1,13 +1,15 @@
 import { Timestamp } from 'firebase-admin/firestore';
+import { OrderItem } from './order';
 
 export enum UserRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',
+  SUPER_ADMIN_MASTER = 'super_admin_master', // Unique account
+  SUPER_ADMIN = 'super_admin',               // Secondary super admins
   ADMIN = 'ADMIN',
-  DELIVERY = 'DELIVERY',
-  CLIENT = 'CLIENT',
-  SERVICE_CLIENT = 'SERVICE_CLIENT',
   SECRETAIRE = 'SECRETAIRE',
+  DELIVERY = 'DELIVERY',
+  CUSTOMER_SERVICE = 'customer_service',
   SUPERVISEUR = 'SUPERVISEUR',
+  CLIENT = 'CLIENT',
 }
 
 export enum UserStatus {
@@ -53,17 +55,19 @@ export interface UserProfile {
   address?: UserAddress;
   profilePicture?: string;
   preferences?: UserPreferences;
+  defaultInstructions?: string;
+  defaultItems?: OrderItem[];
 }
 
 export interface User {
   id: string;
   uid: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
   role: UserRole;
-  profile?: string;
+  profile?: Partial<UserProfile>;
   status: UserStatus;
   address?: string;
   creationMethod: AccountCreationMethod;
@@ -81,6 +85,7 @@ export interface CreateUserInput {
   status: UserStatus;
   creationMethod: AccountCreationMethod;
   password?: string;
+  profile?: Partial<UserProfile>;
 }
 
 export interface UpdateUserInput {
@@ -89,7 +94,7 @@ export interface UpdateUserInput {
   email?: string;
   phone?: string;
   role?: UserRole;
-  profile?: string;
+  profile?: Partial<UserProfile>;
   status?: UserStatus;
   address?: string;
   fcmToken?: string;

@@ -21,10 +21,11 @@ export async function getZoneCapacity(id: string): Promise<ZoneCapacity | null> 
     const { data, error } = await supabase.from(zoneCapacitiesTable).select('*').eq('id', id).single();
 
     if (error) {
-      if (error.status === 404) {
-        return null;
-      }
       throw new AppError(500, 'Failed to fetch zone capacity', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
+      return null;
     }
 
     return data as ZoneCapacity;
@@ -42,6 +43,10 @@ export async function createZoneCapacity(capacityData: Omit<ZoneCapacity, 'id'>)
     const { data, error } = await supabase.from(zoneCapacitiesTable).insert([capacityData]).select().single();
 
     if (error) {
+      throw new AppError(500, 'Failed to create zone capacity', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
       throw new AppError(500, 'Failed to create zone capacity', errorCodes.DATABASE_ERROR);
     }
 
@@ -66,6 +71,10 @@ export async function updateZoneCapacity(id: string, capacityData: Partial<ZoneC
     const { data, error } = await supabase.from(zoneCapacitiesTable).update(capacityData).eq('id', id).select().single();
 
     if (error) {
+      throw new AppError(500, 'Failed to update zone capacity', errorCodes.DATABASE_ERROR);
+    }
+    
+    if (!data) {
       throw new AppError(500, 'Failed to update zone capacity', errorCodes.DATABASE_ERROR);
     }
 

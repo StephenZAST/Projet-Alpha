@@ -21,10 +21,11 @@ export async function getZoneAssignment(id: string): Promise<ZoneAssignment | nu
     const { data, error } = await supabase.from(zoneAssignmentsTable).select('*').eq('id', id).single();
 
     if (error) {
-      if (error.status === 404) {
-        return null;
-      }
       throw new AppError(500, 'Failed to fetch zone assignment', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
+      return null;
     }
 
     return data as ZoneAssignment;
@@ -42,6 +43,10 @@ export async function createZoneAssignment(assignmentData: Omit<ZoneAssignment, 
     const { data, error } = await supabase.from(zoneAssignmentsTable).insert([assignmentData]).select().single();
 
     if (error) {
+      throw new AppError(500, 'Failed to create zone assignment', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
       throw new AppError(500, 'Failed to create zone assignment', errorCodes.DATABASE_ERROR);
     }
 
@@ -66,6 +71,10 @@ export async function updateZoneAssignment(id: string, assignmentData: Partial<Z
     const { data, error } = await supabase.from(zoneAssignmentsTable).update(assignmentData).eq('id', id).select().single();
 
     if (error) {
+      throw new AppError(500, 'Failed to update zone assignment', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
       throw new AppError(500, 'Failed to update zone assignment', errorCodes.DATABASE_ERROR);
     }
 

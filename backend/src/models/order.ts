@@ -110,6 +110,8 @@ export interface Order {
   scheduledDeliveryTime: string;
   completionDate: string | null;
   creationDate: string;
+  pickedUpAt?: string;
+  deliveredAt?: string;
 }
 
 export interface RouteStop {

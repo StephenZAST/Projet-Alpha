@@ -86,10 +86,9 @@ export const customerRegistrationSchema = Joi.object({
   affiliateCode: Joi.string(),
   sponsorCode: Joi.string(),
   creationMethod: Joi.string().valid(
-    AccountCreationMethod.SELF_REGISTRATION,
+    AccountCreationMethod.SELF_REGISTERED,
     AccountCreationMethod.ADMIN_CREATED,
-    AccountCreationMethod.AFFILIATE_REFERRAL,
-    AccountCreationMethod.CUSTOMER_REFERRAL
+    AccountCreationMethod.AFFILIATE_CREATED
   ).required()
 });
 

@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { Bill, BillStatus } from '../../models/bill';
 import { AppError, errorCodes } from '../../utils/errors';
+import { LoyaltyTransaction } from '../../models/loyalty/loyaltyTransaction';
+import { Offer } from '../../models/offer';
+import { getBill } from './billManagement';
 
 const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -12,6 +15,8 @@ if (!supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const billsTable = 'bills';
+const loyaltyTransactionsTable = 'loyaltyTransactions';
+const offersTable = 'offers';
 
 export async function applyLoyaltyPointsToBill(billId: string, userId: string, rewardId: string): Promise<Bill> {
   try {
@@ -73,19 +78,110 @@ export async function applySubscriptionDiscountToBill(billId: string, userId: st
   }
 }
 
-async function getBill(billId: string): Promise<Bill | null> {
-  try {
-    const { data, error } = await supabase.from(billsTable).select('*').eq('id', billId).single();
+// Function to get loyalty transaction data
+export async function getLoyaltyTransaction(id: string): Promise<LoyaltyTransaction | null> {
+  const { data, error } = await supabase.from(loyaltyTransactionsTable).select('*').eq('id', id).single();
 
-    if (error) {
-      throw new AppError(500, 'Failed to fetch bill', errorCodes.DATABASE_ERROR);
-    }
+  if (error) {
+    throw new AppError(500, 'Failed to fetch loyalty transaction', 'INTERNAL_SERVER_ERROR');
+  }
 
-    return data as Bill;
-  } catch (err) {
-    if (err instanceof AppError) {
-      throw err;
-    }
-    throw new AppError(500, 'Failed to fetch bill', errorCodes.DATABASE_ERROR);
+  return data as LoyaltyTransaction;
+}
+
+// Function to create loyalty transaction
+export async function createLoyaltyTransaction(transactionData: LoyaltyTransaction): Promise<LoyaltyTransaction> {
+  const { data, error } = await supabase.from(loyaltyTransactionsTable).insert([transactionData]).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to create loyalty transaction', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as LoyaltyTransaction;
+}
+
+// Function to update loyalty transaction
+export async function updateLoyaltyTransaction(id: string, transactionData: Partial<LoyaltyTransaction>): Promise<LoyaltyTransaction> {
+  const currentTransaction = await getLoyaltyTransaction(id);
+
+  if (!currentTransaction) {
+    throw new AppError(404, 'Loyalty transaction not found', errorCodes.NOT_FOUND);
+  }
+
+  const { data, error } = await supabase.from(loyaltyTransactionsTable).update(transactionData).eq('id', id).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to update loyalty transaction', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as LoyaltyTransaction;
+}
+
+// Function to delete loyalty transaction
+export async function deleteLoyaltyTransaction(id: string): Promise<void> {
+  const transaction = await getLoyaltyTransaction(id);
+
+  if (!transaction) {
+    throw new AppError(404, 'Loyalty transaction not found', errorCodes.NOT_FOUND);
+  }
+
+  const { error } = await supabase.from(loyaltyTransactionsTable).delete().eq('id', id);
+
+  if (error) {
+    throw new AppError(500, 'Failed to delete loyalty transaction', 'INTERNAL_SERVER_ERROR');
+  }
+}
+
+// Function to get offer data
+export async function getOffer(id: string): Promise<Offer | null> {
+  const { data, error } = await supabase.from(offersTable).select('*').eq('id', id).single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to fetch offer', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Offer;
+}
+
+// Function to create offer
+export async function createOffer(offerData: Offer): Promise<Offer> {
+  const { data, error } = await supabase.from(offersTable).insert([offerData]).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to create offer', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Offer;
+}
+
+// Function to update offer
+export async function updateOffer(id: string, offerData: Partial<Offer>): Promise<Offer> {
+  const currentOffer = await getOffer(id);
+
+  if (!currentOffer) {
+    throw new AppError(404, 'Offer not found', errorCodes.NOT_FOUND);
+  }
+
+  const { data, error } = await supabase.from(offersTable).update(offerData).eq('id', id).select().single();
+
+  if (error) {
+    throw new AppError(500, 'Failed to update offer', 'INTERNAL_SERVER_ERROR');
+  }
+
+  return data as Offer;
+}
+
+// Function to delete offer
+export async function deleteOffer(id: string): Promise<void> {
+  const offer = await getOffer(id);
+
+  if (!offer) {
+    throw new AppError(404, 'Offer not found', errorCodes.NOT_FOUND);
+  }
+
+  const { error } = await supabase.from(offersTable).delete().eq('id', id);
+
+  if (error) {
+    throw new AppError(500, 'Failed to delete offer', 'INTERNAL_SERVER_ERROR');
   }
 }

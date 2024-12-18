@@ -5,6 +5,7 @@ import { generateToken } from '../../utils/tokens';
 import { sendVerificationEmail } from '../users/userVerification';
 import { AppError, errorCodes } from '../../utils/errors';
 import { getUserByEmail } from '../users/userRetrieval';
+import { Timestamp } from 'firebase-admin/firestore';
 
 const SALT_ROUNDS = 10;
 const usersTable = 'users';
@@ -12,6 +13,10 @@ const usersTable = 'users';
 export async function createUser(userData: CreateUserInput): Promise<User> {
   try {
     const now = new Date();
+
+    if (!userData.password) {
+      throw new Error('Password is required');
+    }
 
     // Hash the password
     const hashedPassword = await hash(userData.password, SALT_ROUNDS);
@@ -21,30 +26,21 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
       uid: userData.uid || '',
       profile: {
         ...userData.profile,
-        address: null,
-        defaultInstructions: '',
-        defaultItems: [],
-        lastUpdated: now.toISOString(),
+        address: undefined,
         preferences: {
-          notifications: false,
-          defaultItems: [],
-          defaultInstructions: ''
+          notifications: {
+            email: false,
+            sms: false,
+            push: false,
+          },
+          language: 'en',
         }
       },
       role: userData.role || UserRole.CLIENT,
       status: UserStatus.PENDING,
-      creationMethod: userData.creationMethod || AccountCreationMethod.SELF_REGISTRATION,
-      emailVerified: false,
-      loyaltyPoints: 0,
-      defaultItems: [],
-      defaultInstructions: '',
-      createdAt: now.toISOString(),
-      updatedAt: now.toISOString(),
-      phoneNumber: null,
-      displayName: null,
-      email: null,
-      lastName: null,
-      firstName: null
+      creationMethod: userData.creationMethod || AccountCreationMethod.SELF_REGISTERED,
+      createdAt: Timestamp.fromDate(now),
+      updatedAt: Timestamp.fromDate(now),
     };
 
     const { data, error } = await supabase.from(usersTable).insert([newUser]).select().single();
@@ -55,6 +51,9 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
 
     // Send verification email
     const verificationToken = await generateToken();
+    if (!data.profile || !data.profile.email) {
+      throw new Error('User profile or email is undefined');
+    }
     await sendVerificationEmail(data.profile.email, verificationToken);
 
     return data;
@@ -68,6 +67,10 @@ export async function registerCustomer(
   userData: CreateUserInput,
   method: AccountCreationMethod
 ): Promise<User> {
+  if (!userData.profile || !userData.profile.email) {
+    throw new Error('User profile or email is required');
+  }
+
   const existingUser = await getUserByEmail(userData.profile.email);
   if (existingUser) {
     throw new Error('Email already registered');

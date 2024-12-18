@@ -1,9 +1,11 @@
 import { getBill, createBill, updateBill, deleteBill } from './billing/billManagement';
 import { payBill, refundBill } from './billing/paymentProcessing';
-import { applyLoyaltyPointsToBill, applySubscriptionDiscountToBill } from './billing/loyaltyAndSubscription';
+import { applyLoyaltyPointsToBill, applySubscriptionDiscountToBill, getLoyaltyTransaction, createLoyaltyTransaction, updateLoyaltyTransaction, deleteLoyaltyTransaction, getOffer, createOffer, updateOffer, deleteOffer } from './billing/loyaltyAndSubscription';
 import { getBillingStats } from './billing/billingAnalytics';
 import { Bill, BillStatus, PaymentMethod, RefundStatus } from '../models/bill';
 import { AppError, errorCodes } from '../utils/errors';
+import { LoyaltyTransaction } from '../models/loyalty/loyaltyTransaction';
+import { Offer } from '../models/offer';
 
 export class BillingService {
   async createBill(billData: Bill): Promise<Bill> {
@@ -63,6 +65,38 @@ export class BillingService {
     billsByStatus: { [status: string]: number };
   }> {
     return getBillingStats(startDate, endDate);
+  }
+
+  async getLoyaltyTransaction(id: string): Promise<LoyaltyTransaction | null> {
+    return getLoyaltyTransaction(id);
+  }
+
+  async createLoyaltyTransaction(transactionData: LoyaltyTransaction): Promise<LoyaltyTransaction> {
+    return createLoyaltyTransaction(transactionData);
+  }
+
+  async updateLoyaltyTransaction(id: string, transactionData: Partial<LoyaltyTransaction>): Promise<LoyaltyTransaction> {
+    return updateLoyaltyTransaction(id, transactionData);
+  }
+
+  async deleteLoyaltyTransaction(id: string): Promise<void> {
+    return deleteLoyaltyTransaction(id);
+  }
+
+  async getOffer(id: string): Promise<Offer | null> {
+    return getOffer(id);
+  }
+
+  async createOffer(offerData: Offer): Promise<Offer> {
+    return createOffer(offerData);
+  }
+
+  async updateOffer(id: string, offerData: Partial<Offer>): Promise<Offer> {
+    return updateOffer(id, offerData);
+  }
+
+  async deleteOffer(id: string): Promise<void> {
+    return deleteOffer(id);
   }
 }
 
