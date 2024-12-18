@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
-import { DeliveryTask, RouteInfo, OptimizedRoute } from '../models/delivery';
+import { RouteInfo, OptimizedRoute } from '../models/delivery';
 import { AppError, errorCodes } from '../utils/errors';
+import { UserRole } from '../models/user';
+import { Order, OrderStatus } from '../models/order';
+import { DeliveryTask, DeliveryTaskStatus } from '../models/delivery-task';
+import { GeoLocation, calculateDistance } from '../utils/geo';
 
 const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -107,3 +111,125 @@ export async function checkDeliverySlotAvailability(zoneId: string, date: Date):
     throw new AppError(500, 'Failed to check delivery slot availability', errorCodes.DATABASE_ERROR);
   }
 }
+
+export class DeliveryService {
+  async getAvailableTimeSlots(date: Date, zoneId: string): Promise<any[]> {
+    // Placeholder for fetching available time slots from Supabase
+    // This will involve querying a 'timeSlots' table or similar
+    // and filtering by date and zoneId.
+    console.log(`Fetching available time slots for date: ${date} and zoneId: ${zoneId}`);
+    return [];
+  }
+
+  async schedulePickup(orderId: string, date: Date, timeSlot: string, address: any): Promise<void> {
+    // Placeholder for scheduling a pickup
+    // This will involve updating the order with the pickup details
+    // and possibly creating a new delivery task.
+    console.log(`Scheduling pickup for orderId: ${orderId}, date: ${date}, timeSlot: ${timeSlot}, address: ${address}`);
+  }
+
+  async updateOrderLocation(orderId: string, location: any, status: string): Promise<void> {
+    // Placeholder for updating order location and status
+    // This will involve updating the order in the 'orders' table.
+    console.log(`Updating location for orderId: ${orderId}, location: ${location}, status: ${status}`);
+  }
+
+  async getTasks(query: any): Promise<DeliveryTask[]> {
+    // Placeholder for fetching tasks based on query parameters
+    // This will involve querying the 'deliveryTasks' table with filters.
+    console.log(`Fetching tasks with query: ${query}`);
+    return [];
+  }
+
+  async getTaskById(taskId: string): Promise<DeliveryTask | null> {
+    return getDeliveryTask(taskId);
+  }
+
+  async createTask(taskData: DeliveryTask): Promise<DeliveryTask> {
+    return createDeliveryTask(taskData);
+  }
+
+  async updateTask(taskId: string, taskData: Partial<DeliveryTask>): Promise<DeliveryTask> {
+    return updateDeliveryTask(taskId, taskData);
+  }
+
+  async optimizeRoute(taskIds: string[], driverId: string, startLocation: any, endLocation: any, maxTasks: number, considerTraffic: boolean): Promise<OptimizedRoute> {
+    // Placeholder for route optimization logic
+    // This will likely involve using a routing API or algorithm
+    console.log(`Optimizing route for taskIds: ${taskIds}, driverId: ${driverId}, startLocation: ${startLocation}, endLocation: ${endLocation}, maxTasks: ${maxTasks}, considerTraffic: ${considerTraffic}`);
+    return {
+      driverId,
+      route: [],
+      totalDistance: 0,
+      totalDuration: 0,
+    };
+  }
+
+  async updateLocation(locationData: any): Promise<void> {
+    // Placeholder for updating a location
+    // This might involve updating a 'locations' table or similar
+    console.log(`Updating location with data: ${locationData}`);
+  }
+
+  async getZones(): Promise<any[]> {
+    // Placeholder for fetching delivery zones
+    // This will involve querying a 'zones' table or similar
+    console.log(`Fetching delivery zones`);
+    return [];
+  }
+
+  async updateDriverLocation(driverId: string, location: GeoLocation): Promise<void> {
+    const { error } = await supabase.from('drivers').update({ location }).eq('id', driverId);
+
+    if (error) {
+      throw new AppError(500, 'Failed to update driver location', errorCodes.DATABASE_ERROR);
+    }
+  }
+
+  async getTasksByArea(location: GeoLocation, radiusKm: number): Promise<DeliveryTask[]> {
+    const { data, error } = await supabase.from('deliveryTasks').select('*');
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch tasks', errorCodes.DATABASE_ERROR);
+    }
+
+    const tasksWithinRadius = (data as DeliveryTask[]).filter(task => {
+      const taskLocation: GeoLocation = {
+        latitude: task.pickupLocation?.latitude || 0,
+        longitude: task.pickupLocation?.longitude || 0
+      };
+      const distance = calculateDistance(location, taskLocation);
+      return distance <= radiusKm;
+    });
+
+    return tasksWithinRadius;
+  }
+
+  async getAvailableTasks(userId: string): Promise<DeliveryTask[]> {
+    const { data, error } = await supabase
+      .from('deliveryTasks')
+      .select('*')
+      .eq('status', 'available');
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch available tasks', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as DeliveryTask[];
+  }
+
+  async updateTaskStatus(taskId: string, status: DeliveryTaskStatus, userId: string, notes?: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('deliveryTasks')
+      .update({ status, notes, driverId: userId })
+      .eq('id', taskId);
+
+    if (error) {
+      throw new AppError(500, 'Failed to update task status', errorCodes.DATABASE_ERROR);
+    }
+
+    return true;
+  }
+}
+
+export const deliveryService = new DeliveryService();

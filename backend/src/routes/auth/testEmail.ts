@@ -1,9 +1,10 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { sendEmail } from '../../utils/email';
+import { AppError, errorCodes } from '../../utils/errors';
 
 const router = express.Router();
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
         await sendEmail({
             to: 'alphalaundry.service1@gmail.com', // Send to your email
@@ -18,7 +19,7 @@ router.post('/', async (req: Request, res: Response) => {
         res.json({ message: 'Test email sent successfully!' });
     } catch (error) {
         console.error('Error sending test email:', error);
-        res.status(500).json({ error: 'Failed to send test email' });
+        next(new AppError(500, 'Failed to send test email', errorCodes.EMAIL_SEND_ERROR));
     }
 });
 

@@ -90,3 +90,13 @@ export async function deleteCategory(id: string): Promise<void> {
     throw new AppError(500, 'Failed to delete category', errorCodes.DATABASE_ERROR);
   }
 }
+
+export async function getCategoriesUtil(): Promise<Category[]> {
+    const { data, error } = await supabase.from(categoriesTable).select('*');
+  
+    if (error) {
+      throw new AppError(500, 'Failed to fetch categories', errorCodes.DATABASE_ERROR);
+    }
+  
+    return data as Category[];
+  }

@@ -44,6 +44,8 @@ export enum TaskStatus {
   FAILED = 'failed'
 }
 
+export type DeliveryTaskStatus = TaskStatus;
+
 export enum PriorityLevel {
   LOW = 'low',
   MEDIUM = 'medium',

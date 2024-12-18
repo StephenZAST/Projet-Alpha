@@ -1,28 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config';
+import { AppError, errorCodes } from '../utils/errors';
 
-export const authenticateAdmin = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticateAdmin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { authorization } = req.headers;
 
   if (!authorization) {
-    return res.status(401).json({ message: 'Authorization header is required' });
+    return next(new AppError(401, 'Authorization header is required', errorCodes.UNAUTHORIZED));
   }
 
   const token = authorization.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ message: 'Token is required' });
+    return next(new AppError(401, 'Token is required', errorCodes.UNAUTHORIZED));
   }
 
   const { data, error } = await supabase.auth.getUser(token);
 
   if (error || !data?.user) {
-    return res.status(401).json({ message: 'Invalid token' });
+    return next(new AppError(401, 'Invalid token', errorCodes.UNAUTHORIZED));
   }
 
   // Check if the user is an admin
   if (data.user.app_metadata?.provider !== 'admin') {
-    return res.status(403).json({ message: 'Forbidden: User is not an admin' });
+    return next(new AppError(403, 'Forbidden: User is not an admin', errorCodes.FORBIDDEN));
   }
 
   (req as any).user = data.user;

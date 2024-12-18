@@ -1,15 +1,19 @@
 export class AppError extends Error {
   statusCode: number;
   errorCode: string;
+  errors?: any[];
 
-  constructor(statusCode: number, message: string, errorCode: string) {
+  constructor(statusCode: number, message: string, errorCode: string, errors?: any[]) {
     super(message);
     this.statusCode = statusCode;
     this.errorCode = errorCode;
+    this.errors = errors;
   }
 }
 
 export const errorCodes = {
+  WEBSOCKET_ERROR: 'WEBSOCKET_ERROR',
+  EMAIL_SEND_ERROR: 'EMAIL_SEND_ERROR',
   INVALID_LOGIN_DATA: 'INVALID_LOGIN_DATA',
   COMMISSION_WITHDRAWAL_NOT_FOUND: 'COMMISSION_WITHDRAWAL_NOT_FOUND',
   COMMISSION_WITHDRAWAL_UPDATE_FAILED: 'COMMISSION_WITHDRAWAL_UPDATE_FAILED',

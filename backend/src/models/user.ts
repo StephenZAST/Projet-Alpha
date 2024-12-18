@@ -1,24 +1,27 @@
-import { OrderItem } from './order';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export enum UserRole {
-  ADMIN = 'admin',
-  CLIENT = 'client',
-  AFFILIATE = 'affiliate',
-  SECRETARY = 'secretary',
-  SUPER_ADMIN = 'SUPER_ADMIN'
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  DELIVERY = 'DELIVERY',
+  CLIENT = 'CLIENT',
+  SERVICE_CLIENT = 'SERVICE_CLIENT',
+  SECRETAIRE = 'SECRETAIRE',
+  SUPERVISEUR = 'SUPERVISEUR',
 }
 
 export enum UserStatus {
-  PENDING = 'pending',
-  ACTIVE = 'active',
-  DELETED = 'deleted'
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  PENDING = 'PENDING',
 }
 
 export enum AccountCreationMethod {
-  SELF_REGISTRATION = 'self_registration',
-  ADMIN_CREATED = 'admin_created',
-  AFFILIATE_REFERRAL = 'affiliate_referral',
-  CUSTOMER_REFERRAL = 'customer_referral'
+  SELF_REGISTERED = 'SELF_REGISTERED',
+  REFERRED = 'REFERRED',
+  ADMIN_CREATED = 'ADMIN_CREATED',
+  AFFILIATE_CREATED = 'AFFILIATE_CREATED'
 }
 
 export interface UserAddress {
@@ -27,51 +30,67 @@ export interface UserAddress {
   state: string;
   zip: string;
   country: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export interface UserPreferences {
-  notifications: boolean;
-  defaultItems: OrderItem[];
-  defaultInstructions: string;
+  notifications: {
+    email: boolean;
+    sms: boolean;
+    push: boolean;
+  };
+  language: string;
 }
 
 export interface UserProfile {
   firstName: string;
   lastName: string;
   email: string;
-  phoneNumber: string;
-  address: UserAddress | null;
-  defaultInstructions: string | null;
-  defaultItems: OrderItem[] | null;
-  lastUpdated: string | null;
-  preferences: UserPreferences | null;
+  phone?: string;
+  address?: UserAddress;
+  profilePicture?: string;
+  preferences?: UserPreferences;
 }
 
 export interface User {
   id: string;
   uid: string;
-  profile: UserProfile;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
   role: UserRole;
+  profile?: string;
   status: UserStatus;
+  address?: string;
   creationMethod: AccountCreationMethod;
-  emailVerified: boolean;
-  loyaltyPoints: number;
-  defaultItems: OrderItem[];
-  defaultInstructions: string;
-  createdAt: string;
-  updatedAt: string;
-  phoneNumber: string | null;
-  displayName: string | null;
-  email: string | null;
-  lastName: string | null;
-  firstName: string | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  fcmToken?: string;
 }
 
 export interface CreateUserInput {
-  uid?: string;
-  profile: UserProfile;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+  status: UserStatus;
+  creationMethod: AccountCreationMethod;
+  password?: string;
+}
+
+export interface UpdateUserInput {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
   role?: UserRole;
+  profile?: string;
   status?: UserStatus;
-  creationMethod?: AccountCreationMethod;
-  password: string;
+  address?: string;
+  fcmToken?: string;
 }

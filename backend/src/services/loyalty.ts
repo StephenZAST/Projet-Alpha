@@ -6,6 +6,12 @@ import { updateLoyaltyTier, getLoyaltyTiers } from './loyalty/tiers';
 import { LoyaltyAccount, LoyaltyTier, LoyaltyTransaction, LoyaltyTransactionType, LoyaltyProgram, LoyaltyReward, LoyaltyTierConfig, LoyaltyTierDefinition } from '../models/loyalty';
 
 export class LoyaltyService {
+  updateRewardRedemption(redemptionId: string, arg1: { status: import("../models/loyalty").RewardRedemptionStatus; notes: any; }) {
+    throw new Error('Method not implemented.');
+  }
+  getRewardRedemptions(arg0: { status: import("../models/loyalty").RewardRedemptionStatus; }) {
+    throw new Error('Method not implemented.');
+  }
   async getLoyaltyAccount(userId: string): Promise<LoyaltyAccount | null> {
     return getLoyaltyAccount(userId);
   }

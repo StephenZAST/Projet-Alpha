@@ -7,18 +7,14 @@ import { UserRole } from '../models/user';
 
 const router = express.Router();
 
-// Protected routes requiring authentication
-router.use(isAuthenticated);
-
 // Public routes
-router.post('/create', validate(createBillSchema), billingController.createBill);
-router.put('/update/:id', validate(updateBillSchema), billingController.updateBill);
-router.get('/bills', validate(getBillsSchema), billingController.getAllBills);
-router.get('/:id', validate(getBillByIdSchema), billingController.getBillById);
-router.delete('/delete/:id', billingController.deleteBill);
+router.post('/create', isAuthenticated, validate(createBillSchema), billingController.createBill);
+router.put('/update/:id', isAuthenticated, validate(updateBillSchema), billingController.updateBill);
+router.get('/bills', isAuthenticated, validate(getBillsSchema), billingController.getAllBills);
+router.get('/:id', isAuthenticated, validate(getBillByIdSchema), billingController.getBillById);
+router.delete('/delete/:id', isAuthenticated, billingController.deleteBill);
 
 // Admin-specific routes
-router.use(requireAdminRolePath([UserRole.SUPER_ADMIN]));
-router.post('/generate', billingController.generateInvoices); // No validation needed for this route
+router.post('/generate', requireAdminRolePath([UserRole.SUPER_ADMIN]), billingController.generateInvoices); // No validation needed for this route
 
 export default router;

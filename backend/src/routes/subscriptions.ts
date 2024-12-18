@@ -1,12 +1,17 @@
 import express from 'express';
 import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { createSubscription, getSubscriptions, updateSubscription, deleteSubscription, getUserSubscription } from '../services/subscriptions';
-import { UserRole } from '../models/user';
+import { UserRole, User } from '../models/user';
+import { Request, Response, NextFunction } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user?: User;
+}
 
 const router = express.Router();
 
 // Public routes
-router.get('/', async (req, res, next): Promise<void> => {
+router.get('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const subscriptions = await getSubscriptions();
     res.json(subscriptions);
@@ -16,7 +21,7 @@ router.get('/', async (req, res, next): Promise<void> => {
 });
 
 // User routes
-router.get('/user/:userId', isAuthenticated, async (req, res, next): Promise<void> => {
+router.get('/user/:userId', isAuthenticated, async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const subscription = await getUserSubscription(req.params.userId);
     res.json(subscription);
@@ -26,7 +31,7 @@ router.get('/user/:userId', isAuthenticated, async (req, res, next): Promise<voi
 });
 
 // Admin routes
-router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
+router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const subscription = await createSubscription(req.body);
     res.status(201).json(subscription);
@@ -35,12 +40,13 @@ router.post('/', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), 
   }
 });
 
-router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
+router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const subscriptionId = req.params.id;
     const updatedSubscription = await updateSubscription(subscriptionId, req.body);
     if (!updatedSubscription) {
-      res.status(404).json({ error: 'Subscription not found' }); // Removed return
+      res.status(404).json({ error: 'Subscription not found' });
+      return;
     }
     res.json(updatedSubscription);
   } catch (error) {
@@ -48,7 +54,7 @@ router.put('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN])
   }
 });
 
-router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req, res, next): Promise<void> => {
+router.delete('/:id', isAuthenticated, requireAdminRolePath([UserRole.SUPER_ADMIN]), async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const subscriptionId = req.params.id;
     await deleteSubscription(subscriptionId);

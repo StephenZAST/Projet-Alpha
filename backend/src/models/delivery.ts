@@ -1,41 +1,40 @@
+import { User } from './user';
+import { DeliveryTask } from './delivery-task';
+
+export interface Delivery {
+  id: string;
+  driver: User;
+  tasks: DeliveryTask[];
+  status: DeliveryStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export enum DeliveryStatus {
+  STARTED = 'started',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+}
+
 export interface RouteInfo {
-  orderId: string;
-  location: any; // Changed to any for now
+  distance: number; // in meters
+  duration: number; // in seconds
+}
+
+export interface RouteStop {
+  taskId: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
   type: 'pickup' | 'delivery';
-  scheduledTime: string;
-  status: 'pending' | 'completed';
-  address: string;
-  contactName?: string;
-  contactPhone?: string;
+  estimatedArrivalTime?: Date;
 }
 
 export interface OptimizedRoute {
-  deliveryPersonId: string;
-  zoneId: string;
-  date: string;
-  stops: RouteInfo[];
-  estimatedDuration: number; // en minutes
-  estimatedDistance: number; // en kilomètres
-  startLocation: any; // Changed to any for now
-  endLocation: any; // Changed to any for now
-}
-
-export interface DeliveryTask {
-  id?: string;
-  deliveryPersonId: string;
-  orderId: string;
-  type: 'pickup' | 'delivery';
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  scheduledTime: string;
-  completedTime?: string;
-  location: any; // Changed to any for now
-  address: string;
-  notes?: string;
-  proof?: {
-    signature?: string;
-    photo?: string;
-    notes?: string;
-  };
-  createdAt?: string;
-  updatedAt?: string;
+  driverId: string;
+  route: RouteStop[];
+  totalDistance: number; // in meters
+  totalDuration: number; // in seconds
 }

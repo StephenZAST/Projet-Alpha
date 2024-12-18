@@ -1,5 +1,11 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { RecurringOrderService } from '../services/recurringOrders';
+import { RecurringOrder } from '../types/recurring';
+import { User } from '../models/user';
+
+interface AuthenticatedRequest extends Request {
+  user?: User;
+}
 
 class RecurringOrderController {
   private recurringOrderService: RecurringOrderService;
@@ -8,9 +14,9 @@ class RecurringOrderController {
     this.recurringOrderService = new RecurringOrderService();
   }
 
-  createRecurringOrder = async (req: Request, res: Response) => {
+  createRecurringOrder = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.body.userId;
+      const userId = req.user!.id;
       const orderData = req.body;
 
       const recurringOrder = await this.recurringOrderService.createRecurringOrder(
@@ -23,17 +29,13 @@ class RecurringOrderController {
         recurringOrder
       });
     } catch (error) {
-      console.error('Error creating recurring order:', error);
-      res.status(500).json({ 
-        error: 'Échec de la création de la commande récurrente',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
+      next(error);
     }
   };
 
-  updateRecurringOrder = async (req: Request, res: Response) => {
+  updateRecurringOrder = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.body.userId;
+      const userId = req.user!.id;
       const { id } = req.params;
       const updates = req.body;
 
@@ -48,23 +50,13 @@ class RecurringOrderController {
         recurringOrder: updatedOrder
       });
     } catch (error) {
-      console.error('Error updating recurring order:', error);
-      if (error instanceof Error && error.message === 'Unauthorized') {
-        res.status(403).json({ error: 'Non autorisé' });
-      } else if (error instanceof Error && error.message === 'Recurring order not found') {
-        res.status(404).json({ error: 'Commande récurrente non trouvée' });
-      } else {
-        res.status(500).json({ 
-          error: 'Échec de la mise à jour de la commande récurrente',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
+      next(error);
     }
   };
 
-  cancelRecurringOrder = async (req: Request, res: Response) => {
+  cancelRecurringOrder = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.body.userId;
+      const userId = req.user!.id;
       const { id } = req.params;
 
       await this.recurringOrderService.cancelRecurringOrder(id, userId);
@@ -73,50 +65,31 @@ class RecurringOrderController {
         message: 'Commande récurrente annulée avec succès'
       });
     } catch (error) {
-      console.error('Error canceling recurring order:', error);
-      if (error instanceof Error && error.message === 'Unauthorized') {
-        res.status(403).json({ error: 'Non autorisé' });
-      } else if (error instanceof Error && error.message === 'Recurring order not found') {
-        res.status(404).json({ error: 'Commande récurrente non trouvée' });
-      } else {
-        res.status(500).json({ 
-          error: 'Échec de l\'annulation de la commande récurrente',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
+      next(error);
     }
   };
 
-  getRecurringOrders = async (req: Request, res: Response) => {
+  getRecurringOrders = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.body.userId;
+      const userId = req.user!.id;
       const orders = await this.recurringOrderService.getRecurringOrders(userId);
 
       res.json({
         recurringOrders: orders
       });
     } catch (error) {
-      console.error('Error fetching recurring orders:', error);
-      res.status(500).json({ 
-        error: 'Échec de la récupération des commandes récurrentes',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
+      next(error);
     }
   };
 
-  // Cette méthode serait appelée par un job planifié
-  processRecurringOrders = async (res: Response) => {
+  processRecurringOrders = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       await this.recurringOrderService.processRecurringOrders();
       res.json({
         message: 'Traitement des commandes récurrentes effectué avec succès'
       });
     } catch (error) {
-      console.error('Error processing recurring orders:', error);
-      res.status(500).json({ 
-        error: 'Échec du traitement des commandes récurrentes',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
+      next(error);
     }
   };
 }

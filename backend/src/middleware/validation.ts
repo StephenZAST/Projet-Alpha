@@ -14,11 +14,7 @@ export const validate = (schema: Schema, property: 'body' | 'query' | 'params' =
         message: detail.message
       }));
 
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation error',
-        errors
-      });
+      return next(new AppError(400, 'Validation error', errorCodes.VALIDATION_ERROR, errors));
     }
 
     next();
@@ -39,11 +35,7 @@ export const validateAndTransform = (schema: Schema, property: 'body' | 'query' 
         message: detail.message
       }));
 
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation error',
-        errors
-      });
+      return next(new AppError(400, 'Validation error', errorCodes.VALIDATION_ERROR, errors));
     }
 
     // Met à jour la requête avec les données validées et transformées
@@ -62,11 +54,7 @@ export const validatePagination = (req: Request, res: Response, next: NextFuncti
   const { error, value } = schema.validate(req.query);
 
   if (error) {
-    return res.status(400).json({
-      status: 'error',
-      message: 'Invalid pagination parameters',
-      errors: error.details
-    });
+    return next(new AppError(400, 'Invalid pagination parameters', errorCodes.VALIDATION_ERROR, error.details));
   }
 
   req.query = {
@@ -84,10 +72,7 @@ export const validateMongoId = (paramName: string) => {
     const id = req.params[paramName];
 
     if (!/^[0-9a-fA-F]{24}$/.test(id)) {
-      return res.status(400).json({
-        status: 'error',
-        message: `Invalid ${paramName} format`
-      });
+      return next(new AppError(400, `Invalid ${paramName} format`, errorCodes.VALIDATION_ERROR));
     }
 
     next();
@@ -104,24 +89,15 @@ export const validateDateRange = (
     const endDate = new Date(req.query[endDateField] as string);
 
     if (isNaN(startDate.getTime())) {
-      return res.status(400).json({
-        status: 'error',
-        message: `Invalid ${startDateField} format`
-      });
+      return next(new AppError(400, `Invalid ${startDateField} format`, errorCodes.VALIDATION_ERROR));
     }
 
     if (isNaN(endDate.getTime())) {
-      return res.status(400).json({
-        status: 'error',
-        message: `Invalid ${endDateField} format`
-      });
+      return next(new AppError(400, `Invalid ${endDateField} format`, errorCodes.VALIDATION_ERROR));
     }
 
     if (startDate > endDate) {
-      return res.status(400).json({
-        status: 'error',
-        message: `${startDateField} cannot be later than ${endDateField}`
-      });
+      return next(new AppError(400, `${startDateField} cannot be later than ${endDateField}`, errorCodes.VALIDATION_ERROR));
     }
 
     next();

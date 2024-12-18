@@ -7,7 +7,7 @@ export const addPermission = async (req: Request, res: Response, next: NextFunct
   const { name, description, roles } = req.body;
 
   if (!name || !description || !roles) {
-    return next(new AppError(400, 'All fields are required', 'INVALID_PERMISSION_DATA'));
+    return next(new AppError(400, 'All fields are required', errorCodes.INVALID_PERMISSION_DATA));
   }
 
   try {
@@ -15,7 +15,6 @@ export const addPermission = async (req: Request, res: Response, next: NextFunct
     const result = await permissionService.createPermission(permission);
     res.status(201).json({ message: 'Permission added successfully', result });
   } catch (error) {
-    next(new AppError(500, 'Failed to add permission', 'INTERNAL_SERVER_ERROR'));
+    next(error);
   }
 };
-  

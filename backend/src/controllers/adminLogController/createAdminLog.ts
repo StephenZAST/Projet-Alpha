@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AdminLogService } from '../../services/adminLogService';
 import { AppError, errorCodes } from '../../utils/errors';
 
-export const createAdminLog = async (req: Request, res: Response, next: NextFunction) => {
+export const createAdminLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { action, description, userId } = req.body;
 
   if (!action || !description || !userId) {
@@ -14,6 +14,6 @@ export const createAdminLog = async (req: Request, res: Response, next: NextFunc
 
     res.status(201).json({ message: 'Admin log created successfully', adminLog });
   } catch (error) {
-    next(new AppError(500, 'Failed to create admin log', errorCodes.DATABASE_ERROR));
+    next(error);
   }
 };

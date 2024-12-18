@@ -150,4 +150,19 @@ export class AdminLogService {
       throw new AppError(500, 'Failed to delete admin log', errorCodes.DATABASE_ERROR);
     }
   }
+
+  static async updateAdminLog(id: string, updates: Partial<IAdminLog>): Promise<IAdminLog> {
+    const { data, error } = await supabase
+      .from(adminLogsTable)
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to update admin log', errorCodes.DATABASE_ERROR);
+    }
+
+    return data as IAdminLog;
+  }
 }

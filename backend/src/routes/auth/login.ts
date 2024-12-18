@@ -1,7 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import supabase from '../../config/supabase';
-import { AppError } from '../../utils/errors';
-import { generateSupabaseToken } from '../../utils/auth';
+import { AppError, errorCodes } from '../../utils/errors';
+import { generateToken } from '../../utils/jwt';
+import { UserRole } from '../../models/user';
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      throw new AppError(400, 'Email and password are required', 'INVALID_CREDENTIALS');
+      return next(new AppError(400, 'Email and password are required', errorCodes.INVALID_CREDENTIALS));
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -18,12 +19,29 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       password,
     });
 
-    if (error) {
-      throw new AppError(401, 'Invalid email or password', 'INVALID_CREDENTIALS');
+    if (error || !data.user) {
+      return next(new AppError(401, 'Invalid email or password', errorCodes.INVALID_CREDENTIALS));
     }
 
-    // Generate JWT token using our utility
-    const token = generateSupabaseToken(data.user);
+    // Fetch user role from the database
+    const { data: userProfile, error: userProfileError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
+    if (userProfileError) {
+      return next(new AppError(500, 'Failed to fetch user profile', errorCodes.DATABASE_ERROR));
+    }
+
+    const userRole = userProfile?.role || UserRole.CLIENT;
+
+    // Generate JWT token
+    const token = generateToken({
+      uid: data.user.id,
+      email: data.user.email!,
+      role: userRole,
+    });
 
     res.json({
       success: true,
@@ -32,7 +50,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         user: {
           uid: data.user.id,
           email: data.user.email,
-          role: data.user.role || 'user',
+          role: userRole
         },
       },
     });

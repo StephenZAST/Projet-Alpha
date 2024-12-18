@@ -1,5 +1,6 @@
 import { emailConfig } from '../config/email';
 import { sendEmail } from '../utils/email';
+import { AppError, errorCodes } from '../utils/errors';
 
 export const sendVerificationEmail = async (to: string, verificationCode: string) => {
     const subject = 'Email Verification - Alpha Laundry';
@@ -10,11 +11,16 @@ export const sendVerificationEmail = async (to: string, verificationCode: string
         <p>If you didn't request this verification, please ignore this email.</p>
     `;
 
-    await sendEmail({
-        to,
-        subject,
-        html
-    });
+    try {
+        await sendEmail({
+            to,
+            subject,
+            html
+        });
+    } catch (error) {
+        console.error('Error sending verification email:', error);
+        throw new AppError(500, 'Failed to send verification email', errorCodes.EMAIL_SEND_ERROR);
+    }
 };
 
 export const sendPasswordResetEmail = async (to: string, resetToken: string) => {
@@ -28,11 +34,16 @@ export const sendPasswordResetEmail = async (to: string, resetToken: string) => 
         <p>This link will expire in 1 hour.</p>
     `;
 
-    await sendEmail({
-        to,
-        subject,
-        html
-    });
+    try {
+        await sendEmail({
+            to,
+            subject,
+            html
+        });
+    } catch (error) {
+        console.error('Error sending password reset email:', error);
+        throw new AppError(500, 'Failed to send password reset email', errorCodes.EMAIL_SEND_ERROR);
+    }
 };
 
 export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
@@ -55,6 +66,6 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
         });
     } catch (error) {
         console.error('Error sending welcome email:', error);
-        throw new Error('Failed to send welcome email');
+        throw new AppError(500, 'Failed to send welcome email', errorCodes.EMAIL_SEND_ERROR);
     }
 }

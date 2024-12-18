@@ -1,16 +1,7 @@
 import express from 'express';
-import { createPermissionController } from '../controllers/permissionController';
-import { getPermissionsController } from '../controllers/permissionController';
-import { getPermissionByIdController } from '../controllers/permissionController';
-import { updatePermissionController } from '../controllers/permissionController';
-import { deletePermissionController } from '../controllers/permissionController';
-import { initializeDefaultPermissionsController } from '../controllers/permissionController';
-import { getPermissionsByRoleController } from '../controllers/permissionController';
-import { addPermissionController } from '../controllers/permissionController';
-import { removePermissionController } from '../controllers/permissionController';
-import { getRoleMatrixController } from '../controllers/permissionController';
-import { getResourcePermissionsController } from '../controllers/permissionController';
-import { authenticateAdmin } from '../utils/auth';
+import { createPermission, getPermissions, getPermissionById, updatePermission, deletePermission, initializeDefaultPermissions, getPermissionsByRole, addPermission, removePermission, getRoleMatrix, getResourcePermissions } from '../controllers/permissionController';
+
+import { authenticateAdmin } from '../middleware/adminAuth';
 
 const router = express.Router();
 
@@ -18,36 +9,36 @@ const router = express.Router();
 router.use(authenticateAdmin);
 
 // Create a new permission
-router.post('/create', createPermissionController);
+router.post('/create', createPermission);
 
 // Get all permissions
-router.get('/all', getPermissionsController);
+router.get('/all', getPermissions);
 
 // Get a permission by ID
-router.get('/:id', getPermissionByIdController);
+router.get('/:id', getPermissionById);
 
 // Update a permission
-router.put('/:id', updatePermissionController);
+router.put('/:id', updatePermission);
 
 // Delete a permission
-router.delete('/:id', deletePermissionController);
+router.delete('/:id', deletePermission);
 
 // Initialize default permissions
-router.post('/initialize', initializeDefaultPermissionsController);
+router.post('/initialize', initializeDefaultPermissions);
 
 // Get permissions by role
-router.get('/role/:role', getPermissionsByRoleController);
+router.get('/role/:role', getPermissionsByRole);
 
 // Add a new permission
-router.post('/add', addPermissionController);
+router.post('/add', addPermission);
 
 // Remove a permission
-router.delete('/remove/:id', removePermissionController);
+router.delete('/remove/:id', removePermission);
 
 // Get role matrix
-router.get('/roleMatrix', getRoleMatrixController);
+router.get('/roleMatrix', getRoleMatrix);
 
 // Get resource permissions
-router.get('/resource/:resource', getResourcePermissionsController);
+router.get('/resource/:resource', getResourcePermissions);
 
 export default router;

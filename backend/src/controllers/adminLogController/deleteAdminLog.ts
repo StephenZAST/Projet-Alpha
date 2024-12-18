@@ -2,18 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import { AdminLogService } from '../../services/adminLogService';
 import { AppError, errorCodes } from '../../utils/errors';
 
-export const deleteAdminLog = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteAdminLog = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { id } = req.params;
-
-  if (!id) {
-    return next(new AppError(400, 'ID is required', errorCodes.INVALID_ID));
-  }
 
   try {
     await AdminLogService.deleteAdminLog(id);
-
-    res.status(200).json({ message: 'Admin log deleted successfully' });
+    res.status(204).send();
   } catch (error) {
-    next(new AppError(500, 'Failed to delete admin log', errorCodes.DATABASE_ERROR));
+    if (error instanceof AppError) {
+      next(error);
+    } else {
+      next(new AppError(500, 'Failed to delete admin log', errorCodes.DATABASE_ERROR));
+    }
   }
 };

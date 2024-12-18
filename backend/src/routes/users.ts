@@ -15,14 +15,19 @@ import {
   validateUpdateUserRole
 } from '../middleware/userValidation';
 import { UserService, createUser, verifyEmail, requestPasswordReset, resetPassword } from '../services/users';
-import { UserRole } from '../models/user';
+import { UserRole, User } from '../models/user';
+import { Request, Response, NextFunction } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user?: User;
+}
 
 const router = express.Router();
 const userService = new UserService();
 
-router.get('/profile', isAuthenticated, validateGetUserProfile, async (req, res, next) => {
+router.get('/profile', isAuthenticated, validateGetUserProfile, async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const profile = await userService.getUserProfile(req.user!.uid);
+    const profile = await userService.getUserProfile(req.user!.id);
     res.json(profile);
   } catch (error) {
     next(error);
@@ -32,9 +37,9 @@ router.get('/profile', isAuthenticated, validateGetUserProfile, async (req, res,
 router.put('/profile', 
   isAuthenticated, 
   validateUpdateProfile,
-  async (req, res, next) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const updatedProfile = await userService.updateProfile(req.user!.uid, req.body);
+      const updatedProfile = await userService.updateProfile(req.user!.id, req.body);
       res.json(updatedProfile);
     } catch (error) {
       next(error);
@@ -44,9 +49,9 @@ router.put('/profile',
 router.put('/address',
   isAuthenticated,
   validateUpdateAddress,
-  async (req, res, next) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const updatedAddress = await userService.updateAddress(req.user!.uid, req.body);
+      const updatedAddress = await userService.updateAddress(req.user!.id, req.body);
       res.json(updatedAddress);
     } catch (error) {
       next(error);
@@ -56,9 +61,9 @@ router.put('/address',
 router.put('/preferences',
   isAuthenticated,
   validateUpdatePreferences,
-  async (req, res, next) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const updatedPreferences = await userService.updatePreferences(req.user!.uid, req.body);
+      const updatedPreferences = await userService.updatePreferences(req.user!.id, req.body);
       res.json(updatedPreferences);
     } catch (error) {
       next(error);
@@ -69,7 +74,7 @@ router.get('/:id',
   isAuthenticated,
   requireAdminRolePath([UserRole.SUPER_ADMIN]),
   validateGetUserById,
-  async (req, res, next) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = await userService.getUserById(req.params.id);
       res.json(user);
@@ -82,7 +87,7 @@ router.get('/',
   isAuthenticated,
   requireAdminRolePath([UserRole.SUPER_ADMIN]),
   validateGetUsers,
-  async (req, res, next) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { page = 1, limit = 10, search } = req.query;
       const users = await userService.getUsers({
@@ -96,7 +101,7 @@ router.get('/',
     }
 });
 
-router.post('/register', validateCreateUser, async (req, res, next) => {
+router.post('/register', validateCreateUser, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const user = await createUser(req.body);
     res.status(201).json(user);
@@ -105,7 +110,7 @@ router.post('/register', validateCreateUser, async (req, res, next) => {
   }
 });
 
-router.post('/login', validateLogin, async (req, res, next) => {
+router.post('/login', validateLogin, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // Implement login logic
     res.json({ message: 'Login successful' });
@@ -117,7 +122,7 @@ router.post('/login', validateLogin, async (req, res, next) => {
 router.post('/change-password', 
   isAuthenticated, 
   validateChangePassword, 
-  async (req, res, next) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       // Implement change password logic
       res.json({ message: 'Password changed successfully' });
@@ -127,7 +132,7 @@ router.post('/change-password',
   }
 );
 
-router.post('/reset-password', validateResetPassword, async (req, res, next) => {
+router.post('/reset-password', validateResetPassword, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     await requestPasswordReset(req.body.email);
     res.json({ message: 'Password reset email sent' });
@@ -136,7 +141,7 @@ router.post('/reset-password', validateResetPassword, async (req, res, next) => 
   }
 });
 
-router.post('/verify-email', validateVerifyEmail, async (req, res, next) => {
+router.post('/verify-email', validateVerifyEmail, async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     await verifyEmail(req.body.token);
     res.json({ message: 'Email verified successfully' });
@@ -149,7 +154,7 @@ router.put('/:id/role',
   isAuthenticated, 
   requireAdminRolePath([UserRole.SUPER_ADMIN]), 
   validateUpdateUserRole, 
-  async (req, res, next) => {
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       // Implement update role logic
       res.json({ message: 'User role updated successfully' });

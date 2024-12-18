@@ -1,13 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { AdminLogService } from '../../services/adminLogService';
-import { AppError, errorCodes } from '../../utils/errors';
+import { AdminAction } from '../../models/adminLog';
 
-export const getAdminLogs = async (req: Request, res: Response, next: NextFunction) => {
+export const getAdminLogs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const { adminId, action, startDate, endDate, limit, skip } = req.query;
+
   try {
-    const adminLogs = await AdminLogService.getAdminLogs();
+    const logs = await AdminLogService.getAdminLogs(
+      adminId as string | undefined,
+      action as AdminAction | undefined,
+      startDate ? new Date(startDate as string) : undefined,
+      endDate ? new Date(endDate as string) : undefined,
+      limit ? parseInt(limit as string, 10) : undefined,
+      skip ? parseInt(skip as string, 10) : undefined
+    );
 
-    res.status(200).json({ adminLogs });
+    res.status(200).json(logs);
   } catch (error) {
-    next(new AppError(500, 'Failed to fetch admin logs', errorCodes.DATABASE_ERROR));
+    next(error);
   }
 };

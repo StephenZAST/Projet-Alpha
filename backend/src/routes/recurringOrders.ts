@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { recurringOrderController } from '../controllers/recurringOrderController';
 import { isAuthenticated, requireAdminRolePath } from '../middleware/auth';
 import { 
@@ -8,44 +8,48 @@ import {
   validateGetRecurringOrders,
   validateProcessRecurringOrders
 } from '../middleware/recurringOrderValidation';
-import { UserRole } from '../models/user';
+import { UserRole, User } from '../models/user';
+
+interface AuthenticatedRequest extends Request {
+  user?: User;
+}
 
 const router = express.Router();
 
 router.post(
   '/',
   isAuthenticated,
-  validateCreateRecurringOrder, // Apply validation directly
-  recurringOrderController.createRecurringOrder
+  validateCreateRecurringOrder,
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => recurringOrderController.createRecurringOrder(req, res, next)
 );
 
 router.put(
   '/:id',
   isAuthenticated,
-  validateUpdateRecurringOrder, // Apply validation directly
-  recurringOrderController.updateRecurringOrder
+  validateUpdateRecurringOrder,
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => recurringOrderController.updateRecurringOrder(req, res, next)
 );
 
 router.post(
   '/:id/cancel',
   isAuthenticated,
-  validateCancelRecurringOrder, // Apply validation directly
-  recurringOrderController.cancelRecurringOrder
+  validateCancelRecurringOrder,
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => recurringOrderController.cancelRecurringOrder(req, res, next)
 );
 
 router.get(
   '/',
   isAuthenticated,
-  validateGetRecurringOrders, // Apply validation directly
-  recurringOrderController.getRecurringOrders
+  validateGetRecurringOrders,
+  (req: AuthenticatedRequest, res: Response, next: NextFunction) => recurringOrderController.getRecurringOrders(req, res, next)
 );
 
 router.post(
   '/process',
   isAuthenticated,
   requireAdminRolePath([UserRole.SUPER_ADMIN]),
-  validateProcessRecurringOrders, // Apply validation directly
-  recurringOrderController.processRecurringOrders
+  validateProcessRecurringOrders,
+  (req: Request, res: Response, next: NextFunction) => recurringOrderController.processRecurringOrders(req, res, next)
 );
 
 export default router;

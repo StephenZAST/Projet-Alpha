@@ -1,5 +1,6 @@
 import Joi from 'joi';
-import { BillStatus, SubscriptionType } from '../models/billing';
+import { BillingStatus } from '../models/billing';
+import { SubscriptionType } from '../models/subscription/subscriptionPlan';
 
 // Schéma pour la création d'une facture
 export const createBillSchema = Joi.object({
@@ -10,7 +11,7 @@ export const createBillSchema = Joi.object({
   discount: Joi.number().min(0),
   pointsEarned: Joi.number().min(0),
   pointsUsed: Joi.number().min(0),
-  status: Joi.string().valid(...Object.values(BillStatus)).required(),
+  status: Joi.string().valid(...Object.values(BillingStatus)).required(),
   dueDate: Joi.date().min('now').required(),
   paymentMethod: Joi.string().required(),
   notes: Joi.string().allow('')
@@ -18,7 +19,7 @@ export const createBillSchema = Joi.object({
 
 // Schéma pour la mise à jour d'une facture
 export const updateBillSchema = Joi.object({
-  status: Joi.string().valid(...Object.values(BillStatus)),
+  status: Joi.string().valid(...Object.values(BillingStatus)),
   paymentMethod: Joi.string(),
   notes: Joi.string().allow(''),
   pointsUsed: Joi.number().min(0)
@@ -55,7 +56,7 @@ export const loyaltyPointsSchema = Joi.object({
 // Schéma pour la recherche de factures
 export const searchBillsSchema = Joi.object({
   userId: Joi.string(),
-  status: Joi.string().valid(...Object.values(BillStatus)),
+  status: Joi.string().valid(...Object.values(BillingStatus)),
   startDate: Joi.date(),
   endDate: Joi.date().min(Joi.ref('startDate')),
   minAmount: Joi.number().min(0),
