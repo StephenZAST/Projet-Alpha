@@ -14,10 +14,24 @@ import billingRoutes from './routes/billing';
 import authRoutes from './routes/authRoutes';
 import websocketRoutes from './routes/websocket';
 import adminLogRoutes from './routes/adminLogRoutes';
-import googleAuthRoutes from './routes/googleAuthRoutes'; 
 import blogArticleRoutes from './routes/blogArticleRoutes'; 
 import blogGeneratorRoutes from './routes/blogGeneratorRoutes';
 import adminRoutes from './routes/adminRoutes';
+import adminsRoutes from './routes/admins';
+import affiliateRoutes from './routes/affiliateRoutes';
+import analyticsRoutes from './routes/analytics';
+import articlesRoutes from './routes/articles';
+import authRouter from './routes/auth';
+import categoriesRoutes from './routes/categories';
+import deliveryTasksRoutes from './routes/delivery-tasks';
+import deliveryRoutes from './routes/delivery';
+import loyaltyRoutes from './routes/loyalty';
+import notificationsRoutes from './routes/notifications';
+import paymentsRoutes from './routes/payments';
+import permissionRoutes from './routes/permissionRoutes';
+import recurringOrdersRoutes from './routes/recurringOrders';
+import subscriptionsRoutes from './routes/subscriptions';
+import usersRoutes from './routes/users';
 
 const app = express();
 const jobScheduler = new JobScheduler();
@@ -49,6 +63,21 @@ app.use('/api/adminLogs', adminLogRoutes);
 app.use('/api/admin', adminRoutes); 
 app.use('/api/blog', blogArticleRoutes); 
 app.use('/api/blog-generator', blogGeneratorRoutes); 
+app.use('/api/admins', adminsRoutes);
+app.use('/api/affiliates', affiliateRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/articles', articlesRoutes);
+app.use('/api/auth', authRouter);
+app.use('/api/categories', categoriesRoutes);
+app.use('/api/delivery-tasks', deliveryTasksRoutes);
+app.use('/api/delivery', deliveryRoutes);
+app.use('/api/loyalty', loyaltyRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/payments', paymentsRoutes);
+app.use('/api/permissions', permissionRoutes);
+app.use('/api/recurring-orders', recurringOrdersRoutes);
+app.use('/api/subscriptions', subscriptionsRoutes);
+app.use('/api/users', usersRoutes);
 
 // Basic route for testing
 app.get('/', (req, res) => {

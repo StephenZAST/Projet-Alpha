@@ -160,4 +160,4 @@ router.get(
   }
 );
 
-export { router as paymentRoutes };
+export default router;
