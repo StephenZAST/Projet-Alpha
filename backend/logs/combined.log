@@ -29,3 +29,6 @@
 {"level":"info","message":"Supabase client initialized successfully","timestamp":"2024-12-19T13:24:58.825Z"}
 {"level":"info","message":"Starting scheduled jobs","timestamp":"2024-12-19T13:25:03.910Z"}
 {"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-12-19T13:25:03.914Z"}
+{"level":"info","message":"Supabase client initialized successfully","timestamp":"2024-12-19T13:28:03.829Z"}
+{"level":"info","message":"Starting scheduled jobs","timestamp":"2024-12-19T13:28:08.100Z"}
+{"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-12-19T13:28:08.105Z"}
