@@ -8,8 +8,8 @@ import { checkDeliverySlotAvailability } from './delivery';
 import { createOrder as createOrderService, createOneClickOrder as createOneClickOrderService } from './orders/orderCreation';
 import { getOrdersByUser, getOrdersByZone, getOrderById, getAllOrders } from './orders/orderRetrieval';
 import { updateOrderStatus, updateOrder, cancelOrder } from './orders/orderUpdate';
-import { getDeliveryRoute } from './orders/deliveryRoute';
-import { getOrderStatistics } from './orders/orderStatistics';
+import deliveryRouteService from './orders/deliveryRoute';
+import { getOrderStatistics as getOrderStatisticsUtil } from './orders/orderStatistics';
 
 const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -22,7 +22,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const ordersTable = 'orders';
 
-export class OrderService {
+export class OrdersService {
   private ordersTable = 'orders';
 
   /**
@@ -36,13 +36,9 @@ export class OrderService {
    * Create a one-click order
    */
   async createOneClickOrder(
-    userId: string,
-    zoneId: string,
-    items: OrderItem[],
-    totalAmount: number,
-    paymentMethod: PaymentMethod
+    orderData: OrderInput & { zoneId: string }
   ): Promise<Order> {
-    return createOneClickOrderService({ userId, zoneId, items, totalAmount, paymentMethod });
+    return createOneClickOrderService(orderData);
   }
 
   /**
@@ -80,7 +76,7 @@ export class OrderService {
    * Get delivery route
    */
   async getDeliveryRoute(deliveryPersonId: string): Promise<RouteStop[]> {
-    return getDeliveryRoute(deliveryPersonId);
+    return deliveryRouteService.getDeliveryRoute(deliveryPersonId);
   }
 
   /**
@@ -93,12 +89,7 @@ export class OrderService {
       endDate?: Date;
     } = {}
   ): Promise<OrderStatistics> {
-    return {
-      totalOrders: 0,
-      totalRevenue: 0,
-      averageOrderValue: 0,
-      totalOrdersDelivered: 0,
-    };
+    return getOrderStatisticsUtil(options);
   }
 
   /**
@@ -136,3 +127,5 @@ export class OrderService {
     // Implement delete order logic here
   }
 }
+
+export const ordersService = new OrdersService();

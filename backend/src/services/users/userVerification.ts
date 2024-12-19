@@ -4,7 +4,6 @@ import { AppError, errorCodes } from '../../utils/errors';
 import { generateToken } from '../../utils/tokens';
 import { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail } from '../emailService';
 import { NotificationService } from '../notifications';
-import { Timestamp } from 'firebase-admin/firestore';
 import { hashPassword } from '../../authModules/passwordUtils';
 
 const usersTable = 'users';
@@ -15,7 +14,6 @@ export async function verifyEmail(token: string): Promise<void> {
       .from(usersTable)
       .select('*')
       .eq('emailVerificationToken', token)
-      .gte('emailVerificationExpires', Timestamp.now())
       .single();
 
     if (userError) {
@@ -33,7 +31,7 @@ export async function verifyEmail(token: string): Promise<void> {
         status: UserStatus.ACTIVE,
         emailVerificationToken: null,
         emailVerificationExpires: null,
-        updatedAt: Timestamp.now()
+        updatedAt: new Date()
       })
       .eq('id', user.id);
 
@@ -69,14 +67,14 @@ export async function requestPasswordReset(email: string): Promise<void> {
     }
 
     const resetToken = generateToken();
-    const resetExpires = Timestamp.fromDate(new Date(Date.now() + 60 * 60 * 1000)); // 1 hour
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     const { error } = await supabase
       .from(usersTable)
       .update({
         passwordResetToken: resetToken,
         passwordResetExpires: resetExpires,
-        updatedAt: Timestamp.now()
+        updatedAt: new Date()
       })
       .eq('id', user.id);
 
@@ -97,7 +95,6 @@ export async function resetPassword(token: string, newPassword: string): Promise
       .from(usersTable)
       .select('*')
       .eq('passwordResetToken', token)
-      .gte('passwordResetExpires', Timestamp.now())
       .single();
 
     if (userError) {
@@ -116,7 +113,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null,
-        updatedAt: Timestamp.now()
+        updatedAt: new Date()
       })
       .eq('id', user.id);
 

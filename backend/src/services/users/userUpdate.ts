@@ -1,138 +1,145 @@
-import supabase from '../../config/supabase';
-import { User, UserProfile, UserAddress, UserPreferences } from '../../models/user';
 import { AppError, errorCodes } from '../../utils/errors';
-import { NotificationService, NotificationType } from '../notifications';
-import { Timestamp } from 'firebase-admin/firestore';
+import { User, UpdateUserInput, UserAddress, UserPreferences, UserProfile } from '../../models/user';
+import  supabase  from '../../config/supabase';
 
 const usersTable = 'users';
 
-export async function updateProfile(userId: string, updateData: Partial<UserProfile>): Promise<UserProfile> {
+export async function updateUser(id: string, updateData: UpdateUserInput): Promise<User> {
   try {
-    const { data: user, error: userError } = await supabase.from(usersTable).select('profile').eq('id', userId).single();
-
-    if (userError) {
-      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
-    }
-
-    if (!user) {
-      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
-    }
-
-    const existingProfile = user.profile || {};
-    const updatedProfile = {
-      ...existingProfile,
-      ...updateData,
-    };
-
-    const { error } = await supabase.from(usersTable).update({ profile: updatedProfile }).eq('id', userId);
+    const { data, error } = await supabase
+      .from(usersTable)
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
 
     if (error) {
-      throw new AppError(500, 'Failed to update profile', 'INTERNAL_SERVER_ERROR');
-    }
-
-    // Notify user about profile update
-    const notificationService = new NotificationService();
-    await notificationService.sendNotification(userId, {
-      type: NotificationType.PROFILE_UPDATE,
-      title: 'Profile Updated',
-      message: 'Your profile has been successfully updated',
-      data: {}
-    });
-
-    return updatedProfile;
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw new AppError(500, 'Failed to update profile', 'INTERNAL_SERVER_ERROR');
-  }
-}
-
-export async function updateAddress(userId: string, address: UserAddress): Promise<UserAddress> {
-  try {
-    const { data: user, error: userError } = await supabase.from(usersTable).select('address').eq('id', userId).single();
-
-    if (userError) {
-      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
-    }
-
-    if (!user) {
-      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
-    }
-
-    const { error } = await supabase.from(usersTable).update({ address, updatedAt: Timestamp.now() }).eq('id', userId);
-
-    if (error) {
-      throw new AppError(500, 'Failed to update address', 'INTERNAL_SERVER_ERROR');
-    }
-
-    return address;
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw new AppError(500, 'Failed to update address', 'INTERNAL_SERVER_ERROR');
-  }
-}
-
-export async function updatePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences> {
-  try {
-    const { data: user, error: userError } = await supabase.from(usersTable).select('profile').eq('id', userId).single();
-
-    if (userError) {
-      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
-    }
-
-    if (!user || !user.profile) {
-      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
-    }
-
-    const existingPreferences = user.profile.preferences || { notifications: { email: false, sms: false, push: false }, language: 'en' };
-    const updatedPreferences = {
-      ...existingPreferences,
-      ...preferences
-    };
-
-    const { error } = await supabase.from(usersTable).update({ profile: { ...user.profile, preferences: updatedPreferences }, updatedAt: Timestamp.now() }).eq('id', userId);
-
-    if (error) {
-      throw new AppError(500, 'Failed to update preferences', 'INTERNAL_SERVER_ERROR');
-    }
-
-    return updatedPreferences;
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-    throw new AppError(500, 'Failed to update preferences', 'INTERNAL_SERVER_ERROR');
-  }
-}
-
-export async function updateUser(id: string, userData: Partial<User>): Promise<User> {
-  try {
-    const { data: existingUser, error: userError } = await supabase.from(usersTable).select('*').eq('id', id).single();
-
-    if (userError) {
-      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
-    }
-
-    if (!existingUser) {
-      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
-    }
-
-    const updatedUser = {
-      ...existingUser,
-      ...userData,
-      updatedAt: Timestamp.now(),
-    };
-
-    const { data, error } = await supabase.from(usersTable).update(updatedUser).eq('id', id).select('*').single();
-
-    if (error) {
-      throw new AppError(500, 'Failed to update user', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(500, 'Failed to update user', errorCodes.DATABASE_ERROR);
     }
 
     if (!data) {
-      throw new AppError(500, 'Failed to update user', 'INTERNAL_SERVER_ERROR');
+      throw new AppError(404, 'User not found', errorCodes.NOT_FOUND);
     }
 
     return data as User;
   } catch (error) {
     console.error('Error updating user:', error);
     throw error;
+  }
+}
+
+export async function updateProfile(userId: string, updateData: Partial<UserProfile>): Promise<UserProfile> {
+  try {
+    const { data: user, error: userError } = await supabase
+      .from(usersTable)
+      .select('profile')
+      .eq('id', userId)
+      .single();
+
+    if (userError) {
+      throw new AppError(500, 'Failed to fetch user profile', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!user) {
+      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
+    }
+
+    const updatedProfile = {
+      ...user.profile,
+      ...updateData,
+    };
+
+    const { data, error } = await supabase
+      .from(usersTable)
+      .update({ profile: updatedProfile })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to update profile', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
+      throw new AppError(500, 'Failed to update profile', errorCodes.DATABASE_ERROR);
+    }
+
+    return data.profile as UserProfile;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, 'Failed to update profile', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function updateAddress(userId: string, address: UserAddress): Promise<UserAddress> {
+  try {
+    const { data, error } = await supabase
+      .from(usersTable)
+      .update({ address })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to update address', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
+      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
+    }
+
+    return data.address as UserAddress;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, 'Failed to update address', errorCodes.DATABASE_ERROR);
+  }
+}
+
+export async function updatePreferences(userId: string, preferences: Partial<UserPreferences>): Promise<UserPreferences> {
+  try {
+    const { data: user, error: userError } = await supabase
+      .from(usersTable)
+      .select('profile')
+      .eq('id', userId)
+      .single();
+
+    if (userError) {
+      throw new AppError(500, 'Failed to fetch user preferences', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!user || !user.profile) {
+      throw new AppError(404, 'User not found', errorCodes.USER_NOT_FOUND);
+    }
+
+    const updatedPreferences = {
+      ...user.profile.preferences,
+      ...preferences,
+    };
+
+    const { data, error } = await supabase
+      .from(usersTable)
+      .update({ profile: { ...user.profile, preferences: updatedPreferences } })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new AppError(500, 'Failed to update preferences', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
+      throw new AppError(500, 'Failed to update preferences', errorCodes.DATABASE_ERROR);
+    }
+
+    return data.profile.preferences as UserPreferences;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(500, 'Failed to update preferences', errorCodes.DATABASE_ERROR);
   }
 }

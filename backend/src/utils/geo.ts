@@ -1,4 +1,3 @@
-import { GeoPoint } from 'firebase-admin/firestore';
 import * as geohash from 'ngeohash';
 
 export interface GeoLocation {

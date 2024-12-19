@@ -1,75 +1,67 @@
+import { createClient } from '@supabase/supabase-js';
 import { Order, OrderStatus } from '../../models/order';
 import { AppError, errorCodes } from '../../utils/errors';
-import supabase from '../../config/supabase';
 
-interface OrderStatistics {
-  total: number;
-  byStatus: Record<OrderStatus, number>;
-  averageDeliveryTime: number;
+const supabaseUrl = process.env.SUPABASE_URL as string;
+const supabaseKey = process.env.SUPABASE_KEY as string;
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+export async function getOrderStatistics(options: {
+  zoneId?: string;
+  startDate?: Date;
+  endDate?: Date;
+}): Promise<{
+  totalOrders: number;
   totalRevenue: number;
   averageOrderValue: number;
-  period: {
-    start: Date;
-    end: Date;
-  };
-}
-
-export async function getOrderStatistics(
-  options: {
-    zoneId?: string;
-    startDate?: Date;
-    endDate?: Date;
-  } = {}
-): Promise<OrderStatistics> {
+  totalOrdersDelivered: number;
+}> {
   try {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', OrderStatus.COMPLETED);
+    let query = supabase.from('orders').select('*', { count: 'exact' });
 
-    if (error) {
-      throw new AppError(500, 'Failed to fetch order statistics', errorCodes.STATS_FETCH_FAILED);
+    if (options.zoneId) {
+      query = query.eq('zoneId', options.zoneId);
     }
 
-    const orders = data;
+    if (options.startDate) {
+      query = query.gte('createdAt', options.startDate.toISOString());
+    }
 
-    const byStatus = Object.values(OrderStatus).reduce((acc, status) => {
-      acc[status] = orders.filter(o => o.status === status).length;
-      return acc;
-    }, {} as Record<OrderStatus, number>);
+    if (options.endDate) {
+      query = query.lte('createdAt', options.endDate.toISOString());
+    }
 
-    const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const { data, error, count } = await query;
+
+    if (error) {
+      throw new AppError(500, 'Failed to fetch orders', errorCodes.DATABASE_ERROR);
+    }
+
+    if (!data) {
+      return {
+        totalOrders: 0,
+        totalRevenue: 0,
+        averageOrderValue: 0,
+        totalOrdersDelivered: 0,
+      };
+    }
+
+    const totalOrders = count || 0;
+    const totalRevenue = data.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const totalOrdersDelivered = data.filter(
+      (order) => order.status === OrderStatus.DELIVERED
+    ).length;
 
     return {
-      total: orders.length,
-      byStatus,
-      averageDeliveryTime: calculateAverageDeliveryTime(orders),
+      totalOrders,
       totalRevenue,
-      averageOrderValue: orders.length > 0 ? totalRevenue / orders.length : 0,
-      period: {
-        start: options.startDate || new Date(),
-        end: options.endDate || new Date()
-      }
+      averageOrderValue,
+      totalOrdersDelivered,
     };
   } catch (error) {
     console.error('Error fetching order statistics:', error);
-    throw new AppError(500, 'Failed to fetch order statistics', errorCodes.STATS_FETCH_FAILED);
+    throw new AppError(500, 'Failed to fetch order statistics', errorCodes.DATABASE_ERROR);
   }
-}
-
-function calculateAverageDeliveryTime(orders: Order[]): number {
-  const completedOrders = orders.filter(
-    order => order.status === OrderStatus.COMPLETED &&
-    order.completionDate !== null &&
-    order.creationDate !== null
-  );
-
-  if (completedOrders.length === 0) return 0;
-
-  const totalTime = completedOrders.reduce((sum, order) => {
-    const completionTime = new Date(order.completionDate as string).getTime() - new Date(order.creationDate as string).getTime();
-    return sum + completionTime;
-  }, 0);
-
-  return Math.round((totalTime / completedOrders.length / (1000 * 60)) * 10) / 10; // Minutes avec 1 décimale
 }

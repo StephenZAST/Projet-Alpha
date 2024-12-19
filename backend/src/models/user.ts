@@ -1,4 +1,3 @@
-import { Timestamp } from 'firebase-admin/firestore';
 import { OrderItem } from './order';
 
 export enum UserRole {
@@ -73,13 +72,12 @@ export interface User {
   status: UserStatus;
   address?: string;
   creationMethod: AccountCreationMethod;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: Date;
+  updatedAt: Date;
   fcmToken?: string;
 }
 
 export interface CreateUserInput {
-  uid: string;
   firstName: string;
   lastName: string;
   email: string;

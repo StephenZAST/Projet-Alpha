@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { RecurringOrder, RecurringFrequency } from '../types/recurring';
-import { OrderService } from './orders';
+import { OrdersService } from './orders';
 import { NotificationService } from './notifications';
 import { addDays, addWeeks, addMonths } from 'date-fns';
 import { OrderItem, PriceType, OrderStatus, OrderType, PaymentMethod } from '../models/order'; 
@@ -19,7 +19,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const recurringOrdersTable = 'recurringOrders';
 
 export class RecurringOrderService {
-  private orderService = new OrderService();
+  private orderService = new OrdersService();
   private notificationService = new NotificationService();
 
   /**

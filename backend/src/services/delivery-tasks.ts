@@ -2,7 +2,9 @@ import {
   getDeliveryTask as getDeliveryTaskUtil,
   createDeliveryTask as createDeliveryTaskUtil,
   updateDeliveryTask as updateDeliveryTaskUtil,
-  deleteDeliveryTask as deleteDeliveryTaskUtil
+  deleteDeliveryTask as deleteDeliveryTaskUtil,
+  assignDeliveryTask,
+  updateOrderStatus
 } from './delivery-tasks/taskManagement';
 import { DeliveryTask, TaskType, TaskStatus, PriorityLevel } from '../models/delivery-task';
 import { AppError, errorCodes } from '../utils/errors';
@@ -86,6 +88,14 @@ export class DeliveryTasksService {
     }
   
     return true;
+  }
+
+  async assignDeliveryTask(taskId: string, driverId: string): Promise<void> {
+    return assignDeliveryTask(taskId, driverId);
+  }
+
+  async updateOrderStatus(orderIds: string[], status: string): Promise<void> {
+    return updateOrderStatus(orderIds, status);
   }
 }
 

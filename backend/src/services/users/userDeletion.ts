@@ -1,7 +1,6 @@
 import supabase from '../../config/supabase';
 import { User, UserStatus } from '../../models/user';
 import { AppError, errorCodes } from '../../utils/errors';
-import { Timestamp } from 'firebase-admin/firestore';
 
 const usersTable = 'users';
 

@@ -54,7 +54,7 @@ export class AffiliateService {
     return getAllAffiliates();
   }
 
-  async getAffiliateById(affiliateId: string): Promise<Affiliate> {
+  async getAffiliateById(affiliateId: string): Promise<Affiliate | null> {
     return getAffiliateById(affiliateId);
   }
 

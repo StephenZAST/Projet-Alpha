@@ -1,5 +1,3 @@
-import { Timestamp } from 'firebase-admin/firestore';
-
 export interface Location {
   latitude: number;
   longitude: number;
@@ -9,7 +7,7 @@ export interface RouteStop {
   type: 'pickup' | 'delivery';
   location: Location;
   orderId: string;
-  scheduledTime: Timestamp;
+  scheduledTime: Date;
   address: string;
 }
 
@@ -17,7 +15,7 @@ export interface RouteInfo {
   orderId: string;
   location: Location;
   type: 'pickup' | 'delivery';
-  scheduledTime: Timestamp;
+  scheduledTime: Date;
   status: 'pending' | 'in_progress' | 'completed';
   address: string;
 }
@@ -25,7 +23,7 @@ export interface RouteInfo {
 export interface OptimizedRoute {
   deliveryPersonId: string;
   zoneId: string;
-  date: Timestamp;
+  date: Date;
   stops: RouteInfo[];
   estimatedDuration: number;
   estimatedDistance: number;
@@ -67,7 +65,7 @@ export function optimizeRoute(stops: RouteStop[]): Promise<RouteStop[]> {
   try {
     // Trier les arrêts par heure programmée
     const sortedStops = stops.sort((a, b) => {
-      return a.scheduledTime.seconds - b.scheduledTime.seconds;
+      return a.scheduledTime.getTime() - b.scheduledTime.getTime();
     });
 
     // Optimiser l'ordre des arrêts en tenant compte des contraintes de temps
@@ -137,5 +135,5 @@ export function calculateRouteEfficiency(route: OptimizedRoute): number {
 export function optimizeRouteSimple(stops: RouteStop[]): RouteStop[] {
   // Ici, vous pouvez implémenter votre logique d'optimisation de route
   // Pour l'instant, nous retournons simplement les arrêts triés par heure prévue
-  return stops.sort((a, b) => a.scheduledTime.seconds - b.scheduledTime.seconds);
+  return stops.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
 }

@@ -5,7 +5,6 @@ import { generateToken } from '../../utils/tokens';
 import { sendVerificationEmail } from '../users/userVerification';
 import { AppError, errorCodes } from '../../utils/errors';
 import { getUserByEmail } from '../users/userRetrieval';
-import { Timestamp } from 'firebase-admin/firestore';
 
 const SALT_ROUNDS = 10;
 const usersTable = 'users';
@@ -23,7 +22,7 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
 
     const newUser: User = {
       id: '',
-      uid: userData.uid || '',
+      uid: '',
       profile: {
         ...userData.profile,
         address: undefined,
@@ -39,8 +38,8 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
       role: userData.role || UserRole.CLIENT,
       status: UserStatus.PENDING,
       creationMethod: userData.creationMethod || AccountCreationMethod.SELF_REGISTERED,
-      createdAt: Timestamp.fromDate(now),
-      updatedAt: Timestamp.fromDate(now),
+      createdAt: now,
+      updatedAt: now,
     };
 
     const { data, error } = await supabase.from(usersTable).insert([newUser]).select().single();

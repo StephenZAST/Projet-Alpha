@@ -1,7 +1,6 @@
 import express from 'express';
 import { isAuthenticated } from '../middleware/auth';
 import { deliveryTasksService } from '../services/delivery-tasks';
-import { GeoPoint } from 'firebase/firestore';
 import { UserRole, User } from '../models/user';
 import { requireAdminRolePath } from '../middleware/auth';
 import { Request, Response, NextFunction } from 'express';

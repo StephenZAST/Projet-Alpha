@@ -90,3 +90,35 @@ export async function deleteDeliveryTask(id: string): Promise<void> {
     throw new AppError(500, 'Failed to delete delivery task', errorCodes.DATABASE_ERROR);
   }
 }
+
+export async function assignDeliveryTask(taskId: string, driverId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from(deliveryTasksTable)
+      .update({ driverId, status: 'assigned' })
+      .eq('id', taskId);
+
+    if (error) {
+      throw new AppError(500, 'Failed to assign delivery task', errorCodes.DATABASE_ERROR);
+    }
+  } catch (error) {
+    console.error('Error assigning delivery task:', error);
+    throw error;
+  }
+}
+
+export async function updateOrderStatus(orderIds: string[], status: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status })
+      .in('id', orderIds);
+
+    if (error) {
+      throw new AppError(500, 'Failed to update order status', errorCodes.DATABASE_ERROR);
+    }
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    throw error;
+  }
+}
