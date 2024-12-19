@@ -5,14 +5,18 @@ import { LoyaltyTransaction } from '../../models/loyalty/loyaltyTransaction';
 import { Offer } from '../../models/offer';
 import { getBill } from './billManagement';
 
-const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY;
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseKey) {
-  throw new Error('SUPABASE_KEY environment variable not set.');
+  throw new Error('SUPABASE_SERVICE_KEY environment variable not set.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl as string, supabaseKey as string);
 
 const billsTable = 'bills';
 const loyaltyTransactionsTable = 'loyaltyTransactions';

@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import { MainService, ArticleCategory } from '../../models/order';
 import AppError from '../../utils/AppError';
-import { supabase } from '../../config';
+import { supabase } from '../../config/supabase';
 import { Request, Response, NextFunction } from 'express';
 
 export const articleValidationSchema = Joi.object({

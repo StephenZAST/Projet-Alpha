@@ -1,4 +1,4 @@
-import supabase from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { AdminAction, IAdminLog } from '../models/adminLog';
 import { IAdmin } from '../models/admin';
 import { AppError, errorCodes } from '../utils/errors';

@@ -1,4 +1,4 @@
-import supabase from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { UserCredentials } from '../types/types';
 
 export const registerWithSupabase = async (credentials: UserCredentials) => {

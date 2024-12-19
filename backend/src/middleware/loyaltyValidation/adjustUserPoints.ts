@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { supabase } from '../../config';
+import { supabase } from '../../config/supabase';
 import AppError from '../../utils/AppError';
 
 export const validateAdjustUserPoints = async (req: Request, res: Response, next: NextFunction) => {

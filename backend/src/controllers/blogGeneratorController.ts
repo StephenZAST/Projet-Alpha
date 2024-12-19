@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { GoogleAIService } from '../services/googleAI';
 import { BlogArticle, BlogArticleStatus, BlogArticleCategory } from '../models/blogArticle';
-import  supabase  from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
 import { UserRole, User } from '../models/user';
 

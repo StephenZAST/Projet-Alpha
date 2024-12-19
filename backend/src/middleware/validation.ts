@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Schema } from 'joi';
-import * as Joi from 'joi';
+import Joi from 'joi';
 import { AppError, errorCodes } from '../utils/errors';
 
 // Middleware générique de validation

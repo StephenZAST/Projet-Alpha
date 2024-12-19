@@ -1,15 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { AppError, errorCodes } from '../../utils/errors';
 import { Bill, BillStatus, PaymentStatus } from '../../models/bill';
+import dotenv from 'dotenv';
 
-const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY;
+dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error('SUPABASE_URL or SUPABASE_KEY environment variables not set.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl as string, supabaseKey as string);
 
 export async function generateInvoices(userId: string, startDate: Date, endDate: Date): Promise<Bill[]> {
   try {

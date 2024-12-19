@@ -1,6 +1,6 @@
 import { Order, OrderStatus } from '../../models/order';
 import { AppError, errorCodes } from '../../utils/errors';
-import  supabase  from '../../config/supabase';
+import { supabase } from '../../config/supabase';
 
 export async function updateOrderStatus(
   orderId: string,

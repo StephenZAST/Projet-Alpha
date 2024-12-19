@@ -1,4 +1,4 @@
-import supabase from '../../config/supabase';
+import { supabase } from '../../config/supabase';
 import { Permission } from '../../models/permission';
 import { AppError, errorCodes } from '../../utils/errors';
 

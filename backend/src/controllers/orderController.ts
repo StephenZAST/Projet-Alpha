@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError, errorCodes } from '../utils/errors';
-import  supabase  from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { Order, OrderStatus, GetOrdersOptions } from '../models/order';
 import { User } from '../models/user';
 

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { BlogArticle, BlogArticleStatus, CreateBlogArticleInput, UpdateBlogArticleInput } from '../models/blogArticle';
-import  supabase  from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
 import { UserRole, User } from '../models/user';
 

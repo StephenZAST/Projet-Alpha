@@ -1,4 +1,4 @@
-import supabase from '../../config/supabase';
+import { supabase } from '../../config/supabase';
 import { Affiliate, AffiliateStatus } from '../../models/affiliate';
 import { AppError, errorCodes } from '../../utils/errors';
 

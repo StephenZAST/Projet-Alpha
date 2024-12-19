@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
-import supabase from '../../config/supabase';
+import { supabase } from '../../config/supabase';
 import { AppError, errorCodes } from '../../utils/errors';
 import { generateToken } from '../../utils/jwt';
 import { UserRole } from '../../models/user';

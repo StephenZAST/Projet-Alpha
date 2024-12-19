@@ -5,7 +5,7 @@ import { AppError, errorCodes } from '../../utils/errors';
 import { getUserProfile } from '../users/userRetrieval';
 import { checkDeliverySlotAvailability } from '../delivery';
 import { validateOrderData } from '../../validation/orders';
-import supabase from '../../config/supabase';
+import { supabase } from '../../config/supabase';
 
 const ordersTable = 'orders';
 

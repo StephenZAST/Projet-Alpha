@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
-import { supabase } from '../config';
+import { supabase } from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
 import { BlogArticleCategory, BlogArticleStatus } from '../models/blogArticle';
 

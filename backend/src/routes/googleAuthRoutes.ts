@@ -1,5 +1,5 @@
 import express from 'express';
-import supabase from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { generateToken } from '../utils/jwt';
 import { AppError } from '../utils/errors';
 import { UserRole } from '../models/user';

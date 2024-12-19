@@ -1,4 +1,4 @@
-import supabase from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
 
 export enum ServiceType {

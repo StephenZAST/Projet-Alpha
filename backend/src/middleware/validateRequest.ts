@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
-import { supabase } from '../config';
+import { supabase } from '../config/supabase';
 import AppError from '../utils/AppError';
 
 export const validateRequest = (schema: Joi.Schema) => {

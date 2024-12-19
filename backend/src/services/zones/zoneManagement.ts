@@ -1,15 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { Zone, ZoneStatus, Location } from '../../models/zone';
 import { AppError, errorCodes } from '../../utils/errors';
+import dotenv from 'dotenv';
 
-const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY;
+dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY; // Changed from SUPABASE_KEY to SUPABASE_SERVICE_KEY
 
 if (!supabaseKey) {
-  throw new Error('SUPABASE_KEY environment variable not set.');
+  throw new Error('SUPABASE_SERVICE_KEY environment variable not set.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl as string, supabaseKey);
 
 const zonesTable = 'zones';
 
@@ -94,15 +97,6 @@ export async function deleteZone(id: string): Promise<void> {
 
     if (!zone) {
       throw new AppError(404, 'Zone not found', errorCodes.NOT_FOUND);
-    }
-
-    const { error } = await supabase.from(zonesTable).delete().eq('id', id);
-
-    if (error) {
-      throw new AppError(500, 'Failed to delete zone', errorCodes.DATABASE_ERROR);
-    }
-  } catch (error) {
-    console.error('Error deleting zone:', error);
-    throw error;
+    }    const { error } = await supabase.from(zonesTable).delete().eq('id', id);    if (error) {      throw new AppError(500, 'Failed to delete zone', errorCodes.DATABASE_ERROR);    }  } catch (error) {    console.error('Error deleting zone:', error);    throw error;
   }
 }

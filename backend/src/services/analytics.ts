@@ -1,7 +1,7 @@
-import { supabase } from '../config';
+import { supabase } from '../config/supabase';
 import { RevenueMetrics, CustomerMetrics, AffiliateMetrics, AffiliateSummary } from '../models/analytics';
 import { AppError, errorCodes } from '../utils/errors';
-import { getAnalytics, createAnalytics, updateAnalytics, deleteAnalytics } from './analyticsService/analyticsManagement';
+import { getAnalytics, createAnalytics, updateAnalytics, deleteAnalytics } from '../services/analyticsService/analyticsManagement';
 
 export class AnalyticsService {
   private readonly analyticsTable = 'analytics';

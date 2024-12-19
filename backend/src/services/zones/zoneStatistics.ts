@@ -2,15 +2,18 @@ import { createClient } from '@supabase/supabase-js';
 import { Zone } from '../../models/zone';
 import { Order } from '../../models/order';
 import { AppError, errorCodes } from '../../utils/errors';
+import dotenv from 'dotenv';
 
-const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY;
+dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseKey) {
-  throw new Error('SUPABASE_KEY environment variable not set.');
+  throw new Error('SUPABASE_SERVICE_KEY environment variable not set.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl as string, supabaseKey);
 
 const zonesTable = 'zones';
 const ordersTable = 'orders';
