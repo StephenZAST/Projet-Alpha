@@ -1,8 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 import { logger } from './utils/logger';
 
-// Charger les variables d'environnement
-import * as dotenv from 'dotenv';
 dotenv.config();
 
 const config = {
@@ -22,10 +20,5 @@ const config = {
     key: process.env.SUPABASE_KEY as string
   }
 };
-
-// Initialize Supabase client
-export const supabase = createClient(config.supabase.url, config.supabase.key);
-
-logger.info('Supabase client initialized successfully');
 
 export default config;

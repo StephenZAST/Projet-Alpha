@@ -3,72 +3,27 @@ import { UserRole } from '../models/user';
 
 // Schéma pour la création d'un utilisateur
 export const createUserSchema = Joi.object({
-  email: Joi.string().email().required()
+  email: Joi.string().email()
     .messages({
       'string.email': 'Format d\'email invalide',
-      'any.required': 'Email est requis',
       'string.empty': 'Email ne peut pas être vide'
     }),
   password: Joi.string()
-    .min(8)
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
-    .required()
+    .min(6) // Reduced minimum length
     .messages({
-      'string.pattern.base': 'Le mot de passe doit contenir au moins une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial',
-      'any.required': 'Mot de passe est requis',
+      'string.min': 'Le mot de passe doit contenir au moins 6 caractères',
       'string.empty': 'Mot de passe ne peut pas être vide'
     }),
-  firstName: Joi.string().required()
+  firstName: Joi.string().allow('').optional(),
+  lastName: Joi.string().allow('').optional(),
+  phone: Joi.string().pattern(/^[0-9+\-\s]{8,}$/).optional() // More flexible pattern
     .messages({
-      'any.required': 'Prénom est requis',
-      'string.empty': 'Prénom ne peut pas être vide'
+      'string.pattern.base': 'Format de numéro de téléphone invalide'
     }),
-  lastName: Joi.string().required()
+  role: Joi.string().valid(...Object.values(UserRole))
+    .default(UserRole.USER) // Add default role
     .messages({
-      'any.required': 'Nom est requis',
-      'string.empty': 'Nom ne peut pas être vide'
-    }),
-  phone: Joi.string().pattern(/^\+?[0-9]{10,15}$/).required()
-    .messages({
-      'string.pattern.base': 'Format de numéro de téléphone invalide',
-      'any.required': 'Numéro de téléphone est requis',
-      'string.empty': 'Numéro de téléphone ne peut pas être vide'
-    }),
-  role: Joi.string().valid(...Object.values(UserRole)).required()
-    .messages({
-      'any.only': 'Rôle invalide',
-      'any.required': 'Rôle est requis',
-      'string.empty': 'Rôle ne peut pas être vide'
-    }),
-  address: Joi.string().required()
-    .messages({
-      'any.required': 'Adresse est requise',
-      'string.empty': 'Adresse ne peut pas être vide'
-    }),
-  defaultLocation: Joi.object({
-    latitude: Joi.number().min(-90).max(90).required()
-      .messages({
-        'any.required': 'Latitude est requise',
-        'number.min': 'Latitude doit être supérieure ou égale à -90',
-        'number.max': 'Latitude doit être inférieure ou égale à 90'
-      }),
-    longitude: Joi.number().min(-180).max(180).required()
-      .messages({
-        'any.required': 'Longitude est requise',
-        'number.min': 'Longitude doit être supérieure ou égale à -180',
-        'number.max': 'Longitude doit être inférieure ou égale à 180'
-      })
-  }).required(),
-  creationMethod: Joi.string().valid(
-    'self_registration',
-    'admin_created',
-    'affiliate_referral',
-    'customer_referral'
-  ).required()
-    .messages({
-      'any.only': 'Méthode de création invalide',
-      'any.required': 'Méthode de création est requise',
-      'string.empty': 'Méthode de création ne peut pas être vide'
+      'any.only': 'Rôle invalide'
     })
 });
 

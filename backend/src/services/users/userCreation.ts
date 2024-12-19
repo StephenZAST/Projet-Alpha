@@ -1,4 +1,4 @@
-import supabase from '../../config/supabase';
+import { supabase } from '../../config/supabase';
 import { User, UserRole, UserStatus, AccountCreationMethod, CreateUserInput, UserProfile, UserAddress, UserPreferences } from '../../models/user';
 import { hash } from 'bcrypt';
 import { generateToken } from '../../utils/tokens';
@@ -9,58 +9,57 @@ import { getUserByEmail } from '../users/userRetrieval';
 const SALT_ROUNDS = 10;
 const usersTable = 'users';
 
-export async function createUser(userData: CreateUserInput): Promise<User> {
+export const createUser = async (userData: any) => {
   try {
-    const now = new Date();
+    // Create auth user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+    });
 
-    if (!userData.password) {
-      throw new Error('Password is required');
+    if (authError) {
+      console.error('Auth Error:', authError);
+      throw new AppError(400, `Authentication error: ${authError.message}`, 'AUTH_ERROR');
     }
 
-    // Hash the password
-    const hashedPassword = await hash(userData.password, SALT_ROUNDS);
-
-    const newUser: User = {
-      id: '',
-      uid: '',
-      profile: {
-        ...userData.profile,
-        address: undefined,
-        preferences: {
-          notifications: {
-            email: false,
-            sms: false,
-            push: false,
-          },
-          language: 'en',
+    // Create user profile
+    const { data: profileData, error: profileError } = await supabase
+      .from('users')
+      .insert([
+        {
+          id: authData.user?.id,
+          email: userData.email,
+          display_name: userData.displayName,
+          phone_number: userData.phoneNumber,
+          address: userData.address,
+          affiliate_code: userData.affiliateCode,
+          sponsor_code: userData.sponsorCode,
+          creation_method: userData.creationMethod,
+          profile: userData.profile
         }
-      },
-      role: userData.role || UserRole.CLIENT,
-      status: UserStatus.PENDING,
-      creationMethod: userData.creationMethod || AccountCreationMethod.SELF_REGISTERED,
-      createdAt: now,
-      updatedAt: now,
-    };
+      ])
+      .select()
+      .single();
 
-    const { data, error } = await supabase.from(usersTable).insert([newUser]).select().single();
-
-    if (error) {
-      throw new AppError(500, 'Failed to create user', 'INTERNAL_SERVER_ERROR');
+    if (profileError) {
+      console.error('Profile Error:', profileError);
+      // Cleanup auth user if profile creation fails
+      await supabase.auth.admin.deleteUser(authData.user?.id as string);
+      throw new AppError(400, `Profile creation error: ${profileError.message}`, 'PROFILE_ERROR');
     }
 
-    // Send verification email
-    const verificationToken = await generateToken();
-    if (!data.profile || !data.profile.email) {
-      throw new Error('User profile or email is undefined');
-    }
-    await sendVerificationEmail(data.profile.email, verificationToken);
-
-    return data;
+    return profileData;
   } catch (error) {
-    console.error('Error creating user:', error);
-    throw error;
+    console.error('Creation Error:', error);
+    if (error instanceof AppError) {
+      throw error;
+    }
+    if (error instanceof Error) {
+      throw new AppError(500, `Failed to create user: ${error.message}`, 'INTERNAL_SERVER_ERROR');
+    }
+    throw new AppError(500, 'Failed to create user: An unknown error occurred.', 'INTERNAL_SERVER_ERROR');
   }
-}
+};
 
 export async function registerCustomer(
   userData: CreateUserInput,

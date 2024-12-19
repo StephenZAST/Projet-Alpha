@@ -1,6 +1,6 @@
 import { AppError, errorCodes } from '../../utils/errors';
 import { User, UpdateUserInput, UserAddress, UserPreferences, UserProfile } from '../../models/user';
-import  supabase  from '../../config/supabase';
+import { supabase } from '../../config/supabase';
 
 const usersTable = 'users';
 

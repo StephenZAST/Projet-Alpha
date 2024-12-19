@@ -11,6 +11,7 @@ export enum UserRole {
   CLIENT = 'CLIENT',
   SECRETARY = "SECRETARY",
   SERVICE_CLIENT = "SERVICE_CLIENT",
+  USER = "USER",
 }
 
 export enum UserStatus {

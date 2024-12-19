@@ -3,14 +3,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Use the environment variable for the Supabase key
-const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
-const supabaseServiceRoleKey = process.env.SUPABASE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error('Supabase credentials not found in environment variables');
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Supabase URL:', supabaseUrl);
+  console.error('Supabase Key:', supabaseKey ? '[EXISTS]' : '[MISSING]');
+  throw new Error('Missing Supabase credentials in environment variables');
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-export default supabase;
+export const supabase = createClient(supabaseUrl, supabaseKey);
