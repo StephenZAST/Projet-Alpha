@@ -64,18 +64,11 @@ export interface UserProfile {
 export interface User {
   id: string;
   uid: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
   role: UserRole;
-  profile?: Partial<UserProfile>;
   status: UserStatus;
-  address?: string;
-  creationMethod: AccountCreationMethod;
   createdAt: Date;
   updatedAt: Date;
-  fcmToken?: string;
+  profile: UserProfile;
 }
 
 export interface CreateUserInput {
