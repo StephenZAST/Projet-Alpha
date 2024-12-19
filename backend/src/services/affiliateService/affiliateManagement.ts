@@ -1,15 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { Affiliate, AffiliateStatus, PaymentMethod } from '../../models/affiliate';
 import { AppError, errorCodes } from '../../utils/errors';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Supabase environment variables not set.');
+  throw new Error('SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables not set.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl as string, supabaseKey as string);
 
 export async function createAffiliate(
   firstName: string,

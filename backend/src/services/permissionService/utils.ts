@@ -1,15 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { Permission } from '../../models/permission';
 import { AppError, errorCodes } from '../../utils/errors';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Supabase URL or Key not set.');
+  throw new Error('SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables not set.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl as string, supabaseKey as string);
 
 const permissionsTable = 'permissions';
 

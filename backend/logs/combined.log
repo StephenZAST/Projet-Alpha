@@ -95,3 +95,5 @@
 {"level":"info","message":"Starting scheduled jobs","timestamp":"2024-12-19T17:28:02.121Z"}
 {"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-12-19T17:28:02.126Z"}
 {"level":"error","message":"AppError: 400\n    at C:\\Users\\HP OMEN\\Desktop\\Codes\\Important\\Alpha\\backend\\src\\services\\users\\userCreation.ts:22:13\n    at Generator.next (<anonymous>)\n    at fulfilled (C:\\Users\\HP OMEN\\Desktop\\Codes\\Important\\Alpha\\backend\\src\\services\\users\\userCreation.ts:5:58)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)","timestamp":"2024-12-19T17:28:26.186Z"}
+{"level":"info","message":"Starting scheduled jobs","timestamp":"2024-12-19T19:11:35.794Z"}
+{"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-12-19T19:11:35.802Z"}

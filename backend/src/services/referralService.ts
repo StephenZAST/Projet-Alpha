@@ -8,14 +8,18 @@ import { getReferralReward, createReferralReward, updateReferralReward, deleteRe
 import { getActiveReferralProgram } from './referral/programManagement';
 import { referral } from './notification/referral';
 
-const supabaseUrl = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY;
+import dotenv from 'dotenv';
 
-if (!supabaseKey) {
-  throw new Error('SUPABASE_KEY environment variable not set.');
+dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables not set.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl as string, supabaseKey as string);
 
 const referralsTable = 'referrals';
 const rewardsTable = 'referral-rewards';

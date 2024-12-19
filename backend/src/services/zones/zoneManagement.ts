@@ -6,13 +6,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY; // Changed from SUPABASE_KEY to SUPABASE_SERVICE_KEY
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 
-if (!supabaseKey) {
-  throw new Error('SUPABASE_SERVICE_KEY environment variable not set.');
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables not set.');
 }
 
-const supabase = createClient(supabaseUrl as string, supabaseKey);
+const supabase = createClient(supabaseUrl as string, supabaseKey as string);
 
 const zonesTable = 'zones';
 

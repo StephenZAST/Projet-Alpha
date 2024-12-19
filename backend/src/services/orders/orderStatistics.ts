@@ -1,11 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { Order, OrderStatus } from '../../models/order';
 import { AppError, errorCodes } from '../../utils/errors';
+import dotenv from 'dotenv';
 
-const supabaseUrl = process.env.SUPABASE_URL as string;
-const supabaseKey = process.env.SUPABASE_KEY as string;
+dotenv.config();
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables not set.');
+}
+
+const supabase = createClient(supabaseUrl as string, supabaseKey as string);
 
 export async function getOrderStatistics(options: {
   zoneId?: string;
