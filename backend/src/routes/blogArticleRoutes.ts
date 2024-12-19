@@ -11,27 +11,27 @@ const blogArticleController = new BlogArticleController();
 router.get('/', blogArticleController.getArticles);
 router.get('/:identifier', blogArticleController.getArticle);
 
-// Routes protégées nécessitant une authentification
-router.use(isAuthenticated);
-
 // Routes pour la création et la gestion des articles (tous les admins sauf les livreurs)
 router.post(
     '/',
-    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
+    isAuthenticated,
+    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SERVICE, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
     validateCreateBlogArticle,
     blogArticleController.createArticle
 );
 
 router.put(
     '/:id',
-    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
+    isAuthenticated,
+    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SERVICE, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
     validateUpdateBlogArticle,
     blogArticleController.updateArticle
 );
 
 router.delete(
     '/:id',
-    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.SERVICE_CLIENT, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
+    isAuthenticated,
+    requireAdminRolePath([UserRole.SUPER_ADMIN, UserRole.CUSTOMER_SERVICE, UserRole.SECRETAIRE, UserRole.SUPERVISEUR]),
     blogArticleController.deleteArticle
 );
 

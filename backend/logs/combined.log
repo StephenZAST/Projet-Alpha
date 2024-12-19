@@ -14,3 +14,18 @@
 {"level":"info","message":"Server is running on port 3000","timestamp":"2024-11-20T06:11:08.361Z"}
 {"level":"info","message":"Starting scheduled jobs","timestamp":"2024-11-20T06:11:08.365Z"}
 {"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-11-20T06:11:08.369Z"}
+{"level":"info","message":"Supabase client initialized successfully","timestamp":"2024-12-19T12:17:25.327Z"}
+{"level":"info","message":"Starting scheduled jobs","timestamp":"2024-12-19T12:17:29.334Z"}
+{"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-12-19T12:17:29.338Z"}
+{"level":"info","message":"Supabase client initialized successfully","timestamp":"2024-12-19T12:56:17.446Z"}
+{"level":"info","message":"Starting scheduled jobs","timestamp":"2024-12-19T12:56:21.412Z"}
+{"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-12-19T12:56:21.416Z"}
+{"level":"info","message":"Supabase client initialized successfully","timestamp":"2024-12-19T13:23:17.963Z"}
+{"level":"info","message":"Starting scheduled jobs","timestamp":"2024-12-19T13:23:24.486Z"}
+{"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-12-19T13:23:24.491Z"}
+{"level":"info","message":"Supabase client initialized successfully","timestamp":"2024-12-19T13:23:56.996Z"}
+{"level":"info","message":"Starting scheduled jobs","timestamp":"2024-12-19T13:24:02.511Z"}
+{"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-12-19T13:24:02.516Z"}
+{"level":"info","message":"Supabase client initialized successfully","timestamp":"2024-12-19T13:24:58.825Z"}
+{"level":"info","message":"Starting scheduled jobs","timestamp":"2024-12-19T13:25:03.910Z"}
+{"level":"info","message":"Recurring order processing job scheduled","timestamp":"2024-12-19T13:25:03.914Z"}

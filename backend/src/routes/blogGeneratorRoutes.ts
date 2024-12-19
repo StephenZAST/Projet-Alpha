@@ -13,7 +13,7 @@ router.use(isAuthenticated);
 // Routes pour les administrateurs (sauf livreurs)
 router.use(requireAdminRolePath([
     UserRole.SUPER_ADMIN,
-    UserRole.SERVICE_CLIENT,
+    UserRole.CUSTOMER_SERVICE,
     UserRole.SECRETAIRE,
     UserRole.SUPERVISEUR
 ]));

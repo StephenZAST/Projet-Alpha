@@ -1,12 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { GoogleAIService } from '../services/googleAI';
 import { BlogArticle, BlogArticleStatus, BlogArticleCategory } from '../models/blogArticle';
-import supabase from '../config/supabase';
+import  supabase  from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
-import { UserRole } from '../models/user';
+import { UserRole, User } from '../models/user';
+
+interface AuthenticatedRequest extends Request {
+    user?: User;
+}
 
 export class BlogGeneratorController {
-    async updateGoogleAIKey(req: Request, res: Response, next: NextFunction) {
+    async updateGoogleAIKey(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         try {
             const { googleAIKey } = req.body;
             const user = req.user;
@@ -52,7 +56,7 @@ export class BlogGeneratorController {
         }
     }
 
-    async generateBlogArticle(req: Request, res: Response, next: NextFunction) {
+    async generateBlogArticle(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         try {
             const user = req.user;
 

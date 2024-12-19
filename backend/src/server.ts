@@ -1,15 +1,10 @@
 import app from './app';
-import { config } from 'dotenv';
+import config from './config';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { WebSocketManager } from './services/websocket.service';
 import { JobScheduler } from './jobs/scheduler';
 import { logger } from './utils/logger';
-
-// Charger les variables d'environnement
-config();
-
-const port = process.env.PORT || 3001; // Change default port to 3001
 
 // Créer un serveur HTTP à partir de l'application Express
 const httpServer = createServer(app);
@@ -29,9 +24,9 @@ const websocketManager = new WebSocketManager(io);
 const jobScheduler = new JobScheduler();
 
 // Démarrer le serveur
-httpServer.listen(port, () => {
-  console.log(`🚀 Serveur démarré sur le port ${port}`);
-  console.log(`📚 Documentation API disponible sur http://localhost:${port}/api-docs`);
+httpServer.listen(config.port, () => {
+  console.log(`🚀 Serveur démarré sur le port ${config.port}`);
+  console.log(`📚 Documentation API disponible sur http://localhost:${config.port}/api-docs`);
   jobScheduler.startJobs();
 });
 

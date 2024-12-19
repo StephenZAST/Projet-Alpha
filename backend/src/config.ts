@@ -6,7 +6,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const config = {
-  port: 3001,
+  port: process.env.PORT || 3001,
   allowedOrigins: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000'],
   email: { // Add email configuration
     host: process.env.EMAIL_HOST,

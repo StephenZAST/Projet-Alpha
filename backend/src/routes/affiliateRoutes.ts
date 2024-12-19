@@ -1,18 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import  affiliateController  from '../controllers/affiliateController';
-import { requireAdminRolePath } from '../middleware/auth';
+import { requireAdminRolePath, isAuthenticated } from '../middleware/auth';
 import { UserRole } from '../models/user';
 
 const router = express.Router();
-
-// Middleware to check if the user is authenticated
-const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.user) {
-    next();
-  } else {
-    res.status(401).json({ message: 'Not authenticated' });
-  }
-};
 
 // Routes for affiliates
 router.get('/', isAuthenticated, requireAdminRolePath([UserRole.ADMIN, UserRole.SECRETAIRE]) as express.RequestHandler, affiliateController.getAllAffiliates);

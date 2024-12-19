@@ -2,16 +2,20 @@ import { Request, Response, NextFunction } from 'express';
 import { BlogArticle, BlogArticleStatus, CreateBlogArticleInput, UpdateBlogArticleInput } from '../models/blogArticle';
 import  supabase  from '../config/supabase';
 import { AppError, errorCodes } from '../utils/errors';
-import { UserRole } from '../models/user';
+import { UserRole, User } from '../models/user';
+
+interface AuthenticatedRequest extends Request {
+    user?: User;
+}
 
 export class BlogArticleController {
-    async createArticle(req: Request, res: Response, next: NextFunction) {
+    async createArticle(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         try {
             const articleData: CreateBlogArticleInput = req.body;
-            const user = req.user as { id: string; firstName: string; lastName: string; role: UserRole; };
+            const user = req.user;
 
-            if (!user) {
-                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
+            if (!user || !user.id) {
+                throw new AppError(401, 'User not authenticated', errorCodes.UNAUTHORIZED);
             }
 
             const slug = this.generateSlug(articleData.title);
@@ -53,14 +57,14 @@ export class BlogArticleController {
         }
     }
 
-    async updateArticle(req: Request, res: Response, next: NextFunction) {
+    async updateArticle(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         try {
             const { id } = req.params;
             const updateData: UpdateBlogArticleInput = req.body;
-            const user = req.user as { id: string; firstName: string; lastName: string; role: UserRole; };
+            const user = req.user;
 
-            if (!user) {
-                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
+            if (!user || !user.id) {
+                throw new AppError(401, 'User not authenticated', errorCodes.UNAUTHORIZED);
             }
 
             const { data: existingArticle, error: fetchError } = await supabase
@@ -107,13 +111,13 @@ export class BlogArticleController {
         }
     }
 
-    async deleteArticle(req: Request, res: Response, next: NextFunction) {
+    async deleteArticle(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         try {
             const { id } = req.params;
-            const user = req.user as { id: string; firstName: string; lastName: string; role: UserRole; };
+            const user = req.user;
 
-            if (!user) {
-                throw new AppError(401, 'Unauthorized', errorCodes.UNAUTHORIZED);
+            if (!user || !user.id) {
+                throw new AppError(401, 'User not authenticated', errorCodes.UNAUTHORIZED);
             }
 
             const { data: existingArticle, error: fetchError } = await supabase

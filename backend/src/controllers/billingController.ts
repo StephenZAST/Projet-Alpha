@@ -1,174 +1,121 @@
- import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { BillingService } from '../services/billing';
 import { Bill } from '../models/bill';
 import { AppError, errorCodes } from '../utils/errors';
-import Joi from 'joi';
-import { UserRole } from '../models/user';
-
-// Placeholder for billing validation schema
-const billingValidationSchema = Joi.object({
-    // Define validation rules here
-});
+import { UserRole, User } from '../models/user';
 
 const billingService = new BillingService();
 
-class BillingController {
-    async createBill(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            // Replace with actual validation and bill creation logic
-            const validatedData = await billingValidationSchema.validateAsync(req.body);
-            const billData: Bill = {
-                ...validatedData,
-                userId: req.user!.id, // Assuming req.user is populated by authentication middleware
-            };
+interface AuthenticatedRequest extends Request {
+    user?: User;
+  }
 
-            const newBill = await billingService.createBill(billData);
-            res.status(201).json(newBill);
-            return; // Add explicit return
-        } catch (error) {
-            if (error instanceof Joi.ValidationError) {
-                next(new AppError(400, error.details.map(detail => detail.message).join(', '), errorCodes.VALIDATION_ERROR));
-            } else {
-                next(error);
-            }
-        }
+export const createBill = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<Response | void> => {
+  try {
+    const billData: Bill = {
+      ...req.body,
+      userId: req.user!.id, // Assuming req.user is populated by authentication middleware
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const newBill = await billingService.createBill(billData);
+    res.status(201).json(newBill);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateBill = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<Response | void> => {
+  try {
+    const { id } = req.params;
+    const billData: Partial<Bill> = req.body;
+
+    const updatedBill = await billingService.updateBill(id, billData);
+    if (!updatedBill) {
+
+      res.status(404).json({ message: 'Bill not found' });
+      return;
     }
 
-    async getAllBills(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { page = 1, limit = 10, status } = req.query;
+    res.status(200).json(updatedBill);
+  } catch (error) {
+    next(error);
+  }
 
-            // Validate query parameters
-            const paginationSchema = Joi.object({
-                page: Joi.number().integer().min(1),
-                limit: Joi.number().integer().min(1).max(100),
-                status: Joi.string().valid('pending', 'paid', 'overdue'),
-            });
-            const { error, value: validatedQuery } = paginationSchema.validate({ page, limit, status });
+};
+export const getBillById = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<Response | void> => {
+  try {
+    const { id } = req.params;
+    const bill = await billingService.getBillById(id);
 
-            if (error) {
-                throw new AppError(400, error.details.map(detail => detail.message).join(', '), errorCodes.VALIDATION_ERROR);
-            }
-
-            const bills = await billingService.getBillsForUser(
-                req.user!.id,
-                { page: validatedQuery.page, limit: validatedQuery.limit, status: validatedQuery.status }
-            );
-            res.status(200).json(bills);
-            return; // Add explicit return
-        } catch (error) {
-            next(error);
-        }
+    if (!bill) {
+      return res.status(404).json({ message: 'Bill not found' });
     }
 
-    async getBillById(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { id } = req.params;
-
-            // Validate ID parameter
-            const idSchema = Joi.string().required();
-            const { error } = idSchema.validate(id);
-
-            if (error) {
-                throw new AppError(400, error.details.map(detail => detail.message).join(', '), errorCodes.VALIDATION_ERROR);
-            }
-
-            const bill = await billingService.getBillById(id);
-            if (!bill) {
-                throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND);
-            }
-
-            // Check if the user is authorized to view the bill
-            if (bill.userId !== req.user!.id && req.user!.role !== UserRole.SUPER_ADMIN) {
-                throw new AppError(403, 'Forbidden', errorCodes.FORBIDDEN);
-            }
-
-            res.status(200).json(bill);
-            return; // Add explicit return
-        } catch (error) {
-            next(error);
-        }
+    if (bill.userId !== req.user!.id && req.user!.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    async updateBill(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { id } = req.params;
+    res.status(200).json(bill);
+  } catch (error) {
+    next(error);
+  }
+};
 
-            // Validate ID parameter
-            const idSchema = Joi.string().required();
-            const { error: idError } = idSchema.validate(id);
+export const getAllBills = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<Response | void> => {
+  try {
+    const bills = await billingService.getAllBills();
+    res.status(200).json(bills);
+  } catch (error) {
+    next(error);
+  }
+};
 
-            if (idError) {
-                throw new AppError(400, idError.details.map(detail => detail.message).join(', '), errorCodes.VALIDATION_ERROR);
-            }
+export const deleteBill = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<Response | void> => {
+  try {
+    const { id } = req.params;
+    const bill = await billingService.getBillById(id);
 
-            const validatedData = await billingValidationSchema.validateAsync(req.body);
-            const billData: Partial<Bill> = {
-                ...validatedData,
-            };
-
-            const bill = await billingService.getBillById(id);
-            if (!bill) {
-                throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND);
-            }
-
-            // Check if the user is authorized to update the bill
-            if (bill.userId !== req.user!.id && req.user!.role !== UserRole.SUPER_ADMIN) {
-                throw new AppError(403, 'Forbidden', errorCodes.FORBIDDEN);
-            }
-
-            const updatedBill = await billingService.updateBill(id, billData);
-            res.status(200).json(updatedBill);
-            return; // Add explicit return
-        } catch (error) {
-            if (error instanceof Joi.ValidationError) {
-                next(new AppError(400, error.details.map(detail => detail.message).join(', '), errorCodes.VALIDATION_ERROR));
-            } else {
-                next(error);
-            }
-        }
+    if (!bill) {
+      return res.status(404).json({ message: 'Bill not found' });
     }
 
-    async deleteBill(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { id } = req.params;
-
-            // Validate ID parameter
-            const idSchema = Joi.string().required();
-            const { error: idError } = idSchema.validate(id);
-
-            if (idError) {
-                throw new AppError(400, idError.details.map(detail => detail.message).join(', '), errorCodes.VALIDATION_ERROR);
-            }
-
-            const bill = await billingService.getBillById(id);
-            if (!bill) {
-                throw new AppError(404, 'Bill not found', errorCodes.BILL_NOT_FOUND);
-            }
-
-            // Check if the user is authorized to delete the bill
-            if (bill.userId !== req.user!.id && req.user!.role !== UserRole.SUPER_ADMIN) {
-                throw new AppError(403, 'Forbidden', errorCodes.FORBIDDEN);
-            }
-
-            await billingService.deleteBill(id);
-            res.status(204).send();
-            return; // Add explicit return
-        } catch (error) {
-            next(error);
-        }
+    if (bill.userId !== req.user!.id && req.user!.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    async generateInvoices(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            // Placeholder for invoice generation logic
-            // Add your invoice generation logic here
-            res.status(200).json({ message: 'Invoices generated successfully' });
-            return; // Add explicit return
-        } catch (error) {
-            next(error);
-        }
+    await billingService.deleteBill(id);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const generateInvoices = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
+  try {
+    const { userId, startDate, endDate } = req.body;
+
+    if (!userId || !startDate || !endDate) {
+      throw new AppError(400, 'Missing required parameters', errorCodes.MISSING_REQUIRED_PARAMETERS);
     }
+
+    const invoices = await billingService.generateInvoices(userId, new Date(startDate), new Date(endDate));
+    res.status(200).json(invoices);
+  } catch (error) {
+    if (error instanceof AppError) {
+      next(error);
+    } else {
+      next(new AppError(500, 'Failed to generate invoices', errorCodes.INTERNAL_SERVER_ERROR));
+    }
+  }
+};
+
+export const billingController = {
+  createBill,
+  updateBill,
+  getBillById,
+  getAllBills,
+  deleteBill,
+  generateInvoices
 }
-
-export const billingController = new BillingController();

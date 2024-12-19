@@ -34,7 +34,6 @@ import subscriptionsRoutes from './routes/subscriptions';
 import usersRoutes from './routes/users';
 
 const app = express();
-const jobScheduler = new JobScheduler();
 
 // Middleware de base
 app.use(cors({
@@ -99,26 +98,6 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
     message: 'Erreur interne du serveur', 
     status: 500 
   });
-});
-
-// Start server with error handling
-const PORT = process.env.PORT || config.port;
-app.listen(PORT, () => {
-  logger.info(`Server is running on http://localhost:${PORT}`);
-  jobScheduler.startJobs();
-});
-
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received. Starting graceful shutdown...');
-  jobScheduler.stopJobs();
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received. Starting graceful shutdown...');
-  jobScheduler.stopJobs();
-  process.exit(0);
 });
 
 export default app;
