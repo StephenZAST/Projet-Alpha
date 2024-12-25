@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "Alpha Laundry Addresses",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Address",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"street\": \"123 Main St\",\n  \"city\": \"Anytown\",\n  \"postalCode\": \"12345\",\n  \"gpsLatitude\": 48.8566,\n  \"gpsLongitude\": 2.3522,\n  \"isDefault\": true\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/addresses/create",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "addresses",
+            "create"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Addresses",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/addresses/all",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "addresses",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Address",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"street\": \"123 Main St\",\n  \"city\": \"Anytown\",\n  \"postalCode\": \"12345\",\n  \"gpsLatitude\": 48.8566,\n  \"gpsLongitude\": 2.3522,\n  \"isDefault\": true\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/addresses/update/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "addresses",
+            "update",
+            "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Address",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/addresses/delete/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "addresses",
+            "delete",
+            "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

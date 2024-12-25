@@ -1,103 +1,107 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import morgan from 'morgan';
-import { JobScheduler } from './jobs/scheduler';
-import config from './config';
-import { logger } from './utils/logger';
+import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
+import rateLimit from 'express-rate-limit';
 
-// Import des routes
-import orderRoutes from './routes/orders';
-import zoneRoutes from './routes/zones';
-import billingRoutes from './routes/billing';
-import authRoutes from './routes/authRoutes';
-import websocketRoutes from './routes/websocket';
-import adminLogRoutes from './routes/adminLogRoutes';
-import blogArticleRoutes from './routes/blogArticleRoutes'; 
-import blogGeneratorRoutes from './routes/blogGeneratorRoutes';
-import adminRoutes from './routes/adminRoutes';
-import adminsRoutes from './routes/admins';
-import affiliateRoutes from './routes/affiliateRoutes';
-import analyticsRoutes from './routes/analytics';
-import articlesRoutes from './routes/articles';
-import authRouter from './routes/auth';
-import categoriesRoutes from './routes/categories';
-import deliveryTasksRoutes from './routes/delivery-tasks';
-import deliveryRoutes from './routes/delivery';
-import loyaltyRoutes from './routes/loyalty';
-import notificationsRoutes from './routes/notifications';
-import paymentsRoutes from './routes/payments';
-import permissionRoutes from './routes/permissionRoutes';
-import recurringOrdersRoutes from './routes/recurringOrders';
-import subscriptionsRoutes from './routes/subscriptions';
-import usersRoutes from './routes/users';
+// Import all routes
+import authRoutes from './routes/auth.routes';
+import orderRoutes from './routes/order.routes';
+import deliveryRoutes from './routes/delivery.routes';
+import affiliateRoutes from './routes/affiliate.routes';
+import loyaltyRoutes from './routes/loyalty.routes';
+import notificationRoutes from './routes/notification.routes';
+import serviceRoutes from './routes/service.routes';
+import addressRoutes from './routes/address.routes';
+import adminRoutes from './routes/admin.routes';
+import offerRoutes from './routes/offer.routes';
+import articleCategoryRoutes from './routes/articleCategory.routes';
+import articleRoutes from './routes/article.routes';
+import articleServiceRoutes from './routes/articleService.routes';
+import blogCategoryRoutes from './routes/blogCategory.routes';
+import blogArticleRoutes from './routes/blogArticle.routes';
+import './scheduler'; // Importer le scheduler pour démarrer les tâches cron
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 
-// Middleware de base
-app.use(cors({
-  origin: config.allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  credentials: true
-}));
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-  crossOriginOpenerPolicy: false
-}));
-app.use(compression());
-app.use(morgan('dev'));
-app.use(express.json({ limit: '10mb' }));
+// Middleware globaux
+app.use(cors());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+app.use('/api', limiter);
+
 // Routes
-app.use('/api/orders', orderRoutes);
-app.use('/api/zones', zoneRoutes);
-app.use('/api/billing', billingRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/websocket', websocketRoutes);
-app.use('/api/adminLogs', adminLogRoutes);
-app.use('/api/admin', adminRoutes); 
-app.use('/api/blog', blogArticleRoutes); 
-app.use('/api/blog-generator', blogGeneratorRoutes); 
-app.use('/api/admins', adminsRoutes);
-app.use('/api/affiliates', affiliateRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/articles', articlesRoutes);
-app.use('/api/auth', authRouter);
-app.use('/api/categories', categoriesRoutes);
-app.use('/api/delivery-tasks', deliveryTasksRoutes);
-app.use('/api/delivery', deliveryRoutes);
-app.use('/api/loyalty', loyaltyRoutes);
-app.use('/api/notifications', notificationsRoutes);
-app.use('/api/payments', paymentsRoutes);
-app.use('/api/permissions', permissionRoutes);
-app.use('/api/recurring-orders', recurringOrdersRoutes);
-app.use('/api/subscriptions', subscriptionsRoutes);
-app.use('/api/users', usersRoutes);
+app.use('/api/auth', authRoutes); // Utiliser directement la route sans middleware
 
-// Basic route for testing
+app.use('/api/orders', (req, res, next) => {
+  console.log('Orders Routes Middleware:', req.user);
+  orderRoutes(req, res, next);
+});
+
+app.use('/api/delivery', (req, res, next) => {
+  console.log('Delivery Routes Middleware:', req.user);
+  deliveryRoutes(req, res, next);
+});
+
+app.use('/api/affiliate', (req, res, next) => {
+  console.log('Affiliate Routes Middleware:', req.user);
+  affiliateRoutes(req, res, next);
+});
+
+app.use('/api/loyalty', (req, res, next) => {
+  console.log('Loyalty Routes Middleware:', req.user);
+  loyaltyRoutes(req, res, next);
+});
+
+app.use('/api/notifications', (req, res, next) => {
+  console.log('Notifications Routes Middleware:', req.user);
+  notificationRoutes(req, res, next);
+});
+
+app.use('/api/services', serviceRoutes);
+app.use('/api/addresses', addressRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/offers', offerRoutes);
+app.use('/api/article-categories', articleCategoryRoutes);
+app.use('/api/articles', articleRoutes);
+app.use('/api/article-services', articleServiceRoutes);
+app.use('/api/blog-categories', blogCategoryRoutes);
+app.use('/api/blog-articles', blogArticleRoutes);
+
+// Error handling middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
+// Initialize Supabase client
+export const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+);
+
+// Basic route
 app.get('/', (req, res) => {
-  res.json({ message: 'Bienvenue sur l\'API du système de gestion de blanchisserie' });
+  res.json({ message: 'Welcome to Alpha Laundry API' });
 });
 
-// Gestion des erreurs 404
-app.use((req, res) => {
-  res.status(404).json({ 
-    message: 'Route non trouvée', 
-    status: 404 
-  });
-});
+const PORT = process.env.PORT || 3001;
 
-// Gestion des erreurs globales
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logger.error(err.stack);
-  res.status(500).json({ 
-    message: 'Erreur interne du serveur', 
-    status: 500 
-  });
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
 export default app;

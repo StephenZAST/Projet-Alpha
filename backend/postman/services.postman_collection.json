@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "Alpha Laundry Services",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Service",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Washing and Ironing\",\n  \"price\": 15.00,\n  \"description\": \"Washing and ironing service for up to 10 items.\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/services/create",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "services",
+            "create"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Services",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/services/all",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "services",
+            "all"
+          ]
+        }
+      },
+      "response": []
+    },
+{
+  "name": "Update Service",
+  "request": {
+    "method": "PATCH",
+    "header": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "key": "Authorization",
+        "value": "Bearer {{token}}",
+        "type": "text"
+      }
+    ],
+    "body": {
+      "mode": "raw",
+      "raw": "{\n  \"name\": \"Washing and Ironing\",\n  \"price\": 15.00,\n  \"description\": \"Washing and ironing service for up to 10 items.\"\n}"
+    },
+    "url": {
+      "raw": "http://localhost:3001/api/services/update/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+      "host": [
+        "localhost"
+      ],
+      "port": "3001",
+      "path": [
+        "api",
+        "services",
+        "update",
+        "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"
+      ]
+    }
+  },
+  "response": []
+},
+{
+  "name": "Delete Service",
+  "request": {
+    "method": "DELETE",
+    "header": [
+      {
+        "key": "Authorization",
+        "value": "Bearer {{token}}",
+        "type": "text"
+      }
+    ],
+    "url": {
+      "raw": "http://localhost:3001/api/services/delete/a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+      "host": [
+        "localhost"
+      ],
+      "port": "3001",
+      "path": [
+        "api",
+        "services",
+        "delete",
+        "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6"
+      ]
+    }
+  },
+  "response": []
+}
+  ]
+}

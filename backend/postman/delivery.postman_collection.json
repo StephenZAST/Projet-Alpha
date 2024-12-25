@@ -1,0 +1,57 @@
+{
+  "info": {
+    "name": "Delivery",
+    "description": "Delivery management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Pending Deliveries",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/delivery/pending",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "delivery", "pending"]
+        }
+      }
+    },
+    {
+      "name": "Update Delivery Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/delivery/:orderId/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "delivery", ":orderId", "status"],
+          "variable": [
+            {
+              "key": "orderId",
+              "value": "order_id"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"status\": \"DELIVERED\",\n    \"gpsLatitude\": 5.123456,\n    \"gpsLongitude\": -4.123456\n}"
+        }
+      }
+    }
+  ]
+}

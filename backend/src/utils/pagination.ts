@@ -1,78 +1,54 @@
-import { Request } from 'express';
-
-// Interface pour les paramètres de pagination
 export interface PaginationParams {
-  page: number;
+  offset: number;
   limit: number;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  page?: number;
 }
 
-// Interface pour la réponse paginée
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: {
-    currentPage: number;
-    pageSize: number;
-    totalItems: number;
+    total: number;
+    page: number;
+    limit: number;
     totalPages: number;
-    hasMore: boolean;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
   };
 }
 
-// Classe utilitaire pour la pagination
-export class Pagination {
-  // Extraire les paramètres de pagination de la requête
-  static getParams(req: Request): PaginationParams {
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
-    const sortBy = (req.query.sortBy as string) || 'createdAt';
-    const sortOrder = (req.query.sortOrder as string === 'asc' ? 'asc' : 'desc');
+export const DEFAULT_PAGE_SIZE = 10;
+export const MAX_PAGE_SIZE = 100;
 
-    return { page, limit, sortBy, sortOrder };
-  }
+export const DEFAULT_LIMIT = 10;
+export const DEFAULT_OFFSET = 0;
 
-  // Calculer l'offset pour la requête à la base de données
-  static getOffset(page: number, limit: number): number {
-    return (page - 1) * limit;
-  }
+export const validatePaginationParams = (query: any): PaginationParams => {
+  const page = Math.max(1, parseInt(query.page as string, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(query.limit as string, 10) || DEFAULT_LIMIT));
+  const offset = (page - 1) * limit;
 
-  // Créer la réponse paginée
-  static createResponse<T>(
-    data: T[],
-    totalItems: number,
-    page: number,
-    limit: number
-  ): PaginatedResponse<T> {
-    const totalPages = Math.ceil(totalItems / limit);
+  return {
+    offset,
+    limit,
+    page
+  };
+};
 
-    return {
-      data,
-      pagination: {
-        currentPage: page,
-        pageSize: limit,
-        totalItems,
-        totalPages,
-        hasMore: page < totalPages
-      }
-    };
-  }
+export function calculatePagination(total: number, page: number, limit: number) {
+  const totalPages = Math.ceil(total / limit);
+  
+  return {
+    total,
+    page,
+    limit,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1
+  };
+}
 
-  // Créer les options de tri pour Firestore
-  static createFirestoreOptions(params: PaginationParams) {
-    return {
-      orderBy: [{ field: params.sortBy || 'createdAt', direction: params.sortOrder || 'desc' }],
-      limit: params.limit,
-      offset: this.getOffset(params.page, params.limit)
-    };
-  }
-
-  // Créer les options de tri pour MongoDB
-  static createMongoDBOptions(params: PaginationParams) {
-    return {
-      sort: { [params.sortBy || 'createdAt']: params.sortOrder === 'asc' ? 1 : -1 },
-      skip: this.getOffset(params.page, params.limit),
-      limit: params.limit
-    };
-  }
+export function getPaginationRange(page: number, limit: number): [number, number] {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  return [from, to];
 }

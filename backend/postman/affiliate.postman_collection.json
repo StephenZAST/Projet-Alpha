@@ -1,0 +1,135 @@
+{
+  "info": {
+    "name": "Affiliate",
+    "description": "Affiliate management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/affiliate/dashboard",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "affiliate", "dashboard"]
+        }
+      }
+    },
+    {
+      "name": "Get Commissions",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/affiliate/commissions",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "affiliate", "commissions"]
+        }
+      }
+    },
+    {
+      "name": "Request Withdrawal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/affiliate/withdraw",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "affiliate", "withdraw"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"amount\": 100.00\n}"
+        }
+      }
+    },
+    {
+      "name": "Generate Affiliate Code",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/affiliate/generate-code",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "affiliate", "generate-code"]
+        }
+      }
+    },
+    {
+      "name": "Create Affiliate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/become-affiliate",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "become-affiliate"]
+        }
+      }
+    },
+    {
+      "name": "Create Customer with Affiliate Code",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/affiliate/create-customer",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "affiliate", "create-customer"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"customer@example.com\",\n    \"password\": \"password123\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phone\": \"+22500000000\",\n    \"affiliateCode\": \"AFF123456\"\n}"
+        }
+      }
+    }
+  ]
+}

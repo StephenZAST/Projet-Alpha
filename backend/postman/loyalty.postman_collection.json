@@ -1,0 +1,76 @@
+{
+  "info": {
+    "name": "Loyalty",
+    "description": "Loyalty management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Earn Points",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/loyalty/earn-points",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "loyalty", "earn-points"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"points\": 100,\n    \"source\": \"ORDER\",\n    \"referenceId\": \"order_id\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Spend Points",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/loyalty/spend-points",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "loyalty", "spend-points"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"points\": 50\n}"
+        }
+      }
+    },
+    {
+      "name": "Get Points Balance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/loyalty/points-balance",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "loyalty", "points-balance"]
+        }
+      }
+    }
+  ]
+}

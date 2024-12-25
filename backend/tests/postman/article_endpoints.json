@@ -1,0 +1,261 @@
+{
+  "info": {
+    "name": "Alpha Laundry - Article Endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Article Categories",
+      "item": [
+        {
+          "name": "Create Article Category",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/article-categories",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "Vêtements",
+                "description": "Catégorie pour tous les types de vêtements"
+              }
+            }
+          }
+        },
+        {
+          "name": "Get All Article Categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/article-categories",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Update Article Category",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/article-categories/:categoryId",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "Vêtements Modifiés",
+                "description": "Catégorie modifiée pour tous les types de vêtements"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Article Category",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/article-categories/:categoryId",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Articles",
+      "item": [
+        {
+          "name": "Create Article",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/articles",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "categoryId": "category_id",
+                "name": "Chemise",
+                "description": "Chemise en coton",
+                "basePrice": 10.0,
+                "premiumPrice": 15.0
+              }
+            }
+          }
+        },
+        {
+          "name": "Get All Articles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/articles",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Update Article",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/articles/:articleId",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "categoryId": "category_id",
+                "name": "Chemise Modifiée",
+                "description": "Chemise en coton modifiée",
+                "basePrice": 12.0,
+                "premiumPrice": 18.0
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Article",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/articles/:articleId",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Article Services",
+      "item": [
+        {
+          "name": "Create Article Service",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/article-services",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "articleId": "article_id",
+                "serviceId": "service_id",
+                "priceMultiplier": 1.5
+              }
+            }
+          }
+        },
+        {
+          "name": "Get All Article Services",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/article-services",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Update Article Service",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/article-services/:articleServiceId",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "priceMultiplier": 2.0
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Article Service",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/article-services/:articleServiceId",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}

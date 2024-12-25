@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "Notification",
+    "description": "Notification management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Notifications",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications"]
+        }
+      }
+    },
+    {
+      "name": "Get Unread Count",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/unread",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", "unread"]
+        }
+      }
+    },
+    {
+      "name": "Mark as Read",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/:notificationId/read",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", ":notificationId", "read"],
+          "variable": [
+            {
+              "key": "notificationId",
+              "value": "notification_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Notification",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/:notificationId",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", ":notificationId"],
+          "variable": [
+            {
+              "key": "notificationId",
+              "value": "notification_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Mark All as Read",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/mark-all-read",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", "mark-all-read"]
+        }
+      }
+    },
+    {
+      "name": "Get Notification Preferences",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/preferences",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", "preferences"]
+        }
+      }
+    },
+    {
+      "name": "Update Notification Preferences",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/preferences",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", "preferences"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": true,\n    \"sms\": false,\n    \"push\": true\n}"
+        }
+      }
+    }
+  ]
+}

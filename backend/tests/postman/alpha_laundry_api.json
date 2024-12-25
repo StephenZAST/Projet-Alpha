@@ -1,0 +1,241 @@
+{
+  "info": {
+    "name": "Alpha Laundry API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "header": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "email": "user@example.com",
+                "password": "password123",
+                "firstName": "John",
+                "lastName": "Doe",
+                "phone": "+1234567890"
+              }
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "email": "user@example.com",
+                "password": "password123"
+              }
+            }
+          }
+        },
+        {
+          "name": "Register Affiliate",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register/affiliate",
+            "header": {
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "email": "affiliate@example.com",
+                "password": "password123",
+                "firstName": "John",
+                "lastName": "Doe",
+                "phone": "+1234567890",
+                "parentAffiliateCode": "OPTIONAL_CODE"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/orders",
+            "header": {
+              "Authorization": "Bearer {{token}}",
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "serviceId": "service_id",
+                "addressId": "address_id",
+                "quantity": 1,
+                "isRecurring": false,
+                "recurrenceType": "NONE",
+                "collectionDate": "2024-01-01",
+                "deliveryDate": "2024-01-02",
+                "items": [
+                  {
+                    "articleId": "article_id",
+                    "quantity": 2
+                  }
+                ],
+                "offerIds": ["offer_id"],
+                "affiliateCode": "AFFILIATE_CODE"
+              }
+            }
+          }
+        },
+        {
+          "name": "Get User Orders",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/orders",
+            "header": {
+              "Authorization": "Bearer {{token}}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Offers",
+      "item": [
+        {
+          "name": "Create Offer (Admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/offers",
+            "header": {
+              "Authorization": "Bearer {{token}}",
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "Summer Sale",
+                "description": "20% off on all items",
+                "discountType": "PERCENTAGE",
+                "discountValue": 20,
+                "minPurchaseAmount": 50,
+                "maxDiscountAmount": 100,
+                "isCumulative": true,
+                "startDate": "2024-01-01",
+                "endDate": "2024-02-01",
+                "articleIds": ["article_id1", "article_id2"]
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Available Offers",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/offers/available",
+            "header": {
+              "Authorization": "Bearer {{token}}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Affiliate",
+      "item": [
+        {
+          "name": "Get Commissions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/affiliate/commissions",
+            "header": {
+              "Authorization": "Bearer {{token}}"
+            }
+          }
+        },
+        {
+          "name": "Request Withdrawal",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/affiliate/withdraw",
+            "header": {
+              "Authorization": "Bearer {{token}}",
+              "Content-Type": "application/json"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "amount": 100
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/notifications",
+            "header": {
+              "Authorization": "Bearer {{token}}"
+            }
+          }
+        },
+        {
+          "name": "Mark As Read",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/notifications/:notificationId/read",
+            "header": {
+              "Authorization": "Bearer {{token}}"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// You can add pre-request scripts here"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// You can add test scripts here"
+        ]
+      }
+    }
+  ]
+}

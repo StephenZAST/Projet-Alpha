@@ -1,0 +1,122 @@
+{
+  "info": {
+    "_postman_id": "unique-id-here",
+    "name": "Notifications API",
+    "description": "Collection for testing notification endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get User Notifications",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Unread Count",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/unread",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", "unread"]
+        }
+      }
+    },
+    {
+      "name": "Mark as Read",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/:notificationId/read",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", ":notificationId", "read"],
+          "variable": [
+            {
+              "key": "notificationId",
+              "value": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Mark All as Read",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/mark-all-read",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", "mark-all-read"]
+        }
+      }
+    },
+    {
+      "name": "Delete Notification",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/notifications/:notificationId",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "notifications", ":notificationId"],
+          "variable": [
+            {
+              "key": "notificationId",
+              "value": ""
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
