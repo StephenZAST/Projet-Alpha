@@ -7,27 +7,33 @@ class OffersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.dashboardBackground,
-      body: Builder(
-        builder: (BuildContext context) => SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppBarComponent(
-                  title: 'Offres',
-                  onMenuPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                ),
-                Center(
-                  child: Text('Offers Page Content'),
-                ),
-              ],
+    return SafeArea(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppBarComponent(
+              title: 'Offres',
+              onMenuPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
             ),
-          ),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(
+                child: Text(
+                  'Offres disponibles',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.gray800,
+                  ),
+                ),
+              ),
+            ),
+            // Contenu des offres ici
+          ],
         ),
       ),
     );
