@@ -8,41 +8,32 @@ class ServicesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.dashboardBackground,
-      body: Builder(
-        builder: (BuildContext context) => SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: [
-                    AppBarComponent(
-                      title: 'Services',
-                      onMenuPressed: () {
-                        Scaffold.of(context).openDrawer();
-                      },
-                    ),
-                    const AddressSectionComponent(),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    'Nos Services',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray800,
-                    ),
-                  ),
-                ),
-                // TODO: Add services grid or list here
-              ],
+    return SafeArea(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppBarComponent(
+              title: 'Services',
+              onMenuPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
             ),
-          ),
+            const AddressSectionComponent(),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                'Nos Services',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.gray800,
+                ),
+              ),
+            ),
+            // TODO: Add services grid or list here
+          ],
         ),
       ),
     );

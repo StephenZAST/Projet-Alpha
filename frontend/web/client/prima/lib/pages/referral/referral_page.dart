@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/home-components/app_bar.dart';
+import 'package:prima/widgets/custom_sidebar.dart';
 
 class ReferralPage extends StatelessWidget {
   const ReferralPage({super.key});
@@ -9,6 +10,7 @@ class ReferralPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
+      drawer: const CustomSidebar(),
       body: Builder(
         builder: (BuildContext context) => SafeArea(
           child: SingleChildScrollView(

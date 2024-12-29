@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/home-components/app_bar.dart';
+import 'package:prima/widgets/custom_sidebar.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -68,6 +69,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
+      drawer: const CustomSidebar(),
       body: Builder(
         builder: (BuildContext context) => SafeArea(
           child: SingleChildScrollView(
@@ -119,11 +121,11 @@ class _SettingsPageState extends State<SettingsPage> {
                           value: _selectedLanguage,
                           items: ['Français', 'English']
                               .map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
                           onChanged: (String? newValue) {
                             if (newValue != null) {
                               setState(() {

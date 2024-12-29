@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/home-components/app_bar.dart';
 import 'package:prima/home-components/address_section.dart';
+import 'package:prima/widgets/custom_sidebar.dart';
 
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
@@ -10,6 +11,11 @@ class OrdersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(0),
+        child: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+      ),
+      drawer: const CustomSidebar(),
       body: Builder(
         builder: (BuildContext context) => SafeArea(
           child: SingleChildScrollView(

@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/home-components/app_bar.dart';
 import 'package:prima/home-components/address_section.dart';
+import 'package:prima/widgets/custom_sidebar.dart';
+import 'package:provider/provider.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<NavigationProvider>(context, listen: false)
+          .setSecondaryPageIndex(NavigationProvider.notificationsIndex);
+    });
+
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
+      drawer: const CustomSidebar(),
       body: Builder(
         builder: (BuildContext context) => SafeArea(
           child: SingleChildScrollView(

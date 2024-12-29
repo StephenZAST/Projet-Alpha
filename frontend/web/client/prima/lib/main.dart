@@ -57,8 +57,6 @@ class MainNavigationWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navigationProvider = Provider.of<NavigationProvider>(context);
-    
-    // Create a PageController that listens to the navigationProvider
     final pageController = PageController(initialPage: navigationProvider.currentIndex);
 
     // Update page when navigationProvider changes
@@ -86,12 +84,14 @@ class MainNavigationWrapper extends StatelessWidget {
         },
         children: pages,
       ),
-      bottomNavigationBar: CustomBottomNavigation(
-        selectedIndex: navigationProvider.currentIndex,
-        onItemSelected: (index) {
-          navigationProvider.setIndex(index);
-        },
-      ),
+      bottomNavigationBar: navigationProvider.isSecondaryPage 
+          ? null 
+          : CustomBottomNavigation(
+              selectedIndex: navigationProvider.currentIndex,
+              onItemSelected: (index) {
+                navigationProvider.setIndex(index);
+              },
+            ),
     );
   }
 }
