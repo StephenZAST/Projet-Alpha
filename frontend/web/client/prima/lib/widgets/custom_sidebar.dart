@@ -74,7 +74,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Commandes',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/orders');
+              Navigator.pushNamed(context, '/orders');
             },
           ),
           _buildDrawerItem(
@@ -82,7 +82,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Notifications',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/notifications');
+              Navigator.pushNamed(context, '/notifications');
             },
           ),
           _buildDrawerItem(
@@ -99,7 +99,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Parrainage',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/referral');
+              Navigator.pushNamed(context, '/referral');
             },
           ),
           _buildDrawerItem(
@@ -116,7 +116,7 @@ class CustomSidebar extends StatelessWidget {
             text: 'Réglages',
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/settings');
+              Navigator.pushNamed(context, '/settings');
             },
           ),
           const Divider(height: 1, color: AppColors.gray200),

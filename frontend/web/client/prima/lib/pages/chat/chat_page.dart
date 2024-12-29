@@ -9,22 +9,24 @@ class ChatPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppBarComponent(
-                title: 'Messages',
-                onMenuPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              ),
-              Center(
-                child: Text('Chat Page Content'),
-              ),
-            ],
+      body: Builder(
+        builder: (BuildContext context) => SafeArea(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppBarComponent(
+                  title: 'Messages',
+                  onMenuPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                ),
+                Center(
+                  child: Text('Chat Page Content'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

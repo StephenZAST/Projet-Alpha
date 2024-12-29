@@ -38,7 +38,15 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
         useMaterial3: true,
       ),
-      home: const MainNavigationWrapper(),
+      // Suppression de la propriété home et ajout de initialRoute
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const MainNavigationWrapper(),
+        '/notifications': (context) => const NotificationsPage(),
+        '/orders': (context) => const OrdersPage(),
+        '/referral': (context) => const ReferralPage(),
+        '/settings': (context) => const SettingsPage(),
+      },
     );
   }
 }
