@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:provider/provider.dart';
+import 'package:prima/navigation/navigation_provider.dart';
 
 class CustomSidebar extends StatelessWidget {
   final String userName;
@@ -7,6 +9,8 @@ class CustomSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final navigationProvider = Provider.of<NavigationProvider>(context);
+
     return Drawer(
       backgroundColor: AppColors.white,
       child: ListView(
@@ -41,26 +45,28 @@ class CustomSidebar extends StatelessWidget {
           _buildDrawerItem(
             icon: Icons.home,
             text: 'Home',
-            isSelected: true,
+            isSelected: navigationProvider.currentIndex == 0,
             onTap: () {
+              navigationProvider.setIndex(0);
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/');
             },
           ),
           _buildDrawerItem(
             icon: Icons.local_offer_outlined,
             text: 'Offres',
+            isSelected: navigationProvider.currentIndex == 1,
             onTap: () {
+              navigationProvider.setIndex(1);
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/offers');
             },
           ),
           _buildDrawerItem(
             icon: Icons.shopping_bag_outlined,
             text: 'Services',
+            isSelected: navigationProvider.currentIndex == 2,
             onTap: () {
+              navigationProvider.setIndex(2);
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/services');
             },
           ),
           _buildDrawerItem(
@@ -82,9 +88,10 @@ class CustomSidebar extends StatelessWidget {
           _buildDrawerItem(
             icon: Icons.message_outlined,
             text: 'Messages',
+            isSelected: navigationProvider.currentIndex == 3,
             onTap: () {
+              navigationProvider.setIndex(3);
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/chat');
             },
           ),
           _buildDrawerItem(
@@ -98,9 +105,10 @@ class CustomSidebar extends StatelessWidget {
           _buildDrawerItem(
             icon: Icons.person_outline,
             text: 'Profile',
+            isSelected: navigationProvider.currentIndex == 4,
             onTap: () {
+              navigationProvider.setIndex(4);
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/profile');
             },
           ),
           _buildDrawerItem(

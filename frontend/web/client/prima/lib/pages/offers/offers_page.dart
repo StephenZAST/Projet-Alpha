@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:prima/widgets/page_header.dart';
+import 'package:prima/home-components/app_bar.dart';
 
 class OffersPage extends StatelessWidget {
   const OffersPage({super.key});
@@ -14,10 +14,12 @@ class OffersPage extends StatelessWidget {
           physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              PageHeader(
+            children: [
+              AppBarComponent(
                 title: 'Offres',
-                showAddressSection: true,
+                onMenuPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
               ),
               Center(
                 child: Text('Offers Page Content'),
