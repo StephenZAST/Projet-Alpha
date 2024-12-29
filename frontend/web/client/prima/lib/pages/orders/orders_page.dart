@@ -1,31 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:prima/widgets/custom_sidebar.dart';
-import 'package:prima/widgets/custom_bottom_navigation.dart';
 import 'package:prima/home-components/app_bar.dart';
 import 'package:prima/home-components/address_section.dart';
 
-class OrdersPage extends StatefulWidget {
+class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
-
-  @override
-  State<OrdersPage> createState() => _OrdersPageState();
-}
-
-class _OrdersPageState extends State<OrdersPage> {
-  int _selectedIndex = 0;
-
-  void _onNavigationItemSelected(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
-      drawer: const CustomSidebar(),
       body: Builder(
         builder: (BuildContext context) => SafeArea(
           child: SingleChildScrollView(
@@ -44,7 +28,7 @@ class _OrdersPageState extends State<OrdersPage> {
                     const AddressSectionComponent(),
                   ],
                 ),
-                Padding(
+                const Padding(
                   padding: EdgeInsets.all(16.0),
                   child: Text(
                     'Mes Commandes',
@@ -60,10 +44,6 @@ class _OrdersPageState extends State<OrdersPage> {
             ),
           ),
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigation(
-        selectedIndex: _selectedIndex,
-        onItemSelected: _onNavigationItemSelected,
       ),
     );
   }

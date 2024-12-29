@@ -1,37 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:prima/widgets/custom_sidebar.dart';
-import 'package:prima/widgets/custom_bottom_navigation.dart';
 import 'package:prima/widgets/page_header.dart';
 
-class ReferralPage extends StatefulWidget {
+class ReferralPage extends StatelessWidget {
   const ReferralPage({super.key});
-
-  @override
-  State<ReferralPage> createState() => _ReferralPageState();
-}
-
-class _ReferralPageState extends State<ReferralPage> {
-  int _selectedIndex = 0;
-
-  void _onNavigationItemSelected(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
-      drawer: const CustomSidebar(),
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              PageHeader(
+              const PageHeader(
                 title: 'Parrainage',
                 showAddressSection: true,
               ),
@@ -112,10 +96,6 @@ class _ReferralPageState extends State<ReferralPage> {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavigation(
-        selectedIndex: _selectedIndex,
-        onItemSelected: _onNavigationItemSelected,
       ),
     );
   }
