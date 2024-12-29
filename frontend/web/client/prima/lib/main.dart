@@ -59,13 +59,13 @@ class MainNavigationWrapper extends StatelessWidget {
     final navigationProvider = Provider.of<NavigationProvider>(context);
     final pageController = PageController(initialPage: navigationProvider.currentIndex);
 
-    // Update page when navigationProvider changes
+    // Mettre à jour la page quand l'index change
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (pageController.hasClients) {
         pageController.jumpToPage(navigationProvider.currentIndex);
       }
     });
-    
+
     final List<Widget> pages = [
       const HomePage(),
       const OffersPage(),
@@ -80,18 +80,19 @@ class MainNavigationWrapper extends StatelessWidget {
         controller: pageController,
         physics: const NeverScrollableScrollPhysics(),
         onPageChanged: (index) {
-          navigationProvider.setIndex(index);
+          navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
         },
         children: pages,
       ),
-      bottomNavigationBar: navigationProvider.isSecondaryPage 
-          ? null 
-          : CustomBottomNavigation(
+      bottomNavigationBar: navigationProvider.shouldShowBottomNav(navigationProvider.currentRoute)
+          ? CustomBottomNavigation(
               selectedIndex: navigationProvider.currentIndex,
               onItemSelected: (index) {
-                navigationProvider.setIndex(index);
+                navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
+                pageController.jumpToPage(index);
               },
-            ),
+            )
+          : null,
     );
   }
 }

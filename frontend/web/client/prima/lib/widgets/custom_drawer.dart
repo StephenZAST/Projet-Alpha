@@ -146,7 +146,20 @@ class CustomDrawer extends StatelessWidget {
       ),
       onTap: onTap ?? () {
         if (index != null && navigationProvider != null) {
-          navigationProvider.setIndex(index);
+          // Remplacer setIndex par la bonne méthode selon le type de route
+          if (index < 5) {
+            // Routes principales
+            navigationProvider.navigateToMainRoute(
+              context, 
+              NavigationProvider.mainRoutes[index]
+            );
+          } else {
+            // Routes secondaires
+            final route = _getRouteFromIndex(index);
+            if (route != null) {
+              navigationProvider.navigateToSecondaryRoute(context, route);
+            }
+          }
         }
         Navigator.pop(context);
       },
@@ -154,5 +167,20 @@ class CustomDrawer extends StatelessWidget {
       selectedTileColor: AppColors.primary.withOpacity(0.1),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
+  }
+
+  String? _getRouteFromIndex(int index) {
+    switch (index) {
+      case 5:
+        return '/orders';
+      case 6:
+        return '/referral';
+      case 7:
+        return '/settings';
+      case 8:
+        return '/notifications';
+      default:
+        return null;
+    }
   }
 }

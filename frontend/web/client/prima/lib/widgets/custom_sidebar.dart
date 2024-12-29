@@ -11,15 +11,15 @@ class CustomSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final navigationProvider = Provider.of<NavigationProvider>(context);
 
-    void navigateToMainPage(int index) {
-      navigationProvider.setIndex(index);
+    // Déplacer les méthodes de navigation ici
+    void navigateToMainRoute(String route) {
       Navigator.pop(context);
+      navigationProvider.navigateToMainRoute(context, route);
     }
 
-    void navigateToSecondaryPage(String route, int index) {
+    void navigateToSecondaryRoute(String route) {
       Navigator.pop(context);
-      navigationProvider.setSecondaryPageIndex(index);
-      Navigator.pushNamed(context, route);
+      navigationProvider.navigateToSecondaryRoute(context, route);
     }
 
     return Drawer(
@@ -56,56 +56,56 @@ class CustomSidebar extends StatelessWidget {
           _buildDrawerItem(
             icon: Icons.home,
             text: 'Home',
-            isSelected: !navigationProvider.isSecondaryPage && navigationProvider.currentIndex == 0,
-            onTap: () => navigateToMainPage(0),
+            isSelected: navigationProvider.isCurrentRoute('/'),
+            onTap: () => navigationProvider.navigateToMainRoute(context, '/'),
           ),
           _buildDrawerItem(
             icon: Icons.local_offer_outlined,
             text: 'Offres',
-            isSelected: !navigationProvider.isSecondaryPage && navigationProvider.currentIndex == 1,
-            onTap: () => navigateToMainPage(1),
+            isSelected: navigationProvider.isCurrentRoute('/offers'),
+            onTap: () => navigationProvider.navigateToMainRoute(context, '/offers'),
           ),
           _buildDrawerItem(
             icon: Icons.shopping_bag_outlined,
             text: 'Services',
-            isSelected: !navigationProvider.isSecondaryPage && navigationProvider.currentIndex == 2,
-            onTap: () => navigateToMainPage(2),
+            isSelected: navigationProvider.isCurrentRoute('/services'),
+            onTap: () => navigationProvider.navigateToMainRoute(context, '/services'),
           ),
           _buildDrawerItem(
             icon: Icons.message_outlined,
             text: 'Messages',
-            isSelected: !navigationProvider.isSecondaryPage && navigationProvider.currentIndex == 3,
-            onTap: () => navigateToMainPage(3),
+            isSelected: navigationProvider.isCurrentRoute('/chat'),
+            onTap: () => navigationProvider.navigateToMainRoute(context, '/chat'),
           ),
           _buildDrawerItem(
             icon: Icons.person_outline,
             text: 'Profile',
-            isSelected: !navigationProvider.isSecondaryPage && navigationProvider.currentIndex == 4,
-            onTap: () => navigateToMainPage(4),
+            isSelected: navigationProvider.isCurrentRoute('/profile'),
+            onTap: () => navigationProvider.navigateToMainRoute(context, '/profile'),
           ),
           _buildDrawerItem(
             icon: Icons.receipt_long_outlined,
             text: 'Commandes',
-            isSelected: navigationProvider.isSecondaryPage && navigationProvider.currentIndex == NavigationProvider.orderIndex,
-            onTap: () => navigateToSecondaryPage('/orders', NavigationProvider.orderIndex),
+            isSelected: navigationProvider.isCurrentRoute('/orders'),
+            onTap: () => navigationProvider.navigateToSecondaryRoute(context, '/orders'),
           ),
           _buildDrawerItem(
             icon: Icons.notifications_outlined,
             text: 'Notifications',
-            isSelected: navigationProvider.isSecondaryPage && navigationProvider.currentIndex == NavigationProvider.notificationsIndex,
-            onTap: () => navigateToSecondaryPage('/notifications', NavigationProvider.notificationsIndex),
+            isSelected: navigationProvider.isCurrentRoute('/notifications'),
+            onTap: () => navigateToSecondaryRoute('/notifications'),
           ),
           _buildDrawerItem(
             icon: Icons.people_outline,
             text: 'Parrainage',
-            isSelected: navigationProvider.isSecondaryPage && navigationProvider.currentIndex == NavigationProvider.referralIndex,
-            onTap: () => navigateToSecondaryPage('/referral', NavigationProvider.referralIndex),
+            isSelected: navigationProvider.isCurrentRoute('/referral'),
+            onTap: () => navigateToSecondaryRoute('/referral'),
           ),
           _buildDrawerItem(
             icon: Icons.settings_outlined,
             text: 'Réglages',
-            isSelected: navigationProvider.isSecondaryPage && navigationProvider.currentIndex == NavigationProvider.settingsIndex,
-            onTap: () => navigateToSecondaryPage('/settings', NavigationProvider.settingsIndex),
+            isSelected: navigationProvider.isCurrentRoute('/settings'),
+            onTap: () => navigateToSecondaryRoute('/settings'), // Correction ici
           ),
           const Divider(height: 1, color: AppColors.gray200),
           _buildDrawerItem(

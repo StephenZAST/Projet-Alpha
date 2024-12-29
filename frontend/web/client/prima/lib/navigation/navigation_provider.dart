@@ -2,76 +2,84 @@ import 'package:flutter/material.dart';
 
 class NavigationProvider with ChangeNotifier {
   int _currentIndex = 0;
+  String _currentRoute = '/';
   bool _isSecondaryPage = false;
 
-  int get currentIndex => _currentIndex;
-  bool get isSecondaryPage => _isSecondaryPage;
-
+  // Définition des constantes statiques
+  static const int homeIndex = 0;
+  static const int offersIndex = 1;
+  static const int servicesIndex = 2;
+  static const int chatIndex = 3;
+  static const int profileIndex = 4;
   static const int orderIndex = 5;
   static const int notificationsIndex = 6;
   static const int referralIndex = 7;
   static const int settingsIndex = 8;
 
-  void setIndex(int index) {
-    _currentIndex = index;
-    _isSecondaryPage = false;
+  int get currentIndex => _currentIndex;
+  String get currentRoute => _currentRoute;
+  bool get isSecondaryPage => _isSecondaryPage;
+
+  static const List<String> mainRoutes = [
+    '/',           // Home
+    '/offers',     // Offres
+    '/services',   // Services
+    '/chat',       // Messages
+    '/profile',    // Profile
+  ];
+
+  static const Map<String, int> allRoutes = {
+    '/': homeIndex,
+    '/offers': offersIndex,
+    '/services': servicesIndex,
+    '/chat': chatIndex,
+    '/profile': profileIndex,
+    '/orders': orderIndex,
+    '/notifications': notificationsIndex,
+    '/referral': referralIndex,
+    '/settings': settingsIndex,
+  };
+
+  bool isPageSelected(int index) {
+    return _currentIndex == index && 
+           (index < 5 ? !_isSecondaryPage : _isSecondaryPage);
+  }
+
+  bool isCurrentRoute(String route) {
+    return _currentRoute == route;
+  }
+
+  bool shouldShowBottomNav(String route) {
+    return mainRoutes.contains(route);
+  }
+
+  void setRoute(String route) {
+    _currentRoute = route;
+    _currentIndex = allRoutes[route] ?? 0;
+    _isSecondaryPage = !mainRoutes.contains(route);
     notifyListeners();
   }
 
-  void setSecondaryPageIndex(int index) {
-    _currentIndex = index;
-    _isSecondaryPage = true;
-    notifyListeners();
-  }
-
-  void navigateToMainPage(BuildContext context, int index) {
-    setIndex(index);
-    while (Navigator.canPop(context)) {
-      Navigator.pop(context);
+  void navigateToMainRoute(BuildContext context, String route) {
+    if (mainRoutes.contains(route)) {
+      setRoute(route);
+      while (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      if (route == '/') {
+        Navigator.pushReplacementNamed(context, '/');
+      } else {
+        int index = mainRoutes.indexOf(route);
+        _currentIndex = index;
+        notifyListeners();
+      }
     }
   }
 
-  // Helper method to convert route names to indices
-  int getIndexFromRoute(String route) {
-    switch (route) {
-      case '/orders':
-        return orderIndex;
-      case '/notifications':
-        return notificationsIndex;
-      case '/referral':
-        return referralIndex;
-      case '/settings':
-        return settingsIndex;
-      case '/':
-        return 0;
-      case '/offers':
-        return 1;
-      case '/services':
-        return 2;
-      case '/chat':
-        return 3;
-      case '/profile':
-        return 4;
-      default:
-        return 0;
-    }
-  }
-
-  // Helper method to convert indices to route names
-  String getRouteFromIndex(int index) {
-    switch (index) {
-      case 0:
-        return '/';
-      case 1:
-        return '/offers';
-      case 2:
-        return '/services';
-      case 3:
-        return '/chat';
-      case 4:
-        return '/profile';
-      default:
-        return '/';
+  void navigateToSecondaryRoute(BuildContext context, String route) {
+    if (!mainRoutes.contains(route)) {
+      setRoute(route);
+      Navigator.pushNamed(context, route);
     }
   }
 }

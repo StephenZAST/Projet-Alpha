@@ -13,7 +13,7 @@ class NotificationsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NavigationProvider>(context, listen: false)
-          .setSecondaryPageIndex(NavigationProvider.notificationsIndex);
+          .setRoute('/notifications'); // Changé de setSecondaryPageIndex à setRoute
     });
 
     return Scaffold(
