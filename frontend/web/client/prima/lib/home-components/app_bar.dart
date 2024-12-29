@@ -9,7 +9,7 @@ class AppBarComponent extends StatelessWidget {
   const AppBarComponent({
     super.key,
     this.title = '',
-    this.onMenuPressed,
+    required this.onMenuPressed,
   });
 
   @override
@@ -90,9 +90,7 @@ class AppBarComponent extends StatelessWidget {
                 size: 20,
               ),
             ),
-            onTap: onMenuPressed ?? () {
-              Scaffold.of(context).openDrawer();
-            },
+            onTap: onMenuPressed,
             scaleCoefficient: 0.9,
             useCache: false,
           ),

@@ -6,7 +6,6 @@ import 'package:prima/home-components/app_bar.dart';
 import 'package:prima/home-components/address_section.dart';
 import 'package:prima/home-components/recent_orders_section.dart';
 import 'package:prima/home-components/services_title.dart';
-import 'package:prima/widgets/custom_sidebar.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -15,20 +14,25 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
-      body: const SafeArea(
+      body: SafeArea(
         child: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
+          physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppBarComponent(),
-              AddressSectionComponent(),
-              SizedBox(height: 16),
-              ReductionSection(),
-              SizedBox(height: 16),
-              ServicesTitleComponent(),
-              ServiceSection(),
-              RecentOrdersSectionComponent(),
+              AppBarComponent(
+                title: 'Home',
+                onMenuPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              ),
+              const AddressSectionComponent(),
+              const SizedBox(height: 16),
+              const ReductionSection(),
+              const SizedBox(height: 16),
+              const ServicesTitleComponent(),
+              const ServiceSection(),
+              const RecentOrdersSectionComponent(),
             ],
           ),
         ),

@@ -53,14 +53,14 @@ class CustomDrawer extends StatelessWidget {
             context: context,
             icon: Icons.local_offer_outlined,
             text: 'Offres',
-            index: 2,
+            index: 1,
             navigationProvider: navigationProvider,
           ),
           _buildDrawerItem(
             context: context,
             icon: Icons.shopping_bag_outlined,
             text: 'Services',
-            index: 4,
+            index: 2,
             navigationProvider: navigationProvider,
           ),
           _buildDrawerItem(
@@ -95,7 +95,7 @@ class CustomDrawer extends StatelessWidget {
             context: context,
             icon: Icons.person_outline,
             text: 'Profile',
-            index: 1,
+            index: 4,
             navigationProvider: navigationProvider,
           ),
           _buildDrawerItem(
