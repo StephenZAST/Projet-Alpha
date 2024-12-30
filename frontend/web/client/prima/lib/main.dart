@@ -15,11 +15,16 @@ import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/widgets/custom_drawer.dart';
 import 'package:prima/widgets/custom_bottom_navigation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:prima/providers/profile_provider.dart';
 
 void main() {
+  final bool useMockData = true; // Change this to false to use real data
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => NavigationProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider(useMockData: useMockData)),
+      ],
       child: const MyApp(),
     ),
   );
@@ -67,7 +72,7 @@ class MainNavigationWrapper extends StatelessWidget {
         onPageChanged: (index) {
           navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
         },
-        children: const [
+        children: [
           HomePage(),
           OffersPage(),
           ServicesPage(),
