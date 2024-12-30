@@ -59,37 +59,33 @@ class MainNavigationWrapper extends StatelessWidget {
     final navigationProvider = Provider.of<NavigationProvider>(context);
     final pageController = PageController(initialPage: navigationProvider.currentIndex);
 
-    // Mettre à jour la page quand l'index change
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (pageController.hasClients) {
-        pageController.jumpToPage(navigationProvider.currentIndex);
-      }
-    });
-
-    final List<Widget> pages = [
-      const HomePage(),
-      const OffersPage(),
-      const ServicesPage(),
-      const ChatPage(),
-      const ProfilePage(),
-    ];
-
     return Scaffold(
       drawer: const CustomSidebar(),
       body: PageView(
         controller: pageController,
-        physics: const NeverScrollableScrollPhysics(),
+        physics: const BouncingScrollPhysics(),
         onPageChanged: (index) {
           navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
         },
-        children: pages,
+        children: const [
+          HomePage(),
+          OffersPage(),
+          ServicesPage(),
+          ChatPage(),
+          ProfilePage(),
+        ],
       ),
       bottomNavigationBar: navigationProvider.shouldShowBottomNav(navigationProvider.currentRoute)
           ? CustomBottomNavigation(
               selectedIndex: navigationProvider.currentIndex,
               onItemSelected: (index) {
+                // Animation fluide avec un effet de rebond
+                pageController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOutCubicEmphasized,
+                );
                 navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
-                pageController.jumpToPage(index);
               },
             )
           : null,
