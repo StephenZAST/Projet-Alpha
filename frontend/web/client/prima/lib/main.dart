@@ -18,12 +18,23 @@ import 'package:flutter/widgets.dart';
 import 'package:prima/providers/profile_provider.dart';
 
 void main() {
-  final bool useMockData = true; // Change this to false to use real data
+  const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'dev');
+  final config = {
+    'useMockData': env == 'dev',
+    'baseUrl': env == 'dev' 
+        ? 'http://localhost:3000'
+        : 'https://api.example.com',
+  };
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => ProfileProvider(useMockData: useMockData)),
+        ChangeNotifierProvider(
+          create: (_) => ProfileProvider(
+            useMockData: config['useMockData'] as bool,
+          ),
+        ),
       ],
       child: const MyApp(),
     ),
