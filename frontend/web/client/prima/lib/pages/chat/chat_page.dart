@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/home-components/app_bar.dart';
-import 'package:prima/widgets/custom_sidebar.dart';
 
 class ChatPage extends StatelessWidget {
   const ChatPage({super.key});
@@ -10,24 +9,38 @@ class ChatPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
-      drawer: const CustomSidebar(),
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppBarComponent(
-                title: 'Messages',
-                onMenuPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
+        child: Column(
+          children: [
+            AppBarComponent(
+              title: 'Messages',
+              onMenuPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Vos conversations',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.gray800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Liste des conversations à implémenter
+                    ],
+                  ),
+                ),
               ),
-              Center(
-                child: Text('Chat Page Content'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

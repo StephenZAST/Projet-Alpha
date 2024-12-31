@@ -8,11 +8,11 @@ class CustomSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navigationProvider = Provider.of<NavigationProvider>(context);
+    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
 
     void handleNavigation(String route) {
       Navigator.pop(context); // Ferme le drawer
-      if (NavigationProvider.mainRoutes.contains(route)) {
+      if (NavigationProvider.mainRoutes.contains(route) || route == '/') {
         navigationProvider.navigateToMainRoute(context, route);
       } else {
         navigationProvider.navigateToSecondaryRoute(context, route);
@@ -53,8 +53,8 @@ class CustomSidebar extends StatelessWidget {
           _buildDrawerItem(
             icon: Icons.home,
             text: 'Home',
-            isSelected: navigationProvider.currentRoute == '/',
-            onTap: () => handleNavigation('/'),
+            isSelected: navigationProvider.currentRoute == '/home',
+            onTap: () => handleNavigation('/home'),
           ),
           _buildDrawerItem(
             icon: Icons.local_offer_outlined,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:prima/home-components/app_bar.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/home-components/app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/providers/profile_provider.dart';
 
@@ -55,21 +55,40 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _buildProfileItem(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.gray600,
-          )),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.gray600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          )),
-          const Divider(),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              color: AppColors.gray800,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

@@ -10,33 +10,37 @@ class OffersPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.dashboardBackground,
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppBarComponent(
-                title: 'Offres',
-                onMenuPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              ),
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(
-                  child: Text(
-                    'Offres disponibles',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray800,
-                    ),
+        child: Column(
+          children: [
+            AppBarComponent(
+              title: 'Offres',
+              onMenuPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Offres disponibles',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.gray800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Liste des offres à implémenter
+                    ],
                   ),
                 ),
               ),
-              // Contenu des offres ici
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
