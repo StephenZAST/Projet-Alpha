@@ -8,7 +8,7 @@ class CustomSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+    final navigationProvider = Provider.of<NavigationProvider>(context);
 
     void handleNavigation(String route) {
       Navigator.pop(context); // Ferme le drawer

@@ -74,34 +74,31 @@ class MainNavigationWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     final navigationProvider = Provider.of<NavigationProvider>(context);
 
-    return Scaffold(
-      drawer: const CustomSidebar(),
-      body: PageView(
-        controller: navigationProvider.pageController,
-        physics: const BouncingScrollPhysics(), // Réactivation du swipe avec un effet de rebond
-        onPageChanged: (index) {
-          navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
-        },
-        children: [
-          const HomePage(),
-          const OffersPage(),
-          const ServicesPage(),
-          const ChatPage(),
-          ProfilePage(), // Suppression du const car ProfilePage n'a pas de constructeur const
-        ],
+    return WillPopScope(
+      onWillPop: () async {
+        return !(await navigationProvider.goBack(context));
+      },
+      child: Scaffold(
+        drawer: const CustomSidebar(),
+        body: IndexedStack(
+          index: navigationProvider.currentIndex,
+          children: const [
+            HomePage(),
+            OffersPage(),
+            ServicesPage(),
+            ChatPage(),
+            ProfilePage(),
+          ],
+        ),
+        bottomNavigationBar: navigationProvider.shouldShowBottomNav(navigationProvider.currentRoute)
+            ? CustomBottomNavigation(
+                selectedIndex: navigationProvider.currentIndex,
+                onItemSelected: (index) {
+                  navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
+                },
+              )
+            : null,
       ),
-      bottomNavigationBar: navigationProvider.shouldShowBottomNav(navigationProvider.currentRoute)
-          ? CustomBottomNavigation(
-              selectedIndex: navigationProvider.currentIndex,
-              onItemSelected: (index) {
-                navigationProvider.pageController.animateToPage(
-                  index,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              },
-            )
-          : null,
     );
   }
 }
