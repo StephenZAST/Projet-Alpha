@@ -7,6 +7,7 @@ class ProfileProvider extends ChangeNotifier {
   final ProfileDataProvider _dataProvider;
   Map<String, dynamic>? _cachedProfile;
   bool _isLoading = false;
+  String? _error;
 
   ProfileProvider({required bool useMockData})
       : _dataProvider = useMockData
@@ -14,15 +15,20 @@ class ProfileProvider extends ChangeNotifier {
             : RealProfileProvider();
 
   bool get isLoading => _isLoading;
-  Map<String, dynamic>? get cachedProfile => _cachedProfile;
+  Map<String, dynamic>? get profile => _cachedProfile;
+  String? get error => _error;
 
   Future<Map<String, dynamic>> getProfile() async {
     try {
       _isLoading = true;
+      _error = null;
       notifyListeners();
       
       _cachedProfile = await _dataProvider.getProfile();
       return _cachedProfile!;
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -30,7 +36,12 @@ class ProfileProvider extends ChangeNotifier {
   }
 
   Future<void> updateProfile(Map<String, dynamic> profile) async {
-    await _dataProvider.updateProfile(profile);
-    notifyListeners();
+    try {
+      await _dataProvider.updateProfile(profile);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    }
   }
 }

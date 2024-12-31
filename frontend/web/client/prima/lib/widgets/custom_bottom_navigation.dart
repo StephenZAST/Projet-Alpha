@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
 
 class CustomBottomNavigation extends StatelessWidget {
@@ -51,22 +53,9 @@ class CustomBottomNavigation extends StatelessWidget {
               _buildNavItem(Icons.person_rounded, 'Profile', 4),
             ],
             onTap: (index) {
-              if (index != 2) { 
+              if (index != 2) {
                 onItemSelected(index);
-                switch (index) {
-                  case 0:
-                    Navigator.pushReplacementNamed(context, '/');
-                    break;
-                  case 1:
-                    Navigator.pushReplacementNamed(context, '/offers');
-                    break;
-                  case 3:
-                    Navigator.pushReplacementNamed(context, '/chat');
-                    break;
-                  case 4:
-                    Navigator.pushReplacementNamed(context, '/profile');
-                    break;
-                }
+                Provider.of<NavigationProvider>(context, listen: false).setRoute(NavigationProvider.mainRoutes[index]);
               }
             },
           ),

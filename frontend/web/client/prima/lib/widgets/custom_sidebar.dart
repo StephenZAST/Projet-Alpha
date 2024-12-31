@@ -4,22 +4,19 @@ import 'package:provider/provider.dart';
 import 'package:prima/navigation/navigation_provider.dart';
 
 class CustomSidebar extends StatelessWidget {
-  final String userName;
-  const CustomSidebar({super.key, this.userName = 'ZAKANE'});
+  const CustomSidebar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final navigationProvider = Provider.of<NavigationProvider>(context);
+    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
 
-    // Déplacer les méthodes de navigation ici
-    void navigateToMainRoute(String route) {
-      Navigator.pop(context);
-      navigationProvider.navigateToMainRoute(context, route);
-    }
-
-    void navigateToSecondaryRoute(String route) {
-      Navigator.pop(context);
-      navigationProvider.navigateToSecondaryRoute(context, route);
+    void handleNavigation(String route) {
+      Navigator.pop(context); // Ferme le drawer
+      if (NavigationProvider.mainRoutes.contains(route)) {
+        navigationProvider.navigateToMainRoute(context, route);
+      } else {
+        navigationProvider.navigateToSecondaryRoute(context, route);
+      }
     }
 
     return Drawer(
@@ -42,7 +39,7 @@ class CustomSidebar extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Mr $userName',
+                  'Mr ZAKANE',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -56,56 +53,56 @@ class CustomSidebar extends StatelessWidget {
           _buildDrawerItem(
             icon: Icons.home,
             text: 'Home',
-            isSelected: navigationProvider.isCurrentRoute('/'),
-            onTap: () => navigationProvider.navigateToMainRoute(context, '/'),
+            isSelected: navigationProvider.currentRoute == '/',
+            onTap: () => handleNavigation('/'),
           ),
           _buildDrawerItem(
             icon: Icons.local_offer_outlined,
             text: 'Offres',
-            isSelected: navigationProvider.isCurrentRoute('/offers'),
-            onTap: () => navigationProvider.navigateToMainRoute(context, '/offers'),
+            isSelected: navigationProvider.currentRoute == '/offers',
+            onTap: () => handleNavigation('/offers'),
           ),
           _buildDrawerItem(
             icon: Icons.shopping_bag_outlined,
             text: 'Services',
-            isSelected: navigationProvider.isCurrentRoute('/services'),
-            onTap: () => navigationProvider.navigateToMainRoute(context, '/services'),
+            isSelected: navigationProvider.currentRoute == '/services',
+            onTap: () => handleNavigation('/services'),
           ),
           _buildDrawerItem(
             icon: Icons.message_outlined,
             text: 'Messages',
-            isSelected: navigationProvider.isCurrentRoute('/chat'),
-            onTap: () => navigationProvider.navigateToMainRoute(context, '/chat'),
+            isSelected: navigationProvider.currentRoute == '/chat',
+            onTap: () => handleNavigation('/chat'),
           ),
           _buildDrawerItem(
             icon: Icons.person_outline,
             text: 'Profile',
-            isSelected: navigationProvider.isCurrentRoute('/profile'),
-            onTap: () => navigationProvider.navigateToMainRoute(context, '/profile'),
+            isSelected: navigationProvider.currentRoute == '/profile',
+            onTap: () => handleNavigation('/profile'),
           ),
           _buildDrawerItem(
             icon: Icons.receipt_long_outlined,
             text: 'Commandes',
-            isSelected: navigationProvider.isCurrentRoute('/orders'),
-            onTap: () => navigationProvider.navigateToSecondaryRoute(context, '/orders'),
+            isSelected: navigationProvider.currentRoute == '/orders',
+            onTap: () => handleNavigation('/orders'),
           ),
           _buildDrawerItem(
             icon: Icons.notifications_outlined,
             text: 'Notifications',
-            isSelected: navigationProvider.isCurrentRoute('/notifications'),
-            onTap: () => navigateToSecondaryRoute('/notifications'),
+            isSelected: navigationProvider.currentRoute == '/notifications',
+            onTap: () => handleNavigation('/notifications'),
           ),
           _buildDrawerItem(
             icon: Icons.people_outline,
             text: 'Parrainage',
-            isSelected: navigationProvider.isCurrentRoute('/referral'),
-            onTap: () => navigateToSecondaryRoute('/referral'),
+            isSelected: navigationProvider.currentRoute == '/referral',
+            onTap: () => handleNavigation('/referral'),
           ),
           _buildDrawerItem(
             icon: Icons.settings_outlined,
             text: 'Réglages',
-            isSelected: navigationProvider.isCurrentRoute('/settings'),
-            onTap: () => navigateToSecondaryRoute('/settings'), // Correction ici
+            isSelected: navigationProvider.currentRoute == '/settings',
+            onTap: () => handleNavigation('/settings'),
           ),
           const Divider(height: 1, color: AppColors.gray200),
           _buildDrawerItem(

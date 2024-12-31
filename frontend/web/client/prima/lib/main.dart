@@ -73,35 +73,32 @@ class MainNavigationWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navigationProvider = Provider.of<NavigationProvider>(context);
-    final pageController = PageController(initialPage: navigationProvider.currentIndex);
 
     return Scaffold(
       drawer: const CustomSidebar(),
       body: PageView(
-        controller: pageController,
-        physics: const BouncingScrollPhysics(),
+        controller: navigationProvider.pageController,
+        physics: const BouncingScrollPhysics(), // Réactivation du swipe avec un effet de rebond
         onPageChanged: (index) {
           navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
         },
         children: [
-          HomePage(),
-          OffersPage(),
-          ServicesPage(),
-          ChatPage(),
-          ProfilePage(),
+          const HomePage(),
+          const OffersPage(),
+          const ServicesPage(),
+          const ChatPage(),
+          ProfilePage(), // Suppression du const car ProfilePage n'a pas de constructeur const
         ],
       ),
       bottomNavigationBar: navigationProvider.shouldShowBottomNav(navigationProvider.currentRoute)
           ? CustomBottomNavigation(
               selectedIndex: navigationProvider.currentIndex,
               onItemSelected: (index) {
-                // Animation fluide avec un effet de rebond
-                pageController.animateToPage(
+                navigationProvider.pageController.animateToPage(
                   index,
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.easeInOutCubicEmphasized,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
                 );
-                navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
               },
             )
           : null,

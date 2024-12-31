@@ -7,9 +7,7 @@ class RealProfileProvider implements ProfileDataProvider {
   final String baseUrl = 'http://localhost:3001/api';
   final http.Client client;
 
-  RealProfileProvider({
-    http.Client? httpClient,
-  }) : client = httpClient ?? http.Client();
+  RealProfileProvider({http.Client? httpClient}) : client = httpClient ?? http.Client();
 
   @override
   Future<Map<String, dynamic>> getProfile() async {
