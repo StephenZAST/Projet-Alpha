@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/main.dart';
 
 class NavigationProvider with ChangeNotifier {
   static const List<String> mainRoutes = ['/home', '/offers', '/services', '/chat', '/profile'];
@@ -6,11 +7,9 @@ class NavigationProvider with ChangeNotifier {
 
   int _currentIndex = 0;
   String _currentRoute = '/home';
-  final List<String> _navigationHistory = ['/home'];
 
   int get currentIndex => _currentIndex;
   String get currentRoute => _currentRoute;
-  bool get canGoBack => _navigationHistory.length > 1;
 
   bool shouldShowBottomNav(String route) => mainRoutes.contains(route);
 
@@ -23,32 +22,22 @@ class NavigationProvider with ChangeNotifier {
   }
 
   Future<void> navigateToMainRoute(BuildContext context, String route) async {
-    if (route == '/home') route = '/';
-    if (mainRoutes.contains(route) || route == '/') {
-      await Navigator.pushNamedAndRemoveUntil(
+    if (mainRoutes.contains(route)) {
+      // Retour à la MainNavigationWrapper avec l'index correct
+      await Navigator.pushAndRemoveUntil(
         context,
-        '/',
+        MaterialPageRoute(
+          builder: (_) => const MainNavigationWrapper(),
+        ),
         (route) => false,
       );
-      if (route != '/') {
-        setRoute(route);
-      }
-    }
+      setRoute(route);
+    }2
   }
 
   Future<void> navigateToSecondaryRoute(BuildContext context, String route) async {
     if (secondaryRoutes.contains(route)) {
       await Navigator.pushNamed(context, route);
     }
-  }
-
-  Future<bool> goBack(BuildContext context) async {
-    if (_navigationHistory.length > 1) {
-      _navigationHistory.removeLast();
-      final previousRoute = _navigationHistory.last;
-      await navigateToMainRoute(context, previousRoute);
-      return true;
-    }
-    return false;
   }
 }
