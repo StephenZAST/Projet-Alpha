@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/animations/page_transition.dart';
 import 'package:prima/main.dart';
 
 class NavigationProvider with ChangeNotifier {
@@ -50,9 +51,9 @@ class NavigationProvider with ChangeNotifier {
   Future<void> navigateToMainRoute(BuildContext context, String route) async {
     if (!mainRoutes.contains(route)) return;
 
+    final int newIndex = mainRoutes.indexOf(route);
     _currentRoute = route;
-    _currentIndex = mainRoutes.indexOf(route);
-    // Réinitialiser la pile de navigation
+    _currentIndex = newIndex;
     _navigationStack
       ..clear()
       ..add(route);
@@ -60,9 +61,8 @@ class NavigationProvider with ChangeNotifier {
     if (ModalRoute.of(context)?.settings.name != '/') {
       await Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (context) => const MainNavigationWrapper(),
-          settings: const RouteSettings(name: '/'),
+        CustomPageTransition(
+          child: const MainNavigationWrapper(),
         ),
         (route) => false,
       );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/animations/page_transition.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/theme/colors.dart';
@@ -85,8 +86,32 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MainNavigationWrapper extends StatelessWidget {
+class MainNavigationWrapper extends StatefulWidget {
   const MainNavigationWrapper({super.key});
+
+  @override
+  State<MainNavigationWrapper> createState() => _MainNavigationWrapperState();
+}
+
+class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
+  late PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    final navigationProvider =
+        Provider.of<NavigationProvider>(context, listen: false);
+    _pageController = PageController(
+      initialPage: navigationProvider.currentIndex,
+      keepPage: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,8 +127,11 @@ class MainNavigationWrapper extends StatelessWidget {
       },
       child: Scaffold(
         drawer: const CustomSidebar(),
-        body: IndexedStack(
-          index: navigationProvider.currentIndex,
+        body: SlidePageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
+          },
           children: const [
             HomePage(),
             OffersPage(),
@@ -117,8 +145,11 @@ class MainNavigationWrapper extends StatelessWidget {
             ? CustomBottomNavigation(
                 selectedIndex: navigationProvider.currentIndex,
                 onItemSelected: (index) {
-                  navigationProvider
-                      .setRoute(NavigationProvider.mainRoutes[index]);
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
                 },
               )
             : null,
