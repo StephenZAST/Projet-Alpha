@@ -28,7 +28,7 @@ class DrawerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+    final navigationProvider = Provider.of<NavigationProvider>(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,19 +45,20 @@ class DrawerSection extends StatelessWidget {
           ),
         ),
         ...items.map((item) => _buildDrawerItem(
-          context: context,
-          icon: item.icon,
-          text: item.title,
-          isSelected: navigationProvider.currentRoute == item.route,
-          onTap: () {
-            Navigator.pop(context);
-            if (NavigationProvider.mainRoutes.contains(item.route)) {
-              navigationProvider.navigateToMainRoute(context, item.route);
-            } else {
-              navigationProvider.navigateToSecondaryRoute(context, item.route);
-            }
-          },
-        )),
+              context: context,
+              icon: item.icon,
+              text: item.title,
+              isSelected: navigationProvider.currentRoute == item.route,
+              onTap: () {
+                Navigator.pop(context); // Ferme le drawer
+                if (NavigationProvider.mainRoutes.contains(item.route)) {
+                  navigationProvider.navigateToMainRoute(context, item.route);
+                } else {
+                  navigationProvider.navigateToSecondaryRoute(
+                      context, item.route);
+                }
+              },
+            )),
       ],
     );
   }
@@ -94,7 +95,8 @@ class CustomSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navigationProvider = Provider.of<NavigationProvider>(context, listen: false);
+    final navigationProvider =
+        Provider.of<NavigationProvider>(context, listen: false);
 
     Future<void> handleNavigation(String route) async {
       Navigator.pop(context); // Ferme le drawer
@@ -146,26 +148,39 @@ class CustomSidebar extends StatelessWidget {
             title: 'Navigation principale',
             items: [
               DrawerItem(icon: Icons.home, title: 'Accueil', route: '/home'),
-              DrawerItem(icon: Icons.local_offer, title: 'Offres', route: '/offers'),
-              DrawerItem(icon: Icons.cleaning_services, title: 'Services', route: '/services'),
+              DrawerItem(
+                  icon: Icons.local_offer, title: 'Offres', route: '/offers'),
+              DrawerItem(
+                  icon: Icons.cleaning_services,
+                  title: 'Services',
+                  route: '/services'),
               DrawerItem(icon: Icons.chat, title: 'Messages', route: '/chat'),
-              DrawerItem(icon: Icons.person, title: 'Profile', route: '/profile'),
+              DrawerItem(
+                  icon: Icons.person, title: 'Profile', route: '/profile'),
             ],
           ),
           const Divider(),
           const DrawerSection(
             title: 'Activité',
             items: [
-              DrawerItem(icon: Icons.receipt, title: 'Commandes', route: '/orders'),
-              DrawerItem(icon: Icons.notifications, title: 'Notifications', route: '/notifications'),
+              DrawerItem(
+                  icon: Icons.receipt, title: 'Commandes', route: '/orders'),
+              DrawerItem(
+                  icon: Icons.notifications,
+                  title: 'Notifications',
+                  route: '/notifications'),
             ],
           ),
           const Divider(),
           const DrawerSection(
             title: 'Autres',
             items: [
-              DrawerItem(icon: Icons.people, title: 'Parrainage', route: '/referral'),
-              DrawerItem(icon: Icons.settings, title: 'Paramètres', route: '/settings'),
+              DrawerItem(
+                  icon: Icons.people, title: 'Parrainage', route: '/referral'),
+              DrawerItem(
+                  icon: Icons.settings,
+                  title: 'Paramètres',
+                  route: '/settings'),
             ],
           ),
           const Divider(height: 1, color: AppColors.gray200),

@@ -21,9 +21,8 @@ void main() {
   const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'dev');
   final config = {
     'useMockData': env == 'dev',
-    'baseUrl': env == 'dev' 
-        ? 'http://localhost:3000'
-        : 'https://api.example.com',
+    'baseUrl':
+        env == 'dev' ? 'http://localhost:3000' : 'https://api.example.com',
   };
 
   runApp(
@@ -63,6 +62,25 @@ class MyApp extends StatelessWidget {
         '/referral': (context) => const ReferralPage(),
         '/settings': (context) => const SettingsPage(),
       },
+      onGenerateRoute: (settings) {
+        if (NavigationProvider.secondaryRoutes.contains(settings.name)) {
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (context) {
+              switch (settings.name) {
+                case '/orders':
+                  return const OrdersPage();
+                case '/notifications':
+                  return const NotificationsPage();
+                // ... autres routes secondaires
+                default:
+                  return const SizedBox.shrink();
+              }
+            },
+          );
+        }
+        return null;
+      },
     );
   }
 }
@@ -76,13 +94,11 @@ class MainNavigationWrapper extends StatelessWidget {
 
     return WillPopScope(
       onWillPop: () async {
-        // Si nous sommes sur une route principale, permettre la sortie de l'app
-        if (navigationProvider.currentRoute == '/home') {
-          return true;
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+          return false;
         }
-        // Sinon, retourner à home
-        navigationProvider.setRoute('/home');
-        return false;
+        return true;
       },
       child: Scaffold(
         drawer: const CustomSidebar(),
@@ -96,11 +112,13 @@ class MainNavigationWrapper extends StatelessWidget {
             ProfilePage(),
           ],
         ),
-        bottomNavigationBar: navigationProvider.shouldShowBottomNav(navigationProvider.currentRoute)
+        bottomNavigationBar: navigationProvider
+                .shouldShowBottomNav(navigationProvider.currentRoute)
             ? CustomBottomNavigation(
                 selectedIndex: navigationProvider.currentIndex,
                 onItemSelected: (index) {
-                  navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
+                  navigationProvider
+                      .setRoute(NavigationProvider.mainRoutes[index]);
                 },
               )
             : null,
