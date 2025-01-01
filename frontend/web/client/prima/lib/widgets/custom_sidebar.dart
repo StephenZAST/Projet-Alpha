@@ -28,38 +28,38 @@ class DrawerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navigationProvider = Provider.of<NavigationProvider>(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.gray600,
+    return Consumer<NavigationProvider>(
+      builder: (context, navigationProvider, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.gray600,
+              ),
             ),
           ),
-        ),
-        ...items.map((item) => _buildDrawerItem(
-              context: context,
-              icon: item.icon,
-              text: item.title,
-              isSelected: navigationProvider.currentRoute == item.route,
-              onTap: () {
-                Navigator.pop(context); // Ferme le drawer
-                if (NavigationProvider.mainRoutes.contains(item.route)) {
-                  navigationProvider.navigateToMainRoute(context, item.route);
-                } else {
-                  navigationProvider.navigateToSecondaryRoute(
-                      context, item.route);
-                }
-              },
-            )),
-      ],
+          ...items.map((item) => _buildDrawerItem(
+                context: context,
+                icon: item.icon,
+                text: item.title,
+                isSelected: navigationProvider.isRouteActive(item.route),
+                onTap: () {
+                  Navigator.pop(context);
+                  if (NavigationProvider.mainRoutes.contains(item.route)) {
+                    navigationProvider.navigateToMainRoute(context, item.route);
+                  } else {
+                    navigationProvider.navigateToSecondaryRoute(
+                        context, item.route);
+                  }
+                },
+              )),
+        ],
+      ),
     );
   }
 

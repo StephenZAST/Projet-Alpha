@@ -36,28 +36,37 @@ class NavigationProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Ajout d'une méthode pour vérifier la route active
+  bool isRouteActive(String route) {
+    // Si nous sommes sur une route secondaire (dans la pile de navigation)
+    if (_navigationStack.length > 1) {
+      // Seule la dernière route de la pile est active
+      return _navigationStack.last == route;
+    }
+    // Sinon, nous sommes sur une route principale
+    return _currentRoute == route;
+  }
+
   Future<void> navigateToMainRoute(BuildContext context, String route) async {
     if (!mainRoutes.contains(route)) return;
 
-    // Mise à jour de l'index avant la navigation
-    _currentIndex = mainRoutes.indexOf(route);
     _currentRoute = route;
+    _currentIndex = mainRoutes.indexOf(route);
+    // Réinitialiser la pile de navigation
+    _navigationStack
+      ..clear()
+      ..add(route);
 
-    // Si nous sommes déjà sur la MainNavigationWrapper, pas besoin de recréer la pile
-    if (ModalRoute.of(context)?.settings.name == '/') {
-      notifyListeners();
-      return;
+    if (ModalRoute.of(context)?.settings.name != '/') {
+      await Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const MainNavigationWrapper(),
+          settings: const RouteSettings(name: '/'),
+        ),
+        (route) => false,
+      );
     }
-
-    // Sinon, retour à la MainNavigationWrapper avec le bon index
-    await Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const MainNavigationWrapper(),
-        settings: const RouteSettings(name: '/'),
-      ),
-      (route) => false,
-    );
     notifyListeners();
   }
 
@@ -65,11 +74,17 @@ class NavigationProvider with ChangeNotifier {
       BuildContext context, String route) async {
     if (!secondaryRoutes.contains(route)) return;
 
-    await Navigator.pushNamed(
-      context,
-      route,
-      arguments: _currentRoute, // Sauvegarde la route précédente
-    );
+    // Ajouter la nouvelle route à la pile
+    _navigationStack.add(route);
+    notifyListeners();
+
+    await Navigator.pushNamed(context, route);
+
+    // Après le retour de la page secondaire
+    if (_navigationStack.length > 1) {
+      _navigationStack.removeLast();
+      notifyListeners();
+    }
   }
 
   void returnToMainRoute(BuildContext context, String? previousRoute) {
