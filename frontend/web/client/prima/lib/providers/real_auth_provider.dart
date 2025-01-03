@@ -25,7 +25,7 @@ class RealAuthProvider implements AuthDataProvider {
         if (data['data'] != null) {
           return data['data'];
         }
-        throw Exception('Invalid response format');
+        throw Exception('Invalid response format: ${response.body}');
       }
 
       throw HttpException(response.statusCode, 'Failed to login');
@@ -43,7 +43,12 @@ class RealAuthProvider implements AuthDataProvider {
       final response = await client.post(
         Uri.parse('$baseUrl/auth/register'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'name': name, 'email': email, 'password': password}),
+        body: json.encode({
+          'firstName': name,
+          'email': email,
+          'password': password,
+          'lastName': ''
+        }),
       );
 
       if (response.statusCode == 200) {

@@ -33,8 +33,7 @@ class _LoginPageState extends State<LoginPage> {
           _emailController.text, _passwordController.text);
       if (response['token'] != null) {
         // Stocker le token et naviguer vers la page d'accueil
-        // Exemple : Navigator.pushReplacementNamed(context, '/home');
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacementNamed(context, '/');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
