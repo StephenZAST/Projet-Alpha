@@ -17,6 +17,9 @@ import 'package:prima/widgets/custom_drawer.dart';
 import 'package:prima/widgets/custom_bottom_navigation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prima/providers/profile_provider.dart';
+import 'package:prima/pages/auth/login_page.dart';
+import 'package:prima/pages/auth/register_page.dart';
+import 'package:prima/providers/auth_provider.dart';
 
 void main() {
   const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'dev');
@@ -31,7 +34,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(
-          create: (_) => ProfileProvider(
+          create: (_) => AuthProvider(
             useMockData: config['useMockData'] as bool,
           ),
         ),
@@ -54,14 +57,16 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
         useMaterial3: true,
       ),
-      // Suppression de la propriété home et ajout de initialRoute
-      initialRoute: '/',
+      // Modification de la propriété initialRoute pour qu'elle pointe vers '/login'
+      initialRoute: '/login',
       routes: {
         '/': (context) => const MainNavigationWrapper(),
         '/notifications': (context) => const NotificationsPage(),
         '/orders': (context) => const OrdersPage(),
         '/referral': (context) => const ReferralPage(),
         '/settings': (context) => const SettingsPage(),
+        '/login': (context) => const LoginPage(),
+        '/register': (context) => const RegisterPage(),
       },
       onGenerateRoute: (settings) {
         if (NavigationProvider.secondaryRoutes.contains(settings.name)) {
