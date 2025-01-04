@@ -148,16 +148,12 @@ static async getCurrentUser(req: Request, res: Response) {
 
   static async logout(req: Request, res: Response) {
     try {
-      const token = req.cookies.token;
-      if (!token) {
-        return res.status(400).json({ error: 'No token provided' });
-      }
-      await AuthService.invalidateToken(token);
+      // Simplifier la logique de déconnexion
       res.clearCookie('token');
-      res.json({ message: 'Logged out successfully' });
+      res.json({ success: true, message: 'Logged out successfully' });
     } catch (error: any) {
       console.error('Logout error:', error);
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 }

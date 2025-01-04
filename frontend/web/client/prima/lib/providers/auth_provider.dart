@@ -116,19 +116,22 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     try {
       _isLoading = true;
-      _error = null;
       notifyListeners();
 
-      await _dio.post('$baseUrl/auth/logout',
-          options: Options(validateStatus: (status) => status == 200));
+      // Appel simple au backend
+      await _dio.post(
+        '$baseUrl/auth/logout',
+        options: Options(
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+    } catch (e) {
+      print('Logout error: $e');
+    } finally {
+      // Nettoyage local dans tous les cas
       _token = null;
       _user = null;
       _isAuthenticated = false;
-      notifyListeners();
-    } on DioException catch (e) {
-      _error = 'Erreur de déconnexion: ${e.message}';
-      notifyListeners();
-    } finally {
       _isLoading = false;
       notifyListeners();
     }

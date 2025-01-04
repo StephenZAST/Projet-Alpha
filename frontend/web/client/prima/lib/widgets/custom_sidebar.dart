@@ -186,13 +186,30 @@ class CustomSidebar extends StatelessWidget {
             ],
           ),
           const Divider(height: 1, color: AppColors.gray200),
-          _buildDrawerItem(
-            icon: Icons.logout,
-            text: 'Déconnexion',
+          ListTile(
+            leading: const Icon(Icons.logout, color: AppColors.gray600),
+            title: const Text('Déconnexion'),
             onTap: () async {
-              Navigator.pop(context);
-              await authProvider.logout();
-              Navigator.pushReplacementNamed(context, '/login');
+              try {
+                Navigator.pop(context); // Ferme le drawer
+                await authProvider.logout();
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
+                }
+              } catch (e) {
+                // Même en cas d'erreur, rediriger vers la page de connexion
+                if (context.mounted) {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
+                }
+              }
             },
           ),
         ],
