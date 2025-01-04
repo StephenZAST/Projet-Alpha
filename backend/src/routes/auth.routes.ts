@@ -48,9 +48,9 @@ router.post('/register/affiliate', async (req: Request, res: Response) => {
 });
 
 // Routes authentifiées
-router.use(authenticateToken as express.RequestHandler);
+// router.use(authenticateToken as express.RequestHandler);
 
-router.get('/me', asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+router.get('/me', authenticateToken as express.RequestHandler, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   await AuthController.getCurrentUser(req, res);
 }));
 
@@ -113,5 +113,10 @@ router.post(
     await AuthController.createAdmin(req, res);
   })
 );
+
+
+router.post('/logout', asyncHandler(async (req: Request, res: Response) => {
+  await AuthController.logout(req, res);
+}));
 
 export default router;

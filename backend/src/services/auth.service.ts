@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const blacklistedTokens = new Set<string>();
 
 export class AuthService {
   static async register(email: string, password: string, firstName: string, lastName: string, phone?: string, affiliateCode?: string, role: string = 'CLIENT'): Promise<User> {
@@ -86,6 +87,14 @@ export class AuthService {
     );
 
     return { user, token };
+  }
+
+  static async invalidateToken(token: string): Promise<void> {
+    blacklistedTokens.add(token);
+  }
+
+  static isTokenBlacklisted(token: string): boolean {
+    return blacklistedTokens.has(token);
   }
 
   static async getCurrentUser(userId: string): Promise<User> {

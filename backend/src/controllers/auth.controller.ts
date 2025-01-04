@@ -17,8 +17,9 @@ export class AuthController {
   static async login(req: Request, res: Response) {
     try {
       const { email, password } = req.body;
-      const result = await AuthService.login(email, password);
-      res.json({ data: result });
+      const { user, token } = await AuthService.login(email, password);
+      res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+      res.json({ data: { user, token } });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -141,6 +142,21 @@ static async getCurrentUser(req: Request, res: Response) {
       const result = await AuthService.updateUser(targetUserId, email, firstName, lastName, phone, role);
       res.json({ data: result });
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async logout(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+      if (!token) {
+        return res.status(400).json({ error: 'No token provided' });
+      }
+      await AuthService.invalidateToken(token);
+      res.clearCookie('token');
+      res.json({ message: 'Logged out successfully' });
+    } catch (error: any) {
+      console.error('Logout error:', error);
       res.status(500).json({ error: error.message });
     }
   }

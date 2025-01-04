@@ -3,6 +3,7 @@ import 'package:prima/main.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/navigation/navigation_provider.dart';
+import 'package:prima/providers/auth_provider.dart';
 
 class DrawerItem {
   final IconData icon;
@@ -97,6 +98,7 @@ class CustomSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final navigationProvider =
         Provider.of<NavigationProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     Future<void> handleNavigation(String route) async {
       Navigator.pop(context); // Ferme le drawer
@@ -187,9 +189,10 @@ class CustomSidebar extends StatelessWidget {
           _buildDrawerItem(
             icon: Icons.logout,
             text: 'Déconnexion',
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
-              // TODO: Handle sign out
+              await authProvider.logout();
+              Navigator.pushReplacementNamed(context, '/login');
             },
           ),
         ],

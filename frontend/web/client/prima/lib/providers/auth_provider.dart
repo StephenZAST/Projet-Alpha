@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:cookie_jar/cookie_jar.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 
 class AuthProvider extends ChangeNotifier {
   final String baseUrl = 'http://localhost:3001/api';
@@ -9,6 +13,7 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? _user;
   bool _isLoading = false;
   String? _error;
+  final Dio _dio = Dio();
 
   bool get isAuthenticated => _isAuthenticated;
   String? get token => _token;
@@ -16,22 +21,33 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  AuthProvider() {
+    _init();
+  }
+
+  Future<void> _init() async {
+    final appDocDir = await getApplicationDocumentsDirectory();
+    final cookieJar = PersistCookieJar(
+      storage: FileStorage(appDocDir.path),
+    );
+    _dio.interceptors.add(CookieManager(cookieJar));
+  }
+
   Future<bool> login(String email, String password) async {
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final response = await _dio.post(
+        '$baseUrl/auth/login',
+        data: {
           'email': email,
           'password': password,
-        }),
+        },
       );
 
-      final data = json.decode(response.body);
+      final data = response.data;
 
       if (response.statusCode == 200 && data['data'] != null) {
         _token = data['data']['token'];
@@ -45,8 +61,8 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return false;
       }
-    } catch (e) {
-      _error = 'Erreur de connexion: $e';
+    } on DioException catch (e) {
+      _error = 'Erreur de connexion: ${e.message}';
       notifyListeners();
       return false;
     } finally {
@@ -62,19 +78,18 @@ class AuthProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final response = await _dio.post(
+        '$baseUrl/auth/register',
+        data: {
           'email': email,
           'password': password,
           'firstName': firstName,
           'lastName': lastName,
           'phone': phone,
-        }),
+        },
       );
 
-      final data = json.decode(response.body);
+      final data = response.data;
 
       if (response.statusCode == 200 && data['data'] != null) {
         _token = data['data']['token'];
@@ -88,8 +103,8 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return false;
       }
-    } catch (e) {
-      _error = 'Erreur d\'inscription: $e';
+    } on DioException catch (e) {
+      _error = 'Erreur d\'inscription: ${e.message}';
       notifyListeners();
       return false;
     } finally {
@@ -98,10 +113,24 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  void logout() {
-    _token = null;
-    _user = null;
-    _isAuthenticated = false;
-    notifyListeners();
+  Future<void> logout() async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      await _dio.post('$baseUrl/auth/logout',
+          options: Options(validateStatus: (status) => status == 200));
+      _token = null;
+      _user = null;
+      _isAuthenticated = false;
+      notifyListeners();
+    } on DioException catch (e) {
+      _error = 'Erreur de déconnexion: ${e.message}';
+      notifyListeners();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
