@@ -31,13 +31,15 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final response = await authProvider.register(
-        _nameController.text,
+      final success = await authProvider.register(
         _emailController.text,
         _passwordController.text,
+        _nameController.text,
+        '', // lastName
+        null, // phone
       );
-      if (response['token'] != null) {
-        // Stocker le token et naviguer vers la page d'accueil
+
+      if (success && mounted) {
         Navigator.pushReplacementNamed(context, '/');
       }
     } catch (e) {

@@ -26,15 +26,16 @@ void main() {
   final config = {
     'useMockData': env == 'dev',
     'baseUrl':
-        env == 'dev' ? 'http://localhost:3000' : 'https://api.example.com',
+        env == 'dev' ? 'http://localhost:3001/api' : 'https://api.example.com',
   };
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(
+          create: (_) => ProfileProvider(
             useMockData: config['useMockData'] as bool,
           ),
         ),
@@ -49,43 +50,49 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ZS Laundry',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'SourceSansPro',
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        useMaterial3: true,
-      ),
-      // Modification de la propriété initialRoute pour qu'elle pointe vers '/login'
-      initialRoute: '/login',
-      routes: {
-        '/': (context) => const MainNavigationWrapper(),
-        '/notifications': (context) => const NotificationsPage(),
-        '/orders': (context) => const OrdersPage(),
-        '/referral': (context) => const ReferralPage(),
-        '/settings': (context) => const SettingsPage(),
-        '/login': (context) => const LoginPage(),
-        '/register': (context) => const RegisterPage(),
-      },
-      onGenerateRoute: (settings) {
-        if (NavigationProvider.secondaryRoutes.contains(settings.name)) {
-          return MaterialPageRoute(
-            settings: settings,
-            builder: (context) {
-              switch (settings.name) {
-                case '/orders':
-                  return const OrdersPage();
-                case '/notifications':
-                  return const NotificationsPage();
-                // ... autres routes secondaires
-                default:
-                  return const SizedBox.shrink();
-              }
-            },
-          );
-        }
-        return null;
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        return MaterialApp(
+          title: 'ZS Laundry',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            fontFamily: 'SourceSansPro',
+            colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+            useMaterial3: true,
+          ),
+          initialRoute: authProvider.isAuthenticated ? '/' : '/login',
+          routes: {
+            '/': (context) => const MainNavigationWrapper(),
+            '/login': (context) => const LoginPage(),
+            '/register': (context) => const RegisterPage(),
+          },
+          onGenerateRoute: (settings) {
+            // Protection des routes qui nécessitent une authentification
+            if (!authProvider.isAuthenticated &&
+                settings.name != '/login' &&
+                settings.name != '/register') {
+              return MaterialPageRoute(
+                builder: (_) => const LoginPage(),
+              );
+            }
+
+            // Routes principales et secondaires
+            switch (settings.name) {
+              case '/notifications':
+                return MaterialPageRoute(
+                    builder: (_) => const NotificationsPage());
+              case '/orders':
+                return MaterialPageRoute(builder: (_) => const OrdersPage());
+              case '/referral':
+                return MaterialPageRoute(builder: (_) => const ReferralPage());
+              case '/settings':
+                return MaterialPageRoute(builder: (_) => const SettingsPage());
+              default:
+                return MaterialPageRoute(
+                    builder: (_) => const MainNavigationWrapper());
+            }
+          },
+        );
       },
     );
   }
@@ -99,17 +106,16 @@ class MainNavigationWrapper extends StatefulWidget {
 }
 
 class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
-  late PageController _pageController;
+  late final PageController _pageController;
 
   @override
   void initState() {
     super.initState();
     final navigationProvider =
         Provider.of<NavigationProvider>(context, listen: false);
-    _pageController = PageController(
-      initialPage: navigationProvider.currentIndex,
-      keepPage: true,
-    );
+    _pageController =
+        PageController(initialPage: navigationProvider.currentIndex);
+    navigationProvider.setPageController(_pageController);
   }
 
   @override
@@ -120,45 +126,48 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    final navigationProvider = Provider.of<NavigationProvider>(context);
-
-    return WillPopScope(
-      onWillPop: () async {
-        if (Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-          return false;
+    return Consumer2<NavigationProvider, AuthProvider>(
+      builder: (context, navigationProvider, authProvider, _) {
+        if (!authProvider.isAuthenticated) {
+          return const LoginPage();
         }
-        return true;
-      },
-      child: Scaffold(
-        drawer: const CustomSidebar(),
-        body: SlidePageView(
-          controller: _pageController,
-          onPageChanged: (index) {
-            navigationProvider.setRoute(NavigationProvider.mainRoutes[index]);
+
+        return WillPopScope(
+          onWillPop: () async {
+            if (navigationProvider.currentIndex != 0) {
+              navigationProvider.setRouteFromIndex(0);
+              return false;
+            }
+            return true;
           },
-          children: const [
-            HomePage(),
-            OffersPage(),
-            ServicesPage(),
-            ChatPage(),
-            ProfilePage(),
-          ],
-        ),
-        bottomNavigationBar: navigationProvider
-                .shouldShowBottomNav(navigationProvider.currentRoute)
-            ? CustomBottomNavigation(
-                selectedIndex: navigationProvider.currentIndex,
-                onItemSelected: (index) {
-                  _pageController.animateToPage(
-                    index,
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
-                },
-              )
-            : null,
-      ),
+          child: Scaffold(
+            drawer: const CustomSidebar(),
+            body: PageView(
+              controller: _pageController,
+              physics: const BouncingScrollPhysics(),
+              onPageChanged: (index) {
+                navigationProvider.setRouteFromIndex(index);
+              },
+              children: const [
+                HomePage(),
+                OffersPage(),
+                ServicesPage(),
+                ChatPage(),
+                ProfilePage(),
+              ],
+            ),
+            bottomNavigationBar: navigationProvider
+                    .shouldShowBottomNav(navigationProvider.currentRoute)
+                ? CustomBottomNavigation(
+                    selectedIndex: navigationProvider.currentIndex,
+                    onItemSelected: (index) {
+                      navigationProvider.animateToPage(index);
+                    },
+                  )
+                : null,
+          ),
+        );
+      },
     );
   }
 }

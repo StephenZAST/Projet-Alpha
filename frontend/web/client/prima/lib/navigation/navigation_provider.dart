@@ -20,6 +20,7 @@ class NavigationProvider with ChangeNotifier {
   int _currentIndex = 0;
   String _currentRoute = '/home';
   final List<String> _navigationStack = ['/home'];
+  PageController? _pageController;
 
   int get currentIndex => _currentIndex;
   String get currentRoute => _currentRoute;
@@ -104,5 +105,38 @@ class NavigationProvider with ChangeNotifier {
       setRoute(_navigationStack.last);
       Navigator.pop(context);
     }
+  }
+
+  Future<bool> goBack(BuildContext context) async {
+    if (_currentIndex != 0) {
+      setRouteFromIndex(0);
+      return true;
+    }
+    return false;
+  }
+
+  void setRouteFromIndex(int index) {
+    if (index >= 0 && index < mainRoutes.length) {
+      _currentIndex = index;
+      _currentRoute = mainRoutes[index];
+      notifyListeners();
+    }
+  }
+
+  void setPageController(PageController controller) {
+    _pageController = controller;
+  }
+
+  void animateToPage(int index) {
+    _pageController?.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void dispose() {
+    _pageController?.dispose();
+    super.dispose();
   }
 }
