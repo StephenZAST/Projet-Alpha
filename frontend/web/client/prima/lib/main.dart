@@ -20,29 +20,56 @@ import 'package:prima/providers/profile_provider.dart';
 import 'package:prima/pages/auth/login_page.dart';
 import 'package:prima/pages/auth/register_page.dart';
 import 'package:prima/providers/auth_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:prima/config/env.dart';
 
-void main() {
-  const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'dev');
-  final config = {
-    'useMockData': env == 'dev',
-    'baseUrl':
-        env == 'dev' ? 'http://localhost:3001/api' : 'https://api.example.com',
-  };
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(
-          create: (_) => ProfileProvider(
-            useMockData: config['useMockData'] as bool,
+  try {
+    // Charger le fichier .env
+    await dotenv.load(fileName: ".env").then((_) {
+      print("Configuration .env chargée avec succès");
+    }).catchError((error) {
+      print("Erreur lors du chargement du .env: $error");
+      // Utiliser des valeurs par défaut si le fichier .env n'est pas trouvé
+      dotenv.env['SUPABASE_URL'] = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
+      dotenv.env['SUPABASE_ANON_KEY'] =
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsbXFreG50ZGhhaXVpdXBuaGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM4NDQzMzAsImV4cCI6MjA0OTQyMDMzMH0.JPAmXHOWtnPo5h7tGUTDBi6c-iPMoFG5YCcxhPVzXNk';
+    });
+
+    // Initialiser Supabase
+    await Supabase.initialize(
+      url: dotenv.env['SUPABASE_URL']!,
+      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    );
+
+    const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'dev');
+    final config = {
+      'useMockData': env == 'dev',
+      'baseUrl': env == 'dev'
+          ? 'http://localhost:3001/api'
+          : 'https://api.example.com',
+    };
+
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => NavigationProvider()),
+          ChangeNotifierProvider(create: (_) => AuthProvider()),
+          ChangeNotifierProvider(
+            create: (_) => ProfileProvider(
+              useMockData: config['useMockData'] as bool,
+            ),
           ),
-        ),
-      ],
-      child: const MyApp(),
-    ),
-  );
+        ],
+        child: const MyApp(),
+      ),
+    );
+  } catch (e) {
+    print("Erreur d'initialisation: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {

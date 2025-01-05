@@ -140,8 +140,13 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                     ),
-                    onTap: () {
-                      // Implémentation de la connexion Google
+                    onTap: () async {
+                      final authProvider =
+                          Provider.of<AuthProvider>(context, listen: false);
+                      final success = await authProvider.signInWithGoogle();
+                      if (success && mounted) {
+                        Navigator.pushReplacementNamed(context, '/');
+                      }
                     },
                     useCache: false,
                     scaleCoefficient: 0.95,

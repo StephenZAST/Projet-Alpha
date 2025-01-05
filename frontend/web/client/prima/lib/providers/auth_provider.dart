@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthProvider extends ChangeNotifier {
   final String baseUrl = 'http://localhost:3001/api';
@@ -132,6 +134,48 @@ class AuthProvider extends ChangeNotifier {
       _token = null;
       _user = null;
       _isAuthenticated = false;
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> signInWithGoogle() async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      final AuthResponse response =
+          (await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo:
+            kIsWeb ? null : 'io.supabase.flutterquickstart://login-callback/',
+      )) as AuthResponse;
+
+      // Vérifier si l'authentification a réussi
+      if (response.session != null) {
+        final User? user = response.session?.user;
+
+        if (user != null) {
+          _token = response.session?.accessToken;
+          _user = {
+            'id': user.id,
+            'email': user.email,
+            'name': user.userMetadata?['full_name'],
+          };
+          _isAuthenticated = true;
+          notifyListeners();
+          return true;
+        }
+      }
+
+      _error = 'Échec de la connexion avec Google';
+      return false;
+    } catch (e) {
+      _error = 'Erreur de connexion Google: $e';
+      print('Google Sign In Error: $e');
+      return false;
+    } finally {
       _isLoading = false;
       notifyListeners();
     }

@@ -19,6 +19,8 @@ dependencies:
   path_provider: ^2.0.0
   dio: ^5.0.0
   dio_cookie_manager: ^3.0.0
+  supabase_flutter: ^2.8.2
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -28,6 +30,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - .env
+    - assets/
     - assets/AlphaLogo.png
     - assets/google-icon.png
     - assets/Lavage.png
