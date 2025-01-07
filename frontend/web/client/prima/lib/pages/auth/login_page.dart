@@ -17,6 +17,33 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Vérifier s'il y a des credentials temporaires
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      // Utiliser les getters publics au lieu des champs privés
+      if (authProvider.tempEmail != null && authProvider.tempPassword != null) {
+        _emailController.text = authProvider.tempEmail!;
+        _passwordController.text = authProvider.tempPassword!;
+        authProvider.clearTempCredentials();
+        _attemptLogin();
+      }
+    });
+  }
+
+  Future<void> _attemptLogin() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      final success = await Provider.of<AuthProvider>(context, listen: false)
+          .login(_emailController.text, _passwordController.text);
+
+      if (success && mounted) {
+        Navigator.pushReplacementNamed(context, '/');
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,

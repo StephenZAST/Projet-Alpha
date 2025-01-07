@@ -14,24 +14,29 @@ class RealAuthProvider implements AuthDataProvider {
   @override
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
+      print('RealAuthProvider: Attempting login for $email'); // Debug log
+
       final response = await client.post(
         Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: json.encode({'email': email, 'password': password}),
       );
 
+      print('Response status: ${response.statusCode}'); // Debug log
+      print('Response body: ${response.body}'); // Debug log
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['data'] != null) {
-          return data['data'];
-        }
-        throw Exception('Invalid response format: ${response.body}');
+        return data['data'];
       }
 
-      throw HttpException(response.statusCode, 'Failed to login');
-    } on HttpException {
-      rethrow;
+      throw HttpException(response.statusCode,
+          json.decode(response.body)['error'] ?? 'Authentication failed');
     } catch (e) {
+      print('Login error: $e'); // Debug log
       throw Exception('Network error: $e');
     }
   }

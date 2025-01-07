@@ -1,6 +1,7 @@
 import supabase from '../config/database';
-import { AuthResponse, User } from '../models/types';
+import { AuthResponse, User, ResetCode } from '../models/types';
 import bcrypt from 'bcryptjs';
+import { sendEmail } from './email.service';
 import { v4 as uuidv4 } from 'uuid';
 import * as jwt from 'jsonwebtoken';
 
@@ -54,40 +55,60 @@ export class AuthService {
   }
 
   static async login(email: string, password: string): Promise<{ user: User, token: string }> {
-    const { data: users, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email);
+    try {
+        console.log('Starting login process for:', email);
 
-    if (error) throw error;
+        // 1. Récupérer l'utilisateur
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
 
-    if (!users || users.length === 0) {
-      throw new Error('User not found');
+        if (userError || !user) {
+            console.error('User not found:', email);
+            throw new Error('User not found');
+        }
+
+        // 2. Vérifier le mot de passe
+        console.log('Input password:', password);
+        console.log('Stored hash:', user.password);
+        
+        const isValid = await bcrypt.compare(password, user.password);
+        
+        console.log('Password validation result:', {
+            isValid,
+            email,
+            inputPassword: password,
+            storedHash: user.password
+        });
+
+        if (!isValid) {
+            throw new Error('Invalid credentials');
+        }
+
+        // 3. Générer le token
+        const token = jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            process.env.JWT_SECRET!,
+            { expiresIn: '24h' }
+        );
+
+        return {
+            user: {
+                ...user,
+                firstName: user.first_name,
+                lastName: user.last_name,
+                createdAt: new Date(user.created_at),
+                updatedAt: new Date(user.updated_at)
+            },
+            token
+        };
+    } catch (error) {
+        console.error('Login failed:', error);
+        throw error;
     }
-
-    if (users.length > 1) {
-      console.error('Multiple users found for the same email:', users);
-      throw new Error('Multiple users found for the same email');
-    }
-
-    const user = users[0];
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new Error('Invalid credentials');
-    }
-
-    // Modification du payload JWT pour inclure l'id comme 'id' au lieu de 'userId'
-    const token = jwt.sign(
-      { 
-        id: user.id,  // Changé de userId à id
-        role: user.role 
-      }, 
-      process.env.JWT_SECRET!, 
-      { expiresIn: '1h' }
-    );
-
-    return { user, token };
-  }
+}
 
   static async invalidateToken(token: string): Promise<void> {
     blacklistedTokens.add(token);
@@ -346,10 +367,179 @@ export class AuthService {
   }
 
   static async resetPassword(email: string): Promise<void> {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) {
-      console.error('Error resetting password:', error);
-      throw new Error('Failed to send reset password email.');
+    try {
+        // 1. Vérifier si l'utilisateur existe et obtenir son ID
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('id, email')
+            .eq('email', email)
+            .single();
+
+        if (userError || !user) {
+            console.error('User check error:', userError);
+            throw new Error('User not found');
+        }
+
+        // 2. Générer un nouveau code
+        const code = this.generateVerificationCode();
+        const expirationTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+        // 3. Insérer le code dans la base de données avec user_id
+        const { error: resetCodeError } = await supabase
+            .from('reset_codes')
+            .insert([{
+                user_id: user.id,
+                email: email,
+                code: code,
+                expires_at: expirationTime,
+                used: false,
+                created_at: new Date(),
+                updated_at: new Date()
+            }]);
+
+        if (resetCodeError) {
+            console.error('Reset code storage error:', resetCodeError);
+            throw new Error('Failed to store reset code');
+        }
+
+        // 4. Envoyer l'email
+        try {
+            await sendEmail(email, code);
+            console.log('Reset code email sent successfully to:', email);
+        } catch (emailError) {
+            console.error('Email sending error:', emailError);
+            throw new Error('Failed to send reset code email');
+        }
+
+    } catch (error) {
+        console.error('Reset password process error:', error);
+        throw error;
+    }
+}
+
+  static generateVerificationCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString(); // Code à 6 chiffres
+  }
+
+  static async storeVerificationCode(email: string, code: string) {
+    const expirationTime = new Date();
+    expirationTime.setMinutes(expirationTime.getMinutes() + 15); // Code valide 15 minutes
+
+    const { data, error } = await supabase
+      .from('reset_codes')
+      .insert({
+        email,
+        code,
+        expires_at: expirationTime,
+        used: false
+      });
+
+    return { data, error };
+  }
+
+  static async sendVerificationEmail(email: string, code: string) {
+    try {
+      await sendEmail(email, code);
+      return true;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error('Failed to send verification email');
     }
   }
+
+  static async validateResetCode(email: string, code: string): Promise<boolean> {
+    try {
+        console.log('Validating reset code:', { email, code });
+        
+        const { data, error } = await supabase
+            .from('reset_codes')
+            .select('*')
+            .match({ email, code, used: false })
+            .gt('expires_at', new Date().toISOString())
+            .order('created_at', { ascending: false })
+            .limit(1);
+        
+        if (error) {
+            console.error('Database error during validation:', error);
+            return false;
+        }
+
+        console.log('Found reset codes:', data);
+        
+        // Vérifier si nous avons trouvé un code valide
+        if (!data || data.length === 0) {
+            console.log('No valid reset code found');
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Reset code validation error:', error);
+        return false;
+    }
+}
+
+  static async verifyCodeAndResetPassword(email: string, code: string, newPassword: string): Promise<void> {
+    try {
+        console.log('Starting password reset for:', email);
+
+        // 1. Vérifier le code de réinitialisation
+        const { data: resetCodes, error: codeError } = await supabase
+            .from('reset_codes')
+            .select('*')
+            .eq('email', email)
+            .eq('code', code)
+            .eq('used', false)
+            .gt('expires_at', new Date().toISOString())
+            .single();
+
+        if (codeError || !resetCodes) {
+            console.error('Reset code validation failed:', codeError);
+            throw new Error('Invalid or expired reset code');
+        }
+
+        // 2. Hasher le nouveau mot de passe
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        console.log('New password hash:', hashedPassword);
+
+        // 3. Mettre à jour le mot de passe dans la base de données
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({
+                password: hashedPassword,
+                updated_at: new Date().toISOString()
+            })
+            .eq('email', email);
+
+        if (updateError) {
+            console.error('Password update failed:', updateError);
+            throw new Error('Failed to update password');
+        }
+
+        // 4. Vérifier immédiatement que le nouveau mot de passe fonctionne
+        const testVerification = await bcrypt.compare(newPassword, hashedPassword);
+        console.log('Password verification test:', testVerification);
+
+        if (!testVerification) {
+            throw new Error('Password verification failed');
+        }
+
+        // 5. Marquer le code comme utilisé
+        await supabase
+            .from('reset_codes')
+            .update({
+                used: true,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', resetCodes.id);
+
+        console.log('Reset code marked as used');
+        console.log('Password reset completed successfully');
+
+    } catch (error) {
+        console.error('Password reset failed:', error);
+        throw error;
+    }
+}
+
 }

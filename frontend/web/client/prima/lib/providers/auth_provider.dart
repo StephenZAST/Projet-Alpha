@@ -17,11 +17,18 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
   final Dio _dio = Dio();
 
+  String? _tempEmail;
+  String? _tempPassword;
+
   bool get isAuthenticated => _isAuthenticated;
   String? get token => _token;
   Map<String, dynamic>? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  // Ajouter les getters publics
+  String? get tempEmail => _tempEmail;
+  String? get tempPassword => _tempPassword;
 
   AuthProvider() {
     _init();
@@ -35,37 +42,60 @@ class AuthProvider extends ChangeNotifier {
     _dio.interceptors.add(CookieManager(cookieJar));
   }
 
+  void setTempCredentials(String email, String password) {
+    _tempEmail = email;
+    _tempPassword = password;
+    notifyListeners();
+  }
+
+  void clearTempCredentials() {
+    _tempEmail = null;
+    _tempPassword = null;
+    notifyListeners();
+  }
+
   Future<bool> login(String email, String password) async {
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
+      print('Attempting login with email: $email'); // Debug log
+
       final response = await _dio.post(
         '$baseUrl/auth/login',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          validateStatus: (status) =>
+              true, // Accept all status codes for debugging
+        ),
         data: {
           'email': email,
           'password': password,
         },
       );
 
-      final data = response.data;
+      print('Login response status: ${response.statusCode}'); // Debug log
+      print('Login response data: ${response.data}'); // Debug log
 
-      if (response.statusCode == 200 && data['data'] != null) {
-        _token = data['data']['token'];
-        _user = data['data']['user'];
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        _token = response.data['data']['token'];
+        _user = response.data['data']['user'];
         _isAuthenticated = true;
-        _error = null;
+        print('Login successful, token: $_token'); // Debug log
         notifyListeners();
         return true;
-      } else {
-        _error = data['error'] ?? 'Une erreur est survenue';
-        notifyListeners();
-        return false;
       }
-    } on DioException catch (e) {
-      _error = 'Erreur de connexion: ${e.message}';
-      notifyListeners();
+
+      _error = response.data['error'] ?? 'Authentication failed';
+      print('Login error: $_error'); // Debug log
+      return false;
+    } catch (e) {
+      print('Login exception: $e'); // Debug log
+      _error = 'Connection error: $e';
       return false;
     } finally {
       _isLoading = false;

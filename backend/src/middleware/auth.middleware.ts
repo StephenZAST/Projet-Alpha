@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/types';
+import { AuthService } from '../services/auth.service';
 
 declare global {
   namespace Express {
@@ -10,35 +11,32 @@ declare global {
   }
 }
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
+export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const token = req.headers.authorization?.split(' ')[1] || req.cookies.token;
+
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    req.user = {
-      id: decoded.id,  // Assurez-vous que cela correspond au payload JWT
-      role: decoded.role,
-      // Ajoutez d'autres champs requis par l'interface User
-      email: decoded.email || '',
-      password: decoded.password || '',
-      firstName: decoded.firstName || '',
-      lastName: decoded.lastName || '',
-      createdAt: new Date(decoded.createdAt || new Date()),
-      updatedAt: new Date(decoded.updatedAt || new Date())
-    };
-    
-    console.log('Decoded token:', decoded);
-    console.log('Set user:', req.user);
-    console.log('Token payload:', req.user); // Ajoutez ce log
+
+    // Vérifier si le token est blacklisté
+    if (AuthService.isTokenBlacklisted(token)) {
+      return res.status(401).json({ error: 'Token is no longer valid' });
+    }
+
+    // Vérifier si l'utilisateur existe toujours
+    const user = await AuthService.getCurrentUser(decoded.id);
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    req.user = decoded;
     next();
   } catch (error) {
-    console.error('Token verification error:', error);
-    return res.status(403).json({ error: 'Invalid token' });
+    console.error('Auth middleware error:', error);
+    return res.status(401).json({ error: 'Invalid token' });
   }
 };
 

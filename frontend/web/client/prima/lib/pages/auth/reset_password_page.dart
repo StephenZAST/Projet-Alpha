@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:provider/provider.dart';
+import 'package:prima/providers/auth_provider.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -10,23 +14,120 @@ class ResetPasswordPage extends StatefulWidget {
 }
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
+  // Définir l'URL de base
+  final String baseUrl = 'http://localhost:3001/api/auth';
   int _currentStep = 0;
   final _emailController = TextEditingController();
   final _codeController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  String _errorMessage = '';
 
   Future<void> _resetPassword() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: Implement reset password logic
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-      setState(() => _currentStep++);
+      switch (_currentStep) {
+        case 0:
+          await _requestResetCode();
+          break;
+        case 1:
+          await _verifyCode(); // Nouvelle méthode pour vérifier le code uniquement
+          break;
+        case 2:
+          if (_newPasswordController.text != _confirmPasswordController.text) {
+            setState(
+                () => _errorMessage = 'Les mots de passe ne correspondent pas');
+            return;
+          }
+          await _setNewPassword(); // Nouvelle méthode pour définir le nouveau mot de passe
+          break;
+        case 3:
+          Navigator.pushReplacementNamed(context, '/login');
+          break;
+      }
     } catch (e) {
-      // Handle error
+      setState(() => _errorMessage = e.toString());
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _requestResetCode() async {
+    final email = _emailController.text;
+    final url = Uri.parse('http://localhost:3001/api/auth/reset-password');
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode({'email': email});
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+      if (response.statusCode == 200) {
+        setState(() => _currentStep++);
+      } else {
+        print('Request reset code response: ${response.body}');
+        setState(() =>
+            _errorMessage = 'Failed to send reset code: ${response.body}');
+      }
+    } catch (e) {
+      setState(() => _errorMessage = 'Failed to connect to server: $e');
+    }
+  }
+
+  Future<void> _verifyCode() async {
+    try {
+      final email = _emailController.text;
+      final code = _codeController.text;
+
+      final url = Uri.parse('$baseUrl/verify-code');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'code': code,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        setState(
+            () => _currentStep = 2); // Passer à l'étape du nouveau mot de passe
+      } else {
+        setState(() => _errorMessage = 'Code invalide');
+      }
+    } catch (e) {
+      setState(() => _errorMessage = 'Erreur: $e');
+    }
+  }
+
+  Future<void> _setNewPassword() async {
+    try {
+      final email = _emailController.text;
+      final code = _codeController.text;
+      final newPassword = _newPasswordController.text;
+
+      final url = Uri.parse('$baseUrl/verify-code-and-reset-password');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'code': code,
+          'newPassword': newPassword,
+        }),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        Provider.of<AuthProvider>(context, listen: false)
+            .setTempCredentials(email, newPassword);
+        setState(() => _currentStep = 3); // Afficher l'écran de succès
+      } else {
+        setState(() => _errorMessage =
+            responseData['error'] ?? 'Échec de la réinitialisation');
+      }
+    } catch (e) {
+      setState(() => _errorMessage = 'Erreur: $e');
     }
   }
 
@@ -51,6 +152,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   }
 
   Widget _buildContent() {
+    if (_errorMessage.isNotEmpty) {
+      return Center(
+        child: Text(
+          _errorMessage,
+          style: const TextStyle(color: AppColors.error),
+        ),
+      );
+    }
     switch (_currentStep) {
       case 0:
         return _buildEmailStep();
@@ -149,7 +258,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Nous avons envoyé un code à 4 chiffres à votre adresse zastph300@gmail.com',
+          'Nous avons envoyé un code à 6 chiffres à votre adresse zastph300@gmail.com',
           style: TextStyle(
             fontSize: 14,
             color: AppColors.gray600,
@@ -184,7 +293,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               ),
             ),
           ),
-          onTap: _resetPassword,
+          onTap: _isLoading ? null : _resetPassword,
           useCache: false,
           scaleCoefficient: 0.9,
         ),
@@ -259,7 +368,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               ),
             ),
           ),
-          onTap: _resetPassword,
+          onTap: _isLoading ? null : _resetPassword,
           useCache: false,
           scaleCoefficient: 0.9,
         ),

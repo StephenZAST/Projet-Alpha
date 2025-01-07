@@ -30,30 +30,25 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Charger le fichier .env
-    await dotenv.load(fileName: ".env").then((_) {
-      print("Configuration .env chargée avec succès");
-    }).catchError((error) {
-      print("Erreur lors du chargement du .env: $error");
-      // Utiliser des valeurs par défaut si le fichier .env n'est pas trouvé
-      dotenv.env['SUPABASE_URL'] = 'https://qlmqkxntdhaiuiupnhdf.supabase.co';
-      dotenv.env['SUPABASE_ANON_KEY'] =
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsbXFreG50ZGhhaXVpdXBuaGRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM4NDQzMzAsImV4cCI6MjA0OTQyMDMzMH0.JPAmXHOWtnPo5h7tGUTDBi6c-iPMoFG5YCcxhPVzXNk';
-    });
+    // Charger les variables d'environnement
+    await dotenv.load();
 
-    // Initialiser Supabase
-    await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL']!,
-      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-    );
-
-    const env = String.fromEnvironment('ENVIRONMENT', defaultValue: 'dev');
-    final config = {
+    // Définir la configuration de l'environnement
+    final env =
+        const String.fromEnvironment('ENVIRONMENT', defaultValue: 'dev');
+    final appConfig = {
       'useMockData': env == 'dev',
       'baseUrl': env == 'dev'
           ? 'http://localhost:3001/api'
           : 'https://api.example.com',
     };
+
+    // Initialiser Supabase
+    await Supabase.initialize(
+      url: dotenv.env['SUPABASE_URL']!,
+      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+      debug: true,
+    );
 
     runApp(
       MultiProvider(
@@ -62,7 +57,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => AuthProvider()),
           ChangeNotifierProvider(
             create: (_) => ProfileProvider(
-              useMockData: config['useMockData'] as bool,
+              useMockData: appConfig['useMockData'] as bool,
             ),
           ),
         ],
@@ -70,7 +65,8 @@ void main() async {
       ),
     );
   } catch (e) {
-    print("Erreur d'initialisation: $e");
+    print('Initialization error: $e');
+    rethrow;
   }
 }
 

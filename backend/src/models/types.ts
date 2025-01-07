@@ -342,3 +342,12 @@ export interface AppliedDiscount {
   offerId: string;
   discountAmount: number;
 }
+
+export interface ResetCode {
+  id: string;
+  email: string;
+  code: string;
+  expires_at: Date;
+  used: boolean;
+  createdAt: Date;
+}

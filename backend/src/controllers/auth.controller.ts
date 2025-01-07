@@ -16,14 +16,42 @@ export class AuthController {
 
   static async login(req: Request, res: Response) {
     try {
-      const { email, password } = req.body;
-      const { user, token } = await AuthService.login(email, password);
-      res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-      res.json({ data: { user, token } });
+        const { email, password } = req.body;
+        console.log('Login request received for:', email);
+
+        const { user, token } = await AuthService.login(email, password);
+        
+        // Définir le cookie avec le token
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000 // 24 heures
+        });
+
+        // Envoyer la réponse
+        res.json({
+            success: true,
+            data: {
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    role: user.role,
+                    phone: user.phone
+                },
+                token
+            }
+        });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+        console.error('Login error:', error);
+        res.status(401).json({
+            success: false,
+            error: error.message || 'Authentication failed'
+        });
     }
-  }
+}
 
 static async getCurrentUser(req: Request, res: Response) {
   try {
@@ -160,10 +188,48 @@ static async getCurrentUser(req: Request, res: Response) {
   static async resetPassword(req: Request, res: Response) {
     try {
       const { email } = req.body;
+      console.log('Attempting password reset for email:', email);
+      
       await AuthService.resetPassword(email);
+      
+      console.log('Password reset email sent successfully');
       res.json({ message: 'Password reset email sent' });
     } catch (error: any) {
+      console.error('Reset password error:', error);
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async verifyCodeAndResetPassword(req: Request, res: Response) {
+    try {
+        const { email, code, newPassword } = req.body;
+        console.log('Reset password request received for:', email);
+
+        await AuthService.verifyCodeAndResetPassword(email, code, newPassword);
+
+        // Test immédiat de connexion
+        try {
+            const { user, token } = await AuthService.login(email, newPassword);
+            console.log('Test login successful with new password');
+            
+            res.json({
+                success: true,
+                message: 'Password reset and verified successfully',
+                data: { user, token }
+            });
+        } catch (loginError) {
+            console.error('Test login failed:', loginError);
+            res.status(400).json({
+                success: false,
+                error: 'Password reset succeeded but verification failed'
+            });
+        }
+    } catch (error: any) {
+        console.error('Password reset failed:', error);
+        res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
+}
 }

@@ -47,9 +47,34 @@ router.post('/register/affiliate', async (req: Request, res: Response) => {
   }
 });
 
-// Routes authentifiées
-// router.use(authenticateToken as express.RequestHandler);
+// Routes publiques pour la réinitialisation du mot de passe
+router.post('/reset-password', asyncHandler(async (req: Request, res: Response) => {
+  await AuthController.resetPassword(req, res);
+}));
 
+router.post('/verify-code-and-reset-password', asyncHandler(async (req: Request, res: Response) => {
+  await AuthController.verifyCodeAndResetPassword(req, res);
+}));
+
+// Ajouter cette nouvelle route pour la vérification du code uniquement
+router.post('/verify-code', asyncHandler(async (req: Request, res: Response) => {
+    const { email, code } = req.body;
+    const isValid = await AuthService.validateResetCode(email, code);
+    
+    if (isValid) {
+        res.json({ success: true });
+    } else {
+        res.status(400).json({ 
+            success: false, 
+            error: 'Code invalide ou expiré' 
+        });
+    }
+}));
+
+// Routes protégées nécessitant une authentification
+router.use(authenticateToken as express.RequestHandler);
+
+// Routes authentifiées
 router.get('/me', authenticateToken as express.RequestHandler, asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   await AuthController.getCurrentUser(req, res);
 }));
@@ -66,12 +91,10 @@ router.patch(
   })
 );
 
-router.post(
-  '/change-password',
-  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    await AuthController.changePassword(req, res);
-  })
-);
+// Change password (nécessite une authentification)
+router.post('/change-password', asyncHandler(async (req: Request, res: Response) => {
+  await AuthController.changePassword(req, res);
+}));
 
 router.delete(
   '/delete-account',
@@ -116,10 +139,6 @@ router.post(
 
 router.post('/logout', asyncHandler(async (req: Request, res: Response) => {
   await AuthController.logout(req, res);
-}));
-
-router.post('/reset-password', asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  await AuthController.resetPassword(req, res);
 }));
 
 export default router;
