@@ -30,8 +30,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - .env
-    - assets/
+    - assets/.env
     - assets/AlphaLogo.png
     - assets/google-icon.png
     - assets/Lavage.png
