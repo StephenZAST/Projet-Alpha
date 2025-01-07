@@ -24,6 +24,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:prima/config/env.dart';
 
+import 'pages/auth/reset_password_page.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -92,6 +94,7 @@ class MyApp extends StatelessWidget {
             '/': (context) => const MainNavigationWrapper(),
             '/login': (context) => const LoginPage(),
             '/register': (context) => const RegisterPage(),
+            '/reset_password': (context) => const ResetPasswordPage(),
           },
           onGenerateRoute: (settings) {
             // Protection des routes qui nécessitent une authentification

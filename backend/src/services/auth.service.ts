@@ -344,4 +344,12 @@ export class AuthService {
       throw error;
     }
   }
+
+  static async resetPassword(email: string): Promise<void> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) {
+      console.error('Error resetting password:', error);
+      throw new Error('Failed to send reset password email.');
+    }
+  }
 }

@@ -118,4 +118,8 @@ router.post('/logout', asyncHandler(async (req: Request, res: Response) => {
   await AuthController.logout(req, res);
 }));
 
+router.post('/reset-password', asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  await AuthController.resetPassword(req, res);
+}));
+
 export default router;

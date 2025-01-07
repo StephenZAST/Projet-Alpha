@@ -156,4 +156,14 @@ static async getCurrentUser(req: Request, res: Response) {
       res.status(400).json({ error: error.message });
     }
   }
+
+  static async resetPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      await AuthService.resetPassword(email);
+      res.json({ message: 'Password reset email sent' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

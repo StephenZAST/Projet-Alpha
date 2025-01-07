@@ -169,61 +169,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   TextButton(
                     onPressed: () =>
                         Navigator.pushReplacementNamed(context, '/login'),
-                    child: RichText(
-                      text: TextSpan(
-                        style: const TextStyle(fontSize: 14),
-                        children: [
-                          const TextSpan(
-                            text: 'Déjà un compte ? ',
-                            style: TextStyle(color: AppColors.gray600),
-                          ),
-                          TextSpan(
-                            text: 'Se connecter',
-                            style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SpringButton(
-                    SpringButtonType.OnlyScale,
-                    Container(
-                      width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.gray50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset('assets/google-icon.png', height: 20),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Continuer avec Google',
-                            style: TextStyle(
-                              color: AppColors.gray800,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    onTap: () async {
-                      final authProvider =
-                          Provider.of<AuthProvider>(context, listen: false);
-                      final success = await authProvider.signInWithGoogle();
-                      if (success && mounted) {
-                        Navigator.pushReplacementNamed(context, '/');
-                      }
-                    },
-                    useCache: false,
-                    scaleCoefficient: 0.95,
+                    child: const Text('Déjà un compte ? Se connecter'),
                   ),
                 ],
               ),
