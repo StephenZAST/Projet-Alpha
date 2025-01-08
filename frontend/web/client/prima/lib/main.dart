@@ -13,7 +13,6 @@ import 'package:prima/pages/referral/referral_page.dart';
 import 'package:prima/pages/settings/settings_page.dart';
 import 'package:prima/pages/notifications/notifications_page.dart';
 import 'package:prima/navigation/navigation_provider.dart';
-import 'package:prima/widgets/custom_drawer.dart';
 import 'package:prima/widgets/custom_bottom_navigation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:prima/providers/profile_provider.dart';
