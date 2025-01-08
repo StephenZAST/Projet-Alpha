@@ -147,18 +147,9 @@ class CustomSidebar extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const DrawerSection(
-            title: 'Navigation principale',
+            title: 'Navigation',
             items: [
               DrawerItem(icon: Icons.home, title: 'Accueil', route: '/home'),
-              DrawerItem(
-                  icon: Icons.local_offer, title: 'Offres', route: '/offers'),
-              DrawerItem(
-                  icon: Icons.cleaning_services,
-                  title: 'Services',
-                  route: '/services'),
-              DrawerItem(icon: Icons.chat, title: 'Messages', route: '/chat'),
-              DrawerItem(
-                  icon: Icons.person, title: 'Profile', route: '/profile'),
             ],
           ),
           const Divider(),
@@ -185,6 +176,7 @@ class CustomSidebar extends StatelessWidget {
                   route: '/settings'),
             ],
           ),
+          const Divider(height: 1, color: AppColors.gray200),
           const Divider(height: 1, color: AppColors.gray200),
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.gray600),
@@ -223,22 +215,32 @@ class CustomSidebar extends StatelessWidget {
     bool isSelected = false,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: isSelected ? AppColors.primary : AppColors.gray600,
-      ),
-      title: Text(
-        text,
-        style: TextStyle(
-          color: isSelected ? AppColors.primary : AppColors.gray600,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: ListTile(
+          leading: Icon(
+            icon,
+            color: isSelected ? AppColors.primary : AppColors.gray600,
+          ),
+          title: Text(
+            text,
+            style: TextStyle(
+              color: isSelected ? AppColors.primary : AppColors.gray600,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          selected: isSelected,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         ),
       ),
-      onTap: onTap,
-      selected: isSelected,
-      selectedTileColor: AppColors.primary.withOpacity(0.1),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }
