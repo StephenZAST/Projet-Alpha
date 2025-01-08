@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prima/main.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/utils/string_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/providers/auth_provider.dart';
@@ -99,6 +100,10 @@ class CustomSidebar extends StatelessWidget {
     final navigationProvider =
         Provider.of<NavigationProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+    final firstName = user?['firstName'] as String?;
+    final lastName = user?['lastName'] as String?;
+    final displayName = getDisplayName(firstName, lastName);
 
     Future<void> handleNavigation(String route) async {
       Navigator.pop(context); // Ferme le drawer
@@ -135,7 +140,7 @@ class CustomSidebar extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Mr ZAKANE',
+                  displayName,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
