@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:prima/providers/address_provider.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -196,14 +198,14 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
       Container(
         height: 56,
         decoration: BoxDecoration(
-          color: AppColors.primary,
+          gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(30),
           boxShadow: [AppColors.primaryShadow],
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            'Enregistrer l\'adresse',
-            style: TextStyle(
+            _isLoading ? 'Enregistrement...' : 'Enregistrer l\'adresse',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -211,10 +213,37 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
           ),
         ),
       ),
-      onTap: () {
-        // TODO: Implement address saving
-        Navigator.pop(context);
-      },
+      onTap: _isLoading
+          ? null
+          : () async {
+              if (_streetController.text.isEmpty ||
+                  _cityController.text.isEmpty ||
+                  _postalCodeController.text.isEmpty ||
+                  _addressNameController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Veuillez remplir tous les champs')),
+                );
+                return;
+              }
+
+              try {
+                await context.read<AddressProvider>().addAddress(
+                      _addressNameController.text,
+                      _streetController.text,
+                      _cityController.text,
+                      _postalCodeController.text,
+                      _selectedLocation?.latitude,
+                      _selectedLocation?.longitude,
+                    );
+                Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Erreur lors de l\'enregistrement')),
+                );
+              }
+            },
     );
   }
 }

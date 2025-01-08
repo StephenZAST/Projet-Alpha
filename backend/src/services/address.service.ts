@@ -2,15 +2,32 @@ import supabase from '../config/database';
 import { Address } from '../models/types';
 
 export class AddressService {
-  static async createAddress(userId: string, street: string, city: string, isDefault: boolean = false, postalCode?: string, gpsLatitude?: number, gpsLongitude?: number): Promise<Address> {
+  static async createAddress(
+    userId: string, 
+    name: string,  // Ajout du paramètre name
+    street: string, 
+    city: string, 
+    isDefault: boolean = false, 
+    postalCode?: string, 
+    gpsLatitude?: number, 
+    gpsLongitude?: number
+  ): Promise<Address> {
     const { data, error } = await supabase
       .from('addresses')
-      .insert([{ user_id: userId, street, city, postal_code: postalCode, gps_latitude: gpsLatitude, gps_longitude: gpsLongitude, is_default: isDefault }])
+      .insert([{ 
+        user_id: userId,
+        name,     // Ajout du name
+        street, 
+        city, 
+        postal_code: postalCode, 
+        gps_latitude: gpsLatitude, 
+        gps_longitude: gpsLongitude, 
+        is_default: isDefault 
+      }])
       .select()
       .single();
 
     if (error) throw error;
-
     return data;
   }
 
