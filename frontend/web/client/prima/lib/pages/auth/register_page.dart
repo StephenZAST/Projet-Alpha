@@ -19,12 +19,19 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isSubmitting = false;
 
+  bool _obscurePassword = true;
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _affiliateCodeController =
+      TextEditingController();
+
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _phoneController.dispose();
+    _affiliateCodeController.dispose();
     super.dispose();
   }
 
@@ -40,7 +47,10 @@ class _RegisterPageState extends State<RegisterPage> {
         _passwordController.text,
         _firstNameController.text,
         _lastNameController.text,
-        null, // phone
+        _phoneController.text, // Le téléphone est maintenant toujours envoyé
+        _affiliateCodeController.text.isEmpty
+            ? null
+            : _affiliateCodeController.text,
       );
 
       if (success && mounted) {
@@ -124,11 +134,43 @@ class _RegisterPageState extends State<RegisterPage> {
                     label: 'Mot de passe',
                     icon: Icons.lock_outline,
                     obscureText: true,
+                    suffix: IconButton(
+                      icon: Icon(_obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    ),
                     validator: (v) {
                       if (v?.isEmpty ?? true) return 'Champ requis';
                       if (v!.length < 6) return 'Minimum 6 caractères';
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _phoneController,
+                    label: 'Numéro de téléphone', // Supprimé "(optionnel)"
+                    icon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                    validator: (v) {
+                      if (v?.isEmpty ?? true) {
+                        return 'Numéro de téléphone requis'; // Nouveau message d'erreur
+                      }
+                      // Validation du format de numéro de téléphone
+                      if (!RegExp(r'^\+?[\d\s-]{9,}$').hasMatch(v!)) {
+                        return 'Format de numéro invalide';
+                      }
+                      return null;
+                    },
+                    helperText: 'Ex: +225 0708090102', // Aide pour le format
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    controller: _affiliateCodeController,
+                    label: 'Code affilié (optionnel)',
+                    icon: Icons.group_outlined,
+                    helperText: 'Si vous avez été parrainé',
                   ),
                   const SizedBox(height: 32),
                   SpringButton(
@@ -187,10 +229,12 @@ class _RegisterPageState extends State<RegisterPage> {
     bool obscureText = false,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    Widget? suffix,
+    String? helperText,
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: obscureText,
+      obscureText: obscureText && _obscurePassword,
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
@@ -198,6 +242,8 @@ class _RegisterPageState extends State<RegisterPage> {
         labelStyle: const TextStyle(
             fontStyle: FontStyle.italic, fontWeight: FontWeight.bold),
         prefixIcon: Icon(icon, color: AppColors.gray600),
+        suffixIcon: suffix,
+        helperText: helperText,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.gray200),

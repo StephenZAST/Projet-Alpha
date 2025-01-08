@@ -23,6 +23,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
   String _errorMessage = '';
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   Future<void> _resetPassword() async {
     setState(() => _isLoading = true);
@@ -339,6 +341,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           label: 'Nouveau mot de passe',
           icon: Icons.lock_outline,
           obscureText: true,
+          suffix: IconButton(
+            icon: Icon(
+                _obscurePassword ? Icons.visibility_off : Icons.visibility),
+            onPressed: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
+          ),
         ),
         const SizedBox(height: 16),
         _buildTextField(
@@ -346,6 +354,19 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           label: 'Confirmer mot de passe',
           icon: Icons.lock_outline,
           obscureText: true,
+          suffix: IconButton(
+            icon: Icon(_obscureConfirmPassword
+                ? Icons.visibility_off
+                : Icons.visibility),
+            onPressed: () => setState(
+                () => _obscureConfirmPassword = !_obscureConfirmPassword),
+          ),
+          validator: (value) {
+            if (value != _newPasswordController.text) {
+              return 'Les mots de passe ne correspondent pas';
+            }
+            return null;
+          },
         ),
         const SizedBox(height: 32),
         SpringButton(
@@ -443,6 +464,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     required IconData icon,
     bool obscureText = false,
     TextInputType keyboardType = TextInputType.text,
+    Widget? suffix,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
@@ -451,6 +474,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         labelStyle: const TextStyle(
             fontStyle: FontStyle.italic, fontWeight: FontWeight.bold),
         prefixIcon: Icon(icon),
+        suffixIcon: suffix,
         filled: true,
         fillColor: AppColors.gray50,
         border: OutlineInputBorder(
@@ -458,8 +482,18 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           borderSide: BorderSide.none,
         ),
       ),
-      obscureText: obscureText,
+      obscureText: obscureText
+          ? (label.contains('Nouveau')
+              ? _obscurePassword
+              : _obscureConfirmPassword)
+          : false,
       keyboardType: keyboardType,
+      validator: validator,
+      onChanged: (value) {
+        if (label.contains('Confirmer')) {
+          setState(() {}); // Pour rafraîchir la validation
+        }
+      },
     );
   }
 }

@@ -15,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true; // Ajouter cette variable
 
   @override
   void initState() {
@@ -82,7 +83,7 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _passwordController,
                     label: 'Mot de passe',
                     icon: Icons.lock_outline,
-                    obscureText: true,
+                    obscureText: true, // Activé par défaut
                     validator: (v) =>
                         v?.isEmpty ?? true ? 'Mot de passe requis' : null,
                   ),
@@ -174,6 +175,15 @@ class _LoginPageState extends State<LoginPage> {
         labelStyle: const TextStyle(
             fontStyle: FontStyle.italic, fontWeight: FontWeight.bold),
         prefixIcon: Icon(icon),
+        suffixIcon: obscureText
+            ? IconButton(
+                icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility),
+                onPressed: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+              )
+            : null,
         filled: true,
         fillColor: AppColors.gray50,
         border: OutlineInputBorder(
@@ -181,7 +191,7 @@ class _LoginPageState extends State<LoginPage> {
           borderSide: BorderSide.none,
         ),
       ),
-      obscureText: obscureText,
+      obscureText: obscureText ? _obscurePassword : false,
       keyboardType: keyboardType,
       validator: validator,
     );

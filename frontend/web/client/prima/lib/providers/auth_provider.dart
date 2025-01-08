@@ -104,7 +104,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> register(String email, String password, String firstName,
-      String lastName, String? phone) async {
+      String lastName, String? phone, String? affiliateCode) async {
     try {
       _isLoading = true;
       _error = null;
@@ -118,6 +118,7 @@ class AuthProvider extends ChangeNotifier {
           'firstName': firstName,
           'lastName': lastName,
           'phone': phone,
+          'affiliateCode': affiliateCode,
         },
       );
 
