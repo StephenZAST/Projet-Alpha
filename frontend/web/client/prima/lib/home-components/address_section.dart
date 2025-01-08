@@ -2,9 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:prima/widgets/address_bottom_sheet.dart';
 
 class AddressSectionComponent extends StatelessWidget {
   const AddressSectionComponent({Key? key}) : super(key: key);
+
+  void _showAddressBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const AddressBottomSheet(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +70,7 @@ class AddressSectionComponent extends StatelessWidget {
               ),
               child: const Icon(Icons.map, color: AppColors.white),
             ),
-            onTap: () {},
+            onTap: () => _showAddressBottomSheet(context),
             scaleCoefficient: 0.9,
             useCache: false,
           ),
