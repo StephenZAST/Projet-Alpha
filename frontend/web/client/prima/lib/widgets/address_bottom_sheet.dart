@@ -215,50 +215,209 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
                 markers: [
                   if (_selectedLocation != null)
                     Marker(
-                      width: 50,
-                      height: 50,
+                      width: 80,
+                      height: 80,
                       point: _selectedLocation!,
-                      child: TweenAnimationBuilder<double>(
-                        duration: const Duration(milliseconds: 300),
-                        tween: Tween(begin: 0.0, end: 1.0),
-                        builder: (context, value, child) {
-                          return Transform.scale(
-                            scale: 0.6 + (0.4 * value),
-                            child: _buildAnimatedMarker(),
-                          );
-                        },
-                      ),
+                      child: _buildLocationMarker(),
                     ),
                 ],
               ),
             ],
           ),
         ),
+        // Contrôles de la carte avec fond semi-transparent
         Positioned(
           top: 16,
           right: 16,
           child: Column(
             children: [
-              _buildMapButton(
+              _buildMapControlButton(
                 icon: Icons.my_location,
                 onTap: _getCurrentLocation,
+                tooltip: 'Ma position',
               ),
               const SizedBox(height: 8),
-              _buildMapButton(
+              _buildMapControlButton(
                 icon: Icons.search,
                 onTap: () {
                   // Implémenter la recherche d'adresse
                 },
+                tooltip: 'Rechercher une adresse',
               ),
             ],
           ),
         ),
+        // Bouton de confirmation avec fond semi-transparent
         Positioned(
           left: 16,
           right: 16,
           bottom: 16,
-          child: _buildSaveButton(),
+          child: _buildConfirmationButton(),
         ),
+      ],
+    );
+  }
+
+  Widget _buildMapControlButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required String tooltip,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: SpringButton(
+        SpringButtonType.OnlyScale,
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            gradient: AppColors.primaryGradient.scale(0.8),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 20,
+          ),
+        ),
+        onTap: onTap,
+        scaleCoefficient: 0.95,
+      ),
+    );
+  }
+
+  Widget _buildLocationMarker() {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Stack(
+          children: [
+            // Cercle externe animé
+            Center(
+              child: Container(
+                width: 60 * value,
+                height: 60 * value,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            // Cercle intermédiaire
+            Center(
+              child: Container(
+                width: 40 * value,
+                height: 40 * value,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            // Marqueur central
+            Center(
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.location_on,
+                  color: Colors.white,
+                  size: 12,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildConfirmationButton() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: SpringButton(
+            SpringButtonType.OnlyScale,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient.scale(0.9),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: _buildSaveButtonContent(),
+            ),
+            onTap: _isLoading ? null : _saveAddress,
+            scaleCoefficient: 0.95,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButtonContent() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (_isLoading)
+          const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              strokeWidth: 2,
+            ),
+          )
+        else ...[
+          const Icon(
+            Icons.check_circle_outline,
+            color: Colors.white,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Confirmer l\'emplacement',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -515,5 +674,22 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
         scaleCoefficient: 0.95,
       ),
     );
+  }
+}
+
+// Ajouter cette extension pour le gradient
+extension GradientScale on Gradient {
+  Gradient scale(double opacity) {
+    if (this is LinearGradient) {
+      final LinearGradient gradient = this as LinearGradient;
+      return LinearGradient(
+        begin: gradient.begin,
+        end: gradient.end,
+        colors:
+            gradient.colors.map((color) => color.withOpacity(opacity)).toList(),
+        stops: gradient.stops,
+      );
+    }
+    return this;
   }
 }
