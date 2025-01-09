@@ -211,4 +211,10 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // Assurez-vous que cette méthode est appelée après une connexion réussie
+  void setToken(String token) {
+    _token = token;
+    notifyListeners();
+  }
 }

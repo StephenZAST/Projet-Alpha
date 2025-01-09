@@ -16,30 +16,37 @@ class AddressService {
     bool isDefault = false,
   }) async {
     try {
-      print('Sending request to: ${_dio.options.baseUrl}/api/addresses/create');
-      print(
-          'Request data: {name: $name, street: $street, city: $city, postalCode: $postalCode, latitude: $latitude, longitude: $longitude, isDefault: $isDefault}');
+      print('Creating address with data: ${{
+        'name': name,
+        'street': street,
+        'city': city,
+        'postal_code': postalCode,
+        'gps_latitude': latitude,
+        'gps_longitude': longitude,
+        'is_default': isDefault,
+      }}');
 
       final response = await _dio.post('/api/addresses/create', data: {
         'name': name,
         'street': street,
         'city': city,
-        'postal_code':
-            postalCode, // Assurez-vous que le nom correspond au backend
+        'postal_code': postalCode,
         'gps_latitude': latitude,
         'gps_longitude': longitude,
         'is_default': isDefault,
       });
 
-      print('Response: ${response.data}');
+      print('Response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
+
+      if (response.statusCode == 401) {
+        throw Exception('Non autorisé. Veuillez vous reconnecter.');
+      }
+
       return Address.fromJson(response.data['data']);
-    } on DioException catch (e) {
-      print('Error details: ${e.response?.data}');
-      print('Error message: ${e.message}');
-      print('Error type: ${e.type}');
-      print('Error stacktrace: ${e.stackTrace}');
-      throw Exception(
-          'Failed to create address: ${e.response?.data['error'] ?? e.message}');
+    } catch (e) {
+      print('Error creating address: $e');
+      rethrow;
     }
   }
 

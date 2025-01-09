@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:prima/animations/page_transition.dart';
 import 'package:prima/providers/address_provider.dart';
@@ -88,29 +87,30 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(
-          create: (_) {
+          create: (context) {
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
             final dio = Dio(BaseOptions(
-              baseUrl:
-                  'http://localhost:3001', // Assurez-vous que c'est le même port que votre backend
+              baseUrl: 'http://localhost:3001',
               contentType: 'application/json',
               headers: {
                 'Accept': 'application/json',
               },
-              validateStatus: (status) {
-                return status! < 500; // Accepter tous les codes de statut < 500
+            ));
+
+            // Ajouter l'intercepteur pour le token
+            dio.interceptors.add(InterceptorsWrapper(
+              onRequest: (options, handler) {
+                final token = authProvider.token;
+                if (token != null) {
+                  options.headers['Authorization'] = 'Bearer $token';
+                }
+                return handler.next(options);
               },
             ));
-            // Ajout d'un intercepteur plus détaillé pour le débogage
-            if (kDebugMode) {
-              dio.interceptors.add(LogInterceptor(
-                requestHeader: true,
-                requestBody: true,
-                responseHeader: true,
-                responseBody: true,
-                error: true,
-                logPrint: (object) => debugPrint(object.toString()),
-              ));
-            }
+
+            // ...existing interceptors...
+
             final addressService = AddressService(dio);
             return AddressProvider(addressService);
           },

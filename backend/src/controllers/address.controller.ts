@@ -5,18 +5,50 @@ import { Address } from '../models/types';
 export class AddressController {
   static async createAddress(req: Request, res: Response) {
     try {
-      const { street, city, postalCode, gpsLatitude, gpsLongitude, isDefault } = req.body;
-      const userId = req.user?.id;
+      console.log('Creating address with data:', req.body);
+      console.log('User:', req.user);
 
-      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      if (!req.user?.id) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
 
-      const address = await AddressService.createAddress(userId, street, city, isDefault, postalCode, gpsLatitude, gpsLongitude);
+      const { 
+        name,
+        street, 
+        city, 
+        postal_code, 
+        gps_latitude, 
+        gps_longitude, 
+        is_default 
+      } = req.body;
+
+      // Validation
+      if (!name || !street || !city || !postal_code) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: name, street, city, postal_code' 
+        });
+      }
+
+      const address = await AddressService.createAddress(
+        req.user.id,
+        name,
+        street,
+        city,
+        postal_code,
+        gps_latitude,
+        gps_longitude,
+        is_default
+      );
+
       res.json({ data: address });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    } catch (error: unknown) {
+      console.error('Error in createAddress controller:', error);
+      res.status(500).json({ 
+        error: 'Failed to create address',
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   }
-
   static async getAllAddresses(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
