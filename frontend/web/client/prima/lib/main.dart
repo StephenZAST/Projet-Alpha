@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:prima/animations/page_transition.dart';
 import 'package:prima/providers/address_provider.dart';
+import 'package:prima/services/address_service.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/theme/colors.dart';
@@ -84,7 +86,13 @@ class MyApp extends StatelessWidget {
             useMockData: false,
           ),
         ),
-        ChangeNotifierProvider(create: (_) => AddressProvider()),
+        ChangeNotifierProvider(
+          create: (_) {
+            final dio = Dio();
+            final addressService = AddressService(dio);
+            return AddressProvider(addressService);
+          },
+        ),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
