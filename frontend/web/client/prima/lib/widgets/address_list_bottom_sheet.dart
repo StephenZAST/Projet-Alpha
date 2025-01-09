@@ -116,13 +116,23 @@ class AddressListBottomSheet extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          BackButton(color: Colors.white),
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
           const SizedBox(width: 8),
           Text(
             'Mes adresses',
@@ -216,12 +226,21 @@ class AddressListBottomSheet extends StatelessWidget {
   }
 
   void _showAddressBottomSheet(BuildContext context) {
-    Navigator.pop(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const AddressBottomSheet(),
+      builder: (context) => AddressBottomSheet(
+        onBack: () {
+          Navigator.pop(context);
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => const AddressListBottomSheet(),
+          );
+        },
+      ),
     );
   }
 }

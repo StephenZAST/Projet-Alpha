@@ -8,8 +8,13 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class AddressBottomSheet extends StatefulWidget {
   final Address? address;
+  final VoidCallback? onBack;
 
-  const AddressBottomSheet({Key? key, this.address}) : super(key: key);
+  const AddressBottomSheet({
+    Key? key,
+    this.address,
+    this.onBack,
+  }) : super(key: key);
 
   @override
   State<AddressBottomSheet> createState() => _AddressBottomSheetState();
@@ -33,7 +38,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
       ),
       child: Column(
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           Expanded(
             child: DefaultTabController(
               length: 2,
@@ -123,24 +128,36 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.primary,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: const Row(
+      child: Row(
         children: [
-          BackButton(color: Colors.white),
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: widget.onBack ?? () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
           Text(
-            'Gérer mes adresses',
-            style: TextStyle(
+            widget.address != null ? 'Modifier l\'adresse' : 'Nouvelle adresse',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
             ),
           ),
+          const Spacer(),
         ],
       ),
     );
@@ -201,86 +218,93 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
   }
 
   Widget _buildMapSection() {
-    return Column(
+    return Stack(
       children: [
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.gray200),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Stack(
-              children: [
-                GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: _selectedLocation ?? const LatLng(48.8566, 2.3522),
-                    zoom: _selectedLocation != null ? 15 : 10,
-                  ),
-                  markers: _selectedLocation != null
-                      ? {
-                          Marker(
-                            markerId: const MarkerId('selectedLocation'),
-                            position: _selectedLocation!,
-                          )
-                        }
-                      : {},
-                  onTap: (LatLng location) {
-                    setState(() {
-                      _selectedLocation = location;
-                    });
-                  },
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: false,
-                ),
-                Positioned(
-                  bottom: 16,
-                  right: 16,
-                  child: SpringButton(
-                    SpringButtonType.OnlyScale,
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [AppColors.primaryShadow],
+        Column(
+          children: [
+            Container(
+              height: 200,
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [AppColors.primaryShadow],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(
+                  children: [
+                    GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target:
+                            _selectedLocation ?? const LatLng(48.8566, 2.3522),
+                        zoom: _selectedLocation != null ? 15 : 10,
                       ),
-                      child: Icon(
-                        Icons.my_location,
-                        color: AppColors.white,
+                      markers: _selectedLocation != null
+                          ? {
+                              Marker(
+                                markerId: const MarkerId('selectedLocation'),
+                                position: _selectedLocation!,
+                              )
+                            }
+                          : {},
+                      onTap: (LatLng location) {
+                        setState(() {
+                          _selectedLocation = location;
+                        });
+                      },
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: false,
+                    ),
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: SpringButton(
+                        SpringButtonType.OnlyScale,
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [AppColors.primaryShadow],
+                          ),
+                          child: const Icon(
+                            Icons.my_location,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        onTap: _getCurrentLocation,
                       ),
                     ),
-                    onTap: _getCurrentLocation,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        SpringButton(
-          SpringButtonType.OnlyScale,
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.gray50,
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: AppColors.gray200),
-            ),
-            child: Center(
-              child: Text(
-                _isLoading
-                    ? 'Chargement de la position...'
-                    : 'Cliquez sur la carte pour sélectionner un emplacement',
-                style: TextStyle(
-                  color: AppColors.gray600,
-                  fontWeight: FontWeight.w500,
+                  ],
                 ),
               ),
             ),
-          ),
-          onTap: () {},
+            const SizedBox(height: 16),
+            SpringButton(
+              SpringButtonType.OnlyScale,
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.gray50,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: AppColors.gray200),
+                ),
+                child: Center(
+                  child: Text(
+                    _isLoading
+                        ? 'Chargement de la position...'
+                        : 'Cliquez sur la carte pour sélectionner un emplacement',
+                    style: TextStyle(
+                      color: AppColors.gray600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              onTap: () {},
+            ),
+          ],
         ),
       ],
     );
@@ -325,57 +349,81 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
   }
 
   Widget _buildSaveButton() {
-    return SpringButton(
-      SpringButtonType.OnlyScale,
-      Container(
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [AppColors.primaryShadow],
-        ),
-        child: Center(
-          child: Text(
-            _isLoading ? 'Enregistrement...' : 'Enregistrer l\'adresse',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SpringButton(
+        SpringButtonType.OnlyScale,
+        Container(
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [AppColors.primaryShadow],
+          ),
+          child: Stack(
+            children: [
+              if (_isLoading)
+                Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.save_outlined, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.address != null
+                          ? 'Mettre à jour l\'adresse'
+                          : 'Enregistrer l\'adresse',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
           ),
         ),
+        onTap: _isLoading ? null : _saveAddress,
       ),
-      onTap: _isLoading
-          ? null
-          : () async {
-              if (_streetController.text.isEmpty ||
-                  _cityController.text.isEmpty ||
-                  _postalCodeController.text.isEmpty ||
-                  _addressNameController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Veuillez remplir tous les champs')),
-                );
-                return;
-              }
-
-              try {
-                await context.read<AddressProvider>().addAddress(
-                      _addressNameController.text,
-                      _streetController.text,
-                      _cityController.text,
-                      _postalCodeController.text,
-                      _selectedLocation?.latitude,
-                      _selectedLocation?.longitude,
-                    );
-                Navigator.pop(context);
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Erreur lors de l\'enregistrement')),
-                );
-              }
-            },
     );
+  }
+
+  Future<void> _saveAddress() async {
+    if (_streetController.text.isEmpty ||
+        _cityController.text.isEmpty ||
+        _postalCodeController.text.isEmpty ||
+        _addressNameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez remplir tous les champs')),
+      );
+      return;
+    }
+
+    try {
+      await context.read<AddressProvider>().addAddress(
+            _addressNameController.text,
+            _streetController.text,
+            _cityController.text,
+            _postalCodeController.text,
+            _selectedLocation?.latitude,
+            _selectedLocation?.longitude,
+          );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erreur lors de l\'enregistrement')),
+      );
+    }
   }
 }
