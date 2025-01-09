@@ -22,11 +22,11 @@ class AddressCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.primary, // Changed background color to blue
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2), // Increased shadow opacity
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -68,6 +68,8 @@ class AddressCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color:
+                                  Colors.white, // Changed text color to white
                             ),
                           ),
                         ),
@@ -92,15 +94,17 @@ class AddressCard extends StatelessWidget {
                             children: [
                               Text(
                                 address.street,
-                                style: TextStyle(
-                                  color: AppColors.gray500,
+                                style: const TextStyle(
+                                  color: Colors
+                                      .white, // Changed text color to white
                                   fontSize: 14,
                                 ),
                               ),
                               Text(
                                 '${address.postalCode} ${address.city}',
-                                style: TextStyle(
-                                  color: AppColors.gray500,
+                                style: const TextStyle(
+                                  color: Colors
+                                      .white, // Changed text color to white
                                   fontSize: 14,
                                 ),
                               ),
@@ -112,17 +116,26 @@ class AddressCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // Added building icon
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Image.asset(
+                  'assets/Building.png',
+                  width: 56,
+                  height: 51,
+                ),
+              ),
               if (onEdit != null)
                 IconButton(
                   icon: const Icon(Icons.edit_outlined),
                   onPressed: onEdit,
-                  color: AppColors.primary,
+                  color: Colors.white, // Changed icon color to white
                 ),
               if (onDelete != null)
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
                   onPressed: onDelete,
-                  color: AppColors.error,
+                  color: Colors.white, // Changed icon color to white
                 ),
             ],
           ),

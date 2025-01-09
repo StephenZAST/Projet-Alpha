@@ -35,6 +35,7 @@ flutter:
   assets:
     - assets/.env
     - assets/AlphaLogo.png
+    - assets/Building.png
     - assets/Adresse_back.png
     - assets/google-icon.png
     - assets/Lavage.png
