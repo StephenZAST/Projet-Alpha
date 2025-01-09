@@ -3,6 +3,7 @@ import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:prima/widgets/address_bottom_sheet.dart';
+import 'package:prima/widgets/address_list_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/providers/address_provider.dart';
 
@@ -14,7 +15,7 @@ class AddressSectionComponent extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const AddressBottomSheet(),
+      builder: (context) => const AddressListBottomSheet(),
     );
   }
 

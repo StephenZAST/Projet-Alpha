@@ -41,27 +41,72 @@ class AddressCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      address.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        if (address.isDefault)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.successLight,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Par défaut',
+                              style: TextStyle(
+                                color: AppColors.success,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        if (address.isDefault) const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            address.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      address.street,
-                      style: TextStyle(
-                        color: AppColors.gray500,
-                        fontSize: 14,
-                      ),
-                    ),
-                    Text(
-                      '${address.postalCode} ${address.city}',
-                      style: TextStyle(
-                        color: AppColors.gray500,
-                        fontSize: 14,
-                      ),
+                    Row(
+                      children: [
+                        if (address.latitude != null &&
+                            address.longitude != null)
+                          Icon(
+                            Icons.location_on,
+                            color: AppColors.primary,
+                            size: 16,
+                          ),
+                        if (address.latitude != null &&
+                            address.longitude != null)
+                          const SizedBox(width: 4),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                address.street,
+                                style: TextStyle(
+                                  color: AppColors.gray500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Text(
+                                '${address.postalCode} ${address.city}',
+                                style: TextStyle(
+                                  color: AppColors.gray500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
