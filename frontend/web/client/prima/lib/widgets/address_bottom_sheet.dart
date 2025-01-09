@@ -215,10 +215,19 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
                 markers: [
                   if (_selectedLocation != null)
                     Marker(
-                      width: 40,
-                      height: 40,
+                      width: 50,
+                      height: 50,
                       point: _selectedLocation!,
-                      child: _buildCustomMarker(),
+                      child: TweenAnimationBuilder<double>(
+                        duration: const Duration(milliseconds: 300),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: 0.6 + (0.4 * value),
+                            child: _buildAnimatedMarker(),
+                          );
+                        },
+                      ),
                     ),
                 ],
               ),
@@ -334,6 +343,38 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
     );
   }
 
+  Widget _buildAnimatedMarker() {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Center(
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: Center(
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                shape: BoxShape.circle,
+                boxShadow: [AppColors.primaryShadow],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<void> _getCurrentLocation() async {
     setState(() => _isLoading = true);
     try {
@@ -419,52 +460,59 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
   }
 
   Widget _buildSaveButton() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return Container(
+      margin: const EdgeInsets.all(16),
       child: SpringButton(
         SpringButtonType.OnlyScale,
         Container(
-          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           decoration: BoxDecoration(
             gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [AppColors.primaryShadow],
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          child: Stack(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (_isLoading)
-                Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      strokeWidth: 2,
-                    ),
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    strokeWidth: 2,
                   ),
                 )
-              else
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.save_outlined, color: Colors.white),
-                    const SizedBox(width: 8),
-                    Text(
-                      widget.address != null
-                          ? 'Mettre à jour l\'adresse'
-                          : 'Enregistrer l\'adresse',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+              else ...[
+                const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.white,
+                  size: 24,
                 ),
+                const SizedBox(width: 12),
+                Text(
+                  widget.address != null
+                      ? 'Mettre à jour l\'adresse'
+                      : 'Confirmer l\'emplacement',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
         onTap: _isLoading ? null : _saveAddress,
+        scaleCoefficient: 0.95,
       ),
     );
   }
