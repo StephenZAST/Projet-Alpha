@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui' as ui;
 import 'package:prima/providers/address_provider.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/widgets/custom_map_marker.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:geolocator/geolocator.dart';
@@ -27,6 +31,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
   final _postalCodeController = TextEditingController();
   LatLng? _selectedLocation;
   bool _isLoading = false;
+  BitmapDescriptor? _markerIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -244,10 +249,15 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
                               Marker(
                                 markerId: const MarkerId('selectedLocation'),
                                 position: _selectedLocation!,
-                              )
+                                icon: _markerIcon ??
+                                    BitmapDescriptor.defaultMarker,
+                              ),
                             }
                           : {},
-                      onTap: (LatLng location) {
+                      onTap: (LatLng location) async {
+                        _markerIcon = await _getBitmapDescriptorFromWidget(
+                          const CustomMapMarker(),
+                        );
                         setState(() {
                           _selectedLocation = location;
                         });
@@ -310,6 +320,46 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
     );
   }
 
+  Future<BitmapDescriptor> _getBitmapDescriptorFromWidget(
+      Widget customMarker) async {
+    try {
+      final RenderRepaintBoundary repaintBoundary = RenderRepaintBoundary();
+      final ui.Size logicalSize =
+          ui.window.physicalSize / ui.window.devicePixelRatio;
+      final ui.Size imageSize =
+          ui.Size(40, 40); // Replace with your custom marker size
+
+      final RenderObjectToWidgetElement<RenderBox> rootElement =
+          RenderObjectToWidgetAdapter<RenderBox>(
+        container: repaintBoundary,
+        child: SizedBox.fromSize(
+          size: imageSize,
+          child: customMarker,
+        ),
+      ).attachToRenderTree(BuildOwner());
+
+      final PipelineOwner pipelineOwner = PipelineOwner();
+      pipelineOwner.rootNode = repaintBoundary;
+
+      // Force layout and paint
+      repaintBoundary.scheduleInitialLayout();
+      pipelineOwner.flushLayout();
+      pipelineOwner.flushCompositingBits();
+      pipelineOwner.flushPaint();
+
+      final ui.Image image =
+          await repaintBoundary.toImage(pixelRatio: ui.window.devicePixelRatio);
+      final ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      return BitmapDescriptor.fromBytes(pngBytes);
+    } catch (e) {
+      print('Error creating BitmapDescriptor: $e');
+      return BitmapDescriptor.defaultMarker;
+    }
+  }
+
   Future<void> _getCurrentLocation() async {
     setState(() => _isLoading = true);
     try {
@@ -345,6 +395,34 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
       );
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _saveAddress() async {
+    if (_streetController.text.isEmpty ||
+        _cityController.text.isEmpty ||
+        _postalCodeController.text.isEmpty ||
+        _addressNameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez remplir tous les champs')),
+      );
+      return;
+    }
+
+    try {
+      await context.read<AddressProvider>().addAddress(
+            _addressNameController.text,
+            _streetController.text,
+            _cityController.text,
+            _postalCodeController.text,
+            _selectedLocation?.latitude,
+            _selectedLocation?.longitude,
+          );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erreur lors de l\'enregistrement')),
+      );
     }
   }
 
@@ -397,33 +475,5 @@ class _AddressBottomSheetState extends State<AddressBottomSheet> {
         onTap: _isLoading ? null : _saveAddress,
       ),
     );
-  }
-
-  Future<void> _saveAddress() async {
-    if (_streetController.text.isEmpty ||
-        _cityController.text.isEmpty ||
-        _postalCodeController.text.isEmpty ||
-        _addressNameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez remplir tous les champs')),
-      );
-      return;
-    }
-
-    try {
-      await context.read<AddressProvider>().addAddress(
-            _addressNameController.text,
-            _streetController.text,
-            _cityController.text,
-            _postalCodeController.text,
-            _selectedLocation?.latitude,
-            _selectedLocation?.longitude,
-          );
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erreur lors de l\'enregistrement')),
-      );
-    }
   }
 }
