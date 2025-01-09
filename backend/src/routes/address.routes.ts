@@ -12,9 +12,12 @@ router.use(authenticateToken as express.RequestHandler);
 router.post(
   '/create',
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    console.log('Received create address request');
+    console.log('Request body:', req.body);
     try {
       await AddressController.createAddress(req, res);
     } catch (error) {
+      console.error('Error in create address route:', error);
       next(error);
     }
   })

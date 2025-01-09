@@ -16,19 +16,30 @@ class AddressService {
     bool isDefault = false,
   }) async {
     try {
-      final response = await _dio.post('/addresses/create', data: {
+      print('Sending request to: ${_dio.options.baseUrl}/api/addresses/create');
+      print(
+          'Request data: {name: $name, street: $street, city: $city, postalCode: $postalCode, latitude: $latitude, longitude: $longitude, isDefault: $isDefault}');
+
+      final response = await _dio.post('/api/addresses/create', data: {
         'name': name,
         'street': street,
         'city': city,
-        'postalCode': postalCode,
-        'gpsLatitude': latitude,
-        'gpsLongitude': longitude,
-        'isDefault': isDefault,
+        'postal_code':
+            postalCode, // Assurez-vous que le nom correspond au backend
+        'gps_latitude': latitude,
+        'gps_longitude': longitude,
+        'is_default': isDefault,
       });
 
+      print('Response: ${response.data}');
       return Address.fromJson(response.data['data']);
     } on DioException catch (e) {
-      throw Exception('Failed to create address: ${e.response?.data['error']}');
+      print('Error details: ${e.response?.data}');
+      print('Error message: ${e.message}');
+      print('Error type: ${e.type}');
+      print('Error stacktrace: ${e.stackTrace}');
+      throw Exception(
+          'Failed to create address: ${e.response?.data['error'] ?? e.message}');
     }
   }
 
