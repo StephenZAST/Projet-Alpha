@@ -29,19 +29,17 @@ export class AuthController {
             maxAge: 24 * 60 * 60 * 1000 // 24 heures
         });
 
+        // Récupérer l'utilisateur avec ses adresses
+        const userData = await AuthService.getCurrentUser(user.id);
+        const userAddresses = userData.addresses?.filter((addr: { user_id: string; }) => addr.user_id === user.id) || [];
+
         // Envoyer la réponse
         res.json({
             success: true,
             data: {
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    role: user.role,
-                    phone: user.phone
-                },
-                token
+                user: userData,
+                token: token,
+                addresses: userAddresses // Envoyer uniquement les adresses de l'utilisateur
             }
         });
     } catch (error: any) {

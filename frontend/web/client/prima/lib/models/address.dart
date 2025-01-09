@@ -1,6 +1,6 @@
 class Address {
   final String id;
-  final String userId;
+  final String userId; // Important pour la relation avec l'utilisateur
   final String name;
   final String street;
   final String city;

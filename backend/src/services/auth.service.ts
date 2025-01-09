@@ -118,15 +118,18 @@ export class AuthService {
     return blacklistedTokens.has(token);
   }
 
-  static async getCurrentUser(userId: string): Promise<User> {
+  static async getCurrentUser(userId: string) {
+    // Ajout de la jointure avec la table addresses
     const { data: user, error } = await supabase
       .from('users')
-      .select('*')
+      .select(`
+        *,
+        addresses:addresses(*)
+      `)
       .eq('id', userId)
       .single();
 
     if (error) throw error;
-
     return user;
   }
 

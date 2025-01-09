@@ -37,7 +37,7 @@ router.get(
 // Routes admin
 router.patch(
   '/update/:addressId',
-  authorizeRoles(['SUPER_ADMIN', 'ADMIN']) as express.RequestHandler,
+  // Suppression de authorizeRoles
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       await AddressController.updateAddress(req, res);
@@ -49,7 +49,7 @@ router.patch(
 
 router.delete(
   '/delete/:addressId',
-  authorizeRoles(['SUPER_ADMIN', 'ADMIN']) as express.RequestHandler,
+  // Suppression de authorizeRoles pour permettre à tous les utilisateurs authentifiés
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       await AddressController.deleteAddress(req, res);

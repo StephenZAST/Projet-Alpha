@@ -1,13 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:prima/providers/auth_provider.dart';
 import 'package:prima/services/address_service.dart';
 import 'package:prima/models/address.dart';
+import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 
-class AddressProvider with ChangeNotifier {
+class AddressProvider extends ChangeNotifier {
+  final AuthProvider _authProvider;
+  final Dio _dio;
   final AddressService _addressService;
   Address? _selectedAddress;
   List<Address> _addresses = [];
 
-  AddressProvider(this._addressService);
+  AddressProvider(this._authProvider)
+      : _dio = Dio(BaseOptions(
+          baseUrl: _authProvider.baseUrl,
+        )),
+        _addressService = AddressService(Dio(BaseOptions(
+          baseUrl: _authProvider.baseUrl,
+        ))) {
+    _setupInterceptors();
+    loadAddresses(); // Charger automatiquement les adresses au démarrage
+  }
+
+  void _setupInterceptors() {
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        final token = _authProvider.token;
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+    ));
+  }
 
   Address? get selectedAddress => _selectedAddress;
   List<Address> get addresses => _addresses;
@@ -87,10 +113,43 @@ class AddressProvider with ChangeNotifier {
 
   Future<void> loadAddresses() async {
     try {
+      print('Loading addresses...');
       _addresses = await _addressService.getAddresses();
+
+      // Si une adresse par défaut existe, la sélectionner
+      Address? defaultAddress;
+
+      if (_addresses.isNotEmpty) {
+        defaultAddress = _addresses.firstWhere(
+          (addr) => addr.isDefault,
+          orElse: () => _addresses.first,
+        );
+      }
+
+      if (defaultAddress != null) {
+        _selectedAddress = defaultAddress;
+      }
+
       notifyListeners();
     } catch (e) {
-      throw Exception('Failed to load addresses: $e');
+      print('Error loading addresses: $e');
+      _addresses = [];
+      notifyListeners();
     }
+  }
+
+  void setAddresses(BuildContext context, List<Address> addresses) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userId = authProvider.user?['id'];
+
+    _addresses = addresses.where((addr) => addr.userId == userId).toList();
+
+    if (_addresses.isNotEmpty) {
+      _selectedAddress = _addresses.firstWhere(
+        (addr) => addr.isDefault,
+        orElse: () => _addresses.first,
+      );
+    }
+    notifyListeners();
   }
 }

@@ -72,27 +72,48 @@ class AddressService {
     required bool isDefault,
   }) async {
     try {
-      final response = await _dio.patch('/addresses/update/$id', data: {
+      print('Updating address with ID: $id');
+      final response = await _dio.patch('/api/addresses/update/$id', data: {
         'name': name,
         'street': street,
         'city': city,
-        'postalCode': postalCode,
-        'gpsLatitude': latitude,
-        'gpsLongitude': longitude,
-        'isDefault': isDefault,
+        'postal_code': postalCode,
+        'gps_latitude': latitude,
+        'gps_longitude': longitude,
+        'is_default': isDefault,
       });
 
       return Address.fromJson(response.data['data']);
     } on DioException catch (e) {
-      throw Exception('Failed to update address: ${e.response?.data['error']}');
+      print('Error updating address: ${e.response?.data}');
+      throw Exception('Failed to update address: ${e.message}');
     }
   }
 
   Future<void> deleteAddress(String id) async {
     try {
-      await _dio.delete('/addresses/delete/$id');
+      print('Deleting address with ID: $id');
+      final response = await _dio.delete(
+        '/api/addresses/delete/$id',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer ${_dio.options.headers['Authorization']}',
+          },
+        ),
+      );
+
+      if (response.statusCode == 403) {
+        throw Exception(
+            'Vous n\'avez pas la permission de supprimer cette adresse');
+      }
+
+      if (response.statusCode != 200) {
+        throw Exception('Erreur lors de la suppression de l\'adresse');
+      }
     } on DioException catch (e) {
-      throw Exception('Failed to delete address: ${e.response?.data['error']}');
+      print('Error deleting address: ${e.response?.data}');
+      throw Exception(
+          e.response?.data['error'] ?? 'Erreur lors de la suppression');
     }
   }
 }

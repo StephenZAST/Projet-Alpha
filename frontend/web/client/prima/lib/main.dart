@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:prima/animations/page_transition.dart';
 import 'package:prima/providers/address_provider.dart';
+import 'package:prima/providers/auth_data_provider.dart';
+import 'package:prima/providers/profile_data_provider.dart';
 import 'package:prima/services/address_service.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:provider/provider.dart';
@@ -25,51 +27,44 @@ import 'package:prima/providers/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:prima/config/env.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'pages/auth/reset_password_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
 
-  try {
-    // Charger les variables d'environnement
-    await dotenv.load();
-
-    // Définir la configuration de l'environnement
-    final env =
-        const String.fromEnvironment('ENVIRONMENT', defaultValue: 'dev');
-    final appConfig = {
-      'useMockData': env == 'dev',
-      'baseUrl': env == 'dev'
-          ? 'http://localhost:3001/api'
-          : 'https://api.example.com',
-    };
-
-    // Initialiser Supabase
-    await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL']!,
-      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-      debug: true,
-    );
-
-    runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => NavigationProvider()),
-          ChangeNotifierProvider(create: (_) => AuthProvider()),
-          ChangeNotifierProvider(
-            create: (_) => ProfileProvider(
-              useMockData: appConfig['useMockData'] as bool,
-            ),
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(
+            authDataProvider: AuthDataProviderImpl(prefs),
+            profileDataProvider: ProfileDataProviderImpl(prefs),
+            prefs: prefs,
           ),
-        ],
-        child: const MyApp(),
-      ),
-    );
-  } catch (e) {
-    print('Initialization error: $e');
-    rethrow;
-  }
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, AddressProvider>(
+          create: (context) => AddressProvider(
+            Provider.of<AuthProvider>(context, listen: false),
+          ),
+          update: (context, auth, previous) =>
+              AddressProvider(auth)..loadAddresses(),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ProfileProvider>(
+          create: (context) => ProfileProvider(
+            Provider.of<AuthProvider>(context, listen: false),
+            prefs,
+            useMockData: false,
+          ),
+          update: (context, auth, previous) =>
+              ProfileProvider(auth, prefs, useMockData: false),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -80,11 +75,14 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(
-          create: (_) => ProfileProvider(
-            useMockData: false,
-          ),
+          create: (context) {
+            final authProvider =
+                Provider.of<AuthProvider>(context, listen: false);
+            final prefs =
+                Provider.of<SharedPreferences>(context, listen: false);
+            return ProfileProvider(authProvider, prefs, useMockData: false);
+          },
         ),
         ChangeNotifierProvider(
           create: (context) {
@@ -111,8 +109,7 @@ class MyApp extends StatelessWidget {
 
             // ...existing interceptors...
 
-            final addressService = AddressService(dio);
-            return AddressProvider(addressService);
+            return AddressProvider(authProvider);
           },
         ),
       ],

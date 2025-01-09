@@ -222,15 +222,16 @@ export type RecurrenceType = 'NONE' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
 // Address related types
 export interface Address {
   id: string;
-  userId: string;
+  user_id: string;  // Changer userId à user_id pour correspondre à la BD
+  name: string;
   street: string;
   city: string;
-  postalCode: string;
-  gpsLatitude?: number;
-  gpsLongitude?: number;
-  isDefault: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  postal_code: string;
+  gps_latitude?: number;
+  gps_longitude?: number;
+  is_default: boolean;
+  created_at: Date;
+  updated_at: Date;
 }
 
 // DTO (Data Transfer Objects)
