@@ -5,7 +5,6 @@ import 'package:prima/utils/string_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/providers/auth_provider.dart';
-import 'package:prima/utils/name_formatter.dart';
 
 class DrawerItem {
   final IconData icon;
@@ -104,6 +103,7 @@ class CustomSidebar extends StatelessWidget {
     final user = authProvider.user;
     final firstName = user?['firstName'] as String?;
     final lastName = user?['lastName'] as String?;
+    final displayName = getDisplayName(firstName, lastName);
 
     Future<void> handleNavigation(String route) async {
       Navigator.pop(context); // Ferme le drawer
@@ -140,7 +140,7 @@ class CustomSidebar extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  NameFormatter.getFullName(firstName, lastName),
+                  displayName,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
