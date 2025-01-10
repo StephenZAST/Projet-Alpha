@@ -5,6 +5,8 @@ import 'package:prima/models/address.dart';
 import 'dart:ui' as ui;
 import 'package:prima/providers/address_provider.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/utils/bottom_sheet_manager.dart';
+import 'package:prima/widgets/address_list_bottom_sheet.dart';
 import 'package:prima/widgets/custom_map_marker.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
@@ -593,6 +595,10 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
           );
         }
         Navigator.pop(context);
+        BottomSheetManager().showCustomBottomSheet(
+          context: context,
+          builder: (context) => const AddressListBottomSheet(),
+        );
       } catch (e) {
         _showErrorSnackBar('Erreur lors de l\'enregistrement');
       } finally {

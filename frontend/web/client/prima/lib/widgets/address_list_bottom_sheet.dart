@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/utils/bottom_sheet_manager.dart';
 import 'package:prima/widgets/address_bottom_sheet.dart';
 import 'package:prima/widgets/address_card.dart';
 import 'package:prima/providers/address_provider.dart';
@@ -226,17 +227,19 @@ class AddressListBottomSheet extends StatelessWidget {
   }
 
   void _showAddressBottomSheet(BuildContext context) {
-    showModalBottomSheet(
+    // D'abord fermer le bottom sheet actuel
+    Navigator.pop(context);
+
+    // Puis ouvrir le nouveau bottom sheet
+    BottomSheetManager().showCustomBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (context) => AddressBottomSheet(
         onBack: () {
+          // Lors du retour, fermer le bottom sheet d'ajout d'adresse
           Navigator.pop(context);
-          showModalBottomSheet(
+          // Puis rouvrir la liste des adresses
+          BottomSheetManager().showCustomBottomSheet(
             context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
             builder: (context) => const AddressListBottomSheet(),
           );
         },

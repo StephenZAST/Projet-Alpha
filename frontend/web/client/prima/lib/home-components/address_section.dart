@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/utils/bottom_sheet_manager.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:prima/widgets/address_bottom_sheet.dart';
@@ -11,10 +12,10 @@ class AddressSectionComponent extends StatelessWidget {
   const AddressSectionComponent({Key? key}) : super(key: key);
 
   void _showAddressBottomSheet(BuildContext context) {
-    showModalBottomSheet(
+    // Utiliser BottomSheetManager au lieu de showModalBottomSheet
+    BottomSheetManager().showCustomBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      isDismissible: true,
       builder: (context) => const AddressListBottomSheet(),
     );
   }
