@@ -2,9 +2,15 @@ import 'package:dio/dio.dart';
 import 'package:prima/models/address.dart';
 
 class AddressService {
-  final Dio _dio;
+  Dio? _dio;
 
-  AddressService(this._dio);
+  AddressService([Dio? dio]) {
+    _dio = dio;
+  }
+
+  void setDio(Dio dio) {
+    _dio = dio;
+  }
 
   Future<Address> createAddress({
     required String name,
@@ -26,7 +32,7 @@ class AddressService {
         'is_default': isDefault,
       }}');
 
-      final response = await _dio.post('/api/addresses/create', data: {
+      final response = await _dio!.post('/addresses/create', data: {
         'name': name,
         'street': street,
         'city': city,
@@ -52,12 +58,23 @@ class AddressService {
 
   Future<List<Address>> getAddresses() async {
     try {
-      final response = await _dio.get('/addresses/all');
-      return (response.data['data'] as List)
-          .map((json) => Address.fromJson(json))
-          .toList();
-    } on DioException catch (e) {
-      throw Exception('Failed to get addresses: ${e.response?.data['error']}');
+      if (_dio == null) {
+        throw Exception('Dio instance not set');
+      }
+
+      final response = await _dio!.get('/addresses/all');
+      print('Address response: ${response.data}'); // Debug log
+
+      if (response.statusCode == 200) {
+        return (response.data['data'] as List)
+            .map((json) => Address.fromJson(json))
+            .toList();
+      } else {
+        throw Exception('Failed to load addresses: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in getAddresses: $e'); // Debug log
+      rethrow;
     }
   }
 
@@ -73,7 +90,7 @@ class AddressService {
   }) async {
     try {
       print('Updating address with ID: $id');
-      final response = await _dio.patch('/api/addresses/update/$id', data: {
+      final response = await _dio!.patch('/addresses/update/$id', data: {
         'name': name,
         'street': street,
         'city': city,
@@ -93,11 +110,11 @@ class AddressService {
   Future<void> deleteAddress(String id) async {
     try {
       print('Deleting address with ID: $id');
-      final response = await _dio.delete(
-        '/api/addresses/delete/$id',
+      final response = await _dio!.delete(
+        '/addresses/delete/$id',
         options: Options(
           headers: {
-            'Authorization': 'Bearer ${_dio.options.headers['Authorization']}',
+            'Authorization': 'Bearer ${_dio!.options.headers['Authorization']}',
           },
         ),
       );

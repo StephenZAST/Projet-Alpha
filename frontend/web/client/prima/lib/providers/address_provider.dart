@@ -14,12 +14,17 @@ class AddressProvider extends ChangeNotifier {
 
   AddressProvider(this._authProvider)
       : _dio = Dio(BaseOptions(
-          baseUrl: _authProvider.baseUrl,
+          baseUrl: _authProvider
+              .baseUrl, // Enlever le /api ici car il est déjà dans baseUrl
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
         )),
-        _addressService = AddressService(Dio(BaseOptions(
-          baseUrl: _authProvider.baseUrl,
-        ))) {
+        _addressService = AddressService(null) {
+    // Modifié ici
     _setupInterceptors();
+    _addressService.setDio(_dio); // Ajouté cette ligne
     loadAddresses(); // Charger automatiquement les adresses au démarrage
   }
 
