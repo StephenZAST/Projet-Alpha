@@ -92,19 +92,25 @@ class AddressCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                address.street,
-                                style: const TextStyle(
-                                  color: Colors
-                                      .white, // Changed text color to white
-                                  fontSize: 14,
+                              // Vérifier si street existe avant de l'afficher
+                              if (address.street != null &&
+                                  address.street!.isNotEmpty)
+                                Text(
+                                  address.street!,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
+                              // Gérer le cas où postalCode est optionnel
                               Text(
-                                '${address.postalCode} ${address.city}',
+                                [
+                                  if (address.postalCode != null)
+                                    address.postalCode,
+                                  address.city
+                                ].where((e) => e != null).join(' '),
                                 style: const TextStyle(
-                                  color: Colors
-                                      .white, // Changed text color to white
+                                  color: Colors.white,
                                   fontSize: 14,
                                 ),
                               ),

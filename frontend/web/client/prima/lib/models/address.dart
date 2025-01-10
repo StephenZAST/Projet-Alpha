@@ -2,11 +2,11 @@ class Address {
   final String id;
   final String userId; // Important pour la relation avec l'utilisateur
   final String name;
-  final String street;
+  final String? street; // Maintenant optionnel
   final String city;
-  final String postalCode;
-  final double? latitude;
-  final double? longitude;
+  final String? postalCode; // Maintenant optionnel
+  final double latitude; // Plus optionnel
+  final double longitude; // Plus optionnel
   final bool isDefault;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -15,11 +15,11 @@ class Address {
     required this.id,
     required this.userId,
     required this.name,
-    required this.street,
+    this.street, // Optionnel
     required this.city,
-    required this.postalCode,
-    this.latitude,
-    this.longitude,
+    this.postalCode, // Optionnel
+    required this.latitude, // Requis
+    required this.longitude, // Requis
     required this.isDefault,
     required this.createdAt,
     required this.updatedAt,
@@ -33,8 +33,8 @@ class Address {
       street: json['street'],
       city: json['city'],
       postalCode: json['postal_code'],
-      latitude: json['gps_latitude'],
-      longitude: json['gps_longitude'],
+      latitude: json['gps_latitude'] ?? 0.0,
+      longitude: json['gps_longitude'] ?? 0.0,
       isDefault: json['is_default'],
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),

@@ -43,9 +43,9 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
     _tabController = TabController(length: 2, vsync: this);
     if (widget.address != null) {
       _addressNameController.text = widget.address!.name;
-      _streetController.text = widget.address!.street;
+      _streetController.text = widget.address!.street!;
       _cityController.text = widget.address!.city;
-      _postalCodeController.text = widget.address!.postalCode;
+      _postalCodeController.text = widget.address!.postalCode!;
       if (widget.address!.latitude != null &&
           widget.address!.longitude != null) {
         _selectedLocation = LatLng(
@@ -142,17 +142,19 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
         TextField(
           controller: _addressNameController,
           decoration: InputDecoration(
-            labelText: 'Nom de l\'adresse',
+            labelText: 'Nom de l\'adresse *',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+            errorText:
+                _addressNameController.text.isEmpty ? 'Champ requis' : null,
           ),
         ),
         const SizedBox(height: 16),
         TextField(
           controller: _streetController,
           decoration: InputDecoration(
-            labelText: 'Rue',
+            labelText: 'Rue ou Quartier (optionnel)',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -165,10 +167,12 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
               child: TextField(
                 controller: _cityController,
                 decoration: InputDecoration(
-                  labelText: 'Ville',
+                  labelText: 'Ville *',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  errorText:
+                      _cityController.text.isEmpty ? 'Champ requis' : null,
                 ),
               ),
             ),
@@ -177,7 +181,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
               child: TextField(
                 controller: _postalCodeController,
                 decoration: InputDecoration(
-                  labelText: 'Code postal',
+                  labelText: 'Code postal (optionnel)',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -598,15 +602,52 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
   }
 
   bool _validateForm() {
-    if (_addressNameController.text.isEmpty ||
-        _streetController.text.isEmpty ||
-        _cityController.text.isEmpty ||
-        _postalCodeController.text.isEmpty) {
-      _showErrorSnackBar('Veuillez remplir tous les champs');
-      return false;
+    List<String> errors = [];
+
+    if (_addressNameController.text.isEmpty) {
+      errors.add('Le nom de l\'adresse est requis');
     }
+
+    if (_cityController.text.isEmpty) {
+      errors.add('La ville est requise');
+    }
+
     if (_selectedLocation == null) {
-      _showErrorSnackBar('Veuillez sélectionner un emplacement sur la carte');
+      errors.add('La localisation GPS est requise');
+    }
+
+    if (errors.isNotEmpty) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Champs requis manquants'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: errors
+                  .map((error) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline,
+                                color: Colors.red, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(error)),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+            ),
+            actions: [
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          );
+        },
+      );
       return false;
     }
     return true;
