@@ -152,8 +152,13 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () {
                       Navigator.pushNamed(context, '/register');
                     },
-                    child:
-                        const Text('Vous n\'avez pas de compte ? Créez-en un'),
+                    child: const Text(
+                      'Vous n\'avez pas de compte ? Créez-en un',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),

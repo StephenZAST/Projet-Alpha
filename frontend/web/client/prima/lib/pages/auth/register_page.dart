@@ -81,140 +81,137 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
-                  Image.asset('assets/AlphaLogo.png', height: 60),
-                  const SizedBox(height: 32),
-                  const Text(
-                    'Créer un compte',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray900,
-                    ),
-                    textAlign: TextAlign.center,
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
+                Image.asset('assets/AlphaLogo.png', height: 60),
+                const SizedBox(height: 32),
+                const Text(
+                  'Créer un compte',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.gray900,
                   ),
-                  const SizedBox(height: 40),
-                  _buildTextField(
-                    controller: _firstNameController,
-                    label: 'Prénom',
-                    icon: Icons.person_outline,
-                    validator: (v) =>
-                        v?.isEmpty ?? true ? 'Champ requis' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _lastNameController,
-                    label: 'Nom de famille',
-                    icon: Icons.person_outline,
-                    validator: (v) =>
-                        v?.isEmpty ?? true ? 'Champ requis' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _emailController,
-                    label: 'Adresse email',
-                    icon: Icons.email_outlined,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) {
-                      if (v?.isEmpty ?? true) return 'Champ requis';
-                      if (!v!.contains('@')) return 'Email invalide';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _passwordController,
-                    label: 'Mot de passe',
-                    icon: Icons.lock_outline,
-                    obscureText: true,
-                    suffix: IconButton(
-                      icon: Icon(_obscurePassword
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+                _buildTextField(
+                  controller: _firstNameController,
+                  label: 'Prénom',
+                  icon: Icons.person_outline,
+                  validator: (v) => v?.isEmpty ?? true ? 'Champ requis' : null,
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: _lastNameController,
+                  label: 'Nom de famille',
+                  icon: Icons.person_outline,
+                  validator: (v) => v?.isEmpty ?? true ? 'Champ requis' : null,
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: _emailController,
+                  label: 'Adresse email',
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (v) {
+                    if (v?.isEmpty ?? true) return 'Champ requis';
+                    if (!v!.contains('@')) return 'Email invalide';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: _passwordController,
+                  label: 'Mot de passe',
+                  icon: Icons.lock_outline,
+                  obscureText: _obscurePassword,
+                  suffix: IconButton(
+                    icon: Icon(
+                      _obscurePassword
                           ? Icons.visibility_off
-                          : Icons.visibility),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
+                          : Icons.visibility,
+                      color: AppColors.gray600,
                     ),
-                    validator: (v) {
-                      if (v?.isEmpty ?? true) return 'Champ requis';
-                      if (v!.length < 6) return 'Minimum 6 caractères';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _phoneController,
-                    label: 'Numéro de téléphone', // Supprimé "(optionnel)"
-                    icon: Icons.phone_outlined,
-                    keyboardType: TextInputType.phone,
-                    validator: (v) {
-                      if (v?.isEmpty ?? true) {
-                        return 'Numéro de téléphone requis'; // Nouveau message d'erreur
-                      }
-                      // Validation du format de numéro de téléphone
-                      if (!RegExp(r'^\+?[\d\s-]{9,}$').hasMatch(v!)) {
-                        return 'Format de numéro invalide';
-                      }
-                      return null;
-                    },
-                    helperText: 'Ex: +225 0708090102', // Aide pour le format
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _affiliateCodeController,
-                    label: 'Code affilié (optionnel)',
-                    icon: Icons.group_outlined,
-                    helperText: 'Si vous avez été parrainé',
-                  ),
-                  const SizedBox(height: 32),
-                  SpringButton(
-                    SpringButtonType.OnlyScale,
-                    Container(
-                      width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Center(
-                        child: _isSubmitting
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
-                                ),
-                              )
-                            : const Text(
-                                'Créer un compte',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ),
-                    ),
-                    onTap: _isSubmitting ? null : _register,
-                    useCache: false,
-                    scaleCoefficient: 0.9,
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
                     onPressed: () =>
-                        Navigator.pushReplacementNamed(context, '/login'),
-                    child: const Text('Déjà un compte ? Se connecter'),
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                ],
-              ),
+                  validator: (v) {
+                    if (v?.isEmpty ?? true) return 'Champ requis';
+                    if (v!.length < 6) return 'Minimum 6 caractères';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: _phoneController,
+                  label: 'Numéro de téléphone',
+                  icon: Icons.phone_outlined,
+                  keyboardType: TextInputType.phone,
+                  validator: (v) => v?.isEmpty ?? true ? 'Champ requis' : null,
+                  helperText: 'Ex: +225 0708090102',
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: _affiliateCodeController,
+                  label: 'Code affilié (optionnel)',
+                  icon: Icons.group_outlined,
+                  helperText: 'Si vous avez été parrainé',
+                ),
+                const SizedBox(height: 32),
+                SpringButton(
+                  SpringButtonType.OnlyScale,
+                  Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [AppColors.primaryShadow],
+                    ),
+                    child: Center(
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Créer un compte',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                  onTap: _isSubmitting ? null : _register,
+                  useCache: false,
+                  scaleCoefficient: 0.9,
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () =>
+                      Navigator.pushReplacementNamed(context, '/login'),
+                  child: const Text(
+                    'Déjà un compte ? Se connecter',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -234,16 +231,23 @@ class _RegisterPageState extends State<RegisterPage> {
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: obscureText && _obscurePassword,
+      obscureText: obscureText,
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(
-            fontStyle: FontStyle.italic, fontWeight: FontWeight.bold),
+          fontStyle: FontStyle.italic,
+          fontWeight: FontWeight.bold,
+          color: AppColors.gray600,
+        ),
         prefixIcon: Icon(icon, color: AppColors.gray600),
         suffixIcon: suffix,
         helperText: helperText,
+        helperStyle: TextStyle(
+          color: AppColors.gray600,
+          fontSize: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.gray200),
@@ -254,10 +258,12 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).primaryColor),
+          borderSide: BorderSide(color: AppColors.primary),
         ),
         filled: true,
         fillColor: AppColors.gray50,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
