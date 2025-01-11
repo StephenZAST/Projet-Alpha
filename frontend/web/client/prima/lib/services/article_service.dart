@@ -39,17 +39,26 @@ class ArticleService {
   // Ajout de la méthode getServices
   Future<List<Service>> getServices() async {
     try {
+      print('Making API call to get services...');
       final response = await _dio.get('/api/services/all');
+      // Corriger l'appel print pour éviter l'erreur d'arguments
+      print('Services API response: ${response.data}'); // Modification ici
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? [];
-        // Correction du typage avec .map()
-        return data
-            .map((json) => Service.fromJson(json as Map<String, dynamic>))
-            .toList();
+        return data.map((json) {
+          try {
+            return Service.fromJson(json as Map<String, dynamic>);
+          } catch (e) {
+            print('Error parsing service: $e');
+            print('Service data: $json');
+            rethrow;
+          }
+        }).toList();
       }
       throw Exception('Failed to load services');
     } catch (e) {
-      print('Error loading services: $e');
+      print('Error in getServices: $e');
       throw Exception('Error loading services: $e');
     }
   }

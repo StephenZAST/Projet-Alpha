@@ -22,7 +22,7 @@ class NewOrderBottomSheet extends StatefulWidget {
 }
 
 class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
   int _currentStep = 0;
 
@@ -42,15 +42,22 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
       initialIndex: 0,
     );
     _tabController.addListener(() {
-      setState(() {
-        _currentStep = _tabController.index;
-      });
+      if (mounted) {
+        setState(() {
+          _currentStep = _tabController.index;
+        });
+      }
     });
 
-    // Charger les services au démarrage
-    final articleProvider = context.read<ArticleProvider>();
-    articleProvider.loadServices();
+    // Chargement immédiat des services
+    Future.microtask(() {
+      if (mounted) {
+        context.read<ArticleProvider>().loadServices();
+      }
+    });
   }
+
+  // Supprimer didChangeDependencies car nous chargeons déjà dans initState
 
   @override
   void dispose() {
@@ -119,38 +126,146 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
   Widget _buildServiceSelection() {
     return Consumer<ArticleProvider>(
       builder: (context, provider, _) {
-        if (provider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+        print('Building service selection. Loading: ${provider.isLoading}');
+        print('Services count: ${provider.services.length}');
 
-        // Utiliser le getter services au lieu de getServices()
-        final services = provider.services;
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: services.length,
-          itemBuilder: (context, index) {
-            final service = services[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListTile(
-                title: Text(service.name),
-                subtitle: Text('\$${service.price}'),
-                trailing: Radio<String>(
-                  value: service.id,
-                  groupValue: _selectedServiceId,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedServiceId = value;
-                      _selectedService = service;
-                    });
-                  },
-                ),
-              ),
-            );
-          },
-        );
+        return provider.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : provider.services.isEmpty
+                ? _buildEmptyServicesView(provider)
+                : _buildServicesList(provider.services);
       },
+    );
+  }
+
+  Widget _buildEmptyServicesView(ArticleProvider provider) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Aucun service disponible',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => provider.loadServices(),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Réessayer'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServicesList(List<Service> services) {
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await context.read<ArticleProvider>().loadServices();
+            },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: services.length,
+              itemBuilder: (context, index) {
+                final service = services[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      setState(() {
+                        _selectedServiceId = service.id;
+                        _selectedService = service;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _selectedServiceId == service.id
+                              ? AppColors.primary
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  service.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Radio<String>(
+                                value: service.id,
+                                groupValue: _selectedServiceId,
+                                activeColor: AppColors.primary,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedServiceId = value;
+                                    _selectedService = service;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                          if (service.description != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              service.description!,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          Text(
+                            'Prix: \$${service.price.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        if (_selectedService != null)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: _buildNextButton(
+              onNext: () {
+                _fetchArticles();
+                _tabController.animateTo(1);
+              },
+            ),
+          ),
+      ],
     );
   }
 
@@ -354,5 +469,49 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
       }
     }
     return total;
+  }
+
+  Future<void> _fetchArticles() async {
+    try {
+      final articleProvider = context.read<ArticleProvider>();
+      await articleProvider.loadCategories();
+      if (articleProvider.categories.isNotEmpty) {
+        for (var category in articleProvider.categories) {
+          await articleProvider.loadArticlesForCategory(category.id);
+        }
+      }
+      _tabController
+          .animateTo(1); // Passer à l'onglet suivant après le chargement
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement des articles: $e')),
+      );
+    }
+  }
+
+  Widget _buildNextButton({required VoidCallback onNext}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ElevatedButton(
+        onPressed: onNext,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          elevation: 3,
+        ),
+        child: const Text(
+          'Suivant',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
   }
 }

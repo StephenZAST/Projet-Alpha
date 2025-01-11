@@ -39,11 +39,16 @@ class ArticleProvider extends ChangeNotifier {
   // Chargement des services
   Future<void> loadServices() async {
     try {
+      print('Starting to load services...');
       _setLoading(true);
       final fetchedServices = await _articleService.getServices();
+      print('Fetched ${fetchedServices.length} services');
+
+      // Remplacer setState par une mise à jour directe
       _services = fetchedServices;
-      notifyListeners();
+      notifyListeners(); // Notifier directement ici
     } catch (e) {
+      print('Error loading services: $e');
       _setError('Erreur lors du chargement des services: $e');
     } finally {
       _setLoading(false);
