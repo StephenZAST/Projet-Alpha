@@ -58,6 +58,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final authDataProvider = AuthDataProviderImpl(prefs);
+  final profileDataProvider = ProfileDataProviderImpl(prefs);
   final dio = Dio(BaseOptions(
     baseUrl: 'http://localhost:3001',
     headers: {
@@ -66,7 +67,7 @@ void main() async {
     },
   ));
 
-  final store = createStore(dio, authDataProvider);
+  final store = createStore(dio, authDataProvider, profileDataProvider);
 
   runApp(MyApp(store: store));
 }

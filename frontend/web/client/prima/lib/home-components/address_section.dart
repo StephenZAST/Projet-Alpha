@@ -1,31 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:prima/models/address.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/utils/bottom_sheet_manager.dart';
+import 'package:redux/redux.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:prima/widgets/address_bottom_sheet.dart';
 import 'package:prima/widgets/address_list_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/providers/address_provider.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:prima/redux/store.dart';
+import 'package:prima/redux/actions/address_actions.dart';
 
 class AddressSectionComponent extends StatelessWidget {
   const AddressSectionComponent({Key? key}) : super(key: key);
 
-  void _showAddressBottomSheet(BuildContext context) {
-    // Utiliser BottomSheetManager au lieu de showModalBottomSheet
-    BottomSheetManager().showCustomBottomSheet(
-      context: context,
-      isDismissible: true,
-      builder: (context) => const AddressListBottomSheet(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Consumer<AddressProvider>(
-      builder: (context, addressProvider, child) {
-        final selectedAddress = addressProvider.selectedAddress;
-
+    return StoreConnector<AppState, _ViewModel>(
+      onInit: (store) => store.dispatch(LoadAddressesAction()),
+      converter: (store) => _ViewModel.fromStore(store),
+      builder: (context, vm) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
@@ -49,14 +45,11 @@ class AddressSectionComponent extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          color: AppColors.labelColor,
-                          size: 24,
-                        ),
+                        Icon(Icons.location_on_outlined,
+                            color: AppColors.labelColor),
                         const SizedBox(width: 12),
                         Text(
-                          selectedAddress?.name ?? 'Ajouter une adresse',
+                          vm.selectedAddress?.name ?? 'Ajouter une adresse',
                           style: TextStyle(
                             color: AppColors.labelColor,
                             fontSize: 16,
@@ -90,6 +83,29 @@ class AddressSectionComponent extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  void _showAddressBottomSheet(BuildContext context) {
+    // Utiliser BottomSheetManager au lieu de showModalBottomSheet
+    BottomSheetManager().showCustomBottomSheet(
+      context: context,
+      isDismissible: true,
+      builder: (context) => const AddressListBottomSheet(),
+    );
+  }
+}
+
+class _ViewModel {
+  final Address? selectedAddress;
+
+  _ViewModel({
+    this.selectedAddress,
+  });
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    return _ViewModel(
+      selectedAddress: store.state.addressState.selectedAddress,
     );
   }
 }

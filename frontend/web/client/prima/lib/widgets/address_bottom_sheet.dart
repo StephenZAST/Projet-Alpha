@@ -13,6 +13,9 @@ import 'package:spring_button/spring_button.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:prima/redux/store.dart';
+import 'package:prima/redux/actions/address_actions.dart';
 
 class AddressBottomSheet extends StatefulWidget {
   final Address? address;
@@ -569,41 +572,35 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
 
   Future<void> _saveAddress() async {
     if (_validateForm()) {
-      setState(() => _isLoading = true);
-      try {
-        final addressProvider = context.read<AddressProvider>();
-        if (widget.address != null) {
-          await addressProvider.updateAddress(
-            id: widget.address!.id,
-            name: _addressNameController.text,
-            street: _streetController.text,
-            city: _cityController.text,
-            postalCode: _postalCodeController.text,
-            latitude: _selectedLocation?.latitude,
-            longitude: _selectedLocation?.longitude,
-            isDefault: widget.address!.isDefault,
-          );
-        } else {
-          await addressProvider.addAddress(
-            name: _addressNameController.text,
-            street: _streetController.text,
-            city: _cityController.text,
-            postalCode: _postalCodeController.text,
-            latitude: _selectedLocation?.latitude,
-            longitude: _selectedLocation?.longitude,
-            isDefault: false,
-          );
-        }
-        Navigator.pop(context);
-        BottomSheetManager().showCustomBottomSheet(
-          context: context,
-          builder: (context) => const AddressListBottomSheet(),
-        );
-      } catch (e) {
-        _showErrorSnackBar('Erreur lors de l\'enregistrement');
-      } finally {
-        setState(() => _isLoading = false);
+      final store = StoreProvider.of<AppState>(context);
+
+      if (widget.address != null) {
+        store.dispatch(UpdateAddressAction(
+          id: widget.address!.id,
+          name: _addressNameController.text,
+          street: _streetController.text,
+          city: _cityController.text,
+          postalCode: _postalCodeController.text,
+          latitude: _selectedLocation?.latitude,
+          longitude: _selectedLocation?.longitude,
+          isDefault: widget.address!.isDefault,
+        ));
+      } else {
+        store.dispatch(AddAddressAction(
+          name: _addressNameController.text,
+          street: _streetController.text,
+          city: _cityController.text,
+          postalCode: _postalCodeController.text,
+          latitude: _selectedLocation?.latitude,
+          longitude: _selectedLocation?.longitude,
+        ));
       }
+
+      Navigator.pop(context);
+      BottomSheetManager().showCustomBottomSheet(
+        context: context,
+        builder: (context) => const AddressListBottomSheet(),
+      );
     }
   }
 

@@ -9,32 +9,35 @@ class AddressCard extends StatelessWidget {
   final Address address;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onTap; // Ajout du paramètre onTap
 
   const AddressCard({
     Key? key,
     required this.address,
     this.onEdit,
     this.onDelete,
+    this.onTap, // Ajout dans le constructeur
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.primary, // Changed background color to blue
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2), // Increased shadow opacity
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: SpringButton(
-        SpringButtonType.OnlyScale,
-        Padding(
+    return InkWell(
+      // Ajout de InkWell pour gérer le tap
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primary, // Changed background color to blue
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2), // Increased shadow opacity
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
@@ -146,10 +149,6 @@ class AddressCard extends StatelessWidget {
             ],
           ),
         ),
-        onTap: () {
-          context.read<AddressProvider>().selectAddress(address);
-          Navigator.pop(context);
-        },
       ),
     );
   }

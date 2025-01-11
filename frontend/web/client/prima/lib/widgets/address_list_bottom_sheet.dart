@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:prima/models/address.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/utils/bottom_sheet_manager.dart';
 import 'package:prima/widgets/address_bottom_sheet.dart';
 import 'package:prima/widgets/address_card.dart';
 import 'package:prima/providers/address_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:redux/redux.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:prima/redux/store.dart';
+import 'package:prima/redux/actions/address_actions.dart';
 
 class AddressListBottomSheet extends StatelessWidget {
   const AddressListBottomSheet({Key? key}) : super(key: key);
@@ -18,99 +23,101 @@ class AddressListBottomSheet extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Stack(
-        children: [
-          Column(
+      child: StoreConnector<AppState, _ViewModel>(
+        converter: (store) => _ViewModel.fromStore(store),
+        builder: (context, vm) {
+          return Stack(
             children: [
-              _buildHeader(context),
-              Expanded(
-                child: Consumer<AddressProvider>(
-                  builder: (context, addressProvider, child) {
-                    if (addressProvider.addresses.isEmpty) {
-                      return _buildEmptyState(context);
-                    }
-                    return ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                      itemCount: addressProvider.addresses.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final address = addressProvider.addresses[index];
-                        return Dismissible(
-                          key: Key(address.id),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 24),
-                            child: Icon(
-                              Icons.delete_outline,
-                              color: AppColors.error,
-                              size: 24,
-                            ),
-                          ),
-                          confirmDismiss: (direction) async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Supprimer l\'adresse'),
-                                content: const Text(
-                                    'Êtes-vous sûr de vouloir supprimer cette adresse ?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: const Text('Annuler'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    child: Text(
-                                      'Supprimer',
-                                      style: TextStyle(color: AppColors.error),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                            return confirm ?? false;
-                          },
-                          onDismissed: (direction) async {
-                            await addressProvider.deleteAddress(address.id);
-                          },
-                          child: AddressCard(
-                            address: address,
-                            onEdit: () {
-                              Navigator.pop(context);
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => AddressBottomSheet(
-                                  address: address,
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+              Column(
+                children: [
+                  _buildHeader(context),
+                  Expanded(
+                    child: vm.addresses.isEmpty
+                        ? _buildEmptyState(context)
+                        : _buildAddressList(context, vm),
+                  ),
+                ],
+              ),
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: _buildAddButton(context),
               ),
             ],
-          ),
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: _buildAddButton(context),
-          ),
-        ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildAddressList(BuildContext context, _ViewModel vm) {
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      itemCount: vm.addresses.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final address = vm.addresses[index];
+        return Dismissible(
+          key: Key(address.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 24),
+            child: Icon(
+              Icons.delete_outline,
+              color: AppColors.error,
+              size: 24,
+            ),
+          ),
+          confirmDismiss: (direction) async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Supprimer l\'adresse'),
+                content: const Text(
+                    'Êtes-vous sûr de vouloir supprimer cette adresse ?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Annuler'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(
+                      'Supprimer',
+                      style: TextStyle(color: AppColors.error),
+                    ),
+                  ),
+                ],
+              ),
+            );
+            return confirm ?? false;
+          },
+          onDismissed: (direction) {
+            StoreProvider.of<AppState>(context).dispatch(
+              DeleteAddressAction(address.id),
+            );
+          },
+          child: AddressCard(
+            address: address,
+            onTap: () {
+              StoreProvider.of<AppState>(context).dispatch(
+                SelectAddressAction(address),
+              );
+              Navigator.pop(context);
+            },
+            onEdit: () {
+              Navigator.pop(context);
+              _showAddressBottomSheet(context, address);
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -226,7 +233,7 @@ class AddressListBottomSheet extends StatelessWidget {
     );
   }
 
-  void _showAddressBottomSheet(BuildContext context) {
+  void _showAddressBottomSheet(BuildContext context, [Address? address]) {
     // D'abord fermer le bottom sheet actuel
     Navigator.pop(context);
 
@@ -234,6 +241,7 @@ class AddressListBottomSheet extends StatelessWidget {
     BottomSheetManager().showCustomBottomSheet(
       context: context,
       builder: (context) => AddressBottomSheet(
+        address: address,
         onBack: () {
           // Lors du retour, fermer le bottom sheet d'ajout d'adresse
           Navigator.pop(context);
@@ -244,6 +252,26 @@ class AddressListBottomSheet extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _ViewModel {
+  final List<Address> addresses;
+  final bool isLoading;
+  final String? error;
+
+  _ViewModel({
+    required this.addresses,
+    required this.isLoading,
+    this.error,
+  });
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    return _ViewModel(
+      addresses: store.state.addressState.addresses,
+      isLoading: store.state.addressState.isLoading,
+      error: store.state.addressState.error,
     );
   }
 }
