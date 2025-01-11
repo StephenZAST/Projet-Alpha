@@ -3,7 +3,11 @@ import 'package:prima/providers/article_provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/widgets/order_bottom_sheet.dart';
 import 'package:provider/provider.dart';
+import 'package:redux/redux.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:prima/redux/store.dart';
+import 'package:prima/redux/actions/article_actions.dart';
 
 class ArticleSelectionView extends StatefulWidget {
   final Function(Map<String, int>) onArticlesSelected;
@@ -28,12 +32,11 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
   void initState() {
     super.initState();
     _selectedArticles = Map.from(widget.initialSelection);
-    final articleProvider = context.read<ArticleProvider>();
-    articleProvider.loadCategories();
-    _tabController = TabController(
-      length: articleProvider.categories.length,
-      vsync: this,
-    );
+
+    // Charger les catégories au démarrage
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      StoreProvider.of<AppState>(context).dispatch(LoadCategoriesAction());
+    });
   }
 
   @override
@@ -44,17 +47,24 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ArticleProvider>(
-      builder: (context, provider, child) {
-        if (provider.isLoading) {
+    return StoreConnector<AppState, _ViewModel>(
+      converter: (store) => _ViewModel.fromStore(store),
+      onInit: (store) {
+        _tabController = TabController(
+          length: store.state.articleState.categories.length,
+          vsync: this,
+        );
+      },
+      builder: (context, vm) {
+        if (vm.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (provider.error != null) {
-          return Center(child: Text('Error: ${provider.error}'));
+        if (vm.error != null) {
+          return Center(child: Text('Error: ${vm.error}'));
         }
 
-        if (provider.categories.isEmpty) {
+        if (vm.categories.isEmpty) {
           return const Center(child: Text('Aucune catégorie disponible'));
         }
 
@@ -65,15 +75,15 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
               isScrollable: true,
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.gray500,
-              tabs: provider.categories
+              tabs: vm.categories
                   .map((category) => Tab(text: category.name))
                   .toList(),
             ),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: provider.categories.map((category) {
-                  return _buildCategoryArticles(category, provider);
+                children: vm.categories.map((category) {
+                  return _buildCategoryArticles(category, vm);
                 }).toList(),
               ),
             ),
@@ -83,12 +93,12 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
     );
   }
 
-  Widget _buildCategoryArticles(
-      ArticleCategory category, ArticleProvider provider) {
-    final articles = provider.getArticlesForCategory(category.id);
+  Widget _buildCategoryArticles(ArticleCategory category, _ViewModel vm) {
+    final articles = vm.getArticlesForCategory(category.id);
 
     if (articles.isEmpty) {
-      provider.loadArticlesForCategory(category.id);
+      StoreProvider.of<AppState>(context)
+          .dispatch(LoadArticlesByCategoryAction(category.id));
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -163,5 +173,32 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
 
       widget.onArticlesSelected(_selectedArticles);
     });
+  }
+}
+
+class _ViewModel {
+  final List<ArticleCategory> categories;
+  final Map<String, List<Article>> articlesByCategory;
+  final bool isLoading;
+  final String? error;
+
+  _ViewModel({
+    required this.categories,
+    required this.articlesByCategory,
+    required this.isLoading,
+    this.error,
+  });
+
+  List<Article> getArticlesForCategory(String categoryId) {
+    return articlesByCategory[categoryId] ?? [];
+  }
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    return _ViewModel(
+      categories: store.state.articleState.categories,
+      articlesByCategory: store.state.articleState.articlesByCategory,
+      isLoading: store.state.articleState.isLoading,
+      error: store.state.articleState.error,
+    );
   }
 }

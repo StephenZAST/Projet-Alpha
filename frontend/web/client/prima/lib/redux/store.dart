@@ -12,27 +12,34 @@ import 'package:dio/dio.dart';
 import 'middleware/auth_middleware.dart';
 import 'middleware/profile_middleware.dart';
 import 'middleware/address_middleware.dart';
+import 'states/article_state.dart';
+import 'reducers/article_reducer.dart';
+import 'middleware/article_middleware.dart';
 
 class AppState {
   final AuthState authState;
   final ProfileState profileState;
   final AddressState addressState;
+  final ArticleState articleState;
 
   AppState({
     required this.authState,
     required this.profileState,
     required this.addressState,
+    required this.articleState,
   });
 
   AppState copyWith({
     AuthState? authState,
     ProfileState? profileState,
     AddressState? addressState,
+    ArticleState? articleState,
   }) {
     return AppState(
       authState: authState ?? this.authState,
       profileState: profileState ?? this.profileState,
       addressState: addressState ?? this.addressState,
+      articleState: articleState ?? this.articleState,
     );
   }
 }
@@ -42,6 +49,7 @@ AppState appReducer(AppState state, dynamic action) {
     authState: authReducer(state.authState, action),
     profileState: profileReducer(state.profileState, action),
     addressState: addressReducer(state.addressState, action),
+    articleState: articleReducer(state.articleState, action),
   );
 }
 
@@ -53,6 +61,7 @@ Store<AppState> createStore(
   final authMiddleware = AuthMiddleware(dio, authDataProvider);
   final profileMiddleware = ProfileMiddleware(dio, profileDataProvider);
   final addressMiddleware = AddressMiddleware(dio);
+  final articleMiddleware = ArticleMiddleware(dio);
 
   return Store<AppState>(
     appReducer,
@@ -60,12 +69,14 @@ Store<AppState> createStore(
       authState: AuthState(),
       profileState: ProfileState(),
       addressState: AddressState(),
+      articleState: ArticleState(),
     ),
     middleware: [
       thunkMiddleware,
       ...authMiddleware.createMiddleware(),
       ...profileMiddleware.createMiddleware(),
       ...addressMiddleware.createMiddleware(),
+      ...articleMiddleware.createMiddleware(),
     ],
   );
 }
