@@ -15,18 +15,24 @@ import 'middleware/address_middleware.dart';
 import 'states/article_state.dart';
 import 'reducers/article_reducer.dart';
 import 'middleware/article_middleware.dart';
+import 'states/service_state.dart';
+import 'reducers/service_reducer.dart';
+import 'middleware/service_middleware.dart';
+import '../services/article_service.dart';
 
 class AppState {
   final AuthState authState;
   final ProfileState profileState;
   final AddressState addressState;
   final ArticleState articleState;
+  final ServiceState serviceState;
 
   AppState({
     required this.authState,
     required this.profileState,
     required this.addressState,
     required this.articleState,
+    required this.serviceState,
   });
 
   AppState copyWith({
@@ -34,12 +40,14 @@ class AppState {
     ProfileState? profileState,
     AddressState? addressState,
     ArticleState? articleState,
+    ServiceState? serviceState,
   }) {
     return AppState(
       authState: authState ?? this.authState,
       profileState: profileState ?? this.profileState,
       addressState: addressState ?? this.addressState,
       articleState: articleState ?? this.articleState,
+      serviceState: serviceState ?? this.serviceState,
     );
   }
 }
@@ -50,6 +58,7 @@ AppState appReducer(AppState state, dynamic action) {
     profileState: profileReducer(state.profileState, action),
     addressState: addressReducer(state.addressState, action),
     articleState: articleReducer(state.articleState, action),
+    serviceState: serviceReducer(state.serviceState, action),
   );
 }
 
@@ -61,7 +70,9 @@ Store<AppState> createStore(
   final authMiddleware = AuthMiddleware(dio, authDataProvider);
   final profileMiddleware = ProfileMiddleware(dio, profileDataProvider);
   final addressMiddleware = AddressMiddleware(dio);
-  final articleMiddleware = ArticleMiddleware(dio);
+  final articleService = ArticleService(dio);
+  final articleMiddleware = ArticleMiddleware(articleService);
+  final serviceMiddleware = ServiceMiddleware(dio);
 
   return Store<AppState>(
     appReducer,
@@ -70,6 +81,7 @@ Store<AppState> createStore(
       profileState: ProfileState(),
       addressState: AddressState(),
       articleState: ArticleState(),
+      serviceState: ServiceState(),
     ),
     middleware: [
       thunkMiddleware,
@@ -77,6 +89,7 @@ Store<AppState> createStore(
       ...profileMiddleware.createMiddleware(),
       ...addressMiddleware.createMiddleware(),
       ...articleMiddleware.createMiddleware(),
+      ...serviceMiddleware.createMiddleware(),
     ],
   );
 }
