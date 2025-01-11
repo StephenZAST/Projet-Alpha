@@ -44,55 +44,51 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        return MaterialApp(
-          title: 'ZS Laundry',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            fontFamily: 'SourceSansPro',
-            colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-            useMaterial3: true,
-          ),
-          initialRoute: authProvider.isAuthenticated ? '/' : '/login',
-          routes: {
-            '/': (context) => const MainNavigationWrapper(),
-            '/login': (context) => const LoginPage(),
-            '/register': (context) => const RegisterPage(),
-            '/reset_password': (context) => const ResetPasswordPage(),
-          },
-          onGenerateRoute: (settings) {
-            // Protection des routes qui nécessitent une authentification
-            if (!authProvider.isAuthenticated &&
-                settings.name != '/login' &&
-                settings.name != '/register') {
-              return MaterialPageRoute(
-                builder: (_) => const LoginPage(),
-              );
-            }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authProvider = ref.watch(authProviderProvider);
+    return MaterialApp(
+      title: 'ZS Laundry',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: 'SourceSansPro',
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+        useMaterial3: true,
+      ),
+      initialRoute: authProvider.isAuthenticated ? '/' : '/login',
+      routes: {
+        '/': (context) => const MainNavigationWrapper(),
+        '/login': (context) => const LoginPage(),
+        '/register': (context) => const RegisterPage(),
+        '/reset_password': (context) => const ResetPasswordPage(),
+      },
+      onGenerateRoute: (settings) {
+        // Protection des routes qui nécessitent une authentification
+        if (!authProvider.isAuthenticated &&
+            settings.name != '/login' &&
+            settings.name != '/register') {
+          return MaterialPageRoute(
+            builder: (_) => const LoginPage(),
+          );
+        }
 
-            // Routes principales et secondaires
-            switch (settings.name) {
-              case '/notifications':
-                return MaterialPageRoute(
-                    builder: (_) => const NotificationsPage());
-              case '/orders':
-                return MaterialPageRoute(builder: (_) => const OrdersPage());
-              case '/referral':
-                return MaterialPageRoute(builder: (_) => const ReferralPage());
-              case '/settings':
-                return MaterialPageRoute(builder: (_) => const SettingsPage());
-              default:
-                return MaterialPageRoute(
-                    builder: (_) => const MainNavigationWrapper());
-            }
-          },
-        );
+        // Routes principales et secondaires
+        switch (settings.name) {
+          case '/notifications':
+            return MaterialPageRoute(builder: (_) => const NotificationsPage());
+          case '/orders':
+            return MaterialPageRoute(builder: (_) => const OrdersPage());
+          case '/referral':
+            return MaterialPageRoute(builder: (_) => const ReferralPage());
+          case '/settings':
+            return MaterialPageRoute(builder: (_) => const SettingsPage());
+          default:
+            return MaterialPageRoute(
+                builder: (_) => const MainNavigationWrapper());
+        }
       },
     );
   }

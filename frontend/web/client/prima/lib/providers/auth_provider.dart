@@ -10,9 +10,9 @@ import 'package:prima/models/address.dart';
 import 'package:prima/providers/address_provider.dart';
 import 'package:prima/providers/auth_data_provider.dart';
 import 'package:prima/providers/profile_data_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthDataProvider _authDataProvider;
@@ -164,8 +164,7 @@ class AuthProvider extends ChangeNotifier {
         // Ne charger que les adresses de l'utilisateur connecté
         if (_context != null) {
           try {
-            final addressProvider =
-                Provider.of<AddressProvider>(_context!, listen: false);
+            final addressProvider = ref.read(addressProviderProvider);
             final userAddresses = userData['addresses'] as List<dynamic>;
             final filteredAddresses = userAddresses
                 .where((addr) => addr['user_id'] == _user!['id'])
@@ -180,7 +179,7 @@ class AuthProvider extends ChangeNotifier {
                 .toList();
 
             // Utiliser la méthode setAddresses de AddressProvider pour mettre à jour les adresses
-            addressProvider.setAddresses(_context!, addressList);
+            _setAddressesAfterLogin(ref, addressList);
           } catch (e) {
             print('Error setting addresses after login: $e');
           }
@@ -316,4 +315,45 @@ class AuthProvider extends ChangeNotifier {
     _token = token;
     notifyListeners();
   }
+
+  void _setAddressesAfterLogin(WidgetRef ref, List<dynamic> addresses) async {
+    if (_user != null) {
+      try {
+        final addressProvider = ref.read(addressProviderProvider);
+        final filteredAddresses =
+            addresses.where((addr) => addr['user_id'] == _user!['id']).toList();
+
+        await _profileDataProvider
+            .saveUserAddresses(filteredAddresses.cast<Map<String, dynamic>>());
+
+        // Convertir la liste filtrée en une liste d'objets Address
+        List<Address> addressList =
+            filteredAddresses.map((addr) => Address.fromJson(addr)).toList();
+
+        // Utiliser la méthode setAddresses de AddressProvider pour mettre à jour les adresses
+        addressProvider.setAddresses(addressList);
+      } catch (e) {
+        print('Error setting addresses after login: $e');
+      }
+    }
+  }
 }
+
+final authProviderProvider = ChangeNotifierProvider<AuthProvider>((ref) {
+  final prefs = ref.read(sharedPreferencesProvider);
+  final authDataProvider = AuthDataProviderImpl(prefs);
+  final profileDataProvider = ProfileDataProviderImpl(prefs);
+  return AuthProvider(
+    authDataProvider: authDataProvider,
+    profileDataProvider: profileDataProvider,
+    prefs: prefs,
+  );
+});
+
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  return SharedPreferences.getInstance() as SharedPreferences;
+});
+final addressProviderProvider = ChangeNotifierProvider<AddressProvider>((ref) {
+  final authProvider = ref.read(authProviderProvider);
+  return AddressProvider(authProvider);
+});

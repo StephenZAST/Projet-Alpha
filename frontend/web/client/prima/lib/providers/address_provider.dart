@@ -158,3 +158,11 @@ class AddressProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+final addressProviderProvider = Provider<AddressProvider>(
+  (ref) {
+    final authProvider = ref.read(authProviderProvider);
+    return AddressProvider(authProvider);
+  },
+  create: (BuildContext context) {},
+);
