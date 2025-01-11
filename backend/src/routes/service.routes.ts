@@ -7,10 +7,9 @@ const router = express.Router();
 
 // Public routes
 router.post('/create', asyncHandler(ServiceController.createService));
-
+router.get('/all', asyncHandler(ServiceController.getAllServices));
 
 // Admin routes
-router.get('/all', asyncHandler(ServiceController.getAllServices));
 router.use(authenticateToken as express.RequestHandler);
 router.patch('/update/:serviceId', authorizeRoles(['SUPER_ADMIN', 'ADMIN']) as express.RequestHandler, asyncHandler(ServiceController.updateService));
 router.patch('/update/:serviceId', authorizeRoles(['SUPER_ADMIN', 'ADMIN']) as express.RequestHandler, asyncHandler(ServiceController.updateService));

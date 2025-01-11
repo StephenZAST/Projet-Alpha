@@ -16,9 +16,25 @@ export class ServiceController {
   static async getAllServices(req: Request, res: Response) {
     try {
       const services = await ServiceService.getAllServices();
-      res.json({ data: services });
+      const formattedServices = services.map(service => ({
+        id: service.id || '',
+        name: service.name || '',
+        price: service.price || 0,
+        description: service.description || null,
+        created_at: service.createdAt?.toISOString() || new Date().toISOString(), // Changé de created_at à createdAt
+        updated_at: service.updatedAt?.toISOString() || new Date().toISOString()  // Changé de updated_at à updatedAt
+      }));
+      
+      res.json({ 
+        success: true, 
+        data: formattedServices
+      });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error('Error in getAllServices:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to fetch services' 
+      });
     }
   }
 

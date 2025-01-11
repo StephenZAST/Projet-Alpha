@@ -1,0 +1,12 @@
+### 3. Vérifier la structure de la table service dans la base de données
+
+Assurez-vous que la colonne `price` est bien définie dans votre schéma de base de données et qu'elle a une valeur par défaut:
+
+model Service {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float    @default(0) // Ajouter une valeur par défaut
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}

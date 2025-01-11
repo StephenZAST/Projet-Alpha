@@ -25,14 +25,24 @@ class Service {
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
-    return Service(
-      id: json['id'],
-      name: json['name'],
-      price: json['price'].toDouble(),
-      description: json['description'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-    );
+    try {
+      return Service(
+        id: json['id'] ?? '',
+        name: json['name'] ?? '',
+        price: (json['price'] ?? 0).toDouble(),
+        description: json['description'],
+        createdAt: json['created_at'] != null
+            ? DateTime.parse(json['created_at'])
+            : DateTime.now(),
+        updatedAt: json['updated_at'] != null
+            ? DateTime.parse(json['updated_at'])
+            : DateTime.now(),
+      );
+    } catch (e) {
+      print('Error parsing service JSON: $json');
+      print('Error details: $e');
+      rethrow;
+    }
   }
 }
 
@@ -50,12 +60,22 @@ class ArticleCategory {
   });
 
   factory ArticleCategory.fromJson(Map<String, dynamic> json) {
-    return ArticleCategory(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      createdAt: DateTime.parse(json['createdAt']),
-    );
+    try {
+      print('Parsing category with data: $json'); // Ajout de log
+      return ArticleCategory(
+        id: json['id'] ?? '',
+        name: json['name'] ?? '',
+        description: json['description'],
+        createdAt:
+            json['created_at'] != null // Changé de createdAt à created_at
+                ? DateTime.parse(json['created_at'])
+                : DateTime.now(),
+      );
+    } catch (e, stack) {
+      print('Error parsing category: $e');
+      print('Stack trace: $stack');
+      rethrow;
+    }
   }
 }
 
@@ -81,16 +101,29 @@ class Article {
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
-    return Article(
-      id: json['id'],
-      categoryId: json['categoryId'],
-      name: json['name'],
-      description: json['description'],
-      basePrice: json['basePrice'].toDouble(),
-      premiumPrice: json['premiumPrice'].toDouble(),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-    );
+    try {
+      print('Parsing article with data: $json'); // Ajout de log
+      return Article(
+        id: json['id'] ?? '',
+        categoryId: json['categoryId'] ?? '',
+        name: json['name'] ?? '',
+        description: json['description'],
+        basePrice: (json['basePrice'] ?? 0).toDouble(),
+        premiumPrice: (json['premiumPrice'] ?? 0).toDouble(),
+        createdAt:
+            json['created_at'] != null // Changé de createdAt à created_at
+                ? DateTime.parse(json['created_at'])
+                : DateTime.now(),
+        updatedAt:
+            json['updated_at'] != null // Changé de updatedAt à updated_at
+                ? DateTime.parse(json['updated_at'])
+                : DateTime.now(),
+      );
+    } catch (e, stack) {
+      print('Error parsing article: $e');
+      print('Stack trace: $stack');
+      rethrow;
+    }
   }
 }
 
@@ -102,8 +135,9 @@ class OrderBottomSheet extends StatefulWidget {
 }
 
 class _OrderBottomSheetState extends State<OrderBottomSheet>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+    with TickerProviderStateMixin {
+  late TabController _mainTabController;
+  TabController? _articleTabController;
   List<Service> _services = [];
   List<ArticleCategory> _articleCategories = [];
   List<Article> _articles = [];
@@ -117,13 +151,20 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _fetchServices();
+    _mainTabController = TabController(length: 3, vsync: this);
+
+    print('Fetching services...');
+    _fetchServices().then((_) {
+      print('Services fetched: ${_services.length}');
+    }).catchError((error) {
+      print('Error fetching services: $error');
+    });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _mainTabController.dispose();
+    _articleTabController?.dispose();
     super.dispose();
   }
 
@@ -134,14 +175,35 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
     });
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final response = await authProvider.dio.get('/services/all');
+      print('Making API call to /services/all');
+      final response = await authProvider.dio.get('/api/services/all');
+      print('Response received: ${response.data}');
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        _services = data.map((e) => Service.fromJson(e)).toList();
+        final List<dynamic> data = response.data['data'] ?? [];
+        print('Raw data: $data'); // Ajoutez ce log
+
+        _services = data
+            .map((e) {
+              try {
+                print('Processing service data: $e'); // Ajoutez ce log
+                return Service.fromJson(e);
+              } catch (e, stack) {
+                print('Error parsing service: $e');
+                print('Stack trace: $stack');
+                return null;
+              }
+            })
+            .whereType<Service>()
+            .toList();
+
+        print('Services parsed: ${_services.length}');
       } else {
         _error = 'Failed to load services';
       }
-    } on DioException catch (e) {
+    } catch (e, stack) {
+      print('Exception details: $e');
+      print('Stack trace: $stack');
       _error = 'Connection error: $e';
     } finally {
       setState(() {
@@ -157,21 +219,70 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
     });
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final categoriesResponse =
-          await authProvider.dio.get('/article-categories/');
-      final articlesResponse = await authProvider.dio.get('/articles/');
-      if (categoriesResponse.statusCode == 200 &&
-          articlesResponse.statusCode == 200) {
-        final List<dynamic> categoriesData = categoriesResponse.data;
+
+      // Test d'abord la disponibilité des endpoints
+      print('Testing API endpoints...');
+      try {
+        final testResponse = await authProvider.dio.get('/api/articles');
+        print('Test response code: ${testResponse.statusCode}');
+        print('Test response full data: ${testResponse.data}');
+      } catch (e) {
+        print('Test request failed: $e');
+      }
+
+      // Récupération des données en série plutôt qu'en parallèle
+      try {
+        print('Fetching categories...');
+        final categoriesResponse =
+            await authProvider.dio.get('/api/article-categories');
+        print('Categories response: ${categoriesResponse.data}');
+
+        if (categoriesResponse.statusCode != 200) {
+          throw Exception(
+              'Failed to load categories: ${categoriesResponse.statusCode}');
+        }
+
+        final List<dynamic> categoriesData =
+            categoriesResponse.data['data'] ?? [];
         _articleCategories =
             categoriesData.map((e) => ArticleCategory.fromJson(e)).toList();
-        final List<dynamic> articlesData = articlesResponse.data;
+        print('Parsed ${_articleCategories.length} categories');
+
+        print('Fetching articles...');
+        final articlesResponse = await authProvider.dio.get('/api/articles');
+        print('Articles response: ${articlesResponse.data}');
+
+        if (articlesResponse.statusCode != 200) {
+          throw Exception(
+              'Failed to load articles: ${articlesResponse.statusCode}');
+        }
+
+        final List<dynamic> articlesData = articlesResponse.data['data'] ?? [];
         _articles = articlesData.map((e) => Article.fromJson(e)).toList();
-      } else {
-        _error = 'Failed to load articles or categories';
+        print('Parsed ${_articles.length} articles');
+
+        // Mise à jour du TabController seulement si nous avons des données
+        if (_articleCategories.isNotEmpty) {
+          setState(() {
+            _articleTabController?.dispose();
+            _articleTabController = TabController(
+              length: _articleCategories.length,
+              vsync: this,
+            );
+          });
+          print(
+              'Created tab controller with ${_articleCategories.length} tabs');
+        }
+      } catch (e) {
+        print('Data fetching error: $e');
+        throw e;
       }
-    } on DioException catch (e) {
-      _error = 'Connection error: $e';
+    } catch (e, stack) {
+      print('Top level error: $e');
+      print('Stack trace: $stack');
+      setState(() {
+        _error = 'Error loading data: $e';
+      });
     } finally {
       setState(() {
         _isLoading = false;
@@ -191,7 +302,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
         children: [
           _buildHeader(context),
           TabBar(
-            controller: _tabController,
+            controller: _mainTabController,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.gray500,
             indicator: BoxDecoration(
@@ -207,7 +318,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
           ),
           Expanded(
             child: TabBarView(
-              controller: _tabController,
+              controller: _mainTabController,
               children: [
                 _buildServiceSelectionTab(),
                 _buildArticleSelectionTab(),
@@ -261,34 +372,36 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
     } else if (_error != null) {
       return Center(child: Text('Error: $_error'));
     } else {
-      return Stack(
+      return Column(
         children: [
-          ListView.builder(
-            itemCount: _services.length,
-            itemBuilder: (context, index) {
-              final service = _services[index];
-              return ListTile(
-                title: Text(service.name),
-                subtitle: Text('\$${service.price}'),
-                selected: _selectedService == service,
-                selectedTileColor: AppColors.gray100,
-                onTap: () {
-                  setState(() {
-                    _selectedService = service;
-                  });
-                  log('Selected service: ${service.name}');
-                },
-              );
-            },
+          Expanded(
+            child: ListView.builder(
+              itemCount: _services.length,
+              itemBuilder: (context, index) {
+                final service = _services[index];
+                return ListTile(
+                  title: Text(service.name),
+                  subtitle: Text('\$${service.price}'),
+                  selected: _selectedService == service,
+                  selectedTileColor: AppColors.gray100,
+                  onTap: () {
+                    setState(() {
+                      _selectedService = service;
+                    });
+                    print('Selected service: ${service.name}');
+                  },
+                );
+              },
+            ),
           ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: _buildNextButton(onNext: () {
-              _fetchArticles();
-              _tabController.animateTo(1);
-            }),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildNextButton(
+              onNext: () {
+                _fetchArticles();
+                _mainTabController.animateTo(1);
+              },
+            ),
           ),
         ],
       );
@@ -300,103 +413,97 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
       return const Center(child: CircularProgressIndicator());
     } else if (_error != null) {
       return Center(child: Text('Error: $_error'));
+    } else if (_articleCategories.isEmpty) {
+      return const Center(child: Text('Aucune catégorie disponible'));
+    } else if (_articleTabController == null) {
+      return const Center(child: CircularProgressIndicator());
     } else {
-      return DefaultTabController(
-        length: _articleCategories.length,
-        child: Column(
-          children: [
-            TabBar(
-              isScrollable: true,
-              labelColor: AppColors.primary,
-              unselectedLabelColor: AppColors.gray500,
-              indicator: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [AppColors.primaryShadow],
-              ),
-              tabs: _articleCategories
-                  .map((category) => Tab(text: category.name))
-                  .toList(),
-            ),
-            Expanded(
-              child: TabBarView(
-                children: _articleCategories.map((category) {
-                  final articlesInCategory = _articles
-                      .where((article) => article.categoryId == category.id)
-                      .toList();
-                  return ListView.builder(
-                    itemCount: articlesInCategory.length,
-                    itemBuilder: (context, index) {
-                      final article = articlesInCategory[index];
-                      return ListTile(
-                        title: Text(article.name),
-                        subtitle: Text('\$${article.basePrice}'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SpringButton(
-                              SpringButtonType.OnlyScale,
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.gray100,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.remove, size: 16),
+      return Column(
+        children: [
+          TabBar(
+            controller: _articleTabController,
+            isScrollable: true,
+            labelColor: AppColors.primary,
+            unselectedLabelColor: AppColors.gray500,
+            tabs: _articleCategories
+                .map((category) => Tab(text: category.name))
+                .toList(),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _articleTabController,
+              children: _articleCategories.map((category) {
+                final articlesInCategory = _articles
+                    .where((article) => article.categoryId == category.id)
+                    .toList();
+                return ListView.builder(
+                  itemCount: articlesInCategory.length,
+                  itemBuilder: (context, index) {
+                    final article = articlesInCategory[index];
+                    return ListTile(
+                      title: Text(article.name),
+                      subtitle: Text('\$${article.basePrice}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SpringButton(
+                            SpringButtonType.OnlyScale,
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray100,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              onTap: () {
-                                setState(() {
-                                  _selectedArticles.update(
-                                      article.id, (value) => value - 1,
-                                      ifAbsent: () => 0);
-                                  if (_selectedArticles[article.id] == 0) {
-                                    _selectedArticles.remove(article.id);
-                                  }
-                                });
-                              },
+                              child: const Icon(Icons.remove, size: 16),
                             ),
-                            const SizedBox(width: 8),
-                            Text(_selectedArticles[article.id]?.toString() ??
-                                '0'),
-                            const SizedBox(width: 8),
-                            SpringButton(
-                              SpringButtonType.OnlyScale,
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.gray100,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(Icons.add, size: 16),
+                            onTap: () {
+                              setState(() {
+                                _selectedArticles.update(
+                                    article.id, (value) => value - 1,
+                                    ifAbsent: () => 0);
+                                if (_selectedArticles[article.id] == 0) {
+                                  _selectedArticles.remove(article.id);
+                                }
+                              });
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                              _selectedArticles[article.id]?.toString() ?? '0'),
+                          const SizedBox(width: 8),
+                          SpringButton(
+                            SpringButtonType.OnlyScale,
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.gray100,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              onTap: () {
-                                setState(() {
-                                  _selectedArticles.update(
-                                      article.id, (value) => value + 1,
-                                      ifAbsent: () => 1);
-                                });
-                              },
+                              child: const Icon(Icons.add, size: 16),
                             ),
-                          ],
-                        ),
-                        onTap: () {
-                          // TODO: Implement article selection
-                        },
-                      );
-                    },
-                  );
-                }).toList(),
-              ),
+                            onTap: () {
+                              setState(() {
+                                _selectedArticles.update(
+                                    article.id, (value) => value + 1,
+                                    ifAbsent: () => 1);
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
             ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16,
-              child:
-                  _buildNextButton(onNext: () => _tabController.animateTo(2)),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildNextButton(
+              onNext: () => _mainTabController.animateTo(2),
             ),
-          ],
-        ),
+          ),
+        ],
       );
     }
   }

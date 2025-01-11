@@ -25,9 +25,20 @@ export class ArticleController {
 
   static async getAllArticles(req: Request, res: Response) {
     try {
+      console.log('Fetching all articles...');
       const result = await ArticleService.getAllArticles();
-      res.json({ data: result });
+      console.log(`Found ${result.length} articles:`, result);
+      
+      res.json({
+        success: true,
+        data: result.map(article => ({
+          ...article,
+          basePrice: article.basePrice || 0,
+          premiumPrice: article.premiumPrice || 0,
+        }))
+      });
     } catch (error: any) {
+      console.error('Error in getAllArticles:', error);
       res.status(500).json({ error: error.message });
     }
   }

@@ -14,7 +14,6 @@ class BottomSheetManager {
     bool isDismissible = true,
   }) async {
     if (_isBottomSheetOpen) {
-      // Fermer le bottom sheet actuel avant d'en ouvrir un nouveau
       _currentController?.close();
     }
 
@@ -25,26 +24,8 @@ class BottomSheetManager {
       isScrollControlled: true,
       isDismissible: isDismissible,
       backgroundColor: Colors.transparent,
-      transitionAnimationController: AnimationController(
-        vsync: Navigator.of(context),
-        duration: const Duration(milliseconds: 200),
-      ),
       builder: (context) {
-        return AnimatedBuilder(
-          animation: ModalRoute.of(context)!.animation!,
-          builder: (context, child) {
-            return SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: ModalRoute.of(context)!.animation!,
-                curve: Curves.easeOut,
-              )),
-              child: builder(context),
-            );
-          },
-        );
+        return builder(context);
       },
     );
 

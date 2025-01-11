@@ -50,8 +50,12 @@ class AuthProvider extends ChangeNotifier {
         _profileDataProvider = profileDataProvider,
         _prefs = prefs,
         _dio = Dio(BaseOptions(
-          baseUrl: 'http://localhost:3001/api',
-          headers: {'Accept': 'application/json'},
+          baseUrl: 'http://localhost:3001',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) => status! < 500,
         )) {
     _setupDio();
     _init();
@@ -59,27 +63,27 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Dio _setupDio() {
-    final dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      headers: {'Accept': 'application/json'},
-    ));
-
-    dio.interceptors.add(InterceptorsWrapper(
+    _dio.interceptors.clear();
+    _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
+        print('Making request to: ${options.path}');
+        print('Request data: ${options.data}');
         if (_token != null) {
           options.headers['Authorization'] = 'Bearer $_token';
         }
         return handler.next(options);
       },
+      onResponse: (response, handler) {
+        print('Response received: ${response.data}');
+        return handler.next(response);
+      },
       onError: (error, handler) {
-        if (error.response?.statusCode == 401) {
-          _handleUnauthorized();
-        }
+        print('Request error: ${error.message}');
+        print('Error response: ${error.response?.data}');
         return handler.next(error);
       },
     ));
-
-    return dio;
+    return _dio;
   }
 
   Future<void> _loadStoredData() async {

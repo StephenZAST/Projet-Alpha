@@ -42,11 +42,23 @@ export class ArticleService {
   }
 
   static async getAllArticles(): Promise<Article[]> {
+    console.log('ArticleService: Getting all articles');
     const { data, error } = await supabase
       .from('articles')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    console.log('Supabase response:', { data, error });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+
+    if (!data) {
+      console.log('No data returned from Supabase');
+      return [];
+    }
 
     return data;
   }
