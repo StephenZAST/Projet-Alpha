@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:prima/models/article.dart';
+import 'package:prima/models/article_category.dart';
 import 'package:prima/providers/article_provider.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:prima/widgets/order_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
 
@@ -28,12 +29,18 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
   void initState() {
     super.initState();
     _selectedArticles = Map.from(widget.initialSelection);
+    _initializeCategories();
+  }
+
+  Future<void> _initializeCategories() async {
     final articleProvider = context.read<ArticleProvider>();
-    articleProvider.loadCategories();
-    _tabController = TabController(
-      length: articleProvider.categories.length,
-      vsync: this,
-    );
+    await articleProvider.loadCategories();
+    setState(() {
+      _tabController = TabController(
+        length: articleProvider.categories.length,
+        vsync: this,
+      );
+    });
   }
 
   @override
@@ -45,7 +52,7 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
   @override
   Widget build(BuildContext context) {
     return Consumer<ArticleProvider>(
-      builder: (context, provider, child) {
+      builder: (context, provider, _) {
         if (provider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -85,25 +92,30 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
 
   Widget _buildCategoryArticles(
       ArticleCategory category, ArticleProvider provider) {
-    final articles = provider.getArticlesForCategory(category.id);
+    return FutureBuilder<void>(
+      future: provider.loadArticlesForCategory(category.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (articles.isEmpty) {
-      provider.loadArticlesForCategory(category.id);
-      return const Center(child: CircularProgressIndicator());
-    }
+        final articles = provider.getArticlesForCategory(category.id);
 
-    return ListView.builder(
-      itemCount: articles.length,
-      itemBuilder: (context, index) {
-        final article = articles[index];
-        return _buildArticleItem(article);
+        return ListView.builder(
+          itemCount: articles.length,
+          padding: const EdgeInsets.all(16),
+          itemBuilder: (context, index) {
+            final article = articles[index];
+            return _buildArticleItem(article);
+          },
+        );
       },
     );
   }
 
   Widget _buildArticleItem(Article article) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         title: Text(article.name),
         subtitle: Text('\$${article.basePrice}'),
@@ -114,13 +126,9 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
               icon: Icons.remove,
               onPressed: () => _updateQuantity(article.id, -1),
             ),
-            SizedBox(
-              width: 40,
-              child: Text(
-                '${_selectedArticles[article.id] ?? 0}',
-                textAlign: TextAlign.center,
-              ),
-            ),
+            const SizedBox(width: 8),
+            Text('${_selectedArticles[article.id] ?? 0}'),
+            const SizedBox(width: 8),
             _buildQuantityButton(
               icon: Icons.add,
               onPressed: () => _updateQuantity(article.id, 1),

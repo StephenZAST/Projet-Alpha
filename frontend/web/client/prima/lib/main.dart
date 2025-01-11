@@ -2,9 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:prima/animations/page_transition.dart';
 import 'package:prima/providers/address_provider.dart';
+import 'package:prima/providers/article_provider.dart';
 import 'package:prima/providers/auth_data_provider.dart';
+import 'package:prima/providers/order_provider.dart';
 import 'package:prima/providers/profile_data_provider.dart';
 import 'package:prima/services/address_service.dart';
+import 'package:prima/services/article_service.dart';
+import 'package:prima/services/order_service.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/theme/colors.dart';
@@ -60,6 +64,16 @@ void main() async {
           ),
           update: (context, auth, previous) =>
               ProfileProvider(auth, prefs, useMockData: false),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ArticleProvider(
+            ArticleService(context.read<AuthProvider>().dio),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => OrderProvider(
+            OrderService(context.read<AuthProvider>().dio),
+          ),
         ),
       ],
       child: const MyApp(),

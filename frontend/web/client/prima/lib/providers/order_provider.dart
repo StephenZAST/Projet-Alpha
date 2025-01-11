@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:prima/models/order.dart';
+import 'package:prima/models/order.dart'
+    hide OrderItem; // Cacher OrderItem de order.dart
+import 'package:prima/models/order_item.dart'
+    as order_item; // Utiliser un préfixe pour order_item.dart
 import 'package:prima/services/order_service.dart';
 
 class OrderProvider extends ChangeNotifier {
@@ -19,7 +22,7 @@ class OrderProvider extends ChangeNotifier {
     required String addressId,
     required DateTime collectionDate,
     required DateTime deliveryDate,
-    required List<OrderItem> items,
+    required List<Map<String, dynamic>> items,
     String? affiliateCode,
   }) async {
     try {
@@ -27,12 +30,24 @@ class OrderProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // Convertir les Map en OrderItem avec le préfixe
+      final orderItems = items
+          .map((item) => order_item.OrderItem(
+                id: '',
+                orderId: '',
+                articleId: item['articleId'] as String,
+                serviceId: item['serviceId'] as String,
+                quantity: item['quantity'] as int,
+                unitPrice: (item['unitPrice'] as num).toDouble(),
+              ))
+          .toList();
+
       _currentOrder = await _orderService.createOrder(
         serviceId: serviceId,
         addressId: addressId,
         collectionDate: collectionDate,
         deliveryDate: deliveryDate,
-        items: items,
+        items: orderItems,
         affiliateCode: affiliateCode,
       );
 

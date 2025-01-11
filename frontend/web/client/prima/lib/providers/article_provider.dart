@@ -1,58 +1,103 @@
 import 'package:flutter/material.dart';
+import 'package:prima/models/article.dart';
+import 'package:prima/models/article_category.dart';
+import 'package:prima/models/service.dart';
 import 'package:prima/services/article_service.dart';
-import 'package:prima/widgets/order_bottom_sheet.dart';
 
 class ArticleProvider extends ChangeNotifier {
   final ArticleService _articleService;
   List<ArticleCategory> _categories = [];
   Map<String, List<Article>> _articlesByCategory = {};
+  List<Service> _services = [];
   bool _isLoading = false;
   String? _error;
 
   ArticleProvider(this._articleService);
 
+  // Getters
   List<ArticleCategory> get categories => _categories;
+  List<Service> get services => _services;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  // Méthodes pour obtenir les articles
   List<Article> getArticlesForCategory(String categoryId) {
     return _articlesByCategory[categoryId] ?? [];
   }
 
-  Future<void> loadCategories() async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
+  Article? findArticleById(String id) {
+    for (var articles in _articlesByCategory.values) {
+      try {
+        return articles.firstWhere((article) => article.id == id);
+      } catch (_) {
+        continue;
+      }
+    }
+    return null;
+  }
 
-      _categories = await _articleService.getCategories();
+  // Chargement des services
+  Future<void> loadServices() async {
+    try {
+      _setLoading(true);
+      final fetchedServices = await _articleService.getServices();
+      _services = fetchedServices;
       notifyListeners();
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      _setError('Erreur lors du chargement des services: $e');
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
+  // Chargement des catégories
+  Future<void> loadCategories() async {
+    try {
+      _setLoading(true);
+      _categories = await _articleService.getCategories();
+      notifyListeners();
+    } catch (e) {
+      _setError('Erreur lors du chargement des catégories: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Chargement des articles par catégorie
   Future<void> loadArticlesForCategory(String categoryId) async {
     try {
       if (_articlesByCategory.containsKey(categoryId)) return;
 
-      _isLoading = true;
-      notifyListeners();
-
+      _setLoading(true);
       final articles = await _articleService.getArticlesByCategory(categoryId);
       _articlesByCategory[categoryId] = articles;
-
       notifyListeners();
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      _setError('Erreur lors du chargement des articles: $e');
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
+  }
+
+  // Méthodes utilitaires
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    if (loading) _error = null;
+    notifyListeners();
+  }
+
+  void _setError(String error) {
+    _error = error;
+    notifyListeners();
+  }
+
+  // Méthode pour réinitialiser l'état
+  void reset() {
+    _categories = [];
+    _articlesByCategory = {};
+    _services = [];
+    _error = null;
+    _isLoading = false;
+    notifyListeners();
   }
 }

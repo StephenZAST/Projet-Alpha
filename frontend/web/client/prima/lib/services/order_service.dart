@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:prima/models/order.dart';
+import 'package:prima/models/order.dart' hide OrderItem;
+import 'package:prima/models/order_item.dart' as order_item;
 
 class OrderService {
   final Dio _dio;
@@ -11,7 +12,7 @@ class OrderService {
     required String addressId,
     required DateTime collectionDate,
     required DateTime deliveryDate,
-    required List<OrderItem> items,
+    required List<order_item.OrderItem> items,
     String? affiliateCode,
   }) async {
     try {
@@ -42,7 +43,7 @@ class OrderService {
 
   Future<double> calculateTotal({
     required String serviceId,
-    required List<OrderItem> items,
+    required List<order_item.OrderItem> items,
   }) async {
     try {
       final response = await _dio.post('/api/orders/calculate-total', data: {

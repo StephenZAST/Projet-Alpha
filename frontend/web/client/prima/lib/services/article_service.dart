@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:prima/widgets/order_bottom_sheet.dart';
+import 'package:prima/models/article.dart';
+import 'package:prima/models/article_category.dart';
+import 'package:prima/models/service.dart'; // Utilisez uniquement ce modèle Service
 
 class ArticleService {
   final Dio _dio;
@@ -31,6 +33,24 @@ class ArticleService {
       throw Exception('Failed to load articles');
     } catch (e) {
       throw Exception('Error loading articles: $e');
+    }
+  }
+
+  // Ajout de la méthode getServices
+  Future<List<Service>> getServices() async {
+    try {
+      final response = await _dio.get('/api/services/all');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'] ?? [];
+        // Correction du typage avec .map()
+        return data
+            .map((json) => Service.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception('Failed to load services');
+    } catch (e) {
+      print('Error loading services: $e');
+      throw Exception('Error loading services: $e');
     }
   }
 }
