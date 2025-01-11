@@ -150,6 +150,18 @@ export interface Service {
   updatedAt: Date;
 }
 
+// Ajout de la fonction fromJson comme une fonction utilitaire séparée
+export const ServiceFromJson = (json: Record<string, any>): Service => {
+  return {
+    id: json.id,
+    name: json.name,
+    price: json.price,
+    description: json.description,
+    createdAt: new Date(json.createdAt),
+    updatedAt: new Date(json.updatedAt),
+  };
+};
+
 // Blog related types
 export interface BlogCategory {
   id: string;

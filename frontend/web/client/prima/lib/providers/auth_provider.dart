@@ -40,6 +40,7 @@ class AuthProvider extends ChangeNotifier {
   // Ajouter les getters publics
   String? get tempEmail => _tempEmail;
   String? get tempPassword => _tempPassword;
+  Dio get dio => _dio;
 
   AuthProvider({
     required AuthDataProvider authDataProvider,

@@ -3,6 +3,8 @@ import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:prima/utils/bottom_sheet_manager.dart';
+import 'package:prima/widgets/order_bottom_sheet.dart';
 
 class CustomBottomNavigation extends StatelessWidget {
   final int selectedIndex;
@@ -20,7 +22,7 @@ class CustomBottomNavigation extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Container(
-          padding: const EdgeInsets.only(top: 8), 
+          padding: const EdgeInsets.only(top: 8),
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: [
@@ -46,7 +48,7 @@ class CustomBottomNavigation extends StatelessWidget {
               _buildNavItem(Icons.home_rounded, 'Home', 0),
               _buildNavItem(Icons.local_offer_rounded, 'Offres', 1),
               const BottomNavigationBarItem(
-                icon: SizedBox(height: 40), 
+                icon: SizedBox(height: 40),
                 label: '',
               ),
               _buildNavItem(Icons.chat_bubble_rounded, 'Chat', 3),
@@ -55,7 +57,8 @@ class CustomBottomNavigation extends StatelessWidget {
             onTap: (index) {
               if (index != 2) {
                 onItemSelected(index);
-                Provider.of<NavigationProvider>(context, listen: false).setRoute(NavigationProvider.mainRoutes[index]);
+                Provider.of<NavigationProvider>(context, listen: false)
+                    .setRoute(NavigationProvider.mainRoutes[index]);
               }
             },
           ),
@@ -63,7 +66,7 @@ class CustomBottomNavigation extends StatelessWidget {
         Positioned(
           left: 0,
           right: 0,
-          top: -12, 
+          top: -12,
           child: Center(
             child: SpringButton(
               SpringButtonType.OnlyScale,
@@ -84,7 +87,10 @@ class CustomBottomNavigation extends StatelessWidget {
                 child: const Icon(Icons.add, color: AppColors.white, size: 30),
               ),
               onTap: () {
-                // TODO: Implement add order functionality
+                BottomSheetManager().showCustomBottomSheet(
+                  context: context,
+                  builder: (context) => const OrderBottomSheet(),
+                );
               },
               scaleCoefficient: 0.9,
               useCache: false,
@@ -95,13 +101,14 @@ class CustomBottomNavigation extends StatelessWidget {
     );
   }
 
-  BottomNavigationBarItem _buildNavItem(IconData icon, String label, int index) {
+  BottomNavigationBarItem _buildNavItem(
+      IconData icon, String label, int index) {
     return BottomNavigationBarItem(
       icon: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: EdgeInsets.all(selectedIndex == index ? 12 : 8),
         decoration: BoxDecoration(
-          color: selectedIndex == index 
+          color: selectedIndex == index
               ? AppColors.primary.withOpacity(0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
