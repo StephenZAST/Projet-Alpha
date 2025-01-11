@@ -1,0 +1,356 @@
+{
+  "info": {
+    "name": "Alpha Laundry Articles and Categories",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Article Category",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"T-shirts\",\n  \"description\": \"T-shirts for men, women and children\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/article-categories/",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "article-categories"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Article Category By Id",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/article-categories/id_de_la_categorie",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "article-categories", "id_de_la_categorie"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Article Categories",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/article-categories/",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "article-categories"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Article Category",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"T-shirts updated\",\n  \"description\": \"T-shirts for men, women and children updated\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/article-categories/id_de_la_categorie",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "article-categories", "id_de_la_categorie"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Article Category",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/article-categories/id_de_la_categorie",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "article-categories", "id_de_la_categorie"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Article",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoryId\": \"id_de_la_categorie_t_shirts\",\n  \"name\": \"T-shirt col rond\",\n  \"description\": \"T-shirt col rond en coton\",\n  \"basePrice\": 10,\n  \"premiumPrice\": 15\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/articles/",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "articles"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Article By Id",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/articles/id_de_l_article",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "articles", "id_de_l_article"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Articles",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/articles/",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "articles"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Article",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"T-shirt col rond updated\",\n  \"description\": \"T-shirt col rond en coton updated\",\n  \"basePrice\": 12,\n  \"premiumPrice\": 18\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/articles/id_de_l_article",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "articles", "id_de_l_article"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Article",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/articles/id_de_l_article",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "articles", "id_de_l_article"]
+        }
+      },
+      "response": []
+    },
+        {
+      "name": "Create Order Item",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"id_de_la_commande\",\n  \"articleId\": \"id_du_t_shirt_col_rond\",\n  \"serviceId\": \"id_du_service\",\n  \"quantity\": 2,\n  \"unitPrice\": 10\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/order-items/",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "order-items"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Order Item By Id",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/order-items/id_de_l_article_de_commande",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "order-items", "id_de_l_article_de_commande"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Order Items",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/order-items/",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "order-items"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Order Item",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 3,\n  \"unitPrice\": 12\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/order-items/id_de_l_article_de_commande",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "order-items", "id_de_l_article_de_commande"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Order Item",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+           "raw": "http://localhost:3001/api/order-items/id_de_l_article_de_commande",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "order-items", "id_de_l_article_de_commande"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

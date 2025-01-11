@@ -5,22 +5,22 @@ import PDFDocument from 'pdfkit'; // Ajouter cette dépendance
 
 export class OrderController {
   static async createOrder(req: Request, res: Response) {
+    console.log('Starting createOrder controller function');
+    console.log('Request body:', req.body);
     try {
       const { 
         serviceId, 
         addressId, 
-        quantity, 
         isRecurring, 
         recurrenceType, 
         collectionDate, 
         deliveryDate, 
-        gpsLatitude, 
-        gpsLongitude, 
         affiliateCode,
         items  // Add this line
       } = req.body;
       
       const userId = req.user?.id;
+      console.log('User ID:', userId);
 
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -28,20 +28,19 @@ export class OrderController {
         userId,
         serviceId,
         addressId,
-        quantity,
         isRecurring,
         recurrenceType,
         collectionDate,
         deliveryDate,
-        gpsLatitude,
-        gpsLongitude,
         affiliateCode,
         items: items || []  // Add this line with default empty array
       };
+      console.log('Order data:', orderData);
 
       const result = await OrderService.createOrder(orderData);
       res.json({ data: result });
     } catch (error: any) {
+      console.error('Error in createOrder controller:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -167,6 +166,23 @@ export class OrderController {
       // Finaliser le PDF
       doc.end();
 
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async calculateTotal(req: Request, res: Response) {
+    try {
+      const { items } = req.body;
+      
+      if (!items || !Array.isArray(items)) {
+        return res.status(400).json({ error: 'Invalid items array' });
+      }
+
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      const total = await OrderService.calculateTotal(items);
+      res.json({ data: { total } });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

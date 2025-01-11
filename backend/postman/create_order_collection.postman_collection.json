@@ -1,0 +1,92 @@
+{
+  "info": {
+    "name": "Alpha Laundry Create Order Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Order with Items",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"id_de_l_utilisateur\",\n  \"serviceId\": \"id_du_service\",\n  \"addressId\": \"id_de_l_adresse\",\n  \"isRecurring\": false,\n  \"recurrenceType\": \"NONE\",\n  \"collectionDate\": \"2025-01-15T10:00:00.000Z\",\n  \"deliveryDate\": \"2025-01-18T10:00:00.000Z\",\n  \"affiliateCode\": \"code_affilie\",\n  \"items\": [\n    {\n      \"articleId\": \"id_du_t_shirt_col_rond\",\n      \"quantity\": 2\n    }\n  ],\n  \"offerIds\": [\"id_de_l_offre\"]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/orders/",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "orders"]
+        }
+      },
+      "response": []
+    },
+        {
+      "name": "Create Order with Items (Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"id_de_l_utilisateur\",\n  \"serviceId\": \"id_du_service\",\n  \"addressId\": \"id_de_l_adresse\",\n  \"isRecurring\": false,\n  \"recurrenceType\": \"NONE\",\n  \"collectionDate\": \"2025-01-15T10:00:00.000Z\",\n  \"deliveryDate\": \"2025-01-18T10:00:00.000Z\",\n  \"affiliateCode\": \"code_affilie\",\n  \"items\": [\n    {\n      \"articleId\": \"id_du_t_shirt_col_rond\",\n      \"quantity\": 2\n    }\n  ],\n  \"offerIds\": [\"id_de_l_offre\"]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/orders/create-order",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "orders", "create-order"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Calculate Total",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"articleId\": \"id_du_t_shirt_col_rond\",\n      \"quantity\": 2\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/orders/calculate-total",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "orders", "calculate-total"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,18 +1,20 @@
 import supabase from '../config/database';
-import { Article } from '../models/types';
+import { Article, CreateArticleDTO } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ArticleService {
-  static async createArticle(name: string, basePrice: number, premiumPrice: number, categoryId: string, description?: string): Promise<Article> {
+  static async createArticle(articleData: CreateArticleDTO): Promise<Article> {
+    const { categoryId, name, description, basePrice, premiumPrice } = articleData;
+
     const newArticle: Article = {
       id: uuidv4(),
-      categoryId: categoryId,
-      name: name,
-      description: description,
-      basePrice: basePrice,
-      premiumPrice: premiumPrice,
+      categoryId,
+      name,
+      description,
+      basePrice,
+      premiumPrice,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     const { data, error } = await supabase
@@ -22,6 +24,19 @@ export class ArticleService {
       .single();
 
     if (error) throw error;
+
+    return data;
+  }
+
+  static async getArticleById(articleId: string): Promise<Article> {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('id', articleId)
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Article not found');
 
     return data;
   }
@@ -36,15 +51,16 @@ export class ArticleService {
     return data;
   }
 
-  static async updateArticle(articleId: string, name: string, basePrice: number, premiumPrice: number, categoryId: string, description?: string): Promise<Article> {
+  static async updateArticle(articleId: string, articleData: Partial<Article>): Promise<Article> {
     const { data, error } = await supabase
       .from('articles')
-      .update({ name, basePrice, premiumPrice, description, categoryId, updatedAt: new Date() })
+      .update(articleData)
       .eq('id', articleId)
       .select()
       .single();
 
     if (error) throw error;
+    if (!data) throw new Error('Article not found');
 
     return data;
   }

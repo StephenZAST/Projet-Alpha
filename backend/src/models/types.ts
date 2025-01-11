@@ -170,29 +170,28 @@ export interface BlogArticle {
 
 // Order related types
 export interface OrderItem {
-  id: string;
-  orderId: string;
-  articleId: string;
-  quantity: number;
-  price: number;
-  article?: Article;
-  createdAt: Date;
-  updatedAt: Date;
+    id: string;
+    orderId: string;
+    articleId: string;
+    serviceId: string;
+    quantity: number;
+    unitPrice: number;
+    article?: Article;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface Order {
   id: string;
   userId: string;
-  service_id: string;  // Snake case car c'est comme ça dans la BD
-  address_id: string;  // Snake case car c'est comme ça dans la BD
+  service_id: string;  
+  address_id: string;  
   affiliateCode?: string;
   status: OrderStatus;
   isRecurring: boolean;
   recurrenceType: RecurrenceType | null;
   nextRecurrenceDate?: Date | null;
   totalAmount: number;
-  gpsLatitude?: number | null;
-  gpsLongitude?: number | null;
   collectionDate?: Date | null;
   deliveryDate?: Date | null;
   createdAt: Date;
@@ -205,6 +204,7 @@ export interface Order {
     offerId: string;
     discountAmount: number;
   }[];
+  service_type_id?: string;
 }
 
 export type OrderStatus = 
@@ -253,13 +253,11 @@ export interface CreateOrderDTO {
   userId: string;
   serviceId: string;
   addressId: string;
-  quantity: number;
+  serviceTypeId?: string;
   isRecurring: boolean;
   recurrenceType: RecurrenceType;
   collectionDate?: Date;
   deliveryDate?: Date;
-  gpsLatitude?: number;
-  gpsLongitude?: number;
   affiliateCode?: string;
   items: {
     articleId: string;
@@ -268,9 +266,16 @@ export interface CreateOrderDTO {
   offerIds?: string[];
 }
 
-export interface OrderItemDTO {
+export interface CreateOrderItemDTO {
+    orderId: string;
   articleId: string;
   serviceId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface OrderItemDTO {
+  articleId: string;
   quantity: number;
 }
 
@@ -337,6 +342,19 @@ export interface CreateOfferDTO {
   startDate?: Date;
   endDate?: Date;
   articleIds?: string[];
+}
+
+export interface CreateArticleDTO {
+  categoryId: string;
+  name: string;
+  description?: string;
+  basePrice: number;
+  premiumPrice: number;
+}
+
+export interface CreateArticleCategoryDTO {
+  name: string;
+  description?: string;
 }
 
 export interface AppliedDiscount {

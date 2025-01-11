@@ -1,14 +1,16 @@
 import supabase from '../config/database';
-import { ArticleCategory } from '../models/types';
+import { ArticleCategory, CreateArticleCategoryDTO } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ArticleCategoryService {
-  static async createCategory(name: string, description?: string): Promise<ArticleCategory> {
+  static async createArticleCategory(categoryData: CreateArticleCategoryDTO): Promise<ArticleCategory> {
+    const { name, description } = categoryData;
+
     const newCategory: ArticleCategory = {
       id: uuidv4(),
       name,
       description,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     const { data, error } = await supabase
@@ -18,31 +20,48 @@ export class ArticleCategoryService {
       .single();
 
     if (error) throw error;
+
     return data;
   }
 
-  static async getAllCategories(): Promise<ArticleCategory[]> {
+  static async getArticleCategoryById(categoryId: string): Promise<ArticleCategory> {
+    const { data, error } = await supabase
+      .from('article_categories')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Article category not found');
+
+    return data;
+  }
+
+  static async getAllArticleCategories(): Promise<ArticleCategory[]> {
     const { data, error } = await supabase
       .from('article_categories')
       .select('*');
 
     if (error) throw error;
+
     return data;
   }
 
-  static async updateCategory(categoryId: string, name: string, description?: string): Promise<ArticleCategory> {
+  static async updateArticleCategory(categoryId: string, categoryData: Partial<ArticleCategory>): Promise<ArticleCategory> {
     const { data, error } = await supabase
       .from('article_categories')
-      .update({ name, description, updatedAt: new Date() })
+      .update(categoryData)
       .eq('id', categoryId)
       .select()
       .single();
 
     if (error) throw error;
+    if (!data) throw new Error('Article category not found');
+
     return data;
   }
 
-  static async deleteCategory(categoryId: string): Promise<void> {
+  static async deleteArticleCategory(categoryId: string): Promise<void> {
     const { error } = await supabase
       .from('article_categories')
       .delete()

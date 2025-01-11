@@ -4,18 +4,29 @@ import { ArticleService } from '../services/article.service';
 export class ArticleController {
   static async createArticle(req: Request, res: Response) {
     try {
-      const { name, basePrice, premiumPrice, categoryId, description } = req.body;
-      const article = await ArticleService.createArticle(name, basePrice, premiumPrice, categoryId, description);
-      res.json({ data: article });
+      const articleData = req.body;
+      const result = await ArticleService.createArticle(articleData);
+      res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   }
 
+  static async getArticleById(req: Request, res: Response) {
+    try {
+      const articleId = req.params.articleId;
+      const result = await ArticleService.getArticleById(articleId);
+      res.json({ data: result });
+    } catch (error: any) {
+      res.status(error.message === 'Article not found' ? 404 : 500)
+         .json({ error: error.message });
+    }
+  }
+
   static async getAllArticles(req: Request, res: Response) {
     try {
-      const articles = await ArticleService.getAllArticles();
-      res.json({ data: articles });
+      const result = await ArticleService.getAllArticles();
+      res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -23,10 +34,10 @@ export class ArticleController {
 
   static async updateArticle(req: Request, res: Response) {
     try {
-      const { articleId } = req.params;
-      const { name, basePrice, premiumPrice, categoryId, description } = req.body;
-      const article = await ArticleService.updateArticle(articleId, name, basePrice, premiumPrice, categoryId, description);
-      res.json({ data: article });
+      const articleId = req.params.articleId;
+      const articleData = req.body;
+      const result = await ArticleService.updateArticle(articleId, articleData);
+      res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -34,9 +45,9 @@ export class ArticleController {
 
   static async deleteArticle(req: Request, res: Response) {
     try {
-      const { articleId } = req.params;
+      const articleId = req.params.articleId;
       await ArticleService.deleteArticle(articleId);
-      res.json({ success: true });
+      res.json({ message: 'Article deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

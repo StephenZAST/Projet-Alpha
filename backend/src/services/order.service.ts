@@ -4,8 +4,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
 
 export class OrderService {
+  
   static async createOrder(orderData: CreateOrderDTO): Promise<Order> {
-    const { userId, serviceId, addressId, items, quantity, isRecurring, recurrenceType, collectionDate, deliveryDate, gpsLatitude, gpsLongitude, affiliateCode } = orderData;
+    const { userId, serviceId, addressId, items, isRecurring, recurrenceType, collectionDate, deliveryDate, affiliateCode, serviceTypeId } = orderData;
+
+    console.log('Creating order with data:', orderData);
 
     const { data: service } = await supabase
       .from('services')
@@ -28,7 +31,7 @@ export class OrderService {
     }
 
     // Calculate total amount including articles
-    let totalAmount = service.price * quantity;
+    let totalAmount = service.price;
     
     // Fetch all articles prices
     const { data: articles } = await supabase
@@ -52,6 +55,7 @@ export class OrderService {
       id: uuidv4(),
       userId: userId,
       service_id: serviceId,
+      service_type_id: serviceTypeId,
       address_id: addressId,
       affiliateCode: affiliateCode,
       status: 'PENDING',
@@ -59,8 +63,6 @@ export class OrderService {
       recurrenceType: recurrenceType,
       nextRecurrenceDate: isRecurring ? collectionDate : null,
       totalAmount: totalAmount,
-      gpsLatitude: gpsLatitude,
-      gpsLongitude: gpsLongitude,
       collectionDate: collectionDate,
       deliveryDate: deliveryDate,
       createdAt: new Date(),
@@ -76,22 +78,31 @@ export class OrderService {
 
     if (orderError) throw orderError;
 
+    console.log('Order created successfully:', order);
+
     // Create order items
-    const orderItems = items.map(item => ({
-      id: uuidv4(),
-      orderId: order.id,
-      articleId: item.articleId,
-      quantity: item.quantity,
-      price: articles.find(a => a.id === item.articleId)?.basePrice || 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }));
+    const orderItems = items.map((item: { articleId: string; quantity: number; premiumPrice?: boolean }) => {
+      const article = articles.find(a => a.id === item.articleId);
+      const unitPrice = item.premiumPrice ? article?.premiumPrice : article?.basePrice;
+      return {
+        id: uuidv4(),
+        orderId: order.id,
+        articleId: item.articleId,
+        serviceId: serviceId,
+        quantity: item.quantity,
+        unitPrice: unitPrice || 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    });
 
     const { error: itemsError } = await supabase
       .from('order_items')
       .insert(orderItems);
 
     if (itemsError) throw itemsError;
+
+    console.log('Order items created successfully:', orderItems);
 
     let affiliate;
     let commissionAmount = 0;
@@ -128,6 +139,8 @@ export class OrderService {
       }
     }
 
+    console.log('Affiliate commission processed:', { affiliate, commissionAmount });
+
     // Calculer les réductions si des offres sont appliquées
     if (orderData.offerIds?.length) {
       const articleIds = orderItems.map(item => item.articleId);
@@ -151,6 +164,8 @@ export class OrderService {
       }));
 
       await supabase.from('user_offers').insert(userOffers);
+    
+      console.log('Discounts applied:', { totalAmount: totalAmount, appliedDiscounts: appliedDiscounts });
     }
 
     // Créer notification pour le client
@@ -169,8 +184,13 @@ export class OrderService {
         commissionAmount
       );
     }
-
-    return this.getOrderDetails(order.id, userId);
+    
+    console.log('Returning order details');
+    const orderDetails = await this.getOrderDetails(order.id, userId);
+    return {
+      ...orderDetails,
+      totalAmount: orderDetails.items?.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0) || 0
+    }
   }
 
   static async getUserOrders(userId: string): Promise<Order[]> {
@@ -184,7 +204,10 @@ export class OrderService {
         address:addresses(*),
         items:order_items(
           *,
-          article:articles(*)
+          article:articles(
+            *,
+            category:article_categories(name)
+          )
         )
       `)
       .eq('userId', userId);
@@ -213,15 +236,19 @@ export class OrderService {
       recurrenceType: order.recurrenceType,
       nextRecurrenceDate: order.nextRecurrenceDate,
       totalAmount: order.totalAmount,
-      gpsLatitude: order.gpsLatitude,
-      gpsLongitude: order.gpsLongitude,
       collectionDate: order.collectionDate ? new Date(order.collectionDate) : null,
       deliveryDate: order.deliveryDate ? new Date(order.deliveryDate) : null,
       createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
       updatedAt: order.updatedAt ? new Date(order.updatedAt) : new Date(),
       service: order.service,
       address: order.address,
-      items: order.items || []
+      items: order.items?.map((item: any) => ({
+        ...item,
+        article: {
+          ...item.article,
+          categoryName: item.article.category?.name
+        }
+      })) || []
     }));  }
 
   static async getOrderDetails(orderId: string, userId: string): Promise<Order> {
@@ -235,7 +262,10 @@ export class OrderService {
         address:addresses(*),
         items:order_items(
           *,
-          article:articles(*)
+          article:articles(
+            *,
+            category:article_categories(name)
+          )
         )
       `)
       .eq('id', orderId)
@@ -261,7 +291,13 @@ export class OrderService {
       address: data.address,
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
-      items: data.items || []
+      items: data.items?.map((item: any) => ({
+        ...item,
+        article: {
+          ...item.article,
+          categoryName: item.article.category?.name
+        }
+      })) || []
     } as Order;
   }
 
@@ -416,9 +452,32 @@ export class OrderService {
     }
 
     return { 
-      finalAmount: Math.max(finalAmount, 0), 
-      appliedDiscounts 
+      finalAmount: Math.max(finalAmount, 0),
+      appliedDiscounts: appliedDiscounts
     };
   }
-}
 
+  static async calculateTotal(items: { articleId: string; quantity: number }[]): Promise<number> {
+    let totalAmount = 0;
+
+    // Fetch all articles prices
+    const { data: articles } = await supabase
+      .from('articles')
+      .select('*')
+      .in('id', items.map(item => item.articleId));
+
+    if (!articles || articles.length !== items.length) {
+      throw new Error('One or more articles not found');
+    }
+
+    // Add articles prices to total
+    items.forEach(item => {
+      const article = articles.find(a => a.id === item.articleId);
+      if (article) {
+        totalAmount += article.basePrice * item.quantity;
+      }
+    });
+
+    return totalAmount;
+  }
+}

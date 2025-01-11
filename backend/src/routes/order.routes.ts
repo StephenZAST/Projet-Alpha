@@ -48,6 +48,13 @@ router.get(
   })
 );
 
+router.post(
+  '/calculate-total',
+  asyncHandler(async (req: Request, res: Response) => {
+    await OrderController.calculateTotal(req, res);
+  })
+);
+
 // Routes admin et livreur
 router.patch(
   '/:orderId/status',
@@ -62,14 +69,6 @@ router.get(
   authorizeRoles(['ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await OrderController.getAllOrders(req, res);
-  })
-);
-
-router.post(
-  '/create-order',
-  authorizeRoles(['ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await OrderController.createOrder(req, res);
   })
 );
 

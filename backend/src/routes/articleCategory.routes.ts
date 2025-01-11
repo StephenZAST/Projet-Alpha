@@ -1,34 +1,50 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { ArticleCategoryController } from '../controllers/articleCategory.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
-router.use(authenticateToken);
-
-// Routes publiques (clients)
-router.get(
-  '/',
-  asyncHandler((req, res, next) => ArticleCategoryController.getAllCategories(req, res))
-);
+// // Protection des routes avec authentification
+// router.use(authenticateToken as express.RequestHandler);
 
 // Routes admin
-router.use(authorizeRoles(['ADMIN', 'SUPER_ADMIN']));
-
 router.post(
   '/',
-  asyncHandler((req, res, next) => ArticleCategoryController.createCategory(req, res))
+  // authorizeRoles(['ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await ArticleCategoryController.createArticleCategory(req, res);
+  })
 );
 
-router.put(
+router.get(
   '/:categoryId',
-  asyncHandler((req, res, next) => ArticleCategoryController.updateCategory(req, res))
+  asyncHandler(async (req: Request, res: Response) => {
+    await ArticleCategoryController.getArticleCategoryById(req, res);
+  })
+);
+
+router.get(
+  '/',
+  asyncHandler(async (req: Request, res: Response) => {
+    await ArticleCategoryController.getAllArticleCategories(req, res);
+  })
+);
+
+router.patch(
+  '/:categoryId',
+  authorizeRoles(['ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await ArticleCategoryController.updateArticleCategory(req, res);
+  })
 );
 
 router.delete(
   '/:categoryId',
-  asyncHandler((req, res, next) => ArticleCategoryController.deleteCategory(req, res))
+  authorizeRoles(['ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await ArticleCategoryController.deleteArticleCategory(req, res);
+  })
 );
 
 export default router;

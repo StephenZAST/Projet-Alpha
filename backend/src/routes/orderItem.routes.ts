@@ -1,49 +1,49 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { ArticleController } from '../controllers/article.controller';
+import { OrderItemController } from '../controllers/orderItem.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
-// // Protection des routes avec authentification
-// router.use(authenticateToken as express.RequestHandler);
+// Protection des routes avec authentification
+router.use(authenticateToken as express.RequestHandler);
 
 // Routes admin
 router.post(
   '/',
-  // authorizeRoles(['ADMIN']) as express.RequestHandler,
+  authorizeRoles(['ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.createArticle(req, res);
+    await OrderItemController.createOrderItem(req, res);
   })
 );
 
 router.get(
-  '/:articleId',
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.getArticleById(req, res);
-  })
+    '/:orderItemId',
+    asyncHandler(async (req: Request, res: Response) => {
+        await OrderItemController.getOrderItemById(req, res);
+    })
 );
 
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.getAllArticles(req, res);
+    await OrderItemController.getAllOrderItems(req, res);
   })
 );
 
 router.patch(
-  '/:articleId',
+  '/:orderItemId',
   authorizeRoles(['ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.updateArticle(req, res);
+    await OrderItemController.updateOrderItem(req, res);
   })
 );
 
 router.delete(
-  '/:articleId',
+  '/:orderItemId',
   authorizeRoles(['ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.deleteArticle(req, res);
+    await OrderItemController.deleteOrderItem(req, res);
   })
 );
 

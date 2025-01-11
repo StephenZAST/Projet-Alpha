@@ -114,16 +114,23 @@ export const validateClaimReward = (req: Request, res: Response, next: NextFunct
 };
 
 export const validateOrder = (req: Request, res: Response, next: NextFunction) => {
-  const { serviceId, addressId, quantity } = req.body;
+  console.log('Validating order request:', req.body);
+  const { serviceId, addressId, items } = req.body;
 
-  if (!serviceId || !addressId || !quantity) {
+  if (!serviceId || !addressId || !items || !Array.isArray(items) || items.length === 0) {
+    console.log('Validation failed: Missing required fields or invalid items array');
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  if (quantity <= 0) {
-    return res.status(400).json({ error: 'Quantity must be greater than 0' });
+  // Check if each item has articleId and quantity
+  for (const item of items) {
+    if (!item.articleId || typeof item.quantity !== 'number' || item.quantity <= 0) {
+      console.log('Validation failed: Invalid item format', item);
+      return res.status(400).json({ error: 'Invalid item format' });
+    }
   }
 
+  console.log('Order validation successful');
   next();
 };
 
