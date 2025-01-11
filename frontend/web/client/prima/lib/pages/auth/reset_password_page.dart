@@ -5,6 +5,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:prima/providers/auth_provider.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:redux/redux.dart';
+import '../../redux/store.dart';
+import '../../redux/actions/auth_actions.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -27,109 +31,33 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   bool _obscureConfirmPassword = true;
 
   Future<void> _resetPassword() async {
-    setState(() => _isLoading = true);
-    try {
-      switch (_currentStep) {
-        case 0:
-          await _requestResetCode();
-          break;
-        case 1:
-          await _verifyCode(); // Nouvelle méthode pour vérifier le code uniquement
-          break;
-        case 2:
-          if (_newPasswordController.text != _confirmPasswordController.text) {
-            setState(
-                () => _errorMessage = 'Les mots de passe ne correspondent pas');
-            return;
-          }
-          await _setNewPassword(); // Nouvelle méthode pour définir le nouveau mot de passe
-          break;
-        case 3:
-          Navigator.pushReplacementNamed(context, '/login');
-          break;
-      }
-    } catch (e) {
-      setState(() => _errorMessage = e.toString());
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
+    final store = StoreProvider.of<AppState>(context);
 
-  Future<void> _requestResetCode() async {
-    final email = _emailController.text;
-    final url = Uri.parse('http://localhost:3001/api/auth/reset-password');
-    final headers = {'Content-Type': 'application/json'};
-    final body = jsonEncode({'email': email});
-
-    try {
-      final response = await http.post(url, headers: headers, body: body);
-      if (response.statusCode == 200) {
-        setState(() => _currentStep++);
-      } else {
-        print('Request reset code response: ${response.body}');
-        setState(() =>
-            _errorMessage = 'Failed to send reset code: ${response.body}');
-      }
-    } catch (e) {
-      setState(() => _errorMessage = 'Failed to connect to server: $e');
-    }
-  }
-
-  Future<void> _verifyCode() async {
-    try {
-      final email = _emailController.text;
-      final code = _codeController.text;
-
-      final url = Uri.parse('$baseUrl/verify-code');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'email': email,
-          'code': code,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        setState(
-            () => _currentStep = 2); // Passer à l'étape du nouveau mot de passe
-      } else {
-        setState(() => _errorMessage = 'Code invalide');
-      }
-    } catch (e) {
-      setState(() => _errorMessage = 'Erreur: $e');
-    }
-  }
-
-  Future<void> _setNewPassword() async {
-    try {
-      final email = _emailController.text;
-      final code = _codeController.text;
-      final newPassword = _newPasswordController.text;
-
-      final url = Uri.parse('$baseUrl/verify-code-and-reset-password');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'email': email,
-          'code': code,
-          'newPassword': newPassword,
-        }),
-      );
-
-      final responseData = json.decode(response.body);
-
-      if (response.statusCode == 200 && responseData['success'] == true) {
-        Provider.of<AuthProvider>(context, listen: false)
-            .setTempCredentials(email, newPassword);
-        setState(() => _currentStep = 3); // Afficher l'écran de succès
-      } else {
-        setState(() => _errorMessage =
-            responseData['error'] ?? 'Échec de la réinitialisation');
-      }
-    } catch (e) {
-      setState(() => _errorMessage = 'Erreur: $e');
+    switch (_currentStep) {
+      case 0:
+        store.dispatch(RequestResetCodeAction(_emailController.text));
+        break;
+      case 1:
+        store.dispatch(VerifyResetCodeAction(
+          email: _emailController.text,
+          code: _codeController.text,
+        ));
+        break;
+      case 2:
+        if (_newPasswordController.text != _confirmPasswordController.text) {
+          setState(
+              () => _errorMessage = 'Les mots de passe ne correspondent pas');
+          return;
+        }
+        store.dispatch(ResetPasswordAction(
+          email: _emailController.text,
+          code: _codeController.text,
+          newPassword: _newPasswordController.text,
+        ));
+        break;
+      case 3:
+        Navigator.pushReplacementNamed(context, '/login');
+        break;
     }
   }
 
@@ -145,19 +73,31 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: _buildContent(),
+        child: StoreConnector<AppState, _ViewModel>(
+          converter: (Store<AppState> store) => _ViewModel.fromStore(store),
+          builder: (context, vm) {
+            // Mise à jour du step si nécessaire
+            if (vm.resetPasswordSuccess && _currentStep < 3) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                setState(() => _currentStep++);
+              });
+            }
+
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: _buildContent(vm),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildContent() {
-    if (_errorMessage.isNotEmpty) {
+  Widget _buildContent(_ViewModel vm) {
+    if (vm.error != null && vm.error!.isNotEmpty) {
       return Center(
         child: Text(
-          _errorMessage,
+          vm.error!,
           style: const TextStyle(color: AppColors.error),
         ),
       );
@@ -494,6 +434,29 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           setState(() {}); // Pour rafraîchir la validation
         }
       },
+    );
+  }
+}
+
+class _ViewModel {
+  final bool isLoading;
+  final String? error;
+  final bool resetPasswordSuccess;
+  final int currentStep;
+
+  _ViewModel({
+    required this.isLoading,
+    this.error,
+    required this.resetPasswordSuccess,
+    required this.currentStep,
+  });
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    return _ViewModel(
+      isLoading: store.state.authState.isLoading,
+      error: store.state.authState.error,
+      resetPasswordSuccess: store.state.authState.resetPasswordSuccess ?? false,
+      currentStep: store.state.authState.resetPasswordStep ?? 0,
     );
   }
 }

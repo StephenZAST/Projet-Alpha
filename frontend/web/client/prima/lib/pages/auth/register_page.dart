@@ -3,6 +3,10 @@ import 'package:prima/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:redux/redux.dart';
+import '../../redux/store.dart';
+import '../../redux/actions/auth_actions.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -40,31 +44,18 @@ class _RegisterPageState extends State<RegisterPage> {
 
     setState(() => _isSubmitting = true);
 
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.register(
-        _emailController.text,
-        _passwordController.text,
-        _firstNameController.text,
-        _lastNameController.text,
-        _phoneController.text, // Le téléphone est maintenant toujours envoyé
-        _affiliateCodeController.text.isEmpty
+    StoreProvider.of<AppState>(context).dispatch(
+      RegisterRequestAction(
+        email: _emailController.text,
+        password: _passwordController.text,
+        firstName: _firstNameController.text,
+        lastName: _lastNameController.text,
+        phone: _phoneController.text,
+        affiliateCode: _affiliateCodeController.text.isEmpty
             ? null
             : _affiliateCodeController.text,
-      );
-
-      if (success && mounted) {
-        Navigator.pushReplacementNamed(context, '/');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
+      ),
+    );
   }
 
   @override
@@ -80,140 +71,154 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 40),
-                Image.asset('assets/AlphaLogo.png', height: 60),
-                const SizedBox(height: 32),
-                const Text(
-                  'Créer un compte',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.gray900,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                _buildTextField(
-                  controller: _firstNameController,
-                  label: 'Prénom',
-                  icon: Icons.person_outline,
-                  validator: (v) => v?.isEmpty ?? true ? 'Champ requis' : null,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _lastNameController,
-                  label: 'Nom de famille',
-                  icon: Icons.person_outline,
-                  validator: (v) => v?.isEmpty ?? true ? 'Champ requis' : null,
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _emailController,
-                  label: 'Adresse email',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    if (v?.isEmpty ?? true) return 'Champ requis';
-                    if (!v!.contains('@')) return 'Email invalide';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _passwordController,
-                  label: 'Mot de passe',
-                  icon: Icons.lock_outline,
-                  obscureText: _obscurePassword,
-                  suffix: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: AppColors.gray600,
+        child: StoreConnector<AppState, _ViewModel>(
+          converter: (Store<AppState> store) => _ViewModel.fromStore(store),
+          builder: (context, vm) {
+            if (vm.isAuthenticated) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushReplacementNamed(context, '/');
+              });
+            }
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 40),
+                    Image.asset('assets/AlphaLogo.png', height: 60),
+                    const SizedBox(height: 32),
+                    const Text(
+                      'Créer un compte',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.gray900,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  ),
-                  validator: (v) {
-                    if (v?.isEmpty ?? true) return 'Champ requis';
-                    if (v!.length < 6) return 'Minimum 6 caractères';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _phoneController,
-                  label: 'Numéro de téléphone',
-                  icon: Icons.phone_outlined,
-                  keyboardType: TextInputType.phone,
-                  validator: (v) => v?.isEmpty ?? true ? 'Champ requis' : null,
-                  helperText: 'Ex: +225 0708090102',
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _affiliateCodeController,
-                  label: 'Code affilié (optionnel)',
-                  icon: Icons.group_outlined,
-                  helperText: 'Si vous avez été parrainé',
-                ),
-                const SizedBox(height: 32),
-                SpringButton(
-                  SpringButtonType.OnlyScale,
-                  Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [AppColors.primaryShadow],
+                    const SizedBox(height: 40),
+                    _buildTextField(
+                      controller: _firstNameController,
+                      label: 'Prénom',
+                      icon: Icons.person_outline,
+                      validator: (v) =>
+                          v?.isEmpty ?? true ? 'Champ requis' : null,
                     ),
-                    child: Center(
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Text(
-                              'Créer un compte',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _lastNameController,
+                      label: 'Nom de famille',
+                      icon: Icons.person_outline,
+                      validator: (v) =>
+                          v?.isEmpty ?? true ? 'Champ requis' : null,
                     ),
-                  ),
-                  onTap: _isSubmitting ? null : _register,
-                  useCache: false,
-                  scaleCoefficient: 0.9,
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, '/login'),
-                  child: const Text(
-                    'Déjà un compte ? Se connecter',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _emailController,
+                      label: 'Adresse email',
+                      icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v?.isEmpty ?? true) return 'Champ requis';
+                        if (!v!.contains('@')) return 'Email invalide';
+                        return null;
+                      },
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _passwordController,
+                      label: 'Mot de passe',
+                      icon: Icons.lock_outline,
+                      obscureText: _obscurePassword,
+                      suffix: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: AppColors.gray600,
+                        ),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
+                      ),
+                      validator: (v) {
+                        if (v?.isEmpty ?? true) return 'Champ requis';
+                        if (v!.length < 6) return 'Minimum 6 caractères';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _phoneController,
+                      label: 'Numéro de téléphone',
+                      icon: Icons.phone_outlined,
+                      keyboardType: TextInputType.phone,
+                      validator: (v) =>
+                          v?.isEmpty ?? true ? 'Champ requis' : null,
+                      helperText: 'Ex: +225 0708090102',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _affiliateCodeController,
+                      label: 'Code affilié (optionnel)',
+                      icon: Icons.group_outlined,
+                      helperText: 'Si vous avez été parrainé',
+                    ),
+                    const SizedBox(height: 32),
+                    SpringButton(
+                      SpringButtonType.OnlyScale,
+                      Container(
+                        width: double.infinity,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [AppColors.primaryShadow],
+                        ),
+                        child: Center(
+                          child: vm.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                )
+                              : const Text(
+                                  'Créer un compte',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      onTap: vm.isLoading ? null : _register,
+                      useCache: false,
+                      scaleCoefficient: 0.9,
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.pushReplacementNamed(context, '/login'),
+                      child: const Text(
+                        'Déjà un compte ? Se connecter',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -265,6 +270,26 @@ class _RegisterPageState extends State<RegisterPage> {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
+    );
+  }
+}
+
+class _ViewModel {
+  final bool isLoading;
+  final String? error;
+  final bool isAuthenticated;
+
+  _ViewModel({
+    required this.isLoading,
+    this.error,
+    required this.isAuthenticated,
+  });
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    return _ViewModel(
+      isLoading: store.state.authState.isLoading,
+      error: store.state.authState.error,
+      isAuthenticated: store.state.authState.isAuthenticated,
     );
   }
 }

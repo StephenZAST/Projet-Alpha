@@ -6,6 +6,9 @@ import 'package:prima/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:prima/providers/order_provider.dart';
+import 'package:prima/providers/order_state.dart';
 
 class Service {
   final String id;
@@ -127,37 +130,33 @@ class Article {
   }
 }
 
-class OrderBottomSheet extends StatefulWidget {
+class OrderBottomSheet extends ConsumerStatefulWidget {
   const OrderBottomSheet({super.key});
 
   @override
-  State<OrderBottomSheet> createState() => _OrderBottomSheetState();
+  ConsumerState<OrderBottomSheet> createState() => _OrderBottomSheetState();
 }
 
-class _OrderBottomSheetState extends State<OrderBottomSheet>
+class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
     with TickerProviderStateMixin {
   late TabController _mainTabController;
   TabController? _articleTabController;
-  List<Service> _services = [];
-  List<ArticleCategory> _articleCategories = [];
-  List<Article> _articles = [];
-  bool _isLoading = false;
-  String? _error;
-  Service? _selectedService;
-  Map<String, int> _selectedArticles = {};
-  DateTime? _selectedCollectionDate;
-  DateTime? _selectedDeliveryDate;
 
   @override
   void initState() {
     super.initState();
     _mainTabController = TabController(length: 3, vsync: this);
 
-    print('Fetching services...');
-    _fetchServices().then((_) {
-      print('Services fetched: ${_services.length}');
-    }).catchError((error) {
-      print('Error fetching services: $error');
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await ref.read(orderProvider.notifier).fetchServices(authProvider);
+      final orderState = ref.read(orderProvider);
+      if (orderState.articleCategories.isNotEmpty) {
+        _articleTabController = TabController(
+          length: orderState.articleCategories.length,
+          vsync: this,
+        );
+      }
     });
   }
 
@@ -166,128 +165,6 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
     _mainTabController.dispose();
     _articleTabController?.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchServices() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      print('Making API call to /services/all');
-      final response = await authProvider.dio.get('/api/services/all');
-      print('Response received: ${response.data}');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['data'] ?? [];
-        print('Raw data: $data'); // Ajoutez ce log
-
-        _services = data
-            .map((e) {
-              try {
-                print('Processing service data: $e'); // Ajoutez ce log
-                return Service.fromJson(e);
-              } catch (e, stack) {
-                print('Error parsing service: $e');
-                print('Stack trace: $stack');
-                return null;
-              }
-            })
-            .whereType<Service>()
-            .toList();
-
-        print('Services parsed: ${_services.length}');
-      } else {
-        _error = 'Failed to load services';
-      }
-    } catch (e, stack) {
-      print('Exception details: $e');
-      print('Stack trace: $stack');
-      _error = 'Connection error: $e';
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _fetchArticles() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      // Test d'abord la disponibilité des endpoints
-      print('Testing API endpoints...');
-      try {
-        final testResponse = await authProvider.dio.get('/api/articles');
-        print('Test response code: ${testResponse.statusCode}');
-        print('Test response full data: ${testResponse.data}');
-      } catch (e) {
-        print('Test request failed: $e');
-      }
-
-      // Récupération des données en série plutôt qu'en parallèle
-      try {
-        print('Fetching categories...');
-        final categoriesResponse =
-            await authProvider.dio.get('/api/article-categories');
-        print('Categories response: ${categoriesResponse.data}');
-
-        if (categoriesResponse.statusCode != 200) {
-          throw Exception(
-              'Failed to load categories: ${categoriesResponse.statusCode}');
-        }
-
-        final List<dynamic> categoriesData =
-            categoriesResponse.data['data'] ?? [];
-        _articleCategories =
-            categoriesData.map((e) => ArticleCategory.fromJson(e)).toList();
-        print('Parsed ${_articleCategories.length} categories');
-
-        print('Fetching articles...');
-        final articlesResponse = await authProvider.dio.get('/api/articles');
-        print('Articles response: ${articlesResponse.data}');
-
-        if (articlesResponse.statusCode != 200) {
-          throw Exception(
-              'Failed to load articles: ${articlesResponse.statusCode}');
-        }
-
-        final List<dynamic> articlesData = articlesResponse.data['data'] ?? [];
-        _articles = articlesData.map((e) => Article.fromJson(e)).toList();
-        print('Parsed ${_articles.length} articles');
-
-        // Mise à jour du TabController seulement si nous avons des données
-        if (_articleCategories.isNotEmpty) {
-          setState(() {
-            _articleTabController?.dispose();
-            _articleTabController = TabController(
-              length: _articleCategories.length,
-              vsync: this,
-            );
-          });
-          print(
-              'Created tab controller with ${_articleCategories.length} tabs');
-        }
-      } catch (e) {
-        print('Data fetching error: $e');
-        throw e;
-      }
-    } catch (e, stack) {
-      print('Top level error: $e');
-      print('Stack trace: $stack');
-      setState(() {
-        _error = 'Error loading data: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
   @override
@@ -367,28 +244,29 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
   }
 
   Widget _buildServiceSelectionTab() {
-    if (_isLoading) {
+    final orderState = ref.watch(orderProvider);
+
+    if (orderState.isLoading) {
       return const Center(child: CircularProgressIndicator());
-    } else if (_error != null) {
-      return Center(child: Text('Error: $_error'));
+    } else if (orderState.error != null) {
+      return Center(child: Text('Error: ${orderState.error}'));
     } else {
       return Column(
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: _services.length,
+              itemCount: orderState.services.length,
               itemBuilder: (context, index) {
-                final service = _services[index];
+                final service = orderState.services[index];
                 return ListTile(
                   title: Text(service.name),
                   subtitle: Text('\$${service.price}'),
-                  selected: _selectedService == service,
+                  selected: orderState.selectedService == service,
                   selectedTileColor: AppColors.gray100,
                   onTap: () {
-                    setState(() {
-                      _selectedService = service;
-                    });
-                    print('Selected service: ${service.name}');
+                    ref
+                        .read(orderProvider.notifier)
+                        .selectService(service as Service?);
                   },
                 );
               },
@@ -398,7 +276,9 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
             padding: const EdgeInsets.all(16.0),
             child: _buildNextButton(
               onNext: () {
-                _fetchArticles();
+                final authProvider =
+                    Provider.of<AuthProvider>(context, listen: false);
+                ref.read(orderProvider.notifier).fetchArticles(authProvider);
                 _mainTabController.animateTo(1);
               },
             ),
@@ -409,11 +289,13 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
   }
 
   Widget _buildArticleSelectionTab() {
-    if (_isLoading) {
+    final orderState = ref.watch(orderProvider);
+
+    if (orderState.isLoading) {
       return const Center(child: CircularProgressIndicator());
-    } else if (_error != null) {
-      return Center(child: Text('Error: $_error'));
-    } else if (_articleCategories.isEmpty) {
+    } else if (orderState.error != null) {
+      return Center(child: Text('Error: ${orderState.error}'));
+    } else if (orderState.articleCategories.isEmpty) {
       return const Center(child: Text('Aucune catégorie disponible'));
     } else if (_articleTabController == null) {
       return const Center(child: CircularProgressIndicator());
@@ -425,15 +307,15 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
             isScrollable: true,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.gray500,
-            tabs: _articleCategories
+            tabs: orderState.articleCategories
                 .map((category) => Tab(text: category.name))
                 .toList(),
           ),
           Expanded(
             child: TabBarView(
               controller: _articleTabController,
-              children: _articleCategories.map((category) {
-                final articlesInCategory = _articles
+              children: orderState.articleCategories.map((category) {
+                final articlesInCategory = orderState.articles
                     .where((article) => article.categoryId == category.id)
                     .toList();
                 return ListView.builder(
@@ -457,19 +339,15 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
                               child: const Icon(Icons.remove, size: 16),
                             ),
                             onTap: () {
-                              setState(() {
-                                _selectedArticles.update(
-                                    article.id, (value) => value - 1,
-                                    ifAbsent: () => 0);
-                                if (_selectedArticles[article.id] == 0) {
-                                  _selectedArticles.remove(article.id);
-                                }
-                              });
+                              ref
+                                  .read(orderProvider.notifier)
+                                  .updateArticleQuantity(article.id, -1);
                             },
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                              _selectedArticles[article.id]?.toString() ?? '0'),
+                          Text(orderState.selectedArticles[article.id]
+                                  ?.toString() ??
+                              '0'),
                           const SizedBox(width: 8),
                           SpringButton(
                             SpringButtonType.OnlyScale,
@@ -482,11 +360,9 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
                               child: const Icon(Icons.add, size: 16),
                             ),
                             onTap: () {
-                              setState(() {
-                                _selectedArticles.update(
-                                    article.id, (value) => value + 1,
-                                    ifAbsent: () => 1);
-                              });
+                              ref
+                                  .read(orderProvider.notifier)
+                                  .updateArticleQuantity(article.id, 1);
                             },
                           ),
                         ],
@@ -509,6 +385,8 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
   }
 
   Widget _buildDateSelectionTab() {
+    final orderState = ref.watch(orderProvider);
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -527,13 +405,13 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
                 lastDate: DateTime(2100),
               );
               if (pickedDate != null) {
-                setState(() {
-                  _selectedCollectionDate = pickedDate;
-                });
+                ref
+                    .read(orderProvider.notifier)
+                    .selectCollectionDate(pickedDate);
               }
             },
             controller: TextEditingController(
-                text: _selectedCollectionDate?.toString()),
+                text: orderState.selectedCollectionDate?.toString()),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -550,13 +428,11 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
                 lastDate: DateTime(2100),
               );
               if (pickedDate != null) {
-                setState(() {
-                  _selectedDeliveryDate = pickedDate;
-                });
+                ref.read(orderProvider.notifier).selectDeliveryDate(pickedDate);
               }
             },
-            controller:
-                TextEditingController(text: _selectedDeliveryDate?.toString()),
+            controller: TextEditingController(
+                text: orderState.selectedDeliveryDate?.toString()),
           ),
           const SizedBox(height: 24),
           _buildConfirmationButton(),
@@ -632,33 +508,22 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
   }
 
   Future<void> _createOrder(BuildContext context) async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final items = _selectedArticles.entries
-          .map((e) => ({'articleId': e.key, 'quantity': e.value}))
-          .toList();
-      final response = await authProvider.dio.post('/orders', data: {
-        'serviceId': _selectedService!.id,
-        'items': items,
-        'collectionDate': _selectedCollectionDate?.toIso8601String(),
-        'deliveryDate': _selectedDeliveryDate?.toIso8601String(),
-      });
-      if (response.statusCode == 200) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final result =
+        await ref.read(orderProvider.notifier).createOrder(authProvider);
+
+    result.when(
+      success: () {
         Navigator.pop(context);
-        log('Order created successfully');
-      } else {
-        _error = 'Failed to create order';
-      }
-    } on DioException catch (e) {
-      _error = 'Connection error: $e';
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Commande créée avec succès')),
+        );
+      },
+      error: (message) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      },
+    );
   }
 }

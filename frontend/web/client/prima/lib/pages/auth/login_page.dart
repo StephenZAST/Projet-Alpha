@@ -3,6 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:prima/providers/auth_provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:redux/redux.dart';
+import '../../redux/store.dart';
+import '../../redux/actions/auth_actions.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -39,12 +43,12 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _attemptLogin() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final success = await Provider.of<AuthProvider>(context, listen: false)
-          .login(_emailController.text, _passwordController.text);
-
-      if (success && mounted) {
-        Navigator.pushReplacementNamed(context, '/');
-      }
+      StoreProvider.of<AppState>(context).dispatch(
+        LoginRequestAction(
+          _emailController.text,
+          _passwordController.text,
+        ),
+      );
     }
   }
 
@@ -53,117 +57,103 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
-        child: Consumer<AuthProvider>(
-          builder: (context, authProvider, _) => SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 60),
-                  Image.asset('assets/AlphaLogo.png', height: 60),
-                  const SizedBox(height: 40),
-                  Text(
-                    'Ravi de vous revoir !',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray900,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 40),
-                  _buildTextField(
-                    controller: _emailController,
-                    label: 'Adresse email',
-                    icon: Icons.email_outlined,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (v) =>
-                        v?.isEmpty ?? true ? 'Email requis' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _passwordController,
-                    label: 'Mot de passe',
-                    icon: Icons.lock_outline,
-                    obscureText: true, // Activé par défaut
-                    validator: (v) =>
-                        v?.isEmpty ?? true ? 'Mot de passe requis' : null,
-                  ),
-                  const SizedBox(height: 24),
-                  SpringButton(
-                    SpringButtonType.OnlyScale,
-                    Container(
-                      width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(30),
+        child: StoreConnector<AppState, _ViewModel>(
+          converter: (Store<AppState> store) => _ViewModel.fromStore(store),
+          builder: (context, vm) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 60),
+                    Image.asset('assets/AlphaLogo.png', height: 60),
+                    const SizedBox(height: 40),
+                    Text(
+                      'Ravi de vous revoir !',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.gray900,
                       ),
-                      child: Center(
-                        child: authProvider.isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 40),
+                    _buildTextField(
+                      controller: _emailController,
+                      label: 'Adresse email',
+                      icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) =>
+                          v?.isEmpty ?? true ? 'Email requis' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _passwordController,
+                      label: 'Mot de passe',
+                      icon: Icons.lock_outline,
+                      obscureText: true, // Activé par défaut
+                      validator: (v) =>
+                          v?.isEmpty ?? true ? 'Mot de passe requis' : null,
+                    ),
+                    const SizedBox(height: 24),
+                    SpringButton(
+                      SpringButtonType.OnlyScale,
+                      Container(
+                        width: double.infinity,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Center(
+                          child: vm.isLoading
+                              ? const CircularProgressIndicator(
                                   valueColor: AlwaysStoppedAnimation<Color>(
                                       Colors.white),
+                                )
+                              : const Text(
+                                  'Se connecter',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              )
-                            : const Text(
-                                'Se connecter',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
+                        ),
+                      ),
+                      onTap: vm.isLoading ? null : _attemptLogin,
+                      useCache: false,
+                      scaleCoefficient: 0.9,
+                    ),
+                    const SizedBox(height: 32),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/reset_password');
+                        },
+                        child: const Text('Mot de passe oublié ?'),
                       ),
                     ),
-                    onTap: authProvider.isLoading
-                        ? null
-                        : () async {
-                            if (_formKey.currentState?.validate() ?? false) {
-                              final success = await authProvider.login(
-                                _emailController.text,
-                                _passwordController.text,
-                              );
-                              if (success && mounted) {
-                                Navigator.pushReplacementNamed(context, '/');
-                              }
-                            }
-                          },
-                    useCache: false,
-                    scaleCoefficient: 0.9,
-                  ),
-                  const SizedBox(height: 32),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
+                    TextButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/reset_password');
+                        Navigator.pushNamed(context, '/register');
                       },
-                      child: const Text('Mot de passe oublié ?'),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/register');
-                    },
-                    child: const Text(
-                      'Vous n\'avez pas de compte ? Créez-en un',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
+                      child: const Text(
+                        'Vous n\'avez pas de compte ? Créez-en un',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -211,5 +201,25 @@ class _LoginPageState extends State<LoginPage> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+}
+
+class _ViewModel {
+  final bool isLoading;
+  final String? error;
+  final bool isAuthenticated;
+
+  _ViewModel({
+    required this.isLoading,
+    this.error,
+    required this.isAuthenticated,
+  });
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    return _ViewModel(
+      isLoading: store.state.authState.isLoading,
+      error: store.state.authState.error,
+      isAuthenticated: store.state.authState.isAuthenticated,
+    );
   }
 }
