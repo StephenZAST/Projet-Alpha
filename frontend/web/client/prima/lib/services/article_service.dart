@@ -1,65 +1,108 @@
 import 'package:dio/dio.dart';
 import 'package:prima/models/article.dart';
 import 'package:prima/models/article_category.dart';
-import 'package:prima/models/service.dart'; // Utilisez uniquement ce modèle Service
+import 'package:prima/models/service.dart';
 
 class ArticleService {
   final Dio _dio;
 
   ArticleService(this._dio);
 
-  Future<List<ArticleCategory>> getCategories() async {
+  Future<List<Service>> getServices() async {
     try {
-      final response = await _dio.get('/api/article-categories');
+      print('Making request to: /api/services/all');
+      print('Request data: ${_dio.options.headers}');
+
+      final response = await _dio.get('/api/services/all');
+
+      print('Response received: ${response.data}');
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? [];
-        return data.map((json) => ArticleCategory.fromJson(json)).toList();
+
+        final services = data
+            .map((json) {
+              try {
+                return Service.fromJson(json);
+              } catch (e) {
+                print('Error parsing service: $e');
+                print('Invalid service data: $json');
+                return null;
+              }
+            })
+            .whereType<Service>()
+            .toList();
+
+        print('Successfully parsed ${services.length} services');
+        return services;
       }
-      throw Exception('Failed to load categories');
+
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        message: 'Failed to load services: ${response.statusCode}',
+      );
+    } on DioException catch (e) {
+      print('DioError in getServices: ${e.message}');
+      print('DioError response: ${e.response?.data}');
+      throw Exception('Network error while loading services: ${e.message}');
     } catch (e) {
-      throw Exception('Error loading categories: $e');
+      print('Unexpected error in getServices: $e');
+      throw Exception('Error loading services: $e');
     }
   }
 
   Future<List<Article>> getArticlesByCategory(String categoryId) async {
     try {
-      final response = await _dio.get('/api/articles', queryParameters: {
-        'categoryId': categoryId,
-      });
+      print('Fetching articles for category: $categoryId');
+
+      final response = await _dio
+          .get('/api/articles', queryParameters: {'categoryId': categoryId});
+
+      print('Articles response: ${response.data}');
+
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? [];
-        return data.map((json) => Article.fromJson(json)).toList();
+        final articles = data.map((json) => Article.fromJson(json)).toList();
+        print('Parsed ${articles.length} articles for category $categoryId');
+        return articles;
       }
-      throw Exception('Failed to load articles');
+
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        message: 'Failed to load articles',
+      );
     } catch (e) {
+      print('Error loading articles for category $categoryId: $e');
       throw Exception('Error loading articles: $e');
     }
   }
 
-  // Ajout de la méthode getServices
-  Future<List<Service>> getServices() async {
+  Future<List<ArticleCategory>> getCategories() async {
     try {
-      print('Making API call to get services...');
-      final response = await _dio.get('/api/services/all');
-      // Corriger l'appel print pour éviter l'erreur d'arguments
-      print('Services API response: ${response.data}'); // Modification ici
+      print('Fetching categories');
+
+      final response = await _dio.get('/api/article-categories');
+
+      print('Categories response: ${response.data}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? [];
-        return data.map((json) {
-          try {
-            return Service.fromJson(json as Map<String, dynamic>);
-          } catch (e) {
-            print('Error parsing service: $e');
-            print('Service data: $json');
-            rethrow;
-          }
-        }).toList();
+        final categories =
+            data.map((json) => ArticleCategory.fromJson(json)).toList();
+        print('Parsed ${categories.length} categories');
+        return categories;
       }
-      throw Exception('Failed to load services');
+
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        message: 'Failed to load categories',
+      );
     } catch (e) {
-      print('Error in getServices: $e');
-      throw Exception('Error loading services: $e');
+      print('Error loading categories: $e');
+      throw Exception('Error loading categories: $e');
     }
   }
 }

@@ -13,16 +13,17 @@ import 'package:prima/providers/article_provider.dart';
 import 'package:prima/providers/order_provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:provider/provider.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class NewOrderBottomSheet extends StatefulWidget {
+class NewOrderBottomSheet extends ConsumerStatefulWidget {
   const NewOrderBottomSheet({Key? key}) : super(key: key);
 
   @override
-  State<NewOrderBottomSheet> createState() => _NewOrderBottomSheetState();
+  ConsumerState<NewOrderBottomSheet> createState() =>
+      _NewOrderBottomSheetState();
 }
 
-class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
-    with TickerProviderStateMixin {
+class _NewOrderBottomSheetState extends ConsumerState<NewOrderBottomSheet> {
   late TabController _tabController;
   int _currentStep = 0;
 
@@ -33,6 +34,8 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
   DateTime? _collectionDate;
   DateTime? _deliveryDate;
 
+  bool _mounted = true;
+
   @override
   void initState() {
     super.initState();
@@ -41,55 +44,74 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
       vsync: this,
       initialIndex: 0,
     );
-    _tabController.addListener(() {
-      if (mounted) {
-        setState(() {
-          _currentStep = _tabController.index;
-        });
-      }
-    });
 
-    // Chargement immédiat des services
-    Future.microtask(() {
-      if (mounted) {
-        context.read<ArticleProvider>().loadServices();
+    // Modification du chargement initial
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_mounted) {
+        _loadInitialData();
       }
     });
   }
 
-  // Supprimer didChangeDependencies car nous chargeons déjà dans initState
+  Future<void> _loadInitialData() async {
+    if (!_mounted) return;
+
+    try {
+      final provider = Provider.of<ArticleProvider>(context, listen: false);
+      await provider.loadServices();
+
+      if (_mounted) {
+        setState(() {
+          // Force rebuild after services are loaded
+        });
+      }
+    } catch (e) {
+      if (_mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur de chargement: $e')),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
+    _mounted = false;
     _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.9,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          _buildHeader(context),
-          OrderProgressStepper(currentStep: _currentStep),
-          Expanded(
-            child: AnimatedTabView(
-              controller: _tabController,
-              children: [
-                _buildServiceSelection(),
-                _buildArticleSelection(),
-                _buildDateSelection(),
-                _buildConfirmation(),
-              ],
-            ),
+    return Consumer<ArticleProvider>(
+      builder: (context, provider, child) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
-        ],
-      ),
+          child: Column(
+            children: [
+              _buildHeader(context),
+              OrderProgressStepper(currentStep: _currentStep),
+              Expanded(
+                child: provider.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : AnimatedTabView(
+                        controller: _tabController,
+                        children: [
+                          _buildServiceSelection(),
+                          _buildArticleSelection(),
+                          _buildDateSelection(),
+                          _buildConfirmation(),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -124,18 +146,44 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
   }
 
   Widget _buildServiceSelection() {
-    return Consumer<ArticleProvider>(
-      builder: (context, provider, _) {
-        print('Building service selection. Loading: ${provider.isLoading}');
-        print('Services count: ${provider.services.length}');
-
-        return provider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : provider.services.isEmpty
-                ? _buildEmptyServicesView(provider)
-                : _buildServicesList(provider.services);
-      },
-    );
+    return ref.watch(servicesNotifierProvider).when(
+          data: (services) {
+            if (services.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Aucun service disponible'),
+                    ElevatedButton(
+                      onPressed: () {
+                        ref
+                            .read(servicesNotifierProvider.notifier)
+                            .loadServices();
+                      },
+                      child: const Text('Rafraîchir'),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return _buildServicesList(services);
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Error: $error'),
+                ElevatedButton(
+                  onPressed: () {
+                    ref.read(servicesNotifierProvider.notifier).loadServices();
+                  },
+                  child: const Text('Réessayer'),
+                ),
+              ],
+            ),
+          ),
+        );
   }
 
   Widget _buildEmptyServicesView(ArticleProvider provider) {
@@ -219,10 +267,12 @@ class _NewOrderBottomSheetState extends State<NewOrderBottomSheet>
                                 groupValue: _selectedServiceId,
                                 activeColor: AppColors.primary,
                                 onChanged: (value) {
-                                  setState(() {
-                                    _selectedServiceId = value;
-                                    _selectedService = service;
-                                  });
+                                  if (value != null) {
+                                    setState(() {
+                                      _selectedServiceId = value;
+                                      _selectedService = service;
+                                    });
+                                  }
                                 },
                               ),
                             ],
