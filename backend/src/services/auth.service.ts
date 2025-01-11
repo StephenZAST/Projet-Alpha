@@ -51,6 +51,17 @@ export class AuthService {
       updatedAt: new Date(data.updated_at)
     };
 
+    // Créer un profil de points de fidélité pour le nouvel utilisateur
+    await supabase
+      .from('loyalty_points')
+      .insert({
+        id: uuidv4(),
+        user_id: user.id,
+        points_balance: 0,
+        total_earned: 0,
+        created_at: new Date()
+      });
+
     return user;
   }
 
@@ -234,7 +245,7 @@ export class AuthService {
       .select()
       .single();
 
-  if (updateError) throw updateError;
+    if (updateError) throw updateError;
 
     return {
       ...data,

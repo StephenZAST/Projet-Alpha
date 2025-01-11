@@ -2,6 +2,7 @@ import supabase from '../config/database';
 import { AppliedDiscount, CreateOrderDTO, Order, OrderStatus, RecurrenceType } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
+import { LoyaltyService } from './loyalty.service';
 
 export class OrderService {
   
@@ -187,9 +188,14 @@ export class OrderService {
     
     console.log('Returning order details');
     const orderDetails = await this.getOrderDetails(order.id, userId);
+    const finalTotalAmount = orderDetails.items?.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0) || 0;
+
+    // Attribuer des points de fidélité au client
+    await LoyaltyService.earnPoints(userId, finalTotalAmount, 'ORDER', order.id);
+
     return {
       ...orderDetails,
-      totalAmount: orderDetails.items?.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0) || 0
+      totalAmount: finalTotalAmount
     }
   }
 
