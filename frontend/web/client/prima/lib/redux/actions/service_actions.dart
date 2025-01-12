@@ -6,7 +6,7 @@ import '../../models/service.dart';
 class LoadServicesAction {}
 
 class LoadServicesSuccessAction {
-  final List<ServiceModel>? services;
+  final List<Service>? services; // Changé de ServiceModel à Service
   LoadServicesSuccessAction(this.services);
 }
 
@@ -17,7 +17,7 @@ class LoadServicesFailureAction {
 
 // Action de sélection
 class SelectServiceAction {
-  final ServiceModel? service;
+  final Service? service; // Changé de ServiceModel à Service
   SelectServiceAction(this.service);
 }
 

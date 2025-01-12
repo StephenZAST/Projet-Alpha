@@ -1,5 +1,5 @@
-class ServiceModel {
-  // Renommé de Service à ServiceModel
+// Remplacer ServiceModel par Service pour unifier
+class Service {
   final String id;
   final String name;
   final double price;
@@ -7,8 +7,7 @@ class ServiceModel {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  ServiceModel({
-    // Mettre à jour le constructeur
+  Service({
     required this.id,
     required this.name,
     required this.price,
@@ -17,9 +16,9 @@ class ServiceModel {
     required this.updatedAt,
   });
 
-  factory ServiceModel.fromJson(Map<String, dynamic> json) {
-    return ServiceModel(
-      // Mettre à jour la création
+  factory Service.fromJson(Map<String, dynamic> json) {
+    print('Parsing Service from JSON: $json'); // Log pour debug
+    return Service(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       price: (json['price'] ?? 0).toDouble(),

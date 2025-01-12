@@ -2,7 +2,7 @@ import '../../models/service.dart'; // Assurez-vous que ce fichier existe
 import '../../models/article.dart'; // Ajouter cet import
 
 class UpdateOrderServiceAction {
-  final ServiceModel? service; // Changé de Service à ServiceModel
+  final Service? service; // Changé de ServiceModel à Service
   UpdateOrderServiceAction(this.service);
 }
 

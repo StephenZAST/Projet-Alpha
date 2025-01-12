@@ -6,9 +6,13 @@ import '../../models/service.dart';
 import '../../models/article.dart';
 
 OrderState orderReducer(OrderState state, dynamic action) {
+  print(
+      'OrderReducer: handling action ${action.runtimeType}'); // Log pour debug
+
   if (action is UpdateOrderServiceAction) {
+    print('Updating service: ${action.service}'); // Log pour debug
     return state.copyWith(
-      selectedService: action.service as Service?,
+      selectedService: action.service, // Plus besoin du cast
     );
   }
 

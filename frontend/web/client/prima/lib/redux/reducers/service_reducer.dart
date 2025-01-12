@@ -26,7 +26,7 @@ ServiceState serviceReducer(ServiceState state, dynamic action) {
   }
 
   if (action is SelectServiceAction) {
-    final ServiceModel? newService = action.service;
+    final Service? newService = action.service;
     return state.copyWith(
       selectedService: newService,
     );

@@ -2,8 +2,8 @@ import 'dart:developer';
 import '../../models/service.dart';
 
 class ServiceState {
-  final List<ServiceModel>? services; // Rendre nullable
-  final ServiceModel? selectedService;
+  final List<Service> services; // Changé de ServiceModel à Service
+  final Service? selectedService; // Changé de ServiceModel à Service
   final bool isLoading;
   final String? error;
 
@@ -15,8 +15,8 @@ class ServiceState {
   });
 
   ServiceState copyWith({
-    List<ServiceModel>? services, // Déjà nullable
-    ServiceModel? selectedService,
+    List<Service>? services, // Changé de ServiceModel à Service
+    Service? selectedService, // Changé de ServiceModel à Service
     bool? isLoading,
     String? error,
   }) {
