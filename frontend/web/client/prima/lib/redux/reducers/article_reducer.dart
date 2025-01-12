@@ -1,4 +1,5 @@
-import 'package:prima/widgets/order_bottom_sheet.dart';
+import '../../models/article.dart';
+import '../../models/article_category.dart';
 
 import '../states/article_state.dart';
 import '../actions/article_actions.dart';
@@ -13,8 +14,9 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
   }
 
   if (action is LoadCategoriesSuccessAction) {
+    final List<ArticleCategory> categories = List<ArticleCategory>.from(action.categories);
     return state.copyWith(
-      categories: action.categories,
+      categories: categories,
       isLoading: false,
       articlesByCategory: {},
     );
@@ -37,7 +39,7 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
   }
 
   if (action is LoadArticlesByCategorySuccessAction) {
-    final newArticlesByCategory =
+    final Map<String, List<Article>> newArticlesByCategory =
         Map<String, List<Article>>.from(state.articlesByCategory);
     newArticlesByCategory[action.categoryId] = action.articles;
 

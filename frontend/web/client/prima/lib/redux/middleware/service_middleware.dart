@@ -29,16 +29,24 @@ class ServiceMiddleware {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? [];
-        final List<ServiceModel>? services =
-            data.map((json) => ServiceModel.fromJson(json)).toList();
-        store.dispatch(LoadServicesSuccessAction(services));
+        try {
+          final List<ServiceModel>? services = data
+              .map(
+                  (json) => ServiceModel.fromJson(json as Map<String, dynamic>))
+              .toList();
+          store.dispatch(LoadServicesSuccessAction(services));
+        } catch (parseError) {
+          store.dispatch(LoadServicesFailureAction(
+            'Error parsing service data: $parseError',
+          ));
+        }
       } else {
         store.dispatch(LoadServicesFailureAction(
           response.data['error'] ?? 'Failed to load services',
         ));
       }
     } catch (e) {
-      store.dispatch(LoadServicesFailureAction(e.toString()));
+      store.dispatch(LoadServicesFailureAction('Network error: $e'));
     }
   }
 }

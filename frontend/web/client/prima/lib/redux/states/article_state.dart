@@ -1,7 +1,7 @@
 import 'package:prima/widgets/order_bottom_sheet.dart';
 
 class ArticleState {
-  final List<ArticleCategory> categories;
+  final List<ArticleCategory> categories;  // Non-nullable
   final List<Article> articles;
   final bool isLoading;
   final String? error;
@@ -16,7 +16,7 @@ class ArticleState {
   });
 
   ArticleState copyWith({
-    List<ArticleCategory>? categories,
+    List<ArticleCategory>? categories,  // Nullable dans le paramètre
     List<Article>? articles,
     Map<String, List<Article>>? articlesByCategory,
     bool? isLoading,

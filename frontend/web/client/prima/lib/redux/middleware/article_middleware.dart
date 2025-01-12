@@ -2,6 +2,8 @@ import 'package:redux/redux.dart';
 import '../store.dart';
 import '../actions/article_actions.dart';
 import '../../services/article_service.dart';
+import '../../models/article.dart';
+import '../../models/article_category.dart';
 
 class ArticleMiddleware {
   final ArticleService articleService;
@@ -25,7 +27,8 @@ class ArticleMiddleware {
 
     try {
       final categories = await articleService.getCategories();
-      store.dispatch(LoadCategoriesSuccessAction(categories));
+      store.dispatch(
+          LoadCategoriesSuccessAction(categories as List<ArticleCategory>));
     } catch (e) {
       store.dispatch(LoadCategoriesFailureAction(e.toString()));
     }
@@ -41,8 +44,10 @@ class ArticleMiddleware {
     try {
       final articles =
           await articleService.getArticlesByCategory(action.categoryId);
-      store.dispatch(
-          LoadArticlesByCategorySuccessAction(action.categoryId, articles));
+      store.dispatch(LoadArticlesByCategorySuccessAction(
+        action.categoryId,
+        List<Article>.from(articles),
+      ));
     } catch (e) {
       store.dispatch(
           LoadArticlesByCategoryFailureAction(action.categoryId, e.toString()));

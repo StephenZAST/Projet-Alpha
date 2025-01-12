@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_redux/flutter_redux.dart';
 import 'package:prima/main.dart';
+import 'package:prima/redux/actions/auth_actions.dart';
+import 'package:prima/redux/store.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/utils/string_utils.dart';
 import 'package:provider/provider.dart';
@@ -99,8 +102,8 @@ class CustomSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final navigationProvider =
         Provider.of<NavigationProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final user = authProvider.user;
+    final authState = StoreProvider.of<AppState>(context).state.authState;
+    final user = authState.user;
     final firstName = user?['firstName'] as String?;
     final lastName = user?['lastName'] as String?;
     final displayName = getDisplayName(firstName, lastName);
@@ -186,27 +189,13 @@ class CustomSidebar extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.gray600),
             title: const Text('Déconnexion'),
-            onTap: () async {
-              try {
-                Navigator.pop(context); // Ferme le drawer
-                await authProvider.logout();
-                if (context.mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
-                }
-              } catch (e) {
-                // Même en cas d'erreur, rediriger vers la page de connexion
-                if (context.mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
-                }
-              }
+            onTap: () {
+              StoreProvider.of<AppState>(context).dispatch(LogoutAction());
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/login',
+                (route) => false,
+              );
             },
           ),
         ],

@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:prima/animations/page_transition.dart';
-import 'package:prima/providers/address_provider.dart';
 import 'package:prima/providers/auth_data_provider.dart';
 import 'package:prima/providers/profile_data_provider.dart';
 import 'package:prima/services/address_service.dart';
@@ -19,18 +18,13 @@ import 'package:prima/pages/notifications/notifications_page.dart';
 import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/widgets/custom_bottom_navigation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:prima/providers/profile_provider.dart';
 import 'package:prima/pages/auth/login_page.dart';
 import 'package:prima/pages/auth/register_page.dart';
-import 'package:prima/providers/auth_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:prima/config/env.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prima/providers/address_provider.dart';
-import 'package:prima/providers/auth_provider.dart';
-import 'package:prima/providers/profile_provider.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
 import 'redux/store.dart';
@@ -39,20 +33,6 @@ import 'pages/auth/reset_password_page.dart';
 
 final navigationProviderProvider =
     ChangeNotifierProvider((ref) => NavigationProvider());
-final authProviderProvider = ChangeNotifierProvider((ref) => AuthProvider(
-      authDataProvider: AuthDataProviderImpl(
-          SharedPreferences.getInstance() as SharedPreferences),
-      profileDataProvider: ProfileDataProviderImpl(
-          SharedPreferences.getInstance() as SharedPreferences),
-      prefs: SharedPreferences.getInstance() as SharedPreferences,
-    ));
-final profileProviderProvider = ChangeNotifierProvider((ref) => ProfileProvider(
-      ref.watch(authProviderProvider),
-      SharedPreferences.getInstance() as SharedPreferences,
-      useMockData: false,
-    ));
-final addressProviderProvider = ChangeNotifierProvider(
-    (ref) => AddressProvider(ref.watch(authProviderProvider)));
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -132,9 +112,11 @@ class _MainNavigationWrapperState extends ConsumerState<MainNavigationWrapper> {
     return Consumer(
       builder: (context, ref, child) {
         final navigationProvider = ref.watch(navigationProviderProvider);
-        final authProvider = ref.watch(authProviderProvider);
+        // Remplacer authProvider par le store Redux
+        final isAuthenticated =
+            StoreProvider.of<AppState>(context).state.authState.isAuthenticated;
 
-        if (!authProvider.isAuthenticated) {
+        if (!isAuthenticated) {
           return const LoginPage();
         }
 

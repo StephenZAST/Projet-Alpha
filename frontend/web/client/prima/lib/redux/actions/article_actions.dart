@@ -1,4 +1,5 @@
-import 'package:prima/widgets/order_bottom_sheet.dart';
+import '../../models/article.dart'; // Nouveau modèle à créer
+import '../../models/article_category.dart'; // Nouveau modèle à créer
 
 // Actions pour les catégories
 class LoadCategoriesAction {}

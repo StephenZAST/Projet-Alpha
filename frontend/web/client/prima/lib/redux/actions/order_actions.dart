@@ -1,8 +1,8 @@
 import '../../models/service.dart'; // Assurez-vous que ce fichier existe
-import '../../widgets/order_bottom_sheet.dart';
+import '../../models/article.dart'; // Ajouter cet import
 
 class UpdateOrderServiceAction {
-  final Service? service; // Modifié pour accepter null
+  final ServiceModel? service; // Changé de Service à ServiceModel
   UpdateOrderServiceAction(this.service);
 }
 

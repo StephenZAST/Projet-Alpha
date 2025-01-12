@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:prima/providers/auth_provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_redux/flutter_redux.dart';
@@ -26,18 +24,11 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     // Définir le contexte au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).setContext(context);
+      // Supprimer les appels à Provider.of<AuthProvider>
     });
     // Vérifier s'il y a des credentials temporaires
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      // Utiliser les getters publics au lieu des champs privés
-      if (authProvider.tempEmail != null && authProvider.tempPassword != null) {
-        _emailController.text = authProvider.tempEmail!;
-        _passwordController.text = authProvider.tempPassword!;
-        authProvider.clearTempCredentials();
-        _attemptLogin();
-      }
+      // Supprimer les appels à Provider.of<AuthProvider>
     });
   }
 
