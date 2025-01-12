@@ -1,5 +1,6 @@
-// Supprimer l'import de providers/order_state.dart
-// import 'package:prima/providers/order_state.dart';  // Supprimer cette ligne
+import 'package:prima/providers/address_data_provider.dart';
+import 'package:prima/redux/actions/auth_actions.dart';
+
 import 'states/order_state.dart'; // Utiliser uniquement cette version
 import 'package:prima/providers/profile_data_provider.dart';
 import 'package:prima/redux/reducers/address_reducer.dart';
@@ -23,6 +24,7 @@ import 'states/service_state.dart';
 import 'reducers/service_reducer.dart';
 import 'middleware/service_middleware.dart';
 import '../services/article_service.dart';
+import 'middleware/storage_middleware.dart'; // Ajout de l'import
 
 class AppState {
   final AuthState authState;
@@ -74,20 +76,20 @@ AppState appReducer(AppState state, dynamic action) {
 
 Store<AppState> createStore(Dio dio, AuthDataProvider authDataProvider,
     ProfileDataProvider profileDataProvider,
-    {AppState? initialState} // Ajout du paramètre optionnel initialState
-    ) {
+    {AppState? initialState}) {
   final authMiddleware = AuthMiddleware(dio, authDataProvider);
   final profileMiddleware = ProfileMiddleware(dio, profileDataProvider);
   final addressMiddleware = AddressMiddleware(dio);
-  final articleService = ArticleService(dio);
-  final articleMiddleware = ArticleMiddleware(articleService);
+  final articleMiddleware = ArticleMiddleware(ArticleService(dio));
   final serviceMiddleware = ServiceMiddleware(dio);
+  final storageMiddleware = StorageMiddleware(
+    authDataProvider: authDataProvider,
+  );
 
   return Store<AppState>(
     appReducer,
     initialState: initialState ??
         AppState(
-          // Utiliser l'état initial fourni ou créer un nouveau
           authState: AuthState(),
           profileState: ProfileState(),
           addressState: AddressState(),
@@ -102,6 +104,7 @@ Store<AppState> createStore(Dio dio, AuthDataProvider authDataProvider,
       ...addressMiddleware.createMiddleware(),
       ...articleMiddleware.createMiddleware(),
       ...serviceMiddleware.createMiddleware(),
+      ...storageMiddleware.createMiddleware(),
     ],
   );
 }

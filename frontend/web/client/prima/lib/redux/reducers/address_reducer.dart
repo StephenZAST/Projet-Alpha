@@ -3,6 +3,8 @@ import '../actions/address_actions.dart';
 import '../../models/address.dart';
 
 AddressState addressReducer(AddressState state, dynamic action) {
+  print('AddressReducer: handling ${action.runtimeType}');
+
   if (action is LoadAddressesAction) {
     return state.copyWith(
       isLoading: true,

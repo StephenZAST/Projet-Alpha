@@ -2,6 +2,8 @@ import '../states/profile_state.dart';
 import '../actions/profile_actions.dart';
 
 ProfileState profileReducer(ProfileState state, dynamic action) {
+  print('ProfileReducer: handling ${action.runtimeType}');
+
   if (action is LoadProfileAction) {
     return state.copyWith(
       isLoading: true,
