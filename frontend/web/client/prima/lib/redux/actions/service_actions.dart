@@ -1,10 +1,12 @@
-import '../../widgets/order_bottom_sheet.dart';
+import 'dart:developer';
+
+import '../../models/service.dart';
 
 // Actions de chargement
 class LoadServicesAction {}
 
 class LoadServicesSuccessAction {
-  final List<Service> services;
+  final List<ServiceModel>? services;
   LoadServicesSuccessAction(this.services);
 }
 
@@ -15,7 +17,7 @@ class LoadServicesFailureAction {
 
 // Action de sélection
 class SelectServiceAction {
-  final Service service;
+  final ServiceModel? service;
   SelectServiceAction(this.service);
 }
 

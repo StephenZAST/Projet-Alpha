@@ -1,0 +1,46 @@
+class ServiceModel {
+  // Renommé de Service à ServiceModel
+  final String id;
+  final String name;
+  final double price;
+  final String? description;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  ServiceModel({
+    // Mettre à jour le constructeur
+    required this.id,
+    required this.name,
+    required this.price,
+    this.description,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ServiceModel.fromJson(Map<String, dynamic> json) {
+    return ServiceModel(
+      // Mettre à jour la création
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      price: (json['price'] ?? 0).toDouble(),
+      description: json['description'],
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'price': price,
+      'description': description,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+}

@@ -1,5 +1,6 @@
 import '../states/service_state.dart';
 import '../actions/service_actions.dart';
+import '../../models/service.dart';
 
 ServiceState serviceReducer(ServiceState state, dynamic action) {
   if (action is LoadServicesAction) {
@@ -25,8 +26,9 @@ ServiceState serviceReducer(ServiceState state, dynamic action) {
   }
 
   if (action is SelectServiceAction) {
+    final ServiceModel? newService = action.service;
     return state.copyWith(
-      selectedService: action.service,
+      selectedService: newService,
     );
   }
 

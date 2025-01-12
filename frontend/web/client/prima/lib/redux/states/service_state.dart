@@ -1,19 +1,22 @@
+import 'dart:developer';
+import '../../models/service.dart';
+
 class ServiceState {
-  final List<Service> services;
-  final Service? selectedService;
+  final List<ServiceModel>? services; // Rendre nullable
+  final ServiceModel? selectedService;
   final bool isLoading;
   final String? error;
 
   ServiceState({
-    this.services = const [],
+    this.services = const [], // Valeur par défaut
     this.selectedService,
     this.isLoading = false,
     this.error,
   });
 
   ServiceState copyWith({
-    List<Service>? services,
-    Service? selectedService,
+    List<ServiceModel>? services, // Déjà nullable
+    ServiceModel? selectedService,
     bool? isLoading,
     String? error,
   }) {

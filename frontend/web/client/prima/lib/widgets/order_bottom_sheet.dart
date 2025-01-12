@@ -1,10 +1,15 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:prima/redux/actions/order_actions.dart';
+import 'package:prima/redux/actions/service_actions.dart';
+import 'package:prima/redux/store.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/providers/auth_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as provider;
 import 'package:dio/dio.dart';
+import 'package:redux/redux.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:prima/providers/order_provider.dart';
@@ -131,7 +136,12 @@ class Article {
 }
 
 class OrderBottomSheet extends ConsumerStatefulWidget {
-  const OrderBottomSheet({super.key});
+  final Service? initialService;
+
+  const OrderBottomSheet({
+    Key? key,
+    this.initialService,
+  }) : super(key: key);
 
   @override
   ConsumerState<OrderBottomSheet> createState() => _OrderBottomSheetState();
@@ -148,16 +158,22 @@ class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
     _mainTabController = TabController(length: 3, vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await ref.read(orderProvider.notifier).fetchServices(authProvider);
-      final orderState = ref.read(orderProvider);
-      if (orderState.articleCategories.isNotEmpty) {
-        _articleTabController = TabController(
-          length: orderState.articleCategories.length,
-          vsync: this,
-        );
+      // Utiliser StoreProvider au lieu de Provider
+      final store = StoreProvider.of<AppState>(context);
+      store.dispatch(LoadServicesAction());
+
+      // Utiliser les actions Redux pour charger les articles
+      if (widget.initialService != null) {
+        store.dispatch(SelectServiceAction(widget.initialService!));
       }
     });
+
+    // Si un service initial est fourni, le sélectionner
+    if (widget.initialService != null) {
+      StoreProvider.of<AppState>(context).dispatch(
+        SelectServiceAction(widget.initialService!),
+      );
+    }
   }
 
   @override
@@ -244,200 +260,152 @@ class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
   }
 
   Widget _buildServiceSelectionTab() {
-    final orderState = ref.watch(orderProvider);
+    return StoreConnector<AppState, _ServiceViewModel>(
+      converter: (store) => _ServiceViewModel.fromStore(store),
+      builder: (context, vm) {
+        if (vm.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (orderState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    } else if (orderState.error != null) {
-      return Center(child: Text('Error: ${orderState.error}'));
-    } else {
-      return Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: orderState.services.length,
-              itemBuilder: (context, index) {
-                final service = orderState.services[index];
-                return ListTile(
-                  title: Text(service.name),
-                  subtitle: Text('\$${service.price}'),
-                  selected: orderState.selectedService == service,
-                  selectedTileColor: AppColors.gray100,
-                  onTap: () {
-                    ref
-                        .read(orderProvider.notifier)
-                        .selectService(service as Service?);
-                  },
-                );
-              },
+        return Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: vm.services.length,
+                itemBuilder: (context, index) {
+                  final service = vm.services[index];
+                  return ListTile(
+                    title: Text(service.name),
+                    subtitle: Text('\$${service.price}'),
+                    selected: vm.selectedService == service,
+                    selectedTileColor: AppColors.gray100,
+                    onTap: () => vm.selectService(service),
+                  );
+                },
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _buildNextButton(
-              onNext: () {
-                final authProvider =
-                    Provider.of<AuthProvider>(context, listen: false);
-                ref.read(orderProvider.notifier).fetchArticles(authProvider);
-                _mainTabController.animateTo(1);
-              },
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildNextButton(
+                onNext: () {
+                  final authProvider = provider.Provider.of<AuthProvider>(
+                      context,
+                      listen: false);
+                  ref.read(orderProvider.notifier).fetchArticles(authProvider);
+                  _mainTabController.animateTo(1);
+                },
+              ),
             ),
-          ),
-        ],
-      );
-    }
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildArticleSelectionTab() {
-    final orderState = ref.watch(orderProvider);
+    return StoreConnector<AppState, _ArticleViewModel>(
+      converter: (store) => _ArticleViewModel.fromStore(store),
+      builder: (context, vm) {
+        if (vm.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (orderState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    } else if (orderState.error != null) {
-      return Center(child: Text('Error: ${orderState.error}'));
-    } else if (orderState.articleCategories.isEmpty) {
-      return const Center(child: Text('Aucune catégorie disponible'));
-    } else if (_articleTabController == null) {
-      return const Center(child: CircularProgressIndicator());
-    } else {
-      return Column(
-        children: [
-          TabBar(
-            controller: _articleTabController,
-            isScrollable: true,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.gray500,
-            tabs: orderState.articleCategories
-                .map((category) => Tab(text: category.name))
-                .toList(),
-          ),
-          Expanded(
-            child: TabBarView(
+        if (vm.error != null) {
+          return Center(child: Text('Error: ${vm.error}'));
+        }
+
+        if (vm.articleCategories.isEmpty) {
+          return const Center(child: Text('Aucune catégorie disponible'));
+        }
+
+        return Column(
+          children: [
+            TabBar(
               controller: _articleTabController,
-              children: orderState.articleCategories.map((category) {
-                final articlesInCategory = orderState.articles
-                    .where((article) => article.categoryId == category.id)
-                    .toList();
-                return ListView.builder(
-                  itemCount: articlesInCategory.length,
-                  itemBuilder: (context, index) {
-                    final article = articlesInCategory[index];
-                    return ListTile(
-                      title: Text(article.name),
-                      subtitle: Text('\$${article.basePrice}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SpringButton(
-                            SpringButtonType.OnlyScale,
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: AppColors.gray100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.remove, size: 16),
-                            ),
-                            onTap: () {
-                              ref
-                                  .read(orderProvider.notifier)
-                                  .updateArticleQuantity(article.id, -1);
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          Text(orderState.selectedArticles[article.id]
-                                  ?.toString() ??
-                              '0'),
-                          const SizedBox(width: 8),
-                          SpringButton(
-                            SpringButtonType.OnlyScale,
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: AppColors.gray100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.add, size: 16),
-                            ),
-                            onTap: () {
-                              ref
-                                  .read(orderProvider.notifier)
-                                  .updateArticleQuantity(article.id, 1);
-                            },
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              }).toList(),
+              isScrollable: true,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.gray500,
+              tabs: vm.articleCategories
+                  .map((category) => Tab(text: category.name))
+                  .toList(),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _buildNextButton(
-              onNext: () => _mainTabController.animateTo(2),
+            Expanded(
+              child: TabBarView(
+                controller: _articleTabController,
+                children: vm.articleCategories.map((category) {
+                  final articlesInCategory =
+                      vm.getArticlesForCategory(category.id);
+                  return _buildArticleList(articlesInCategory, vm);
+                }).toList(),
+              ),
             ),
-          ),
-        ],
-      );
-    }
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildNextButton(
+                onNext: () => _mainTabController.animateTo(2),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildDateSelectionTab() {
-    final orderState = ref.watch(orderProvider);
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          TextField(
-            decoration: const InputDecoration(
-              labelText: 'Date de collecte',
-              border: OutlineInputBorder(),
-            ),
-            readOnly: true,
-            onTap: () async {
-              final DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime.now(),
-                lastDate: DateTime(2100),
-              );
-              if (pickedDate != null) {
-                ref
-                    .read(orderProvider.notifier)
-                    .selectCollectionDate(pickedDate);
-              }
-            },
-            controller: TextEditingController(
-                text: orderState.selectedCollectionDate?.toString()),
+    return StoreConnector<AppState, _DateViewModel>(
+      converter: (store) => _DateViewModel.fromStore(store),
+      builder: (context, vm) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Date de collecte',
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate != null) {
+                    vm.setDates(collectionDate: pickedDate);
+                  }
+                },
+                controller:
+                    TextEditingController(text: vm.collectionDate?.toString()),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Date de livraison',
+                  border: OutlineInputBorder(),
+                ),
+                readOnly: true,
+                onTap: () async {
+                  final DateTime? pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate != null) {
+                    vm.setDates(deliveryDate: pickedDate);
+                  }
+                },
+                controller:
+                    TextEditingController(text: vm.deliveryDate?.toString()),
+              ),
+              const SizedBox(height: 24),
+              _buildConfirmationButton(),
+            ],
           ),
-          const SizedBox(height: 16),
-          TextField(
-            decoration: const InputDecoration(
-              labelText: 'Date de livraison',
-              border: OutlineInputBorder(),
-            ),
-            readOnly: true,
-            onTap: () async {
-              final DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime.now(),
-                lastDate: DateTime(2100),
-              );
-              if (pickedDate != null) {
-                ref.read(orderProvider.notifier).selectDeliveryDate(pickedDate);
-              }
-            },
-            controller: TextEditingController(
-                text: orderState.selectedDeliveryDate?.toString()),
-          ),
-          const SizedBox(height: 24),
-          _buildConfirmationButton(),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -508,7 +476,8 @@ class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
   }
 
   Future<void> _createOrder(BuildContext context) async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider =
+        provider.Provider.of<AuthProvider>(context, listen: false);
     final result =
         await ref.read(orderProvider.notifier).createOrder(authProvider);
 
@@ -524,6 +493,133 @@ class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
           SnackBar(content: Text(message)),
         );
       },
+    );
+  }
+
+  Widget _buildArticleList(List<Article> articles, _ArticleViewModel vm) {
+    return ListView.builder(
+      itemCount: articles.length,
+      itemBuilder: (context, index) {
+        final article = articles[index];
+        return ListTile(
+          title: Text(article.name),
+          subtitle: Text('\$${article.basePrice}'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SpringButton(
+                SpringButtonType.OnlyScale,
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.remove, size: 16),
+                ),
+                onTap: () => vm.updateQuantity(article.id, -1),
+              ),
+              const SizedBox(width: 8),
+              Text(vm.selectedArticles[article.id]?.toString() ?? '0'),
+              const SizedBox(width: 8),
+              SpringButton(
+                SpringButtonType.OnlyScale,
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add, size: 16),
+                ),
+                onTap: () => vm.updateQuantity(article.id, 1),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Ajouter un ViewModel pour les services
+class _ServiceViewModel {
+  final List<Service> services;
+  final Service? selectedService;
+  final bool isLoading;
+  final Function(Service) selectService;
+
+  _ServiceViewModel({
+    required this.services,
+    this.selectedService,
+    required this.isLoading,
+    required this.selectService,
+  });
+
+  static _ServiceViewModel fromStore(Store<AppState> store) {
+    return _ServiceViewModel(
+      services: store.state.serviceState.services,
+      selectedService: store.state.serviceState.selectedService,
+      isLoading: store.state.serviceState.isLoading,
+      selectService: (service) => store.dispatch(SelectServiceAction(service)),
+    );
+  }
+}
+
+class _ArticleViewModel {
+  final List<ArticleCategory> articleCategories;
+  final List<Article> articles;
+  final Map<String, int> selectedArticles;
+  final bool isLoading;
+  final String? error;
+  final Function(String, int) updateQuantity;
+
+  _ArticleViewModel({
+    required this.articleCategories,
+    required this.articles,
+    required this.selectedArticles,
+    required this.isLoading,
+    this.error,
+    required this.updateQuantity,
+  });
+
+  List<Article> getArticlesForCategory(String categoryId) {
+    return articles
+        .where((article) => article.categoryId == categoryId)
+        .toList();
+  }
+
+  static _ArticleViewModel fromStore(Store<AppState> store) {
+    return _ArticleViewModel(
+      articleCategories: store.state.articleState.categories,
+      articles: store.state.articleState.articles,
+      selectedArticles: store.state.orderState.selectedArticles,
+      isLoading: store.state.articleState.isLoading,
+      error: store.state.articleState.error,
+      updateQuantity: (articleId, quantity) =>
+          store.dispatch(UpdateOrderArticleQuantityAction(articleId, quantity)),
+    );
+  }
+}
+
+class _DateViewModel {
+  final DateTime? collectionDate;
+  final DateTime? deliveryDate;
+  final Function({DateTime? collectionDate, DateTime? deliveryDate}) setDates;
+
+  _DateViewModel({
+    this.collectionDate,
+    this.deliveryDate,
+    required this.setDates,
+  });
+
+  static _DateViewModel fromStore(Store<AppState> store) {
+    return _DateViewModel(
+      collectionDate: store.state.orderState.collectionDate,
+      deliveryDate: store.state.orderState.deliveryDate,
+      setDates: ({collectionDate, deliveryDate}) => store.dispatch(
+          SetOrderDatesAction(
+              collectionDate: collectionDate, deliveryDate: deliveryDate)),
     );
   }
 }

@@ -8,6 +8,7 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
     return state.copyWith(
       isLoading: true,
       error: null,
+      articlesByCategory: {},
     );
   }
 
@@ -15,6 +16,7 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
     return state.copyWith(
       categories: action.categories,
       isLoading: false,
+      articlesByCategory: {},
     );
   }
 
@@ -22,6 +24,7 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
     return state.copyWith(
       error: action.error,
       isLoading: false,
+      articlesByCategory: {},
     );
   }
 
@@ -29,6 +32,7 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
     return state.copyWith(
       isLoading: true,
       error: null,
+      articlesByCategory: {},
     );
   }
 
@@ -47,6 +51,7 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
     return state.copyWith(
       error: action.error,
       isLoading: false,
+      articlesByCategory: {},
     );
   }
 

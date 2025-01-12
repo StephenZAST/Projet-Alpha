@@ -1,78 +1,137 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:prima/redux/store.dart';
+import 'package:prima/redux/actions/service_actions.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:spring_button/spring_button.dart';
+import 'package:prima/utils/bottom_sheet_manager.dart';
+import 'package:prima/widgets/order_bottom_sheet.dart';
+import 'package:redux/redux.dart';
 
-class ServiceSection extends StatelessWidget {
+class ServiceSection extends StatefulWidget {
   const ServiceSection({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final services = [
-      {'name': 'Repassage', 'image': 'assets/Repassage.png'},
-      {'name': 'Lavage', 'image': 'assets/Lavage.png'},
-      {'name': 'Nettoyage à sec', 'image': 'assets/Nettoyage_à_sec.png'},
-      {'name': 'Pliage', 'image': 'assets/Pliage.png'},
-    ];
+  State<ServiceSection> createState() => _ServiceSectionState();
+}
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: List.generate(services.length, (index) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: SpringButton(
-                SpringButtonType.OnlyScale,
-                Container(
-                  width: 120,
-                  height: 180,
+class _ServiceSectionState extends State<ServiceSection> {
+  @override
+  void initState() {
+    super.initState();
+    // Charger les services au montage du composant
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      StoreProvider.of<AppState>(context).dispatch(LoadServicesAction());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StoreConnector<AppState, _ViewModel>(
+      converter: (store) => _ViewModel.fromStore(store),
+      builder: (context, vm) {
+        if (vm.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (vm.error != null) {
+          return Center(
+            child: Text('Error: ${vm.error}'),
+          );
+        }
+
+        return SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: vm.services.length,
+            itemBuilder: (context, index) {
+              final service = vm.services[index];
+              return GestureDetector(
+                onTap: () {
+                  // Sélectionner le service
+                  vm.selectService(service);
+
+                  // Afficher le bottom sheet avec le service sélectionné
+                  BottomSheetManager().showCustomBottomSheet(
+                    context: context,
+                    builder: (context) => OrderBottomSheet(
+                      initialService: service,
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 100,
                   margin: const EdgeInsets.only(right: 16),
-                  padding: const EdgeInsets.symmetric(vertical: 28),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(14),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(
-                        services[index]['image'] as String,
-                        width: 75,
-                        height: 75,
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.asset(
+                          'assets/${service.name}.png',
+                          width: 24,
+                          height: 24,
+                          color: AppColors.primary,
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: Text(
-                          services[index]['name'] as String,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      Text(
+                        service.name,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
                 ),
-                onTap: () {},
-                scaleCoefficient: 0.95,
-                useCache: false,
-              ),
-            );
-          }),
-        ),
-      ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ViewModel {
+  final List<Service> services;
+  final bool isLoading;
+  final String? error;
+  final Function(Service) selectService;
+
+  _ViewModel({
+    required this.services,
+    required this.isLoading,
+    this.error,
+    required this.selectService,
+  });
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    return _ViewModel(
+      services: store.state.serviceState.services,
+      isLoading: store.state.serviceState.isLoading,
+      error: store.state.serviceState.error,
+      selectService: (service) => store.dispatch(SelectServiceAction(service)),
     );
   }
 }

@@ -22,4 +22,8 @@ class OrderState with _$OrderState {
 class OrderResult with _$OrderResult {
   const factory OrderResult.success() = _OrderSuccess;
   const factory OrderResult.error(String message) = _OrderError;
+
+  void when(
+      {required Null Function() success,
+      required Null Function(dynamic message) error}) {}
 }

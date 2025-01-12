@@ -1,8 +1,10 @@
+import 'dart:developer';
+
 import 'package:redux/redux.dart';
 import 'package:dio/dio.dart';
 import '../store.dart';
 import '../actions/service_actions.dart';
-import '../../widgets/order_bottom_sheet.dart';
+import '../../models/service.dart';
 
 class ServiceMiddleware {
   final Dio dio;
@@ -27,7 +29,8 @@ class ServiceMiddleware {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data['data'] ?? [];
-        final services = data.map((json) => Service.fromJson(json)).toList();
+        final List<ServiceModel>? services =
+            data.map((json) => ServiceModel.fromJson(json)).toList();
         store.dispatch(LoadServicesSuccessAction(services));
       } else {
         store.dispatch(LoadServicesFailureAction(

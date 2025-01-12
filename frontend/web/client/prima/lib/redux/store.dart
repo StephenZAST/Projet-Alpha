@@ -1,5 +1,9 @@
+// Supprimer l'import de providers/order_state.dart
+// import 'package:prima/providers/order_state.dart';  // Supprimer cette ligne
+import 'states/order_state.dart'; // Utiliser uniquement cette version
 import 'package:prima/providers/profile_data_provider.dart';
 import 'package:prima/redux/reducers/address_reducer.dart';
+import 'package:prima/redux/reducers/order_reducer.dart';
 import 'package:prima/redux/states/address_state.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
@@ -26,6 +30,8 @@ class AppState {
   final AddressState addressState;
   final ArticleState articleState;
   final ServiceState serviceState;
+  final OrderState
+      orderState; // Ceci utilisera maintenant la version de redux/states/
 
   AppState({
     required this.authState,
@@ -33,6 +39,7 @@ class AppState {
     required this.addressState,
     required this.articleState,
     required this.serviceState,
+    required this.orderState, // Ajout du paramètre
   });
 
   AppState copyWith({
@@ -41,6 +48,7 @@ class AppState {
     AddressState? addressState,
     ArticleState? articleState,
     ServiceState? serviceState,
+    OrderState? orderState, // Ajout du paramètre
   }) {
     return AppState(
       authState: authState ?? this.authState,
@@ -48,6 +56,7 @@ class AppState {
       addressState: addressState ?? this.addressState,
       articleState: articleState ?? this.articleState,
       serviceState: serviceState ?? this.serviceState,
+      orderState: orderState ?? this.orderState, // Ajout de la copie
     );
   }
 }
@@ -59,6 +68,7 @@ AppState appReducer(AppState state, dynamic action) {
     addressState: addressReducer(state.addressState, action),
     articleState: articleReducer(state.articleState, action),
     serviceState: serviceReducer(state.serviceState, action),
+    orderState: orderReducer(state.orderState, action), // Ajout du reducer
   );
 }
 
@@ -82,6 +92,8 @@ Store<AppState> createStore(
       addressState: AddressState(),
       articleState: ArticleState(),
       serviceState: ServiceState(),
+      orderState:
+          OrderState(), // Utilise maintenant la bonne version de OrderState
     ),
     middleware: [
       thunkMiddleware,
