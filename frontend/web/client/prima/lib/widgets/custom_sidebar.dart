@@ -8,6 +8,7 @@ import 'package:prima/utils/string_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/providers/auth_provider.dart';
+import 'package:redux/redux.dart';
 
 class DrawerItem {
   final IconData icon;
@@ -100,141 +101,114 @@ class CustomSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final navigationProvider =
-        Provider.of<NavigationProvider>(context, listen: false);
-    final authState = StoreProvider.of<AppState>(context).state.authState;
-    final user = authState.user;
-    final firstName = user?['firstName'] as String?;
-    final lastName = user?['lastName'] as String?;
-    final displayName = getDisplayName(firstName, lastName);
-
-    Future<void> handleNavigation(String route) async {
-      Navigator.pop(context); // Ferme le drawer
-      if (NavigationProvider.mainRoutes.contains(route)) {
-        // Utilise MaterialPageRoute pour une transition propre
-        await Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const MainNavigationWrapper()),
-          (route) => false,
+    return StoreConnector<AppState, _ViewModel>(
+      converter: (store) => _ViewModel.fromStore(store),
+      builder: (context, vm) {
+        final displayName = getDisplayName(
+          vm.user?['firstName'] as String?,
+          vm.user?['lastName'] as String?,
         );
-        navigationProvider.setRoute(route);
-      } else {
-        await navigationProvider.navigateToSecondaryRoute(context, route);
-      }
-    }
 
-    return Drawer(
-      backgroundColor: AppColors.white,
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
-            decoration: const BoxDecoration(
-              color: AppColors.white,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Image.asset(
-                  'assets/AlphaLogo.png',
-                  height: 40,
-                  fit: BoxFit.contain,
+        return Drawer(
+          backgroundColor: AppColors.white,
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
+                decoration: const BoxDecoration(color: AppColors.white),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset(
+                      'assets/AlphaLogo.png',
+                      height: 40,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.gray800,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.gray800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          const DrawerSection(
-            title: 'Navigation',
-            items: [
-              DrawerItem(icon: Icons.home, title: 'Accueil', route: '/home'),
+              ),
+              const SizedBox(height: 8),
+              const DrawerSection(
+                title: 'Navigation',
+                items: [
+                  DrawerItem(
+                      icon: Icons.home, title: 'Accueil', route: '/home'),
+                ],
+              ),
+              const Divider(),
+              const DrawerSection(
+                title: 'Activité',
+                items: [
+                  DrawerItem(
+                      icon: Icons.receipt,
+                      title: 'Commandes',
+                      route: '/orders'),
+                  DrawerItem(
+                      icon: Icons.notifications,
+                      title: 'Notifications',
+                      route: '/notifications'),
+                ],
+              ),
+              const Divider(),
+              const DrawerSection(
+                title: 'Autres',
+                items: [
+                  DrawerItem(
+                      icon: Icons.people,
+                      title: 'Parrainage',
+                      route: '/referral'),
+                  DrawerItem(
+                      icon: Icons.settings,
+                      title: 'Paramètres',
+                      route: '/settings'),
+                ],
+              ),
+              const Divider(height: 1, color: AppColors.gray200),
+              const Divider(height: 1, color: AppColors.gray200),
+              ListTile(
+                leading: const Icon(Icons.logout, color: AppColors.gray600),
+                title: const Text('Déconnexion'),
+                onTap: () {
+                  vm.onLogout();
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
+                },
+              ),
             ],
           ),
-          const Divider(),
-          const DrawerSection(
-            title: 'Activité',
-            items: [
-              DrawerItem(
-                  icon: Icons.receipt, title: 'Commandes', route: '/orders'),
-              DrawerItem(
-                  icon: Icons.notifications,
-                  title: 'Notifications',
-                  route: '/notifications'),
-            ],
-          ),
-          const Divider(),
-          const DrawerSection(
-            title: 'Autres',
-            items: [
-              DrawerItem(
-                  icon: Icons.people, title: 'Parrainage', route: '/referral'),
-              DrawerItem(
-                  icon: Icons.settings,
-                  title: 'Paramètres',
-                  route: '/settings'),
-            ],
-          ),
-          const Divider(height: 1, color: AppColors.gray200),
-          const Divider(height: 1, color: AppColors.gray200),
-          ListTile(
-            leading: const Icon(Icons.logout, color: AppColors.gray600),
-            title: const Text('Déconnexion'),
-            onTap: () {
-              StoreProvider.of<AppState>(context).dispatch(LogoutAction());
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/login',
-                (route) => false,
-              );
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
+}
 
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String text,
-    bool isSelected = false,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: ListTile(
-          leading: Icon(
-            icon,
-            color: isSelected ? AppColors.primary : AppColors.gray600,
-          ),
-          title: Text(
-            text,
-            style: TextStyle(
-              color: isSelected ? AppColors.primary : AppColors.gray600,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-          selected: isSelected,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        ),
-      ),
+class _ViewModel {
+  final Map<String, dynamic>? user;
+  final Function() onLogout;
+
+  _ViewModel({
+    required this.user,
+    required this.onLogout,
+  });
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    return _ViewModel(
+      user: store.state.authState.user,
+      onLogout: () => store.dispatch(LogoutAction()),
     );
   }
 }

@@ -1,7 +1,8 @@
 import 'dart:developer';
-
 import 'package:prima/models/address.dart';
-import 'package:prima/widgets/order_bottom_sheet.dart';
+import 'package:prima/widgets/order_bottom_sheet.dart' as bottom_sheet;
+import 'package:prima/models/service.dart' as service_model;
+import 'package:prima/models/article.dart' as article_model;
 
 class Order {
   final String id;
@@ -15,7 +16,7 @@ class Order {
   final double totalAmount;
   final DateTime? collectionDate;
   final DateTime? deliveryDate;
-  final Service? service;
+  final service_model.Service? service;
   final Address? address;
   final List<OrderItem>? items;
 
@@ -55,14 +56,34 @@ class Order {
       deliveryDate: json['deliveryDate'] != null
           ? DateTime.parse(json['deliveryDate'])
           : null,
-      service:
-          json['service'] != null ? Service.fromJson(json['service']) : null,
+      service: json['service'] != null
+          ? service_model.Service.fromJson(json['service'])
+          : null,
       address:
           json['address'] != null ? Address.fromJson(json['address']) : null,
       items: json['items'] != null
           ? (json['items'] as List).map((i) => OrderItem.fromJson(i)).toList()
           : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'service_id': serviceId,
+      'address_id': addressId,
+      'affiliateCode': affiliateCode,
+      'status': status,
+      'isRecurring': isRecurring,
+      'recurrenceType': recurrenceType,
+      'nextRecurrenceDate': nextRecurrenceDate?.toIso8601String(),
+      'totalAmount': totalAmount,
+      'collectionDate': collectionDate?.toIso8601String(),
+      'deliveryDate': deliveryDate?.toIso8601String(),
+      'service': service?.toJson(),
+      'address': address?.toJson(),
+      'items': items?.map((item) => item.toJson()).toList(),
+    };
   }
 }
 
@@ -73,7 +94,7 @@ class OrderItem {
   final String serviceId;
   final int quantity;
   final double unitPrice;
-  final Article? article;
+  final article_model.Article? article;
 
   OrderItem({
     required this.id,
@@ -93,8 +114,21 @@ class OrderItem {
       serviceId: json['serviceId'],
       quantity: json['quantity'],
       unitPrice: (json['unitPrice'] ?? 0).toDouble(),
-      article:
-          json['article'] != null ? Article.fromJson(json['article']) : null,
+      article: json['article'] != null
+          ? article_model.Article.fromJson(json['article'])
+          : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'orderId': orderId,
+      'articleId': articleId,
+      'serviceId': serviceId,
+      'quantity': quantity,
+      'unitPrice': unitPrice,
+      'article': article?.toJson(),
+    };
   }
 }

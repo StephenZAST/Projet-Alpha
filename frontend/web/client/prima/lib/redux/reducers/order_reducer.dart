@@ -55,5 +55,27 @@ OrderState orderReducer(OrderState state, dynamic action) {
     return OrderState();
   }
 
+  if (action is LoadOrdersAction) {
+    return state.copyWith(
+      isLoading: true,
+      error: null,
+    );
+  }
+
+  if (action is LoadOrdersSuccessAction) {
+    return state.copyWith(
+      orders: action.orders,
+      isLoading: false,
+      error: null,
+    );
+  }
+
+  if (action is LoadOrdersFailureAction) {
+    return state.copyWith(
+      isLoading: false,
+      error: action.error,
+    );
+  }
+
   return state;
 }

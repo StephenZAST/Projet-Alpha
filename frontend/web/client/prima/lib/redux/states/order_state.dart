@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:prima/models/order.dart';
 import 'package:prima/widgets/order_bottom_sheet.dart' as bottom_sheet;
 import '../../models/service.dart';
 import '../../models/article.dart';
@@ -13,6 +14,7 @@ class OrderState {
   final DateTime? deliveryDate;
   final bool isLoading;
   final String? error;
+  final List<Order> orders; // Nouvelle propriété
 
   OrderState({
     this.selectedService,
@@ -23,6 +25,7 @@ class OrderState {
     this.deliveryDate,
     this.isLoading = false,
     this.error,
+    this.orders = const [], // Initialisation par défaut
   });
 
   OrderState copyWith({
@@ -34,6 +37,7 @@ class OrderState {
     DateTime? deliveryDate,
     bool? isLoading,
     String? error,
+    List<Order>? orders,
   }) {
     return OrderState(
       selectedService: selectedService ?? this.selectedService,
@@ -44,6 +48,7 @@ class OrderState {
       deliveryDate: deliveryDate ?? this.deliveryDate,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
+      orders: orders ?? this.orders,
     );
   }
 }

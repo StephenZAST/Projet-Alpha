@@ -35,4 +35,18 @@ class Article {
           : DateTime.now(),
     );
   }
+
+  // Ajout de la méthode toJson
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'categoryId': categoryId,
+      'name': name,
+      'description': description,
+      'basePrice': basePrice,
+      'premiumPrice': premiumPrice,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 }
