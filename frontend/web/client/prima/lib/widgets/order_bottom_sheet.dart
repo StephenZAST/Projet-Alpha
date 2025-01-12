@@ -135,16 +135,34 @@ class Article {
   }
 }
 
-class OrderBottomSheet extends ConsumerStatefulWidget {
-  final Service? initialService;
-
-  const OrderBottomSheet({
-    Key? key,
-    this.initialService,
-  }) : super(key: key);
-
+class OrderBottomSheet extends StatelessWidget {
   @override
-  ConsumerState<OrderBottomSheet> createState() => _OrderBottomSheetState();
+  Widget build(BuildContext context) {
+    return StoreConnector<AppState, _OrderViewModel>(
+      onInit: (store) {
+        store.dispatch(LoadServicesAction());
+        store.dispatch(LoadCategoriesAction());
+      },
+      converter: (store) => _OrderViewModel.fromStore(store),
+      builder: (context, vm) {
+        return // ... existing bottom sheet UI
+      }
+    );
+  }
+}
+
+class _OrderViewModel {
+  final List<Service> services;
+  final List<ArticleCategory> categories;
+
+  _OrderViewModel({required this.services, required this.categories});
+
+  static _OrderViewModel fromStore(Store<AppState> store) {
+    return _OrderViewModel(
+      services: store.state.serviceState.services,
+      categories: store.state.articleState.categories,
+    );
+  }
 }
 
 class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>

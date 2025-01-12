@@ -1,14 +1,12 @@
 import 'package:redux/redux.dart';
-import 'package:dio/dio.dart';
 import '../store.dart';
 import '../actions/address_actions.dart';
 import '../../services/address_service.dart';
 
 class AddressMiddleware {
-  final Dio dio;
   final AddressService addressService;
 
-  AddressMiddleware(this.dio) : addressService = AddressService(dio);
+  AddressMiddleware(this.addressService);
 
   List<Middleware<AppState>> createMiddleware() {
     return [

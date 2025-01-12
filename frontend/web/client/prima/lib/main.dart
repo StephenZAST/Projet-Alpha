@@ -4,7 +4,6 @@ import 'package:prima/animations/page_transition.dart';
 import 'package:prima/providers/auth_data_provider.dart';
 import 'package:prima/providers/profile_data_provider.dart';
 import 'package:prima/services/address_service.dart';
-import 'package:prima/services/article_service.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/pages/home/home_page.dart';
@@ -40,8 +39,6 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final authDataProvider = AuthDataProviderImpl(prefs);
   final profileDataProvider = ProfileDataProviderImpl(prefs);
-
-  // Configuration de Dio
   final dio = Dio(BaseOptions(
     baseUrl: 'http://localhost:3001',
     headers: {
@@ -50,42 +47,36 @@ void main() async {
     },
   ));
 
-  // Initialisation des services
-  final articleService = ArticleService(dio);
+  final store = createStore(dio, authDataProvider, profileDataProvider);
 
-  // Initialisation du store avec tous les middleware
-  final store = await initStore(
-    dio,
-    authDataProvider,
-    profileDataProvider,
-  );
-
-  runApp(StoreProvider<AppState>(
-    store: store,
-    child: const MyApp(),
-  ));
+  runApp(MyApp(store: store));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final Store<AppState> store;
+
+  const MyApp({Key? key, required this.store}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ZS Laundry',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'SourceSansPro',
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        useMaterial3: true,
+    return StoreProvider<AppState>(
+      store: store,
+      child: MaterialApp(
+        title: 'ZS Laundry',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          fontFamily: 'SourceSansPro',
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+          useMaterial3: true,
+        ),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const MainNavigationWrapper(),
+          '/login': (context) => const LoginPage(),
+          '/register': (context) => const RegisterPage(),
+          '/reset_password': (context) => const ResetPasswordPage(),
+        },
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const MainNavigationWrapper(),
-        '/login': (context) => const LoginPage(),
-        '/register': (context) => const RegisterPage(),
-        '/reset_password': (context) => const ResetPasswordPage(),
-      },
     );
   }
 }

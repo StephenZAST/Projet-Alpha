@@ -25,6 +25,10 @@ import 'reducers/service_reducer.dart';
 import 'middleware/service_middleware.dart';
 import '../services/article_service.dart';
 import 'middleware/storage_middleware.dart'; // Ajout de l'import
+import '../middleware/order_middleware.dart';
+import '../reducers/app_reducer.dart';
+import '../states/app_state.dart';
+import '../../services/address_service.dart';
 
 class AppState {
   final AuthState authState;
@@ -114,24 +118,20 @@ Future<Store<AppState>> initStore(
   AuthDataProvider authDataProvider,
   ProfileDataProvider profileDataProvider,
 ) async {
-  final token = await authDataProvider.getStoredToken();
-  final userData = await authDataProvider.getStoredUserData();
+  final addressService = AddressService(dio);
+  final articleService = ArticleService(dio);
 
-  return createStore(
-    dio,
-    authDataProvider,
-    profileDataProvider,
-    initialState: AppState(
-      authState: AuthState(
-        isAuthenticated: token != null,
-        token: token,
-        user: userData,
-      ),
-      profileState: ProfileState(),
-      addressState: AddressState(),
-      articleState: ArticleState(),
-      serviceState: ServiceState(),
-      orderState: OrderState(),
-    ),
+  return Store<AppState>(
+    appReducer,
+    initialState: AppState.initial(),
+    middleware: [
+      thunkMiddleware,
+      ...AuthMiddleware(dio, authDataProvider).createMiddleware(),
+      ...ProfileMiddleware(dio, profileDataProvider).createMiddleware(),
+      ...AddressMiddleware(addressService).createMiddleware(),
+      ...OrderMiddleware(dio).createMiddleware(),
+      ...ServiceMiddleware(dio).createMiddleware(),
+      ...ArticleMiddleware(articleService).createMiddleware(),
+    ],
   );
 }

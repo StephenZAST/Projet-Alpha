@@ -23,8 +23,11 @@ class AddressListBottomSheet extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: StoreConnector<AppState, _ViewModel>(
-        converter: (store) => _ViewModel.fromStore(store),
+      child: StoreConnector<AppState, _AddressViewModel>(
+        onInit: (store) {
+          store.dispatch(LoadAddressesAction());
+        },
+        converter: (store) => _AddressViewModel.fromStore(store),
         builder: (context, vm) {
           return Stack(
             children: [
@@ -50,7 +53,7 @@ class AddressListBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildAddressList(BuildContext context, _ViewModel vm) {
+  Widget _buildAddressList(BuildContext context, _AddressViewModel vm) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       itemCount: vm.addresses.length,
@@ -256,22 +259,14 @@ class AddressListBottomSheet extends StatelessWidget {
   }
 }
 
-class _ViewModel {
+class _AddressViewModel {
   final List<Address> addresses;
-  final bool isLoading;
-  final String? error;
 
-  _ViewModel({
-    required this.addresses,
-    required this.isLoading,
-    this.error,
-  });
+  _AddressViewModel({required this.addresses});
 
-  static _ViewModel fromStore(Store<AppState> store) {
-    return _ViewModel(
+  static _AddressViewModel fromStore(Store<AppState> store) {
+    return _AddressViewModel(
       addresses: store.state.addressState.addresses,
-      isLoading: store.state.addressState.isLoading,
-      error: store.state.addressState.error,
     );
   }
 }
