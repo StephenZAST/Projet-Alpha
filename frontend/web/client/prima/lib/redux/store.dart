@@ -72,11 +72,10 @@ AppState appReducer(AppState state, dynamic action) {
   );
 }
 
-Store<AppState> createStore(
-  Dio dio,
-  AuthDataProvider authDataProvider,
-  ProfileDataProvider profileDataProvider,
-) {
+Store<AppState> createStore(Dio dio, AuthDataProvider authDataProvider,
+    ProfileDataProvider profileDataProvider,
+    {AppState? initialState} // Ajout du paramètre optionnel initialState
+    ) {
   final authMiddleware = AuthMiddleware(dio, authDataProvider);
   final profileMiddleware = ProfileMiddleware(dio, profileDataProvider);
   final addressMiddleware = AddressMiddleware(dio);
@@ -86,15 +85,16 @@ Store<AppState> createStore(
 
   return Store<AppState>(
     appReducer,
-    initialState: AppState(
-      authState: AuthState(),
-      profileState: ProfileState(),
-      addressState: AddressState(),
-      articleState: ArticleState(),
-      serviceState: ServiceState(),
-      orderState:
-          OrderState(), // Utilise maintenant la bonne version de OrderState
-    ),
+    initialState: initialState ??
+        AppState(
+          // Utiliser l'état initial fourni ou créer un nouveau
+          authState: AuthState(),
+          profileState: ProfileState(),
+          addressState: AddressState(),
+          articleState: ArticleState(),
+          serviceState: ServiceState(),
+          orderState: OrderState(),
+        ),
     middleware: [
       thunkMiddleware,
       ...authMiddleware.createMiddleware(),
@@ -103,5 +103,32 @@ Store<AppState> createStore(
       ...articleMiddleware.createMiddleware(),
       ...serviceMiddleware.createMiddleware(),
     ],
+  );
+}
+
+Future<Store<AppState>> initStore(
+  Dio dio,
+  AuthDataProvider authDataProvider,
+  ProfileDataProvider profileDataProvider,
+) async {
+  final token = await authDataProvider.getStoredToken();
+  final userData = await authDataProvider.getStoredUserData();
+
+  return createStore(
+    dio,
+    authDataProvider,
+    profileDataProvider,
+    initialState: AppState(
+      authState: AuthState(
+        isAuthenticated: token != null,
+        token: token,
+        user: userData,
+      ),
+      profileState: ProfileState(),
+      addressState: AddressState(),
+      articleState: ArticleState(),
+      serviceState: ServiceState(),
+      orderState: OrderState(),
+    ),
   );
 }

@@ -1,16 +1,19 @@
-import 'package:prima/widgets/order_bottom_sheet.dart';
+import 'package:prima/widgets/order_bottom_sheet.dart' as widgets;
+import '../../models/article.dart';
+import '../../models/article_category.dart';
 
 class ArticleState {
-  final List<ArticleCategory>? categories; // Rendre nullable
-  final List<Article>? articles;
+  final List<ArticleCategory> categories; // Non-nullable avec valeur par défaut
+  final List<Article> articles;
   final bool isLoading;
   final String? error;
-  final Map<String, List<Article>>? articlesByCategory; // Rendre nullable
+  final Map<String, List<Article>>
+      articlesByCategory; // Non-nullable avec valeur par défaut
 
   ArticleState({
-    this.categories, // Enlever la valeur par défaut
-    this.articles,
-    this.articlesByCategory,
+    this.categories = const [],
+    this.articles = const [],
+    this.articlesByCategory = const {},
     this.isLoading = false,
     this.error,
   });
