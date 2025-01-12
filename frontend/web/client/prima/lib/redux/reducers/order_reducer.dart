@@ -1,3 +1,5 @@
+import 'package:prima/widgets/order_bottom_sheet.dart';
+
 import '../states/order_state.dart';
 import '../actions/order_actions.dart';
 import '../../models/service.dart';
@@ -6,7 +8,7 @@ import '../../models/article.dart';
 OrderState orderReducer(OrderState state, dynamic action) {
   if (action is UpdateOrderServiceAction) {
     return state.copyWith(
-      selectedService: action.service,
+      selectedService: action.service as Service?,
     );
   }
 

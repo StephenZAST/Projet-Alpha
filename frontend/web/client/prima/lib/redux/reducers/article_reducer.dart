@@ -1,6 +1,5 @@
 import '../../models/article.dart';
 import '../../models/article_category.dart';
-
 import '../states/article_state.dart';
 import '../actions/article_actions.dart';
 
@@ -9,16 +8,13 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
     return state.copyWith(
       isLoading: true,
       error: null,
-      articlesByCategory: {},
     );
   }
 
   if (action is LoadCategoriesSuccessAction) {
-    final List<ArticleCategory> categories = List<ArticleCategory>.from(action.categories);
+    // Éviter la conversion de type explicite
     return state.copyWith(
-      categories: categories,
       isLoading: false,
-      articlesByCategory: {},
     );
   }
 
@@ -26,7 +22,6 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
     return state.copyWith(
       error: action.error,
       isLoading: false,
-      articlesByCategory: {},
     );
   }
 
@@ -34,17 +29,12 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
     return state.copyWith(
       isLoading: true,
       error: null,
-      articlesByCategory: {},
     );
   }
 
   if (action is LoadArticlesByCategorySuccessAction) {
-    final Map<String, List<Article>> newArticlesByCategory =
-        Map<String, List<Article>>.from(state.articlesByCategory);
-    newArticlesByCategory[action.categoryId] = action.articles;
-
+    // Éviter la création d'une nouvelle Map
     return state.copyWith(
-      articlesByCategory: newArticlesByCategory,
       isLoading: false,
     );
   }
@@ -53,7 +43,6 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
     return state.copyWith(
       error: action.error,
       isLoading: false,
-      articlesByCategory: {},
     );
   }
 
