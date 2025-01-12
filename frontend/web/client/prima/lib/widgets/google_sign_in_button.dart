@@ -1,56 +1,50 @@
 import 'package:flutter/material.dart';
-import 'package:prima/theme/colors.dart';
-import 'package:spring_button/spring_button.dart';
-import 'package:provider/provider.dart';
-import 'package:prima/providers/auth_provider.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import '../redux/store.dart';
+import '../redux/actions/auth_actions.dart';
+import '../theme/colors.dart';
 
 class GoogleSignInButton extends StatelessWidget {
-  final String text;
-
-  const GoogleSignInButton({
-    super.key,
-    this.text = 'Continuer avec Google',
-  });
-
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) => SpringButton(
-        SpringButtonType.OnlyScale,
-        Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            color: AppColors.gray50,
-            borderRadius: BorderRadius.circular(8),
+    return StoreConnector<AppState, _ViewModel>(
+      converter: (store) => _ViewModel.fromStore(store),
+      builder: (context, vm) {
+        return ElevatedButton(
+          onPressed: vm.isLoading ? null : () => vm.signInWithGoogle(),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset('assets/google-icon.png', height: 24),
-              const SizedBox(width: 12),
-              Text(
-                text,
-                style: const TextStyle(
-                  color: AppColors.gray800,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+          child: vm.isLoading
+              ? const CircularProgressIndicator()
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset('assets/google_logo.png', height: 24),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Continue with Google',
+                      style: TextStyle(color: AppColors.gray800),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ),
-        onTap: authProvider.isLoading
-            ? null
-            : () async {
-                final success = await authProvider.signInWithGoogle();
-                if (success && context.mounted) {
-                  Navigator.pushReplacementNamed(context, '/');
-                }
-              },
-        useCache: false,
-        scaleCoefficient: 0.95,
-      ),
+        );
+      },
+    );
+  }
+}
+
+class _ViewModel {
+  final bool isLoading;
+  final Function signInWithGoogle;
+
+  _ViewModel({required this.isLoading, required this.signInWithGoogle});
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    return _ViewModel(
+      isLoading: store.state.authState.isLoading,
+      signInWithGoogle: () => store.dispatch(GoogleSignInAction()),
     );
   }
 }

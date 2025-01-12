@@ -38,6 +38,7 @@ class AppState {
   final ServiceState serviceState;
   final OrderState
       orderState; // Ceci utilisera maintenant la version de redux/states/
+  final NavigationState navigationState;
 
   AppState({
     required this.authState,
@@ -46,6 +47,7 @@ class AppState {
     required this.articleState,
     required this.serviceState,
     required this.orderState, // Ajout du paramètre
+    required this.navigationState,
   });
 
   AppState copyWith({
@@ -55,6 +57,7 @@ class AppState {
     ArticleState? articleState,
     ServiceState? serviceState,
     OrderState? orderState, // Ajout du paramètre
+    NavigationState? navigationState,
   }) {
     return AppState(
       authState: authState ?? this.authState,
@@ -63,6 +66,7 @@ class AppState {
       articleState: articleState ?? this.articleState,
       serviceState: serviceState ?? this.serviceState,
       orderState: orderState ?? this.orderState, // Ajout de la copie
+      navigationState: navigationState ?? this.navigationState,
     );
   }
 }
@@ -75,6 +79,7 @@ AppState appReducer(AppState state, dynamic action) {
     articleState: articleReducer(state.articleState, action),
     serviceState: serviceReducer(state.serviceState, action),
     orderState: orderReducer(state.orderState, action), // Ajout du reducer
+    navigationState: navigationReducer(state.navigationState, action),
   );
 }
 
@@ -100,6 +105,7 @@ Store<AppState> createStore(Dio dio, AuthDataProvider authDataProvider,
           articleState: ArticleState(),
           serviceState: ServiceState(),
           orderState: OrderState(),
+          navigationState: NavigationState(),
         ),
     middleware: [
       thunkMiddleware,
