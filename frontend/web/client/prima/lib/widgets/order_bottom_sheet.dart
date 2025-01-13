@@ -1,167 +1,29 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:prima/redux/states/app_state.dart';
+import '../../models/service.dart';
+import '../../models/article.dart';
+import '../../models/article_category.dart';
 import 'package:prima/redux/actions/order_actions.dart';
 import 'package:prima/redux/actions/service_actions.dart';
-import 'package:prima/redux/store.dart';
+import 'package:prima/redux/actions/article_actions.dart'; // Ajout de l'import
 import 'package:prima/theme/colors.dart';
-import 'package:prima/providers/auth_provider.dart';
-import 'package:provider/provider.dart' as provider;
-import 'package:dio/dio.dart';
 import 'package:redux/redux.dart';
 import 'package:spring_button/spring_button.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:prima/providers/order_provider.dart';
-import 'package:prima/providers/order_state.dart';
 
-class Service {
-  final String id;
-  final String name;
-  final double price;
-  final String? description;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  Service({
-    required this.id,
-    required this.name,
-    required this.price,
-    this.description,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory Service.fromJson(Map<String, dynamic> json) {
-    try {
-      return Service(
-        id: json['id'] ?? '',
-        name: json['name'] ?? '',
-        price: (json['price'] ?? 0).toDouble(),
-        description: json['description'],
-        createdAt: json['created_at'] != null
-            ? DateTime.parse(json['created_at'])
-            : DateTime.now(),
-        updatedAt: json['updated_at'] != null
-            ? DateTime.parse(json['updated_at'])
-            : DateTime.now(),
-      );
-    } catch (e) {
-      print('Error parsing service JSON: $json');
-      print('Error details: $e');
-      rethrow;
-    }
-  }
-}
-
-class ArticleCategory {
-  final String id;
-  final String name;
-  final String? description;
-  final DateTime createdAt;
-
-  ArticleCategory({
-    required this.id,
-    required this.name,
-    this.description,
-    required this.createdAt,
-  });
-
-  factory ArticleCategory.fromJson(Map<String, dynamic> json) {
-    try {
-      print('Parsing category with data: $json'); // Ajout de log
-      return ArticleCategory(
-        id: json['id'] ?? '',
-        name: json['name'] ?? '',
-        description: json['description'],
-        createdAt:
-            json['created_at'] != null // Changé de createdAt à created_at
-                ? DateTime.parse(json['created_at'])
-                : DateTime.now(),
-      );
-    } catch (e, stack) {
-      print('Error parsing category: $e');
-      print('Stack trace: $stack');
-      rethrow;
-    }
-  }
-}
-
-class Article {
-  final String id;
-  final String categoryId;
-  final String name;
-  final String? description;
-  final double basePrice;
-  final double premiumPrice;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  Article({
-    required this.id,
-    required this.categoryId,
-    required this.name,
-    this.description,
-    required this.basePrice,
-    required this.premiumPrice,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory Article.fromJson(Map<String, dynamic> json) {
-    try {
-      print('Parsing article with data: $json'); // Ajout de log
-      return Article(
-        id: json['id'] ?? '',
-        categoryId: json['categoryId'] ?? '',
-        name: json['name'] ?? '',
-        description: json['description'],
-        basePrice: (json['basePrice'] ?? 0).toDouble(),
-        premiumPrice: (json['premiumPrice'] ?? 0).toDouble(),
-        createdAt:
-            json['created_at'] != null // Changé de createdAt à created_at
-                ? DateTime.parse(json['created_at'])
-                : DateTime.now(),
-        updatedAt:
-            json['updated_at'] != null // Changé de updatedAt à updated_at
-                ? DateTime.parse(json['updated_at'])
-                : DateTime.now(),
-      );
-    } catch (e, stack) {
-      print('Error parsing article: $e');
-      print('Stack trace: $stack');
-      rethrow;
-    }
-  }
-}
-
-class OrderBottomSheet extends ConsumerStatefulWidget {
-  final Service initialService; // Changed from Service? to Service
+class OrderBottomSheet extends StatefulWidget {
+  final Service initialService;
 
   const OrderBottomSheet({
     Key? key,
-    required this.initialService, // Changed to required
+    required this.initialService,
   }) : super(key: key);
 
   @override
-  ConsumerState<OrderBottomSheet> createState() => _OrderBottomSheetState();
+  State<OrderBottomSheet> createState() => _OrderBottomSheetState();
 }
 
-class _OrderViewModel {
-  final List<Service> services;
-  final List<ArticleCategory> categories;
-
-  _OrderViewModel({required this.services, required this.categories});
-
-  static _OrderViewModel fromStore(Store<AppState> store) {
-    return _OrderViewModel(
-      services: store.state.serviceState.services,
-      categories: store.state.articleState.categories,
-    );
-  }
-}
-
-class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
+class _OrderBottomSheetState extends State<OrderBottomSheet>
     with TickerProviderStateMixin {
   late TabController _mainTabController;
   TabController? _articleTabController;
@@ -171,18 +33,11 @@ class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
     super.initState();
     _mainTabController = TabController(length: 3, vsync: this);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Utiliser StoreProvider au lieu de Provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final store = StoreProvider.of<AppState>(context);
       store.dispatch(LoadServicesAction());
-      store.dispatch(
-          SelectServiceAction(widget.initialService)); // Removed null check
+      store.dispatch(SelectServiceAction(widget.initialService));
     });
-
-    // Sélectionner le service initial
-    StoreProvider.of<AppState>(context).dispatch(
-      SelectServiceAction(widget.initialService), // Removed null check
-    );
   }
 
   @override
@@ -297,10 +152,9 @@ class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
               padding: const EdgeInsets.all(16.0),
               child: _buildNextButton(
                 onNext: () {
-                  final authProvider = provider.Provider.of<AuthProvider>(
-                      context,
-                      listen: false);
-                  ref.read(orderProvider.notifier).fetchArticles(authProvider);
+                  final store = StoreProvider.of<AppState>(context);
+                  store.dispatch(
+                      LoadCategoriesAction()); // Changé pour la bonne action
                   _mainTabController.animateTo(1);
                 },
               ),
@@ -485,23 +339,21 @@ class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
   }
 
   Future<void> _createOrder(BuildContext context) async {
-    final authProvider =
-        provider.Provider.of<AuthProvider>(context, listen: false);
-    final result =
-        await ref.read(orderProvider.notifier).createOrder(authProvider);
+    // Utiliser StoreConnector pour créer la commande
+    StoreProvider.of<AppState>(context).dispatch(
+      CreateOrderAction(
+        StoreProvider.of<AppState>(context)
+                .state
+                .addressState
+                .selectedAddress
+                ?.id ??
+            '',
+      ),
+    );
 
-    result.when(
-      success: () {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Commande créée avec succès')),
-        );
-      },
-      error: (message) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
-      },
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Commande créée avec succès')),
     );
   }
 
@@ -551,7 +403,7 @@ class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
   }
 }
 
-// Ajouter un ViewModel pour les services
+// ViewModels
 class _ServiceViewModel {
   final List<Service> services;
   final Service? selectedService;

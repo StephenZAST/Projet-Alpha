@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:prima/animations/page_transition.dart';
 import 'package:prima/providers/auth_data_provider.dart';
 import 'package:prima/providers/profile_data_provider.dart';
-import 'package:prima/services/address_service.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/pages/home/home_page.dart';
@@ -11,18 +10,10 @@ import 'package:prima/pages/profile/profile_page.dart';
 import 'package:prima/pages/offers/offers_page.dart';
 import 'package:prima/pages/chat/chat_page.dart';
 import 'package:prima/pages/services/services_page.dart';
-import 'package:prima/pages/orders/orders_page.dart';
-import 'package:prima/pages/referral/referral_page.dart';
-import 'package:prima/pages/settings/settings_page.dart';
-import 'package:prima/pages/notifications/notifications_page.dart';
 import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/widgets/custom_bottom_navigation.dart';
-import 'package:flutter/widgets.dart';
 import 'package:prima/pages/auth/login_page.dart';
 import 'package:prima/pages/auth/register_page.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:prima/config/env.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_redux/flutter_redux.dart';
@@ -147,7 +138,7 @@ class _MainNavigationWrapperState extends ConsumerState<MainNavigationWrapper> {
             bottomNavigationBar: navigationProvider
                     .shouldShowBottomNav(navigationProvider.currentRoute)
                 ? CustomBottomNavigation(
-                    selectedIndex: navigationProvider.currentIndex,
+                    currentIndex: navigationProvider.currentIndex,
                     onItemSelected: (index) {
                       navigationProvider.animateToPage(index);
                     },

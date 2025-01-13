@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:prima/redux/states/app_state.dart';
-import 'package:prima/redux/store.dart';
-import 'package:prima/redux/actions/service_actions.dart';
-import 'package:prima/theme/colors.dart';
-import 'package:prima/utils/bottom_sheet_manager.dart';
-import 'package:prima/widgets/order_bottom_sheet.dart' as widgets;
+import '../models/service.dart'; // Use direct import
+import '../redux/states/app_state.dart';
+import '../redux/actions/service_actions.dart';
+import '../theme/colors.dart';
+import '../utils/bottom_sheet_manager.dart';
+import '../widgets/order_bottom_sheet.dart';
 import 'package:redux/redux.dart';
-import 'package:prima/models/service.dart';
 
 class ServiceSection extends StatefulWidget {
   const ServiceSection({Key? key}) : super(key: key);
@@ -59,7 +58,7 @@ class _ServiceSectionState extends State<ServiceSection> {
                   // Afficher le bottom sheet avec le service sélectionné
                   BottomSheetManager().showCustomBottomSheet(
                     context: context,
-                    builder: (context) => widgets.OrderBottomSheet(
+                    builder: (context) => OrderBottomSheet(
                       initialService: service,
                     ),
                   );

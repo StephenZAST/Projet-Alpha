@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
-import 'package:provider/provider.dart';
-import 'package:prima/providers/auth_provider.dart';
 import 'package:prima/utils/string_utils.dart';
+import 'package:redux/redux.dart';
 
 class AppBarComponent extends StatelessWidget {
   final String title;
@@ -17,13 +18,11 @@ class AppBarComponent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        final user = authProvider.user;
-        final firstName = user?['firstName'] as String?;
-        final lastName = user?['lastName'] as String?;
-        final initials = getInitials(firstName, lastName);
-        final displayName = getDisplayName(firstName, lastName);
+    return StoreConnector<AppState, _ViewModel>(
+      converter: (store) => _ViewModel.fromStore(store),
+      builder: (context, vm) {
+        final initials = getInitials(vm.firstName, vm.lastName);
+        final displayName = getDisplayName(vm.firstName, vm.lastName);
 
         return Padding(
           padding: const EdgeInsets.all(16.0),
@@ -109,6 +108,24 @@ class AppBarComponent extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _ViewModel {
+  final String? firstName;
+  final String? lastName;
+
+  _ViewModel({
+    this.firstName,
+    this.lastName,
+  });
+
+  static _ViewModel fromStore(Store<AppState> store) {
+    final user = store.state.authState.user;
+    return _ViewModel(
+      firstName: user?['firstName'] as String?,
+      lastName: user?['lastName'] as String?,
     );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import '../redux/store.dart';
+import 'package:prima/models/service.dart';
+import 'package:prima/redux/states/app_state.dart';
+import 'package:prima/redux/states/navigation_state.dart';
+import 'package:redux/redux.dart';
 import '../redux/actions/navigation_actions.dart';
 import '../theme/colors.dart';
 import 'package:prima/widgets/order_bottom_sheet.dart';
@@ -8,6 +11,15 @@ import 'package:spring_button/spring_button.dart';
 import 'package:prima/utils/bottom_sheet_manager.dart';
 
 class CustomBottomNavigation extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onItemSelected;
+
+  const CustomBottomNavigation({
+    super.key,
+    required this.currentIndex,
+    required this.onItemSelected,
+  });
+
   @override
   Widget build(BuildContext context) {
     return StoreConnector<AppState, _ViewModel>(
@@ -31,8 +43,8 @@ class CustomBottomNavigation extends StatelessWidget {
                     const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: BottomNavigationBar(
-                currentIndex: vm.currentIndex,
-                onTap: vm.onTabSelected,
+                currentIndex: currentIndex,
+                onTap: onItemSelected,
                 selectedItemColor: AppColors.primary,
                 unselectedItemColor: AppColors.gray500,
                 backgroundColor: Colors.transparent,
@@ -80,7 +92,14 @@ class CustomBottomNavigation extends StatelessWidget {
                   onTap: () {
                     BottomSheetManager().showCustomBottomSheet(
                       context: context,
-                      builder: (context) => const OrderBottomSheet(),
+                      builder: (context) => OrderBottomSheet(
+                          initialService: Service(
+                        id: '',
+                        name: '',
+                        price: 0,
+                        createdAt: DateTime.now(),
+                        updatedAt: DateTime.now(),
+                      )),
                     );
                   },
                   scaleCoefficient: 0.9,

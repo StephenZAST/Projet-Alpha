@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:prima/main.dart';
 import 'package:prima/redux/actions/auth_actions.dart';
-import 'package:prima/redux/store.dart';
+import 'package:prima/redux/actions/navigation_actions.dart';
+import 'package:prima/redux/states/app_state.dart';
+import 'package:prima/redux/states/navigation_state.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/utils/string_utils.dart';
-import 'package:provider/provider.dart';
-import 'package:prima/navigation/navigation_provider.dart';
-import 'package:prima/providers/auth_provider.dart';
 import 'package:redux/redux.dart';
 
 class DrawerItem {
@@ -34,8 +32,9 @@ class DrawerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<NavigationProvider>(
-      builder: (context, navigationProvider, _) => Column(
+    return StoreConnector<AppState, _DrawerViewModel>(
+      converter: (store) => _DrawerViewModel.fromStore(store),
+      builder: (context, vm) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -53,14 +52,13 @@ class DrawerSection extends StatelessWidget {
                 context: context,
                 icon: item.icon,
                 text: item.title,
-                isSelected: navigationProvider.isRouteActive(item.route),
+                isSelected: vm.currentRoute == item.route,
                 onTap: () {
                   Navigator.pop(context);
-                  if (NavigationProvider.mainRoutes.contains(item.route)) {
-                    navigationProvider.navigateToMainRoute(context, item.route);
+                  if (vm.isMainRoute(item.route)) {
+                    vm.navigateToMainRoute(context, item.route);
                   } else {
-                    navigationProvider.navigateToSecondaryRoute(
-                        context, item.route);
+                    vm.navigateToSecondaryRoute(context, item.route);
                   }
                 },
               )),
@@ -101,8 +99,8 @@ class CustomSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<AppState, _ViewModel>(
-      converter: (store) => _ViewModel.fromStore(store),
+    return StoreConnector<AppState, _SidebarViewModel>(
+      converter: (store) => _SidebarViewModel.fromStore(store),
       builder: (context, vm) {
         final displayName = getDisplayName(
           vm.user?['firstName'] as String?,
@@ -196,17 +194,45 @@ class CustomSidebar extends StatelessWidget {
   }
 }
 
-class _ViewModel {
+class _DrawerViewModel {
+  final String currentRoute;
+  final Function(BuildContext, String) navigateToMainRoute;
+  final Function(BuildContext, String) navigateToSecondaryRoute;
+  final bool Function(String) isMainRoute;
+
+  _DrawerViewModel({
+    required this.currentRoute,
+    required this.navigateToMainRoute,
+    required this.navigateToSecondaryRoute,
+    required this.isMainRoute,
+  });
+
+  static _DrawerViewModel fromStore(Store<AppState> store) {
+    return _DrawerViewModel(
+      currentRoute: store.state.navigationState.currentRoute,
+      isMainRoute: (route) =>
+          NavigationState.mainRoutes.contains(route), // Correction ici
+      navigateToMainRoute: (context, route) => store.dispatch(
+          NavigateToMainRouteAction(
+              route, context)), // Ordre des paramètres corrigé
+      navigateToSecondaryRoute: (context, route) => store.dispatch(
+          NavigateToSecondaryRouteAction(
+              route, context)), // Ordre des paramètres corrigé
+    );
+  }
+}
+
+class _SidebarViewModel {
   final Map<String, dynamic>? user;
   final Function() onLogout;
 
-  _ViewModel({
+  _SidebarViewModel({
     required this.user,
     required this.onLogout,
   });
 
-  static _ViewModel fromStore(Store<AppState> store) {
-    return _ViewModel(
+  static _SidebarViewModel fromStore(Store<AppState> store) {
+    return _SidebarViewModel(
       user: store.state.authState.user,
       onLogout: () => store.dispatch(LogoutAction()),
     );

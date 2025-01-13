@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class SetRouteAction {
   final String route;
   SetRouteAction(this.route);
@@ -17,10 +19,14 @@ class PopRouteAction {}
 
 class NavigateToMainRouteAction {
   final String route;
-  NavigateToMainRouteAction(this.route);
+  final BuildContext context;
+
+  NavigateToMainRouteAction(this.route, this.context);
 }
 
 class NavigateToSecondaryRouteAction {
   final String route;
-  NavigateToSecondaryRouteAction(this.route);
+  final BuildContext context;
+
+  NavigateToSecondaryRouteAction(this.route, this.context);
 }

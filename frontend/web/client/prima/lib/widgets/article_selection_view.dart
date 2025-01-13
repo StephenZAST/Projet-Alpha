@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:prima/providers/article_provider.dart';
+import 'package:prima/models/article.dart';
+import 'package:prima/models/article_category.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:prima/widgets/order_bottom_sheet.dart';
-import 'package:provider/provider.dart';
 import 'package:redux/redux.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:prima/redux/store.dart';
 import 'package:prima/redux/actions/article_actions.dart';
 
 class ArticleSelectionView extends StatefulWidget {

@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:prima/models/address.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/utils/bottom_sheet_manager.dart';
 import 'package:prima/widgets/address_bottom_sheet.dart';
 import 'package:prima/widgets/address_card.dart';
-import 'package:prima/providers/address_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:redux/redux.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:prima/redux/store.dart';
 import 'package:prima/redux/actions/address_actions.dart';
 
 class AddressListBottomSheet extends StatelessWidget {

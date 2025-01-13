@@ -1,4 +1,3 @@
-// Remplacer ServiceModel par Service pour unifier
 class Service {
   final String id;
   final String name;
@@ -17,7 +16,6 @@ class Service {
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
-    print('Parsing Service from JSON: $json'); // Log pour debug
     return Service(
       id: json['id'] ?? '',
       name: json['name'] ?? '',

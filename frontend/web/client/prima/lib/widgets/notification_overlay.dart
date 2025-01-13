@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:prima/redux/actions/notification_actions.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:redux/redux.dart';
-import '../redux/store.dart';
 import '../theme/colors.dart';
 
 class NotificationOverlay extends StatelessWidget {
@@ -84,7 +85,7 @@ class NotificationOverlay extends StatelessWidget {
 
 class _ViewModel {
   final Map<String, dynamic>? currentNotification;
-  final Function dismissNotification;
+  final VoidCallback dismissNotification;
 
   _ViewModel({
     required this.currentNotification,

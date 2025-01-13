@@ -1,13 +1,13 @@
-import 'dart:developer';
-import 'package:prima/widgets/order_bottom_sheet.dart' as bottom_sheet;
+import 'package:prima/models/article.dart';
+import 'package:prima/models/article_category.dart';
 import '../../models/service.dart';
 import '../../models/order.dart';
 
 class OrderState {
   final Service? selectedService;
   final Map<String, int> selectedArticles;
-  final List<bottom_sheet.Article> articles;
-  final List<bottom_sheet.ArticleCategory> articleCategories;
+  final List<Article> articles;
+  final List<ArticleCategory> articleCategories;
   final DateTime? collectionDate;
   final DateTime? deliveryDate;
   final bool isLoading;
@@ -29,8 +29,8 @@ class OrderState {
   OrderState copyWith({
     Service? selectedService,
     Map<String, int>? selectedArticles,
-    List<bottom_sheet.Article>? articles,
-    List<bottom_sheet.ArticleCategory>? articleCategories,
+    List<Article>? articles,
+    List<ArticleCategory>? articleCategories,
     DateTime? collectionDate,
     DateTime? deliveryDate,
     bool? isLoading,
