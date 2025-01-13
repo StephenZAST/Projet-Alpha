@@ -135,20 +135,16 @@ class Article {
   }
 }
 
-class OrderBottomSheet extends StatelessWidget {
+class OrderBottomSheet extends ConsumerStatefulWidget {
+  final Service initialService; // Changed from Service? to Service
+
+  const OrderBottomSheet({
+    Key? key,
+    required this.initialService, // Changed to required
+  }) : super(key: key);
+
   @override
-  Widget build(BuildContext context) {
-    return StoreConnector<AppState, _OrderViewModel>(
-      onInit: (store) {
-        store.dispatch(LoadServicesAction());
-        store.dispatch(LoadCategoriesAction());
-      },
-      converter: (store) => _OrderViewModel.fromStore(store),
-      builder: (context, vm) {
-        return // ... existing bottom sheet UI
-      }
-    );
-  }
+  ConsumerState<OrderBottomSheet> createState() => _OrderBottomSheetState();
 }
 
 class _OrderViewModel {
@@ -179,19 +175,14 @@ class _OrderBottomSheetState extends ConsumerState<OrderBottomSheet>
       // Utiliser StoreProvider au lieu de Provider
       final store = StoreProvider.of<AppState>(context);
       store.dispatch(LoadServicesAction());
-
-      // Utiliser les actions Redux pour charger les articles
-      if (widget.initialService != null) {
-        store.dispatch(SelectServiceAction(widget.initialService!));
-      }
+      store.dispatch(
+          SelectServiceAction(widget.initialService)); // Removed null check
     });
 
-    // Si un service initial est fourni, le sélectionner
-    if (widget.initialService != null) {
-      StoreProvider.of<AppState>(context).dispatch(
-        SelectServiceAction(widget.initialService!),
-      );
-    }
+    // Sélectionner le service initial
+    StoreProvider.of<AppState>(context).dispatch(
+      SelectServiceAction(widget.initialService), // Removed null check
+    );
   }
 
   @override

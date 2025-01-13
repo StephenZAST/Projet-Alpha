@@ -1,3 +1,4 @@
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/redux/store.dart';
 import 'package:redux/redux.dart';
 import 'package:dio/dio.dart';

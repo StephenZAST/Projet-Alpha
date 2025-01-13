@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/models/address.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/utils/bottom_sheet_manager.dart';
 import 'package:redux/redux.dart';
@@ -8,9 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:prima/widgets/address_bottom_sheet.dart';
 import 'package:prima/widgets/address_list_bottom_sheet.dart';
 import 'package:provider/provider.dart';
-import 'package:prima/providers/address_provider.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:prima/redux/store.dart';
 import 'package:prima/redux/actions/address_actions.dart';
 
 class AddressSectionComponent extends StatelessWidget {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
 
 class RecentOrdersSectionComponent extends StatelessWidget {
@@ -57,7 +56,9 @@ class RecentOrdersSectionComponent extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isWaiting ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+        color: isWaiting
+            ? Colors.orange.withOpacity(0.1)
+            : Colors.green.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

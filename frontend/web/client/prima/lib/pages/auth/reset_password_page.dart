@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:provider/provider.dart';
-import 'package:prima/providers/auth_provider.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
-import '../../redux/store.dart';
 import '../../redux/actions/auth_actions.dart';
 
 class ResetPasswordPage extends StatefulWidget {
@@ -26,7 +22,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
-  String _errorMessage = '';
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -45,8 +40,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         break;
       case 2:
         if (_newPasswordController.text != _confirmPasswordController.text) {
-          setState(
-              () => _errorMessage = 'Les mots de passe ne correspondent pas');
           return;
         }
         store.dispatch(ResetPasswordAction(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
-import '../../redux/store.dart';
 import '../../redux/actions/auth_actions.dart';
 
 class LoginPage extends StatefulWidget {

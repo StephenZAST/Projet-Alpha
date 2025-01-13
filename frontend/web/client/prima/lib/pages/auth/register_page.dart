@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:prima/providers/auth_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:redux/redux.dart';
-import '../../redux/store.dart';
 import '../../redux/actions/auth_actions.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -21,7 +19,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isSubmitting = false;
 
   bool _obscurePassword = true;
   final TextEditingController _phoneController = TextEditingController();
@@ -41,8 +38,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSubmitting = true);
 
     StoreProvider.of<AppState>(context).dispatch(
       RegisterRequestAction(

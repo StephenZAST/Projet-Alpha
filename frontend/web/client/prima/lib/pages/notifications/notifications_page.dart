@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:prima/navigation/navigation_provider.dart';
+import 'package:prima/redux/actions/navigation_actions.dart';
+import 'package:prima/redux/actions/notification_actions.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/home-components/app_bar.dart';
 import 'package:prima/home-components/address_section.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import '../redux/store.dart';
-import '../redux/actions/notification_actions.dart';
+import 'package:redux/redux.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
@@ -72,6 +74,25 @@ class NotificationsPage extends StatelessWidget {
                 ),
         );
       },
+    );
+  }
+}
+
+class NotificationCard extends StatelessWidget {
+  final Map<String, dynamic> notification;
+
+  const NotificationCard({Key? key, required this.notification})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: ListTile(
+        title: Text(notification['title'] ?? ''),
+        subtitle: Text(notification['message'] ?? ''),
+        trailing: Text(notification['date'] ?? ''),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/home-components/app_bar.dart';
 import 'package:flutter_redux/flutter_redux.dart';

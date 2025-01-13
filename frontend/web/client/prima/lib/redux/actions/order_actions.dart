@@ -1,8 +1,9 @@
 import '../../models/service.dart'; // Assurez-vous que ce fichier existe
 import '../../models/article.dart'; // Ajouter cet import
+import '../../models/order.dart'; // Assurez-vous d'avoir ce modèle
 
 class UpdateOrderServiceAction {
-  final ServiceModel? service; // Changé de Service à ServiceModel
+  final Service? service; // Changé de ServiceModel à Service
   UpdateOrderServiceAction(this.service);
 }
 
@@ -31,3 +32,18 @@ class CreateOrderFailureAction {
 }
 
 class ResetOrderAction {}
+
+// Nouvelles actions pour le chargement des commandes
+class LoadOrdersAction {
+  const LoadOrdersAction();
+}
+
+class LoadOrdersSuccessAction {
+  final List<Order> orders;
+  const LoadOrdersSuccessAction(this.orders);
+}
+
+class LoadOrdersFailureAction {
+  final String error;
+  const LoadOrdersFailureAction(this.error);
+}

@@ -35,4 +35,17 @@ class Article {
           : DateTime.now(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'categoryId': categoryId,
+      'name': name,
+      'description': description,
+      'basePrice': basePrice,
+      'premiumPrice': premiumPrice,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
 }
