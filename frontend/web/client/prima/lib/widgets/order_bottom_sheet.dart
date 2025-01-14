@@ -34,6 +34,8 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
   bool _isLoading = false;
   RecurrenceType _selectedRecurrence = RecurrenceType.none;
   String? _selectedAddressId;
+  TimeOfDay? _collectionTime;
+  TimeOfDay? _deliveryTime;
 
   @override
   void initState() {
@@ -117,6 +119,10 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
           selectedRecurrence: _selectedRecurrence,
           onRecurrenceSelected: (type) =>
               setState(() => _selectedRecurrence = type),
+          collectionTime: _collectionTime,
+          deliveryTime: _deliveryTime,
+          onCollectionTimeSelected: _handleCollectionTimeSelected,
+          onDeliveryTimeSelected: _handleDeliveryTimeSelected,
         );
       case 3:
         return OrderSummary(
@@ -232,6 +238,14 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
 
   void _handleDeliveryDateSelected(DateTime? date) {
     setState(() => _deliveryDate = date);
+  }
+
+  void _handleCollectionTimeSelected(TimeOfDay? time) {
+    setState(() => _collectionTime = time);
+  }
+
+  void _handleDeliveryTimeSelected(TimeOfDay? time) {
+    setState(() => _deliveryTime = time);
   }
 
   Future<void> _handleConfirmOrder() async {

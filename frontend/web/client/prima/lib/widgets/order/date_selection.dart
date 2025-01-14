@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/widgets/order/recurrence_selection.dart';
+import 'package:intl/intl.dart';
 
 class DateSelection extends StatelessWidget {
   final DateTime? collectionDate;
   final DateTime? deliveryDate;
+  final TimeOfDay? collectionTime;
+  final TimeOfDay? deliveryTime;
   final Function(DateTime?) onCollectionDateSelected;
   final Function(DateTime?) onDeliveryDateSelected;
+  final Function(TimeOfDay?) onCollectionTimeSelected;
+  final Function(TimeOfDay?) onDeliveryTimeSelected;
   final VoidCallback onNext;
   final VoidCallback onPrevious;
   final RecurrenceType selectedRecurrence;
@@ -16,8 +21,12 @@ class DateSelection extends StatelessWidget {
     Key? key,
     this.collectionDate,
     this.deliveryDate,
+    this.collectionTime,
+    this.deliveryTime,
     required this.onCollectionDateSelected,
     required this.onDeliveryDateSelected,
+    required this.onCollectionTimeSelected,
+    required this.onDeliveryTimeSelected,
     required this.onNext,
     required this.onPrevious,
     required this.selectedRecurrence,
@@ -31,25 +40,28 @@ class DateSelection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildDateField(
+          _buildDateTimePicker(
             context: context,
-            label: 'Date de collecte',
-            value: collectionDate,
-            onSelect: (date) {
+            title: 'Date et heure de collecte',
+            selectedDate: collectionDate,
+            selectedTime: collectionTime,
+            onSelectDate: (date) {
               onCollectionDateSelected(date);
-              // Proposer une date de livraison automatique (+3 jours)
               if (date != null) {
                 onDeliveryDateSelected(date.add(const Duration(days: 3)));
               }
             },
+            onSelectTime: onCollectionTimeSelected,
             minDate: DateTime.now(),
           ),
           const SizedBox(height: 24),
-          _buildDateField(
+          _buildDateTimePicker(
             context: context,
-            label: 'Date de livraison',
-            value: deliveryDate,
-            onSelect: (date) => onDeliveryDateSelected(date),
+            title: 'Date et heure de livraison',
+            selectedDate: deliveryDate,
+            selectedTime: deliveryTime,
+            onSelectDate: onDeliveryDateSelected,
+            onSelectTime: onDeliveryTimeSelected,
             minDate: collectionDate?.add(const Duration(days: 1)) ??
                 DateTime.now().add(const Duration(days: 1)),
           ),
@@ -63,27 +75,90 @@ class DateSelection extends StatelessWidget {
     );
   }
 
-  Widget _buildDateField({
+  Widget _buildDateTimePicker({
     required BuildContext context,
-    required String label,
-    required DateTime? value,
-    required Function(DateTime?) onSelect,
+    required String title,
+    required DateTime? selectedDate,
+    required TimeOfDay? selectedTime,
+    required Function(DateTime?) onSelectDate,
+    required Function(TimeOfDay?) onSelectTime,
     required DateTime minDate,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: AppColors.gray700,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppColors.gray700,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.calendar_today),
+              onPressed: () =>
+                  _selectDate(context, selectedDate, onSelectDate, minDate),
+              color: AppColors.gray500,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 80,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: 30,
+            itemBuilder: (context, index) {
+              final day = DateTime.now().add(Duration(days: index));
+              final isSelected = selectedDate != null &&
+                  day.year == selectedDate.year &&
+                  day.month == selectedDate.month &&
+                  day.day == selectedDate.day;
+
+              return GestureDetector(
+                onTap: () => onSelectDate(day),
+                child: Container(
+                  width: 56,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary : AppColors.gray100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : AppColors.gray300,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('d').format(day),
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppColors.gray700,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        DateFormat('E', 'fr_FR').format(day),
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppColors.gray500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(height: 8),
-        InkWell(
-          onTap: () => _selectDate(context, value, onSelect, minDate),
+        GestureDetector(
+          onTap: () => _selectTime(context, selectedTime, onSelectTime),
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -93,13 +168,14 @@ class DateSelection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.calendar_today, color: AppColors.primary, size: 20),
+                Icon(Icons.access_time, color: AppColors.primary, size: 20),
                 const SizedBox(width: 12),
                 Text(
-                  value?.toString().split(' ')[0] ?? 'Sélectionner une date',
+                  selectedTime?.format(context) ?? 'Sélectionner une heure',
                   style: TextStyle(
-                    color:
-                        value != null ? AppColors.gray800 : AppColors.gray500,
+                    color: selectedTime != null
+                        ? AppColors.gray800
+                        : AppColors.gray500,
                     fontSize: 16,
                   ),
                 ),
@@ -137,5 +213,30 @@ class DateSelection extends StatelessWidget {
       },
     );
     if (picked != null) onSelect(picked);
+  }
+
+  Future<void> _selectTime(
+    BuildContext context,
+    TimeOfDay? initialTime,
+    Function(TimeOfDay?) onSelectTime,
+  ) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime ?? TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: AppColors.gray800,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) onSelectTime(picked);
   }
 }
