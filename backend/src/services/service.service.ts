@@ -15,13 +15,18 @@ export class ServiceService {
   }
 
   static async getAllServices(): Promise<Service[]> {
-    const { data, error } = await supabase
-      .from('services')
-      .select('*');
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-
-    return data;
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllServices:', error);
+      throw error;
+    }
   }
 
   static async updateService(serviceId: string, name: string, price: number, description?: string): Promise<Service> {

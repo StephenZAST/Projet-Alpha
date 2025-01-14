@@ -38,13 +38,18 @@ export class ArticleCategoryService {
   }
 
   static async getAllArticleCategories(): Promise<ArticleCategory[]> {
-    const { data, error } = await supabase
-      .from('article_categories')
-      .select('*');
+    try {
+      const { data, error } = await supabase
+        .from('article_categories')
+        .select('*')
+        .order('name');
 
-    if (error) throw error;
-
-    return data;
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllCategories:', error);
+      throw error;
+    }
   }
 
   static async updateArticleCategory(categoryId: string, categoryData: Partial<ArticleCategory>): Promise<ArticleCategory> {

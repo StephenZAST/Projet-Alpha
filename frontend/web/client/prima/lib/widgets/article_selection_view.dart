@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:prima/models/article.dart';
 import 'package:prima/providers/article_provider.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:prima/widgets/order_bottom_sheet.dart';
+import 'package:prima/models/article_category.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
 

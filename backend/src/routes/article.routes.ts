@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { ArticleController } from '../controllers/article.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
+import { ArticleService } from '../services/article.service';
 
 const router = express.Router();
 
@@ -27,7 +28,21 @@ router.get(
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.getAllArticles(req, res);
+    try {
+      const articles = await ArticleService.getAllArticles();
+      res.status(200).json({
+        success: true,
+        data: articles,
+        message: 'Articles retrieved successfully'
+      });
+    } catch (error) {
+      console.error('Error getting articles:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve articles',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   })
 );
 

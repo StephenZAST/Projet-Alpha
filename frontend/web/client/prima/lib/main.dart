@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:prima/animations/page_transition.dart';
 import 'package:prima/providers/address_provider.dart';
+import 'package:prima/providers/article_provider.dart';
 import 'package:prima/providers/auth_data_provider.dart';
 import 'package:prima/providers/profile_data_provider.dart';
-import 'package:prima/services/address_service.dart';
+import 'package:prima/providers/service_provider.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/theme/colors.dart';
@@ -19,15 +19,13 @@ import 'package:prima/pages/settings/settings_page.dart';
 import 'package:prima/pages/notifications/notifications_page.dart';
 import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/widgets/custom_bottom_navigation.dart';
-import 'package:flutter/widgets.dart';
 import 'package:prima/providers/profile_provider.dart';
 import 'package:prima/pages/auth/login_page.dart';
 import 'package:prima/pages/auth/register_page.dart';
 import 'package:prima/providers/auth_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:prima/config/env.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:prima/services/article_service.dart';
+import 'package:prima/services/service_service.dart';
 
 import 'pages/auth/reset_password_page.dart';
 
@@ -60,6 +58,21 @@ void main() async {
           ),
           update: (context, auth, previous) =>
               ProfileProvider(auth, prefs, useMockData: false),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ArticleProvider>(
+          create: (context) => ArticleProvider(
+            ArticleService(
+                Provider.of<AuthProvider>(context, listen: false).dio),
+          ),
+          update: (context, auth, previous) => ArticleProvider(
+            ArticleService(auth.dio),
+          ),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, ServiceProvider>(
+          create: (context) => ServiceProvider(
+            Provider.of<AuthProvider>(context, listen: false).dio,
+          ),
+          update: (context, auth, previous) => ServiceProvider(auth.dio),
         ),
       ],
       child: const MyApp(),

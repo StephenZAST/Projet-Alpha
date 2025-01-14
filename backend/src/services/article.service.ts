@@ -42,25 +42,21 @@ export class ArticleService {
   }
 
   static async getAllArticles(): Promise<Article[]> {
-    console.log('ArticleService: Getting all articles');
-    const { data, error } = await supabase
-      .from('articles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select(`
+          *,
+          category:article_categories(*)
+        `)
+        .order('created_at', { ascending: false });
 
-    console.log('Supabase response:', { data, error });
-
-    if (error) {
-      console.error('Supabase error:', error);
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAllArticles:', error);
       throw error;
     }
-
-    if (!data) {
-      console.log('No data returned from Supabase');
-      return [];
-    }
-
-    return data;
   }
 
   static async updateArticle(articleId: string, articleData: Partial<Article>): Promise<Article> {

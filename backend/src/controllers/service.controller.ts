@@ -16,24 +16,17 @@ export class ServiceController {
   static async getAllServices(req: Request, res: Response) {
     try {
       const services = await ServiceService.getAllServices();
-      const formattedServices = services.map(service => ({
-        id: service.id || '',
-        name: service.name || '',
-        price: service.price || 0,
-        description: service.description || null,
-        created_at: service.createdAt?.toISOString() || new Date().toISOString(), // Changé de created_at à createdAt
-        updated_at: service.updatedAt?.toISOString() || new Date().toISOString()  // Changé de updated_at à updatedAt
-      }));
-      
-      res.json({ 
-        success: true, 
-        data: formattedServices
+      return res.status(200).json({
+        success: true,
+        data: services,
+        message: 'Services retrieved successfully'
       });
-    } catch (error: any) {
-      console.error('Error in getAllServices:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to fetch services' 
+    } catch (error) {
+      console.error('Error in getAllServices controller:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve services',
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }
