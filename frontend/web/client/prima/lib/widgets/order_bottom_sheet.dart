@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/providers/service_provider.dart';
+import 'package:prima/widgets/order/order_stepper.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/models/order.dart';
 import 'package:prima/models/service.dart';
@@ -20,9 +21,8 @@ class OrderBottomSheet extends StatefulWidget {
   _OrderBottomSheetState createState() => _OrderBottomSheetState();
 }
 
-class _OrderBottomSheetState extends State<OrderBottomSheet>
-    with TickerProviderStateMixin {
-  late PageController _pageController;
+class _OrderBottomSheetState extends State<OrderBottomSheet> {
+  int _currentStep = 0;
   Service? _selectedService;
   final Map<String, int> _selectedArticles = {};
   DateTime? _collectionDate;
@@ -32,7 +32,6 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
     Future.microtask(() => _initData());
   }
 
@@ -59,10 +58,69 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
     }
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  bool _canProceedToNextStep() {
+    switch (_currentStep) {
+      case 0:
+        return _selectedService != null;
+      case 1:
+        return _selectedArticles.isNotEmpty;
+      case 2:
+        return _collectionDate != null && _deliveryDate != null;
+      default:
+        return true;
+    }
+  }
+
+  void _goToNextStep() {
+    if (_currentStep < 3 && _canProceedToNextStep()) {
+      setState(() => _currentStep++);
+    }
+  }
+
+  void _goToPreviousStep() {
+    if (_currentStep > 0) {
+      setState(() => _currentStep--);
+    }
+  }
+
+  Widget _buildStepContent() {
+    switch (_currentStep) {
+      case 0:
+        return ServiceSelection(
+          selectedService: _selectedService,
+          onServiceSelected: (service) {
+            setState(() {
+              _selectedService = service;
+              _goToNextStep();
+            });
+          },
+        );
+      case 1:
+        return ArticleSelection(
+          selectedArticles: _selectedArticles,
+          onArticleQuantityChanged: _handleArticleQuantityChanged,
+        );
+      case 2:
+        return DateSelection(
+          collectionDate: _collectionDate,
+          deliveryDate: _deliveryDate,
+          onCollectionDateSelected: _handleCollectionDateSelected,
+          onDeliveryDateSelected: _handleDeliveryDateSelected,
+          onNext: _goToNextStep,
+          onPrevious: _goToPreviousStep,
+        );
+      case 3:
+        return OrderSummary(
+          selectedService: _selectedService,
+          selectedArticles: _selectedArticles,
+          collectionDate: _collectionDate,
+          deliveryDate: _deliveryDate,
+          onConfirmOrder: _handleConfirmOrder,
+          isLoading: _isLoading,
+        );
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   @override
@@ -81,57 +139,30 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
       child: Column(
         children: [
           const BottomSheetHeader(),
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
+          OrderStepper(currentStep: _currentStep),
+          Expanded(child: _buildStepContent()),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ServiceSelection(
-                  selectedService: _selectedService,
-                  onServiceSelected: _handleServiceSelection,
-                ),
-                ArticleSelection(
-                  selectedArticles: _selectedArticles,
-                  onArticleQuantityChanged: _handleArticleQuantityChanged,
-                ),
-                DateSelection(
-                  collectionDate: _collectionDate,
-                  deliveryDate: _deliveryDate,
-                  onCollectionDateSelected: _handleCollectionDateSelected,
-                  onDeliveryDateSelected: _handleDeliveryDateSelected,
-                  onNext: () => _pageController.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
+                if (_currentStep > 0)
+                  TextButton(
+                    onPressed: _goToPreviousStep,
+                    child: const Text('Retour'),
                   ),
-                  onPrevious: () => _pageController.previousPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
+                const Spacer(),
+                if (_currentStep < 3)
+                  ElevatedButton(
+                    onPressed: _canProceedToNextStep() ? _goToNextStep : null,
+                    child: const Text('Suivant'),
                   ),
-                ),
-                OrderSummary(
-                  selectedService: _selectedService,
-                  selectedArticles: _selectedArticles,
-                  collectionDate: _collectionDate,
-                  deliveryDate: _deliveryDate,
-                  onConfirmOrder: _handleConfirmOrder,
-                  isLoading: _isLoading,
-                ),
               ],
             ),
           ),
         ],
       ),
     );
-  }
-
-  void _handleServiceSelection(Service service) {
-    setState(() {
-      _selectedService = service;
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    });
   }
 
   void _handleArticleQuantityChanged(String articleId, int quantity) {
