@@ -5,7 +5,6 @@ import 'package:prima/models/order.dart';
 import 'package:prima/models/service.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/providers/article_provider.dart';
-import 'package:prima/models/article_category.dart';
 import 'package:prima/widgets/order/service_selection.dart';
 import 'package:prima/widgets/order/article_selection.dart';
 import 'package:prima/widgets/order/date_selection.dart';
@@ -25,7 +24,6 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
     with TickerProviderStateMixin {
   late PageController _pageController;
   Service? _selectedService;
-  ArticleCategory? _selectedCategory;
   final Map<String, int> _selectedArticles = {};
   DateTime? _collectionDate;
   DateTime? _deliveryDate;
@@ -94,7 +92,6 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
                 ),
                 ArticleSelection(
                   selectedArticles: _selectedArticles,
-                  categoryTabController: _categoryTabController,
                   onArticleQuantityChanged: _handleArticleQuantityChanged,
                 ),
                 DateSelection(

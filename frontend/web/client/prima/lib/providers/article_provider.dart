@@ -6,15 +6,14 @@ import 'package:prima/models/article_category.dart';
 
 class ArticleProvider extends ChangeNotifier {
   final ArticleService _articleService;
-  Map<String, List<Article>> _articlesByCategory = {};
   List<ArticleCategory> _categories = [];
+  List<Article> _articles = [];
   bool _isLoading = false;
   String? _error;
 
   ArticleProvider(this._articleService);
 
-  List<Article> get articles =>
-      _articlesByCategory.values.expand((e) => e).toList();
+  List<Article> get articles => _articles;
   List<ArticleCategory> get categories => _categories;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -29,15 +28,7 @@ class ArticleProvider extends ChangeNotifier {
       final articlesResult = await _articleService.getArticlesByCategory('all');
 
       _categories = List<ArticleCategory>.from(categoriesResult);
-
-      // Organiser les articles par catégorie
-      _articlesByCategory.clear();
-      for (var article in articlesResult) {
-        if (!_articlesByCategory.containsKey(article.categoryId)) {
-          _articlesByCategory[article.categoryId] = [];
-        }
-        _articlesByCategory[article.categoryId]!.add(article);
-      }
+      _articles = List<Article>.from(articlesResult);
 
       notifyListeners();
     } catch (e) {
@@ -50,6 +41,8 @@ class ArticleProvider extends ChangeNotifier {
   }
 
   List<Article> getArticlesForCategory(String categoryId) {
-    return _articlesByCategory[categoryId] ?? [];
+    return _articles
+        .where((article) => article.categoryId == categoryId)
+        .toList();
   }
 }
