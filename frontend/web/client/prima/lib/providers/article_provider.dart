@@ -6,14 +6,15 @@ import 'package:prima/models/article_category.dart';
 
 class ArticleProvider extends ChangeNotifier {
   final ArticleService _articleService;
-  List<Article> _articles = [];
+  Map<String, List<Article>> _articlesByCategory = {};
   List<ArticleCategory> _categories = [];
   bool _isLoading = false;
   String? _error;
 
   ArticleProvider(this._articleService);
 
-  List<Article> get articles => _articles;
+  List<Article> get articles =>
+      _articlesByCategory.values.expand((e) => e).toList();
   List<ArticleCategory> get categories => _categories;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -24,22 +25,24 @@ class ArticleProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      // Load categories
       final categoriesResult = await _articleService.getCategories();
       final articlesResult = await _articleService.getArticlesByCategory('all');
 
-      // Logging pour le debug
-      debugPrint('Categories loaded: ${categoriesResult.length}');
-      debugPrint('Articles loaded: ${articlesResult.length}');
-
       _categories = List<ArticleCategory>.from(categoriesResult);
-      _articles = List<Article>.from(articlesResult);
+
+      // Organiser les articles par catégorie
+      _articlesByCategory.clear();
+      for (var article in articlesResult) {
+        if (!_articlesByCategory.containsKey(article.categoryId)) {
+          _articlesByCategory[article.categoryId] = [];
+        }
+        _articlesByCategory[article.categoryId]!.add(article);
+      }
 
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading articles/categories: $e');
       _error = e.toString();
-      notifyListeners();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -47,8 +50,6 @@ class ArticleProvider extends ChangeNotifier {
   }
 
   List<Article> getArticlesForCategory(String categoryId) {
-    return _articles
-        .where((article) => article.categoryId == categoryId)
-        .toList();
+    return _articlesByCategory[categoryId] ?? [];
   }
 }

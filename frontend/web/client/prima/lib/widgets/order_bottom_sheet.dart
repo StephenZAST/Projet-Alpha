@@ -23,8 +23,7 @@ class OrderBottomSheet extends StatefulWidget {
 
 class _OrderBottomSheetState extends State<OrderBottomSheet>
     with TickerProviderStateMixin {
-  late TabController _categoryTabController;
-  final PageController _pageController = PageController();
+  late PageController _pageController;
   Service? _selectedService;
   ArticleCategory? _selectedCategory;
   final Map<String, int> _selectedArticles = {};
@@ -35,6 +34,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
     Future.microtask(() => _initData());
   }
 
@@ -48,21 +48,14 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
         articleProvider.loadData(),
         serviceProvider.loadServices(),
       ]);
-
-      if (mounted) {
-        setState(() {
-          _categoryTabController = TabController(
-            length: articleProvider.categories.length,
-            vsync: this,
-          );
-          _isLoading = false;
-        });
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur de chargement: $e')),
         );
+      }
+    } finally {
+      if (mounted) {
         setState(() => _isLoading = false);
       }
     }
@@ -70,7 +63,6 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
 
   @override
   void dispose() {
-    _categoryTabController.dispose();
     _pageController.dispose();
     super.dispose();
   }

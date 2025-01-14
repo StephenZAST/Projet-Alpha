@@ -2,22 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/providers/article_provider.dart';
 import 'package:prima/models/article.dart';
-import 'package:prima/models/article_category.dart';
 import 'package:prima/theme/colors.dart';
 
-class ArticleSelection extends StatelessWidget {
-  final ArticleCategory? selectedCategory;
+class ArticleSelection extends StatefulWidget {
   final Map<String, int> selectedArticles;
   final Function(String, int) onArticleQuantityChanged;
-  final TabController categoryTabController;
 
   const ArticleSelection({
     Key? key,
-    this.selectedCategory,
     required this.selectedArticles,
     required this.onArticleQuantityChanged,
-    required this.categoryTabController,
   }) : super(key: key);
+
+  @override
+  State<ArticleSelection> createState() => _ArticleSelectionState();
+}
+
+class _ArticleSelectionState extends State<ArticleSelection>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    final articleProvider = context.read<ArticleProvider>();
+    _tabController = TabController(
+      length: articleProvider.categories.length,
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +84,7 @@ class ArticleSelection extends StatelessWidget {
         return Column(
           children: [
             TabBar(
-              controller: categoryTabController,
+              controller: _tabController,
               isScrollable: true,
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.gray500,
@@ -80,9 +99,10 @@ class ArticleSelection extends StatelessWidget {
             ),
             Expanded(
               child: TabBarView(
-                controller: categoryTabController,
+                controller: _tabController,
                 children: provider.categories.map((category) {
-                  return _buildArticleList(context, category, provider);
+                  return _buildArticleList(
+                      provider.getArticlesForCategory(category.id));
                 }).toList(),
               ),
             ),
@@ -92,10 +112,7 @@ class ArticleSelection extends StatelessWidget {
     );
   }
 
-  Widget _buildArticleList(BuildContext context, ArticleCategory category,
-      ArticleProvider provider) {
-    final articles = provider.getArticlesForCategory(category.id);
-
+  Widget _buildArticleList(List<Article> articles) {
     if (articles.isEmpty) {
       return Center(
         child: Column(
@@ -122,7 +139,7 @@ class ArticleSelection extends StatelessWidget {
   }
 
   Widget _buildArticleCard(BuildContext context, Article article) {
-    final quantity = selectedArticles[article.id] ?? 0;
+    final quantity = widget.selectedArticles[article.id] ?? 0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -176,7 +193,7 @@ class ArticleSelection extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.remove_circle_outline),
           onPressed: quantity > 0
-              ? () => onArticleQuantityChanged(articleId, quantity - 1)
+              ? () => widget.onArticleQuantityChanged(articleId, quantity - 1)
               : null,
           color: quantity > 0 ? AppColors.primary : AppColors.gray400,
         ),
@@ -189,7 +206,8 @@ class ArticleSelection extends StatelessWidget {
         ),
         IconButton(
           icon: const Icon(Icons.add_circle_outline),
-          onPressed: () => onArticleQuantityChanged(articleId, quantity + 1),
+          onPressed: () =>
+              widget.onArticleQuantityChanged(articleId, quantity + 1),
           color: AppColors.primary,
         ),
       ],
