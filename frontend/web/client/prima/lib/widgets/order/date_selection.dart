@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/widgets/order/recurrence_selection.dart';
 
 class DateSelection extends StatelessWidget {
   final DateTime? collectionDate;
@@ -8,6 +9,8 @@ class DateSelection extends StatelessWidget {
   final Function(DateTime?) onDeliveryDateSelected;
   final VoidCallback onNext;
   final VoidCallback onPrevious;
+  final RecurrenceType selectedRecurrence;
+  final Function(RecurrenceType) onRecurrenceSelected;
 
   const DateSelection({
     Key? key,
@@ -17,11 +20,13 @@ class DateSelection extends StatelessWidget {
     required this.onDeliveryDateSelected,
     required this.onNext,
     required this.onPrevious,
+    required this.selectedRecurrence,
+    required this.onRecurrenceSelected,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -48,8 +53,11 @@ class DateSelection extends StatelessWidget {
             minDate: collectionDate?.add(const Duration(days: 1)) ??
                 DateTime.now().add(const Duration(days: 1)),
           ),
-          const Spacer(),
-          _buildNavigationButtons(context),
+          const SizedBox(height: 32),
+          RecurrenceSelection(
+            selectedRecurrence: selectedRecurrence,
+            onRecurrenceSelected: onRecurrenceSelected,
+          ),
         ],
       ),
     );
@@ -129,25 +137,5 @@ class DateSelection extends StatelessWidget {
       },
     );
     if (picked != null) onSelect(picked);
-  }
-
-  Widget _buildNavigationButtons(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        TextButton(
-          onPressed: onPrevious,
-          child: const Text('Retour'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            if (collectionDate != null && deliveryDate != null) {
-              onNext();
-            }
-          },
-          child: const Text('Suivant'),
-        ),
-      ],
-    );
   }
 }

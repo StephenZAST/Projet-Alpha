@@ -13,6 +13,8 @@ class OrderService {
     required DateTime deliveryDate,
     required List<Map<String, dynamic>> items,
     String? affiliateCode,
+    bool isRecurring = false,
+    String? recurrenceType,
   }) async {
     try {
       final response = await _dio.post('/api/orders', data: {
@@ -22,6 +24,8 @@ class OrderService {
         'deliveryDate': deliveryDate.toIso8601String(),
         'items': items,
         'affiliateCode': affiliateCode,
+        'isRecurring': isRecurring,
+        'recurrenceType': recurrenceType,
       });
 
       if (response.statusCode == 201) {

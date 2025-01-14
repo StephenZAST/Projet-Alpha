@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:prima/providers/auth_provider.dart';
 import 'package:prima/providers/service_provider.dart';
+import 'package:prima/services/order_service.dart';
 import 'package:prima/widgets/order/order_stepper.dart';
+import 'package:prima/widgets/order/recurrence_selection.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/models/order.dart';
 import 'package:prima/models/service.dart';
@@ -11,6 +14,7 @@ import 'package:prima/widgets/order/article_selection.dart';
 import 'package:prima/widgets/order/date_selection.dart';
 import 'package:prima/widgets/order/order_summary.dart';
 import 'package:prima/widgets/order/bottom_sheet_header.dart';
+import 'package:spring_button/spring_button.dart';
 
 class OrderBottomSheet extends StatefulWidget {
   final Function(Order)? onOrderCreated;
@@ -28,6 +32,8 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
   DateTime? _collectionDate;
   DateTime? _deliveryDate;
   bool _isLoading = false;
+  RecurrenceType _selectedRecurrence = RecurrenceType.none;
+  String? _selectedAddressId;
 
   @override
   void initState() {
@@ -108,6 +114,9 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
           onDeliveryDateSelected: _handleDeliveryDateSelected,
           onNext: _goToNextStep,
           onPrevious: _goToPreviousStep,
+          selectedRecurrence: _selectedRecurrence,
+          onRecurrenceSelected: (type) =>
+              setState(() => _selectedRecurrence = type),
         );
       case 3:
         return OrderSummary(
@@ -147,15 +156,57 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 if (_currentStep > 0)
-                  TextButton(
-                    onPressed: _goToPreviousStep,
-                    child: const Text('Retour'),
+                  SpringButton(
+                    SpringButtonType.OnlyScale,
+                    Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        border: Border.all(color: AppColors.primary),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Retour',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    onTap: _goToPreviousStep,
+                    scaleCoefficient: 0.95,
+                    useCache: false,
                   ),
                 const Spacer(),
                 if (_currentStep < 3)
-                  ElevatedButton(
-                    onPressed: _canProceedToNextStep() ? _goToNextStep : null,
-                    child: const Text('Suivant'),
+                  SpringButton(
+                    SpringButtonType.OnlyScale,
+                    Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [AppColors.primaryShadow],
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Suivant',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    onTap: _canProceedToNextStep() ? _goToNextStep : null,
+                    scaleCoefficient: 0.95,
+                    useCache: false,
                   ),
               ],
             ),
@@ -184,6 +235,59 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
   }
 
   Future<void> _handleConfirmOrder() async {
-    // Implement order confirmation logic
+    if (_selectedService == null ||
+        _collectionDate == null ||
+        _deliveryDate == null ||
+        _selectedAddressId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Veuillez remplir tous les champs requis')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final items = _selectedArticles.entries.map((entry) {
+        return {
+          'articleId': entry.key,
+          'quantity': entry.value,
+        };
+      }).toList();
+
+      // Récupérer l'instance de Dio depuis AuthProvider
+      final dio = Provider.of<AuthProvider>(context, listen: false).dio;
+
+      final order = await OrderService(dio).createOrder(
+        serviceId: _selectedService!.id,
+        addressId: _selectedAddressId!,
+        collectionDate: _collectionDate!,
+        deliveryDate: _deliveryDate!,
+        items: items,
+        affiliateCode: null,
+        isRecurring: _selectedRecurrence != RecurrenceType.none,
+        recurrenceType:
+            _selectedRecurrence.toString().split('.').last.toUpperCase(),
+      );
+
+      if (widget.onOrderCreated != null) {
+        widget.onOrderCreated!(order);
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }
