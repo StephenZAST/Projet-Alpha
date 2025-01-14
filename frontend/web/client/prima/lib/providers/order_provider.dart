@@ -19,7 +19,7 @@ class OrderProvider extends ChangeNotifier {
     required String addressId,
     required DateTime collectionDate,
     required DateTime deliveryDate,
-    required List<OrderItem> items,
+    required List<Map<String, dynamic>> items,
     String? affiliateCode,
   }) async {
     try {
@@ -44,6 +44,22 @@ class OrderProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<double> calculateTotal({
+    required String serviceId,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    try {
+      return await _orderService.calculateTotal(
+        serviceId: serviceId,
+        items: items,
+      );
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
     }
   }
 }

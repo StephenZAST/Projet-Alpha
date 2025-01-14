@@ -43,9 +43,9 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
 
     setState(() => _isLoading = true);
     try {
-      // Utiliser loadData() au lieu de loadCategories()
+// Utiliser loadData() au lieu de loadCategories()
       await Future.wait([
- sp        articleProvider.loadData(),
+        articleProvider.loadData(),
         serviceProvider.loadServices(),
       ]);
 

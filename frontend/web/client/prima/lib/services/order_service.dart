@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:prima/models/order.dart';
+import '../models/order.dart';
 
 class OrderService {
   final Dio _dio;
@@ -11,7 +11,7 @@ class OrderService {
     required String addressId,
     required DateTime collectionDate,
     required DateTime deliveryDate,
-    required List<OrderItem> items,
+    required List<Map<String, dynamic>> items,
     String? affiliateCode,
   }) async {
     try {
@@ -20,21 +20,15 @@ class OrderService {
         'addressId': addressId,
         'collectionDate': collectionDate.toIso8601String(),
         'deliveryDate': deliveryDate.toIso8601String(),
-        'items': items
-            .map((item) => ({
-                  'articleId': item.articleId,
-                  'quantity': item.quantity,
-                }))
-            .toList(),
+        'items': items,
         'affiliateCode': affiliateCode,
       });
 
-      if (response.statusCode == 200) {
-        final orderData = response.data['data'];
-        return Order.fromJson(orderData);
+      if (response.statusCode == 201) {
+        return Order.fromJson(response.data['data']);
       }
 
-      throw Exception('Failed to create order: ${response.statusCode}');
+      throw Exception(response.data['message'] ?? 'Failed to create order');
     } catch (e) {
       throw Exception('Error creating order: $e');
     }
@@ -42,24 +36,19 @@ class OrderService {
 
   Future<double> calculateTotal({
     required String serviceId,
-    required List<OrderItem> items,
+    required List<Map<String, dynamic>> items,
   }) async {
     try {
-      final response = await _dio.post('/api/orders/calculate-total', data: {
+      final response = await _dio.post('/api/orders/calculate', data: {
         'serviceId': serviceId,
-        'items': items
-            .map((item) => ({
-                  'articleId': item.articleId,
-                  'quantity': item.quantity,
-                }))
-            .toList(),
+        'items': items,
       });
 
       if (response.statusCode == 200) {
         return (response.data['data']['total'] as num).toDouble();
       }
 
-      throw Exception('Failed to calculate total');
+      throw Exception(response.data['message'] ?? 'Failed to calculate total');
     } catch (e) {
       throw Exception('Error calculating total: $e');
     }
