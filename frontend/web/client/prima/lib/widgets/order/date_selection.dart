@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/widgets/order/recurrence_selection.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-class DateSelection extends StatelessWidget {
+class DateSelection extends StatefulWidget {
   final DateTime? collectionDate;
   final DateTime? deliveryDate;
   final TimeOfDay? collectionTime;
@@ -34,6 +35,36 @@ class DateSelection extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _DateSelectionState createState() => _DateSelectionState();
+}
+
+class _DateSelectionState extends State<DateSelection> {
+  bool _isLocaleInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocale();
+  }
+
+  Future<void> _initializeLocale() async {
+    await initializeDateFormatting('fr_FR', null);
+    if (mounted) {
+      setState(() => _isLocaleInitialized = true);
+    }
+  }
+
+  String _formatDay(DateTime date) {
+    if (!_isLocaleInitialized) return date.day.toString();
+    return DateFormat.d('fr_FR').format(date);
+  }
+
+  String _formatWeekday(DateTime date) {
+    if (!_isLocaleInitialized) return '';
+    return DateFormat.E('fr_FR').format(date);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -43,32 +74,33 @@ class DateSelection extends StatelessWidget {
           _buildDateTimePicker(
             context: context,
             title: 'Date et heure de collecte',
-            selectedDate: collectionDate,
-            selectedTime: collectionTime,
+            selectedDate: widget.collectionDate,
+            selectedTime: widget.collectionTime,
             onSelectDate: (date) {
-              onCollectionDateSelected(date);
+              widget.onCollectionDateSelected(date);
               if (date != null) {
-                onDeliveryDateSelected(date.add(const Duration(days: 3)));
+                widget
+                    .onDeliveryDateSelected(date.add(const Duration(days: 3)));
               }
             },
-            onSelectTime: onCollectionTimeSelected,
+            onSelectTime: widget.onCollectionTimeSelected,
             minDate: DateTime.now(),
           ),
           const SizedBox(height: 24),
           _buildDateTimePicker(
             context: context,
             title: 'Date et heure de livraison',
-            selectedDate: deliveryDate,
-            selectedTime: deliveryTime,
-            onSelectDate: onDeliveryDateSelected,
-            onSelectTime: onDeliveryTimeSelected,
-            minDate: collectionDate?.add(const Duration(days: 1)) ??
+            selectedDate: widget.deliveryDate,
+            selectedTime: widget.deliveryTime,
+            onSelectDate: widget.onDeliveryDateSelected,
+            onSelectTime: widget.onDeliveryTimeSelected,
+            minDate: widget.collectionDate?.add(const Duration(days: 1)) ??
                 DateTime.now().add(const Duration(days: 1)),
           ),
           const SizedBox(height: 32),
           RecurrenceSelection(
-            selectedRecurrence: selectedRecurrence,
-            onRecurrenceSelected: onRecurrenceSelected,
+            selectedRecurrence: widget.selectedRecurrence,
+            onRecurrenceSelected: widget.onRecurrenceSelected,
           ),
         ],
       ),
@@ -125,17 +157,17 @@ class DateSelection extends StatelessWidget {
                   width: 56,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : AppColors.gray100,
+                    color: isSelected ? AppColors.primary : AppColors.gray50,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isSelected ? AppColors.primary : AppColors.gray300,
+                      color: isSelected ? AppColors.primary : AppColors.gray200,
                     ),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        DateFormat('d').format(day),
+                        _formatDay(day),
                         style: TextStyle(
                           color: isSelected ? Colors.white : AppColors.gray700,
                           fontWeight: FontWeight.w600,
@@ -143,7 +175,7 @@ class DateSelection extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        DateFormat('E', 'fr_FR').format(day),
+                        _formatWeekday(day),
                         style: TextStyle(
                           color: isSelected ? Colors.white : AppColors.gray500,
                           fontSize: 12,

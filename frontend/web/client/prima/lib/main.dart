@@ -26,11 +26,15 @@ import 'package:prima/providers/auth_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:prima/services/article_service.dart';
 import 'package:prima/services/service_service.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'pages/auth/reset_password_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialiser les données de localisation française
+  await initializeDateFormatting('fr_FR', null);
   final prefs = await SharedPreferences.getInstance();
 
   runApp(
