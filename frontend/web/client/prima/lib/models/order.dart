@@ -4,63 +4,44 @@ import 'package:prima/models/service.dart';
 
 class Order {
   final String id;
+  final Service service;
   final String serviceId;
   final String addressId;
-  final String? affiliateCode;
+  final DateTime collectionDate;
+  final DateTime deliveryDate;
+  final double totalAmount;
   final String status;
   final bool isRecurring;
   final String recurrenceType;
-  final DateTime? nextRecurrenceDate;
-  final double totalAmount;
-  final DateTime? collectionDate;
-  final DateTime? deliveryDate;
-  final Service? service;
-  final Address? address;
-  final List<OrderItem>? items;
+  final List<MapEntry<Article, int>> articles;
 
   Order({
     required this.id,
+    required this.service,
     required this.serviceId,
     required this.addressId,
-    this.affiliateCode,
+    required this.collectionDate,
+    required this.deliveryDate,
+    required this.totalAmount,
     required this.status,
     required this.isRecurring,
     required this.recurrenceType,
-    this.nextRecurrenceDate,
-    required this.totalAmount,
-    this.collectionDate,
-    this.deliveryDate,
-    this.service,
-    this.address,
-    this.items,
+    required this.articles,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
       id: json['id'],
+      service: Service.fromJson(json['service']),
       serviceId: json['service_id'],
       addressId: json['address_id'],
-      affiliateCode: json['affiliateCode'],
+      collectionDate: DateTime.parse(json['collectionDate']),
+      deliveryDate: DateTime.parse(json['deliveryDate']),
+      totalAmount: (json['totalAmount'] ?? 0).toDouble(),
       status: json['status'],
       isRecurring: json['isRecurring'] ?? false,
-      recurrenceType: json['recurrenceType'] ?? 'NONE',
-      nextRecurrenceDate: json['nextRecurrenceDate'] != null
-          ? DateTime.parse(json['nextRecurrenceDate'])
-          : null,
-      totalAmount: (json['totalAmount'] ?? 0).toDouble(),
-      collectionDate: json['collectionDate'] != null
-          ? DateTime.parse(json['collectionDate'])
-          : null,
-      deliveryDate: json['deliveryDate'] != null
-          ? DateTime.parse(json['deliveryDate'])
-          : null,
-      service:
-          json['service'] != null ? Service.fromJson(json['service']) : null,
-      address:
-          json['address'] != null ? Address.fromJson(json['address']) : null,
-      items: json['items'] != null
-          ? (json['items'] as List).map((i) => OrderItem.fromJson(i)).toList()
-          : null,
+      recurrenceType: json['recurrenceType'] ?? '',
+      articles: [],
     );
   }
 }
