@@ -97,6 +97,7 @@ class RecurrenceSelection extends StatelessWidget {
               style: TextStyle(
                 color: isSelected ? Colors.white : AppColors.gray800,
                 fontWeight: FontWeight.w600,
+                fontStyle: FontStyle.italic,
               ),
             ),
           ),
