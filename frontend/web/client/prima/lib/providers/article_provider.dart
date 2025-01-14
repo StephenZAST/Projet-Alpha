@@ -6,8 +6,9 @@ import 'package:prima/models/article_category.dart';
 
 class ArticleProvider extends ChangeNotifier {
   final ArticleService _articleService;
-  List<ArticleCategory> _categories = [];
   List<Article> _articles = [];
+  List<ArticleCategory> _categories =
+      []; // Changed from Set<String> to List<ArticleCategory>
   bool _isLoading = false;
   String? _error;
 
@@ -24,15 +25,27 @@ class ArticleProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final categoriesResult = await _articleService.getCategories();
-      final articlesResult = await _articleService.getArticlesByCategory('all');
+      final articlesResult = await _articleService.getArticles();
+      _articles = articlesResult;
 
-      _categories = List<ArticleCategory>.from(categoriesResult);
-      _articles = List<Article>.from(articlesResult);
+      // Extract unique categories from articles
+      final Set<ArticleCategory> categorySet = {};
+      for (var article in articlesResult) {
+        if (article.category != null) {
+          try {
+            categorySet.add(ArticleCategory.fromJson(article.category!));
+          } catch (e) {
+            print('Error parsing category for article ${article.id}: $e');
+          }
+        }
+      }
+      _categories = categorySet.toList();
 
+      print(
+          'Loaded ${_articles.length} articles and ${_categories.length} categories');
       notifyListeners();
     } catch (e) {
-      debugPrint('Error loading articles/categories: $e');
+      print('Error in loadData: $e');
       _error = e.toString();
     } finally {
       _isLoading = false;
@@ -41,8 +54,10 @@ class ArticleProvider extends ChangeNotifier {
   }
 
   List<Article> getArticlesForCategory(String categoryId) {
-    return _articles
-        .where((article) => article.categoryId == categoryId)
-        .toList();
+    print('Getting articles for category: $categoryId');
+    final articles =
+        _articles.where((article) => article.categoryId == categoryId).toList();
+    print('Found ${articles.length} articles for category $categoryId');
+    return articles;
   }
 }

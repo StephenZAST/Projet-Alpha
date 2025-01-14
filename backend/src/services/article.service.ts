@@ -62,6 +62,33 @@ export class ArticleService {
     }
   }
 
+  static async getArticles(): Promise<Article[]> {
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select(`
+          *,
+          category:article_categories(name)
+        `);
+
+      if (error) {
+        console.error('Supabase error in getArticles:', error);
+        throw error;
+      }
+
+      // Transform the data to include category as a string
+      const articles = data?.map(article => ({
+        ...article,
+        category: article.category?.name || 'Uncategorized'
+      })) || [];
+
+      return articles;
+    } catch (error) {
+      console.error('Error in getArticles:', error);
+      throw error;
+    }
+  }
+
   static async updateArticle(articleId: string, articleData: Partial<Article>): Promise<Article> {
     const { data, error } = await supabase
       .from('articles')
