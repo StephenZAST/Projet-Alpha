@@ -63,10 +63,10 @@ void main() async {
           create: (context) => ArticleProvider(
             ArticleService(
                 Provider.of<AuthProvider>(context, listen: false).dio),
-          ),
+          )..loadData(),
           update: (context, auth, previous) => ArticleProvider(
             ArticleService(auth.dio),
-          ),
+          )..loadData(),
         ),
         ChangeNotifierProxyProvider<AuthProvider, ServiceProvider>(
           create: (context) => ServiceProvider(

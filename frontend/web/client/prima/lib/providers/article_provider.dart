@@ -17,82 +17,19 @@ class ArticleProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  List<Article> getArticlesForCategory(String categoryId) {
-    return _articles
-        .where((article) => article.categoryId == categoryId)
-        .toList();
-  }
-
-  Future<void> loadCategories() async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      final categoriesResult = await _articleService.getCategories();
-      _categories = List<ArticleCategory>.from(categoriesResult);
-
-      notifyListeners();
-    } catch (e) {
-      print('Error loading categories: $e');
-      _error = e.toString();
-      notifyListeners();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> loadArticles() async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      final articlesResult = await _articleService.getArticlesByCategory('all');
-      _articles = List<Article>.from(articlesResult);
-
-      notifyListeners();
-    } catch (e) {
-      print('Error loading articles: $e');
-      _error = e.toString();
-      notifyListeners();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   Future<void> loadData() async {
     try {
       _isLoading = true;
       _error = null;
       notifyListeners();
 
-      // Load categories first
-      await loadCategories();
-      // Then load articles if categories are not empty
-      if (_categories.isNotEmpty) {
-        await loadArticles();
-      }
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+      // Load categories
+      final categoriesResult = await _articleService.getCategories();
+      _categories = List<ArticleCategory>.from(categoriesResult);
 
-  Future<void> loadArticlesForCategory(String categoryId) async {
-    try {
-      if (_articles.any((article) => article.categoryId == categoryId)) return;
-
-      _isLoading = true;
-      notifyListeners();
-
-      final categoryArticles =
-          await _articleService.getArticlesByCategory(categoryId);
-      _articles.addAll(List<Article>.from(categoryArticles));
+      // Load all articles
+      final articlesResult = await _articleService.getArticlesByCategory('all');
+      _articles = List<Article>.from(articlesResult);
 
       notifyListeners();
     } catch (e) {
@@ -104,8 +41,9 @@ class ArticleProvider extends ChangeNotifier {
     }
   }
 
-  void clearError() {
-    _error = null;
-    notifyListeners();
+  List<Article> getArticlesForCategory(String categoryId) {
+    return _articles
+        .where((article) => article.categoryId == categoryId)
+        .toList();
   }
 }

@@ -22,9 +22,7 @@ class ArticleService {
 
   Future<List<Article>> getArticlesByCategory(String categoryId) async {
     try {
-      final response = await _dio.get('/api/articles', queryParameters: {
-        'categoryId': categoryId,
-      });
+      final response = await _dio.get('/api/articles');
       if (response.data['success'] == true) {
         final List<dynamic> data = response.data['data'] ?? [];
         return data.map((json) => Article.fromJson(json)).toList();

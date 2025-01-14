@@ -30,7 +30,7 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
     super.initState();
     _selectedArticles = Map.from(widget.initialSelection);
     final articleProvider = context.read<ArticleProvider>();
-    articleProvider.loadCategories();
+    articleProvider.loadData();
     _tabController = TabController(
       length: articleProvider.categories.length,
       vsync: this,
@@ -89,8 +89,20 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
     final articles = provider.getArticlesForCategory(category.id);
 
     if (articles.isEmpty) {
-      provider.loadArticlesForCategory(category.id);
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inventory_2_outlined,
+                size: 48, color: AppColors.gray400),
+            const SizedBox(height: 16),
+            Text(
+              'Aucun article dans cette catégorie',
+              style: TextStyle(color: AppColors.gray600),
+            ),
+          ],
+        ),
+      );
     }
 
     return ListView.builder(

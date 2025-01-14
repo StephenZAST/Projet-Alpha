@@ -43,19 +43,26 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
 
     setState(() => _isLoading = true);
     try {
+      // Utiliser loadData() au lieu de loadCategories()
       await Future.wait([
-        articleProvider.loadCategories(),
+ sp        articleProvider.loadData(),
         serviceProvider.loadServices(),
       ]);
 
-      _categoryTabController = TabController(
-        length: articleProvider.categories.length,
-        vsync: this,
-      );
+      if (mounted) {
+        setState(() {
+          _categoryTabController = TabController(
+            length: articleProvider.categories.length,
+            vsync: this,
+          );
+        });
+      }
     } catch (e) {
       _showError('Erreur de chargement: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -265,6 +272,32 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
   Widget _buildArticleSelection() {
     return Consumer<ArticleProvider>(
       builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'Erreur: ${provider.error}',
+                  style: TextStyle(color: AppColors.error),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => provider.loadData(),
+                  child: const Text('Réessayer'),
+                ),
+              ],
+            ),
+          );
+        }
+
         if (provider.categories.isEmpty) {
           return const Center(child: Text('Aucune catégorie disponible'));
         }

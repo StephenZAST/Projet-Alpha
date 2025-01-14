@@ -40,7 +40,7 @@ router.get(
       res.status(500).json({
         success: false,
         message: 'Failed to retrieve articles',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Database error'
       });
     }
   })
