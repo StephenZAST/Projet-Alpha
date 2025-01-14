@@ -30,7 +30,10 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
     super.initState();
     _selectedArticles = Map.from(widget.initialSelection);
     final articleProvider = context.read<ArticleProvider>();
-    articleProvider.loadData();
+
+    // Déplacer l'appel dans un Future.microtask
+    Future.microtask(() => articleProvider.loadData());
+
     _tabController = TabController(
       length: articleProvider.categories.length,
       vsync: this,

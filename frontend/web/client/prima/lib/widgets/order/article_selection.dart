@@ -24,7 +24,16 @@ class ArticleSelection extends StatelessWidget {
     return Consumer<ArticleProvider>(
       builder: (context, provider, _) {
         if (provider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Chargement des articles...'),
+              ],
+            ),
+          );
         }
 
         if (provider.error != null) {

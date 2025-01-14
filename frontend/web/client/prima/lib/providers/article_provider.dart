@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:prima/services/article_service.dart';
 import 'package:prima/models/article.dart';
 import 'package:prima/models/article_category.dart';
@@ -25,14 +26,18 @@ class ArticleProvider extends ChangeNotifier {
 
       // Load categories
       final categoriesResult = await _articleService.getCategories();
-      _categories = List<ArticleCategory>.from(categoriesResult);
-
-      // Load all articles
       final articlesResult = await _articleService.getArticlesByCategory('all');
+
+      // Logging pour le debug
+      debugPrint('Categories loaded: ${categoriesResult.length}');
+      debugPrint('Articles loaded: ${articlesResult.length}');
+
+      _categories = List<ArticleCategory>.from(categoriesResult);
       _articles = List<Article>.from(articlesResult);
 
       notifyListeners();
     } catch (e) {
+      debugPrint('Error loading articles/categories: $e');
       _error = e.toString();
       notifyListeners();
     } finally {

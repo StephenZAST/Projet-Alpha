@@ -24,19 +24,21 @@ class Article {
   factory Article.fromJson(Map<String, dynamic> json) {
     try {
       return Article(
-        id: json['id'] ?? '',
-        name: json['name'] ?? '',
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
         basePrice: (json['base_price'] ?? 0.0).toDouble(),
         premiumPrice: (json['premium_price'] ?? 0.0).toDouble(),
-        description: json['description'],
-        categoryId: json['category_id'] ?? '',
+        description: json['description']?.toString(),
+        categoryId: json['category_id']?.toString() ?? '',
         category: json['category'] != null
             ? ArticleCategory.fromJson(json['category'])
             : null,
-        createdAt: DateTime.parse(json['created_at']),
+        createdAt: DateTime.parse(
+            json['created_at'] ?? DateTime.now().toIso8601String()),
       );
     } catch (e) {
       print('Error parsing Article: $e');
+      print('JSON data: $json');
       rethrow;
     }
   }

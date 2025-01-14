@@ -11,18 +11,19 @@ import 'package:prima/widgets/order/article_selection.dart';
 import 'package:prima/widgets/order/date_selection.dart';
 import 'package:prima/widgets/order/order_summary.dart';
 import 'package:prima/widgets/order/bottom_sheet_header.dart';
-import 'package:prima/widgets/order/order_stepper.dart';
 
 class OrderBottomSheet extends StatefulWidget {
   final Function(Order)? onOrderCreated;
 
   const OrderBottomSheet({Key? key, this.onOrderCreated}) : super(key: key);
+
   @override
   _OrderBottomSheetState createState() => _OrderBottomSheetState();
 }
 
 class _OrderBottomSheetState extends State<OrderBottomSheet>
     with TickerProviderStateMixin {
+  late TabController _categoryTabController;
   final PageController _pageController = PageController();
   Service? _selectedService;
   ArticleCategory? _selectedCategory;
@@ -31,13 +32,10 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
   DateTime? _deliveryDate;
   bool _isLoading = false;
 
-  int _currentStep = 0;
-  late TabController _categoryTabController;
-
   @override
   void initState() {
     super.initState();
-    _initData();
+    Future.microtask(() => _initData());
   }
 
   Future<void> _initData() async {
@@ -57,19 +55,32 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
             length: articleProvider.categories.length,
             vsync: this,
           );
+          _isLoading = false;
         });
       }
     } catch (e) {
-      _showError('Erreur de chargement: $e');
-    } finally {
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur de chargement: $e')),
+        );
         setState(() => _isLoading = false);
       }
     }
   }
 
   @override
+  void dispose() {
+    _categoryTabController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
       decoration: BoxDecoration(
@@ -80,7 +91,6 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
       child: Column(
         children: [
           const BottomSheetHeader(),
-          OrderStepper(currentStep: _currentStep),
           Expanded(
             child: PageView(
               controller: _pageController,
@@ -88,56 +98,34 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
               children: [
                 ServiceSelection(
                   selectedService: _selectedService,
-                  onServiceSelected: _selectService,
+                  onServiceSelected: _handleServiceSelection,
                 ),
                 ArticleSelection(
                   selectedArticles: _selectedArticles,
                   categoryTabController: _categoryTabController,
-                  onArticleQuantityChanged: (articleId, quantity) {
-                    setState(() {
-                      if (quantity == 0) {
-                        _selectedArticles.remove(articleId);
-                      } else {
-                        _selectedArticles[articleId] = quantity;
-                      }
-                    });
-                  },
+                  onArticleQuantityChanged: _handleArticleQuantityChanged,
                 ),
                 DateSelection(
                   collectionDate: _collectionDate,
                   deliveryDate: _deliveryDate,
-                  onCollectionDateSelected: (date) {
-                    setState(() {
-                      _collectionDate = date;
-                    });
-                  },
-                  onDeliveryDateSelected: (date) {
-                    setState(() {
-                      _deliveryDate = date;
-                    });
-                  },
-                  onNext: () {
-                    setState(() => _currentStep++);
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  onPrevious: () {
-                    setState(() => _currentStep--);
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
+                  onCollectionDateSelected: _handleCollectionDateSelected,
+                  onDeliveryDateSelected: _handleDeliveryDateSelected,
+                  onNext: () => _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  ),
+                  onPrevious: () => _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  ),
                 ),
                 OrderSummary(
                   selectedService: _selectedService,
                   selectedArticles: _selectedArticles,
                   collectionDate: _collectionDate,
                   deliveryDate: _deliveryDate,
+                  onConfirmOrder: _handleConfirmOrder,
                   isLoading: _isLoading,
-                  onConfirmOrder: () => _createOrder(0),
                 ),
               ],
             ),
@@ -147,59 +135,35 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
     );
   }
 
-  Future<void> _createOrder(double totalAmount) async {
-    setState(() => _isLoading = true);
-    try {
-      // Implémenter la création de la commande
-      await Future.delayed(const Duration(seconds: 1));
-      if (widget.onOrderCreated != null) {
-        widget.onOrderCreated!(Order(
-          id: '123',
-          service: _selectedService!,
-          articles: _selectedArticles.entries
-              .map((e) => MapEntry(
-                  context
-                      .read<ArticleProvider>()
-                      .articles
-                      .firstWhere((element) => element.id == e.key),
-                  e.value))
-              .toList(),
-          collectionDate: _collectionDate!,
-          deliveryDate: _deliveryDate!,
-          totalAmount: totalAmount,
-          serviceId: _selectedService!.id,
-          addressId: 'addressId',
-          status: 'pending',
-          isRecurring: false,
-          recurrenceType: '',
-        ));
-      }
-      Navigator.pop(context);
-    } catch (e) {
-      _showError('Erreur de création de la commande: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _selectService(Service service) {
+  void _handleServiceSelection(Service service) {
     setState(() {
       _selectedService = service;
-      _currentStep = 1;
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     });
-    _pageController.animateToPage(
-      1,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
+  void _handleArticleQuantityChanged(String articleId, int quantity) {
+    setState(() {
+      if (quantity == 0) {
+        _selectedArticles.remove(articleId);
+      } else {
+        _selectedArticles[articleId] = quantity;
+      }
+    });
+  }
+
+  void _handleCollectionDateSelected(DateTime? date) {
+    setState(() => _collectionDate = date);
+  }
+
+  void _handleDeliveryDateSelected(DateTime? date) {
+    setState(() => _deliveryDate = date);
+  }
+
+  Future<void> _handleConfirmOrder() async {
+    // Implement order confirmation logic
   }
 }

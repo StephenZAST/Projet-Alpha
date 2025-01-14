@@ -43,17 +43,18 @@ export class ArticleService {
 
   static async getAllArticles(): Promise<Article[]> {
     try {
-      console.log('Starting getAllArticles request...');
       const { data, error } = await supabase
         .from('articles')
-        .select('*');
+        .select(`
+          *,
+          category:article_categories(*)
+        `);
 
       if (error) {
         console.error('Supabase error in getAllArticles:', error);
         throw error;
       }
 
-      console.log('Articles retrieved successfully:', data?.length);
       return data || [];
     } catch (error) {
       console.error('Error in getAllArticles:', error);
