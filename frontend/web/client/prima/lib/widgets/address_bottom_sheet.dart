@@ -426,30 +426,6 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
     );
   }
 
-  Widget _buildMapButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return SpringButton(
-      SpringButtonType.OnlyScale,
-      Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [AppColors.primaryShadow],
-        ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 20,
-        ),
-      ),
-      onTap: onTap,
-    );
-  }
-
   Widget _buildInformationTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -488,53 +464,6 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildCustomMarker() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        shape: BoxShape.circle,
-        boxShadow: [AppColors.primaryShadow],
-      ),
-      child: const Icon(
-        Icons.location_on,
-        color: Colors.white,
-        size: 30,
-      ),
-    );
-  }
-
-  Widget _buildAnimatedMarker() {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: Center(
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        ),
-        Positioned.fill(
-          child: Center(
-            child: Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                shape: BoxShape.circle,
-                boxShadow: [AppColors.primaryShadow],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -654,64 +583,6 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
-    );
-  }
-
-  Widget _buildSaveButton() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      child: SpringButton(
-        SpringButtonType.OnlyScale,
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_isLoading)
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    strokeWidth: 2,
-                  ),
-                )
-              else ...[
-                const Icon(
-                  Icons.check_circle_outline,
-                  color: Colors.white,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  widget.address != null
-                      ? 'Mettre à jour l\'adresse'
-                      : 'Confirmer l\'emplacement',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        onTap: _isLoading ? null : _saveAddress,
-        scaleCoefficient: 0.95,
-      ),
     );
   }
 }

@@ -14,7 +14,6 @@ import 'middleware/address_middleware.dart';
 import 'middleware/article_middleware.dart';
 import 'middleware/service_middleware.dart';
 import 'middleware/storage_middleware.dart';
-import 'middleware/order_middleware.dart';
 
 Store<AppState> createStore(Dio dio, AuthDataProvider authDataProvider,
     ProfileDataProvider profileDataProvider,

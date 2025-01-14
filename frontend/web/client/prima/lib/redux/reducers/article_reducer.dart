@@ -1,5 +1,4 @@
 import '../../models/article.dart';
-import '../../models/article_category.dart';
 import '../states/article_state.dart';
 import '../actions/article_actions.dart';
 
@@ -17,7 +16,7 @@ ArticleState articleReducer(ArticleState state, dynamic action) {
   if (action is LoadCategoriesSuccessAction) {
     print('Categories loaded: ${action.categories?.length}');
     return state.copyWith(
-      categories: action.categories ?? const [],
+      categories: action.categories,
       isLoading: false,
     );
   }

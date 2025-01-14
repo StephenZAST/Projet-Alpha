@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import '../../models/service.dart';
 
 // Actions de chargement

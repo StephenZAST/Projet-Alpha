@@ -1,16 +1,16 @@
-import 'dart:developer';
-
 import 'package:prima/redux/states/app_state.dart';
 import 'package:redux/redux.dart';
 import 'package:dio/dio.dart';
-import '../store.dart';
 import '../actions/service_actions.dart';
-import '../../models/service.dart';
+import '../../services/service_service.dart';
 
 class ServiceMiddleware {
   final Dio dio;
+  late final ServiceService serviceService;
 
-  ServiceMiddleware(this.dio);
+  ServiceMiddleware(this.dio) {
+    serviceService = ServiceService(dio);
+  }
 
   List<Middleware<AppState>> createMiddleware() {
     return [
@@ -23,32 +23,18 @@ class ServiceMiddleware {
     LoadServicesAction action,
     NextDispatcher next,
   ) async {
-    print('ServiceMiddleware: Loading services...'); // Log pour debug
     next(action);
-
     try {
-      final response = await dio.get('/api/services/all');
-      print('Service API Response: ${response.data}'); // Log pour debug
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['data'] ?? [];
-        try {
-          final services = data.map((json) => Service.fromJson(json)).toList();
-          print('Parsed ${services.length} services'); // Log pour debug
-          store.dispatch(LoadServicesSuccessAction(services));
-        } catch (parseError) {
-          print('Error parsing services: $parseError'); // Log pour debug
-          store.dispatch(LoadServicesFailureAction(
-              'Error parsing service data: $parseError'));
-        }
-      } else {
-        print('Service API Error: ${response.statusCode}'); // Log pour debug
-        store.dispatch(LoadServicesFailureAction(
-            response.data['error'] ?? 'Failed to load services'));
+      print('Fetching services from /api/services/all...');
+      final services = await serviceService.getServices();
+      print('Services fetched successfully: ${services.length}');
+      store.dispatch(LoadServicesSuccessAction(services));
+    } catch (error) {
+      print('Error loading services: ${error.toString()}');
+      if (error is DioException) {
+        print('DioError details: ${error.response?.data}');
       }
-    } catch (e) {
-      print('Service Network Error: $e'); // Log pour debug
-      store.dispatch(LoadServicesFailureAction('Network error: $e'));
+      store.dispatch(LoadServicesFailureAction(error.toString()));
     }
   }
 }

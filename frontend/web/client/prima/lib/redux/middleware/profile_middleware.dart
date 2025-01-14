@@ -1,7 +1,6 @@
 import 'package:prima/redux/states/app_state.dart';
 import 'package:redux/redux.dart';
 import 'package:dio/dio.dart';
-import '../store.dart';
 import '../actions/profile_actions.dart';
 import '../../providers/profile_data_provider.dart';
 

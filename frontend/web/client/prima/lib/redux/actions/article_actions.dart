@@ -1,5 +1,17 @@
-import '../../models/article.dart'; // Nouveau modèle à créer
-import '../../models/article_category.dart'; // Nouveau modèle à créer
+import '../../models/article.dart';
+import '../../models/article_category.dart';
+
+class LoadArticlesAction {}
+
+class LoadArticlesSuccessAction {
+  final List<Article> articles;
+  LoadArticlesSuccessAction(this.articles);
+}
+
+class LoadArticlesFailureAction {
+  final String error;
+  LoadArticlesFailureAction(this.error);
+}
 
 // Actions pour les catégories
 class LoadCategoriesAction {}

@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:prima/redux/states/app_state.dart';
 import 'package:redux/redux.dart';
-import '../redux/store.dart';
 import '../redux/actions/address_actions.dart';
 import '../models/address.dart';
-import '../theme/colors.dart';
 
 class AddressCard extends StatelessWidget {
   final Address address;

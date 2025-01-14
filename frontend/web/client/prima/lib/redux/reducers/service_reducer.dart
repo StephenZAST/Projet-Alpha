@@ -32,11 +32,5 @@ ServiceState serviceReducer(ServiceState state, dynamic action) {
     );
   }
 
-  if (action is ClearSelectedServiceAction) {
-    return state.copyWith(
-      selectedService: null,
-    );
-  }
-
   return state;
 }

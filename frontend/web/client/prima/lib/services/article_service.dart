@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:prima/models/article.dart';
 import 'package:prima/models/article_category.dart';
-import 'package:prima/widgets/order_bottom_sheet.dart';
 
 class ArticleService {
   final Dio _dio;

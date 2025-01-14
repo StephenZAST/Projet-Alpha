@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+class SetPageControllerAction {
+  final PageController controller;
+  SetPageControllerAction(this.controller);
+}
+
 class SetRouteAction {
   final String route;
   SetRouteAction(this.route);
@@ -15,18 +20,23 @@ class PushRouteAction {
   PushRouteAction(this.route);
 }
 
-class PopRouteAction {}
+class PopRouteAction {
+  PopRouteAction();
+}
+
+class AnimateToPageAction {
+  final int index;
+  AnimateToPageAction(this.index);
+}
 
 class NavigateToMainRouteAction {
   final String route;
   final BuildContext context;
-
   NavigateToMainRouteAction(this.route, this.context);
 }
 
 class NavigateToSecondaryRouteAction {
   final String route;
   final BuildContext context;
-
   NavigateToSecondaryRouteAction(this.route, this.context);
 }

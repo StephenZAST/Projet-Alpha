@@ -37,6 +37,12 @@ class _OrderBottomSheetState extends State<OrderBottomSheet>
       final store = StoreProvider.of<AppState>(context);
       store.dispatch(LoadServicesAction());
       store.dispatch(SelectServiceAction(widget.initialService));
+      print('Current articles: ${store.state.articleState.articles.length}');
+      print('Current services: ${store.state.serviceState.services.length}');
+
+      // Dispatch actions to load data
+      store.dispatch(LoadArticlesAction());
+      store.dispatch(LoadServicesAction());
     });
   }
 

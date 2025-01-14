@@ -1,8 +1,6 @@
 import 'package:prima/redux/states/app_state.dart';
-import 'package:prima/redux/store.dart';
 import 'package:redux/redux.dart';
 import 'package:dio/dio.dart';
-import '../states/auth_state.dart';
 import '../actions/auth_actions.dart';
 import '../../providers/auth_data_provider.dart';
 

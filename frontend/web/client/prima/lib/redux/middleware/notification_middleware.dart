@@ -1,6 +1,5 @@
 import 'package:prima/redux/states/app_state.dart';
 import 'package:redux/redux.dart';
-import '../store.dart';
 import '../actions/notification_actions.dart';
 
 class NotificationMiddleware {

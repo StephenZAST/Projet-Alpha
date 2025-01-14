@@ -5,6 +5,9 @@ import 'package:prima/redux/states/app_state.dart';
 import 'package:prima/redux/states/navigation_state.dart';
 import 'package:redux/redux.dart';
 import '../redux/actions/navigation_actions.dart';
+import '../redux/actions/service_actions.dart';
+import '../redux/actions/article_actions.dart';
+import '../redux/actions/profile_actions.dart';
 import '../theme/colors.dart';
 import 'package:prima/widgets/order_bottom_sheet.dart';
 import 'package:spring_button/spring_button.dart';
@@ -23,6 +26,13 @@ class CustomBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StoreConnector<AppState, _ViewModel>(
+      onInit: (store) {
+        // Load initial data when authenticated
+        store.dispatch(LoadServicesAction());
+        store.dispatch(LoadArticlesAction());
+        store.dispatch(LoadProfileAction());
+        print('Initializing data loading in CustomBottomNavigation');
+      },
       converter: (store) => _ViewModel.fromStore(store),
       builder: (context, vm) {
         return Stack(
@@ -43,8 +53,20 @@ class CustomBottomNavigation extends StatelessWidget {
                     const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: BottomNavigationBar(
-                currentIndex: currentIndex,
-                onTap: onItemSelected,
+                currentIndex: vm.currentIndex,
+                onTap: (index) {
+                  StoreProvider.of<AppState>(context)
+                      .dispatch(SetIndexAction(index));
+                  final routes = [
+                    '/home',
+                    '/offers',
+                    '/services',
+                    '/chat',
+                    '/profile'
+                  ];
+                  StoreProvider.of<AppState>(context)
+                      .dispatch(SetRouteAction(routes[index]));
+                },
                 selectedItemColor: AppColors.primary,
                 unselectedItemColor: AppColors.gray500,
                 backgroundColor: Colors.transparent,
@@ -136,17 +158,24 @@ class _ViewModel {
   final int currentIndex;
   final Function(int) onTabSelected;
   final String currentRoute;
+  final bool isLoading;
+  final String? error;
 
   _ViewModel({
     required this.currentIndex,
     required this.onTabSelected,
     required this.currentRoute,
+    this.isLoading = false,
+    this.error,
   });
 
   static _ViewModel fromStore(Store<AppState> store) {
     return _ViewModel(
       currentIndex: store.state.navigationState.currentIndex,
       currentRoute: store.state.navigationState.currentRoute,
+      isLoading: store.state.serviceState.isLoading ||
+          store.state.articleState.isLoading,
+      error: store.state.serviceState.error ?? store.state.articleState.error,
       onTabSelected: (index) {
         if (index != 2) {
           store.dispatch(SetIndexAction(index));

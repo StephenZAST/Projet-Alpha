@@ -1,9 +1,5 @@
-import 'package:prima/widgets/order_bottom_sheet.dart';
-
 import '../states/order_state.dart';
 import '../actions/order_actions.dart';
-import '../../models/service.dart';
-import '../../models/article.dart';
 
 OrderState orderReducer(OrderState state, dynamic action) {
   print(

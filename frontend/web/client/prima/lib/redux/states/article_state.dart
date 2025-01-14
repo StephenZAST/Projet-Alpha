@@ -1,4 +1,3 @@
-import 'package:prima/widgets/order_bottom_sheet.dart' as widgets;
 import '../../models/article.dart';
 import '../../models/article_category.dart';
 

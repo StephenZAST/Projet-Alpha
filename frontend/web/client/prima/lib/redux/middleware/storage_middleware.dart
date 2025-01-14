@@ -1,8 +1,6 @@
-import 'dart:developer';
 import 'package:prima/redux/actions/address_actions.dart';
 import 'package:prima/redux/states/app_state.dart';
 import 'package:redux/redux.dart';
-import '../store.dart';
 import '../actions/auth_actions.dart';
 import '../actions/profile_actions.dart';
 import '../../providers/auth_data_provider.dart';

@@ -1,30 +1,29 @@
-import 'dart:developer';
 import '../../models/service.dart';
 
 class ServiceState {
-  final List<Service> services; // Changé de ServiceModel à Service
-  final Service? selectedService; // Changé de ServiceModel à Service
+  final List<Service> services;
   final bool isLoading;
   final String? error;
+  final Service? selectedService;
 
   ServiceState({
-    this.services = const [], // Valeur par défaut
-    this.selectedService,
+    this.services = const [],
     this.isLoading = false,
     this.error,
+    this.selectedService,
   });
 
   ServiceState copyWith({
-    List<Service>? services, // Changé de ServiceModel à Service
-    Service? selectedService, // Changé de ServiceModel à Service
+    List<Service>? services,
     bool? isLoading,
     String? error,
+    Service? selectedService,
   }) {
     return ServiceState(
       services: services ?? this.services,
-      selectedService: selectedService ?? this.selectedService,
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
+      error: error,
+      selectedService: selectedService ?? this.selectedService,
     );
   }
 }

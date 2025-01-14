@@ -1,6 +1,5 @@
-import '../../models/service.dart'; // Assurez-vous que ce fichier existe
-import '../../models/article.dart'; // Ajouter cet import
-import '../../models/order.dart'; // Assurez-vous d'avoir ce modèle
+import '../../models/service.dart';
+import '../../models/order.dart';
 
 class UpdateOrderServiceAction {
   final Service? service; // Changé de ServiceModel à Service
