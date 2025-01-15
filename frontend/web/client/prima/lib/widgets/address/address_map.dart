@@ -2,17 +2,17 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:mapbox_gl/mapbox_gl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/widgets/address/custom_map_marker.dart';
 import 'package:spring_button/spring_button.dart';
 import 'dart:ui' as ui;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AddressMap extends StatefulWidget {
-  // Changed to StatefulWidget
   final LatLng? selectedLocation;
   final MapController mapController;
-  final Function(LatLng) onLocationSelected; // Added callback
+  final Function(LatLng) onLocationSelected;
   final VoidCallback onCurrentLocation;
   final VoidCallback onSearchAddress;
   final VoidCallback onConfirmLocation;
@@ -22,7 +22,7 @@ class AddressMap extends StatefulWidget {
     Key? key,
     this.selectedLocation,
     required this.mapController,
-    required this.onLocationSelected, // New required parameter
+    required this.onLocationSelected,
     required this.onCurrentLocation,
     required this.onSearchAddress,
     required this.onConfirmLocation,
@@ -34,70 +34,77 @@ class AddressMap extends StatefulWidget {
 }
 
 class _AddressMapState extends State<AddressMap> {
-  MapboxMapController? _mapboxController;
-  LatLng? _currentSelectedLocation;
-
   @override
   void initState() {
     super.initState();
-    _currentSelectedLocation = widget.selectedLocation;
   }
 
   @override
   void didUpdateWidget(AddressMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Mettre à jour _currentSelectedLocation quand selectedLocation change
     if (widget.selectedLocation != oldWidget.selectedLocation) {
-      setState(() {
-        _currentSelectedLocation = widget.selectedLocation;
-      });
       _updateMapLocation();
     }
   }
 
   void _updateMapLocation() {
-    if (_currentSelectedLocation != null && _mapboxController != null) {
-      _mapboxController!.moveCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(_currentSelectedLocation!.latitude,
-              _currentSelectedLocation!.longitude),
-          15.0,
-        ),
+    if (widget.selectedLocation != null) {
+      widget.mapController.move(
+        widget.selectedLocation!,
+        15.0,
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    print('Building AddressMap widget...');
+    final mapboxToken = dotenv.env['MAPBOX_PUBLIC_TOKEN'];
+    print('MapboxToken: $mapboxToken');
+
+    if (mapboxToken == null) {
+      print(
+          'ERREUR: Token Mapbox non trouvé dans les variables d\'environnement');
+      // Afficher un widget de fallback au lieu de crash
+      return const Center(
+        child: Text('Erreur de configuration de la carte'),
+      );
+    }
+
     return Stack(
       children: [
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.8,
-          child: MapboxMap(
-            accessToken: 'VOTRE_TOKEN_MAPBOX',
-            initialCameraPosition: CameraPosition(
-              target: _currentSelectedLocation ?? const LatLng(48.8566, 2.3522),
-              zoom: 15.0,
+        FlutterMap(
+          mapController: widget.mapController,
+          options: MapOptions(
+            initialCenter: widget.selectedLocation ??
+                const LatLng(5.3484, -4.0305), // Abidjan
+            initialZoom: 15,
+            onTap: (_, point) {
+              widget.onLocationSelected(point);
+            },
+          ),
+          children: [
+            TileLayer(
+              urlTemplate:
+                  "https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}",
+              additionalOptions: {
+                'accessToken': mapboxToken,
+                'id': 'streets-v11',
+              },
             ),
-            onMapCreated: (MapboxMapController controller) {
-              _mapboxController = controller;
-            },
-            onMapClick: (Point<double> point, LatLng coordinates) {
-              setState(() {
-                _currentSelectedLocation = coordinates;
-              });
-              widget.onLocationSelected(coordinates);
-            },
-            styleString: 'mapbox://styles/mapbox/streets-v11',
-          ),
+            MarkerLayer(
+              markers: [
+                if (widget.selectedLocation != null)
+                  Marker(
+                    point: widget.selectedLocation!,
+                    width: 80,
+                    height: 80,
+                    child: const CustomMapMarker(),
+                  ),
+              ],
+            ),
+          ],
         ),
-        if (_currentSelectedLocation != null)
-          Positioned(
-            left: MediaQuery.of(context).size.width / 2 - 40,
-            top: MediaQuery.of(context).size.height * 0.4 - 40,
-            child: const CustomMapMarker(),
-          ),
-        // Contrôles de la carte avec fond semi-transparent
         Positioned(
           top: 16,
           right: 16,
@@ -117,7 +124,6 @@ class _AddressMapState extends State<AddressMap> {
             ],
           ),
         ),
-        // Bouton de confirmation avec fond semi-transparent
         Positioned(
           left: 16,
           right: 16,
@@ -130,9 +136,8 @@ class _AddressMapState extends State<AddressMap> {
 
   void updateLocation(LatLng location) {
     setState(() {
-      _currentSelectedLocation = location;
+      widget.onLocationSelected(location);
     });
-    widget.onLocationSelected(location);
   }
 
   Widget _buildMapControlButton({
@@ -172,7 +177,7 @@ class _AddressMapState extends State<AddressMap> {
   }
 
   Widget _buildLocationMarker() {
-    return const CustomMapMarker(); // Utiliser le composant existant au lieu de recréer l'animation
+    return const CustomMapMarker();
   }
 
   Widget _buildConfirmationButton(BuildContext context) {
