@@ -46,15 +46,82 @@ class AddressListBottomSheet extends StatelessWidget {
                         final address = addressProvider.addresses[index];
                         final isSelected = selectedAddress?.id == address.id;
 
-                        return GestureDetector(
-                          onTap: () => onSelected(address),
-                          child: AddressCard(
-                            address: address,
-                            isSelected: isSelected,
-                            onEdit: () {
-                              Navigator.pop(context);
-                              _showAddressBottomSheet(context, address);
-                            },
+                        return Dismissible(
+                          key: Key(address.id),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorLight,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 24),
+                            child: Icon(
+                              Icons.delete_outline,
+                              color: AppColors.error,
+                              size: 24,
+                            ),
+                          ),
+                          confirmDismiss: (direction) async {
+                            return await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Supprimer l\'adresse'),
+                                    content: const Text(
+                                      'Êtes-vous sûr de vouloir supprimer cette adresse ?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('Annuler'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: Text(
+                                          'Supprimer',
+                                          style:
+                                              TextStyle(color: AppColors.error),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ) ??
+                                false;
+                          },
+                          onDismissed: (direction) async {
+                            try {
+                              await Provider.of<AddressProvider>(context,
+                                      listen: false)
+                                  .deleteAddress(address.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text('Adresse supprimée avec succès'),
+                                ),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text('Erreur lors de la suppression: $e'),
+                                  backgroundColor: AppColors.error,
+                                ),
+                              );
+                            }
+                          },
+                          child: GestureDetector(
+                            onTap: () => onSelected(address),
+                            child: AddressCard(
+                              address: address,
+                              isSelected: isSelected,
+                              onEdit: () {
+                                Navigator.pop(context);
+                                _showAddressBottomSheet(context, address);
+                              },
+                            ),
                           ),
                         );
                       },
