@@ -11,6 +11,8 @@ class AddressProvider extends ChangeNotifier {
   final AddressService _addressService;
   Address? _selectedAddress;
   List<Address> _addresses = [];
+  String? _error;
+  bool _isLoading = false;
 
   AddressProvider(this._authProvider)
       : _dio = Dio(BaseOptions(
@@ -42,6 +44,8 @@ class AddressProvider extends ChangeNotifier {
 
   Address? get selectedAddress => _selectedAddress;
   List<Address> get addresses => _addresses;
+  String? get error => _error;
+  bool get isLoading => _isLoading;
 
   Future<void> addAddress({
     required String name,
@@ -53,6 +57,10 @@ class AddressProvider extends ChangeNotifier {
     bool isDefault = false,
   }) async {
     try {
+      _error = null;
+      _isLoading = true;
+      notifyListeners();
+
       final newAddress = await _addressService.createAddress(
         name: name,
         street: street,
@@ -63,9 +71,11 @@ class AddressProvider extends ChangeNotifier {
         isDefault: isDefault,
       );
       _addresses.add(newAddress);
-      notifyListeners();
     } catch (e) {
-      throw Exception('Failed to add address: $e');
+      _error = _handleError(e);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -118,6 +128,10 @@ class AddressProvider extends ChangeNotifier {
 
   Future<void> loadAddresses() async {
     try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
       print('Loading addresses...');
       _addresses = await _addressService.getAddresses();
 
@@ -134,11 +148,12 @@ class AddressProvider extends ChangeNotifier {
       if (defaultAddress != null) {
         _selectedAddress = defaultAddress;
       }
-
-      notifyListeners();
     } catch (e) {
       print('Error loading addresses: $e');
+      _error = _handleError(e);
       _addresses = [];
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
@@ -161,5 +176,20 @@ class AddressProvider extends ChangeNotifier {
   void setSelectedAddress(Address address) {
     _selectedAddress = address;
     notifyListeners();
+  }
+
+  String _handleError(dynamic error) {
+    if (error is DioException) {
+      switch (error.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.receiveTimeout:
+          return 'La connexion est trop lente';
+        case DioExceptionType.connectionError:
+          return 'Pas de connexion internet';
+        default:
+          return 'Erreur de connexion au serveur';
+      }
+    }
+    return 'Une erreur est survenue';
   }
 }

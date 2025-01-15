@@ -7,6 +7,7 @@ import 'package:prima/widgets/address_card.dart';
 import 'package:prima/providers/address_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:prima/widgets/connection_error_widget.dart';
 
 class AddressListBottomSheet extends StatelessWidget {
   final Function(Address) onSelected;
@@ -20,124 +21,137 @@ class AddressListBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Stack(
-        children: [
-          Column(
-            children: [
-              _buildHeader(context),
-              Expanded(
-                child: Consumer<AddressProvider>(
-                  builder: (context, addressProvider, child) {
-                    if (addressProvider.addresses.isEmpty) {
-                      return _buildEmptyState(context);
-                    }
-                    return ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                      itemCount: addressProvider.addresses.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final address = addressProvider.addresses[index];
-                        final isSelected = selectedAddress?.id == address.id;
+    return Consumer<AddressProvider>(
+      builder: (context, addressProvider, _) {
+        if (addressProvider.error != null) {
+          return ConnectionErrorWidget(
+            onRetry: () => addressProvider.loadAddresses(),
+            customMessage: 'Impossible de charger vos adresses',
+          );
+        }
 
-                        return Dismissible(
-                          key: Key(address.id),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.errorLight,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 24),
-                            child: Icon(
-                              Icons.delete_outline,
-                              color: AppColors.error,
-                              size: 24,
-                            ),
-                          ),
-                          confirmDismiss: (direction) async {
-                            return await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Supprimer l\'adresse'),
-                                    content: const Text(
-                                      'Êtes-vous sûr de vouloir supprimer cette adresse ?',
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, false),
-                                        child: const Text('Annuler'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(context, true),
-                                        child: Text(
-                                          'Supprimer',
-                                          style:
-                                              TextStyle(color: AppColors.error),
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  _buildHeader(context),
+                  Expanded(
+                    child: Consumer<AddressProvider>(
+                      builder: (context, addressProvider, child) {
+                        if (addressProvider.addresses.isEmpty) {
+                          return _buildEmptyState(context);
+                        }
+                        return ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                          itemCount: addressProvider.addresses.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final address = addressProvider.addresses[index];
+                            final isSelected =
+                                selectedAddress?.id == address.id;
+
+                            return Dismissible(
+                              key: Key(address.id),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.errorLight,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 24),
+                                child: Icon(
+                                  Icons.delete_outline,
+                                  color: AppColors.error,
+                                  size: 24,
+                                ),
+                              ),
+                              confirmDismiss: (direction) async {
+                                return await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title:
+                                            const Text('Supprimer l\'adresse'),
+                                        content: const Text(
+                                          'Êtes-vous sûr de vouloir supprimer cette adresse ?',
                                         ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, false),
+                                            child: const Text('Annuler'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, true),
+                                            child: Text(
+                                              'Supprimer',
+                                              style: TextStyle(
+                                                  color: AppColors.error),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                ) ??
-                                false;
-                          },
-                          onDismissed: (direction) async {
-                            try {
-                              await Provider.of<AddressProvider>(context,
-                                      listen: false)
-                                  .deleteAddress(address.id);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text('Adresse supprimée avec succès'),
-                                ),
-                              );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content:
-                                      Text('Erreur lors de la suppression: $e'),
-                                  backgroundColor: AppColors.error,
-                                ),
-                              );
-                            }
-                          },
-                          child: GestureDetector(
-                            onTap: () => onSelected(address),
-                            child: AddressCard(
-                              address: address,
-                              isSelected: isSelected,
-                              onEdit: () {
-                                Navigator.pop(context);
-                                _showAddressBottomSheet(context, address);
+                                    ) ??
+                                    false;
                               },
-                            ),
-                          ),
+                              onDismissed: (direction) async {
+                                try {
+                                  await Provider.of<AddressProvider>(context,
+                                          listen: false)
+                                      .deleteAddress(address.id);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Adresse supprimée avec succès'),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Erreur lors de la suppression: $e'),
+                                      backgroundColor: AppColors.error,
+                                    ),
+                                  );
+                                }
+                              },
+                              child: GestureDetector(
+                                onTap: () => onSelected(address),
+                                child: AddressCard(
+                                  address: address,
+                                  isSelected: isSelected,
+                                  onEdit: () {
+                                    Navigator.pop(context);
+                                    _showAddressBottomSheet(context, address);
+                                  },
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                right: 16,
+                bottom: 16,
+                child: _buildAddButton(context),
               ),
             ],
           ),
-          Positioned(
-            right: 16,
-            bottom: 16,
-            child: _buildAddButton(context),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

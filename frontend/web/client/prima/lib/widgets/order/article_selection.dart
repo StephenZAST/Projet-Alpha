@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:prima/providers/article_provider.dart';
 import 'package:prima/models/article.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/widgets/connection_error_widget.dart';
 
 class ArticleSelection extends StatefulWidget {
   final Map<String, int> selectedArticles;
@@ -48,42 +49,28 @@ class _ArticleSelectionState extends State<ArticleSelection>
   @override
   Widget build(BuildContext context) {
     return Consumer<ArticleProvider>(
-      builder: (context, provider, _) {
-        if (provider.isLoading) {
+      builder: (context, articleProvider, _) {
+        if (articleProvider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (provider.error != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, color: AppColors.error, size: 48),
-                const SizedBox(height: 16),
-                Text(
-                  'Erreur: ${provider.error}',
-                  style: TextStyle(color: AppColors.error),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => provider.loadData(),
-                  child: const Text('Réessayer'),
-                ),
-              ],
-            ),
+        if (articleProvider.error != null) {
+          return ConnectionErrorWidget(
+            onRetry: () => articleProvider.loadData(),
+            customMessage: 'Impossible de charger les articles',
           );
         }
 
-        if (provider.categories.isEmpty) {
+        if (articleProvider.categories.isEmpty) {
           return const Center(child: Text('Aucune catégorie disponible'));
         }
 
         // Initialize controller if not already initialized
         if (_tabController == null ||
-            _tabController!.length != provider.categories.length) {
+            _tabController!.length != articleProvider.categories.length) {
           _tabController?.dispose(); // Dispose old controller if exists
           _tabController = TabController(
-            length: provider.categories.length,
+            length: articleProvider.categories.length,
             vsync: this,
           );
         }
@@ -96,7 +83,7 @@ class _ArticleSelectionState extends State<ArticleSelection>
               isScrollable: true,
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.gray500,
-              tabs: provider.categories
+              tabs: articleProvider.categories
                   .map((cat) => Tab(text: cat.name))
                   .toList(),
             ),
@@ -104,8 +91,9 @@ class _ArticleSelectionState extends State<ArticleSelection>
               child: TabBarView(
                 controller:
                     _tabController!, // Safe to use ! here as we've checked above
-                children: provider.categories.map((category) {
-                  final articles = provider.getArticlesForCategory(category.id);
+                children: articleProvider.categories.map((category) {
+                  final articles =
+                      articleProvider.getArticlesForCategory(category.id);
                   return ArticleList(
                     articles: articles,
                     selectedArticles: widget.selectedArticles,

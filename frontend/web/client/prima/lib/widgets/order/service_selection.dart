@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:prima/providers/service_provider.dart';
 import 'package:prima/models/service.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/widgets/connection_error_widget.dart';
 
 class ServiceSelection extends StatelessWidget {
   final Service? selectedService;
@@ -17,12 +18,19 @@ class ServiceSelection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<ServiceProvider>(
-      builder: (context, provider, _) {
+      builder: (context, serviceProvider, _) {
+        if (serviceProvider.error != null) {
+          return ConnectionErrorWidget(
+            onRetry: () => serviceProvider.loadServices(),
+            customMessage: 'Impossible de charger les services',
+          );
+        }
+
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: provider.services.length,
+          itemCount: serviceProvider.services.length,
           itemBuilder: (context, index) {
-            final service = provider.services[index];
+            final service = serviceProvider.services[index];
             return _buildServiceCard(context, service);
           },
         );
