@@ -13,6 +13,7 @@ import 'package:prima/providers/profile_data_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:prima/widgets/error_dialog.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthDataProvider _authDataProvider;
@@ -191,12 +192,22 @@ class AuthProvider extends ChangeNotifier {
         return true;
       }
 
-      _error = response.data['error'] ?? 'Authentication failed';
-      print('Login error: $_error'); // Debug log
+      if (_context != null) {
+        await ErrorDialog.show(
+          _context!,
+          response.data['error'] ?? 'Identifiants incorrects',
+          title: 'Échec de connexion',
+        );
+      }
       return false;
     } catch (e) {
-      print('Login exception: $e'); // Debug log
-      _error = 'Connection error: $e';
+      if (_context != null) {
+        await ErrorDialog.show(
+          _context!,
+          'Erreur de connexion au serveur',
+          title: 'Erreur',
+        );
+      }
       return false;
     } finally {
       _isLoading = false;

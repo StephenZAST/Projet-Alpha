@@ -4,6 +4,7 @@ import 'package:prima/providers/article_provider.dart';
 import 'package:prima/models/article.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/widgets/connection_error_widget.dart';
+import 'package:spring_button/spring_button.dart';
 
 class ArticleSelection extends StatefulWidget {
   final Map<String, int> selectedArticles;
@@ -105,6 +106,68 @@ class _ArticleSelectionState extends State<ArticleSelection>
           ],
         );
       },
+    );
+  }
+
+  void _showNoArticleSelectedDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.shopping_cart_outlined,
+                  color: AppColors.primary, size: 48),
+              const SizedBox(height: 16),
+              const Text(
+                'Sélection requise',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Veuillez sélectionner au moins un article pour continuer',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.gray700,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SpringButton(
+                SpringButtonType.OnlyScale,
+                Container(
+                  width: double.infinity,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [AppColors.primaryShadow],
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'OK',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                onTap: () => Navigator.pop(context),
+                scaleCoefficient: 0.95,
+                useCache: false,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

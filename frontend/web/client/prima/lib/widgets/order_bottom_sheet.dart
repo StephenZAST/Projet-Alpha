@@ -4,6 +4,7 @@ import 'package:prima/providers/address_provider.dart';
 import 'package:prima/providers/auth_provider.dart';
 import 'package:prima/providers/service_provider.dart';
 import 'package:prima/services/order_service.dart';
+import 'package:prima/widgets/error_dialog.dart';
 import 'package:prima/widgets/order/order_stepper.dart';
 import 'package:prima/widgets/order/recurrence_selection.dart';
 import 'package:provider/provider.dart';
@@ -74,12 +75,26 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
       case 0:
         return _selectedService != null;
       case 1:
-        return _selectedArticles.isNotEmpty;
+        if (_selectedArticles.isEmpty) {
+          _showNoArticleSelectedDialog(context);
+          return false;
+        }
+        return true;
       case 2:
         return _collectionDate != null && _deliveryDate != null;
       default:
         return true;
     }
+  }
+
+  void _showNoArticleSelectedDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => ErrorDialog(
+        message: 'Veuillez sélectionner au moins un article pour continuer',
+        title: 'Sélection requise',
+      ),
+    );
   }
 
   void _goToNextStep() {

@@ -522,8 +522,8 @@ class OrderSummary extends StatelessWidget {
       Container(
         height: 56,
         decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(30),
           boxShadow: [AppColors.primaryShadow],
         ),
         child: Center(
