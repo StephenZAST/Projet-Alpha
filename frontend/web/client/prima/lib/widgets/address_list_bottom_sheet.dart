@@ -124,15 +124,16 @@ class AddressListBottomSheet extends StatelessWidget {
                                   );
                                 }
                               },
-                              child: GestureDetector(
-                                onTap: () => onSelected(address),
+                              child: InkWell(
+                                onTap: () {
+                                  onSelected(address);
+                                  Navigator.pop(context);
+                                },
                                 child: AddressCard(
                                   address: address,
                                   isSelected: isSelected,
-                                  onEdit: () {
-                                    Navigator.pop(context);
-                                    _showAddressBottomSheet(context, address);
-                                  },
+                                  onEdit: () =>
+                                      _handleEditAddress(context, address),
                                 ),
                               ),
                             );
@@ -279,6 +280,27 @@ class AddressListBottomSheet extends StatelessWidget {
           // Lors du retour, fermer le bottom sheet d'ajout d'adresse
           Navigator.pop(context);
           // Puis rouvrir la liste des adresses
+          BottomSheetManager().showCustomBottomSheet(
+            context: context,
+            builder: (context) => AddressListBottomSheet(
+              onSelected: onSelected,
+              selectedAddress: selectedAddress,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _handleEditAddress(BuildContext context, Address address) {
+    Navigator.pop(context);
+    BottomSheetManager().showCustomBottomSheet(
+      context: context,
+      builder: (context) => AddressBottomSheet(
+        address: address,
+        isEditing: true,
+        onBack: () {
+          Navigator.pop(context);
           BottomSheetManager().showCustomBottomSheet(
             context: context,
             builder: (context) => AddressListBottomSheet(

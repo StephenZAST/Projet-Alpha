@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:prima/widgets/custom_map_marker.dart';
+import 'package:prima/widgets/address/custom_map_marker.dart';
 import 'package:spring_button/spring_button.dart';
 import 'dart:ui' as ui;
 
-class AddressMap extends StatelessWidget {
+class AddressMap extends StatefulWidget {
+  // Changed to StatefulWidget
   final LatLng? selectedLocation;
   final MapController mapController;
+  final Function(LatLng) onLocationSelected; // Added callback
   final VoidCallback onCurrentLocation;
   final VoidCallback onSearchAddress;
   final VoidCallback onConfirmLocation;
@@ -18,11 +20,36 @@ class AddressMap extends StatelessWidget {
     Key? key,
     this.selectedLocation,
     required this.mapController,
+    required this.onLocationSelected, // New required parameter
     required this.onCurrentLocation,
     required this.onSearchAddress,
     required this.onConfirmLocation,
     required this.isLoading,
   }) : super(key: key);
+
+  @override
+  State<AddressMap> createState() => _AddressMapState();
+}
+
+class _AddressMapState extends State<AddressMap> {
+  LatLng? _currentSelectedLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentSelectedLocation = widget.selectedLocation;
+  }
+
+  @override
+  void didUpdateWidget(AddressMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Mettre à jour _currentSelectedLocation quand selectedLocation change
+    if (widget.selectedLocation != oldWidget.selectedLocation) {
+      setState(() {
+        _currentSelectedLocation = widget.selectedLocation;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +58,20 @@ class AddressMap extends StatelessWidget {
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.8,
           child: FlutterMap(
-            mapController: mapController,
+            mapController: widget.mapController,
             options: MapOptions(
-              center: selectedLocation ?? const LatLng(48.8566, 2.3522),
-              zoom: selectedLocation != null ? 15.0 : 10.0,
+              center: _currentSelectedLocation ?? const LatLng(48.8566, 2.3522),
+              zoom: _currentSelectedLocation != null ? 15.0 : 10.0,
               onTap: (_, point) {
-                // setState(() {
-                //   _selectedLocation = point;
-                // });
+                setState(() {
+                  _currentSelectedLocation = point;
+                });
+                widget.onLocationSelected(point);
+              },
+              onPositionChanged: (position, hasGesture) {
+                if (hasGesture && _currentSelectedLocation != null) {
+                  widget.onLocationSelected(_currentSelectedLocation!);
+                }
               },
             ),
             children: [
@@ -48,12 +81,13 @@ class AddressMap extends StatelessWidget {
               ),
               MarkerLayer(
                 markers: [
-                  if (selectedLocation != null)
+                  if (_currentSelectedLocation != null)
                     Marker(
                       width: 80,
                       height: 80,
-                      point: selectedLocation!,
-                      child: _buildLocationMarker(),
+                      point: _currentSelectedLocation!,
+                      child:
+                          const CustomMapMarker(), // Changé 'builder' en 'child'
                     ),
                 ],
               ),
@@ -68,13 +102,13 @@ class AddressMap extends StatelessWidget {
             children: [
               _buildMapControlButton(
                 icon: Icons.my_location,
-                onTap: onCurrentLocation,
+                onTap: widget.onCurrentLocation,
                 tooltip: 'Ma position',
               ),
               const SizedBox(height: 8),
               _buildMapControlButton(
                 icon: Icons.search,
-                onTap: onSearchAddress,
+                onTap: widget.onSearchAddress,
                 tooltip: 'Rechercher une adresse',
               ),
             ],
@@ -91,6 +125,13 @@ class AddressMap extends StatelessWidget {
     );
   }
 
+  void updateLocation(LatLng location) {
+    setState(() {
+      _currentSelectedLocation = location;
+    });
+    widget.onLocationSelected(location);
+  }
+
   Widget _buildMapControlButton({
     required IconData icon,
     required VoidCallback onTap,
@@ -104,7 +145,7 @@ class AddressMap extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withOpacity(0.7),
             gradient: AppColors.primaryGradient.scale(0.8),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
@@ -128,61 +169,7 @@ class AddressMap extends StatelessWidget {
   }
 
   Widget _buildLocationMarker() {
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 300),
-      tween: Tween(begin: 0.0, end: 1.0),
-      builder: (context, value, child) {
-        return Stack(
-          children: [
-            // Cercle externe animé
-            Center(
-              child: Container(
-                width: 60 * value,
-                height: 60 * value,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            // Cercle intermédiaire
-            Center(
-              child: Container(
-                width: 40 * value,
-                height: 40 * value,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-            // Marqueur central
-            Center(
-              child: Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.location_on,
-                  color: Colors.white,
-                  size: 12,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+    return const CustomMapMarker(); // Utiliser le composant existant au lieu de recréer l'animation
   }
 
   Widget _buildConfirmationButton(BuildContext context) {
@@ -213,7 +200,7 @@ class AddressMap extends StatelessWidget {
               ),
               child: _buildSaveButtonContent(),
             ),
-            onTap: isLoading ? null : onConfirmLocation,
+            onTap: widget.isLoading ? null : widget.onConfirmLocation,
             scaleCoefficient: 0.95,
           ),
         ),
@@ -225,7 +212,7 @@ class AddressMap extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (isLoading)
+        if (widget.isLoading)
           const SizedBox(
             width: 24,
             height: 24,

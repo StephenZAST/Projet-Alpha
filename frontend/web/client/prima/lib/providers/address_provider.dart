@@ -90,6 +90,10 @@ class AddressProvider extends ChangeNotifier {
     required bool isDefault,
   }) async {
     try {
+      _error = null;
+      _isLoading = true;
+      notifyListeners();
+
       final updatedAddress = await _addressService.updateAddress(
         id: id,
         name: name,
@@ -104,10 +108,40 @@ class AddressProvider extends ChangeNotifier {
       final index = _addresses.indexWhere((a) => a.id == id);
       if (index != -1) {
         _addresses[index] = updatedAddress;
-        notifyListeners();
+
+        // Mettre à jour l'adresse par défaut
+        if (isDefault) {
+          for (var i = 0; i < _addresses.length; i++) {
+            if (i != index && _addresses[i].isDefault) {
+              final addr = _addresses[i];
+              _addresses[i] = Address(
+                id: addr.id,
+                userId: addr.userId,
+                name: addr.name,
+                street: addr.street,
+                city: addr.city,
+                postalCode: addr.postalCode,
+                latitude: addr.latitude,
+                longitude: addr.longitude,
+                isDefault: false,
+                createdAt: addr.createdAt,
+                updatedAt: DateTime.now(),
+              );
+            }
+          }
+        }
+
+        // Mettre à jour l'adresse sélectionnée si nécessaire
+        if (_selectedAddress?.id == id) {
+          _selectedAddress = updatedAddress;
+        }
       }
     } catch (e) {
-      throw Exception('Failed to update address: $e');
+      _error = _handleError(e);
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 

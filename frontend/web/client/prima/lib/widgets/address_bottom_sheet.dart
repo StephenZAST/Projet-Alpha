@@ -14,11 +14,13 @@ import 'package:prima/widgets/address/address_map.dart';
 class AddressBottomSheet extends StatefulWidget {
   final Address? address;
   final VoidCallback? onBack;
+  final bool isEditing;
 
   const AddressBottomSheet({
     Key? key,
     this.address,
     this.onBack,
+    this.isEditing = false,
   }) : super(key: key);
 
   @override
@@ -72,19 +74,54 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
       child: Column(
         children: [
           _buildHeader(context),
-          TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.gray500,
-            indicator: BoxDecoration(
+          Container(
+            decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [AppColors.primaryShadow],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  offset: const Offset(0, 2),
+                  blurRadius: 8,
+                ),
+              ],
             ),
-            tabs: const [
-              Tab(text: 'Informations'),
-              Tab(text: 'Localisation'),
-            ],
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.gray500,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              labelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+              ),
+              tabs: [
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.info_outline, size: 20),
+                      const SizedBox(width: 8),
+                      const Text('Informations'),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.location_on_outlined, size: 20),
+                      const SizedBox(width: 8),
+                      const Text('Localisation'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: TabBarView(
@@ -100,9 +137,21 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
                 AddressMap(
                   selectedLocation: _selectedLocation,
                   mapController: _mapController,
+                  onLocationSelected: (location) {
+                    setState(() {
+                      _selectedLocation = location;
+                    });
+                  },
                   onCurrentLocation: _getCurrentLocation,
                   onSearchAddress: () {},
-                  onConfirmLocation: _saveAddress,
+                  onConfirmLocation: () {
+                    final errors = _validateForm();
+                    if (errors.isEmpty) {
+                      _saveAddress();
+                    } else {
+                      _showValidationDialog(errors);
+                    }
+                  },
                   isLoading: _isLoading,
                 ),
               ],
@@ -164,10 +213,23 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
       }
 
       final position = await Geolocator.getCurrentPosition();
+      final newLocation = LatLng(position.latitude, position.longitude);
+
+      // Mettre à jour l'emplacement sélectionné
       setState(() {
-        _selectedLocation = LatLng(position.latitude, position.longitude);
-        _mapController.move(_selectedLocation!, 15.0);
+        _selectedLocation = newLocation;
       });
+
+      // Déplacer la carte vers le nouvel emplacement
+      _mapController.move(newLocation, 15.0);
+
+      // Important: Notifier le widget AddressMap du changement de location
+      if (mounted) {
+        // Utiliser la callback onLocationSelected pour synchroniser l'état
+        setState(() {
+          _selectedLocation = newLocation;
+        });
+      }
     } catch (e) {
       _showErrorSnackBar('Impossible de récupérer la position actuelle');
     } finally {
@@ -176,11 +238,12 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
   }
 
   Future<void> _saveAddress() async {
-    if (_validateForm()) {
+    if (_validateForm().isEmpty) {
       setState(() => _isLoading = true);
       try {
         final addressProvider = context.read<AddressProvider>();
-        if (widget.address != null) {
+
+        if (widget.isEditing && widget.address != null) {
           await addressProvider.updateAddress(
             id: widget.address!.id,
             name: _addressNameController.text,
@@ -199,48 +262,60 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
             postalCode: _postalCodeController.text,
             latitude: _selectedLocation?.latitude,
             longitude: _selectedLocation?.longitude,
-            isDefault: false,
           );
         }
-        Navigator.pop(context);
-        BottomSheetManager().showCustomBottomSheet(
-          context: context,
-          builder: (context) => AddressListBottomSheet(
-            onSelected: (selectedAddress) {
-              // Handle the selected address if needed
-            },
-          ),
-        );
+
+        if (mounted) {
+          Navigator.pop(context);
+          if (widget.onBack != null) {
+            widget.onBack!();
+          }
+        }
       } catch (e) {
         _showErrorSnackBar('Erreur lors de l\'enregistrement');
       } finally {
-        setState(() => _isLoading = false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
 
-  bool _validateForm() {
-    List<String> errors = [];
+  List<String> _validateForm() {
+    final errors = <String>[];
 
     if (_addressNameController.text.isEmpty) {
       errors.add('Le nom de l\'adresse est requis');
     }
-
     if (_cityController.text.isEmpty) {
       errors.add('La ville est requise');
     }
-
     if (_selectedLocation == null) {
-      errors.add('La localisation GPS est requise');
+      errors.add('Veuillez sélectionner un emplacement sur la carte');
     }
 
-    if (errors.isNotEmpty) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Champs requis manquants'),
-            content: Column(
+    return errors;
+  }
+
+  void _showValidationDialog(List<String> errors) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: AppColors.error),
+              const SizedBox(width: 10),
+              const Text('Champs manquants'),
+            ],
+          ),
+          content: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.errorLight.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: errors
@@ -249,26 +324,32 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
                         child: Row(
                           children: [
                             Icon(Icons.error_outline,
-                                color: Colors.red, size: 20),
+                                color: AppColors.error, size: 20),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(error)),
+                            Expanded(
+                              child: Text(
+                                error,
+                                style: TextStyle(color: AppColors.error),
+                              ),
+                            ),
                           ],
                         ),
                       ))
                   .toList(),
             ),
-            actions: [
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () => Navigator.of(context).pop(),
+          ),
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.error,
               ),
-            ],
-          );
-        },
-      );
-      return false;
-    }
-    return true;
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Compris'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showErrorSnackBar(String message) {
