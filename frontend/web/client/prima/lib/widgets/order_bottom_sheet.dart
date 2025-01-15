@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/providers/address_provider.dart';
 import 'package:prima/providers/auth_provider.dart';
 import 'package:prima/providers/service_provider.dart';
@@ -16,6 +17,7 @@ import 'package:prima/widgets/order/date_selection.dart';
 import 'package:prima/widgets/order/order_summary.dart';
 import 'package:prima/widgets/order/bottom_sheet_header.dart';
 import 'package:spring_button/spring_button.dart';
+import 'package:prima/widgets/order/order_confirmation_popup.dart';
 
 class OrderBottomSheet extends StatefulWidget {
   final Function(Order)? onOrderCreated;
@@ -256,26 +258,36 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
   }
 
   Future<void> _handleConfirmOrder() async {
+    print('🚀 Début de _handleConfirmOrder');
+
     final addressProvider =
         Provider.of<AddressProvider>(context, listen: false);
     final selectedAddress = addressProvider.selectedAddress;
+    final rootContext = Navigator.of(context).context;
 
+    print('📍 Adresse sélectionnée: ${selectedAddress?.name}');
+    print('📍 Service sélectionné: ${_selectedService?.name}');
+    print('📍 Articles sélectionnés: ${_selectedArticles.length}');
+    print('📍 Date collecte: $_collectionDate');
+    print('📍 Date livraison: $_deliveryDate');
+
+    // Validation checks
     if (_selectedService == null ||
         _collectionDate == null ||
         _deliveryDate == null ||
         selectedAddress == null) {
+      print('❌ Validation échouée');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-              'Veuillez remplir tous les champs requis et sélectionner une adresse'),
-        ),
+            content: Text('Veuillez remplir tous les champs requis')),
       );
       return;
     }
 
-    setState(() => _isLoading = true);
-
     try {
+      print('🔄 Début de la création de commande');
+      setState(() => _isLoading = true);
+
       final items = _selectedArticles.entries.map((entry) {
         return {
           'articleId': entry.key,
@@ -285,6 +297,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
 
       final dio = Provider.of<AuthProvider>(context, listen: false).dio;
 
+      print('📤 Envoi de la requête API');
       final order = await OrderService(dio).createOrder(
         serviceId: _selectedService!.id,
         addressId: selectedAddress.id,
@@ -292,18 +305,69 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
         deliveryDate: _deliveryDate!,
         items: items,
         affiliateCode: null,
+        collectionTime: _collectionTime,
+        deliveryTime: _deliveryTime,
         isRecurring: _selectedRecurrence != RecurrenceType.none,
-        recurrenceType:
-            _selectedRecurrence.toString().split('.').last.toUpperCase(),
+        recurrenceType: _selectedRecurrence,
       );
+      print('✅ Commande créée avec succès');
 
-      if (mounted) {
-        if (widget.onOrderCreated != null) {
-          widget.onOrderCreated!(order);
-        }
-        Navigator.of(context).pop(true);
+      if (!mounted) {
+        print('❌ Widget non monté après création de commande');
+        return;
       }
+
+      print('🔄 Fermeture du bottom sheet');
+      Navigator.of(context).pop();
+
+      print('⏳ Attente après fermeture du bottom sheet');
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      if (!rootContext.mounted) {
+        print('❌ Context racine non monté');
+        return;
+      }
+
+      print('🔄 Affichage du dialog de confirmation');
+      await showDialog(
+        context: rootContext,
+        barrierDismissible: false,
+        useSafeArea: false,
+        builder: (dialogContext) {
+          print('🔄 Construction du dialog');
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.zero,
+            child: TweenAnimationBuilder<double>(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              tween: Tween(begin: 0.0, end: 1.0),
+              builder: (context, value, child) {
+                return Transform.scale(
+                  scale: value,
+                  child: OrderConfirmationPopup(
+                    onTrackOrder: () {
+                      print('👆 Clic sur Suivre commande');
+                      Navigator.of(dialogContext).pop();
+                      Navigator.of(rootContext).pushNamed('/orders');
+                    },
+                    onContinueShopping: () {
+                      print('👆 Clic sur Continuer');
+                      Navigator.of(dialogContext).pop();
+                      Provider.of<NavigationProvider>(rootContext,
+                              listen: false)
+                          .navigateToMainRoute(rootContext, '/home');
+                    },
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      );
+      print('✅ Dialog affiché avec succès');
     } catch (e) {
+      print('❌ Erreur lors du processus: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur: $e')),
@@ -313,6 +377,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+      print('🏁 Fin de _handleConfirmOrder');
     }
   }
 }

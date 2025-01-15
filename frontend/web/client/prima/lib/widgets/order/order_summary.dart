@@ -333,24 +333,49 @@ class OrderSummary extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.gray100,
+            color: AppColors.primary,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              const Text(
-                'Aucune adresse sélectionnée',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.gray800,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Aucune adresse sélectionnée',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => _showAddressBottomSheet(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                      ),
+                      child: const Text('Ajouter une adresse'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () => _showAddressBottomSheet(context),
-                child: const Text('Ajouter une adresse'),
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Image.asset(
+                  'assets/Building.png',
+                  width: 56,
+                  height: 51,
+                ),
               ),
             ],
           ),
@@ -366,33 +391,90 @@ class OrderSummary extends StatelessWidget {
       Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.primary,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primary),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  selectedAddress!.name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => _showAddressBottomSheet(context),
-                  child: const Text('Changer'),
-                ),
-              ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            const SizedBox(height: 8),
-            if (selectedAddress!.street != null) Text(selectedAddress!.street!),
-            Text(
-                '${selectedAddress!.city}${selectedAddress!.postalCode != null ? ', ${selectedAddress!.postalCode}' : ''}'),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (selectedAddress!.isDefault)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.successLight,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Par défaut',
+                            style: TextStyle(
+                              color: AppColors.success,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      if (selectedAddress!.isDefault) const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          selectedAddress!.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => _showAddressBottomSheet(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Changer'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  if (selectedAddress!.street != null)
+                    Text(
+                      selectedAddress!.street!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  Text(
+                    '${selectedAddress!.city}${selectedAddress!.postalCode != null ? ', ${selectedAddress!.postalCode}' : ''}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Image.asset(
+                'assets/Building.png',
+                width: 56,
+                height: 51,
+              ),
+            ),
           ],
         ),
       ),

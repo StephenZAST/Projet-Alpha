@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
 
-enum RecurrenceType { none, weekly, biweekly, monthly }
+// Assurez-vous que l'enum correspond aux valeurs du backend
+enum RecurrenceType {
+  none, // corresponds to 'NONE'
+  weekly, // corresponds to 'WEEKLY'
+  biweekly, // corresponds to 'BIWEEKLY'
+  monthly // corresponds to 'MONTHLY'
+}
 
 class RecurrenceSelection extends StatelessWidget {
   final RecurrenceType selectedRecurrence;
