@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
+// Importer LatLng de latlong2 avec un alias
+import 'package:latlong2/latlong.dart' as latlong2;
+// Importer LatLng de mapbox_gl avec un alias
+import 'package:mapbox_gl/mapbox_gl.dart' as mapbox;
 import 'package:prima/models/address.dart';
 import 'package:prima/providers/address_provider.dart';
 import 'package:prima/theme/colors.dart';
@@ -33,7 +36,8 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
   final _streetController = TextEditingController();
   final _cityController = TextEditingController();
   final _postalCodeController = TextEditingController();
-  LatLng? _selectedLocation;
+  // Utiliser le type LatLng de latlong2
+  latlong2.LatLng? _selectedLocation;
   bool _isLoading = false;
   late TabController _tabController;
   final MapController _mapController = MapController();
@@ -49,7 +53,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
       _postalCodeController.text = widget.address!.postalCode!;
       if (widget.address!.latitude != null &&
           widget.address!.longitude != null) {
-        _selectedLocation = LatLng(
+        _selectedLocation = latlong2.LatLng(
           widget.address!.latitude!,
           widget.address!.longitude!,
         );
@@ -135,11 +139,15 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
                   onNext: () => _tabController.animateTo(1),
                 ),
                 AddressMap(
-                  selectedLocation: _selectedLocation,
+                  selectedLocation: _selectedLocation != null
+                      ? mapbox.LatLng(_selectedLocation!.latitude,
+                          _selectedLocation!.longitude)
+                      : null,
                   mapController: _mapController,
                   onLocationSelected: (location) {
                     setState(() {
-                      _selectedLocation = location;
+                      _selectedLocation = latlong2.LatLng(
+                          location.latitude, location.longitude);
                     });
                   },
                   onCurrentLocation: _getCurrentLocation,
@@ -213,7 +221,8 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
       }
 
       final position = await Geolocator.getCurrentPosition();
-      final newLocation = LatLng(position.latitude, position.longitude);
+      final newLocation =
+          latlong2.LatLng(position.latitude, position.longitude);
 
       // Mettre à jour l'emplacement sélectionné
       setState(() {

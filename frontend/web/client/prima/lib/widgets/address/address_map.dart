@@ -1,6 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:mapbox_gl/mapbox_gl.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/widgets/address/custom_map_marker.dart';
 import 'package:spring_button/spring_button.dart';
@@ -32,6 +34,7 @@ class AddressMap extends StatefulWidget {
 }
 
 class _AddressMapState extends State<AddressMap> {
+  MapboxMapController? _mapboxController;
   LatLng? _currentSelectedLocation;
 
   @override
@@ -48,6 +51,19 @@ class _AddressMapState extends State<AddressMap> {
       setState(() {
         _currentSelectedLocation = widget.selectedLocation;
       });
+      _updateMapLocation();
+    }
+  }
+
+  void _updateMapLocation() {
+    if (_currentSelectedLocation != null && _mapboxController != null) {
+      _mapboxController!.moveCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(_currentSelectedLocation!.latitude,
+              _currentSelectedLocation!.longitude),
+          15.0,
+        ),
+      );
     }
   }
 
@@ -57,43 +73,30 @@ class _AddressMapState extends State<AddressMap> {
       children: [
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.8,
-          child: FlutterMap(
-            mapController: widget.mapController,
-            options: MapOptions(
-              center: _currentSelectedLocation ?? const LatLng(48.8566, 2.3522),
-              zoom: _currentSelectedLocation != null ? 15.0 : 10.0,
-              onTap: (_, point) {
-                setState(() {
-                  _currentSelectedLocation = point;
-                });
-                widget.onLocationSelected(point);
-              },
-              onPositionChanged: (position, hasGesture) {
-                if (hasGesture && _currentSelectedLocation != null) {
-                  widget.onLocationSelected(_currentSelectedLocation!);
-                }
-              },
+          child: MapboxMap(
+            accessToken: 'VOTRE_TOKEN_MAPBOX',
+            initialCameraPosition: CameraPosition(
+              target: _currentSelectedLocation ?? const LatLng(48.8566, 2.3522),
+              zoom: 15.0,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.prima',
-              ),
-              MarkerLayer(
-                markers: [
-                  if (_currentSelectedLocation != null)
-                    Marker(
-                      width: 80,
-                      height: 80,
-                      point: _currentSelectedLocation!,
-                      child:
-                          const CustomMapMarker(), // Changé 'builder' en 'child'
-                    ),
-                ],
-              ),
-            ],
+            onMapCreated: (MapboxMapController controller) {
+              _mapboxController = controller;
+            },
+            onMapClick: (Point<double> point, LatLng coordinates) {
+              setState(() {
+                _currentSelectedLocation = coordinates;
+              });
+              widget.onLocationSelected(coordinates);
+            },
+            styleString: 'mapbox://styles/mapbox/streets-v11',
           ),
         ),
+        if (_currentSelectedLocation != null)
+          Positioned(
+            left: MediaQuery.of(context).size.width / 2 - 40,
+            top: MediaQuery.of(context).size.height * 0.4 - 40,
+            child: const CustomMapMarker(),
+          ),
         // Contrôles de la carte avec fond semi-transparent
         Positioned(
           top: 16,
