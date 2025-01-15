@@ -205,7 +205,11 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
         Navigator.pop(context);
         BottomSheetManager().showCustomBottomSheet(
           context: context,
-          builder: (context) => const AddressListBottomSheet(),
+          builder: (context) => AddressListBottomSheet(
+            onSelected: (selectedAddress) {
+              // Handle the selected address if needed
+            },
+          ),
         );
       } catch (e) {
         _showErrorSnackBar('Erreur lors de l\'enregistrement');

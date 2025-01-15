@@ -16,7 +16,12 @@ class AddressSectionComponent extends StatelessWidget {
     BottomSheetManager().showCustomBottomSheet(
       context: context,
       isDismissible: true,
-      builder: (context) => const AddressListBottomSheet(),
+      builder: (context) => AddressListBottomSheet(
+        onSelected: (selectedAddress) {
+          Provider.of<AddressProvider>(context, listen: false)
+              .setSelectedAddress(selectedAddress);
+        },
+      ),
     );
   }
 

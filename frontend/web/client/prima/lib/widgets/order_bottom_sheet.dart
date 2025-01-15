@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/providers/address_provider.dart';
 import 'package:prima/providers/auth_provider.dart';
 import 'package:prima/providers/service_provider.dart';
 import 'package:prima/services/order_service.dart';
@@ -125,13 +126,19 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
           onDeliveryTimeSelected: _handleDeliveryTimeSelected,
         );
       case 3:
-        return OrderSummary(
-          selectedService: _selectedService,
-          selectedArticles: _selectedArticles,
-          collectionDate: _collectionDate,
-          deliveryDate: _deliveryDate,
-          onConfirmOrder: _handleConfirmOrder,
-          isLoading: _isLoading,
+        return Consumer<AddressProvider>(
+          builder: (context, addressProvider, _) => OrderSummary(
+            selectedService: _selectedService,
+            selectedArticles: _selectedArticles,
+            collectionDate: _collectionDate,
+            deliveryDate: _deliveryDate,
+            collectionTime: _collectionTime,
+            deliveryTime: _deliveryTime,
+            selectedRecurrence: _selectedRecurrence,
+            onConfirmOrder: _handleConfirmOrder,
+            isLoading: _isLoading,
+            selectedAddress: addressProvider.selectedAddress,
+          ),
         );
       default:
         return const SizedBox.shrink();
@@ -249,13 +256,19 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
   }
 
   Future<void> _handleConfirmOrder() async {
+    final addressProvider =
+        Provider.of<AddressProvider>(context, listen: false);
+    final selectedAddress = addressProvider.selectedAddress;
+
     if (_selectedService == null ||
         _collectionDate == null ||
         _deliveryDate == null ||
-        _selectedAddressId == null) {
+        selectedAddress == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Veuillez remplir tous les champs requis')),
+          content: Text(
+              'Veuillez remplir tous les champs requis et sélectionner une adresse'),
+        ),
       );
       return;
     }
@@ -270,12 +283,11 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
         };
       }).toList();
 
-      // Récupérer l'instance de Dio depuis AuthProvider
       final dio = Provider.of<AuthProvider>(context, listen: false).dio;
 
       final order = await OrderService(dio).createOrder(
         serviceId: _selectedService!.id,
-        addressId: _selectedAddressId!,
+        addressId: selectedAddress.id,
         collectionDate: _collectionDate!,
         deliveryDate: _deliveryDate!,
         items: items,
@@ -285,11 +297,10 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
             _selectedRecurrence.toString().split('.').last.toUpperCase(),
       );
 
-      if (widget.onOrderCreated != null) {
-        widget.onOrderCreated!(order);
-      }
-
       if (mounted) {
+        if (widget.onOrderCreated != null) {
+          widget.onOrderCreated!(order);
+        }
         Navigator.of(context).pop(true);
       }
     } catch (e) {

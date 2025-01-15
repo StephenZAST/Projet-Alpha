@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/models/address.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/utils/bottom_sheet_manager.dart';
 import 'package:prima/widgets/address_bottom_sheet.dart';
@@ -8,7 +9,14 @@ import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
 
 class AddressListBottomSheet extends StatelessWidget {
-  const AddressListBottomSheet({Key? key}) : super(key: key);
+  final Function(Address) onSelected;
+  final Address? selectedAddress;
+
+  const AddressListBottomSheet({
+    Key? key,
+    required this.onSelected,
+    this.selectedAddress,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -36,64 +44,16 @@ class AddressListBottomSheet extends StatelessWidget {
                           const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final address = addressProvider.addresses[index];
-                        return Dismissible(
-                          key: Key(address.id),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 24),
-                            child: Icon(
-                              Icons.delete_outline,
-                              color: AppColors.error,
-                              size: 24,
-                            ),
-                          ),
-                          confirmDismiss: (direction) async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Supprimer l\'adresse'),
-                                content: const Text(
-                                    'Êtes-vous sûr de vouloir supprimer cette adresse ?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, false),
-                                    child: const Text('Annuler'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context, true),
-                                    child: Text(
-                                      'Supprimer',
-                                      style: TextStyle(color: AppColors.error),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                            return confirm ?? false;
-                          },
-                          onDismissed: (direction) async {
-                            await addressProvider.deleteAddress(address.id);
-                          },
+                        final isSelected = selectedAddress?.id == address.id;
+
+                        return GestureDetector(
+                          onTap: () => onSelected(address),
                           child: AddressCard(
                             address: address,
+                            isSelected: isSelected,
                             onEdit: () {
                               Navigator.pop(context);
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => AddressBottomSheet(
-                                  address: address,
-                                ),
-                              );
+                              _showAddressBottomSheet(context, address);
                             },
                           ),
                         );
@@ -226,7 +186,7 @@ class AddressListBottomSheet extends StatelessWidget {
     );
   }
 
-  void _showAddressBottomSheet(BuildContext context) {
+  void _showAddressBottomSheet(BuildContext context, [Address? address]) {
     // D'abord fermer le bottom sheet actuel
     Navigator.pop(context);
 
@@ -240,7 +200,10 @@ class AddressListBottomSheet extends StatelessWidget {
           // Puis rouvrir la liste des adresses
           BottomSheetManager().showCustomBottomSheet(
             context: context,
-            builder: (context) => const AddressListBottomSheet(),
+            builder: (context) => AddressListBottomSheet(
+              onSelected: onSelected,
+              selectedAddress: selectedAddress,
+            ),
           );
         },
       ),

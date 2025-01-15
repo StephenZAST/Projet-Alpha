@@ -7,6 +7,10 @@ import 'package:prima/widgets/order/recurrence_selection.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:intl/intl.dart';
+import 'package:prima/providers/address_provider.dart';
+import 'package:prima/models/address.dart';
+import 'package:prima/utils/bottom_sheet_manager.dart';
+import 'package:prima/widgets/address_list_bottom_sheet.dart';
 
 class OrderSummary extends StatelessWidget {
   final Service? selectedService;
@@ -18,6 +22,7 @@ class OrderSummary extends StatelessWidget {
   final RecurrenceType selectedRecurrence;
   final VoidCallback onConfirmOrder;
   final bool isLoading;
+  final Address? selectedAddress;
 
   const OrderSummary({
     Key? key,
@@ -30,6 +35,7 @@ class OrderSummary extends StatelessWidget {
     required this.selectedRecurrence,
     required this.onConfirmOrder,
     required this.isLoading,
+    this.selectedAddress,
   }) : super(key: key);
 
   @override
@@ -53,6 +59,11 @@ class OrderSummary extends StatelessWidget {
             title: 'Dates et heures',
             child: _buildDateTimeInfo(context),
           ),
+          const SizedBox(height: 16),
+          _buildSummarySection(
+            title: 'Adresse de collecte/livraison',
+            child: _buildAddressCard(context),
+          ),
           if (selectedRecurrence != RecurrenceType.none) ...[
             const SizedBox(height: 16),
             _buildSummarySection(
@@ -61,32 +72,10 @@ class OrderSummary extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
-          SpringButton(
-            SpringButtonType.OnlyScale,
-            Container(
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [AppColors.primaryShadow],
-              ),
-              child: Center(
-                child: isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Confirmer la commande',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-            ),
-            onTap: isLoading ? null : onConfirmOrder,
-            scaleCoefficient: 0.95,
-            useCache: false,
-          ),
+          if (selectedAddress == null)
+            _buildNoAddressWarning()
+          else
+            _buildConfirmButton(),
         ],
       ),
     );
@@ -334,6 +323,143 @@ class OrderSummary extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAddressCard(BuildContext context) {
+    if (selectedAddress == null) {
+      return SpringButton(
+        SpringButtonType.OnlyScale,
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.gray100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Aucune adresse sélectionnée',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.gray800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () => _showAddressBottomSheet(context),
+                child: const Text('Ajouter une adresse'),
+              ),
+            ],
+          ),
+        ),
+        onTap: () => _showAddressBottomSheet(context),
+        scaleCoefficient: 0.95,
+        useCache: false,
+      );
+    }
+
+    return SpringButton(
+      SpringButtonType.OnlyScale,
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primary),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  selectedAddress!.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _showAddressBottomSheet(context),
+                  child: const Text('Changer'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (selectedAddress!.street != null) Text(selectedAddress!.street!),
+            Text(
+                '${selectedAddress!.city}${selectedAddress!.postalCode != null ? ', ${selectedAddress!.postalCode}' : ''}'),
+          ],
+        ),
+      ),
+      onTap: () => _showAddressBottomSheet(context),
+      scaleCoefficient: 0.95,
+      useCache: false,
+    );
+  }
+
+  void _showAddressBottomSheet(BuildContext context) {
+    BottomSheetManager().showCustomBottomSheet(
+      context: context,
+      builder: (context) => AddressListBottomSheet(
+        selectedAddress: selectedAddress,
+        onSelected: (address) {
+          Provider.of<AddressProvider>(context, listen: false)
+              .setSelectedAddress(address);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
+  Widget _buildNoAddressWarning() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.errorLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text(
+        'Veuillez sélectionner une adresse pour continuer',
+        style: TextStyle(
+          color: AppColors.error,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConfirmButton() {
+    return SpringButton(
+      SpringButtonType.OnlyScale,
+      Container(
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [AppColors.primaryShadow],
+        ),
+        child: Center(
+          child: isLoading
+              ? const CircularProgressIndicator(color: Colors.white)
+              : const Text(
+                  'Confirmer la commande',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+        ),
+      ),
+      onTap: isLoading ? null : onConfirmOrder,
+      scaleCoefficient: 0.95,
+      useCache: false,
     );
   }
 }

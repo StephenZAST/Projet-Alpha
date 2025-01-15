@@ -9,12 +9,14 @@ class AddressCard extends StatelessWidget {
   final Address address;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final bool isSelected;
 
   const AddressCard({
     Key? key,
     required this.address,
     this.onEdit,
     this.onDelete,
+    this.isSelected = false,
   }) : super(key: key);
 
   @override
@@ -22,8 +24,10 @@ class AddressCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.primary, // Changed background color to blue
+        color: isSelected ? AppColors.primaryLight : AppColors.primary,
         borderRadius: BorderRadius.circular(12),
+        border:
+            isSelected ? Border.all(color: AppColors.primary, width: 2) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2), // Increased shadow opacity
@@ -62,6 +66,31 @@ class AddressCard extends StatelessWidget {
                             ),
                           ),
                         if (address.isDefault) const SizedBox(width: 8),
+                        if (isSelected)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle,
+                                    color: AppColors.primary, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Sélectionnée',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         Expanded(
                           child: Text(
                             address.name,

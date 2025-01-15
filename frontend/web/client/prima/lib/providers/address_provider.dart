@@ -157,4 +157,9 @@ class AddressProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  void setSelectedAddress(Address address) {
+    _selectedAddress = address;
+    notifyListeners();
+  }
 }
