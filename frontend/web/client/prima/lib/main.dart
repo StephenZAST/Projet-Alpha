@@ -28,23 +28,11 @@ import 'package:prima/services/article_service.dart';
 import 'package:prima/services/service_service.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'pages/auth/reset_password_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Ajouter des logs pour le débogage
-  print('Chargement du fichier .env...');
-  try {
-    await dotenv.load(fileName: 'assets/.env');
-    print('Fichier .env chargé avec succès');
-    print('MAPBOX_PUBLIC_TOKEN: ${dotenv.env['MAPBOX_PUBLIC_TOKEN']}');
-  } catch (e) {
-    print('Erreur lors du chargement du .env: $e');
-  }
-
   // Initialiser les données de localisation française
   await initializeDateFormatting('fr_FR', null);
   final prefs = await SharedPreferences.getInstance();

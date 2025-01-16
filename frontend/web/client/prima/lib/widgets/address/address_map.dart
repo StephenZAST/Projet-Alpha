@@ -34,31 +34,29 @@ class AddressMap extends StatefulWidget {
 }
 
 class _AddressMapState extends State<AddressMap> {
+  LatLng? _currentSelectedLocation;
+
   @override
   void initState() {
     super.initState();
-    // Le zoom initial se fait uniquement à l'initialisation
-    if (widget.selectedLocation != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.mapController.move(widget.selectedLocation!, 15.0);
-      });
-    }
+    _currentSelectedLocation = widget.selectedLocation;
   }
 
   @override
   void didUpdateWidget(AddressMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // On ne déplace la carte que si la location change via GPS ou action explicite
-    if (widget.selectedLocation != oldWidget.selectedLocation &&
-        oldWidget.selectedLocation == null) {
+    if (widget.selectedLocation != oldWidget.selectedLocation) {
+      setState(() {
+        _currentSelectedLocation = widget.selectedLocation;
+      });
       _updateMapLocation();
     }
   }
 
   void _updateMapLocation() {
-    if (widget.selectedLocation != null) {
+    if (_currentSelectedLocation != null) {
       widget.mapController.move(
-        widget.selectedLocation!,
+        _currentSelectedLocation!,
         15.0,
       );
     }
@@ -66,18 +64,7 @@ class _AddressMapState extends State<AddressMap> {
 
   @override
   Widget build(BuildContext context) {
-    print('Building AddressMap widget...');
-    final mapboxToken = dotenv.env['MAPBOX_PUBLIC_TOKEN'];
-    print('MapboxToken: $mapboxToken');
-
-    if (mapboxToken == null) {
-      print(
-          'ERREUR: Token Mapbox non trouvé dans les variables d\'environnement');
-      // Afficher un widget de fallback au lieu de crash
-      return const Center(
-        child: Text('Erreur de configuration de la carte'),
-      );
-    }
+    final mapboxToken = dotenv.env['MAPBOX_PUBLIC_TOKEN'] ?? '';
 
     return Stack(
       children: [
@@ -88,7 +75,6 @@ class _AddressMapState extends State<AddressMap> {
                 const LatLng(5.3484, -4.0305), // Abidjan
             initialZoom: 15,
             onTap: (_, point) {
-              // Plus de recentrage automatique, juste mise à jour du marqueur
               widget.onLocationSelected(point);
             },
           ),
@@ -114,6 +100,12 @@ class _AddressMapState extends State<AddressMap> {
             ),
           ],
         ),
+        if (_currentSelectedLocation != null)
+          Positioned(
+            left: MediaQuery.of(context).size.width / 2 - 40,
+            top: MediaQuery.of(context).size.height * 0.4 - 40,
+            child: const CustomMapMarker(),
+          ),
         Positioned(
           top: 16,
           right: 16,
@@ -145,8 +137,9 @@ class _AddressMapState extends State<AddressMap> {
 
   void updateLocation(LatLng location) {
     setState(() {
-      widget.onLocationSelected(location);
+      _currentSelectedLocation = location;
     });
+    widget.onLocationSelected(location);
   }
 
   Widget _buildMapControlButton({
@@ -205,7 +198,7 @@ class _AddressMapState extends State<AddressMap> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               decoration: BoxDecoration(
-                color: AppColors.primaryLight.withOpacity(0.9),
+                gradient: AppColors.primaryGradient.scale(0.9),
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
@@ -231,8 +224,8 @@ class _AddressMapState extends State<AddressMap> {
       children: [
         if (widget.isLoading)
           const SizedBox(
-            width: 20,
-            height: 20,
+            width: 24,
+            height: 24,
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               strokeWidth: 2,
