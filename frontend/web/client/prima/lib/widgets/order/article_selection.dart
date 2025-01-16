@@ -145,7 +145,7 @@ class _ArticleSelectionState extends State<ArticleSelection>
                   width: double.infinity,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
+                    color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(22),
                     boxShadow: [AppColors.primaryShadow],
                   ),

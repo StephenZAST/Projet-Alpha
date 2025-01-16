@@ -37,12 +37,20 @@ class _AddressMapState extends State<AddressMap> {
   @override
   void initState() {
     super.initState();
+    // Le zoom initial se fait uniquement à l'initialisation
+    if (widget.selectedLocation != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.mapController.move(widget.selectedLocation!, 15.0);
+      });
+    }
   }
 
   @override
   void didUpdateWidget(AddressMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.selectedLocation != oldWidget.selectedLocation) {
+    // On ne déplace la carte que si la location change via GPS ou action explicite
+    if (widget.selectedLocation != oldWidget.selectedLocation &&
+        oldWidget.selectedLocation == null) {
       _updateMapLocation();
     }
   }
@@ -80,6 +88,7 @@ class _AddressMapState extends State<AddressMap> {
                 const LatLng(5.3484, -4.0305), // Abidjan
             initialZoom: 15,
             onTap: (_, point) {
+              // Plus de recentrage automatique, juste mise à jour du marqueur
               widget.onLocationSelected(point);
             },
           ),
@@ -196,7 +205,7 @@ class _AddressMapState extends State<AddressMap> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient.scale(0.9),
+                color: AppColors.primaryLight.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
@@ -222,8 +231,8 @@ class _AddressMapState extends State<AddressMap> {
       children: [
         if (widget.isLoading)
           const SizedBox(
-            width: 24,
-            height: 24,
+            width: 20,
+            height: 20,
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               strokeWidth: 2,

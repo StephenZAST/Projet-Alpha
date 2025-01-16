@@ -56,7 +56,7 @@ class ErrorDialog extends StatelessWidget {
                 width: double.infinity,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [AppColors.primaryShadow],
                 ),

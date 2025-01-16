@@ -200,7 +200,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                         child: Text(
                           'Retour',
                           style: TextStyle(
-                            color: AppColors.primary,
+                            color: AppColors.primaryLight,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -219,7 +219,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                       height: 40,
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
+                        color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [AppColors.primaryShadow],
                       ),
