@@ -21,6 +21,7 @@ import articleServiceRoutes from './routes/articleService.routes';
 import blogCategoryRoutes from './routes/blogCategory.routes';
 import blogArticleRoutes from './routes/blogArticle.routes';
 import orderItemRoutes from './routes/orderItem.routes';
+import archiveRoutes from './routes/archive.routes';  // Ajouter cet import
 import './scheduler'; // Importer le scheduler pour démarrer les tâches cron
 
 // Load environment variables
@@ -78,6 +79,7 @@ app.use('/api/article-services', articleServiceRoutes);
 app.use('/api/blog-categories', blogCategoryRoutes);
 app.use('/api/blog-articles', blogArticleRoutes);
 app.use('/api/order-items', orderItemRoutes);
+app.use('/api/archives', archiveRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

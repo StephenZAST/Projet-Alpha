@@ -382,3 +382,19 @@ export interface ResetCode {
   used: boolean;
   createdAt: Date;
 }
+
+// Archive related types
+export interface OrderArchive extends Order {
+  archived_at: Date;
+}
+
+export interface ArchivePagination {
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface OrderArchiveResponse {
+  data: OrderArchive[];
+  pagination: ArchivePagination;
+}

@@ -1,0 +1,96 @@
+{
+  "info": {
+    "_postman_id": "a8b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+    "name": "Alpha Archives API",
+    "description": "Collection pour tester le système d'archives",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Archives",
+      "item": [
+        {
+          "name": "Get Archived Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/archives/orders?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "archives", "orders"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Run Archive Cleanup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/archives/cleanup?days=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "archives", "cleanup"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30",
+                  "description": "Nombre de jours pour l'archivage"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}
