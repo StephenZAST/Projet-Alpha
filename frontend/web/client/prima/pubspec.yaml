@@ -28,7 +28,12 @@ dependencies:
   latlong2: ^0.9.0
   shared_preferences: ^2.2.2
   intl: 0.19.0  
-  jiffy: ^6.2.1  
+  jiffy: ^6.2.1
+  flutter_local_notifications: ^16.3.2
+  connectivity_plus: ^5.0.2
+  flutter_cache_manager: ^3.3.1
+  web_socket_channel: ^2.4.0
+  flutter_staggered_animations: ^1.1.1
 
 dev_dependencies:
   flutter_test:
@@ -49,7 +54,5 @@ flutter:
     - assets/menu-icon.svg
     - assets/Nettoyage_à_sec.png
     - assets/Pliage.png
-    - assets/promo-img1.png
-    - assets/Repassage.png
     - assets/validate.png
     - assets/source-sans-pro/

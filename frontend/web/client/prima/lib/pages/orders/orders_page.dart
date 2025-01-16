@@ -1,11 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:prima/home-components/app_bar.dart';
-import 'package:prima/home-components/address_section.dart';
-import 'package:prima/widgets/custom_sidebar.dart';
+import 'package:prima/widgets/order/order_status_filter.dart';
+import 'package:prima/widgets/order/orders_list.dart';
+import 'package:prima/widgets/connection_error_widget.dart';
+import 'package:prima/widgets/custom_refresh_indicator.dart';
 
-class OrdersPage extends StatelessWidget {
+class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
+
+  @override
+  State<OrdersPage> createState() => _OrdersPageState();
+}
+
+class _OrdersPageState extends State<OrdersPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    Future.microtask(() => context.read<OrderProvider>().loadOrders());
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      context.read<OrderProvider>().loadOrders();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,40 +43,50 @@ class OrdersPage extends StatelessWidget {
         preferredSize: const Size.fromHeight(0),
         child: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       ),
-      drawer: const CustomSidebar(),
-      body: Builder(
-        builder: (BuildContext context) => SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: [
-                    AppBarComponent(
-                      title: 'Commandes',
-                      onMenuPressed: () {
-                        Scaffold.of(context).openDrawer();
-                      },
-                    ),
-                    const AddressSectionComponent(),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Text(
-                    'Mes Commandes',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray800,
-                    ),
-                  ),
-                ),
-                // TODO: Add orders list here
-              ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            AppBarComponent(
+              title: 'Mes Commandes',
+              onMenuPressed: () => Scaffold.of(context).openDrawer(),
             ),
-          ),
+            Consumer<OrderProvider>(
+              builder: (context, provider, _) => OrderStatusFilter(
+                selectedStatus: provider._selectedFilter,
+                onStatusSelected: provider.setStatusFilter,
+              ),
+            ),
+            Expanded(
+              child: CustomRefreshIndicator(
+                onRefresh: () =>
+                    context.read<OrderProvider>().loadOrders(refresh: true),
+                child: Consumer<OrderProvider>(
+                  builder: (context, provider, _) {
+                    if (provider.isFirstLoad && provider.isLoading) {
+                      return const Center(
+                        child:
+                            CircularProgressIndicator(color: AppColors.primary),
+                      );
+                    }
+
+                    if (provider.error != null) {
+                      return ConnectionErrorWidget(
+                        onRetry: () => provider.loadOrders(refresh: true),
+                        customMessage: 'Impossible de charger vos commandes',
+                      );
+                    }
+
+                    return OrdersList(
+                      orders: provider.filteredOrders,
+                      scrollController: _scrollController,
+                      isLoading: provider.isLoading,
+                      hasMore: provider.hasMore,
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

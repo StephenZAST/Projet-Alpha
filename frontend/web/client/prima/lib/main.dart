@@ -78,6 +78,25 @@ void main() async {
           ),
           update: (context, auth, previous) => ServiceProvider(auth.dio),
         ),
+        Provider<OrderCacheService>(
+          create: (_) => OrderCacheService(prefs),
+        ),
+        Provider<WebSocketService>(
+          create: (context) => WebSocketService(
+            Provider.of<AuthProvider>(context, listen: false).token ?? '',
+          ),
+        ),
+        ChangeNotifierProxyProvider3<AuthProvider, OrderCacheService,
+            WebSocketService, OrderProvider>(
+          create: (context) => OrderProvider(
+            OrderService(Provider.of<AuthProvider>(context, listen: false).dio),
+            Provider.of<WebSocketService>(context, listen: false),
+          ),
+          update: (context, auth, cache, ws, previous) => OrderProvider(
+            OrderService(auth.dio),
+            ws,
+          ),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -141,6 +160,7 @@ class MyApp extends StatelessWidget {
               useMaterial3: true,
             ),
             initialRoute: authProvider.isAuthenticated ? '/' : '/login',
+            onGenerateRoute: AppRoutes.generateRoute, // Ajoutez cette ligne
             routes: {
               '/': (context) => const MainNavigationWrapper(),
               '/login': (context) => const LoginPage(),

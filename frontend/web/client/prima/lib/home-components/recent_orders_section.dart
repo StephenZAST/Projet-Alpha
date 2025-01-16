@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
-import 'package:spring_button/spring_button.dart';
+import 'package:prima/providers/order_provider.dart';
+import 'package:prima/widgets/order/recent_order_card.dart';
+import 'package:provider/provider.dart';
 
 class RecentOrdersSectionComponent extends StatelessWidget {
   const RecentOrdersSectionComponent({super.key});
@@ -20,73 +22,50 @@ class RecentOrdersSectionComponent extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: AppColors.gray800,
                 ),
               ),
               TextButton(
-                onPressed: () {},
-                child: const Row(
+                onPressed: () => Navigator.pushNamed(context, '/orders'),
+                child: Row(
                   children: [
-                    Text('Voir plus'),
-                    Icon(Icons.arrow_forward),
+                    Text(
+                      'Voir plus',
+                      style: TextStyle(color: AppColors.primary),
+                    ),
+                    Icon(Icons.arrow_forward, color: AppColors.primary),
                   ],
                 ),
               ),
             ],
           ),
-          SpringButton(
-            SpringButtonType.OnlyScale,
-            _buildOrderItem('Commande #1024', 'Nov 15, 2023', true),
-            onTap: () {},
-            scaleCoefficient: 0.95,
-            useCache: false,
-          ),
-          SpringButton(
-            SpringButtonType.OnlyScale,
-            _buildOrderItem('Commande #1024', 'Nov 15, 2023', false),
-            onTap: () {},
-            scaleCoefficient: 0.95,
-            useCache: false,
-          ),
-        ],
-      ),
-    );
-  }
+          const SizedBox(height: 8),
+          Consumer<OrderProvider>(
+            builder: (context, provider, _) {
+              if (provider.isLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
+              }
 
-  Widget _buildOrderItem(String orderNumber, String date, bool isWaiting) {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isWaiting ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.access_time,
-            color: isWaiting ? Colors.orange : Colors.green,
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                orderNumber,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                date,
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            isWaiting ? 'En attente' : 'Terminée',
-            style: TextStyle(
-              color: isWaiting ? Colors.orange : Colors.green,
-              fontWeight: FontWeight.bold,
-            ),
+              if (provider.recentOrders.isEmpty) {
+                return Center(
+                  child: Text(
+                    'Aucune commande récente',
+                    style: TextStyle(color: AppColors.gray600),
+                  ),
+                );
+              }
+
+              return Column(
+                children: provider.recentOrders
+                    .map((order) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: RecentOrderCard(order: order),
+                        ))
+                    .toList(),
+              );
+            },
           ),
         ],
       ),
