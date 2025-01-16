@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../models/order.dart';
+import '../models/order_status.dart';
 import '../widgets/order/recurrence_selection.dart';
 
 class OrderService {
@@ -98,6 +99,64 @@ class OrderService {
       print('❌ [OrderService] Exception détaillée:');
       print('  - Error: $e');
       print('  - Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
+
+  Future<List<Order>> getOrders({
+    int page = 1,
+    int perPage = 10,
+    OrderStatus? status,
+  }) async {
+    try {
+      final queryParameters = {
+        'page': page,
+        'perPage': perPage,
+        if (status != null) 'status': status.name,
+      };
+
+      final response = await _dio.get(
+        '/api/orders',
+        queryParameters: queryParameters,
+        options: Options(
+          headers: {'Accept': 'application/json'},
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final List<dynamic> ordersJson = response.data['data'];
+        return ordersJson.map((json) => Order.fromJson(json)).toList();
+      }
+
+      throw Exception(response.data['error'] ?? 'Failed to fetch orders');
+    } catch (e) {
+      print('Error fetching orders: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<Order>> getUserOrders() async {
+    try {
+      final response = await _dio.get(
+        '/api/orders/user',
+        options: Options(
+          headers: {'Accept': 'application/json'},
+          validateStatus: (status) => true,
+        ),
+      );
+
+      print('📦 [OrderService] Réponse getUserOrders:');
+      print('  - Status: ${response.statusCode}');
+      print('  - Data: ${response.data}');
+
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final List<dynamic> ordersJson = response.data['data'];
+        return ordersJson.map((json) => Order.fromJson(json)).toList();
+      }
+
+      throw Exception(response.data['error'] ?? 'Failed to fetch user orders');
+    } catch (e) {
+      print('❌ [OrderService] Erreur getUserOrders: $e');
       rethrow;
     }
   }

@@ -5,6 +5,8 @@ import 'package:prima/services/order_service.dart';
 import 'package:prima/managers/order_status_manager.dart';
 import 'dart:async';
 
+import 'package:prima/services/websocket_service.dart';
+
 class OrderProvider with ChangeNotifier {
   final OrderService _orderService;
   final WebSocketService _webSocketService;
@@ -94,6 +96,10 @@ class OrderProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> refreshOrders() async {
+    return loadOrders(refresh: true);
   }
 
   void setStatusFilter(OrderStatus? status) {

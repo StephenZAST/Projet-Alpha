@@ -9,10 +9,12 @@ class Order {
   final String addressId;
   final DateTime collectionDate;
   final DateTime deliveryDate;
+  final DateTime createdAt;
   final double totalAmount;
   final String status;
   final bool isRecurring;
   final String recurrenceType;
+  final List<OrderItem>? items; // Changed from List<MapEntry<Article, int>>
   final List<MapEntry<Article, int>> articles;
 
   Order({
@@ -22,10 +24,12 @@ class Order {
     required this.addressId,
     required this.collectionDate,
     required this.deliveryDate,
+    required this.createdAt,
     required this.totalAmount,
     required this.status,
     required this.isRecurring,
     required this.recurrenceType,
+    this.items, // Added items parameter
     required this.articles,
   });
 
@@ -37,12 +41,33 @@ class Order {
       addressId: json['address_id'],
       collectionDate: DateTime.parse(json['collectionDate']),
       deliveryDate: DateTime.parse(json['deliveryDate']),
+      createdAt: DateTime.parse(json['createdAt']),
       totalAmount: (json['totalAmount'] ?? 0).toDouble(),
       status: json['status'],
       isRecurring: json['isRecurring'] ?? false,
       recurrenceType: json['recurrenceType'] ?? '',
+      items: (json['items'] as List<dynamic>?)
+          ?.map((item) => OrderItem.fromJson(item))
+          .toList(),
       articles: [],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'service': service.toJson(),
+      'serviceId': serviceId,
+      'addressId': addressId,
+      'collectionDate': collectionDate.toIso8601String(),
+      'deliveryDate': deliveryDate.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+      'totalAmount': totalAmount,
+      'status': status,
+      'isRecurring': isRecurring,
+      'recurrenceType': recurrenceType,
+      'items': items?.map((item) => item.toJson()).toList(),
+    };
   }
 }
 
@@ -76,5 +101,17 @@ class OrderItem {
       article:
           json['article'] != null ? Article.fromJson(json['article']) : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'orderId': orderId,
+      'articleId': articleId,
+      'serviceId': serviceId,
+      'quantity': quantity,
+      'unitPrice': unitPrice,
+      'article': article?.toJson(),
+    };
   }
 }

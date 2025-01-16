@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:prima/layouts/ReductionSection.dart';
 import 'package:prima/layouts/ServiceSection.dart';
+import 'package:prima/providers/order_provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/home-components/app_bar.dart';
 import 'package:prima/home-components/address_section.dart';
 import 'package:prima/home-components/recent_orders_section.dart';
 import 'package:prima/home-components/services_title.dart';
 import 'package:prima/widgets/animated_page.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

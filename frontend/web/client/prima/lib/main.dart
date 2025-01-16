@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:prima/providers/address_provider.dart';
 import 'package:prima/providers/article_provider.dart';
 import 'package:prima/providers/auth_data_provider.dart';
+import 'package:prima/providers/order_provider.dart';
 import 'package:prima/providers/profile_data_provider.dart';
 import 'package:prima/providers/service_provider.dart';
+import 'package:prima/routes/app_routes.dart';
+import 'package:prima/services/order_cache_service.dart';
+import 'package:prima/services/order_service.dart';
+import 'package:prima/services/websocket_service.dart';
 import 'package:prima/widgets/custom_sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/theme/colors.dart';
@@ -160,7 +165,6 @@ class MyApp extends StatelessWidget {
               useMaterial3: true,
             ),
             initialRoute: authProvider.isAuthenticated ? '/' : '/login',
-            onGenerateRoute: AppRoutes.generateRoute, // Ajoutez cette ligne
             routes: {
               '/': (context) => const MainNavigationWrapper(),
               '/login': (context) => const LoginPage(),

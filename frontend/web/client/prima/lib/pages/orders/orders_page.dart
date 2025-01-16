@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:prima/home-components/app_bar.dart';
+import 'package:prima/providers/order_provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/widgets/order/order_status_filter.dart';
 import 'package:prima/widgets/order/orders_list.dart';
 import 'package:prima/widgets/connection_error_widget.dart';
-import 'package:prima/widgets/custom_refresh_indicator.dart';
+import 'package:prima/widgets/refresh/custom_refresh_indicator.dart';
+import 'package:provider/provider.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -52,7 +55,7 @@ class _OrdersPageState extends State<OrdersPage> {
             ),
             Consumer<OrderProvider>(
               builder: (context, provider, _) => OrderStatusFilter(
-                selectedStatus: provider._selectedFilter,
+                selectedStatus: provider.selectedFilter,
                 onStatusSelected: provider.setStatusFilter,
               ),
             ),
