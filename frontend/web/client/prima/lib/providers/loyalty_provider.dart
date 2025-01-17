@@ -81,4 +81,29 @@ class LoyaltyProvider with ChangeNotifier {
   }
 
   Future<void> refreshPoints() => loadPoints();
+
+  Future<void> convertPointsToDiscount(int points) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _loyaltyService.spendPoints(
+        points,
+        'EXCHANGE',
+        DateTime.now().toIso8601String(),
+      );
+
+      await loadPoints(); // Recharger les points après la conversion
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Calcul du montant de réduction possible
+  double calculatePossibleDiscount(int points) {
+    return (points / 100).floor().toDouble(); // 100 points = 1€
+  }
 }

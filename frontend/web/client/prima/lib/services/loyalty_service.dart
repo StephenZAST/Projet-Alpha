@@ -10,7 +10,10 @@ class LoyaltyService {
   Future<LoyaltyPoints> getPointsBalance() async {
     try {
       final response = await _dio.get('/api/loyalty/points-balance');
-      return LoyaltyPoints.fromJson(response.data['data']);
+      if (response.data['data'] != null) {
+        return LoyaltyPoints.fromJson(response.data['data']);
+      }
+      throw Exception('Failed to load points balance');
     } catch (e) {
       print('Error getting points balance: $e');
       rethrow;
@@ -25,7 +28,11 @@ class LoyaltyService {
         'source': source,
         'referenceId': referenceId,
       });
-      return LoyaltyPoints.fromJson(response.data['data']);
+
+      if (response.data['data'] != null) {
+        return LoyaltyPoints.fromJson(response.data['data']);
+      }
+      throw Exception('Failed to earn points');
     } catch (e) {
       print('Error earning points: $e');
       rethrow;
@@ -35,7 +42,7 @@ class LoyaltyService {
   Future<List<PointTransaction>> getTransactions() async {
     try {
       final response = await _dio.get('/api/loyalty/transactions');
-      final List<dynamic> data = response.data['data'];
+      final List<dynamic> data = response.data['data'] ?? [];
       return data.map((json) => PointTransaction.fromJson(json)).toList();
     } catch (e) {
       print('Error getting transactions: $e');

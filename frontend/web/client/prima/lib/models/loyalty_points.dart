@@ -5,13 +5,15 @@ class LoyaltyPoints {
   final int totalEarned;
   final DateTime createdAt;
 
-  LoyaltyPoints({
+  const LoyaltyPoints({
     required this.id,
     required this.userId,
     required this.pointsBalance,
     required this.totalEarned,
     required this.createdAt,
   });
+
+  bool canSpendPoints(int amount) => pointsBalance >= amount;
 
   factory LoyaltyPoints.fromJson(Map<String, dynamic> json) {
     return LoyaltyPoints(
@@ -22,4 +24,12 @@ class LoyaltyPoints {
       createdAt: DateTime.parse(json['createdAt']),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'userId': userId,
+        'pointsBalance': pointsBalance,
+        'totalEarned': totalEarned,
+        'createdAt': createdAt.toIso8601String(),
+      };
 }

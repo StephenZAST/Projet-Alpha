@@ -7,11 +7,11 @@ class PointsStatsCard extends StatelessWidget {
   final int referrals;
 
   const PointsStatsCard({
-    Key? key,
+    super.key,
     required this.pointsThisMonth,
     required this.totalOrders,
     required this.referrals,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,35 +22,30 @@ class PointsStatsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Vos statistiques',
+              'Statistiques',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: AppColors.gray800,
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                _buildStatItem(
-                  icon: Icons.calendar_month,
-                  title: 'Ce mois',
-                  value: '$pointsThisMonth pts',
-                  color: AppColors.primary,
-                ),
-                _buildStatItem(
-                  icon: Icons.shopping_bag,
-                  title: 'Commandes',
-                  value: '$totalOrders',
-                  color: AppColors.success,
-                ),
-                _buildStatItem(
-                  icon: Icons.people,
-                  title: 'Parrainages',
-                  value: '$referrals',
-                  color: AppColors.warning,
-                ),
-              ],
+            _buildStatItem(
+              icon: Icons.calendar_month,
+              title: 'Points ce mois',
+              value: pointsThisMonth.toString(),
+            ),
+            const SizedBox(height: 12),
+            _buildStatItem(
+              icon: Icons.shopping_bag,
+              title: 'Commandes totales',
+              value: totalOrders.toString(),
+            ),
+            const SizedBox(height: 12),
+            _buildStatItem(
+              icon: Icons.people,
+              title: 'Parrainages',
+              value: referrals.toString(),
             ),
           ],
         ),
@@ -62,36 +57,29 @@ class PointsStatsCard extends StatelessWidget {
     required IconData icon,
     required String title,
     required String value,
-    required Color color,
   }) {
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color),
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
           ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: TextStyle(
-              color: AppColors.gray600,
-              fontSize: 12,
-            ),
+          child: Icon(icon, color: AppColors.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(title, style: const TextStyle(color: AppColors.gray600)),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.gray800,
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
