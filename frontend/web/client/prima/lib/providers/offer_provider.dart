@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences.dart';
+import 'package:prima/providers/loyalty_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/offer.dart';
 import '../services/offer_service.dart';
 import 'dart:convert';
@@ -82,6 +83,34 @@ class OfferProvider with ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  Future<void> applyPointsExchangeOffer(String offerId) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final offer = _offers.firstWhere((o) => o.id == offerId);
+      if (offer.discountType != 'POINTS_EXCHANGE') {
+        throw Exception('Invalid offer type');
+      }
+
+      // Vérifier le solde de points
+      final points = await context.read<LoyaltyProvider>().getPointsBalance();
+      if (points < (offer.pointsRequired ?? 0)) {
+        throw Exception('Insufficient points');
+      }
+
+      // Sélectionner l'offre
+      await selectOffer(offer);
+
+      // La déduction des points se fait côté backend lors de la validation de la commande
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   List<Offer> getValidOffersForAmount(double amount) {
