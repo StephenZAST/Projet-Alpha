@@ -193,6 +193,9 @@ export interface OrderItem {
     updatedAt: Date;
 }
 
+export type PaymentStatus = 'PENDING' | 'COMPLETED';
+export type PaymentMethod = 'CASH' | 'ORANGE_MONEY';
+
 export interface Order {
   id: string;
   userId: string;
@@ -217,6 +220,8 @@ export interface Order {
     discountAmount: number;
   }[];
   service_type_id?: string;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
 }
 
 export type OrderStatus = 
@@ -276,6 +281,7 @@ export interface CreateOrderDTO {
     quantity: number;
   }[];
   offerIds?: string[];
+  paymentMethod: PaymentMethod;
 }
 
 export interface CreateOrderItemDTO {

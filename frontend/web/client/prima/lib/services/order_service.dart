@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:prima/models/payment.dart';
 import '../models/order.dart';
 import '../models/order_status.dart';
 import '../widgets/order/recurrence_selection.dart';
@@ -20,6 +21,7 @@ class OrderService {
     String? affiliateCode,
     bool isRecurring = false,
     RecurrenceType? recurrenceType,
+    required PaymentMethod paymentMethod,
   }) async {
     try {
       print('🔵 [OrderService] Début de createOrder');
@@ -180,4 +182,6 @@ class OrderService {
       throw Exception('Error calculating total: $e');
     }
   }
+
+  completeOrder(String orderId) {}
 }

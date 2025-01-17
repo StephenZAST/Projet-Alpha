@@ -11,8 +11,11 @@ import 'package:prima/providers/address_provider.dart';
 import 'package:prima/models/address.dart';
 import 'package:prima/utils/bottom_sheet_manager.dart';
 import 'package:prima/widgets/address_list_bottom_sheet.dart';
+import 'package:prima/models/payment.dart';
+import 'package:prima/widgets/order/payment_method_selector.dart';
+import 'package:prima/providers/order_provider.dart';
 
-class OrderSummary extends StatelessWidget {
+class OrderSummary extends StatefulWidget {
   final Service? selectedService;
   final Map<String, int> selectedArticles;
   final DateTime? collectionDate;
@@ -20,7 +23,7 @@ class OrderSummary extends StatelessWidget {
   final TimeOfDay? collectionTime;
   final TimeOfDay? deliveryTime;
   final RecurrenceType selectedRecurrence;
-  final VoidCallback onConfirmOrder;
+  final Function(dynamic order) onConfirmOrder;
   final bool isLoading;
   final Address? selectedAddress;
 
@@ -37,6 +40,13 @@ class OrderSummary extends StatelessWidget {
     required this.isLoading,
     this.selectedAddress,
   }) : super(key: key);
+
+  @override
+  State<OrderSummary> createState() => _OrderSummaryState();
+}
+
+class _OrderSummaryState extends State<OrderSummary> {
+  PaymentMethod _selectedPaymentMethod = PaymentMethod.CASH;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +74,7 @@ class OrderSummary extends StatelessWidget {
             title: 'Adresse de collecte/livraison',
             child: _buildAddressCard(context),
           ),
-          if (selectedRecurrence != RecurrenceType.none) ...[
+          if (widget.selectedRecurrence != RecurrenceType.none) ...[
             const SizedBox(height: 16),
             _buildSummarySection(
               title: 'Récurrence',
@@ -72,7 +82,14 @@ class OrderSummary extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
-          if (selectedAddress == null)
+          PaymentMethodSelector(
+            selectedMethod: _selectedPaymentMethod,
+            onMethodSelected: (method) {
+              setState(() => _selectedPaymentMethod = method);
+            },
+          ),
+          const SizedBox(height: 24),
+          if (widget.selectedAddress == null)
             _buildNoAddressWarning()
           else
             _buildConfirmButton(),
@@ -130,14 +147,14 @@ class OrderSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  selectedService?.name ?? '',
+                  widget.selectedService?.name ?? '',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  selectedService?.description ?? '',
+                  widget.selectedService?.description ?? '',
                   style: TextStyle(
                     color: AppColors.gray600,
                     fontSize: 14,
@@ -201,12 +218,12 @@ class OrderSummary extends StatelessWidget {
         _buildInfoRow(
           icon: Icons.upload,
           title: 'Collecte',
-          value: formatDateTime(collectionDate, collectionTime),
+          value: formatDateTime(widget.collectionDate, widget.collectionTime),
         ),
         _buildInfoRow(
           icon: Icons.download,
           title: 'Livraison',
-          value: formatDateTime(deliveryDate, deliveryTime),
+          value: formatDateTime(widget.deliveryDate, widget.deliveryTime),
         ),
       ],
     );
@@ -217,7 +234,7 @@ class OrderSummary extends StatelessWidget {
       RecurrenceType.weekly: 'Hebdomadaire',
       RecurrenceType.biweekly: 'Bi-mensuelle',
       RecurrenceType.monthly: 'Mensuelle',
-    }[selectedRecurrence];
+    }[widget.selectedRecurrence];
 
     return _buildInfoRow(
       icon: Icons.repeat,
@@ -270,7 +287,7 @@ class OrderSummary extends StatelessWidget {
         Provider.of<ArticleProvider>(context, listen: false);
     final summaries = <OrderItemSummary>[];
 
-    for (var entry in selectedArticles.entries) {
+    for (var entry in widget.selectedArticles.entries) {
       final article = articleProvider.articles.firstWhere(
           (a) => a.id == entry.key,
           orElse: () => throw Exception());
@@ -327,7 +344,7 @@ class OrderSummary extends StatelessWidget {
   }
 
   Widget _buildAddressCard(BuildContext context) {
-    if (selectedAddress == null) {
+    if (widget.selectedAddress == null) {
       return SpringButton(
         SpringButtonType.OnlyScale,
         Container(
@@ -409,7 +426,7 @@ class OrderSummary extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      if (selectedAddress!.isDefault)
+                      if (widget.selectedAddress!.isDefault)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
@@ -428,10 +445,11 @@ class OrderSummary extends StatelessWidget {
                             ),
                           ),
                         ),
-                      if (selectedAddress!.isDefault) const SizedBox(width: 8),
+                      if (widget.selectedAddress!.isDefault)
+                        const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          selectedAddress!.name,
+                          widget.selectedAddress!.name,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -449,16 +467,16 @@ class OrderSummary extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  if (selectedAddress!.street != null)
+                  if (widget.selectedAddress!.street != null)
                     Text(
-                      selectedAddress!.street!,
+                      widget.selectedAddress!.street!,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                       ),
                     ),
                   Text(
-                    '${selectedAddress!.city}${selectedAddress!.postalCode != null ? ', ${selectedAddress!.postalCode}' : ''}',
+                    '${widget.selectedAddress!.city}${widget.selectedAddress!.postalCode != null ? ', ${widget.selectedAddress!.postalCode}' : ''}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -488,7 +506,7 @@ class OrderSummary extends StatelessWidget {
     BottomSheetManager().showCustomBottomSheet(
       context: context,
       builder: (context) => AddressListBottomSheet(
-        selectedAddress: selectedAddress,
+        selectedAddress: widget.selectedAddress,
         onSelected: (address) {
           Provider.of<AddressProvider>(context, listen: false)
               .setSelectedAddress(address);
@@ -527,7 +545,7 @@ class OrderSummary extends StatelessWidget {
           boxShadow: [AppColors.primaryShadow],
         ),
         child: Center(
-          child: isLoading
+          child: widget.isLoading
               ? const CircularProgressIndicator(color: Colors.white)
               : const Text(
                   'Confirmer la commande',
@@ -539,7 +557,7 @@ class OrderSummary extends StatelessWidget {
                 ),
         ),
       ),
-      onTap: isLoading ? null : onConfirmOrder,
+      onTap: widget.isLoading ? null : _handleConfirmOrder,
       scaleCoefficient: 0.95,
       useCache: false,
     );
@@ -564,5 +582,39 @@ class OrderSummary extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _handleConfirmOrder() async {
+    try {
+      final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+
+      final order = await orderProvider.createOrder(
+        serviceId: widget.selectedService!.id,
+        addressId: widget.selectedAddress!.id,
+        collectionDate: widget.collectionDate!,
+        deliveryDate: widget.deliveryDate!,
+        items: widget.selectedArticles.entries
+            .map((e) => {
+                  'articleId': e.key,
+                  'quantity': e.value,
+                })
+            .toList(),
+        collectionTime: widget.collectionTime,
+        deliveryTime: widget.deliveryTime,
+        isRecurring: widget.selectedRecurrence != RecurrenceType.none,
+        recurrenceType: widget.selectedRecurrence,
+        paymentMethod: _selectedPaymentMethod,
+      );
+
+      if (mounted) {
+        widget.onConfirmOrder(order);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    }
   }
 }

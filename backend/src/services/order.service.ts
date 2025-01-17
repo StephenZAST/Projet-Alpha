@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { AppliedDiscount, CreateOrderDTO, Order, OrderStatus, RecurrenceType } from '../models/types';
+import { AppliedDiscount, CreateOrderDTO, Order, OrderStatus, PaymentStatus, RecurrenceType } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
 import { LoyaltyService } from './loyalty.service';
@@ -485,5 +485,43 @@ export class OrderService {
     });
 
     return totalAmount;
+  }
+
+  static async updatePaymentStatus(
+    orderId: string, 
+    paymentStatus: PaymentStatus,
+    userId: string
+  ): Promise<Order> {
+    const { data: order } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ 
+        paymentStatus,
+        updatedAt: new Date()
+      })
+      .eq('id', orderId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Envoyer une notification au client
+    await NotificationService.createOrderNotification(
+      order.userId,
+      orderId,
+      'PAYMENT_STATUS_UPDATED',
+      { newStatus: paymentStatus }
+    );
+
+    return data;
   }
 }

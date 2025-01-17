@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:prima/models/order.dart';
 import 'package:prima/models/order_status.dart';
+import 'package:prima/providers/loyalty_provider.dart';
 import 'package:prima/services/order_service.dart';
 import 'package:prima/managers/order_status_manager.dart';
 import 'dart:async';
+import 'package:prima/models/payment.dart';
 
 import 'package:prima/services/websocket_service.dart';
+import 'package:prima/widgets/order/recurrence_selection.dart';
 
 class OrderProvider with ChangeNotifier {
   final OrderService _orderService;
@@ -141,6 +144,39 @@ class OrderProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error completing order: $e');
+      rethrow;
+    }
+  }
+
+  Future<Order> createOrder({
+    required String serviceId,
+    required String addressId,
+    required DateTime collectionDate,
+    required DateTime deliveryDate,
+    required List<Map<String, dynamic>> items,
+    TimeOfDay? collectionTime,
+    TimeOfDay? deliveryTime,
+    required bool isRecurring,
+    required RecurrenceType recurrenceType,
+    required PaymentMethod paymentMethod,
+  }) async {
+    try {
+      final order = await _orderService.createOrder(
+        serviceId: serviceId,
+        addressId: addressId,
+        collectionDate: collectionDate,
+        deliveryDate: deliveryDate,
+        items: items,
+        collectionTime: collectionTime,
+        deliveryTime: deliveryTime,
+        isRecurring: isRecurring,
+        recurrenceType: recurrenceType,
+        paymentMethod: paymentMethod,
+      );
+
+      await loadOrders(refresh: true);
+      return order;
+    } catch (e) {
       rethrow;
     }
   }
