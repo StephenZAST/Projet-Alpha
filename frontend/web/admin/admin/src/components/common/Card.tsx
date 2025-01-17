@@ -1,0 +1,1 @@
+   // npm create vite@latest affiliate-dashboard --template react-ts
