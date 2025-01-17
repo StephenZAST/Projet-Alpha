@@ -2,13 +2,27 @@ import type { Theme } from '@mui/material/styles';
 
 import { experimental_extendTheme as extendTheme } from '@mui/material/styles';
 
-import { shadows, typography, components, colorSchemes, customShadows } from './core';
+import { shadows, typography, components, colorSchemes } from './core';
 
 // ----------------------------------------------------------------------
 
 export function createTheme(): Theme {
   const initialTheme = {
-    colorSchemes,
+    colorSchemes: {
+      ...colorSchemes,
+      light: {
+        ...colorSchemes.light,
+        primary: {
+          main: '#0045CE',
+          light: '#1E4AE9',
+          dark: '#00349B'
+        },
+        success: {
+          main: '#00AC4F',
+          light: '#DCF5E8'
+        }
+      }
+    },
     shadows: shadows(),
     customShadows: customShadows(),
     shape: { borderRadius: 8 },

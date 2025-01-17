@@ -10,14 +10,17 @@
     "start": "vite preview",
     "build": "tsc && vite build",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
-    "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
+    "lint:fix": "eslint . --fix --cache --ext .js,.jsx,.ts,.tsx",
     "fm:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
     "fm:fix": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "rm:all": "rm -rf node_modules .next out dist build",
     "re:start": "yarn rm:all && yarn install && yarn dev",
     "re:build": "yarn rm:all && yarn install && yarn build",
     "re:build-npm": "npm run rm:all && npm install && npm run build",
-    "dev:host": "vite --host"
+    "dev:host": "vite --host",
+    "build:prod": "env-cmd -f .env.production npm run build",
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
+    "tsc": "tsc --noEmit"
   },
   "engines": {
     "node": "20.x"
@@ -29,21 +32,30 @@
     "@emotion/styled": "^11.13.0",
     "@fontsource-variable/dm-sans": "^5.0.7",
     "@fontsource/barlow": "^5.0.14",
+    "@hookform/resolvers": "^3.3.0",
     "@iconify/react": "^5.0.2",
     "@minimal/material-kit-react": "file:",
     "@mui/lab": "^5.0.0-alpha.173",
     "@mui/material": "^5.16.7",
+    "@tanstack/react-query": "^5.0.0",
     "apexcharts": "^3.52.0",
+    "axios": "^1.6.0",
     "dayjs": "^1.11.13",
+    "env-cmd": "^10.0.0",
     "history": "^5.3.0",
     "react": "^18.3.1",
     "react-apexcharts": "^1.4.1",
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",
+    "react-hook-form": "^7.50.0",
     "react-router-dom": "^6.26.1",
-    "simplebar-react": "^3.2.6"
+    "react-toastify": "^9.0.0",
+    "simplebar-react": "^3.2.6",
+    "zod": "^3.22.0",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.0.0",
     "@types/node": "^22.5.0",
     "@types/react": "^18.3.4",
     "@types/react-dom": "^18.3.0",
@@ -64,7 +76,13 @@
     "eslint-plugin-unused-imports": "^3.2.0",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
+    "typescript-plugin-css-modules": "^5.0.0",
     "vite": "^5.4.2",
-    "vite-plugin-checker": "^0.7.2"
+    "vite-plugin-checker": "^0.7.2",
+    "vite-tsconfig-paths": "^4.3.0"
+  },
+  "resolutions": {
+    "@types/react": "^18.3.4",
+    "@types/react-dom": "^18.3.0"
   }
 }

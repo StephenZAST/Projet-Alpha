@@ -7,7 +7,7 @@
     "noEmit": true,
     "allowJs": true,
     "module": "ESNext",
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "skipLibCheck": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
@@ -15,11 +15,23 @@
     "isolatedModules": true,
     "strictNullChecks": true,
     "resolveJsonModule": true,
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "noFallthroughCasesInSwitch": true,
     "useUnknownInCatchVariables": false,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@sections/*": ["./src/sections/*"]
+    },
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "typescript-plugin-css-modules"
+      }
+    ],
+    "types": ["node", "react", "react-dom", "vite/client"]
   },
   "include": ["src"],
   "exclude": ["node_modules"],

@@ -10,12 +10,14 @@ module.exports = {
     sourceType: 'module',
     ecmaVersion: 'latest',
     ecmaFeatures: { jsx: true },
-    project: './tsconfig.json',
+    tsconfigRootDir: __dirname, // Ajoutez cette ligne
+    project: ['./tsconfig.json'], // Modifiez cette ligne
   },
   settings: {
     'import/resolver': {
       typescript: {
-        project: './tsconfig.json',
+        project: ['./tsconfig.json'], // Modifiez cette ligne aussi
+        tsconfigRootDir: __dirname, // Et ajoutez cette ligne
       },
     },
   },

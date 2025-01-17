@@ -515,12 +515,12 @@ export class OrderService {
     if (error) throw error;
 
     // Envoyer une notification au client
-    await NotificationService.createOrderNotification(
-      order.userId,
-      orderId,
-      'PAYMENT_STATUS_UPDATED',
-      { newStatus: paymentStatus }
-    );
+    // await NotificationService.createOrderNotification(
+    //   order.userId,
+    //   orderId,
+    //   'PAYMENT_STATUS_UPDATED',
+    //   { newStatus: paymentStatus }
+    // );
 
     return data;
   }
