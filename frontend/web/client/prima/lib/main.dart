@@ -206,6 +206,9 @@ class MyApp extends StatelessWidget {
                 case '/settings':
                   return MaterialPageRoute(
                       builder: (_) => const SettingsPage());
+                case '/loyalty-points':
+                  return MaterialPageRoute(
+                      builder: (_) => const LoyaltyPointsPage());
                 default:
                   return MaterialPageRoute(
                       builder: (_) => const MainNavigationWrapper());

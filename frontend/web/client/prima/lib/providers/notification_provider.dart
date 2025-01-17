@@ -110,6 +110,28 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
+  Future<void> markAllAsRead() async {
+    try {
+      await _notificationService.markAllAsRead();
+      _notifications = _notifications
+          .map((notification) => Notification(
+                id: notification.id,
+                userId: notification.userId,
+                type: notification.type,
+                title: notification.title,
+                message: notification.message,
+                isRead: true,
+                createdAt: notification.createdAt,
+                data: notification.data,
+              ))
+          .toList();
+      _unreadCount = 0;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error marking all notifications as read: $e');
+    }
+  }
+
   Future<void> loadPreferences() async {
     try {
       final prefs = await _notificationService.getPreferences();
@@ -146,6 +168,12 @@ class NotificationProvider with ChangeNotifier {
 
   void _updateUnreadCount() {
     _unreadCount = _notifications.where((n) => !n.isRead).length;
+  }
+
+  void handleNewNotification(Notification notification) {
+    _notifications.insert(0, notification);
+    if (!notification.isRead) _unreadCount++;
+    notifyListeners();
   }
 
   @override

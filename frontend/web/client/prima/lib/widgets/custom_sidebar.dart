@@ -164,6 +164,10 @@ class CustomSidebar extends StatelessWidget {
               DrawerItem(
                   icon: Icons.receipt, title: 'Commandes', route: '/orders'),
               DrawerItem(
+                  icon: Icons.stars,
+                  title: 'Points fidélité',
+                  route: '/loyalty-points'),
+              DrawerItem(
                   icon: Icons.notifications,
                   title: 'Notifications',
                   route: '/notifications'),
