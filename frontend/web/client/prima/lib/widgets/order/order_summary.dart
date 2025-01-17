@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/models/offer.dart';
 import 'package:prima/models/service.dart';
 import 'package:prima/models/order_item_summary.dart';
 import 'package:prima/providers/article_provider.dart';
@@ -14,6 +15,10 @@ import 'package:prima/widgets/address_list_bottom_sheet.dart';
 import 'package:prima/models/payment.dart';
 import 'package:prima/widgets/order/payment_method_selector.dart';
 import 'package:prima/providers/order_provider.dart';
+import 'package:prima/providers/offer_provider.dart';
+import 'package:prima/widgets/order/reduction_input.dart';
+import 'package:prima/widgets/order/price_details.dart';
+import 'package:prima/widgets/order/order_price_summary.dart';
 
 class OrderSummary extends StatefulWidget {
   final Service? selectedService;
@@ -47,6 +52,20 @@ class OrderSummary extends StatefulWidget {
 
 class _OrderSummaryState extends State<OrderSummary> {
   PaymentMethod _selectedPaymentMethod = PaymentMethod.CASH;
+
+  double _calculateSubtotal() {
+    double total = widget.selectedService?.price ?? 0;
+    final articleProvider = context.read<ArticleProvider>();
+
+    for (var entry in widget.selectedArticles.entries) {
+      final article = articleProvider.articles.firstWhere(
+        (a) => a.id == entry.key,
+        orElse: () => throw Exception('Article not found'),
+      );
+      total += article.basePrice * entry.value;
+    }
+    return total;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +106,76 @@ class _OrderSummaryState extends State<OrderSummary> {
             onMethodSelected: (method) {
               setState(() => _selectedPaymentMethod = method);
             },
+          ),
+          const SizedBox(height: 24),
+          Consumer<OfferProvider>(
+            builder: (context, offerProvider, _) {
+              final validOffers =
+                  offerProvider.getValidOffersForAmount(_calculateTotal());
+              if (validOffers.isNotEmpty) {
+                return Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    ReductionInput(
+                      activeOffer: offerProvider.selectedOffer,
+                      onOfferApplied: offerProvider.selectOffer,
+                      availableOffers: validOffers,
+                    ),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          const SizedBox(height: 24),
+          Consumer<OfferProvider>(
+            builder: (context, offerProvider, _) => PriceDetails(
+              subtotal: _calculateTotal(),
+              activeOffer: offerProvider.selectedOffer,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Consumer<OfferProvider>(
+            builder: (context, offerProvider, _) {
+              final subtotal = _calculateSubtotal();
+              final validOffers =
+                  offerProvider.getValidOffersForAmount(subtotal);
+
+              if (validOffers.isNotEmpty) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Divider(height: 32),
+                    const Text(
+                      'Réductions disponibles',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.gray800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...validOffers.map((offer) => _buildOfferCard(
+                          offer: offer,
+                          isSelected:
+                              offer.id == offerProvider.selectedOffer?.id,
+                          onTap: () => offerProvider.selectOffer(
+                              offer.id == offerProvider.selectedOffer?.id
+                                  ? null
+                                  : offer),
+                        )),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          const SizedBox(height: 24),
+          Consumer<OfferProvider>(
+            builder: (context, offerProvider, _) => OrderPriceSummary(
+              subtotal: _calculateSubtotal(),
+              activeOffer: offerProvider.selectedOffer,
+            ),
           ),
           const SizedBox(height: 24),
           if (widget.selectedAddress == null)
@@ -616,5 +705,74 @@ class _OrderSummaryState extends State<OrderSummary> {
         );
       }
     }
+  }
+
+  double _calculateTotal() {
+    // Implement total calculation logic
+    return 0.0;
+  }
+
+  Widget _buildOfferCard({
+    required Offer offer,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.gray200,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.local_offer,
+                color: isSelected ? AppColors.primary : AppColors.gray400,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      offer.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color:
+                            isSelected ? AppColors.primary : AppColors.gray800,
+                      ),
+                    ),
+                    if (offer.description != null)
+                      Text(
+                        offer.description!,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.gray600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Text(
+                offer.type == 'PERCENTAGE'
+                    ? '-${offer.value}%'
+                    : '-${offer.value}€',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? AppColors.primary : AppColors.gray800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -33,6 +33,8 @@ import 'package:prima/services/article_service.dart';
 import 'package:prima/services/service_service.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:prima/services/offer_service.dart';
+import 'package:prima/providers/offer_provider.dart';
 
 import 'pages/auth/reset_password_page.dart';
 
@@ -101,6 +103,16 @@ void main() async {
             OrderService(auth.dio),
             ws,
           ),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, OfferProvider>(
+          create: (context) => OfferProvider(
+            OfferService(Provider.of<AuthProvider>(context, listen: false).dio),
+            prefs,
+          )..loadOffers(),
+          update: (context, auth, previous) => OfferProvider(
+            OfferService(auth.dio),
+            prefs,
+          )..loadOffers(),
         ),
       ],
       child: const MyApp(),

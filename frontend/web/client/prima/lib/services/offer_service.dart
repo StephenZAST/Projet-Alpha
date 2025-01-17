@@ -9,10 +9,15 @@ class OfferService {
   Future<List<Offer>> getAvailableOffers() async {
     try {
       final response = await _dio.get('/api/offers/available');
-      final List<dynamic> data = response.data['data'];
-      return data.map((json) => Offer.fromJson(json)).toList();
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => Offer.fromJson(json)).toList();
+      }
+
+      throw Exception('Failed to load offers');
     } catch (e) {
-      print('Error getting offers: $e');
+      print('Error loading offers: $e');
       rethrow;
     }
   }

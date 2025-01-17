@@ -2,37 +2,43 @@ class Offer {
   final String id;
   final String name;
   final String? description;
-  final String discountType;
-  final double discountValue;
-  final double? minPurchaseAmount;
+  final String type; // 'PERCENTAGE' ou 'FIXED'
+  final double value;
+  final DateTime? expiryDate;
   final bool isActive;
-  final DateTime? startDate;
-  final DateTime? endDate;
 
   const Offer({
     required this.id,
     required this.name,
     this.description,
-    required this.discountType,
-    required this.discountValue,
-    this.minPurchaseAmount,
-    required this.isActive,
-    this.startDate,
-    this.endDate,
+    required this.type,
+    required this.value,
+    this.expiryDate,
+    this.isActive = true,
   });
+
+  bool get isValid =>
+      isActive && (expiryDate == null || expiryDate!.isAfter(DateTime.now()));
+
+  double calculateDiscount(double amount) {
+    if (!isValid) return 0;
+    if (type == 'PERCENTAGE') {
+      return (amount * value) / 100;
+    }
+    return value;
+  }
 
   factory Offer.fromJson(Map<String, dynamic> json) {
     return Offer(
       id: json['id'],
       name: json['name'],
       description: json['description'],
-      discountType: json['discountType'],
-      discountValue: (json['discountValue'] as num).toDouble(),
-      minPurchaseAmount: json['minPurchaseAmount']?.toDouble(),
-      isActive: json['isActive'],
-      startDate:
-          json['startDate'] != null ? DateTime.parse(json['startDate']) : null,
-      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
+      type: json['type'],
+      value: (json['value'] as num).toDouble(),
+      expiryDate: json['expiryDate'] != null
+          ? DateTime.parse(json['expiryDate'])
+          : null,
+      isActive: json['isActive'] ?? true,
     );
   }
 }
