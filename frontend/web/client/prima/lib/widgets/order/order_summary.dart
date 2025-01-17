@@ -544,4 +544,25 @@ class OrderSummary extends StatelessWidget {
       useCache: false,
     );
   }
+
+  Widget _buildLoyaltyPoints(double amount) {
+    final points = (amount * 10).floor(); // 1 point pour 0.1€
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: AppColors.success.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.stars, color: AppColors.warning),
+          const SizedBox(width: 8),
+          Text(
+            'Vous gagnerez $points points avec cette commande',
+            style: TextStyle(color: AppColors.success),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -126,6 +126,25 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
+  Future<void> completeOrder(String orderId) async {
+    try {
+      final order = await _orderService.completeOrder(orderId);
+      // Mettre à jour les points via LoyaltyProvider
+      if (order.status == 'DELIVERED') {
+        final points = (order.totalAmount * 10).floor(); // 1 point pour 0.1€
+        await context.read<LoyaltyProvider>().earnPoints(
+              points,
+              'ORDER',
+              orderId,
+            );
+      }
+      notifyListeners();
+    } catch (e) {
+      print('Error completing order: $e');
+      rethrow;
+    }
+  }
+
   @override
   void dispose() {
     _orderUpdateSubscription?.cancel();
