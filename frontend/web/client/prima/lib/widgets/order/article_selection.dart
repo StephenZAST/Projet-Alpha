@@ -119,7 +119,7 @@ class _ArticleSelectionState extends State<ArticleSelection>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.shopping_cart_outlined,
+              const Icon(Icons.shopping_cart_outlined,
                   color: AppColors.primary, size: 48),
               const SizedBox(height: 16),
               const Text(
@@ -130,7 +130,7 @@ class _ArticleSelectionState extends State<ArticleSelection>
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Veuillez sélectionner au moins un article pour continuer',
                 textAlign: TextAlign.center,
                 style: TextStyle(

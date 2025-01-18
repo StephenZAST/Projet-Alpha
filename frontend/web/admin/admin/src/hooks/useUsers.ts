@@ -22,8 +22,8 @@ export const useUsers = () => {
       setError(null);
       const data = await api.get<User[]>(ENDPOINTS.USERS.LIST);
       setUsers(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch users');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch users');
     } finally {
       setLoading(false);
     }
@@ -33,8 +33,8 @@ export const useUsers = () => {
     try {
       await api.put(ENDPOINTS.USERS.UPDATE(id), userData);
       await fetchUsers();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update user');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update user');
     }
   };
 
@@ -42,8 +42,8 @@ export const useUsers = () => {
     try {
       await api.delete(ENDPOINTS.USERS.DELETE(id));
       await fetchUsers();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to delete user');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to delete user');
     }
   };
 

@@ -24,7 +24,7 @@ class ArticleCategory {
     } catch (e) {
       print('Error parsing ArticleCategory: $e');
       print('JSON data: $json');
-      throw e;
+      rethrow;
     }
   }
 }

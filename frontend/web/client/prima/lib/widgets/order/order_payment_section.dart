@@ -41,7 +41,7 @@ class OrderPaymentSection extends StatelessWidget {
   Widget _buildPriceDetails() {
     return Column(
       children: [
-        _buildPriceRow('Service', order.service?.price ?? 0),
+        _buildPriceRow('Service', order.service.price ?? 0),
         const SizedBox(height: 8),
         ...(order.items ?? [])
             .map((item) => Padding(

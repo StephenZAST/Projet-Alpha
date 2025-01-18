@@ -15,7 +15,7 @@ export const useNotifications = () => {
       setNotifications(response);
       setUnreadCount(response.filter(n => !n.read).length);
       setError(null);
-    } catch (err: any) {
+    } catch (err: Error) {
       setError(err.message);
     } finally {
       setLoading(false);
@@ -26,7 +26,7 @@ export const useNotifications = () => {
     try {
       await api.put(`/notifications/${id}/read`);
       await fetchNotifications();
-    } catch (err: any) {
+    } catch (err: Error) {
       console.error('Error marking notification as read:', err);
     }
   };

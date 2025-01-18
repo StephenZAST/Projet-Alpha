@@ -2,21 +2,23 @@ import { Button } from './Button';
 import { exportToCSV, exportToPDF } from '../../utils/export';
 import { Download } from 'react-feather';
 
-interface ExportButtonProps {
-  data: any[];
+type ExportData = Record<string, string | number | boolean | Date | null>;
+
+interface ExportButtonProps<T extends ExportData> {
+  data: T[];
   filename: string;
   type: 'csv' | 'pdf';
-  columns?: string[];
+  columns?: (keyof T)[];
   label?: string;
 }
 
-export const ExportButton: React.FC<ExportButtonProps> = ({ 
+export const ExportButton = <T extends ExportData>({ 
   data, 
   filename, 
   type = 'csv',
   columns,
   label = `Export ${type.toUpperCase()}`
-}) => {
+}: ExportButtonProps<T>) => {
   const handleExport = () => {
     if (!data.length) return;
 
@@ -24,7 +26,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
       if (type === 'csv') {
         exportToCSV(data, filename);
       } else if (type === 'pdf' && columns) {
-        exportToPDF(data, filename, columns);
+        exportToPDF(data, filename, columns as string[]);
       }
     } catch (error) {
       console.error('Export failed:', error);

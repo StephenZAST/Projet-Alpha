@@ -47,11 +47,10 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
       _streetController.text = widget.address!.street!;
       _cityController.text = widget.address!.city;
       _postalCodeController.text = widget.address!.postalCode!;
-      if (widget.address!.latitude != null &&
-          widget.address!.longitude != null) {
+      if (widget.address!.longitude != null) {
         _selectedLocation = LatLng(
-          widget.address!.latitude!,
-          widget.address!.longitude!,
+          widget.address!.latitude,
+          widget.address!.longitude,
         );
       }
     }
@@ -99,14 +98,14 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
               ),
-              tabs: [
+              tabs: const [
                 Tab(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.info_outline, size: 20),
-                      const SizedBox(width: 8),
-                      const Text('Informations'),
+                      SizedBox(width: 8),
+                      Text('Informations'),
                     ],
                   ),
                 ),
@@ -115,8 +114,8 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.location_on_outlined, size: 20),
-                      const SizedBox(width: 8),
-                      const Text('Localisation'),
+                      SizedBox(width: 8),
+                      Text('Localisation'),
                     ],
                   ),
                 ),
@@ -135,8 +134,7 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
                   onNext: () => _tabController.animateTo(1),
                 ),
                 AddressMap(
-                  selectedLocation:
-                      _selectedLocation != null ? _selectedLocation : null,
+                  selectedLocation: _selectedLocation,
                   mapController: _mapController,
                   onLocationSelected: (location) {
                     setState(() {
@@ -304,11 +302,11 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Row(
+          title: const Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: AppColors.error),
-              const SizedBox(width: 10),
-              const Text('Champs manquants'),
+              SizedBox(width: 10),
+              Text('Champs manquants'),
             ],
           ),
           content: Container(
@@ -325,13 +323,13 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           children: [
-                            Icon(Icons.error_outline,
+                            const Icon(Icons.error_outline,
                                 color: AppColors.error, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 error,
-                                style: TextStyle(color: AppColors.error),
+                                style: const TextStyle(color: AppColors.error),
                               ),
                             ),
                           ],

@@ -65,7 +65,7 @@ class OrderTimeline extends StatelessWidget {
                     Text(
                       DateFormat('dd MMM yyyy - HH:mm', 'fr_FR')
                           .format(step.date!),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.gray600,
                       ),

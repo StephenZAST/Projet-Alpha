@@ -4,6 +4,8 @@ import 'package:prima/providers/loyalty_provider.dart';
 import 'package:provider/provider.dart';
 
 class LoyaltyOverviewCard extends StatelessWidget {
+  const LoyaltyOverviewCard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Consumer<LoyaltyProvider>(
@@ -17,7 +19,7 @@ class LoyaltyOverviewCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.stars, color: AppColors.warning),
+                    const Icon(Icons.stars, color: AppColors.warning),
                     const SizedBox(width: 8),
                     Text(
                       'Points de Fidélité',
@@ -35,13 +37,14 @@ class LoyaltyOverviewCard extends StatelessWidget {
                 ),
                 Text(
                   'Total gagné : ${points?.totalEarned ?? 0} points',
-                  style: TextStyle(color: AppColors.gray600),
+                  style: const TextStyle(color: AppColors.gray600),
                 ),
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
                   value: ((points?.pointsBalance ?? 0) % 100) / 100,
                   backgroundColor: AppColors.gray200,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
               ],
             ),

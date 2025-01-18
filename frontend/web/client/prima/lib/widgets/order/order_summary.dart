@@ -201,7 +201,7 @@ class _OrderSummaryState extends State<OrderSummary> {
             padding: const EdgeInsets.all(16),
             child: Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.gray700,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -217,7 +217,7 @@ class _OrderSummaryState extends State<OrderSummary> {
   Widget _buildServiceCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.gray200)),
       ),
       child: Row(
@@ -228,7 +228,8 @@ class _OrderSummaryState extends State<OrderSummary> {
               color: AppColors.primaryLight.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.local_laundry_service, color: AppColors.primary),
+            child: const Icon(Icons.local_laundry_service,
+                color: AppColors.primary),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -244,7 +245,7 @@ class _OrderSummaryState extends State<OrderSummary> {
                 ),
                 Text(
                   widget.selectedService?.description ?? '',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.gray600,
                     fontSize: 14,
                   ),
@@ -266,7 +267,7 @@ class _OrderSummaryState extends State<OrderSummary> {
         ...itemSummaries.map((item) => _buildArticleItem(item)),
         Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(top: BorderSide(color: AppColors.gray200)),
           ),
           child: Row(
@@ -281,7 +282,7 @@ class _OrderSummaryState extends State<OrderSummary> {
               ),
               Text(
                 '${totalAmount.toStringAsFixed(2)}€',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.primary,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -339,7 +340,7 @@ class _OrderSummaryState extends State<OrderSummary> {
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.gray200)),
       ),
       child: Row(
@@ -351,7 +352,7 @@ class _OrderSummaryState extends State<OrderSummary> {
             children: [
               Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.gray600,
                   fontSize: 14,
                 ),
@@ -395,7 +396,7 @@ class _OrderSummaryState extends State<OrderSummary> {
   Widget _buildArticleItem(OrderItemSummary item) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.gray200)),
       ),
       child: Row(
@@ -413,7 +414,7 @@ class _OrderSummaryState extends State<OrderSummary> {
               ),
               Text(
                 '${item.quantity}x ${item.unitPrice.toStringAsFixed(2)}€',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.gray600,
                   fontSize: 14,
                 ),
@@ -525,7 +526,7 @@ class _OrderSummaryState extends State<OrderSummary> {
                             color: AppColors.successLight,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
+                          child: const Text(
                             'Par défaut',
                             style: TextStyle(
                               color: AppColors.success,
@@ -662,11 +663,11 @@ class _OrderSummaryState extends State<OrderSummary> {
       ),
       child: Row(
         children: [
-          Icon(Icons.stars, color: AppColors.warning),
+          const Icon(Icons.stars, color: AppColors.warning),
           const SizedBox(width: 8),
           Text(
             'Vous gagnerez $points points avec cette commande',
-            style: TextStyle(color: AppColors.success),
+            style: const TextStyle(color: AppColors.success),
           ),
         ],
       ),

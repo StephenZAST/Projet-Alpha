@@ -61,7 +61,7 @@ class PointExchangeOfferCard extends StatelessWidget {
                   ),
                   if (!hasEnoughPoints) ...[
                     const SizedBox(height: 8),
-                    Text(
+                    const Text(
                       'Points insuffisants',
                       style: TextStyle(
                         color: AppColors.error,

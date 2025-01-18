@@ -87,7 +87,7 @@ class OrderConfirmationPopup extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: AppColors.primary),
                 ),
-                child: Center(
+                child: const Center(
                   child: Text(
                     'Continuer',
                     style: TextStyle(

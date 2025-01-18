@@ -1,1 +1,1 @@
-   npm create vite@latest affiliate-dashboard --template react-ts
+   // npm create vite@latest affiliate-dashboard --template react-ts

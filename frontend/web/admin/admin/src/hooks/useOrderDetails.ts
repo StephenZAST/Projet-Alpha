@@ -14,8 +14,8 @@ export const useOrderDetails = (orderId: string) => {
       setError(null);
       const data = await api.get<Order>(ENDPOINTS.ORDERS.DETAILS(orderId));
       setOrder(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch order details');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch order details');
     } finally {
       setLoading(false);
     }
@@ -25,8 +25,8 @@ export const useOrderDetails = (orderId: string) => {
     try {
       await api.put(ENDPOINTS.ORDERS.UPDATE_STATUS(orderId), { status });
       await fetchOrderDetails();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update order status');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update order status');
     }
   };
 

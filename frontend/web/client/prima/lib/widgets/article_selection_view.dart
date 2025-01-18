@@ -92,13 +92,13 @@ class _ArticleSelectionViewState extends State<ArticleSelectionView>
     final articles = provider.getArticlesForCategory(category.id);
 
     if (articles.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.inventory_2_outlined,
                 size: 48, color: AppColors.gray400),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Aucun article dans cette catégorie',
               style: TextStyle(color: AppColors.gray600),

@@ -88,8 +88,8 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _loadStoredData() async {
-    _token = await _prefs.getString('auth_token');
-    final userData = await _prefs.getString('user_data');
+    _token = _prefs.getString('auth_token');
+    final userData = _prefs.getString('user_data');
     if (userData != null) {
       _user = json.decode(userData);
       _isAuthenticated = true;

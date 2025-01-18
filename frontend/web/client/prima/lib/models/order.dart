@@ -1,4 +1,3 @@
-import 'package:prima/models/address.dart';
 import 'package:prima/models/article.dart';
 import 'package:prima/models/service.dart';
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNotifications } from '../../hooks/useNotifications';
 import { colors } from '../../theme/colors';
 import { Bell, Check } from 'react-feather';

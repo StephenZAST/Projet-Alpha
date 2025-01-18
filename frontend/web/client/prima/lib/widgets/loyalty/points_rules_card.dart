@@ -88,7 +88,7 @@ class PointsRulesCard extends StatelessWidget {
               ),
               Text(
                 description,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.gray600,
                 ),

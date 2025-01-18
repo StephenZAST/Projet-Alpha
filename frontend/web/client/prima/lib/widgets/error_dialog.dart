@@ -29,7 +29,7 @@ class ErrorDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: AppColors.error, size: 48),
+            const Icon(Icons.error_outline, color: AppColors.error, size: 48),
             const SizedBox(height: 16),
             if (title != null) ...[
               Text(
@@ -44,7 +44,7 @@ class ErrorDialog extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 color: AppColors.gray700,
               ),

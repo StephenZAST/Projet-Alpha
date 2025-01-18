@@ -62,11 +62,11 @@ class OrderCard extends StatelessWidget {
               Text(
                 DateFormat('dd MMM yyyy - HH:mm', 'fr_FR')
                     .format(order.createdAt),
-                style: TextStyle(color: AppColors.gray600),
+                style: const TextStyle(color: AppColors.gray600),
               ),
               Text(
                 '${order.items?.length ?? 0} articles',
-                style: TextStyle(color: AppColors.gray600),
+                style: const TextStyle(color: AppColors.gray600),
               ),
             ],
           ),

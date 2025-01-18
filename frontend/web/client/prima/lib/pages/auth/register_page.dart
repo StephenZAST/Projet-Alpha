@@ -244,7 +244,7 @@ class _RegisterPageState extends State<RegisterPage> {
         prefixIcon: Icon(icon, color: AppColors.gray600),
         suffixIcon: suffix,
         helperText: helperText,
-        helperStyle: TextStyle(
+        helperStyle: const TextStyle(
           color: AppColors.gray600,
           fontSize: 12,
         ),
@@ -258,7 +258,7 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppColors.primary),
+          borderSide: const BorderSide(color: AppColors.primary),
         ),
         filled: true,
         fillColor: AppColors.gray50,

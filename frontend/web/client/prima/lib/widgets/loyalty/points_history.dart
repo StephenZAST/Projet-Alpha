@@ -5,6 +5,8 @@ import 'package:prima/theme/colors.dart';
 import 'package:provider/provider.dart';
 
 class PointsHistoryWidget extends StatelessWidget {
+  const PointsHistoryWidget({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Consumer<LoyaltyProvider>(

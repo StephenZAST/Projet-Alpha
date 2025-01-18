@@ -90,7 +90,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
   void _showNoArticleSelectedDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => ErrorDialog(
+      builder: (context) => const ErrorDialog(
         message: 'Veuillez sélectionner au moins un article pour continuer',
         title: 'Sélection requise',
       ),
@@ -196,7 +196,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                         border: Border.all(color: AppColors.primary),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Center(
+                      child: const Center(
                         child: Text(
                           'Retour',
                           style: TextStyle(
@@ -223,10 +223,10 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [AppColors.primaryShadow],
                       ),
-                      child: Center(
+                      child: const Center(
                         child: Text(
                           'Suivant',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,

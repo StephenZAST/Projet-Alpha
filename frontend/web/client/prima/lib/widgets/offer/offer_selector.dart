@@ -5,6 +5,8 @@ import 'package:prima/theme/colors.dart';
 import 'package:provider/provider.dart';
 
 class OfferSelector extends StatelessWidget {
+  const OfferSelector({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Consumer<OfferProvider>(

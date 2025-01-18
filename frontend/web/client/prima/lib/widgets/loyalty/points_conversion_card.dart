@@ -30,7 +30,7 @@ class PointsConversionCard extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'Vous pouvez obtenir jusqu\'à ${possibleDiscount.toStringAsFixed(2)}€ de réduction',
-                  style: TextStyle(color: AppColors.gray600),
+                  style: const TextStyle(color: AppColors.gray600),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(

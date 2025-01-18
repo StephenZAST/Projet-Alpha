@@ -1,5 +1,3 @@
-import 'article_category.dart';
-
 class Article {
   final String id;
   final String name;

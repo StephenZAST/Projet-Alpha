@@ -21,7 +21,7 @@ class BottomSheetHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Text(
+          const Text(
             'Nouvelle commande',
             style: TextStyle(
               color: Colors.white,

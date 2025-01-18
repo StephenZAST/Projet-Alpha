@@ -6,8 +6,10 @@ import { LoadingSpinner } from '../../components/common/Loading';
 import { ExportButton } from '../../components/common/ExportButton';
 import { DataTable } from '../../components/common/DataTable';
 import { Button } from '../../components/common/Button';
-import { colors } from '../../theme/colors';
+import { Modal } from '../../components/common/Modal';
 import { Edit2, Trash2 } from 'react-feather';
+import { colors } from '../../theme/colors';
+import { usePermissions } from '../../hooks/usePermissions';
 
 interface Service {
   id: string;
@@ -15,20 +17,60 @@ interface Service {
   description: string;
   price: number;
   status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ServiceFormData {
+  name: string;
+  description: string;
+  price: number;
+  status: Service['status'];
 }
 
 export const ServicesList = () => {
-  const { data: services, loading, error, refetch } = useAsync<Service[]>(() => api.get('/admin/services'));
+  const { data: services, loading, error, refetch } = useAsync<Service[]>(() => 
+    api.get('/admin/services')
+  );
+  const { hasPermission } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState<ServiceFormData>({
+    name: '',
+    description: '',
+    price: 0,
+    status: 'active'
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingService) {
+        await api.put(`/admin/services/${editingService.id}`, formData);
+      } else {
+        await api.post('/admin/services', formData);
+      }
+      setIsModalOpen(false);
+      setEditingService(null);
+      setFormData({ name: '', description: '', price: 0, status: 'active' });
+      refetch();
+    } catch (err: Error) {
+      console.error('Failed to save service:', err);
+      // Add error notification here
+    }
+  };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this service?')) {
-      try {
-        await api.delete(`/admin/services/${id}`);
-        refetch();
-      } catch (error) {
-        console.error('Failed to delete service:', error);
-      }
+    if (!window.confirm('Are you sure you want to delete this service?')) {
+      return;
+    }
+    try {
+      await api.delete(`/admin/services/${id}`);
+      refetch();
+    } catch (err: unknown) {
+      console.error('Failed to delete service:', err);
+      // Add error notification here
     }
   };
 
@@ -44,7 +86,7 @@ export const ServicesList = () => {
     { 
       key: 'status', 
       label: 'Status',
-      render: (value: string) => (
+      render: (value: Service['status']) => (
         <span style={{
           padding: '4px 8px',
           borderRadius: '4px',
@@ -58,27 +100,50 @@ export const ServicesList = () => {
     {
       key: 'actions',
       label: 'Actions',
-      render: (_: any, item: Service) => (
+      render: (_: unknown, service: Service) => (
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-          <Button
-            variant="secondary"
-            onClick={() => {}} // TODO: Implement edit functionality
-          >
-            <Edit2 size={16} />
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => handleDelete(item.id)}
-          >
-            <Trash2 size={16} />
-          </Button>
+          {hasPermission('services', 'update') && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setEditingService(service);
+                setFormData({
+                  name: service.name,
+                  description: service.description,
+                  price: service.price,
+                  status: service.status
+                });
+                setIsModalOpen(true);
+              }}
+            >
+              <Edit2 size={16} />
+            </Button>
+          )}
+          {hasPermission('services', 'delete') && (
+            <Button
+              variant="secondary"
+              onClick={() => handleDelete(service.id)}
+            >
+              <Trash2 size={16} />
+            </Button>
+          )}
         </div>
       )
     }
   ];
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <div style={{ color: colors.error }}>{error}</div>;
+  if (error) return (
+    <div style={{ 
+      padding: '24px', 
+      color: colors.error,
+      backgroundColor: colors.errorLight,
+      borderRadius: '8px',
+      textAlign: 'center'
+    }}>
+      {error}
+    </div>
+  );
 
   const filteredServices = services?.filter(service => 
     service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -94,7 +159,18 @@ export const ServicesList = () => {
         marginBottom: '24px' 
       }}>
         <h1>Services Management</h1>
-        <Button variant="primary">Add New Service</Button>
+        {hasPermission('services', 'create') && (
+          <Button 
+            variant="primary"
+            onClick={() => {
+              setEditingService(null);
+              setFormData({ name: '', description: '', price: 0, status: 'active' });
+              setIsModalOpen(true);
+            }}
+          >
+            Add New Service
+          </Button>
+        )}
       </div>
 
       <div style={{ 
@@ -120,6 +196,20 @@ export const ServicesList = () => {
         columns={columns}
         loading={loading}
       />
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingService(null);
+          setFormData({ name: '', description: '', price: 0, status: 'active' });
+        }}
+        title={editingService ? 'Edit Service' : 'Add New Service'}
+      >
+        <form onSubmit={handleSubmit}>
+          {/* Add form inputs here */}
+        </form>
+      </Modal>
     </div>
   );
 };

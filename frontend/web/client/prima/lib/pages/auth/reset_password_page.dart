@@ -250,7 +250,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
-        Text(
+        const Text(
           'Entrez votre code de vérification',
           style: TextStyle(
             fontSize: 16,
@@ -259,7 +259,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'Nous avons envoyé un code à 6 chiffres à votre adresse zastph300@gmail.com',
           style: TextStyle(
             fontSize: 14,
@@ -318,7 +318,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
-        Text(
+        const Text(
           'Réinitialiser votre mot de passe',
           style: TextStyle(
             fontSize: 16,
@@ -327,7 +327,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'Votre nouveau mot de passe doit être différent du précédent',
           style: TextStyle(
             fontSize: 14,

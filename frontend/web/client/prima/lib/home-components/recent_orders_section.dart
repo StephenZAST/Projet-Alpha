@@ -27,7 +27,7 @@ class RecentOrdersSectionComponent extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/orders'),
-                child: Row(
+                child: const Row(
                   children: [
                     Text(
                       'Voir plus',
@@ -49,7 +49,7 @@ class RecentOrdersSectionComponent extends StatelessWidget {
               }
 
               if (provider.recentOrders.isEmpty) {
-                return Center(
+                return const Center(
                   child: Text(
                     'Aucune commande récente',
                     style: TextStyle(color: AppColors.gray600),

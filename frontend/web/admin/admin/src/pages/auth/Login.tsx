@@ -20,7 +20,7 @@ export const Login = () => {
     try {
       await login(formData);
       navigate('/dashboard');
-    } catch (err) {
+    } catch {
       setError('Invalid credentials');
     }
   };

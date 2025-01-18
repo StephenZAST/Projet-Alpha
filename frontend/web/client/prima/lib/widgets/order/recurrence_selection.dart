@@ -25,8 +25,8 @@ class RecurrenceSelection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+        const Padding(
+          padding: EdgeInsets.only(bottom: 16),
           child: Text(
             'Fréquence de collecte',
             style: TextStyle(

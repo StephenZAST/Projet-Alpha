@@ -15,8 +15,8 @@ export const useAffiliates = () => {
       setError(null);
       const data = await api.get<Affiliate[]>(ENDPOINTS.AFFILIATES.LIST);
       setAffiliates(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch affiliates');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch affiliates');
     } finally {
       setLoading(false);
     }
@@ -26,8 +26,8 @@ export const useAffiliates = () => {
     try {
       await api.put(ENDPOINTS.AFFILIATES.UPDATE_STATUS(id), { status });
       await fetchAffiliates();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update affiliate status');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update affiliate status');
     }
   };
 
@@ -40,8 +40,8 @@ export const useAffiliates = () => {
       ]);
       setSelectedAffiliate({ ...details, ...stats });
       return { ...details, ...stats };
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to fetch affiliate details');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to fetch affiliate details');
     } finally {
       setLoading(false);
     }

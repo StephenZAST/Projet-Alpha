@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { DashboardMetrics } from '../../components/dashboard/DashboardMetrics';
 import { useAdmin } from '../../hooks/useAdmin';
 import { colors } from '../../theme/colors';

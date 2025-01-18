@@ -28,10 +28,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ]
 };
 
-export const hasPermission = (role: UserRole, resource: string, action: string): boolean => {
+export const hasPermission = (role: UserRole, resource: string, action: 'create' | 'read' | 'update' | 'delete'): boolean => {
   const permissions = ROLE_PERMISSIONS[role];
   return permissions.some(p => 
-    p.resource === resource && p.actions.includes(action as any)
+    p.resource === resource && p.actions.includes(action)
   );
 };
 

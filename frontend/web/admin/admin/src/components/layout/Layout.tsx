@@ -4,12 +4,9 @@ import { Sidebar } from './Sidebar';
 import { Menu, X } from 'react-feather';
 import { colors } from '../../theme/colors';
 import { mediaQueries } from '../../theme/breakpoints';
+import { Outlet } from 'react-router-dom';
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
+export const Layout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -69,7 +66,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         }
       }}>
         <Header />
-        {children}
+        <Outlet /> {/* Replace children with Outlet */}
       </main>
 
       {/* Mobile Overlay */}

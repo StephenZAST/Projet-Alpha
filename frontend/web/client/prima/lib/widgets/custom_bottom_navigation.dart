@@ -89,7 +89,7 @@ class CustomBottomNavigation extends StatelessWidget {
               onTap: () {
                 BottomSheetManager().showCustomBottomSheet(
                   context: context,
-                  builder: (context) => OrderBottomSheet(),
+                  builder: (context) => const OrderBottomSheet(),
                 );
               },
               scaleCoefficient: 0.9,

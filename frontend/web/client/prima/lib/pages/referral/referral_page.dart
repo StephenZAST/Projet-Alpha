@@ -189,7 +189,7 @@ class _ReferralPageState extends State<ReferralPage> {
               ),
               Text(
                 description,
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.gray600,
                   fontSize: 12,
                 ),
@@ -223,7 +223,7 @@ class _ReferralPageState extends State<ReferralPage> {
                   ),
                   Text(
                     '${provider.points?.pointsBalance ?? 0} points',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.gray600,
                       fontSize: 14,
                     ),

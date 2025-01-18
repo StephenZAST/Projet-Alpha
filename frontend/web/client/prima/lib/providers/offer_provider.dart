@@ -127,7 +127,7 @@ class OfferProvider with ChangeNotifier {
               (offer) => offer.id == id,
               orElse: () => null,
             ))
-        .where((offer) => offer != null && offer.isValid)
+        .where((offer) => offer.isValid)
         .cast<Offer>()
         .toList();
   }

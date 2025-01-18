@@ -100,14 +100,14 @@ class AddressForm extends StatelessWidget {
           color: AppColors.gray50,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.location_on_outlined,
               color: AppColors.primary,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               'Passer à la localisation',
               style: TextStyle(

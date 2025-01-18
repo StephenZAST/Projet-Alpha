@@ -1,28 +1,44 @@
+import { useState, useCallback } from 'react';
+import { api } from '../utils/api';
 
+export const useOrders = () => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchOrders = useCallback(async () => {
     try {
-      await api.put(ENDPOINTS.ORDERS.UPDATE_STATUS(orderId), { status });
+      setLoading(true);
+      const response = await api.get('/admin/orders');
+      setOrders(response);
+      setError(null);
+    } catch (err: Error) {
+      setError(err.message || 'Failed to fetch orders');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      await api.put(`/admin/orders/${orderId}/status`, { status });
       await fetchOrders();
-    } catch (err: any) {
+    } catch (err: Error) {
       throw new Error(err.message || 'Failed to update order status');
     }
   };
 
   const getOrderDetails = async (orderId: string) => {
     try {
-      setLoading(true);
-      const data = await api.get<Order>(ENDPOINTS.ORDERS.DETAILS(orderId));
-      setSelectedOrder(data);
-      return data;
-    } catch (err: any) {
+      const response = await api.get(`/admin/orders/${orderId}`);
+      return response;
+    } catch (err: Error) {
       throw new Error(err.message || 'Failed to fetch order details');
-    } finally {
-      setLoading(false);
     }
   };
 
   return {
     orders,
-    selectedOrder,
     loading,
     error,
     fetchOrders,

@@ -9,7 +9,7 @@ interface ExportOptions {
   title?: string;
 }
 
-export const exportToExcel = (data: any[], options: ExportOptions) => {
+export const exportToExcel = <T extends object>(data: T[], options: ExportOptions) => {
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, options.sheetName || 'Sheet1');
@@ -18,7 +18,7 @@ export const exportToExcel = (data: any[], options: ExportOptions) => {
   saveAs(dataBlob, `${options.filename}.xlsx`);
 };
 
-export const exportToPDF = (data: any[], options: ExportOptions) => {
+export const exportToPDF = <T extends object>(data: T[], options: ExportOptions) => {
   const doc = new jsPDF();
   const tableColumn = Object.keys(data[0]);
   const tableRows = data.map(item => Object.values(item));
@@ -35,7 +35,7 @@ export const exportToPDF = (data: any[], options: ExportOptions) => {
   doc.save(`${options.filename}.pdf`);
 };
 
-export const exportToCSV = (data: any[], options: ExportOptions) => {
+export const exportToCSV = <T extends object>(data: T[], options: ExportOptions) => {
   const headers = Object.keys(data[0]);
   const csvRows = [
     headers.join(','),

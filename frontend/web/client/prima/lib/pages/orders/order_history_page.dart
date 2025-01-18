@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:prima/theme/colors.dart';
 import 'package:prima/widgets/order/order_card.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/providers/order_provider.dart';

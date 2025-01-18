@@ -53,7 +53,7 @@ class NotificationListItem extends StatelessWidget {
           color: notification.isRead
               ? Colors.white
               : AppColors.primary.withOpacity(0.05),
-          border: Border(bottom: BorderSide(color: AppColors.gray200)),
+          border: const Border(bottom: BorderSide(color: AppColors.gray200)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,7 +88,7 @@ class NotificationListItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     notification.message,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.gray600,
                       fontSize: 14,
                     ),
@@ -96,7 +96,7 @@ class NotificationListItem extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     timeago.format(notification.createdAt, locale: 'fr'),
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.gray400,
                       fontSize: 12,
                     ),

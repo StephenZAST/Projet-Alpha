@@ -45,7 +45,7 @@ class OrderItemsSection extends StatelessWidget {
                         color: AppColors.gray100,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Center(
+                      child: const Center(
                         child: Icon(
                           Icons.local_laundry_service,
                           color: AppColors.primary,
@@ -68,7 +68,7 @@ class OrderItemsSection extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             '${item.quantity}x ${item.unitPrice.toStringAsFixed(2)}€',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: AppColors.gray600,
                               fontSize: 14,
                             ),

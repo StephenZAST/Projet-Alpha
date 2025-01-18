@@ -124,7 +124,7 @@ class _DateSelectionState extends State<DateSelection> {
           children: [
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: AppColors.gray700,
@@ -200,7 +200,8 @@ class _DateSelectionState extends State<DateSelection> {
             ),
             child: Row(
               children: [
-                Icon(Icons.access_time, color: AppColors.primary, size: 20),
+                const Icon(Icons.access_time,
+                    color: AppColors.primary, size: 20),
                 const SizedBox(width: 12),
                 Text(
                   selectedTime?.format(context) ?? 'Sélectionner une heure',
@@ -233,7 +234,7 @@ class _DateSelectionState extends State<DateSelection> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,
@@ -258,7 +259,7 @@ class _DateSelectionState extends State<DateSelection> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,

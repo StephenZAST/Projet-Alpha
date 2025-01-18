@@ -77,16 +77,15 @@ class ServiceSelection extends StatelessWidget {
                           ),
                     ),
                   ),
-                  if (service.price != null)
-                    Text(
-                      '${service.price}€',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.gray600,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
+                  Text(
+                    '${service.price}€',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.gray600,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
                 ],
               ),
               if (service.description != null) ...[

@@ -61,7 +61,7 @@ class AddressCard extends StatelessWidget {
                                   color: AppColors.successLight,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   'Par défaut',
                                   style: TextStyle(
                                     color: AppColors.success,

@@ -83,7 +83,7 @@ class PaymentMethodSelector extends StatelessWidget {
                     ),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.gray600,
                       ),

@@ -18,7 +18,7 @@ export const useSettings = () => {
       const response = await api.get<UserSettings>('/admin/settings');
       setSettings(response);
       setError(null);
-    } catch (err: any) {
+    } catch (err: Error) {
       setError(err.message);
     }
   };
@@ -28,8 +28,12 @@ export const useSettings = () => {
       const response = await api.get<UserProfile>('/admin/profile');
       setProfile(response);
       setError(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred');
+      }
     }
   };
 
@@ -39,7 +43,7 @@ export const useSettings = () => {
       const response = await api.put<UserSettings>('/admin/settings', newSettings);
       setSettings(response);
       setError(null);
-    } catch (err: any) {
+    } catch (err: Error) {
       setError(err.message);
       throw err;
     } finally {
@@ -53,9 +57,13 @@ export const useSettings = () => {
       const response = await api.put<UserProfile>('/admin/profile', newProfile);
       setProfile(response);
       setError(null);
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+        throw err;
+      }
+      setError('An unknown error occurred');
+      throw new Error('An unknown error occurred');
     } finally {
       setLoading(false);
     }

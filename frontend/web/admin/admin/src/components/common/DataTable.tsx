@@ -1,12 +1,13 @@
+import React from 'react';
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'react-feather';
 import { colors } from '../../theme/colors';
 
 interface Column<T> {
-  key: keyof T;
+  key: keyof T | 'actions';
   label: string;
   sortable?: boolean;
-  render?: (value: any, item: T) => React.ReactNode;
+  render?: (value: unknown, item: T) => React.ReactNode;
 }
 
 interface DataTableProps<T> {

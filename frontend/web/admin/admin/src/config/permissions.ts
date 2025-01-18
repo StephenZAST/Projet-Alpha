@@ -1,7 +1,16 @@
 export type Permission = 'create' | 'read' | 'update' | 'delete';
-export type Resource = 'articles' | 'services' | 'categories' | 'users' | 'affiliates';
+export type Resource = 
+  | 'articles' 
+  | 'services' 
+  | 'categories' 
+  | 'users' 
+  | 'affiliates'
+  | 'analytics'
+  | 'orders';
 
-export const ROLE_PERMISSIONS: Record<string, Record<Resource, Permission[]>> = {
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'DELIVERY';
+
+export const ROLE_PERMISSIONS: Record<UserRole, Partial<Record<Resource, Permission[]>>> = {
   SUPER_ADMIN: {
     articles: ['create', 'read', 'update', 'delete'],
     services: ['create', 'read', 'update', 'delete'],

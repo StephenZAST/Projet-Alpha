@@ -19,8 +19,8 @@ export const useAffiliateDetails = (id: string) => {
       ]);
       setAffiliate(affiliateData);
       setMetrics(metricsData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch affiliate details');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch affiliate details');
     } finally {
       setLoading(false);
     }
@@ -30,8 +30,8 @@ export const useAffiliateDetails = (id: string) => {
     try {
       await api.put(ENDPOINTS.AFFILIATES.UPDATE_STATUS(id), { status });
       await fetchData();
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to update affiliate status');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to update affiliate status');
     }
   };
 

@@ -14,12 +14,12 @@ class PointsHistoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (transactions.isEmpty) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.history, size: 64, color: AppColors.gray400),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Aucune transaction',
               style: TextStyle(color: AppColors.gray600),

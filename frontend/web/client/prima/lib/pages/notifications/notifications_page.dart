@@ -4,7 +4,6 @@ import 'package:prima/home-components/app_bar.dart';
 import 'package:prima/providers/notification_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/widgets/connection_error_widget.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});

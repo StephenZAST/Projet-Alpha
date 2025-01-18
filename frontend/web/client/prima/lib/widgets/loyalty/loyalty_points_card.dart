@@ -51,7 +51,7 @@ class LoyaltyPointsCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Total gagné: ${points.totalEarned} points',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.gray600,
                     fontSize: 14,
                   ),

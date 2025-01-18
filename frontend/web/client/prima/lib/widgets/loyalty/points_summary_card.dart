@@ -95,11 +95,11 @@ class PointsSummaryCard extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.redeem, color: AppColors.primary, size: 16),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Text(
                         'Convertir en réduction',
                         style: TextStyle(

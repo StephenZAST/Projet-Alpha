@@ -1,90 +1,157 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../utils/api';
 import { ENDPOINTS } from '../config/endpoints';
+import type { Service, Article, User, AffiliateProfile } from '../types/models';
 
-export interface DashboardStats {
-  orders: number;
-  revenue: number;
-  users: number;
-  affiliates: number;
+interface DashboardStats {
+  orders: {
+    total: number;
+    pending: number;
+    processing: number;
+    completed: number;
+  };
+  revenue: {
+    total: number;
+    monthly: number;
+    daily: number;
+  };
+  users: {
+    total: number;
+    active: number;
+    new: number;
+  };
+  affiliates: {
+    total: number;
+    active: number;
+    pending: number;
+  };
 }
 
-export interface UseAdminReturn {
-  stats: DashboardStats | null;
-  orders: any[];
-  loading: boolean;
-  error: string | null;
-  refetchStats: () => Promise<void>;
-  createService: (data: any) => Promise<void>;
-  updateService: (id: string, data: any) => Promise<void>;
-  deleteService: (id: string) => Promise<void>;
+interface AdminData {
+  services: Service[];
+  articles: Article[];
+  users: User[];
+  affiliates: AffiliateProfile[];
 }
 
-export const useAdmin = (): UseAdminReturn => {
+export const useAdmin = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [adminData, setAdminData] = useState<AdminData>({
+    services: [],
+    articles: [],
+    users: [],
+    affiliates: []
+  });
+  const [loading, setLoading] = useState<Record<string, boolean>>({
+    stats: false,
+    services: false,
+    articles: false,
+    users: false,
+    affiliates: false
+  });
+  const [error, setError] = useState<Record<string, string | null>>({
+    stats: null,
+    services: null,
+    articles: null,
+    users: null,
+    affiliates: null
+  });
 
   const fetchStats = useCallback(async () => {
+    setLoading(prev => ({ ...prev, stats: true }));
     try {
-      setLoading(true);
-      setError(null);
-      
-      const [statsData, ordersData] = await Promise.all([
-        api.get<DashboardStats>(ENDPOINTS.ADMIN.STATS),
-        api.get<any[]>(ENDPOINTS.ADMIN.ORDERS)
-      ]);
-      
-      setStats(statsData);
-      setOrders(ordersData);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load dashboard data');
-      console.error('Dashboard data fetch error:', err);
+      const data = await api.get<DashboardStats>(ENDPOINTS.ADMIN.STATS);
+      setStats(data);
+      setError(prev => ({ ...prev, stats: null }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch stats';
+      setError(prev => ({ ...prev, stats: message }));
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, stats: false }));
     }
   }, []);
 
-  const createService = async (data: any) => {
+  const fetchEntities = useCallback(async <T extends keyof AdminData>(
+    entity: T,
+    endpoint: string
+  ) => {
+    setLoading(prev => ({ ...prev, [entity]: true }));
     try {
-      await api.post(ENDPOINTS.SERVICES.CREATE, data);
-      await fetchStats();
-    } catch (err: any) {
-      throw new Error(err.message);
+      const data = await api.get<AdminData[T]>(endpoint);
+      setAdminData(prev => ({ ...prev, [entity]: data }));
+      setError(prev => ({ ...prev, [entity]: null }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : `Failed to fetch ${entity}`;
+      setError(prev => ({ ...prev, [entity]: message }));
+    } finally {
+      setLoading(prev => ({ ...prev, [entity]: false }));
     }
-  };
+  }, []);
 
-  const updateService = async (id: string, data: any) => {
+  const updateEntity = useCallback(async <T extends keyof AdminData>(
+    entity: T,
+    id: string,
+    data: Partial<AdminData[T][number]>
+  ) => {
     try {
-      await api.put(ENDPOINTS.SERVICES.UPDATE(id), data);
-      await fetchStats();
-    } catch (err: any) {
-      throw new Error(err.message);
+      const endpoint = ENDPOINTS[entity.toUpperCase() as keyof typeof ENDPOINTS].UPDATE(id);
+      await api.put(endpoint, data);
+      await fetchEntities(entity, ENDPOINTS[entity.toUpperCase() as keyof typeof ENDPOINTS].LIST);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : `Failed to update ${entity}`;
+      throw new Error(message);
     }
-  };
+  }, [fetchEntities]);
 
-  const deleteService = async (id: string) => {
+  const deleteEntity = useCallback(async <T extends keyof AdminData>(
+    entity: T,
+    id: string
+  ) => {
     try {
-      await api.delete(ENDPOINTS.SERVICES.DELETE(id));
-      await fetchStats();
-    } catch (err: any) {
-      throw new Error(err.message);
+      const endpoint = ENDPOINTS[entity.toUpperCase() as keyof typeof ENDPOINTS].DELETE(id);
+      await api.delete(endpoint);
+      await fetchEntities(entity, ENDPOINTS[entity.toUpperCase() as keyof typeof ENDPOINTS].LIST);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : `Failed to delete ${entity}`;
+      throw new Error(message);
     }
-  };
+  }, [fetchEntities]);
+
+  const createEntity = useCallback(async <T extends keyof AdminData>(
+    entity: T,
+    data: Omit<AdminData[T][number], 'id'>
+  ) => {
+    try {
+      const endpoint = ENDPOINTS[entity.toUpperCase() as keyof typeof ENDPOINTS].CREATE;
+      await api.post(endpoint, data);
+      await fetchEntities(entity, ENDPOINTS[entity.toUpperCase() as keyof typeof ENDPOINTS].LIST);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : `Failed to create ${entity}`;
+      throw new Error(message);
+    }
+  }, [fetchEntities]);
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+    fetchEntities('services', ENDPOINTS.SERVICES.LIST);
+    fetchEntities('articles', ENDPOINTS.ARTICLES.LIST);
+    fetchEntities('users', ENDPOINTS.USERS.LIST);
+    fetchEntities('affiliates', ENDPOINTS.ADMIN.AFFILIATES);
+  }, [fetchStats, fetchEntities]);
 
   return {
     stats,
-    orders,
+    data: adminData,
     loading,
     error,
-    refetchStats: fetchStats,
-    createService,
-    updateService,
-    deleteService
+    actions: {
+      refetchStats: fetchStats,
+      refetchEntity: fetchEntities,
+      create: createEntity,
+      update: updateEntity,
+      delete: deleteEntity
+    },
+    isLoading: Object.values(loading).some(Boolean),
+    hasErrors: Object.values(error).some(Boolean)
   };
 };

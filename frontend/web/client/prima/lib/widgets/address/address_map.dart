@@ -238,9 +238,9 @@ class _AddressMapState extends State<AddressMap> {
             size: 24,
           ),
           const SizedBox(width: 12),
-          Text(
+          const Text(
             'Confirmer l\'emplacement',
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,

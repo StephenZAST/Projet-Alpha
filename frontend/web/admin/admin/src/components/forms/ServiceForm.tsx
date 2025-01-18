@@ -4,15 +4,16 @@ import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { colors } from '../../theme/colors';
 
+interface ServiceData {
+  name: string;
+  description: string;
+  price: number;
+  status: 'active' | 'inactive';
+}
+
 interface ServiceFormProps {
-  service?: {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    status: 'active' | 'inactive';
-  };
-  onSubmit: (data: any) => Promise<void>;
+  service?: ServiceData & { id: string };
+  onSubmit: (data: ServiceData) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -41,7 +42,7 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
       setLoading(true);
       setError(null);
       await onSubmit(formData);
-    } catch (err: any) {
+    } catch (err: Error) {
       setError(err.message);
     } finally {
       setLoading(false);

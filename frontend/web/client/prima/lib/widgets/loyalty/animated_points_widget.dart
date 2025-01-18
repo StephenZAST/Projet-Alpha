@@ -58,7 +58,7 @@ class _AnimatedPointsWidgetState extends State<AnimatedPointsWidget>
             ),
             Text(
               widget.label,
-              style: TextStyle(color: AppColors.gray600),
+              style: const TextStyle(color: AppColors.gray600),
             ),
           ],
         );

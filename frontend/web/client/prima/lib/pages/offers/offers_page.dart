@@ -34,13 +34,13 @@ class OffersPage extends StatelessWidget {
                   }
 
                   if (provider.offers.isEmpty) {
-                    return Center(
+                    return const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.local_offer_outlined,
                               size: 64, color: AppColors.gray400),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           Text(
                             'Aucune offre disponible',
                             style: TextStyle(color: AppColors.gray600),
@@ -81,7 +81,7 @@ class OffersPage extends StatelessWidget {
                                       offer.discountType == 'PERCENTAGE'
                                           ? '-${offer.discountValue}%'
                                           : '-${offer.discountValue}€',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         color: AppColors.primary,
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -91,8 +91,8 @@ class OffersPage extends StatelessWidget {
                                     const SizedBox(width: 8),
                                     Text(
                                       'Min. ${offer.minPurchaseAmount}€',
-                                      style:
-                                          TextStyle(color: AppColors.gray600),
+                                      style: const TextStyle(
+                                          color: AppColors.gray600),
                                     ),
                                   ],
                                 ],
@@ -109,14 +109,15 @@ class OffersPage extends StatelessWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   offer.description!,
-                                  style: TextStyle(color: AppColors.gray600),
+                                  style:
+                                      const TextStyle(color: AppColors.gray600),
                                 ),
                               ],
                               if (offer.endDate != null) ...[
                                 const SizedBox(height: 12),
                                 Text(
                                   'Valable jusqu\'au ${_formatDate(offer.endDate!)}',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: AppColors.warning,
                                     fontWeight: FontWeight.w500,
                                   ),

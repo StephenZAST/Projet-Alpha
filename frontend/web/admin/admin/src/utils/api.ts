@@ -1,6 +1,27 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+interface ApiError {
+  message: string;
+  status: number;
+}
+
+interface ApiErrorResponse {
+  message: string;
+}
+
+const handleError = (error: AxiosError): never => {
+  const errorMessage = (error.response?.data as ApiErrorResponse)?.message || error.message;
+  const status = error.response?.status || 500;
+  
+  if (status === 401) {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  }
+
+  throw { message: errorMessage, status } as ApiError;
+};
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -20,17 +41,57 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
+    return handleError(error as AxiosError);
   }
 );
 
 export const api = {
-  get: <T>(endpoint: string) => apiClient.get<T, T>(endpoint),
-  post: <T>(endpoint: string, data: any) => apiClient.post<T, T>(endpoint, data),
-  put: <T>(endpoint: string, data: any) => apiClient.put<T, T>(endpoint, data),
-  delete: <T>(endpoint: string) => apiClient.delete<T, T>(endpoint),
+  get: async <T>(endpoint: string): Promise<T> => {
+    try {
+      const response = await axios.get(`${BASE_URL}${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return handleError(error as AxiosError);
+    }
+  },
+  post: async <T, D = unknown>(endpoint: string, data: D): Promise<T> => {
+    try {
+      const response = await axios.post(`${BASE_URL}${endpoint}`, data, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return handleError(error as AxiosError);
+    }
+  },
+  put: async <T, D = unknown>(endpoint: string, data: D): Promise<T> => {
+    try {
+      const response = await axios.put(`${BASE_URL}${endpoint}`, data, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return handleError(error as AxiosError);
+    }
+  },
+  delete: async <T>(endpoint: string): Promise<T> => {
+    try {
+      const response = await axios.delete(`${BASE_URL}${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return handleError(error as AxiosError);
+    }
+  },
 };

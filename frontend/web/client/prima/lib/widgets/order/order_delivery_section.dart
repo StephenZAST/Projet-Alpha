@@ -47,11 +47,11 @@ class OrderDeliverySection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(Icons.location_on_outlined, color: AppColors.primary),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 'Adresse de livraison',
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
@@ -71,11 +71,11 @@ class OrderDeliverySection extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             order.address?.street ?? '',
-            style: TextStyle(color: AppColors.gray600),
+            style: const TextStyle(color: AppColors.gray600),
           ),
           Text(
             '${order.address?.city ?? ''}, ${order.address?.postal_code ?? ''}',
-            style: TextStyle(color: AppColors.gray600),
+            style: const TextStyle(color: AppColors.gray600),
           ),
         ],
       ),
@@ -128,7 +128,7 @@ class OrderDeliverySection extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.gray600,
                   fontSize: 14,
                 ),

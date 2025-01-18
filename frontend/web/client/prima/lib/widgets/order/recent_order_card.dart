@@ -49,7 +49,7 @@ class RecentOrderCard extends StatelessWidget {
                   ),
                   Text(
                     DateFormat('dd MMM yyyy', 'fr_FR').format(order.createdAt),
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.gray600,
                       fontSize: 12,
                     ),

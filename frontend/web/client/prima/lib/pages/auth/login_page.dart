@@ -64,9 +64,9 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 60),
                   Image.asset('assets/AlphaLogo.png', height: 60),
                   const SizedBox(height: 40),
-                  Text(
+                  const Text(
                     'Ravi de vous revoir !',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: AppColors.gray900,

@@ -1,7 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useOrderDetails } from '../../hooks/useOrderDetails';
 import { colors } from '../../theme/colors';
-import { Button } from '../../components/common/Button';
 import { OrderStatus } from '../../types/order';
 
 const STATUS_COLORS = {
@@ -128,6 +127,12 @@ const tableHeaderStyle = {
 };
 
 const tableCellStyle = {
+  padding: '12px',
+  borderBottom: `1px solid ${colors.gray200}`
+};
+
+const tableHeaderStyle = {
+  textAlign: 'left' as const,
   padding: '12px',
   borderBottom: `1px solid ${colors.gray200}`
 };

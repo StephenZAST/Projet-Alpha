@@ -7,7 +7,6 @@ import { DataTable } from '../../components/common/DataTable';
 import { Modal } from '../../components/common/Modal';
 import { Input } from '../../components/common/Input';
 import { usePermissions } from '../../hooks/usePermissions';
-import { colors } from '../../theme/colors';
 
 interface Category {
   id: string;
@@ -23,7 +22,7 @@ export const CategoriesList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({ name: '', description: '' });
 
-  const { data: categories, loading, error, refetch } = useAsync<Category[]>(() => 
+  const { data: categories, loading, refetch } = useAsync<Category[]>(() => 
     api.get('/admin/categories')
   );
 
@@ -55,7 +54,7 @@ export const CategoriesList = () => {
     {
       key: 'actions',
       label: 'Actions',
-      render: (_: any, category: Category) => (
+      render: (_: unknown, category: Category) => (
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
           {hasPermission('categories', 'update') && (
             <Button

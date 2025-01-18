@@ -20,7 +20,7 @@ class ConnectionErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.wifi_off_rounded,
               size: 80,
               color: AppColors.gray400,
@@ -28,7 +28,7 @@ class ConnectionErrorWidget extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               customMessage ?? 'Problème de connexion',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.gray800,
@@ -36,7 +36,7 @@ class ConnectionErrorWidget extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               'Vérifiez votre connexion internet et réessayez',
               style: TextStyle(
                 fontSize: 16,
@@ -55,11 +55,11 @@ class ConnectionErrorWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [AppColors.primaryShadow],
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.refresh_rounded, color: Colors.white),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text(
                       'Réessayer',
                       style: TextStyle(

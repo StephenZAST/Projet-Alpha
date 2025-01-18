@@ -54,7 +54,7 @@ class AddressSectionComponent extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.location_on_outlined,
                           color: AppColors.labelColor,
                           size: 24,
@@ -62,7 +62,7 @@ class AddressSectionComponent extends StatelessWidget {
                         const SizedBox(width: 12),
                         Text(
                           selectedAddress?.name ?? 'Ajouter une adresse',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppColors.labelColor,
                             fontSize: 16,
                             fontWeight: FontWeight.w500,

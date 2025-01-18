@@ -13,7 +13,7 @@ export const useAnalytics = (timeframe: TimeFrame) => {
     try {
       const response = await api.get<AnalyticsMetrics>(`/admin/analytics?timeframe=${timeframe}`);
       setData(response.data.data);
-    } catch (err: any) {
+    } catch (err: Error) {
       setError(err.message || 'Failed to fetch analytics data');
       console.error('Analytics fetch error:', err);
     } finally {

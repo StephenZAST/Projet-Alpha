@@ -68,7 +68,7 @@ class AddressListBottomSheet extends StatelessWidget {
                                 ),
                                 alignment: Alignment.centerRight,
                                 padding: const EdgeInsets.only(right: 24),
-                                child: Icon(
+                                child: const Icon(
                                   Icons.delete_outline,
                                   color: AppColors.error,
                                   size: 24,
@@ -92,7 +92,7 @@ class AddressListBottomSheet extends StatelessWidget {
                                           TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(context, true),
-                                            child: Text(
+                                            child: const Text(
                                               'Supprimer',
                                               style: TextStyle(
                                                   color: AppColors.error),
@@ -177,7 +177,7 @@ class AddressListBottomSheet extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 8),
-          Text(
+          const Text(
             'Mes adresses',
             style: TextStyle(
               color: Colors.white,
@@ -195,13 +195,13 @@ class AddressListBottomSheet extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
+        const Icon(
           Icons.location_off_outlined,
           size: 48,
           color: AppColors.gray400,
         ),
         const SizedBox(height: 16),
-        Text(
+        const Text(
           'Aucune adresse enregistrée',
           style: TextStyle(
             color: AppColors.gray600,
@@ -224,12 +224,12 @@ class AddressListBottomSheet extends StatelessWidget {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [AppColors.primaryShadow],
         ),
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.add, color: AppColors.white, size: 20),
-            const SizedBox(width: 8),
-            const Text(
+            SizedBox(width: 8),
+            Text(
               'Ajouter une adresse',
               style: TextStyle(
                 color: Colors.white,
@@ -268,7 +268,7 @@ class AddressListBottomSheet extends StatelessWidget {
     );
   }
 
-  void _showAddressBottomSheet(BuildContext context, [Address? address]) {
+  void _showAddressBottomSheet(BuildContext context) {
     // D'abord fermer le bottom sheet actuel
     Navigator.pop(context);
 

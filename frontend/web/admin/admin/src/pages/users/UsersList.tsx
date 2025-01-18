@@ -2,22 +2,93 @@ import { useState } from 'react';
 import { useUsers } from '../../hooks/useUsers';
 import { colors } from '../../theme/colors';
 import { Button } from '../../components/common/Button';
+import { DataTable } from '../../components/common/DataTable';
+import { SearchBar } from '../../components/common/SearchBar';
+import { LoadingSpinner } from '../../components/common/Loading';
+import { Edit2, Trash2 } from 'react-feather';
+import type { User } from '../../types/auth';
 
 export const UsersList = () => {
-  const { users, loading, error, updateUser, deleteUser } = useUsers();
-  const [selectedUser, setSelectedUser] = useState(null);
+  const { users, loading, error, deleteUser } = useUsers();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  const columns = [
+    { 
+      key: 'name',
+      label: 'Name',
+      render: (_: unknown, user: User) => `${user.firstName} ${user.lastName}`
+    },
+    { key: 'email', label: 'Email' },
+    { 
+      key: 'role',
+      label: 'Role',
+      render: (value: string) => (
+        <span style={{
+          padding: '4px 8px',
+          borderRadius: '4px',
+          backgroundColor: colors.primaryLight + '20',
+          color: colors.primary,
+          fontSize: '14px'
+        }}>
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (_: unknown, user: User) => (
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+          <Button
+            variant="secondary"
+            onClick={() => setEditingUser(user)}
+          >
+            <Edit2 size={16} />
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => handleDelete(user.id)}
+          >
+            <Trash2 size={16} />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const handleDelete = async (userId: string) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) {
+      return;
+    }
+    try {
+      await deleteUser(userId);
+    } catch (err) {
+      console.error('Failed to delete user:', err);
+      // You might want to show a toast notification here
+    }
+  };
+
+  const filteredUsers = users?.filter(user => 
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.role.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   if (loading) {
-    return <div style={{ padding: '24px' }}>Loading users...</div>;
+    return <LoadingSpinner />;
   }
 
   if (error) {
     return (
       <div style={{ 
         padding: '24px', 
-        color: colors.error 
+        color: colors.error,
+        backgroundColor: colors.errorLight,
+        borderRadius: '8px',
+        textAlign: 'center'
       }}>
-        Error loading users: {error}
+        {error}
       </div>
     );
   }
@@ -27,75 +98,37 @@ export const UsersList = () => {
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
+        alignItems: 'center',
         marginBottom: '24px' 
       }}>
         <h1>Users Management</h1>
-        <Button variant="primary">Add User</Button>
+        <Button 
+          variant="primary"
+          onClick={() => setEditingUser({})}
+        >
+          Add User
+        </Button>
       </div>
 
-      <div style={{ 
-        backgroundColor: colors.white,
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: '12px', borderBottom: `1px solid ${colors.gray200}` }}>Name</th>
-              <th style={{ textAlign: 'left', padding: '12px', borderBottom: `1px solid ${colors.gray200}` }}>Email</th>
-              <th style={{ textAlign: 'left', padding: '12px', borderBottom: `1px solid ${colors.gray200}` }}>Role</th>
-              <th style={{ textAlign: 'right', padding: '12px', borderBottom: `1px solid ${colors.gray200}` }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user.id}>
-                <td style={{ padding: '12px', borderBottom: `1px solid ${colors.gray200}` }}>
-                  {user.firstName} {user.lastName}
-                </td>
-                <td style={{ padding: '12px', borderBottom: `1px solid ${colors.gray200}` }}>
-                  {user.email}
-                </td>
-                <td style={{ padding: '12px', borderBottom: `1px solid ${colors.gray200}` }}>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: colors.primaryLight + '20',
-                    color: colors.primary,
-                    fontSize: '14px'
-                  }}>
-                    {user.role}
-                  </span>
-                </td>
-                <td style={{ 
-                  padding: '12px', 
-                  borderBottom: `1px solid ${colors.gray200}`,
-                  textAlign: 'right'
-                }}>
-                  <Button 
-                    variant="secondary" 
-                    style={{ marginRight: '8px' }}
-                    onClick={() => setSelectedUser(user)}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="secondary"
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to delete this user?')) {
-                        deleteUser(user.id);
-                      }
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{ marginBottom: '24px' }}>
+        <SearchBar
+          placeholder="Search users..."
+          onSearch={setSearchTerm}
+        />
       </div>
+
+      <DataTable
+        data={filteredUsers}
+        columns={columns}
+        loading={loading}
+      />
+
+      {/* TODO: Add UserForm modal component */}
+      {editingUser && (
+        <div>
+          {/* Add your modal/form component here */}
+        </div>
+      )}
     </div>
   );
 };

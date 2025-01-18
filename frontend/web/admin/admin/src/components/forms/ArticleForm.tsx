@@ -4,6 +4,12 @@ import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { colors } from '../../theme/colors';
 
+interface ArticleFormData {
+  title: string;
+  content: string;
+  categoryId: string;
+}
+
 interface ArticleFormProps {
   article?: {
     id: string;
@@ -12,7 +18,7 @@ interface ArticleFormProps {
     categoryId: string;
   };
   categories: { id: string; name: string; }[];
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: ArticleFormData) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -41,8 +47,8 @@ export const ArticleForm: React.FC<ArticleFormProps> = ({
       setLoading(true);
       setError(null);
       await onSubmit(formData);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }

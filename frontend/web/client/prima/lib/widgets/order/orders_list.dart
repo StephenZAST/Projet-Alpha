@@ -21,7 +21,7 @@ class OrdersList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (orders.isEmpty && !isLoading) {
-      return Center(
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -30,7 +30,7 @@ class OrdersList extends StatelessWidget {
               size: 64,
               color: AppColors.gray400,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Aucune commande trouvée',
               style: TextStyle(
@@ -50,8 +50,8 @@ class OrdersList extends StatelessWidget {
         itemCount: orders.length + (hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == orders.length) {
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
+            return const Padding(
+              padding: EdgeInsets.all(16.0),
               child: Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),

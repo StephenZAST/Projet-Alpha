@@ -135,6 +135,7 @@ class NavigationProvider with ChangeNotifier {
     );
   }
 
+  @override
   void dispose() {
     _pageController?.dispose();
     super.dispose();
