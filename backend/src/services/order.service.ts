@@ -7,7 +7,7 @@ import { LoyaltyService } from './loyalty.service';
 export class OrderService {
   
   static async createOrder(orderData: CreateOrderDTO): Promise<Order> {
-    const { userId, serviceId, addressId, items, isRecurring, recurrenceType, collectionDate, deliveryDate, affiliateCode, serviceTypeId } = orderData;
+    const { userId, serviceId, addressId, items, isRecurring, recurrenceType, collectionDate, deliveryDate, affiliateCode, serviceTypeId, paymentMethod } = orderData;
 
     console.log('Creating order with data:', orderData);
 
@@ -67,7 +67,9 @@ export class OrderService {
       collectionDate: collectionDate,
       deliveryDate: deliveryDate,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      paymentStatus: 'PENDING', // Add this line
+      paymentMethod: paymentMethod // Add this line
     };
 
     // Start a transaction
@@ -254,7 +256,9 @@ export class OrderService {
           ...item.article,
           categoryName: item.article.category?.name
         }
-      })) || []
+      })) || [],
+      paymentStatus: order.paymentStatus, // Add this line
+      paymentMethod: order.paymentMethod // Add this line
     }));  }
 
   static async getOrderDetails(orderId: string, userId: string): Promise<Order> {

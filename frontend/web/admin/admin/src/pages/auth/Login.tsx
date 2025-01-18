@@ -1,27 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../components/common/Button';
-import { Input } from '../../components/common/Input';
-import { useAuth } from '../../contexts/AuthContext';
+import api from '../../utils/api'; // Assurez-vous que l'importation est correcte
+import { useAuth } from '../../hooks/useAuth';
 import { colors } from '../../theme/colors';
 
 export const Login = () => {
-  const navigate = useNavigate();
-  const { login, state } = useAuth();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     try {
-      await login(formData);
+      const response = await api.post('/auth/login', { email, password });
+      login(response.data);
       navigate('/dashboard');
-    } catch {
-      setError('Invalid credentials');
+    } catch (err: Error | unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      setError(error.response?.data?.error || 'Login failed');
     }
   };
 
@@ -45,24 +43,18 @@ export const Login = () => {
           Admin Login
         </h1>
         <form onSubmit={handleSubmit}>
-          <Input
-            label="Email"
+          <input
             type="email"
-            value={formData.email}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              email: e.target.value
-            }))}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
             required
           />
-          <Input
-            label="Password"
+          <input
             type="password"
-            value={formData.password}
-            onChange={(e) => setFormData(prev => ({
-              ...prev,
-              password: e.target.value
-            }))}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
             required
           />
           {error && (
@@ -70,13 +62,9 @@ export const Login = () => {
               {error}
             </p>
           )}
-          <Button 
-            type="submit" 
-            style={{ width: '100%' }}
-            isLoading={state.loading}
-          >
+          <button type="submit" style={{ width: '100%' }}>
             Login
-          </Button>
+          </button>
         </form>
       </div>
     </div>

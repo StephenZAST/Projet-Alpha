@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAsync } from '../../hooks/useAsync';
-import { api } from '../../utils/api';
+import api from '../../utils/api';
 import { SearchBar } from '../../components/common/SearchBar';
 import { Button } from '../../components/common/Button';
 import { DataTable } from '../../components/common/DataTable';

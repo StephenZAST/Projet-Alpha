@@ -16,7 +16,8 @@ export class OrderController {
         collectionDate, 
         deliveryDate, 
         affiliateCode,
-        items  // Add this line
+        items,
+        paymentMethod
       } = req.body;
       
       const userId = req.user?.id;
@@ -33,7 +34,8 @@ export class OrderController {
         collectionDate,
         deliveryDate,
         affiliateCode,
-        items: items || []  // Add this line with default empty array
+        items: items || [],
+        paymentMethod
       };
       console.log('Order data:', orderData);
 

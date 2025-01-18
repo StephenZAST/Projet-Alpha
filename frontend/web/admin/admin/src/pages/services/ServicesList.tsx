@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAsync } from '../../hooks/useAsync';
-import { api } from '../../utils/api';
+import api from '../../utils/api';
 import { SearchBar } from '../../components/common/SearchBar';
 import { LoadingSpinner } from '../../components/common/Loading';
 import { ExportButton } from '../../components/common/ExportButton';

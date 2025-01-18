@@ -91,12 +91,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// Ajoutez un gestionnaire d'erreurs global
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Global error handler:', err);
-  res.status(500).json({ error: err.message || 'Internal server error' });
-});
-
 // Initialize Supabase client
 export const supabase = createClient(
   process.env.SUPABASE_URL!,

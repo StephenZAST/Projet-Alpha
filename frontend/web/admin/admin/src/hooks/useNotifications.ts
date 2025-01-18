@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '../utils/api';
+import api from '../utils/api';
 import { Notification } from '../types/notification';
 
 export const useNotifications = () => {

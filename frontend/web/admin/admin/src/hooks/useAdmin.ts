@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '../utils/api';
+import api from '../utils/api';
 import { ENDPOINTS } from '../config/endpoints';
 import type { Service, Article, User, AffiliateProfile } from '../types/models';
 

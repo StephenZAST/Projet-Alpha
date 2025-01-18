@@ -1,13 +1,13 @@
 import { UserRole } from '../../types/auth';
-import { DashboardMetrics } from '../../types/dashboard';
-import { StatCard } from '../common/StatCard';
+import { DashboardMetrics as DashboardMetricsType } from '../../types/dashboard';
+import { StatCard } from '../common/StatCard'; // Assurez-vous que ce chemin est correct
 
-interface DashboardMetricsProps {
+interface DashboardMetricsComponentProps {
   role: UserRole;
-  metrics: DashboardMetrics;
+  metrics: DashboardMetricsType;
 }
 
-export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ role, metrics }) => {
+export const DashboardMetrics: React.FC<DashboardMetricsComponentProps> = ({ role, metrics }) => {
   const getMetricsForRole = () => {
     switch (role) {
       case 'SUPER_ADMIN':

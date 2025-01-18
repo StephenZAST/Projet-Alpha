@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const BASE_URL = 'http://localhost:3001/api'; // Assurez-vous que le port et le chemin sont corrects
 
 interface ApiError {
   message: string;
@@ -28,6 +28,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -45,53 +46,4 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const api = {
-  get: async <T>(endpoint: string): Promise<T> => {
-    try {
-      const response = await axios.get(`${BASE_URL}${endpoint}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      return response.data;
-    } catch (error) {
-      return handleError(error as AxiosError);
-    }
-  },
-  post: async <T, D = unknown>(endpoint: string, data: D): Promise<T> => {
-    try {
-      const response = await axios.post(`${BASE_URL}${endpoint}`, data, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      return response.data;
-    } catch (error) {
-      return handleError(error as AxiosError);
-    }
-  },
-  put: async <T, D = unknown>(endpoint: string, data: D): Promise<T> => {
-    try {
-      const response = await axios.put(`${BASE_URL}${endpoint}`, data, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      return response.data;
-    } catch (error) {
-      return handleError(error as AxiosError);
-    }
-  },
-  delete: async <T>(endpoint: string): Promise<T> => {
-    try {
-      const response = await axios.delete(`${BASE_URL}${endpoint}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      return response.data;
-    } catch (error) {
-      return handleError(error as AxiosError);
-    }
-  },
-};
+export default apiClient; // Exporter par défaut apiClient

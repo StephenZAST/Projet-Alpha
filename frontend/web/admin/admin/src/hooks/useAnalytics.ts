@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '../utils/api';
+import api from '../utils/api';
 import { AnalyticsMetrics, TimeFrame } from '../types/analytics';
 
 export const useAnalytics = (timeframe: TimeFrame) => {

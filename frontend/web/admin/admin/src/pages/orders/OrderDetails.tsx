@@ -130,9 +130,3 @@ const tableCellStyle = {
   padding: '12px',
   borderBottom: `1px solid ${colors.gray200}`
 };
-
-const tableHeaderStyle = {
-  textAlign: 'left' as const,
-  padding: '12px',
-  borderBottom: `1px solid ${colors.gray200}`
-};

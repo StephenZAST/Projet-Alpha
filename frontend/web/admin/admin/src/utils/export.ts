@@ -1,7 +1,7 @@
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { saveAs } from 'file-saver';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface ExportOptions {
   filename: string;
@@ -9,13 +9,25 @@ interface ExportOptions {
   title?: string;
 }
 
-export const exportToExcel = <T extends object>(data: T[], options: ExportOptions) => {
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, options.sheetName || 'Sheet1');
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(dataBlob, `${options.filename}.xlsx`);
+export const exportToExcel = async <T extends object>(data: T[], options: ExportOptions) => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(options.sheetName || 'Sheet1');
+
+  // Add headers
+  const headers = Object.keys(data[0]);
+  worksheet.addRow(headers);
+
+  // Add data
+  data.forEach(item => {
+    worksheet.addRow(Object.values(item));
+  });
+
+  // Generate buffer
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  });
+  saveAs(blob, `${options.filename}.xlsx`);
 };
 
 export const exportToPDF = <T extends object>(data: T[], options: ExportOptions) => {
