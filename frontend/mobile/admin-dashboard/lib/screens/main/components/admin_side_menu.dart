@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../constants.dart';
+import '../../../controllers/menu_app_controller.dart';
 
 class AdminSideMenu extends StatelessWidget {
   const AdminSideMenu({Key? key}) : super(key: key);
@@ -16,32 +18,34 @@ class AdminSideMenu extends StatelessWidget {
           DrawerListTile(
             title: "Dashboard",
             icon: Icons.dashboard,
-            onPress: () {},
+            onPress: () {
+              Get.toNamed(AdminRoutes.dashboard);
+              context.read<MenuAppController>().updateSelectedIndex(0);
+            },
           ),
           DrawerListTile(
             title: "Orders",
             icon: Icons.shopping_cart,
-            onPress: () {},
+            onPress: () {
+              Get.toNamed(AdminRoutes.orders);
+              context.read<MenuAppController>().updateSelectedIndex(1);
+            },
           ),
           DrawerListTile(
             title: "Products",
             icon: Icons.inventory,
-            onPress: () {},
-          ),
-          DrawerListTile(
-            title: "Services",
-            icon: Icons.miscellaneous_services,
-            onPress: () {},
+            onPress: () {
+              Get.toNamed(AdminRoutes.products);
+              context.read<MenuAppController>().updateSelectedIndex(2);
+            },
           ),
           DrawerListTile(
             title: "Users",
             icon: Icons.people,
-            onPress: () {},
-          ),
-          DrawerListTile(
-            title: "Affiliates",
-            icon: Icons.group_work,
-            onPress: () {},
+            onPress: () {
+              Get.toNamed(AdminRoutes.users);
+              context.read<MenuAppController>().updateSelectedIndex(3);
+            },
           ),
         ],
       ),
