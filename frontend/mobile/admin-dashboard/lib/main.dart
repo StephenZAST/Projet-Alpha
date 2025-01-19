@@ -15,12 +15,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Admin Panel',
+      title: 'Admin Dashboard',
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: bgColor,
-        textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme)
-            .apply(bodyColor: Colors.white),
-        canvasColor: secondaryColor,
+        scaffoldBackgroundColor: AppColors.bgColor,
+        primaryColor: AppColors.primary,
+        colorScheme: ColorScheme.dark().copyWith(
+          primary: AppColors.primary,
+          secondary: AppColors.primaryLight,
+          error: AppColors.error,
+        ),
+        cardTheme: CardTheme(
+          color: AppColors.secondaryBg,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.secondaryBg,
+          elevation: 0,
+        ),
       ),
       home: MultiProvider(
         providers: [

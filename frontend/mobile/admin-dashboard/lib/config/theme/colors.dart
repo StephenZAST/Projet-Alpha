@@ -22,5 +22,3 @@ class AppColors {
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFA4A6B3);
 }
-
-const defaultPadding = 16.0;
