@@ -3,8 +3,20 @@ import supabase from '../config/database';
 import { PaginationParams } from '../utils/pagination';
 import { Notification, NotificationType, Order } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
+import nodemailer from 'nodemailer';
+import { orderConfirmationTemplate, orderStatusUpdateTemplate } from '../utils/emailTemplates';
 
 export class NotificationService {
+  private static transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: Number(process.env.EMAIL_PORT),
+    secure: process.env.EMAIL_SECURE === 'true',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    }
+  });
+
   static async create(
     userId: string,
     type: string,
@@ -287,5 +299,108 @@ export class NotificationService {
 
     if (error) throw error;
     return data as T;
+  }
+
+  static async sendEmail(to: string, subject: string, html: string) {
+    try {
+      await this.transporter.sendMail({
+        from: process.env.EMAIL_FROM_ADDRESS,
+        to,
+        subject,
+        html
+      });
+    } catch (error) {
+      console.error('Email sending failed:', error);
+    }
+  }
+
+  static async handleOrderCreated(order: Order) {
+    try {
+      // 1. Créer notification in-app
+      await this.create(
+        order.userId,
+        'ORDER_CREATED',
+        'Commande confirmée',
+        `Votre commande #${order.id} a été reçue`,
+        { orderId: order.id }
+      );
+
+      // 2. Envoyer email si on a l'adresse
+      const { data: user } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', order.userId)
+        .single();
+
+      if (user?.email) {
+        await this.sendEmail(
+          user.email,
+          `Confirmation de commande #${order.id}`,
+          orderConfirmationTemplate(order)
+        );
+      }
+
+      // 3. Notifier les admins
+      await this.notifyAdmins('NEW_ORDER', {
+        title: 'Nouvelle commande',
+        message: `Nouvelle commande #${order.id} à traiter`,
+        data: { orderId: order.id }
+      });
+
+    } catch (error) {
+      console.error('Notification handling failed:', error);
+    }
+  }
+
+  static async handleOrderStatusUpdate(order: Order, newStatus: string) {
+    try {
+      // Mêmes étapes que handleOrderCreated mais avec les templates de mise à jour
+      await this.create(
+        order.userId,
+        'ORDER_STATUS_UPDATED',
+        'Statut de commande mis à jour',
+        `Votre commande #${order.id} est maintenant ${newStatus}`,
+        { orderId: order.id, status: newStatus }
+      );
+
+      const { data: user } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', order.userId)
+        .single();
+
+      if (user?.email) {
+        await this.sendEmail(
+          user.email,
+          `Mise à jour commande #${order.id}`,
+          orderStatusUpdateTemplate(order, newStatus)
+        );
+      }
+    } catch (error) {
+      console.error('Status update notification failed:', error);
+    }
+  }
+
+  private static async notifyAdmins(type: string, notification: { title: string, message: string, data: any }) {
+    try {
+      const { data: admins } = await supabase
+        .from('users')
+        .select('id')
+        .eq('role', 'ADMIN');
+
+      if (admins) {
+        for (const admin of admins) {
+          await this.create(
+            admin.id,
+            type,
+            notification.title,
+            notification.message,
+            notification.data
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Admin notification failed:', error);
+    }
   }
 }
