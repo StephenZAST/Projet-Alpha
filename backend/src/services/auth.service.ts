@@ -65,61 +65,28 @@ export class AuthService {
     return user;
   }
 
-  static async login(email: string, password: string): Promise<{ user: User, token: string }> {
-    try {
-        console.log('Starting login process for:', email);
+  static async login(email: string, password: string): Promise<{ user: User; token: string }> {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
 
-        // 1. Récupérer l'utilisateur
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
-            .single();
-
-        if (userError || !user) {
-            console.error('User not found:', email);
-            throw new Error('User not found');
-        }
-
-        // 2. Vérifier le mot de passe
-        console.log('Input password:', password);
-        console.log('Stored hash:', user.password);
-        
-        const isValid = await bcrypt.compare(password, user.password);
-        
-        console.log('Password validation result:', {
-            isValid,
-            email,
-            inputPassword: password,
-            storedHash: user.password
-        });
-
-        if (!isValid) {
-            throw new Error('Invalid credentials');
-        }
-
-        // 3. Générer le token
-        const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role },
-            process.env.JWT_SECRET!,
-            { expiresIn: '24h' }
-        );
-
-        return {
-            user: {
-                ...user,
-                firstName: user.first_name,
-                lastName: user.last_name,
-                createdAt: new Date(user.created_at),
-                updatedAt: new Date(user.updated_at)
-            },
-            token
-        };
-    } catch (error) {
-        console.error('Login failed:', error);
-        throw error;
+    if (error || !user) {
+      throw new Error('Invalid email or password');
     }
-}
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new Error('Invalid email or password');
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, {
+      expiresIn: '1h',
+    });
+
+    return { user, token };
+  }
 
   static async invalidateToken(token: string): Promise<void> {
     blacklistedTokens.add(token);

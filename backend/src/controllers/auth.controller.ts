@@ -17,7 +17,11 @@ export class AuthController {
   static async login(req: Request, res: Response) {
     try {
         const { email, password } = req.body;
-        console.log('Login request received for:', email);
+        console.log('Login request received:', { email, password }); // Ajoutez ce log
+
+        if (!email || !password) {
+          return res.status(400).json({ error: 'Email and password are required' });
+        }
 
         const { user, token } = await AuthService.login(email, password);
         
@@ -43,7 +47,7 @@ export class AuthController {
             }
         });
     } catch (error: any) {
-        console.error('Login error:', error);
+        console.error('Login error:', error); // Ajoutez ce log
         res.status(401).json({
             success: false,
             error: error.message || 'Authentication failed'

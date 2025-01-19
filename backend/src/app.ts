@@ -30,9 +30,15 @@ dotenv.config();
 const app = express();
 
 // Middleware globaux
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Configure CORS
+const allowedOrigins = ['http://localhost:3000']; // Ajoutez ici toutes les origines autorisées
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 
 // Rate limiting
 const limiter = rateLimit({

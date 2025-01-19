@@ -1,12 +1,31 @@
 export interface User {
   id: string;
   email: string;
-  role: UserRole;
   firstName: string;
   lastName: string;
+  role: string;
+  phone?: string;
+  referral_code?: string | null;
+  created_at: string;
+  updated_at: string;
+  addresses?: Address[];
 }
 
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'DELIVERY';
+
+export interface Address {
+  id: string;
+  city: string;
+  name: string | null;
+  street: string;
+  user_id: string;
+  created_at: string;
+  is_default: boolean;
+  updated_at: string;
+  postal_code: string;
+  gps_latitude: number;
+  gps_longitude: number;
+}
 
 export interface Permission {
   resource: string;
@@ -40,7 +59,7 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
-  error?: string | null;
+  error: string | null;
 }
 
 export interface LoginCredentials {
@@ -48,9 +67,19 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface LoginResponse {
+  success: boolean;
+  data: {
+    user: User;
+    token: string;
+  };
+}
+
 export type AuthAction =
   | { type: 'LOGIN_SUCCESS'; payload: { user: User; token: string } }
   | { type: 'LOGIN_FAIL'; payload: string }
   | { type: 'LOGOUT' }
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'CLEAR_ERROR' };
+  | { type: 'CLEAR_ERROR' }
+  | { type: 'UPDATE_PROFILE_SUCCESS'; payload: User }
+  | { type: 'UPDATE_PROFILE_FAIL'; payload: string };

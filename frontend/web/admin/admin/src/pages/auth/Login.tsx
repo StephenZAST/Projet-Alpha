@@ -1,23 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../utils/api'; // Assurez-vous que l'importation est correcte
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../contexts/AuthContext';
+import { LoginCredentials } from '../../types/auth';
 import { colors } from '../../theme/colors';
 
 export const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [credentials, setCredentials] = useState<LoginCredentials>({
+    email: '',
+    password: ''
+  });
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { login, state } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await api.post('/auth/login', { email, password });
-      login(response.data);
+      console.log('Submitting login form with credentials:', credentials); // Ajoutez ce log
+      await login(credentials);
+      console.log('Login successful, navigating to dashboard');
       navigate('/dashboard');
     } catch (err: Error | unknown) {
+      console.error('Login form submission error:', err); // Ajoutez ce log
       const error = err as { response?: { data?: { error?: string } } };
       setError(error.response?.data?.error || 'Login failed');
     }
@@ -45,15 +49,21 @@ export const Login = () => {
         <form onSubmit={handleSubmit}>
           <input
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={credentials.email}
+            onChange={(e) => setCredentials(prev => ({
+              ...prev,
+              email: e.target.value
+            }))}
             placeholder="Email"
             required
           />
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={credentials.password}
+            onChange={(e) => setCredentials(prev => ({
+              ...prev,
+              password: e.target.value
+            }))}
             placeholder="Password"
             required
           />
@@ -62,8 +72,8 @@ export const Login = () => {
               {error}
             </p>
           )}
-          <button type="submit" style={{ width: '100%' }}>
-            Login
+          <button type="submit" style={{ width: '100%' }} disabled={state.loading}>
+            {state.loading ? 'Loading...' : 'Login'}
           </button>
         </form>
       </div>

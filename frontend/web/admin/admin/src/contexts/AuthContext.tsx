@@ -1,51 +1,22 @@
 import { createContext, useReducer, useEffect, useCallback, useContext } from 'react';
-import api from '../utils/api';
-import { ENDPOINTS } from '../config/endpoints';
-import type { User } from '../types/auth';
-
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  loading: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
-}
-
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-type AuthAction =
-  | { type: 'LOGIN_SUCCESS'; payload: { user: User; token: string } }
-  | { type: 'LOGIN_FAIL'; payload: string }
-  | { type: 'LOGOUT' }
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'CLEAR_ERROR' };
-
-interface AuthContextType {
-  state: AuthState;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => void;
-  clearError: () => void;
-  updateUserProfile: (data: Partial<User>) => Promise<void>;
-}
+import { authApi } from '../utils/api';
+import { ENDPOINTS } from '../constants/endpoints';
+import { User, AuthState, LoginCredentials, AuthAction } from '../types/auth';
 
 const initialState: AuthState = {
   user: null,
   token: localStorage.getItem('token'),
+  isAuthenticated: false,
   loading: true,
-  error: null,
-  isAuthenticated: false
+  error: null
 };
 
-const AuthContext = createContext<AuthContextType>({
-  state: initialState,
-  login: async () => {},
-  logout: () => {},
-  clearError: () => {},
-  updateUserProfile: async () => {}
-});
+const AuthContext = createContext<{
+  state: AuthState;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+} | null>(null);
 
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
@@ -86,6 +57,17 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         error: null
       };
+    case 'UPDATE_PROFILE_SUCCESS':
+      return {
+        ...state,
+        user: action.payload,
+        error: null
+      };
+    case 'UPDATE_PROFILE_FAIL':
+      return {
+        ...state,
+        error: action.payload
+      };
     default:
       return state;
   }
@@ -110,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const userData = await api.get<User>(ENDPOINTS.AUTH.ME);
+      const { data: userData } = await authApi.get<User>(ENDPOINTS.AUTH.ME);
       dispatch({
         type: 'LOGIN_SUCCESS',
         payload: { user: userData, token }
@@ -129,38 +111,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (credentials: LoginCredentials) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      const response = await api.post(ENDPOINTS.AUTH.LOGIN, credentials);
-      localStorage.setItem('token', response.token);
+      console.log('Sending credentials:', credentials);
+
+      const { user, token } = await authApi.login(credentials);
+      console.log('Extracted data:', { user, token });
+
+      localStorage.setItem('token', token);
+      console.log('Token stored in localStorage:', localStorage.getItem('token'));
+
       dispatch({
         type: 'LOGIN_SUCCESS',
-        payload: { user: response.user, token: response.token }
+        payload: { user, token }
       });
+      console.log('Auth state after login:', state);
     } catch (error) {
+      console.error('Login error details:', error);
       const message = error instanceof Error ? error.message : 'Login failed';
       dispatch({ type: 'LOGIN_FAIL', payload: message });
       throw error;
     }
   };
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    dispatch({ type: 'LOGOUT' });
-  }, []);
-
-  const clearError = useCallback(() => {
-    dispatch({ type: 'CLEAR_ERROR' });
-  }, []);
-
-  const updateUserProfile = async (data: Partial<User>) => {
+  const logout = useCallback(async () => {
     try {
-      const updatedUser = await api.put<User>(ENDPOINTS.AUTH.UPDATE_PROFILE, data);
+      await authApi.post(ENDPOINTS.AUTH.LOGOUT);
+      localStorage.removeItem('token');
+      dispatch({ type: 'LOGOUT' });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  }, []);
+
+  const updateProfile = async (data: Partial<User>) => {
+    try {
+      const { data: updatedUser } = await authApi.put<User>(ENDPOINTS.AUTH.UPDATE_PROFILE, data);
       dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: { user: updatedUser, token: state.token! }
+        type: 'UPDATE_PROFILE_SUCCESS',
+        payload: updatedUser
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Profile update failed';
-      dispatch({ type: 'LOGIN_FAIL', payload: message });
+      dispatch({ type: 'UPDATE_PROFILE_FAIL', payload: message });
       throw error;
     }
   };
@@ -171,8 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         state, 
         login, 
         logout, 
-        clearError,
-        updateUserProfile 
+        updateProfile 
       }}
     >
       {children}
