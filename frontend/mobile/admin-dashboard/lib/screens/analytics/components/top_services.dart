@@ -13,7 +13,7 @@ class TopServices extends StatelessWidget {
           children: [
             Text(
               "Top Services",
-              style: Theme.of(context).textTheme.subtitle1,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             SizedBox(height: defaultPadding),
             Expanded(

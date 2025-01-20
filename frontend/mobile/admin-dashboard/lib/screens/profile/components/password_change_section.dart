@@ -16,7 +16,8 @@ class PasswordChangeSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Change Password', style: Theme.of(context).textTheme.headline6),
+          Text('Change Password',
+              style: Theme.of(context).textTheme.titleLarge),
           SizedBox(height: defaultPadding),
           TextFormField(
             controller: currentPasswordController,

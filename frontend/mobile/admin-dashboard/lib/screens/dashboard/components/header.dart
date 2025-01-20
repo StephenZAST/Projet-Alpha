@@ -24,7 +24,7 @@ class Header extends StatelessWidget {
               icon: Icon(Icons.menu),
               onPressed: () => context.read<MenuAppController>().controlMenu(),
             ),
-          Text("Dashboard", style: Theme.of(context).textTheme.headline6),
+          Text("Dashboard", style: Theme.of(context).textTheme.titleLarge),
           Spacer(),
           NotificationBadge(),
           SizedBox(width: defaultPadding),

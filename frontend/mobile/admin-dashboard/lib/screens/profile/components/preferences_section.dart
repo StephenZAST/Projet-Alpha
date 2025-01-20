@@ -7,7 +7,7 @@ class PreferencesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Preferences', style: Theme.of(context).textTheme.headline6),
+        Text('Preferences', style: Theme.of(context).textTheme.titleLarge),
         SizedBox(height: defaultPadding),
         SwitchListTile(
           title: Text('Receive Notifications'),

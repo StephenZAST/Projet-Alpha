@@ -116,14 +116,14 @@ class StatCard extends StatelessWidget {
               title,
               style: Theme.of(context)
                   .textTheme
-                  .subtitle1!
+                  .titleMedium!
                   .copyWith(color: AppColors.textSecondary),
             ),
             Text(
               value,
               style: Theme.of(context)
                   .textTheme
-                  .headline6!
+                  .titleLarge!
                   .copyWith(color: AppColors.textPrimary),
             ),
           ],

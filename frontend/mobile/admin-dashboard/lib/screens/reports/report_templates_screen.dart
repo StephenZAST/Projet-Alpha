@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'components/custom_report_builder.dart';
 import 'components/templates_list.dart';
-import '../../constants.dart';
 
 class ReportTemplatesScreen extends StatelessWidget {
   @override

@@ -47,12 +47,10 @@ class _AddressBottomSheetState extends State<AddressBottomSheet>
       _streetController.text = widget.address!.street!;
       _cityController.text = widget.address!.city;
       _postalCodeController.text = widget.address!.postalCode!;
-      if (widget.address!.longitude != null) {
-        _selectedLocation = LatLng(
-          widget.address!.latitude,
-          widget.address!.longitude,
-        );
-      }
+      _selectedLocation = LatLng(
+        widget.address!.latitude,
+        widget.address!.longitude,
+      );
     }
   }
 

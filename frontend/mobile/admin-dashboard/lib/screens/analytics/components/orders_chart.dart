@@ -14,7 +14,7 @@ class OrdersChart extends StatelessWidget {
           children: [
             Text(
               "Orders Overview",
-              style: Theme.of(context).textTheme.subtitle1,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             SizedBox(height: defaultPadding),
             Container(

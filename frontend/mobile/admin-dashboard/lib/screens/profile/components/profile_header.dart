@@ -24,8 +24,8 @@ class ProfileHeader extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(admin.name, style: Theme.of(context).textTheme.headline6),
-              Text(admin.email, style: Theme.of(context).textTheme.subtitle1),
+              Text(admin.name, style: Theme.of(context).textTheme.titleLarge),
+              Text(admin.email, style: Theme.of(context).textTheme.titleMedium),
             ],
           ),
         ],

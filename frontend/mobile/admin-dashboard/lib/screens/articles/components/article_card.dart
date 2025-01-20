@@ -21,18 +21,18 @@ class ArticleCard extends StatelessWidget {
             SizedBox(height: defaultPadding),
             Text(
               article.name,
-              style: Theme.of(context).textTheme.subtitle1,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             Text(
               '\$${article.price.toStringAsFixed(2)}',
-              style: Theme.of(context).textTheme.subtitle2,
+              style: Theme.of(context).textTheme.titleSmall,
             ),
             Spacer(),
             Text(
               article.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyText2,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),

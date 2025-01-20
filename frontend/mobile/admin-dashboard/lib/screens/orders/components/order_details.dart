@@ -20,7 +20,7 @@ class OrderDetails extends StatelessWidget {
           children: [
             Text(
               'Order Details',
-              style: Theme.of(context).textTheme.headline6,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             Divider(),
             OrderInfoRow(label: 'Order ID', value: order.id),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../constants.dart';
 import '../../controllers/article_controller.dart';
 import '../../responsive.dart';
 import '../components/header.dart';

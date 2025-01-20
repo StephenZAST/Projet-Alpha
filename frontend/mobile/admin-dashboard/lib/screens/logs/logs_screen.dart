@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../constants.dart';
 import '../../controllers/log_controller.dart';
 import '../../controllers/export_controller.dart';
 import 'components/log_list.dart';

@@ -20,7 +20,7 @@ class CategoryDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('New Category',
-                  style: Theme.of(context).textTheme.headline6),
+                  style: Theme.of(context).textTheme.titleLarge),
               SizedBox(height: defaultPadding),
               TextFormField(
                 controller: nameController,

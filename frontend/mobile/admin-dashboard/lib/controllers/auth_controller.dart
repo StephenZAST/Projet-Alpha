@@ -26,7 +26,7 @@ class AuthController extends GetxController {
   }
 
   void logout() {
-    isAuthenticated.value = false;
+    isLoading.value = false;
     user.value = null;
     Get.offAllNamed('/login');
   }

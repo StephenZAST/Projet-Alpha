@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:prima/models/address.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:spring_button/spring_button.dart';
-import 'package:provider/provider.dart';
-import 'package:prima/providers/address_provider.dart';
 
 class AddressCard extends StatelessWidget {
   final Address address;

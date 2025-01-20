@@ -51,7 +51,7 @@ class OrderStatusCard extends StatelessWidget {
             children: [
               Text(
                 status.label,
-                style: Theme.of(context).textTheme.subtitle1,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),

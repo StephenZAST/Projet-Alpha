@@ -15,7 +15,7 @@ class CategoriesSidebar extends StatelessWidget {
         children: [
           Text(
             'Categories',
-            style: Theme.of(context).textTheme.headline6,
+            style: Theme.of(context).textTheme.titleLarge,
           ),
           SizedBox(height: defaultPadding),
           ...controller.articles.map((article) {

@@ -13,7 +13,7 @@ class CustomerStats extends StatelessWidget {
           children: [
             Text(
               "Customer Stats",
-              style: Theme.of(context).textTheme.subtitle1,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             SizedBox(height: defaultPadding),
             Expanded(

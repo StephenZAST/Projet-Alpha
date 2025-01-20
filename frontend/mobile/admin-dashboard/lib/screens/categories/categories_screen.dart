@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../constants.dart';
 import '../../controllers/category_controller.dart';
 import 'components/category_list_tile.dart';
 import 'components/category_dialog.dart';

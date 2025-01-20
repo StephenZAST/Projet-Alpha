@@ -19,11 +19,11 @@ class RecentOrders extends StatelessWidget {
             children: [
               Text(
                 "Recent Orders",
-                style: Theme.of(context).textTheme.subtitle1,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  primary: AppColors.primary,
+                  backgroundColor: AppColors.primary,
                 ),
                 icon: Icon(Icons.add),
                 label: Text("View All"),

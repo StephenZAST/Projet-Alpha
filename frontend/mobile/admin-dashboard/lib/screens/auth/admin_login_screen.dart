@@ -21,7 +21,7 @@ class AdminLoginScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('Admin Login',
-                    style: Theme.of(context).textTheme.headline4),
+                    style: Theme.of(context).textTheme.headlineMedium),
                 SizedBox(height: defaultPadding),
                 TextFormField(
                   controller: emailController,

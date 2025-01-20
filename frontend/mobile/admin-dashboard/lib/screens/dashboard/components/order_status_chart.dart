@@ -19,7 +19,7 @@ class OrderStatusChart extends StatelessWidget {
         children: [
           Text(
             "Order Status Distribution",
-            style: Theme.of(context).textTheme.subtitle1,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(height: defaultPadding),
           SizedBox(
@@ -79,12 +79,12 @@ class ChartLegend extends StatelessWidget {
                     Expanded(
                       child: Text(
                         status.label,
-                        style: Theme.of(context).textTheme.caption,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
                     Text(
                       '${Get.find<OrdersController>().getOrderCountByStatus(status)}',
-                      style: Theme.of(context).textTheme.caption,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
