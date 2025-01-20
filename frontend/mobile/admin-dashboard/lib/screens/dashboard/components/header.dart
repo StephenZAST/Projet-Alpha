@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:badges/badges.dart';
+import 'notification_badge.dart';
 
 import '../../../constants.dart';
 
@@ -30,22 +31,6 @@ class Header extends StatelessWidget {
           ProfileCard(),
         ],
       ),
-    );
-  }
-}
-
-class NotificationBadge extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Badge(
-      position: BadgePosition.topEnd(top: -2, end: -2),
-      child: IconButton(
-        icon: Icon(Icons.notifications),
-        onPressed: () {},
-      ),
-      badgeContent:
-          Text('3', style: TextStyle(color: Colors.white, fontSize: 12)),
-      badgeColor: AppColors.error,
     );
   }
 }
