@@ -1,22 +1,25 @@
 import '../models/article.dart';
+import 'api_service.dart';
 
 class ArticleService {
   static Future<List<Article>> getArticles() async {
-    // TODO: Implement API call
-    return [
-      Article(
-        id: '1',
-        name: 'Article 1',
-        description: 'Description of Article 1',
-        price: 10.0,
-        categoryId: '1',
-        imageUrl: 'https://via.placeholder.com/150',
-      ),
-      // ...other articles...
-    ];
+    final response = await ApiService.get('articles');
+    return (response['data'] as List)
+        .map((json) => Article.fromJson(json))
+        .toList();
   }
 
-  static Future<void> createArticle(Article article) async {
-    // TODO: Implement API call
+  static Future<Article> createArticle(Map<String, dynamic> data) async {
+    final response = await ApiService.post('articles', data);
+    return Article.fromJson(response['data']);
+  }
+
+  static Future<void> updateArticle(
+      String id, Map<String, dynamic> data) async {
+    await ApiService.put('articles/$id', data);
+  }
+
+  static Future<void> deleteArticle(String id) async {
+    await ApiService.delete('articles/$id');
   }
 }

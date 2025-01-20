@@ -16,4 +16,16 @@ class Article {
     this.imageUrl,
     this.isActive = true,
   });
+
+  factory Article.fromJson(Map<String, dynamic> json) {
+    return Article(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      price: double.parse(json['price'].toString()),
+      categoryId: json['categoryId'],
+      imageUrl: json['imageUrl'],
+      isActive: json['isActive'],
+    );
+  }
 }

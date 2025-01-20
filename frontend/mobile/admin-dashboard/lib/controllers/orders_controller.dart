@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../models/order.dart';
+import '../services/order_service.dart';
 
 class OrdersController extends GetxController {
   final orders = <Order>[].obs;
@@ -20,8 +21,8 @@ class OrdersController extends GetxController {
   Future<void> fetchOrders() async {
     isLoading.value = true;
     try {
-      // TODO: Implement API call
-      orders.value = demoOrders; // Replace with actual API response
+      final response = await OrderService.getOrders();
+      orders.value = response;
     } catch (e) {
       print(e);
     } finally {

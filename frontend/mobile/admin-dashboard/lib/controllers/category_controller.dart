@@ -1,9 +1,10 @@
 import 'package:get/get.dart';
-import '../models/article_category.dart';
+import '../models/category.dart';
 import '../services/category_service.dart';
+import '../utils/error_handler.dart';
 
 class CategoryController extends GetxController {
-  final categories = <ArticleCategory>[].obs;
+  final categories = <Category>[].obs;
   final isLoading = false.obs;
 
   @override
@@ -16,18 +17,10 @@ class CategoryController extends GetxController {
     isLoading.value = true;
     try {
       categories.value = await CategoryService.getCategories();
+    } catch (e) {
+      ErrorHandler.handleError(e);
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  Future<void> createCategory(String name, String? description) async {
-    try {
-      await CategoryService.createCategory(name, description);
-      fetchCategories();
-      Get.back();
-    } catch (e) {
-      Get.snackbar('Error', e.toString());
     }
   }
 }

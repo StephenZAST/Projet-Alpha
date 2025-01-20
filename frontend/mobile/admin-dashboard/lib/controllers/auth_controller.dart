@@ -1,19 +1,27 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../models/user.dart';
+import '../services/api_service.dart';
 
 class AuthController extends GetxController {
-  final isAuthenticated = false.obs;
+  final isLoading = false.obs;
   final user = Rxn<User>();
 
-  Future<void> loginAdmin(String email, String password) async {
+  Future<void> login(String email, String password) async {
     try {
-      // TODO: Implement API call
-      // Simulate successful login
-      user.value = User(email: email, name: "Admin");
-      isAuthenticated.value = true;
+      isLoading.value = true;
+      final response = await ApiService.post(
+          'auth/login', {'email': email, 'password': password});
+
+      final token = response['data']['token'];
+      GetStorage().write('token', token);
+
+      user.value = User.fromJson(response['data']['user']);
       Get.offAllNamed('/dashboard');
     } catch (e) {
       Get.snackbar('Error', e.toString());
+    } finally {
+      isLoading.value = false;
     }
   }
 
