@@ -1,3 +1,5 @@
+import 'package:admin/controllers/auth_controller.dart';
+import 'package:admin/controllers/menu_app_controller.dart';
 import 'package:admin/screens/orders/order_create_screen.dart';
 import 'package:admin/screens/orders/order_details_screen.dart';
 import 'package:get/get.dart';
@@ -13,6 +15,16 @@ import '../middleware/auth_middleware.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/notification_controller.dart';
 
+class AdminBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(() => DashboardController(), fenix: true);
+    Get.lazyPut(() => NotificationController(), fenix: true);
+    Get.lazyPut(() => MenuAppController(), fenix: true);
+    Get.lazyPut(() => AuthController(), fenix: true);
+  }
+}
+
 class AdminRoutes {
   // Route names
   static const String dashboard = '/dashboard';
@@ -25,24 +37,18 @@ class AdminRoutes {
   static const String categories = '/categories';
 
   // Route list with middleware
-  static List<GetPage> routes = [
+  static final routes = [
     GetPage(
       name: login,
       page: () => AdminLoginScreen(),
-      middlewares: [
-        AuthMiddleware(redirectTo: dashboard),
-      ],
+      binding: AdminBinding(),
+      transition: Transition.fadeIn,
     ),
     GetPage(
       name: dashboard,
       page: () => DashboardScreen(),
-      binding: BindingsBuilder(() {
-        Get.lazyPut(() => DashboardController());
-        Get.lazyPut(() => NotificationController());
-      }),
-      middlewares: [
-        AuthMiddleware(),
-      ],
+      binding: AdminBinding(),
+      transition: Transition.fadeIn,
     ),
     GetPage(
       name: orders,
