@@ -5,7 +5,7 @@ import 'package:get_storage/get_storage.dart';
 
 class ApiService {
   static final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost:3001/api',
+    baseUrl: 'http://localhost:3001/api/', // Ajout du slash final
     contentType: 'application/json',
   ));
 
@@ -14,14 +14,21 @@ class ApiService {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         final token = GetStorage().read('token');
+        print('Request URL: ${options.uri}');
+        print('Headers: ${options.headers}');
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         return handler.next(options);
       },
+      onResponse: (response, handler) {
+        print('Response: ${response.data}');
+        return handler.next(response);
+      },
       onError: (DioError e, handler) {
+        print('Error: ${e.message}');
+        print('Error Response: ${e.response?.data}');
         if (e.response?.statusCode == 401) {
-          // Gérer l'expiration du token
           GetStorage().remove('token');
           Get.offAllNamed('/login');
         }

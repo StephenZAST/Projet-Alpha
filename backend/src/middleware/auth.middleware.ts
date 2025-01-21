@@ -13,41 +13,30 @@ declare global {
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log('Auth Middleware - Headers:', req.headers);
+    
     let token = req.headers.authorization;
 
-    // Vérifier si le token existe et commence par "Bearer "
     if (token && token.startsWith('Bearer ')) {
-      token = token.slice(7); // Enlever "Bearer "
+      token = token.slice(7);
+      console.log('Extracted token:', token);
     } else {
-      token = req.cookies?.token; // Essayer de récupérer depuis les cookies
-    }
-
-    if (!token) {
-      console.log('No token found in request:', { 
-        headers: req.headers,
-        cookies: req.cookies 
-      });
+      console.log('No Bearer token found');
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-
-    // Vérifier si le token est blacklisté
-    if (AuthService.isTokenBlacklisted(token)) {
-      return res.status(401).json({ error: 'Token is no longer valid' });
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as User;
+      console.log('Decoded token:', decoded);
+      req.user = decoded;
+      next();
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      return res.status(401).json({ error: 'Invalid token' });
     }
-
-    // Vérifier si l'utilisateur existe toujours
-    const user = await AuthService.getCurrentUser(decoded.id);
-    if (!user) {
-      return res.status(401).json({ error: 'User not found' });
-    }
-
-    req.user = decoded;
-    next();
   } catch (error) {
     console.error('Auth middleware error:', error);
-    return res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ error: 'Authentication failed' });
   }
 };
 

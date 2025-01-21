@@ -6,22 +6,36 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
+// Ajouter des logs pour le debugging
+router.use((req, res, next) => {
+  console.log('Order Route Request:', {
+    path: req.path,
+    method: req.method,
+    headers: req.headers,
+    body: req.body,
+    user: req.user
+  });
+  next();
+});
+
 // Protection des routes avec authentification
 router.use(authenticateToken as express.RequestHandler);
 
 // Placer les routes spécifiques AVANT les routes avec paramètres
 router.get(
   '/recent',
-  authenticateToken as express.RequestHandler,
+  authenticateToken,
   asyncHandler(async (req: Request, res: Response) => {
+    console.log('Recent orders request - User:', req.user);
     await OrderController.getRecentOrders(req, res);
   })
 );
 
 router.get(
   '/by-status',
-  authenticateToken as express.RequestHandler,
+  authenticateToken,
   asyncHandler(async (req: Request, res: Response) => {
+    console.log('Orders by status request - User:', req.user);
     await OrderController.getOrdersByStatus(req, res);
   })
 );

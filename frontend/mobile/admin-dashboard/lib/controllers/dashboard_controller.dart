@@ -27,12 +27,18 @@ class DashboardController extends GetxController {
   Future<void> fetchDashboardData() async {
     try {
       isLoading.value = true;
-      // Séquencer les appels au lieu de Future.wait
-      await fetchStatistics();
-      await fetchRecentOrders();
-      await fetchOrdersByStatus();
+      await Future.wait([
+        fetchStatistics(),
+        fetchRecentOrders(),
+        fetchOrdersByStatus(),
+      ]);
     } catch (e) {
-      ErrorHandler.handleError(e);
+      print('Error fetching dashboard data: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to load dashboard data',
+        snackPosition: SnackPosition.TOP,
+      );
     } finally {
       isLoading.value = false;
     }
