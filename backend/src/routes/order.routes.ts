@@ -9,6 +9,23 @@ const router = express.Router();
 // Protection des routes avec authentification
 router.use(authenticateToken as express.RequestHandler);
 
+// Placer les routes spécifiques AVANT les routes avec paramètres
+router.get(
+  '/recent',
+  authenticateToken as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await OrderController.getRecentOrders(req, res);
+  })
+);
+
+router.get(
+  '/by-status',
+  authenticateToken as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await OrderController.getOrdersByStatus(req, res);
+  })
+);
+
 // Routes client
 router.post(
   '/',
@@ -58,7 +75,8 @@ router.post(
 // Routes admin et livreur
 router.patch(
   '/:orderId/status',
-  authorizeRoles(['ADMIN', 'DELIVERY']) as express.RequestHandler,
+  authenticateToken as express.RequestHandler,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN', 'DELIVERY']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await OrderController.updateOrderStatus(req, res);
   })

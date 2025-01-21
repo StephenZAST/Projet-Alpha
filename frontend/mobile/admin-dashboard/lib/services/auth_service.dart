@@ -1,34 +1,43 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:get/get.dart';
+import 'package:dio/dio.dart';
 import '../models/user.dart';
 import 'api_service.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://localhost:3001/api';
+  static final Dio _dio = Dio(BaseOptions(
+    baseUrl: 'http://localhost:3001/api',
+    contentType: 'application/json',
+    validateStatus: (status) => true, // Pour gérer nous-mêmes les status codes
+  ));
 
   static Future<Map<String, dynamic>> login(
       String email, String password) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/admin/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final response = await _dio.post(
+        '/auth/login',
+        data: {
           'email': email,
           'password': password,
-        }),
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        ),
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'token': data['token'],
-          'expiry': DateTime.now().add(Duration(hours: 24)).toIso8601String(),
-          'user': data['user'],
-        };
+        final data = response.data;
+        print('Login response: $data'); // Debug log
+        return data;
+      } else {
+        throw 'Invalid credentials';
       }
-      throw _handleError(response);
     } catch (e) {
-      throw Exception('Login failed: $e');
+      print('Login error: $e'); // Debug log
+      throw e.toString();
     }
   }
 

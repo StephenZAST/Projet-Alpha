@@ -1,12 +1,11 @@
 import 'package:get/get.dart';
 import '../models/category.dart';
 import '../services/category_service.dart';
-import '../utils/error_handler.dart';
 
 class CategoryController extends GetxController {
   final categories = <Category>[].obs;
+  final Rxn<Category> selectedCategory = Rxn<Category>();
   final isLoading = false.obs;
-  final selectedCategory = Rxn<Category>();
 
   @override
   void onInit() {
@@ -17,13 +16,18 @@ class CategoryController extends GetxController {
   Future<void> fetchCategories() async {
     try {
       isLoading.value = true;
-      final fetchedCategories = await CategoryService.getCategories();
+      final List<Category> fetchedCategories =
+          await CategoryService.getCategories();
       categories.value = fetchedCategories;
     } catch (e) {
-      Get.snackbar('Error', 'Failed to fetch categories: $e');
+      print('Error fetching categories: $e');
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void setSelectedCategory(Category? category) {
+    selectedCategory.value = category;
   }
 
   Future<void> createCategory(String name, String description) async {
@@ -34,16 +38,20 @@ class CategoryController extends GetxController {
         'description': description,
       });
       categories.add(newCategory);
-      Get.back(); // Ferme le dialogue
-      Get.snackbar('Success', 'Category created successfully');
+      Get.back(); // Close the dialog
+      Get.snackbar(
+        'Success',
+        'Category created successfully',
+        snackPosition: SnackPosition.TOP,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to create category: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to create category: $e',
+        snackPosition: SnackPosition.TOP,
+      );
     } finally {
       isLoading.value = false;
     }
-  }
-
-  void setSelectedCategory(Category? category) {
-    selectedCategory.value = category;
   }
 }

@@ -14,6 +14,7 @@ import '../screens/categories/categories_screen.dart';
 import '../middleware/auth_middleware.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/notification_controller.dart';
+import '../controllers/orders_controller.dart';
 
 class AdminBinding extends Bindings {
   @override
@@ -22,6 +23,7 @@ class AdminBinding extends Bindings {
     Get.lazyPut(() => NotificationController(), fenix: true);
     Get.lazyPut(() => MenuAppController(), fenix: true);
     Get.lazyPut(() => AuthController(), fenix: true);
+    Get.lazyPut(() => OrdersController(), fenix: true);
   }
 }
 

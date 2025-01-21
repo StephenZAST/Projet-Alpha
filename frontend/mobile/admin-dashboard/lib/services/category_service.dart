@@ -3,14 +3,22 @@ import 'api_service.dart';
 
 class CategoryService {
   static Future<List<Category>> getCategories() async {
-    final response = await ApiService.get('article-categories');
-    return (response['data'] as List)
-        .map((json) => Category.fromJson(json))
-        .toList();
+    try {
+      final response = await ApiService.get('categories');
+      return (response['data'] as List)
+          .map((json) => Category.fromJson(json))
+          .toList();
+    } catch (e) {
+      throw 'Failed to fetch categories: $e';
+    }
   }
 
   static Future<Category> createCategory(Map<String, dynamic> data) async {
-    final response = await ApiService.post('article-categories', data);
-    return Category.fromJson(response['data']);
+    try {
+      final response = await ApiService.post('categories', data);
+      return Category.fromJson(response['data']);
+    } catch (e) {
+      throw 'Failed to create category: $e';
+    }
   }
 }

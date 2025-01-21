@@ -404,3 +404,43 @@ export interface OrderArchiveResponse {
   data: OrderArchive[];
   pagination: ArchivePagination;
 }
+
+// Dashboard Statistics Types
+export interface DashboardStatistics {
+  totalRevenue: number;
+  totalOrders: number;
+  totalCustomers: number;
+  recentOrders: DashboardOrder[];
+  ordersByStatus: Record<OrderStatus, number>;
+}
+
+export interface DashboardOrder {
+  id: string;
+  totalAmount: number;
+  status: OrderStatus;
+  createdAt: Date;
+  service: {
+    name: string;
+  };
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+}
+
+// Configuration Types
+export interface SystemConfig {
+  id: number;
+  commission_rate: number;
+  reward_points: number;
+  updated_at: Date;
+}
+
+export interface RewardConfig {
+  id: number;
+  reward_points: number;
+  reward_type: string;
+  updated_at: Date;
+}

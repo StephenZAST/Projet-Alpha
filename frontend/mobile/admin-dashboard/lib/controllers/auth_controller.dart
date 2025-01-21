@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
+import '../routes/admin_routes.dart';
 
 class AuthController extends GetxController {
   final user = Rxn<User>();
@@ -38,15 +39,28 @@ class AuthController extends GetxController {
   }
 
   Future<void> login(String email, String password) async {
-    isLoading.value = true;
     try {
+      isLoading.value = true;
       final response = await AuthService.login(email, password);
-      storage.write('token', response['token']);
-      storage.write('tokenExpiry', response['expiry']);
-      user.value = User.fromJson(response['user']);
-      Get.offAllNamed('/dashboard');
+
+      // Vérifier la structure de la réponse
+      if (response['success'] == true && response['data'] != null) {
+        // Stocker le token
+        storage.write('token', response['data']['token']);
+        // Stocker les informations utilisateur
+        storage.write('user', response['data']['user']);
+
+        // Rediriger vers le dashboard
+        AdminRoutes.goToDashboard();
+      } else {
+        throw 'Invalid response format';
+      }
     } catch (e) {
-      Get.snackbar('Error', e.toString());
+      Get.snackbar(
+        'Error',
+        'Login failed: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } finally {
       isLoading.value = false;
     }

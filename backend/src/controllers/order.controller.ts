@@ -96,11 +96,21 @@ export class OrderController {
   static async updateOrderStatus(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
+      const userRole = req.user?.role;
+
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      if (!userRole) return res.status(401).json({ error: 'User role not found' });
 
       const orderId = req.params.orderId;
       const { status } = req.body;
-      const result = await OrderService.updateOrderStatus(orderId, status, userId);
+      
+      const result = await OrderService.updateOrderStatus(
+        orderId, 
+        status, 
+        userId,
+        userRole
+      );
+      
       res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -185,6 +195,31 @@ export class OrderController {
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
       const total = await OrderService.calculateTotal(items);
       res.json({ data: { total } });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getRecentOrders(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const limit = parseInt(req.query.limit as string) || 5;
+      const result = await OrderService.getRecentOrders(limit);
+      res.json({ data: result });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getOrdersByStatus(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const result = await OrderService.getOrdersByStatus();
+      res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

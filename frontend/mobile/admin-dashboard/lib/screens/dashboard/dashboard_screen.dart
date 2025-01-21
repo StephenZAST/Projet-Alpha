@@ -13,8 +13,11 @@ import 'components/order_status_metrics.dart';
 import 'components/order_status_chart.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../widgets/loading_overlay.dart';
+import '../../controllers/orders_controller.dart';
 
 class DashboardScreen extends StatelessWidget {
+  final ordersController = Get.put(OrdersController());
+
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(DashboardController());

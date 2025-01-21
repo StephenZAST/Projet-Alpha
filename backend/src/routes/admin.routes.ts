@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { AdminController } from '../controllers/admin.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
+import { AdminService } from '../services/admin.service';
 
 const router = express.Router();
 
@@ -55,6 +56,33 @@ router.get(
   authorizeRoles(['ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await AdminController.getAllArticles(req, res);
+  })
+);
+
+router.get(
+  '/statistics',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await AdminController.getDashboardStatistics(req, res);
+  })
+);
+
+// Nouvelles routes pour les statistiques individuelles
+router.get(
+  '/total-revenue',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    const revenue = await AdminService.getTotalRevenue();
+    res.json({ data: revenue });
+  })
+);
+
+router.get(
+  '/total-customers',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    const customers = await AdminService.getTotalCustomers();
+    res.json({ data: customers });
   })
 );
 

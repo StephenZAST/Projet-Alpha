@@ -1,25 +1,31 @@
 import supabase from '../config/database';
-import { Service, Article, ArticleCategory } from '../models/types';
+import { Service, Article, DashboardStatistics, SystemConfig, RewardConfig, DashboardOrder } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
 
 export class AdminService {
-  static async configureCommissions(commissionRate: number, rewardPoints: number): Promise<void> {
-    const { error } = await supabase
+  static async configureCommissions(commissionRate: number, rewardPoints: number): Promise<SystemConfig> {
+    const { data, error } = await supabase
       .from('config')
       .update({ commission_rate: commissionRate, reward_points: rewardPoints })
-      .eq('id', 1);
+      .eq('id', 1)
+      .select()
+      .single();
 
     if (error) throw error;
+    return data;
   }
 
-  static async configureRewards(rewardPoints: number, rewardType: string): Promise<void> {
-    const { error } = await supabase
+  static async configureRewards(rewardPoints: number, rewardType: string): Promise<RewardConfig> {
+    const { data, error } = await supabase
       .from('rewards')
       .update({ reward_points: rewardPoints, reward_type: rewardType })
-      .eq('id', 1);
+      .eq('id', 1)
+      .select()
+      .single();
 
     if (error) throw error;
+    return data;
   }
 
   static async createService(name: string, price: number, description?: string): Promise<Service> {
@@ -165,6 +171,136 @@ export class AdminService {
       { status, isActive }
     );
 
+    return data;
+  }
+
+  static async getDashboardStatistics(): Promise<DashboardStatistics> {
+    try {
+      // 1. Récupérer les commandes avec la bonne colonne 'totalAmount'
+      const { data: ordersTotal, error: ordersError } = await supabase
+        .from('orders')
+        .select('totalAmount, status, createdAt') // Utiliser les bons noms de colonnes
+        .eq('status', 'DELIVERED');
+
+      if (ordersError) throw ordersError;
+
+      // 2. Calculer le total des revenus
+      const totalRevenue = ordersTotal?.reduce((sum, order) => 
+        sum + (order.totalAmount || 0), 0
+      ) || 0;
+
+      // 3. Obtenir les commandes récentes avec le bon mapping
+      const { data: recentOrders, error: recentError } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          totalAmount,
+          status,
+          createdAt,
+          service:services(name),
+          user:users(
+            id,
+            email,
+            first_name,
+            last_name
+          )
+        `)
+        .order('createdAt', { ascending: false })
+        .limit(5);
+
+      if (recentError) throw recentError;
+
+      // Transformer les données des commandes récentes correctement
+      const formattedRecentOrders = recentOrders?.map(order => ({
+        id: order.id,
+        totalAmount: order.totalAmount,
+        status: order.status,
+        createdAt: order.createdAt,
+        service: { name: order.service?.[0]?.name || '' },
+        user: order.user && Array.isArray(order.user) && order.user[0] ? {
+          id: order.user[0].id,
+          email: order.user[0].email,
+          firstName: order.user[0].first_name,
+          lastName: order.user[0].last_name
+        } : null
+      }));
+
+      // Reste de la fonction pour obtenir les autres statistiques
+      const { data: ordersByStatus, error: statusError } = await supabase
+        .from('orders')
+        .select('status');
+
+      if (statusError) throw statusError;
+
+      const statusCount = ordersByStatus.reduce((acc: Record<string, number>, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      // 5. Obtenir le nombre total de clients
+      const { count: totalCustomers, error: customersError } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'CLIENT');
+
+      if (customersError) throw customersError;
+
+      return {
+        totalRevenue,
+        totalOrders: ordersTotal?.length || 0,
+        totalCustomers: totalCustomers || 0,
+        recentOrders: formattedRecentOrders || [],
+        ordersByStatus: statusCount
+      } as DashboardStatistics;
+
+    } catch (error) {
+      console.error('Error fetching dashboard statistics:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to fetch dashboard statistics: ${errorMessage}`);
+    }
+  }
+
+  static async getTotalRevenue(): Promise<number> {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('total_amount')
+      .eq('status', 'DELIVERED');
+
+    if (error) throw error;
+    return (data || []).reduce((sum, order) => sum + (order.total_amount || 0), 0);
+  }
+
+  static async getTotalOrders(): Promise<number> {
+    const { count, error } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) throw error;
+    return count || 0;
+  }
+
+  static async getTotalCustomers(): Promise<number> {
+    const { count, error } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'CLIENT');
+
+    if (error) throw error;
+    return count || 0;
+  }
+
+  static async getRecentOrders(limit: number = 5) {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        user:users(email, first_name, last_name),
+        service:services(name)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
     return data;
   }
 }

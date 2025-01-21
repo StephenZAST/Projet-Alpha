@@ -105,12 +105,15 @@ class AdminLoginScreen extends StatelessWidget {
     );
   }
 
-  void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
-      authController.login(
-        emailController.text,
-        passwordController.text,
-      );
+  Future<void> _handleLogin() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      Get.snackbar('Error', 'Please fill all fields');
+      return;
     }
+
+    await authController.login(
+      emailController.text.trim(),
+      passwordController.text,
+    );
   }
 }

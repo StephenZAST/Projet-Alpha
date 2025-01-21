@@ -33,11 +33,43 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configure CORS
-const allowedOrigins = ['http://localhost:3000']; // Ajoutez ici toutes les origines autorisées
+// Configure CORS to allow all localhost origins
+const allowedOrigins = [
+  'http://localhost:3000',   // React default
+  'http://localhost:3001',   // Your API
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+  'http://localhost:8080',   // Common dev port
+  'http://localhost:8081',   // Common dev port
+  'http://localhost:53492',  // Flutter web debug
+  'http://localhost:51284',  // Flutter web debug
+  'http://localhost:61846',  // Flutter web debug
+  /^http:\/\/localhost:\d+$/, // Any localhost port
+  /^http:\/\/127\.0\.0\.1:\d+$/ // Any 127.0.0.1 port
+];
+
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if the origin is localhost
+    if (
+      allowedOrigins.some(allowedOrigin => {
+        if (allowedOrigin instanceof RegExp) {
+          return allowedOrigin.test(origin);
+        }
+        return allowedOrigin === origin;
+      })
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
 // Rate limiting

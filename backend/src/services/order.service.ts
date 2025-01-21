@@ -311,7 +311,7 @@ export class OrderService {
     } as Order;
   }
 
-  static async updateOrderStatus(orderId: string, status: OrderStatus, userId: string): Promise<Order> {
+  static async updateOrderStatus(orderId: string, status: OrderStatus, userId: string, userRole: string): Promise<Order> {
     const { data: order } = await supabase
       .from('orders')
       .select('*')
@@ -322,13 +322,15 @@ export class OrderService {
       throw new Error('Order not found');
     }
 
-    if (order.user_id !== userId && !['ADMIN', 'DELIVERY'].includes(order.user.role)) {
+    // Vérifier les autorisations
+    const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'DELIVERY'];
+    if (!allowedRoles.includes(userRole)) {
       throw new Error('Unauthorized to update order status');
     }
 
     const { data, error } = await supabase
       .from('orders')
-      .update({ status })
+      .update({ status, updatedAt: new Date() })
       .eq('id', orderId)
       .select()
       .single();
@@ -337,7 +339,7 @@ export class OrderService {
 
     // Notifier le client du changement de statut
     await NotificationService.createOrderNotification(
-      data.user_id,
+      order.userId,
       orderId,
       'ORDER_STATUS_UPDATED',
       { newStatus: status }
@@ -518,14 +520,113 @@ export class OrderService {
 
     if (error) throw error;
 
-    // Envoyer une notification au client
-    // await NotificationService.createOrderNotification(
-    //   order.userId,
-    //   orderId,
-    //   'PAYMENT_STATUS_UPDATED',
-    //   { newStatus: paymentStatus }
-    // );
-
     return data;
+  }
+
+  static async getRecentOrders(limit: number = 5): Promise<Order[]> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          service:services(*),
+          user:users(
+            id,
+            email,
+            first_name,
+            last_name,
+            phone,
+            role,
+            referral_code
+          ),
+          address:addresses(
+            id,
+            name,
+            street,
+            city,
+            postal_code,
+            gps_latitude,
+            gps_longitude,
+            is_default
+          ),
+          items:order_items(
+            id,
+            quantity,
+            unitPrice,
+            article:articles(
+              id,
+              name,
+              basePrice,
+              premiumPrice,
+              description,
+              category:article_categories(
+                id,
+                name
+              )
+            )
+          )
+        `)
+        .order('createdAt', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching recent orders:', error);
+        throw error;
+      }
+
+      // Transform the response to match our frontend model
+      return data?.map(order => ({
+        ...order,
+        user: order.user ? {
+          id: order.user.id,
+          email: order.user.email,
+          firstName: order.user.first_name,
+          lastName: order.user.last_name,
+          phone: order.user.phone,
+          role: order.user.role,
+          referralCode: order.user.referral_code
+        } : null,
+        service: order.service,
+        address: order.address ? {
+          id: order.address.id,
+          name: order.address.name,
+          street: order.address.street,
+          city: order.address.city,
+          postalCode: order.address.postal_code,
+          gpsLatitude: order.address.gps_latitude,
+          gpsLongitude: order.address.gps_longitude,
+          isDefault: order.address.is_default
+        } : null,
+        items: order.items?.map((item: { id: string; quantity: number; unitPrice: number; article: any }) => ({
+          id: item.id,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          article: {
+            ...item.article,
+            category: item.article.category
+          }
+        })) || [],
+        createdAt: new Date(order.createdAt),
+        updatedAt: new Date(order.updatedAt)
+      })) || [];
+    } catch (error) {
+      console.error('Error in getRecentOrders:', error);
+      throw error;
+    }
+  }
+
+  static async getOrdersByStatus(): Promise<Record<string, number>> {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('status');
+
+    if (error) throw error;
+
+    const statusCount: Record<string, number> = {};
+    data.forEach((order) => {
+      statusCount[order.status] = (statusCount[order.status] || 0) + 1;
+    });
+
+    return statusCount;
   }
 }

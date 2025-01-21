@@ -13,9 +13,20 @@ declare global {
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1] || req.cookies.token;
+    let token = req.headers.authorization;
+
+    // Vérifier si le token existe et commence par "Bearer "
+    if (token && token.startsWith('Bearer ')) {
+      token = token.slice(7); // Enlever "Bearer "
+    } else {
+      token = req.cookies?.token; // Essayer de récupérer depuis les cookies
+    }
 
     if (!token) {
+      console.log('No token found in request:', { 
+        headers: req.headers,
+        cookies: req.cookies 
+      });
       return res.status(401).json({ error: 'No token provided' });
     }
 

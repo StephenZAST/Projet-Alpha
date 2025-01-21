@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/category_controller.dart';
+import '../../../models/category.dart';
 
 class CategoryDropdown extends StatelessWidget {
   @override
@@ -8,16 +9,16 @@ class CategoryDropdown extends StatelessWidget {
     final controller = Get.find<CategoryController>();
 
     return Obx(() {
-      return DropdownButtonFormField<String>(
+      return DropdownButtonFormField<Category>(
         value: controller.selectedCategory.value,
         items: controller.categories
-            .map((category) => DropdownMenuItem(
-                  value: category.id,
+            .map((category) => DropdownMenuItem<Category>(
+                  value: category,
                   child: Text(category.name),
                 ))
             .toList(),
-        onChanged: (value) {
-          controller.selectedCategory.value = value!;
+        onChanged: (Category? value) {
+          controller.setSelectedCategory(value);
         },
         decoration: InputDecoration(
           labelText: 'Category',

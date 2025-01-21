@@ -157,4 +157,17 @@ export class AdminController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async getDashboardStatistics(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const stats = await AdminService.getDashboardStatistics();
+      res.json({ data: stats });
+    } catch (error: any) {
+      console.error('Error getting dashboard statistics:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

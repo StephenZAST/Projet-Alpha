@@ -1,0 +1,182 @@
+{
+  "info": {
+    "name": "Alpha Laundry Admin Dashboard Tests",
+    "description": "Collection for testing admin dashboard endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Dashboard Statistics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/admin/statistics",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "admin", "statistics"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Recent Orders",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/orders/recent?limit=5",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "orders", "recent"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "5"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Orders By Status",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/orders/by-status",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "orders", "by-status"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Total Revenue",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/admin/total-revenue",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "admin", "total-revenue"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Total Customers",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3001/api/admin/total-customers",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "admin", "total-customers"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Order Status",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"PROCESSING\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/orders/:orderId/status",
+          "host": ["localhost"],
+          "port": "3001",
+          "path": ["api", "orders", ":orderId", "status"],
+          "variable": [
+            {
+              "key": "orderId",
+              "value": "order_id_here"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{adminToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Vous pouvez ajouter ici des scripts de pré-requête si nécessaire"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "adminToken",
+      "value": "votre_token_admin_ici",
+      "type": "string"
+    },
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api",
+      "type": "string"
+    }
+  ]
+}
