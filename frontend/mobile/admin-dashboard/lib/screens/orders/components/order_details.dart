@@ -27,11 +27,11 @@ class OrderDetails extends StatelessWidget {
             OrderInfoRow(label: 'Customer', value: order.customerName),
             OrderInfoRow(
               label: 'Date',
-              value: DateFormat('dd/MM/yyyy').format(order.date),
+              value: DateFormat('dd/MM/yyyy').format(order.createdAt),
             ),
             OrderInfoRow(
               label: 'Amount',
-              value: '\$${order.amount.toStringAsFixed(2)}',
+              value: '\$${order.totalAmount.toStringAsFixed(2)}',
             ),
             OrderInfoRow(label: 'Status', value: order.status.label),
             SizedBox(height: defaultPadding),

@@ -25,7 +25,14 @@ class ServiceController extends GetxController {
 
   Future<void> createService(Service service) async {
     try {
-      await ServiceService.createService(service);
+      final serviceData = {
+        'id': service.id,
+        'name': service.name,
+        'description': service.description,
+        'basePrice': service.basePrice,
+      };
+
+      await ServiceService.createService(serviceData);
       await fetchServices();
       Get.snackbar(
         'Success',

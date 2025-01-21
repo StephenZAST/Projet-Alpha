@@ -26,6 +26,7 @@ class OrderFilters extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              onChanged: (value) => controller.searchOrders(value),
             ),
           ),
           SizedBox(width: defaultPadding),

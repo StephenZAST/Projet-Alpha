@@ -1,28 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/article_controller.dart';
+import '../../../controllers/category_controller.dart';
 
 class CategoryDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ArticleController>();
+    final controller = Get.find<CategoryController>();
 
-    return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        labelText: 'Category',
-        border: OutlineInputBorder(),
-      ),
-      value: controller.selectedCategory.value,
-      items: [
-        DropdownMenuItem(
-          value: '',
-          child: Text('Select Category'),
+    return Obx(() {
+      return DropdownButtonFormField<String>(
+        value: controller.selectedCategory.value,
+        items: controller.categories
+            .map((category) => DropdownMenuItem(
+                  value: category.id,
+                  child: Text(category.name),
+                ))
+            .toList(),
+        onChanged: (value) {
+          controller.selectedCategory.value = value!;
+        },
+        decoration: InputDecoration(
+          labelText: 'Category',
+          border: OutlineInputBorder(),
         ),
-        // TODO: Add categories from API
-      ],
-      onChanged: (value) => controller.selectedCategory.value = value ?? '',
-      validator: (value) =>
-          value?.isEmpty ?? true ? 'Category is required' : null,
-    );
+        validator: (value) => value == null ? 'Please select a category' : null,
+      );
+    });
   }
 }

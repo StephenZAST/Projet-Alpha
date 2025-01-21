@@ -4,6 +4,7 @@ import '../../../constants.dart';
 import '../../../controllers/article_controller.dart';
 import '../../../models/article.dart';
 import 'package:dotted_border/dotted_border.dart';
+import 'category_dropdown.dart';
 
 class ArticleFormScreen extends StatelessWidget {
   final Article? article;
@@ -32,7 +33,22 @@ class ArticleFormScreen extends StatelessWidget {
           padding: EdgeInsets.all(defaultPadding),
           child: Column(
             children: [
-              ImageUploadField(),
+              DottedBorder(
+                borderType: BorderType.RRect,
+                radius: Radius.circular(12),
+                child: Container(
+                  height: 200,
+                  width: double.infinity,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_upload, size: 40),
+                      SizedBox(height: defaultPadding),
+                      Text('Click to upload image'),
+                    ],
+                  ),
+                ),
+              ),
               SizedBox(height: defaultPadding),
               CategoryDropdown(),
               SizedBox(height: defaultPadding),
@@ -82,13 +98,13 @@ class ArticleFormScreen extends StatelessWidget {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      final articleData = Article(
-        id: article?.id ?? '',
-        name: nameController.text,
-        description: descriptionController.text,
-        price: double.parse(priceController.text),
-        categoryId: Get.find<ArticleController>().selectedCategory.value,
-      );
+      final articleData = {
+        'id': article?.id ?? '',
+        'name': nameController.text,
+        'description': descriptionController.text,
+        'price': double.parse(priceController.text),
+        'categoryId': Get.find<ArticleController>().selectedCategory.value,
+      };
 
       Get.find<ArticleController>().createArticle(articleData);
     }

@@ -36,6 +36,12 @@ dependencies:
   pdf: ^3.11.1
   badges: ^3.1.2
   get_storage: ^2.1.1
+  excel: ^4.0.6
+  file_saver: ^0.2.14
+  intl: ^0.20.1
+  timeago: ^3.2.2
+  dotted_border: ^2.1.0
+  path_provider: ^2.0.15
 
 dev_dependencies:
   flutter_test:

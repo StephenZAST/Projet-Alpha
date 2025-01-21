@@ -1,10 +1,9 @@
-import 'package:admin/constants.dart';
-import 'package:admin/controllers/menu_app_controller.dart';
-import 'package:admin/controllers/auth_controller.dart';
-import 'package:admin/routes/admin_routes.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
+import 'config/theme_config.dart';
+import 'controllers/menu_app_controller.dart';
+import 'controllers/auth_controller.dart';
+import 'routes/admin_routes.dart';
 
 void main() {
   runApp(MyApp());
@@ -15,13 +14,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Admin Panel',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: AppColors.bgColor,
-        textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme)
-            .apply(bodyColor: AppColors.textPrimary),
-        canvasColor: AppColors.secondaryBg,
-      ),
+      title: 'Admin Dashboard',
+      theme: ThemeConfig.darkTheme(context),
       initialRoute: AdminRoutes.login,
       getPages: AdminRoutes.routes,
       initialBinding: BindingsBuilder(() {

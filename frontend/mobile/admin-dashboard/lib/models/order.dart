@@ -60,33 +60,36 @@ extension OrderStatusExtension on OrderStatus {
 class Order {
   final String id;
   final String customerName;
-  final double amount;
   final OrderStatus status;
-  final DateTime date;
+  final double totalAmount;
+  final DateTime createdAt;
 
   Order({
     required this.id,
     required this.customerName,
-    required this.amount,
     required this.status,
-    required this.date,
+    required this.totalAmount,
+    required this.createdAt,
   });
-}
 
-List<Order> demoOrders = [
-  Order(
-    id: "1",
-    customerName: "John Doe",
-    amount: 100.0,
-    status: OrderStatus.PENDING,
-    date: DateTime.now().subtract(Duration(days: 1)),
-  ),
-  Order(
-    id: "2",
-    customerName: "Jane Smith",
-    amount: 200.0,
-    status: OrderStatus.COMPLETED,
-    date: DateTime.now().subtract(Duration(days: 2)),
-  ),
-  // ...other orders...
-];
+  factory Order.fromJson(Map<String, dynamic> json) {
+    return Order(
+      id: json['id'],
+      customerName: json['customerName'],
+      status: OrderStatus.values
+          .firstWhere((e) => e.toString() == 'OrderStatus.${json['status']}'),
+      totalAmount: double.parse(json['totalAmount'].toString()),
+      createdAt: DateTime.parse(json['createdAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'customerName': customerName,
+      'status': status.toString().split('.').last,
+      'totalAmount': totalAmount,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+}

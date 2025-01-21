@@ -1,20 +1,26 @@
+import 'api_service.dart';
 import '../models/service.dart';
 
 class ServiceService {
   static Future<List<Service>> getServices() async {
-    // TODO: Implement API call
-    return [
-      Service(
-        id: '1',
-        name: 'Service 1',
-        basePrice: 50.0,
-        description: 'Description of Service 1',
-      ),
-      // ...other services...
-    ];
+    final response = await ApiService.get('services');
+    return (response['data'] as List)
+        .map((json) => Service.fromJson(json))
+        .toList();
   }
 
-  static Future<void> createService(Service service) async {
-    // TODO: Implement API call
+  static Future<Service> createService(Map<String, dynamic> data) async {
+    final response = await ApiService.post('services', data);
+    return Service.fromJson(response['data']);
+  }
+
+  static Future<Service> updateService(
+      String id, Map<String, dynamic> data) async {
+    final response = await ApiService.put('services/$id', data);
+    return Service.fromJson(response['data']);
+  }
+
+  static Future<void> deleteService(String id) async {
+    await ApiService.delete('services/$id');
   }
 }

@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:admin/constants.dart';
 
-import '../../../constants.dart';
-
 class FileInfoCard extends StatelessWidget {
   const FileInfoCard({
     Key? key,
@@ -18,7 +16,7 @@ class FileInfoCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(defaultPadding),
       decoration: BoxDecoration(
-        color: secondaryColor,
+        color: AppColors.primaryLight,
         borderRadius: const BorderRadius.all(Radius.circular(10)),
       ),
       child: Column(
@@ -82,7 +80,7 @@ class FileInfoCard extends StatelessWidget {
 class ProgressLine extends StatelessWidget {
   const ProgressLine({
     Key? key,
-    this.color = primaryColor,
+    this.color = AppColors.primary,
     required this.percentage,
   }) : super(key: key);
 

@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/export_controller.dart';
 
 class ExportButton extends StatelessWidget {
-  final List<dynamic> data;
+  final List<Map<String, dynamic>> data;
   final String type;
 
   const ExportButton({

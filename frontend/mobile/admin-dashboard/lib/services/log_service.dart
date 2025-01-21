@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+
+import 'api_service.dart';
 import '../models/admin_log.dart';
 
 class LogService {
@@ -6,19 +9,22 @@ class LogService {
     DateTime? endDate,
     String? action,
   }) async {
-    // TODO: Implement API call
-    return [
-      AdminLog(
-        id: '1',
-        adminId: 'admin1',
-        adminName: 'Admin One',
-        action: 'CREATE',
-        entityType: 'Order',
-        entityId: 'order1',
-        changes: {'status': 'Pending'},
-        createdAt: DateTime.now().subtract(Duration(days: 1)),
-      ),
-      // ...other logs...
-    ];
+    final queryParams = {
+      if (startDate != null) 'startDate': startDate.toIso8601String(),
+      if (endDate != null) 'endDate': endDate.toIso8601String(),
+      if (action != null) 'action': action,
+    };
+
+    final response =
+        await ApiService.get('admin/logs?${Uri(queryParameters: queryParams)}');
+    return (response['data'] as List)
+        .map((json) => AdminLog.fromJson(json))
+        .toList();
+  }
+
+  static Future<void> exportLogs(DateTimeRange dateRange) async {
+    await ApiService.get(
+      'admin/logs/export?startDate=${dateRange.start.toIso8601String()}&endDate=${dateRange.end.toIso8601String()}',
+    );
   }
 }

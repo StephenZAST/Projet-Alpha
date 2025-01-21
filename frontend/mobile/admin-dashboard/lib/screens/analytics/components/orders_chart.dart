@@ -29,8 +29,8 @@ class OrdersChart extends StatelessWidget {
                       x: 0,
                       barRods: [
                         BarChartRodData(
-                          y: 8,
-                          colors: [AppColors.primary],
+                          toY: 8,
+                          color: AppColors.primary,
                         ),
                       ],
                     ),

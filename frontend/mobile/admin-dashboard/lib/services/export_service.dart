@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:excel/excel.dart';
-import 'package:filesaver/filesaver.dart';
 
 class ExportService {
-  static Future<Uint8List> generatePDF(List<dynamic> data, String type) async {
+  static Future<Uint8List> generatePDF(
+      List<Map<String, dynamic>> data, String type) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -12,11 +12,13 @@ class ExportService {
         build: (context) => [
           pw.Header(
             level: 0,
-            child: pw.Text('Admin Report'),
+            child: pw.Text('$type Report'),
           ),
           pw.Table.fromTextArray(
-            context: context,
-            data: _convertDataToArray(data),
+            headers: data.first.keys.toList(),
+            data: data
+                .map((item) => item.values.map((e) => e.toString()).toList())
+                .toList(),
           ),
         ],
       ),
@@ -26,33 +28,23 @@ class ExportService {
   }
 
   static Future<Uint8List> generateExcel(
-      List<dynamic> data, String type) async {
+      List<Map<String, dynamic>> data, String type) async {
     final excel = Excel.createExcel();
-    final sheet = excel['Report'];
+    final sheet = excel[type];
 
-    // Add headers
-    sheet.appendRow(_getHeaders(type));
+    // Headers
+    final headers = data.first.keys.toList();
+    sheet.appendRow(headers.map((header) => TextCellValue(header)).toList());
 
-    // Add data rows
-    for (var item in data) {
-      sheet.appendRow(_convertToRow(item));
+    // Data
+    for (var i = 0; i < data.length; i++) {
+      final row = data[i]
+          .values
+          .map((value) => TextCellValue(value.toString()))
+          .toList();
+      sheet.appendRow(row);
     }
 
-    return excel.encode()!;
-  }
-
-  static List<List<String>> _convertDataToArray(List<dynamic> data) {
-    // TODO: Implement data conversion logic
-    return [];
-  }
-
-  static List<String> _getHeaders(String type) {
-    // TODO: Implement header retrieval logic
-    return [];
-  }
-
-  static List<String> _convertToRow(dynamic item) {
-    // TODO: Implement row conversion logic
-    return [];
+    return Uint8List.fromList(excel.encode()!);
   }
 }

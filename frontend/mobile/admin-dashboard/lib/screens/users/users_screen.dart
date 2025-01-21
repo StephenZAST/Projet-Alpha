@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-class AdminProfileScreen extends StatelessWidget {
+class UsersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Profile'),
+        title: Text('Users'),
       ),
       body: Center(
-        child: Text('Admin Profile Screen'),
+        child: Text('Users Screen'),
       ),
     );
   }

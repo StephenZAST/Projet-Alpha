@@ -1,5 +1,6 @@
+import 'dart:typed_data';
+import 'package:file_saver/file_saver.dart';
 import 'package:get/get.dart';
-import 'package:filesaver/filesaver.dart';
 import '../services/export_service.dart';
 
 enum ExportFormat { PDF, EXCEL }
@@ -8,7 +9,7 @@ class ExportController extends GetxController {
   final isExporting = false.obs;
 
   Future<void> exportData(
-      List<dynamic> data, String type, ExportFormat format) async {
+      List<Map<String, dynamic>> data, String type, ExportFormat format) async {
     isExporting.value = true;
     try {
       final bytes = format == ExportFormat.PDF
@@ -16,9 +17,9 @@ class ExportController extends GetxController {
           : await ExportService.generateExcel(data, type);
 
       await FileSaver.instance.saveFile(
-        'report_${DateTime.now().toIso8601String()}',
-        bytes,
-        format == ExportFormat.PDF ? 'pdf' : 'xlsx',
+        name: 'report_${DateTime.now().toIso8601String()}',
+        bytes: Uint8List.fromList(bytes),
+        ext: format == ExportFormat.PDF ? 'pdf' : 'xlsx',
       );
 
       Get.snackbar('Success', 'Export completed');

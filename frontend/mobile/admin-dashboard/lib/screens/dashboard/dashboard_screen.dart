@@ -26,7 +26,7 @@ class DashboardScreen extends StatelessWidget {
           padding: EdgeInsets.all(defaultPadding),
           child: Column(
             children: [
-              Header(),
+              Header(title: "Dashboard"),
               SizedBox(height: defaultPadding),
               StatisticsCards(),
               SizedBox(height: defaultPadding),

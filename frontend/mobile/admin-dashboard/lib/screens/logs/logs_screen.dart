@@ -17,7 +17,16 @@ class LogsScreen extends StatelessWidget {
         title: Text('Activity Logs'),
         actions: [
           ExportButton(
-            data: logController.logs,
+            data: logController.logs
+                .map((log) => {
+                      'id': log.id,
+                      'adminName': log.adminName,
+                      'action': log.action,
+                      'entityType': log.entityType,
+                      'entityId': log.entityId,
+                      'timestamp': log.createdAt.toIso8601String(),
+                    })
+                .toList(),
             type: 'logs',
           ),
         ],

@@ -1,15 +1,22 @@
 class Service {
   final String id;
   final String name;
-  final double basePrice;
   final String description;
-  final bool isActive;
+  final double basePrice;
 
   Service({
     required this.id,
     required this.name,
-    required this.basePrice,
     required this.description,
-    this.isActive = true,
+    required this.basePrice,
   });
+
+  factory Service.fromJson(Map<String, dynamic> json) {
+    return Service(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      basePrice: double.parse(json['basePrice'].toString()),
+    );
+  }
 }

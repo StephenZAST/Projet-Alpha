@@ -23,7 +23,7 @@ class LogFilters extends StatelessWidget {
           SizedBox(width: defaultPadding),
           ActionFilter(
             onChanged: (action) {
-              controller.selectedAction.value = action;
+              controller.selectedAction.value = action ?? '';
               controller.fetchLogs();
             },
           ),
@@ -55,7 +55,7 @@ class DateRangePicker extends StatelessWidget {
 }
 
 class ActionFilter extends StatelessWidget {
-  final Function(String) onChanged;
+  final Function(String?) onChanged;
 
   const ActionFilter({Key? key, required this.onChanged}) : super(key: key);
 

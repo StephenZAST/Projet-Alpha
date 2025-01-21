@@ -1,17 +1,19 @@
+import 'api_service.dart';
 import '../models/admin_notification.dart';
 
 class NotificationService {
   static Future<List<AdminNotification>> getAdminNotifications() async {
-    // TODO: Implement API call
-    return [
-      AdminNotification(
-        id: '1',
-        title: 'New Order',
-        message: 'You have a new order.',
-        createdAt: DateTime.now().subtract(Duration(minutes: 5)),
-        type: 'ORDER',
-      ),
-      // ...other notifications...
-    ];
+    final response = await ApiService.get('notifications');
+    return (response['data'] as List)
+        .map((json) => AdminNotification.fromJson(json))
+        .toList();
+  }
+
+  static Future<void> markAsRead(String notificationId) async {
+    await ApiService.post('admin/notifications/$notificationId/read', {});
+  }
+
+  static Future<void> markAllAsRead() async {
+    await ApiService.post('admin/notifications/mark-all-read', {});
   }
 }

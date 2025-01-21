@@ -1,22 +1,22 @@
 import 'package:admin/controllers/menu_app_controller.dart';
 import 'package:admin/responsive.dart';
+import 'package:admin/screens/dashboard/components/notification_badge.dart';
+import 'package:admin/screens/notifications/notifications_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:badges/badges.dart';
-import 'notification_badge.dart';
-
+import 'package:get/get.dart';
 import '../../../constants.dart';
 
 class Header extends StatelessWidget {
+  final String title;
+
+  const Header({Key? key, required this.title}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(defaultPadding),
-      decoration: BoxDecoration(
-        color: AppColors.secondaryBg,
-        borderRadius: BorderRadius.circular(10),
-      ),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
           if (!Responsive.isDesktop(context))
@@ -24,9 +24,18 @@ class Header extends StatelessWidget {
               icon: Icon(Icons.menu),
               onPressed: () => context.read<MenuAppController>().controlMenu(),
             ),
-          Text("Dashboard", style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           Spacer(),
           NotificationBadge(),
+          IconButton(
+            icon: Icon(Icons.notifications, color: AppColors.textPrimary),
+            onPressed: () {
+              Get.to(() => NotificationsScreen());
+            },
+          ),
           SizedBox(width: defaultPadding),
           ProfileCard(),
         ],

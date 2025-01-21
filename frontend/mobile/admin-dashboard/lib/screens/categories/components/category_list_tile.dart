@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../models/article_category.dart';
+import '../../../models/category.dart';
 
 class CategoryListTile extends StatelessWidget {
-  final ArticleCategory category;
+  final Category category;
 
   const CategoryListTile({Key? key, required this.category}) : super(key: key);
 
@@ -11,12 +11,10 @@ class CategoryListTile extends StatelessWidget {
     return ListTile(
       title: Text(category.name),
       subtitle: Text(category.description ?? ''),
-      trailing: Text('${category.articlesCount} articles'),
-      onTap: () => _showEditDialog(context),
+      trailing: Icon(Icons.arrow_forward),
+      onTap: () {
+        // TODO: Implement navigation to category details
+      },
     );
-  }
-
-  void _showEditDialog(BuildContext context) {
-    // TODO: Implement edit dialog
   }
 }

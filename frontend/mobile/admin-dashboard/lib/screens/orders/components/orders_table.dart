@@ -1,3 +1,5 @@
+import 'package:admin/screens/orders/components/order_details.dart';
+import 'package:admin/screens/orders/components/status_update_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../constants.dart';
@@ -64,8 +66,8 @@ class OrdersDataSource extends DataTableSource {
       cells: [
         DataCell(Text(order.id)),
         DataCell(Text(order.customerName)),
-        DataCell(Text(DateFormat('dd/MM/yyyy').format(order.date))),
-        DataCell(Text('\$${order.amount.toStringAsFixed(2)}')),
+        DataCell(Text(DateFormat('dd/MM/yyyy').format(order.createdAt))),
+        DataCell(Text('\$${order.totalAmount.toStringAsFixed(2)}')),
         DataCell(OrderStatusBadge(status: order.status)),
         DataCell(Row(
           children: [

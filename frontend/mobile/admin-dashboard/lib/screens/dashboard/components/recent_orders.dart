@@ -40,6 +40,21 @@ class RecentOrders extends StatelessWidget {
 }
 
 class OrdersDataTable extends StatelessWidget {
+  final List<Order> demoOrders = [
+    Order(
+        id: "1",
+        customerName: "John Doe",
+        totalAmount: 150.0,
+        status: OrderStatus.PENDING,
+        createdAt: DateTime.now()),
+    Order(
+        id: "2",
+        customerName: "Jane Smith",
+        totalAmount: 250.0,
+        status: OrderStatus.DELIVERED,
+        createdAt: DateTime.now()),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -65,9 +80,9 @@ class OrdersDataTable extends StatelessWidget {
       cells: [
         DataCell(Text(order.id)),
         DataCell(Text(order.customerName)),
-        DataCell(Text("\$${order.amount}")),
-        DataCell(Text(order.status)),
-        DataCell(Text("${order.date.toLocal()}".split(' ')[0])),
+        DataCell(Text("\$${order.totalAmount}")),
+        DataCell(Text(order.status.toString().split('.').last)),
+        DataCell(Text("${order.createdAt.toLocal()}".split(' ')[0])),
       ],
     );
   }
