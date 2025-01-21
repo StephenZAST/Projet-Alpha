@@ -24,7 +24,10 @@ class OrderDetails extends StatelessWidget {
             ),
             Divider(),
             OrderInfoRow(label: 'Order ID', value: order.id),
-            OrderInfoRow(label: 'Customer', value: order.customerName),
+            OrderInfoRow(
+              label: 'Customer',
+              value: order.user?.email ?? 'N/A',
+            ),
             OrderInfoRow(
               label: 'Date',
               value: DateFormat('dd/MM/yyyy').format(order.createdAt),
@@ -33,7 +36,13 @@ class OrderDetails extends StatelessWidget {
               label: 'Amount',
               value: '\$${order.totalAmount.toStringAsFixed(2)}',
             ),
-            OrderInfoRow(label: 'Status', value: order.status.label),
+            OrderInfoRow(
+              label: 'Status',
+              value: OrderStatusExtension(OrderStatus.values.firstWhere(
+                (s) => s.toString().split('.').last == order.status,
+                orElse: () => OrderStatus.PENDING,
+              )).label,
+            ),
             SizedBox(height: defaultPadding),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,

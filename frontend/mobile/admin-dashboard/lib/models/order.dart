@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'user.dart';
 
 import 'package:admin/constants.dart';
 
@@ -15,24 +16,7 @@ enum OrderStatus {
 
 extension OrderStatusExtension on OrderStatus {
   String get label {
-    switch (this) {
-      case OrderStatus.PENDING:
-        return 'En attente';
-      case OrderStatus.COLLECTING:
-        return 'En collecte';
-      case OrderStatus.COLLECTED:
-        return 'Collecté';
-      case OrderStatus.PROCESSING:
-        return 'En traitement';
-      case OrderStatus.READY:
-        return 'Prêt';
-      case OrderStatus.DELIVERING:
-        return 'En livraison';
-      case OrderStatus.DELIVERED:
-        return 'Livré';
-      case OrderStatus.CANCELLED:
-        return 'Annulé';
-    }
+    return toString().split('.').last;
   }
 
   Color get color {
@@ -59,37 +43,40 @@ extension OrderStatusExtension on OrderStatus {
 
 class Order {
   final String id;
-  final String customerName;
-  final OrderStatus status;
+  final String status;
   final double totalAmount;
   final DateTime createdAt;
+  final DateTime updatedAt;
+  final User? user; // Ajout de la propriété user
 
   Order({
     required this.id,
-    required this.customerName,
     required this.status,
     required this.totalAmount,
     required this.createdAt,
+    required this.updatedAt,
+    this.user,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
       id: json['id'],
-      customerName: json['customerName'],
-      status: OrderStatus.values
-          .firstWhere((e) => e.toString() == 'OrderStatus.${json['status']}'),
-      totalAmount: double.parse(json['totalAmount'].toString()),
+      status: json['status'],
+      totalAmount: (json['totalAmount'] ?? 0.0).toDouble(),
       createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+      user: json['user'] != null ? User.fromJson(json['user']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'customerName': customerName,
-      'status': status.toString().split('.').last,
+      'status': status,
       'totalAmount': totalAmount,
       'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'user': user?.toJson(),
     };
   }
 }

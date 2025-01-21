@@ -312,40 +312,77 @@ export class OrderService {
   }
 
   static async updateOrderStatus(orderId: string, status: OrderStatus, userId: string, userRole: string): Promise<Order> {
-    const { data: order } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .single();
+    try {
+      // 1. Vérifier si la commande existe
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
 
-    if (!order) {
-      throw new Error('Order not found');
+      if (orderError || !order) {
+        throw new Error('Order not found');
+      }
+
+      // 2. Vérifier les autorisations
+      const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'DELIVERY'];
+      if (!allowedRoles.includes(userRole)) {
+        throw new Error('Unauthorized to update order status');
+      }
+
+      // 3. Mettre à jour le statut
+      const { data: updatedOrder, error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          status,
+          updatedAt: new Date()
+        })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      // 4. Si le statut est "DELIVERED", archiver la commande
+      if (status === 'DELIVERED') {
+        // Vérifier d'abord si la commande n'est pas déjà archivée
+        const { data: existingArchive } = await supabase
+          .from('orders_archive')
+          .select('id')
+          .eq('id', orderId)
+          .single();
+
+        if (!existingArchive) {
+          // Archiver uniquement si la commande n'est pas déjà archivée
+          const archiveData = {
+            ...order,
+            archived_at: new Date(),
+            status: 'DELIVERED'
+          };
+
+          const { error: archiveError } = await supabase
+            .from('orders_archive')
+            .insert([archiveData]);
+
+          if (archiveError && !archiveError.message.includes('duplicate key')) {
+            console.error('Archive error:', archiveError);
+          }
+        }
+      }
+
+      // 5. Notifier le client du changement de statut
+      await NotificationService.createOrderNotification(
+        order.userId,
+        orderId,
+        'ORDER_STATUS_UPDATED',
+        { newStatus: status }
+      );
+
+      return updatedOrder;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
     }
-
-    // Vérifier les autorisations
-    const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'DELIVERY'];
-    if (!allowedRoles.includes(userRole)) {
-      throw new Error('Unauthorized to update order status');
-    }
-
-    const { data, error } = await supabase
-      .from('orders')
-      .update({ status, updatedAt: new Date() })
-      .eq('id', orderId)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Notifier le client du changement de statut
-    await NotificationService.createOrderNotification(
-      order.userId,
-      orderId,
-      'ORDER_STATUS_UPDATED',
-      { newStatus: status }
-    );
-
-    return data;
   }
 
   static async getAllOrders(userId: string): Promise<Order[]> {

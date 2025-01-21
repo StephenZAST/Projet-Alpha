@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../models/order.dart';
+import '../../../controllers/dashboard_controller.dart';
 
 class RecentOrders extends StatelessWidget {
   @override
@@ -40,48 +42,37 @@ class RecentOrders extends StatelessWidget {
 }
 
 class OrdersDataTable extends StatelessWidget {
-  final List<Order> demoOrders = [
-    Order(
-        id: "1",
-        customerName: "John Doe",
-        totalAmount: 150.0,
-        status: OrderStatus.PENDING,
-        createdAt: DateTime.now()),
-    Order(
-        id: "2",
-        customerName: "Jane Smith",
-        totalAmount: 250.0,
-        status: OrderStatus.DELIVERED,
-        createdAt: DateTime.now()),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: [
-          DataColumn(label: Text("Order ID")),
-          DataColumn(label: Text("Customer Name")),
-          DataColumn(label: Text("Amount")),
-          DataColumn(label: Text("Status")),
-          DataColumn(label: Text("Date")),
-        ],
-        rows: List.generate(
-          demoOrders.length,
-          (index) => orderDataRow(demoOrders[index]),
-        ),
-      ),
-    );
+    final controller = Get.find<DashboardController>();
+
+    return Obx(() => SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: [
+              DataColumn(label: Text("Order ID")),
+              DataColumn(label: Text("Customer")),
+              DataColumn(label: Text("Amount")),
+              DataColumn(label: Text("Status")),
+              DataColumn(label: Text("Date")),
+            ],
+            rows: controller.recentOrders
+                .map((order) => orderDataRow(order))
+                .toList(),
+          ),
+        ));
   }
 
   DataRow orderDataRow(Order order) {
     return DataRow(
       cells: [
-        DataCell(Text(order.id)),
-        DataCell(Text(order.customerName)),
-        DataCell(Text("\$${order.totalAmount}")),
-        DataCell(Text(order.status.toString().split('.').last)),
+        DataCell(Text(order.id.substring(0, 8))),
+        DataCell(Text(order.user?.email ?? 'N/A')),
+        DataCell(Text("\$${order.totalAmount.toStringAsFixed(2)}")),
+        DataCell(Text(OrderStatusExtension(OrderStatus.values.firstWhere(
+          (s) => s.toString().split('.').last == order.status,
+          orElse: () => OrderStatus.PENDING,
+        )).label)),
         DataCell(Text("${order.createdAt.toLocal()}".split(' ')[0])),
       ],
     );

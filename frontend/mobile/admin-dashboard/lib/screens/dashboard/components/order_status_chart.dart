@@ -42,7 +42,7 @@ class OrderStatusChart extends StatelessWidget {
   List<PieChartSectionData> _getChartSections() {
     final controller = Get.find<OrdersController>();
     return OrderStatus.values.map((status) {
-      final percentage = controller.getOrderPercentageByStatus(status);
+      final percentage = controller.getOrderPercentageByStatus(status.name);
       return PieChartSectionData(
         color: status.color,
         value: percentage,
@@ -83,7 +83,7 @@ class ChartLegend extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${Get.find<OrdersController>().getOrderCountByStatus(status)}',
+                      '${Get.find<OrdersController>().getOrderCountByStatus(status.name)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],

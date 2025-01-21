@@ -41,12 +41,30 @@ class DashboardController extends GetxController {
   Future<void> fetchStatistics() async {
     try {
       final data = await DashboardService.getStatistics();
-      statistics.value = data;
-      totalRevenue.value = data['totalRevenue'] ?? 0.0;
-      totalOrders.value = data['totalOrders'] ?? 0;
-      totalCustomers.value = data['totalCustomers'] ?? 0;
+      if (data != null) {
+        totalRevenue.value = (data['totalRevenue'] ?? 0.0).toDouble();
+        totalOrders.value = data['totalOrders'] ?? 0;
+        totalCustomers.value = data['totalCustomers'] ?? 0;
+
+        // Mettre à jour les commandes récentes
+        if (data['recentOrders'] != null) {
+          recentOrders.value = (data['recentOrders'] as List)
+              .map((order) => Order.fromJson(order))
+              .toList();
+        }
+
+        // Mettre à jour les statistiques par statut
+        if (data['ordersByStatus'] != null) {
+          ordersByStatus.value = Map<String, int>.from(data['ordersByStatus']);
+        }
+      }
     } catch (e) {
       print('Error fetching statistics: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to fetch dashboard statistics',
+        snackPosition: SnackPosition.TOP,
+      );
     }
   }
 

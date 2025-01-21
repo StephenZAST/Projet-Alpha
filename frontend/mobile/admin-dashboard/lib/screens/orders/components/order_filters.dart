@@ -15,38 +15,48 @@ class OrderFilters extends StatelessWidget {
         color: AppColors.secondaryBg,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search orders...",
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onChanged: (value) => controller.searchOrders(value),
-            ),
+          Text(
+            "Filter Orders",
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-          SizedBox(width: defaultPadding),
-          DropdownButton<String>(
-            value: controller.selectedStatus.value?.label,
-            items: ['Tous', ...OrderStatus.values.map((status) => status.label)]
-                .map((status) => DropdownMenuItem(
-                      value: status,
-                      child: Text(status),
-                    ))
-                .toList(),
-            onChanged: (value) {
-              controller.updateStatusFilter(
-                OrderStatus.values
-                    .firstWhere((status) => status.label == value),
-              );
-            },
+          SizedBox(height: defaultPadding),
+          Wrap(
+            spacing: defaultPadding,
+            runSpacing: defaultPadding / 2,
+            children: [
+              _buildFilterChip(
+                label: 'All',
+                selected: controller.selectedStatus.value == null,
+                onSelected: (_) => controller.filterByStatus(null),
+              ),
+              ...OrderStatus.values.map((status) => _buildFilterChip(
+                    label: status.toString(),
+                    selected:
+                        controller.selectedStatus.value == status.toString(),
+                    onSelected: (_) =>
+                        controller.filterByStatus(status.toString()),
+                  )),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool selected,
+    required Function(bool) onSelected,
+  }) {
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: onSelected,
+      selectedColor: AppColors.primary.withOpacity(0.2),
+      checkmarkColor: AppColors.primary,
     );
   }
 }

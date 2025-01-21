@@ -1,77 +1,89 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:get_storage/get_storage.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3001/api';
+  static final Dio _dio = Dio(BaseOptions(
+    baseUrl: 'http://localhost:3001/api',
+    contentType: 'application/json',
+  ));
 
-  // Auth Header
-  static Map<String, String> getAuthHeader() {
-    final token = GetStorage().read('token');
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+  static void _configureInterceptors() {
+    _dio.interceptors.clear();
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        final token = GetStorage().read('token');
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+      onError: (DioError e, handler) {
+        if (e.response?.statusCode == 401) {
+          // Gérer l'expiration du token
+          GetStorage().remove('token');
+          Get.offAllNamed('/login');
+        }
+        return handler.next(e);
+      },
+    ));
   }
 
-  // Generic GET request
-  static Future<dynamic> get(String endpoint) async {
+  static Future<dynamic> get(String path) async {
+    _configureInterceptors();
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/$endpoint'),
-        headers: getAuthHeader(),
-      );
-      return _handleResponse(response);
+      final response = await _dio.get(path);
+      return response.data;
     } catch (e) {
-      throw Exception('Network error: $e');
+      _handleError(e);
     }
   }
 
-  // Generic POST request
-  static Future<dynamic> post(String endpoint, dynamic data) async {
+  static Future<dynamic> post(String path, dynamic data) async {
+    _configureInterceptors();
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/$endpoint'),
-        headers: getAuthHeader(),
-        body: json.encode(data),
-      );
-      return _handleResponse(response);
+      final response = await _dio.post(path, data: data);
+      return response.data;
     } catch (e) {
-      throw Exception('Network error: $e');
+      _handleError(e);
     }
   }
 
-  // Generic PUT request
-  static Future<dynamic> put(String endpoint, dynamic data) async {
+  static Future<dynamic> put(String path, dynamic data) async {
+    _configureInterceptors();
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/$endpoint'),
-        headers: getAuthHeader(),
-        body: json.encode(data),
-      );
-      return _handleResponse(response);
+      final response = await _dio.put(path, data: data);
+      return response.data;
     } catch (e) {
-      throw Exception('Network error: $e');
+      _handleError(e);
     }
   }
 
-  // Generic DELETE request
-  static Future<dynamic> delete(String endpoint) async {
+  static Future<dynamic> patch(String path, dynamic data) async {
+    _configureInterceptors();
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/$endpoint'),
-        headers: getAuthHeader(),
-      );
-      return _handleResponse(response);
+      final response = await _dio.patch(path, data: data);
+      return response.data;
     } catch (e) {
-      throw Exception('Network error: $e');
+      _handleError(e);
     }
   }
 
-  static dynamic _handleResponse(http.Response response) {
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return json.decode(response.body);
+  static Future<dynamic> delete(String path) async {
+    _configureInterceptors();
+    try {
+      final response = await _dio.delete(path);
+      return response.data;
+    } catch (e) {
+      _handleError(e);
     }
-    throw Exception('Error: ${response.statusCode}');
+  }
+
+  static void _handleError(dynamic error) {
+    if (error is DioError) {
+      throw error.response?.data?['error'] ?? 'Network error occurred';
+    }
+    throw error.toString();
   }
 }
