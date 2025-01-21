@@ -46,27 +46,37 @@ class Order {
   final String status;
   final double totalAmount;
   final DateTime createdAt;
-  final DateTime updatedAt;
-  final User? user; // Ajout de la propriété user
+  final DateTime? updatedAt;
+  final User? user;
 
   Order({
     required this.id,
     required this.status,
     required this.totalAmount,
     required this.createdAt,
-    required this.updatedAt,
+    this.updatedAt,
     this.user,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      id: json['id'],
-      status: json['status'],
-      totalAmount: (json['totalAmount'] ?? 0.0).toDouble(),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-      user: json['user'] != null ? User.fromJson(json['user']) : null,
-    );
+    try {
+      return Order(
+        id: json['id'] ?? '',
+        status: json['status'] ?? 'PENDING',
+        totalAmount: (json['totalAmount'] ?? 0.0).toDouble(),
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'])
+            : DateTime.now(),
+        updatedAt: json['updatedAt'] != null
+            ? DateTime.parse(json['updatedAt'])
+            : null,
+        user: json['user'] != null ? User.fromJson(json['user']) : null,
+      );
+    } catch (e) {
+      print('Error parsing Order: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -75,7 +85,7 @@ class Order {
       'status': status,
       'totalAmount': totalAmount,
       'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
       'user': user?.toJson(),
     };
   }

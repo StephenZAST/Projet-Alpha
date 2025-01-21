@@ -47,30 +47,34 @@ class DashboardController extends GetxController {
   Future<void> fetchStatistics() async {
     try {
       final data = await DashboardService.getStatistics();
-      if (data != null) {
-        totalRevenue.value = (data['totalRevenue'] ?? 0.0).toDouble();
-        totalOrders.value = data['totalOrders'] ?? 0;
-        totalCustomers.value = data['totalCustomers'] ?? 0;
+      totalRevenue.value = (data['totalRevenue'] ?? 0.0).toDouble();
+      totalOrders.value = data['totalOrders'] ?? 0;
+      totalCustomers.value = data['totalCustomers'] ?? 0;
 
-        // Mettre à jour les commandes récentes
-        if (data['recentOrders'] != null) {
+      if (data['recentOrders'] != null) {
+        try {
           recentOrders.value = (data['recentOrders'] as List)
-              .map((order) => Order.fromJson(order))
+              .where((order) => order != null)
+              .map((order) => Order.fromJson(order as Map<String, dynamic>))
               .toList();
+        } catch (e) {
+          print('Error parsing recent orders: $e');
+          recentOrders.value = [];
         }
+      }
 
-        // Mettre à jour les statistiques par statut
-        if (data['ordersByStatus'] != null) {
-          ordersByStatus.value = Map<String, int>.from(data['ordersByStatus']);
+      if (data['ordersByStatus'] != null) {
+        try {
+          ordersByStatus.value = Map<String, int>.from(data['ordersByStatus']
+              .map((key, value) => MapEntry(
+                  key.toString(), int.tryParse(value.toString()) ?? 0)));
+        } catch (e) {
+          print('Error parsing orders by status: $e');
+          ordersByStatus.value = {};
         }
       }
     } catch (e) {
-      print('Error fetching statistics: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to fetch dashboard statistics',
-        snackPosition: SnackPosition.TOP,
-      );
+      print('Error in fetchStatistics: $e');
     }
   }
 
