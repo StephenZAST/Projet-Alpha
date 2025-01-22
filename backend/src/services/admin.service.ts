@@ -261,13 +261,39 @@ export class AdminService {
   }
 
   static async getTotalRevenue(): Promise<number> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('total_amount')
-      .eq('status', 'DELIVERED');
+    try {
+      // Récupérer les commandes actives
+      const { data: activeOrders, error: activeError } = await supabase
+        .from('orders')
+        .select('totalAmount')
+        .eq('status', 'DELIVERED');
 
-    if (error) throw error;
-    return (data || []).reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      if (activeError) throw activeError;
+
+      // Récupérer les commandes archivées
+      const { data: archivedOrders, error: archiveError } = await supabase
+        .from('orders_archive')
+        .select('totalAmount')
+        .eq('status', 'DELIVERED');
+
+      if (archiveError) throw archiveError;
+
+      // Calculer le total des commandes actives et archivées
+      const activeTotal = (activeOrders || []).reduce(
+        (sum, order) => sum + (order.totalAmount || 0),
+        0
+      );
+
+      const archivedTotal = (archivedOrders || []).reduce(
+        (sum, order) => sum + (order.totalAmount || 0),
+        0
+      );
+
+      return activeTotal + archivedTotal;
+    } catch (error) {
+      console.error('Error calculating total revenue:', error);
+      throw new Error('Failed to calculate total revenue');
+    }
   }
 
   static async getTotalOrders(): Promise<number> {
@@ -306,52 +332,114 @@ export class AdminService {
 
   static async getRevenueChartData(): Promise<{ labels: string[], data: number[] }> {
     try {
-      // Obtenir la date d'il y a 7 jours
+      console.log('[Revenue Chart] Starting data fetch...');
+      
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      console.log('[Revenue Chart] Seven days ago:', sevenDaysAgo.toISOString());
       
-      // Requête pour obtenir les commandes des 7 derniers jours
-      const { data, error } = await supabase
+      // Récupérer les commandes actives
+      console.log('[Revenue Chart] Fetching active orders...');
+      const { data: activeOrders, error: activeError } = await supabase
         .from('orders')
-        .select('created_at, total_amount')
-        .gte('created_at', sevenDaysAgo.toISOString())
+        .select('createdAt, totalAmount')
+        .gte('createdAt', sevenDaysAgo.toISOString())
         .eq('status', 'DELIVERED')
-        .order('created_at', { ascending: true });
+        .order('createdAt', { ascending: true });
 
-      if (error) throw error;
+      if (activeError) {
+        console.error('[Revenue Chart] Active orders error:', activeError);
+        throw activeError;
+      }
+      console.log('[Revenue Chart] Active orders received:', activeOrders?.length || 0);
 
-      // Créer un map pour stocker les revenus par jour
+      // Récupérer les commandes archivées
+      console.log('[Revenue Chart] Fetching archived orders...');
+      const { data: archivedOrders, error: archiveError } = await supabase
+        .from('orders_archive')
+        .select('createdAt, totalAmount')
+        .gte('createdAt', sevenDaysAgo.toISOString())
+        .eq('status', 'DELIVERED')
+        .order('createdAt', { ascending: true });
+
+      if (archiveError) {
+        console.error('[Revenue Chart] Archived orders error:', archiveError);
+        throw archiveError;
+      }
+      console.log('[Revenue Chart] Archived orders received:', archivedOrders?.length || 0);
+
+      // Créer un map pour les revenus journaliers
       const dailyRevenue = new Map<string, number>();
-      
-      // Initialiser les 7 derniers jours avec 0
-      for (let i = 0; i < 7; i++) {
+
+      // Initialiser les 7 derniers jours
+      for (let i = 6; i >= 0; i--) {
         const date = new Date();
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
         dailyRevenue.set(dateStr, 0);
       }
 
-      // Calculer les revenus par jour
-      data?.forEach(order => {
-        const dateStr = new Date(order.created_at).toISOString().split('T')[0];
-        const currentAmount = dailyRevenue.get(dateStr) || 0;
-        dailyRevenue.set(dateStr, currentAmount + (order.total_amount || 0));
-      });
+      // Traiter les commandes actives
+      console.log('[Revenue Chart] Daily revenue initialized:', Object.fromEntries(dailyRevenue));
+      
+      console.log('[Revenue Chart] Raw active orders:', JSON.stringify(activeOrders, null, 2));
+      if (activeOrders?.length) {
+        console.log('[Revenue Chart] Processing active orders...');
+        activeOrders.forEach((order, index) => {
+          try {
+            if (order.createdAt && order.totalAmount) {
+              const dateStr = new Date(order.createdAt).toISOString().split('T')[0];
+              const amount = parseFloat(order.totalAmount.toString());
+              if (!isNaN(amount) && dailyRevenue.has(dateStr)) {
+                const currentAmount = dailyRevenue.get(dateStr) || 0;
+                dailyRevenue.set(dateStr, currentAmount + amount);
+                console.log(`[Revenue Chart] Added active order: ${dateStr} = ${amount}`);
+              }
+            }
+          } catch (e) {
+            console.error('[Revenue Chart] Error processing active order:', order, e);
+          }
+        });
+      }
 
-      // Convertir en format pour le graphique
+      // Traiter les commandes archivées
+      if (archivedOrders?.length) {
+        console.log('[Revenue Chart] Processing archived orders...');
+        archivedOrders.forEach(order => {
+          try {
+            if (order.createdAt && order.totalAmount) {
+              const dateStr = new Date(order.createdAt).toISOString().split('T')[0];
+              const amount = parseFloat(order.totalAmount.toString());
+              if (!isNaN(amount) && dailyRevenue.has(dateStr)) {
+                const currentAmount = dailyRevenue.get(dateStr) || 0;
+                dailyRevenue.set(dateStr, currentAmount + amount);
+                console.log(`[Revenue Chart] Added archived order: ${dateStr} = ${amount}`);
+              }
+            }
+          } catch (e) {
+            console.error('[Revenue Chart] Error processing archived order:', order, e);
+          }
+        });
+      }
+
+      // Préparer les données pour le graphique
       const sortedEntries = Array.from(dailyRevenue.entries())
-        .sort((a, b) => a[0].localeCompare(b[0])); // Trier par date
+        .sort((a, b) => a[0].localeCompare(b[0]));
 
-      return {
+      const result = {
         labels: sortedEntries.map(([date]) => {
-          const [year, month, day] = date.split('-');
-          return `${day}/${month}`; // Format: DD/MM
+          const [, month, day] = date.split('-');
+          return `${day}/${month}`;
         }),
         data: sortedEntries.map(([, amount]) => amount),
       };
-    } catch (error) {
-      console.error('Error fetching revenue chart data:', error);
-      throw new Error('Failed to fetch revenue chart data');
+
+      console.log('[Revenue Chart] Final result:', result);
+      return result;
+
+    } catch (error: any) {
+      console.error('[Revenue Chart] Original error:', error);
+      throw new Error(`Failed to fetch revenue chart data: ${error.message || 'Unknown error'}`);
     }
   }
 }

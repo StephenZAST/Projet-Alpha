@@ -17,16 +17,11 @@ router.get(
     await AdminController.getDashboardStatistics(req, res);
   })
 );
-
 router.get(
   '/revenue-chart',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
-    const data = await AdminService.getRevenueChartData();
-    res.json({ 
-      success: true, 
-      data 
-    });
+    await AdminController.getRevenueChartData(req, res);
   })
 );
 

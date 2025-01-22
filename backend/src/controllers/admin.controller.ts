@@ -170,4 +170,29 @@ export class AdminController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async getRevenueChartData(req: Request, res: Response) {
+    try {
+      console.log('[Admin Controller] Getting revenue chart data...');
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log('[Admin Controller] Unauthorized access attempt');
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const chartData = await AdminService.getRevenueChartData();
+      console.log('[Admin Controller] Revenue chart data retrieved successfully');
+      res.json({
+        success: true,
+        data: chartData
+      });
+    } catch (error: any) {
+      console.error('[Admin Controller] Error getting revenue chart data:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: error.message || 'Failed to fetch revenue chart data'
+      });
+    }
+  }
 }
