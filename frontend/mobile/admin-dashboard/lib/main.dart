@@ -1,42 +1,109 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'config/theme_config.dart';
-import 'routes/admin_routes.dart';
-import 'controllers/theme_controller.dart';
+import './routes/admin_routes.dart';
+import './constants.dart';
+import './controllers/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
 
-  // Initialize controllers
-  final themeController = Get.put(ThemeController());
-  themeController.initTheme();
-
-  runApp(MyApp());
+  runApp(AdminDashboard());
 }
 
-class MyApp extends StatelessWidget {
+class AdminDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
       title: 'Admin Dashboard',
-      themeMode: Get.find<ThemeController>().theme,
-      theme: ThemeConfig.lightTheme(context),
-      darkTheme: ThemeConfig.darkTheme(context),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primaryColor: AppColors.primary,
+        scaffoldBackgroundColor: AppColors.bgColor,
+        fontFamily: AppTextStyles.fontFamily,
+        textTheme: TextTheme(
+          headlineLarge: AppTextStyles.h1,
+          headlineMedium: AppTextStyles.h2,
+          headlineSmall: AppTextStyles.h3,
+          titleLarge: AppTextStyles.h4,
+          bodyLarge: AppTextStyles.bodyLarge,
+          bodyMedium: AppTextStyles.bodyMedium,
+          bodySmall: AppTextStyles.bodySmall,
+          labelLarge: AppTextStyles.buttonLarge,
+          labelMedium: AppTextStyles.buttonMedium,
+        ).apply(
+          bodyColor: AppColors.textPrimary,
+          displayColor: AppColors.textPrimary,
+        ),
+        colorScheme: ColorScheme.light(
+          primary: AppColors.primary,
+          secondary: AppColors.accent,
+          error: AppColors.error,
+          background: AppColors.bgColor,
+          surface: AppColors.secondaryBg,
+          onPrimary: AppColors.textLight,
+          onSecondary: AppColors.textLight,
+          onError: AppColors.textLight,
+          onBackground: AppColors.textPrimary,
+          onSurface: AppColors.textPrimary,
+        ),
+        cardTheme: CardTheme(
+          color: AppColors.cardBg,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.radiusMD,
+            side: BorderSide(color: AppColors.borderLight),
+          ),
+        ),
+      ),
+      // Dark theme configuration (basé sur le thème clair)
+      darkTheme: ThemeData(
+        primaryColor: AppColors.primary,
+        scaffoldBackgroundColor: AppColors.darkBg,
+        fontFamily: AppTextStyles.fontFamily,
+        textTheme: TextTheme(
+          headlineLarge: AppTextStyles.h1,
+          headlineMedium: AppTextStyles.h2,
+          headlineSmall: AppTextStyles.h3,
+          titleLarge: AppTextStyles.h4,
+          bodyLarge: AppTextStyles.bodyLarge,
+          bodyMedium: AppTextStyles.bodyMedium,
+          bodySmall: AppTextStyles.bodySmall,
+          labelLarge: AppTextStyles.buttonLarge,
+          labelMedium: AppTextStyles.buttonMedium,
+        ).apply(
+          bodyColor: AppColors.textLight,
+          displayColor: AppColors.textLight,
+        ),
+        colorScheme: ColorScheme.dark(
+          primary: AppColors.primary,
+          secondary: AppColors.accent,
+          error: AppColors.error,
+          background: AppColors.darkBg,
+          surface: AppColors.gray800,
+          onPrimary: AppColors.textLight,
+          onSecondary: AppColors.textLight,
+          onError: AppColors.textLight,
+          onBackground: AppColors.textLight,
+          onSurface: AppColors.textLight,
+        ),
+        cardTheme: CardTheme(
+          color: AppColors.gray800,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.radiusMD,
+            side: BorderSide(color: AppColors.borderDark),
+          ),
+        ),
+      ),
+      themeMode: ThemeMode.system,
+      defaultTransition: Transition.fadeIn,
       initialRoute: AdminRoutes.login,
       getPages: AdminRoutes.routes,
-      initialBinding: AdminBinding(),
-      defaultTransition: Transition.fadeIn,
+      initialBinding: BindingsBuilder(() {
+        Get.put(AuthController(), permanent: true);
+      }),
     );
-  }
-}
-
-class AdminBinding implements Bindings {
-  @override
-  void dependencies() {
-    Get.lazyPut(() => ThemeController(), fenix: true);
-    // Add other controllers here
   }
 }

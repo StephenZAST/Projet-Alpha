@@ -17,6 +17,8 @@ class DashboardController extends GetxController {
   final totalRevenue = 0.0.obs;
   final totalOrders = 0.obs;
   final totalCustomers = 0.obs;
+  final revenueChartLabels = <String>[].obs;
+  final revenueChartData = <double>[].obs;
 
   @override
   void onInit() {
@@ -31,6 +33,7 @@ class DashboardController extends GetxController {
         fetchStatistics(),
         fetchRecentOrders(),
         fetchOrdersByStatus(),
+        fetchRevenueChartData(),
       ]);
     } catch (e) {
       print('Error fetching dashboard data: $e');
@@ -84,6 +87,22 @@ class DashboardController extends GetxController {
       recentOrders.value = data.map((order) => Order.fromJson(order)).toList();
     } catch (e) {
       print('Error fetching recent orders: $e');
+    }
+  }
+
+  Future<void> fetchRevenueChartData() async {
+    try {
+      final data = await DashboardService.getRevenueChart();
+      if (data.containsKey('labels') && data.containsKey('data')) {
+        revenueChartLabels.value = List<String>.from(data['labels']);
+        revenueChartData.value = List<double>.from(
+            (data['data'] as List).map((value) => (value as num).toDouble()));
+      }
+    } catch (e) {
+      print('Error fetching revenue chart data: $e');
+      // En cas d'erreur, initialiser avec des listes vides
+      revenueChartLabels.value = [];
+      revenueChartData.value = [];
     }
   }
 

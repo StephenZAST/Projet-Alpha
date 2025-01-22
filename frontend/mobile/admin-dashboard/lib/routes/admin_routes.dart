@@ -1,34 +1,34 @@
-import 'package:admin/controllers/auth_controller.dart';
-import 'package:admin/controllers/menu_app_controller.dart';
-import 'package:admin/screens/orders/order_create_screen.dart';
-import 'package:admin/screens/orders/order_details_screen.dart';
 import 'package:get/get.dart';
+import '../controllers/auth_controller.dart';
+import '../controllers/menu_app_controller.dart';
+import '../controllers/dashboard_controller.dart';
+import '../controllers/orders_controller.dart';
+import '../controllers/notification_controller.dart';
 import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/auth/admin_login_screen.dart';
 import '../screens/orders/orders_screen.dart';
+import '../screens/orders/order_details_screen.dart';
+import '../screens/orders/order_create_screen.dart';
 import '../screens/products/products_screen.dart';
 import '../screens/users/users_screen.dart';
-import '../screens/auth/admin_login_screen.dart';
 import '../screens/profile/admin_profile_screen.dart';
 import '../screens/services/services_screen.dart';
 import '../screens/categories/categories_screen.dart';
 import '../middleware/auth_middleware.dart';
-import '../controllers/dashboard_controller.dart';
-import '../controllers/notification_controller.dart';
-import '../controllers/orders_controller.dart';
 
 class AdminBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => DashboardController(), fenix: true);
-    Get.lazyPut(() => NotificationController(), fenix: true);
-    Get.lazyPut(() => MenuAppController(), fenix: true);
-    Get.lazyPut(() => AuthController(), fenix: true);
-    Get.lazyPut(() => OrdersController(), fenix: true);
+    // Initialisation des contrôleurs avec permanent: true pour éviter leur destruction
+    Get.put(AuthController(), permanent: true);
+    Get.put(MenuAppController(), permanent: true);
+    Get.put(DashboardController(), permanent: true);
+    Get.put(NotificationController(), permanent: true);
+    Get.put(OrdersController(), permanent: true);
   }
 }
 
 class AdminRoutes {
-  // Route names
   static const String dashboard = '/dashboard';
   static const String orders = '/orders';
   static const String products = '/products';
@@ -38,26 +38,27 @@ class AdminRoutes {
   static const String services = '/services';
   static const String categories = '/categories';
 
-  // Route list with middleware
   static final routes = [
     GetPage(
       name: login,
       page: () => AdminLoginScreen(),
       binding: AdminBinding(),
       transition: Transition.fadeIn,
+      transitionDuration: Duration(milliseconds: 250),
     ),
     GetPage(
       name: dashboard,
       page: () => DashboardScreen(),
       binding: AdminBinding(),
+      middlewares: [AuthMiddleware(redirectTo: login)],
       transition: Transition.fadeIn,
+      transitionDuration: Duration(milliseconds: 250),
     ),
     GetPage(
       name: orders,
       page: () => OrdersScreen(),
-      middlewares: [
-        AuthMiddleware(),
-      ],
+      binding: AdminBinding(),
+      middlewares: [AuthMiddleware(redirectTo: login)],
       children: [
         GetPage(
           name: '/create',
@@ -72,44 +73,53 @@ class AdminRoutes {
     GetPage(
       name: products,
       page: () => ProductsScreen(),
-      middlewares: [
-        AuthMiddleware(),
-      ],
+      binding: AdminBinding(),
+      middlewares: [AuthMiddleware(redirectTo: login)],
     ),
     GetPage(
       name: users,
       page: () => UsersScreen(),
-      middlewares: [
-        AuthMiddleware(),
-      ],
+      binding: AdminBinding(),
+      middlewares: [AuthMiddleware(redirectTo: login)],
     ),
     GetPage(
       name: profile,
       page: () => AdminProfileScreen(),
-      middlewares: [
-        AuthMiddleware(),
-      ],
+      binding: AdminBinding(),
+      middlewares: [AuthMiddleware(redirectTo: login)],
     ),
     GetPage(
       name: services,
       page: () => ServicesScreen(),
-      middlewares: [
-        AuthMiddleware(),
-      ],
+      binding: AdminBinding(),
+      middlewares: [AuthMiddleware(redirectTo: login)],
     ),
     GetPage(
       name: categories,
       page: () => CategoriesScreen(),
-      middlewares: [
-        AuthMiddleware(),
-      ],
+      binding: AdminBinding(),
+      middlewares: [AuthMiddleware(redirectTo: login)],
     ),
   ];
 
-  // Navigation methods
-  static void goToDashboard() => Get.offAllNamed(dashboard);
-  static void goToLogin() => Get.offAllNamed(login);
-  static void goToOrders() => Get.toNamed(orders);
-  static void goToOrderDetails(String id) => Get.toNamed('$orders/$id');
-  static void goToProfile() => Get.toNamed(profile);
+  // Navigation helpers
+  static void goToDashboard() {
+    Get.offAllNamed(dashboard);
+  }
+
+  static void goToLogin() {
+    Get.offAllNamed(login);
+  }
+
+  static void goToOrders() {
+    Get.toNamed(orders);
+  }
+
+  static void goToOrderDetails(String id) {
+    Get.toNamed('$orders/$id');
+  }
+
+  static void goToProfile() {
+    Get.toNamed(profile);
+  }
 }

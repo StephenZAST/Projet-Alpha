@@ -10,14 +10,20 @@ class AuthService {
   static const String _userKey = 'auth_user';
   static final _storage = GetStorage();
 
-  // Base URL for all auth endpoints
   static const String baseAuthPath = 'auth';
 
   static String? get token => _storage.read(_tokenKey);
   static User? get currentUser {
     final userData = _storage.read(_userKey);
     if (userData != null) {
-      return User.fromJson(json.decode(userData));
+      try {
+        final Map<String, dynamic> jsonData = json.decode(userData);
+        print('[AuthService] Stored user data: $jsonData');
+        return User.fromJson(jsonData);
+      } catch (e) {
+        print('[AuthService] Error parsing stored user data: $e');
+        return null;
+      }
     }
     return null;
   }
@@ -34,18 +40,56 @@ class AuthService {
         },
       );
 
+      print('[AuthService] Raw login response: $response');
+
       if (response['success'] && response['data'] != null) {
-        print('[AuthService] Login successful');
+        final innerData = response['data']['data'];
+        if (innerData == null) {
+          throw 'Invalid response structure';
+        }
+
+        final token = innerData['token'];
+        final userData = innerData['user'];
+
+        if (token == null || userData == null) {
+          throw 'Missing token or user data';
+        }
+
+        print('[AuthService] User data before parsing: $userData');
+
+        // S'assurer que les données requises sont présentes
+        if (userData['id'] == null ||
+            userData['email'] == null ||
+            userData['role'] == null) {
+          throw 'Missing required user data fields';
+        }
 
         // Sauvegarder le token
-        final token = response['data']['token'];
         await _storage.write(_tokenKey, token);
-
         // Sauvegarder les données utilisateur
-        final user = response['data']['user'];
-        await _storage.write(_userKey, json.encode(user));
+        await _storage.write(_userKey, json.encode(userData));
 
-        return response;
+        print('[AuthService] Login successful');
+        print('[AuthService] Token saved: $token');
+        print('[AuthService] User data saved: $userData');
+
+        // Tester la création de l'objet User avant de retourner
+        try {
+          final user = User.fromJson(userData);
+          print(
+              '[AuthService] User object created successfully: ${user.toJson()}');
+
+          return {
+            'success': true,
+            'data': {
+              'user': userData,
+              'token': token,
+            }
+          };
+        } catch (e) {
+          print('[AuthService] Error creating user object: $e');
+          throw 'Error parsing user data';
+        }
       }
 
       print('[AuthService] Login failed: ${response['message']}');
@@ -66,10 +110,30 @@ class AuthService {
       print('[AuthService] Getting current user data');
       final response = await ApiService.get('$baseAuthPath/admin/me');
 
+      print('[AuthService] Current user response: $response');
+
       if (response['success'] && response['data'] != null) {
-        final user = User.fromJson(response['data']);
-        await _storage.write(_userKey, json.encode(user.toJson()));
-        return user;
+        final userData = response['data'];
+
+        print('[AuthService] User data before parsing: $userData');
+
+        try {
+          // S'assurer que les données requises sont présentes
+          if (userData['id'] == null ||
+              userData['email'] == null ||
+              userData['role'] == null) {
+            throw 'Missing required user data fields';
+          }
+
+          final user = User.fromJson(userData);
+          await _storage.write(_userKey, json.encode(userData));
+          print(
+              '[AuthService] Current user data fetched and saved successfully: ${user.toJson()}');
+          return user;
+        } catch (e) {
+          print('[AuthService] Error parsing user data: $e');
+          throw 'Invalid user data format';
+        }
       }
       return null;
     } catch (e) {
@@ -104,12 +168,10 @@ class AuthService {
 
   static Future<void> logout() async {
     try {
-      // Essayer de faire un logout côté serveur
       await ApiService.post('$baseAuthPath/logout', {});
     } catch (e) {
       print('[AuthService] Logout error: $e');
     } finally {
-      // Toujours effacer les données locales
       clearSession();
     }
   }

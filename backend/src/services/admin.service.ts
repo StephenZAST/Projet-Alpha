@@ -380,12 +380,9 @@ export class AdminService {
       }
 
       // Traiter les commandes actives
-      console.log('[Revenue Chart] Daily revenue initialized:', Object.fromEntries(dailyRevenue));
-      
-      console.log('[Revenue Chart] Raw active orders:', JSON.stringify(activeOrders, null, 2));
       if (activeOrders?.length) {
         console.log('[Revenue Chart] Processing active orders...');
-        activeOrders.forEach((order, index) => {
+        activeOrders.forEach(order => {
           try {
             if (order.createdAt && order.totalAmount) {
               const dateStr = new Date(order.createdAt).toISOString().split('T')[0];

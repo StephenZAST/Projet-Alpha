@@ -12,27 +12,46 @@ class AuthController extends GetxController {
 
   @override
   void onInit() {
+    print('[AuthController] Initializing');
     super.onInit();
-    ever(user, (_) => _handleAuthStateChange());
-    checkAuth();
+    _initializeAuth();
   }
 
-  void _handleAuthStateChange() {
-    if (user.value == null) {
-      Get.offAllNamed(AdminRoutes.login);
+  void _initializeAuth() async {
+    print('[AuthController] Initializing auth state');
+    final savedUser = AuthService.currentUser;
+    if (savedUser != null) {
+      print('[AuthController] Found saved user: ${savedUser.toJson()}');
+      user.value = savedUser;
+      await checkAuth();
+    } else {
+      print('[AuthController] No saved user found');
+      user.value = null;
     }
   }
 
   Future<void> checkAuth() async {
+    print('[AuthController] Checking auth status');
     isLoading.value = true;
     try {
-      // Utiliser le token stocké dans AuthService
       if (AuthService.token != null) {
-        await _refreshUserData();
+        print('[AuthController] Token found, refreshing user data');
+        final userData = await AuthService.getCurrentUser();
+        if (userData != null) {
+          print(
+              '[AuthController] User data refreshed successfully: ${userData.toJson()}');
+          user.value = userData;
+          _handleAuthStateChange();
+        } else {
+          print('[AuthController] Failed to refresh user data');
+          throw 'Failed to refresh user data';
+        }
       } else {
+        print('[AuthController] No token found, logging out');
         logout();
       }
     } catch (e) {
+      print('[AuthController] Auth check error: $e');
       _handleError('Erreur d\'authentification', e);
       logout();
     } finally {
@@ -40,70 +59,89 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> _refreshUserData() async {
-    try {
-      final userData = await AuthService.getCurrentUser();
-      if (userData != null) {
-        user.value = userData;
-      } else {
-        throw 'Données utilisateur invalides';
-      }
-    } catch (e) {
-      throw 'Impossible de récupérer les données utilisateur: $e';
-    }
-  }
-
   Future<void> login(String email, String password) async {
     try {
+      print('[AuthController] Login attempt for email: $email');
       isLoading.value = true;
 
       final response = await AuthService.login(email, password);
+      print('[AuthController] Login response: $response');
 
-      if (!response['success']) {
+      if (response['success']) {
+        final userData = response['data']['user'];
+        if (userData != null) {
+          try {
+            final newUser = User.fromJson(userData);
+            print(
+                '[AuthController] User created successfully: ${newUser.toJson()}');
+            user.value = newUser;
+
+            // Attendre un peu avant de rediriger pour laisser le temps aux animations
+            await Future.delayed(Duration(milliseconds: 100));
+            Get.offAllNamed(AdminRoutes.dashboard);
+
+            Get.snackbar(
+              'Succès',
+              'Connexion réussie',
+              backgroundColor: AppColors.success,
+              colorText: AppColors.textLight,
+              snackPosition: SnackPosition.TOP,
+              margin: AppSpacing.marginMD,
+              duration: Duration(seconds: 3),
+            );
+          } catch (e) {
+            print('[AuthController] Error creating user object: $e');
+            throw 'Erreur lors de la création de l\'utilisateur';
+          }
+        } else {
+          throw 'Données utilisateur manquantes';
+        }
+      } else {
         throw response['message'] ?? 'Erreur de connexion';
       }
-
-      if (response['data'] == null) {
-        throw 'Données de réponse invalides';
-      }
-
-      // Le token est déjà géré par AuthService
-      await _refreshUserData();
-      Get.offAllNamed(AdminRoutes.dashboard);
-
-      Get.snackbar(
-        'Succès',
-        'Connexion réussie',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        padding: AppSpacing.paddingMD,
-        margin: AppSpacing.marginMD,
-        borderRadius: AppRadius.sm,
-        duration: Duration(seconds: 3),
-      );
     } catch (e) {
+      print('[AuthController] Login error: $e');
       _handleError('Erreur de connexion', e);
     } finally {
       isLoading.value = false;
     }
   }
 
+  void _handleAuthStateChange() {
+    print('[AuthController] Handling auth state change');
+    print('[AuthController] User: ${user.value?.toJson()}');
+    print('[AuthController] Current route: ${Get.currentRoute}');
+
+    // Navigation sûre avec un délai
+    Future.delayed(Duration(milliseconds: 100), () {
+      if (user.value == null) {
+        print('[AuthController] No user, redirecting to login');
+        if (Get.currentRoute != AdminRoutes.login) {
+          Get.offAllNamed(AdminRoutes.login);
+        }
+      } else if (Get.currentRoute != AdminRoutes.dashboard) {
+        print('[AuthController] User authenticated, redirecting to dashboard');
+        Get.offAllNamed(AdminRoutes.dashboard);
+      }
+    });
+  }
+
   void logout() {
+    print('[AuthController] Logging out');
     AuthService.clearSession();
     user.value = null;
+    Get.offAllNamed(AdminRoutes.login);
   }
 
   void _handleError(String title, dynamic error) {
+    print('[AuthController] Error: $title - $error');
     Get.snackbar(
       title,
       error.toString(),
       backgroundColor: AppColors.error,
       colorText: AppColors.textLight,
       snackPosition: SnackPosition.TOP,
-      padding: AppSpacing.paddingMD,
       margin: AppSpacing.marginMD,
-      borderRadius: AppRadius.sm,
       duration: Duration(seconds: 4),
     );
   }
