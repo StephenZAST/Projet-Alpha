@@ -1,11 +1,11 @@
 import 'dart:ui';
-
 import 'package:get/get.dart';
 import '../models/order.dart';
 import '../services/dashboard_service.dart';
 import '../models/chart_data.dart';
 import '../constants.dart';
 import '../utils/error_handler.dart';
+import '../services/auth_service.dart';
 
 class DashboardController extends GetxController {
   // États observables
@@ -19,29 +19,54 @@ class DashboardController extends GetxController {
   final totalCustomers = 0.obs;
   final revenueChartLabels = <String>[].obs;
   final revenueChartData = <double>[].obs;
+  final hasError = false.obs;
+  final errorMessage = ''.obs;
+
+  bool get isAuthenticated => AuthService.token != null;
 
   @override
   void onInit() {
+    print('[DashboardController] Initializing');
     super.onInit();
-    fetchDashboardData();
+  }
+
+  @override
+  void onReady() {
+    print('[DashboardController] Ready, checking authentication');
+    super.onReady();
+    if (isAuthenticated) {
+      print('[DashboardController] User is authenticated, fetching data');
+      fetchDashboardData();
+    } else {
+      print(
+          '[DashboardController] User is not authenticated, skipping data fetch');
+    }
   }
 
   Future<void> fetchDashboardData() async {
+    if (!isAuthenticated) {
+      print('[DashboardController] Not authenticated, skipping data fetch');
+      return;
+    }
+
     try {
+      print('[DashboardController] Fetching dashboard data');
       isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
       await Future.wait([
         fetchStatistics(),
         fetchRecentOrders(),
         fetchOrdersByStatus(),
         fetchRevenueChartData(),
       ]);
+
+      print('[DashboardController] Dashboard data fetched successfully');
     } catch (e) {
-      print('Error fetching dashboard data: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load dashboard data',
-        snackPosition: SnackPosition.TOP,
-      );
+      print('[DashboardController] Error fetching dashboard data: $e');
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors du chargement des données';
     } finally {
       isLoading.value = false;
     }
@@ -49,6 +74,7 @@ class DashboardController extends GetxController {
 
   Future<void> fetchStatistics() async {
     try {
+      print('[DashboardController] Fetching statistics');
       final data = await DashboardService.getStatistics();
       totalRevenue.value = (data['totalRevenue'] ?? 0.0).toDouble();
       totalOrders.value = data['totalOrders'] ?? 0;
@@ -61,7 +87,7 @@ class DashboardController extends GetxController {
               .map((order) => Order.fromJson(order as Map<String, dynamic>))
               .toList();
         } catch (e) {
-          print('Error parsing recent orders: $e');
+          print('[DashboardController] Error parsing recent orders: $e');
           recentOrders.value = [];
         }
       }
@@ -72,26 +98,30 @@ class DashboardController extends GetxController {
               .map((key, value) => MapEntry(
                   key.toString(), int.tryParse(value.toString()) ?? 0)));
         } catch (e) {
-          print('Error parsing orders by status: $e');
+          print('[DashboardController] Error parsing orders by status: $e');
           ordersByStatus.value = {};
         }
       }
     } catch (e) {
-      print('Error in fetchStatistics: $e');
+      print('[DashboardController] Error in fetchStatistics: $e');
+      rethrow;
     }
   }
 
   Future<void> fetchRecentOrders() async {
     try {
+      print('[DashboardController] Fetching recent orders');
       final data = await DashboardService.getRecentOrders();
       recentOrders.value = data.map((order) => Order.fromJson(order)).toList();
     } catch (e) {
-      print('Error fetching recent orders: $e');
+      print('[DashboardController] Error fetching recent orders: $e');
+      rethrow;
     }
   }
 
   Future<void> fetchRevenueChartData() async {
     try {
+      print('[DashboardController] Fetching revenue chart data');
       final data = await DashboardService.getRevenueChart();
       if (data.containsKey('labels') && data.containsKey('data')) {
         revenueChartLabels.value = List<String>.from(data['labels']);
@@ -99,19 +129,21 @@ class DashboardController extends GetxController {
             (data['data'] as List).map((value) => (value as num).toDouble()));
       }
     } catch (e) {
-      print('Error fetching revenue chart data: $e');
-      // En cas d'erreur, initialiser avec des listes vides
+      print('[DashboardController] Error fetching revenue chart data: $e');
       revenueChartLabels.value = [];
       revenueChartData.value = [];
+      rethrow;
     }
   }
 
   Future<void> fetchOrdersByStatus() async {
     try {
+      print('[DashboardController] Fetching orders by status');
       final data = await DashboardService.getOrdersByStatus();
       ordersByStatus.value = data;
     } catch (e) {
-      print('Error fetching orders by status: $e');
+      print('[DashboardController] Error fetching orders by status: $e');
+      rethrow;
     }
   }
 

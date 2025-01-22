@@ -1,172 +1,248 @@
-import 'package:admin/constants.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import '../../../constants.dart';
 import '../../../controllers/dashboard_controller.dart';
+import '../../../models/revenue_data.dart';
 
 class RevenueChart extends StatelessWidget {
-  final controller = Get.find<DashboardController>();
+  final NumberFormat currencyFormat = NumberFormat.currency(
+    locale: 'fr_FR',
+    symbol: 'fcfa',
+    decimalDigits: 0,
+  );
+
+  List<RevenueData> _prepareChartData(
+      List<String> labels, List<double> values) {
+    final data = <RevenueData>[];
+    for (var i = 0; i < labels.length; i++) {
+      data.add(RevenueData(
+        period: labels[i],
+        amount: values[i],
+        previousAmount: i > 0 ? values[i - 1] : null,
+      ));
+    }
+    return data;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<DashboardController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: EdgeInsets.all(defaultPadding),
       decoration: BoxDecoration(
-        color: AppColors.secondaryBg,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
+        color: Theme.of(context).cardColor,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          width: 1,
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Revenus des 7 derniers jours",
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              IconButton(
-                icon: Icon(Icons.refresh, color: AppColors.primary),
-                onPressed: () => controller.fetchRevenueChartData(),
-              ),
-            ],
-          ),
-          SizedBox(height: defaultPadding),
-          Obx(() {
-            if (controller.revenueChartData.isEmpty ||
-                controller.revenueChartLabels.isEmpty) {
-              return Container(
-                height: 200,
-                alignment: Alignment.center,
-                child: Text(
-                  "Aucune donnée disponible",
-                  style: TextStyle(color: AppColors.textSecondary),
+      child: Obx(() {
+        if (controller.isLoading.value) {
+          return Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          );
+        }
+
+        final revenueData = _prepareChartData(
+          controller.revenueChartLabels,
+          controller.revenueChartData,
+        );
+
+        if (revenueData.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.show_chart,
+                  size: 48,
+                  color: AppColors.textSecondary,
                 ),
-              );
-            }
+                SizedBox(height: AppSpacing.md),
+                Text(
+                  'Aucune donnée disponible',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
 
-            double maxY =
-                controller.revenueChartData.reduce((a, b) => a > b ? a : b);
-            maxY = (maxY * 1.2).ceilToDouble();
-
-            return Container(
-              height: 200,
-              padding: EdgeInsets.only(right: 16, top: 16),
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawHorizontalLine: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: maxY / 5,
-                    getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: AppColors.borderLight.withOpacity(0.2),
-                        strokeWidth: 1,
-                      );
-                    },
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Revenus',
+                  style: AppTextStyles.h3.copyWith(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    rightTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          if (value.toInt() < 0 ||
-                              value.toInt() >=
-                                  controller.revenueChartLabels.length) {
-                            return const SizedBox.shrink();
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              controller.revenueChartLabels[value.toInt()],
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
-                              ),
-                            ),
-                          );
-                        },
-                        reservedSize: 30,
-                      ),
+                ),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'week',
+                      child: Text('Cette semaine'),
                     ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 45,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
-                            '${value.toInt()} €',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                            ),
-                          );
-                        },
-                        interval: maxY / 5,
-                      ),
+                    PopupMenuItem(
+                      value: 'month',
+                      child: Text('Ce mois'),
                     ),
+                    PopupMenuItem(
+                      value: 'year',
+                      child: Text('Cette année'),
+                    ),
+                  ],
+                  onSelected: (value) {
+                    // TODO: Implémenter le filtrage par période
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.lg),
+            SizedBox(
+              height: 300,
+              child: SfCartesianChart(
+                plotAreaBorderWidth: 0,
+                primaryXAxis: CategoryAxis(
+                  majorGridLines: MajorGridLines(width: 0),
+                  labelStyle: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
-                  borderData: FlBorderData(
-                    show: false,
+                  axisLine: AxisLine(
+                    width: 1,
+                    color: isDark ? AppColors.gray700 : AppColors.gray200,
                   ),
-                  minX: 0,
-                  maxX: (controller.revenueChartLabels.length - 1).toDouble(),
-                  minY: 0,
-                  maxY: maxY,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: List.generate(
-                        controller.revenueChartData.length,
-                        (index) => FlSpot(
-                          index.toDouble(),
-                          controller.revenueChartData[index],
-                        ),
-                      ),
-                      isCurved: true,
+                  majorTickLines: MajorTickLines(size: 0),
+                ),
+                primaryYAxis: NumericAxis(
+                  numberFormat: currencyFormat,
+                  majorGridLines: MajorGridLines(
+                    width: 1,
+                    color: isDark ? AppColors.gray700 : AppColors.gray200,
+                    dashArray: [5, 5],
+                  ),
+                  labelStyle: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                  axisLine: AxisLine(width: 0),
+                  majorTickLines: MajorTickLines(size: 0),
+                ),
+                tooltipBehavior: TooltipBehavior(
+                  enable: true,
+                  color: Theme.of(context).cardColor,
+                  textStyle: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+                zoomPanBehavior: ZoomPanBehavior(
+                  enablePinching: true,
+                  enableDoubleTapZooming: true,
+                  enableMouseWheelZooming: true,
+                  zoomMode: ZoomMode.x,
+                ),
+                series: <ChartSeries>[
+                  SplineAreaSeries<RevenueData, String>(
+                    name: 'Revenus',
+                    dataSource: revenueData,
+                    xValueMapper: (RevenueData data, _) => data.period,
+                    yValueMapper: (RevenueData data, _) => data.amount,
+                    color: AppColors.primary.withOpacity(0.2),
+                    borderColor: AppColors.primary,
+                    borderWidth: 3,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AppColors.primary.withOpacity(0.3),
+                        AppColors.primary.withOpacity(0.05),
+                      ],
+                    ),
+                    markerSettings: MarkerSettings(
+                      isVisible: true,
                       color: AppColors.primary,
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dotData: FlDotData(show: true),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: AppColors.primary.withOpacity(0.1),
+                      borderColor: Theme.of(context).cardColor,
+                      borderWidth: 2,
+                    ),
+                    animationDuration: 1500,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: AppSpacing.lg),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.xs),
+                    Text(
+                      currencyFormat.format(revenueData.last.amount),
+                      style: AppTextStyles.h3.copyWith(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
-                  lineTouchData: LineTouchData(
-                    touchTooltipData: LineTouchTooltipData(
-                      getTooltipItems: (touchedSpots) {
-                        return touchedSpots.map((LineBarSpot spot) {
-                          return LineTooltipItem(
-                            '${controller.revenueChartLabels[spot.x.toInt()]}\n${spot.y.toStringAsFixed(2)} €',
-                            TextStyle(color: AppColors.textPrimary),
-                          );
-                        }).toList();
-                      },
-                    ),
-                  ),
                 ),
-              ),
-            );
-          }),
-        ],
-      ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Croissance',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: [
+                        Icon(
+                          revenueData.last.isPositiveGrowth
+                              ? Icons.arrow_upward
+                              : Icons.arrow_downward,
+                          color: revenueData.last.isPositiveGrowth
+                              ? AppColors.success
+                              : AppColors.error,
+                          size: 16,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          '${revenueData.last.growth.abs().toStringAsFixed(1)}%',
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: revenueData.last.isPositiveGrowth
+                                ? AppColors.success
+                                : AppColors.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        );
+      }),
     );
   }
 }

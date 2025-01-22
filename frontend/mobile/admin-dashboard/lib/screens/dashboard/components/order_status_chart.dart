@@ -1,135 +1,114 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import '../../../constants.dart';
-import '../../../controllers/orders_controller.dart';
 import 'package:get/get.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import '../../../constants.dart';
+import '../../../controllers/dashboard_controller.dart';
+import '../../../models/chart_data.dart';
 
-class OrderStatusChart extends GetView<OrdersController> {
+class OrderStatusChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<DashboardController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: EdgeInsets.all(defaultPadding),
       decoration: BoxDecoration(
-        color: AppColors.secondaryBg,
-        borderRadius: BorderRadius.circular(10),
+        color: Theme.of(context).cardColor,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Order Status Distribution",
-            style: Theme.of(context).textTheme.titleMedium,
+            'Statuts des commandes',
+            style: AppTextStyles.h3.copyWith(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
           ),
-          SizedBox(height: defaultPadding),
-          Obx(() => SizedBox(
-                height: 200,
-                child: controller.ordersByStatus.isEmpty
-                    ? Center(child: Text('No data available'))
-                    : PieChart(
-                        PieChartData(
-                          sectionsSpace: 0,
-                          centerSpaceRadius: 40,
-                          sections: _getChartSections(),
-                          startDegreeOffset: -90,
+          SizedBox(height: AppSpacing.lg),
+          Expanded(
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                );
+              }
+
+              final data = controller.getOrdersChartData();
+
+              if (data.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.pie_chart,
+                        size: 48,
+                        color: AppColors.textSecondary,
+                      ),
+                      SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Aucune donnée disponible',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
                         ),
                       ),
-              )),
-          Obx(() => ChartLegend(ordersByStatus: controller.ordersByStatus)),
+                    ],
+                  ),
+                );
+              }
+
+              return SfCircularChart(
+                margin: EdgeInsets.zero,
+                legend: Legend(
+                  isVisible: true,
+                  position: LegendPosition.bottom,
+                  orientation: LegendItemOrientation.horizontal,
+                  overflowMode: LegendItemOverflowMode.wrap,
+                  textStyle: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+                tooltipBehavior: TooltipBehavior(
+                  enable: true,
+                  color: Theme.of(context).cardColor,
+                  textStyle: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+                series: <CircularSeries>[
+                  DoughnutSeries<ChartData, String>(
+                    dataSource: data,
+                    xValueMapper: (ChartData data, _) => data.label,
+                    yValueMapper: (ChartData data, _) => data.value,
+                    pointColorMapper: (ChartData data, _) => data.color,
+                    dataLabelMapper: (ChartData data, _) =>
+                        '${data.label}\n${data.value.toInt()}',
+                    dataLabelSettings: DataLabelSettings(
+                      isVisible: true,
+                      labelPosition: ChartDataLabelPosition.outside,
+                      textStyle: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
+                    ),
+                    enableTooltip: true,
+                    animationDuration: 1500,
+                    innerRadius: '60%',
+                  ),
+                ],
+              );
+            }),
+          ),
         ],
       ),
     );
-  }
-
-  List<PieChartSectionData> _getChartSections() {
-    if (controller.ordersByStatus.isEmpty) return [];
-
-    final total =
-        controller.ordersByStatus.values.fold(0, (sum, count) => sum + count);
-
-    return controller.ordersByStatus.entries.map((entry) {
-      final percentage = total > 0 ? (entry.value / total) * 100 : 0.0;
-
-      return PieChartSectionData(
-        color: _getStatusColor(entry.key),
-        value: percentage,
-        title: '${percentage.toStringAsFixed(1)}%',
-        radius: 60,
-        titleStyle: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      );
-    }).toList();
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'PENDING':
-        return AppColors.warning;
-      case 'PROCESSING':
-        return AppColors.primary;
-      case 'DELIVERED':
-        return AppColors.success;
-      case 'CANCELLED':
-        return AppColors.error;
-      default:
-        return AppColors.textSecondary;
-    }
-  }
-}
-
-class ChartLegend extends StatelessWidget {
-  final Map<String, int> ordersByStatus;
-
-  const ChartLegend({Key? key, required this.ordersByStatus}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: ordersByStatus.entries
-          .map((entry) => Padding(
-                padding: EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(entry.key),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        entry.key,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    Text(
-                      '${entry.value}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ))
-          .toList(),
-    );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'PENDING':
-        return AppColors.warning;
-      case 'PROCESSING':
-        return AppColors.primary;
-      case 'DELIVERED':
-        return AppColors.success;
-      case 'CANCELLED':
-        return AppColors.error;
-      default:
-        return AppColors.textSecondary;
-    }
   }
 }

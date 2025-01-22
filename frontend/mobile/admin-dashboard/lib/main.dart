@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import './routes/admin_routes.dart';
 import './constants.dart';
-import './controllers/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,7 +56,6 @@ class AdminDashboard extends StatelessWidget {
           ),
         ),
       ),
-      // Dark theme configuration (basé sur le thème clair)
       darkTheme: ThemeData(
         primaryColor: AppColors.primary,
         scaffoldBackgroundColor: AppColors.darkBg,
@@ -99,11 +97,11 @@ class AdminDashboard extends StatelessWidget {
       ),
       themeMode: ThemeMode.system,
       defaultTransition: Transition.fadeIn,
+      transitionDuration: Duration(milliseconds: 200),
       initialRoute: AdminRoutes.login,
       getPages: AdminRoutes.routes,
-      initialBinding: BindingsBuilder(() {
-        Get.put(AuthController(), permanent: true);
-      }),
+      initialBinding: InitialBinding(),
+      defaultGlobalState: false,
     );
   }
 }

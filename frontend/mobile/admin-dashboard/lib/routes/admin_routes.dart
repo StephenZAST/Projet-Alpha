@@ -16,15 +16,20 @@ import '../screens/services/services_screen.dart';
 import '../screens/categories/categories_screen.dart';
 import '../middleware/auth_middleware.dart';
 
-class AdminBinding extends Bindings {
+class InitialBinding extends Bindings {
   @override
   void dependencies() {
-    // Initialisation des contrôleurs avec permanent: true pour éviter leur destruction
     Get.put(AuthController(), permanent: true);
-    Get.put(MenuAppController(), permanent: true);
-    Get.put(DashboardController(), permanent: true);
-    Get.put(NotificationController(), permanent: true);
-    Get.put(OrdersController(), permanent: true);
+  }
+}
+
+class DashboardBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put(MenuAppController());
+    Get.put(DashboardController());
+    Get.put(NotificationController());
+    Get.put(OrdersController());
   }
 }
 
@@ -42,14 +47,14 @@ class AdminRoutes {
     GetPage(
       name: login,
       page: () => AdminLoginScreen(),
-      binding: AdminBinding(),
+      binding: InitialBinding(),
       transition: Transition.fadeIn,
       transitionDuration: Duration(milliseconds: 250),
     ),
     GetPage(
       name: dashboard,
       page: () => DashboardScreen(),
-      binding: AdminBinding(),
+      binding: DashboardBinding(),
       middlewares: [AuthMiddleware(redirectTo: login)],
       transition: Transition.fadeIn,
       transitionDuration: Duration(milliseconds: 250),
@@ -57,7 +62,7 @@ class AdminRoutes {
     GetPage(
       name: orders,
       page: () => OrdersScreen(),
-      binding: AdminBinding(),
+      binding: DashboardBinding(),
       middlewares: [AuthMiddleware(redirectTo: login)],
       children: [
         GetPage(
@@ -73,31 +78,31 @@ class AdminRoutes {
     GetPage(
       name: products,
       page: () => ProductsScreen(),
-      binding: AdminBinding(),
+      binding: DashboardBinding(),
       middlewares: [AuthMiddleware(redirectTo: login)],
     ),
     GetPage(
       name: users,
       page: () => UsersScreen(),
-      binding: AdminBinding(),
+      binding: DashboardBinding(),
       middlewares: [AuthMiddleware(redirectTo: login)],
     ),
     GetPage(
       name: profile,
       page: () => AdminProfileScreen(),
-      binding: AdminBinding(),
+      binding: DashboardBinding(),
       middlewares: [AuthMiddleware(redirectTo: login)],
     ),
     GetPage(
       name: services,
       page: () => ServicesScreen(),
-      binding: AdminBinding(),
+      binding: DashboardBinding(),
       middlewares: [AuthMiddleware(redirectTo: login)],
     ),
     GetPage(
       name: categories,
       page: () => CategoriesScreen(),
-      binding: AdminBinding(),
+      binding: DashboardBinding(),
       middlewares: [AuthMiddleware(redirectTo: login)],
     ),
   ];
