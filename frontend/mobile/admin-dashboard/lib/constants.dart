@@ -18,6 +18,20 @@ class AppColors {
   static const Color errorLight = Color(0xFFFFE4E6);
   static const Color warning = Color(0xFFF59E0B); // Modern amber
   static const Color warningLight = Color(0xFFFEF3C7);
+  static const Color info = Color(0xFF3B82F6); // Info blue
+  static const Color infoLight = Color(0xFFDBEAFE);
+
+  // Order Status Colors
+  static const Color pending = Color(0xFFF59E0B); // Amber
+  static const Color processing = Color(0xFF3B82F6); // Blue
+  static const Color completed = Color(0xFF22C55E); // Green
+  static const Color cancelled = Color(0xFFEF4444); // Red
+  static const Color delivered = Color(0xFF8B5CF6); // Purple
+
+  // Service Category Colors
+  static const Color serviceHighlight = Color(0xFF0EA5E9); // Sky blue
+  static const Color categoryTag = Color(0xFF6366F1); // Indigo
+  static const Color categoryTagLight = Color(0xFFE0E7FF); // Light indigo
 
   // Background Colors
   static const Color bgColor = Color(0xFFF8FAFC); // Light gray background

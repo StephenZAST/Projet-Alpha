@@ -1,183 +1,160 @@
-import 'dart:ui';
 import 'package:get/get.dart';
 import '../models/order.dart';
 import '../services/dashboard_service.dart';
-import '../models/chart_data.dart';
 import '../constants.dart';
-import '../utils/error_handler.dart';
-import '../services/auth_service.dart';
 
 class DashboardController extends GetxController {
-  // États observables
   final isLoading = false.obs;
-  final orders = <Order>[].obs;
-  final statistics = <String, dynamic>{}.obs;
-  final ordersByStatus = <String, int>{}.obs;
-  final recentOrders = <Order>[].obs;
-  final totalRevenue = 0.0.obs;
-  final totalOrders = 0.obs;
-  final totalCustomers = 0.obs;
-  final revenueChartLabels = <String>[].obs;
-  final revenueChartData = <double>[].obs;
   final hasError = false.obs;
   final errorMessage = ''.obs;
 
-  bool get isAuthenticated => AuthService.token != null;
+  // Statistiques générales
+  final totalRevenue = 0.0.obs;
+  final totalOrders = 0.obs;
+  final totalCustomers = 0.obs;
+
+  // Données pour les graphiques
+  final revenueChartData = <String, List<dynamic>>{}.obs;
+  final orderStatusCount = <String, int>{}.obs;
+
+  // Commandes récentes
+  final recentOrders = <Order>[].obs;
 
   @override
   void onInit() {
-    print('[DashboardController] Initializing');
     super.onInit();
-  }
-
-  @override
-  void onReady() {
-    print('[DashboardController] Ready, checking authentication');
-    super.onReady();
-    if (isAuthenticated) {
-      print('[DashboardController] User is authenticated, fetching data');
-      fetchDashboardData();
-    } else {
-      print(
-          '[DashboardController] User is not authenticated, skipping data fetch');
-    }
+    fetchDashboardData();
   }
 
   Future<void> fetchDashboardData() async {
-    if (!isAuthenticated) {
-      print('[DashboardController] Not authenticated, skipping data fetch');
-      return;
-    }
-
     try {
-      print('[DashboardController] Fetching dashboard data');
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
 
-      await Future.wait([
-        fetchStatistics(),
-        fetchRecentOrders(),
-        fetchOrdersByStatus(),
-        fetchRevenueChartData(),
-      ]);
+      // Récupérer les statistiques générales
+      final stats = await DashboardService.getStatistics();
+      totalRevenue.value = (stats['totalRevenue'] as num).toDouble();
+      totalOrders.value = stats['totalOrders'] as int;
+      totalCustomers.value = stats['totalCustomers'] as int;
 
-      print('[DashboardController] Dashboard data fetched successfully');
+      // Récupérer les commandes par statut
+      final statusData = await DashboardService.getOrdersByStatus();
+      orderStatusCount.value = statusData;
+
+      // Récupérer les commandes récentes
+      final recentData = await DashboardService.getRecentOrders();
+      recentOrders.value = (recentData['orders'] as List)
+          .map((json) => Order.fromJson(json))
+          .toList();
+
+      // Récupérer les données du graphique de revenus
+      final chartData = await DashboardService.getRevenueChartData();
+      revenueChartData.value = {
+        'labels': chartData['labels'] as List<String>,
+        'data': (chartData['data'] as List)
+            .map((e) => (e as num).toDouble())
+            .toList(),
+      };
     } catch (e) {
       print('[DashboardController] Error fetching dashboard data: $e');
       hasError.value = true;
       errorMessage.value = 'Erreur lors du chargement des données';
+
+      Get.snackbar(
+        'Erreur',
+        'Impossible de charger les données du tableau de bord',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 4),
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> fetchStatistics() async {
+  Future<void> configureCommissions({
+    required double commissionRate,
+    required int rewardPoints,
+  }) async {
     try {
-      print('[DashboardController] Fetching statistics');
-      final data = await DashboardService.getStatistics();
-      totalRevenue.value = (data['totalRevenue'] ?? 0.0).toDouble();
-      totalOrders.value = data['totalOrders'] ?? 0;
-      totalCustomers.value = data['totalCustomers'] ?? 0;
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
 
-      if (data['recentOrders'] != null) {
-        try {
-          recentOrders.value = (data['recentOrders'] as List)
-              .where((order) => order != null)
-              .map((order) => Order.fromJson(order as Map<String, dynamic>))
-              .toList();
-        } catch (e) {
-          print('[DashboardController] Error parsing recent orders: $e');
-          recentOrders.value = [];
-        }
-      }
+      await DashboardService.configureCommissions(
+        commissionRate: commissionRate,
+        rewardPoints: rewardPoints,
+      );
 
-      if (data['ordersByStatus'] != null) {
-        try {
-          ordersByStatus.value = Map<String, int>.from(data['ordersByStatus']
-              .map((key, value) => MapEntry(
-                  key.toString(), int.tryParse(value.toString()) ?? 0)));
-        } catch (e) {
-          print('[DashboardController] Error parsing orders by status: $e');
-          ordersByStatus.value = {};
-        }
-      }
+      Get.snackbar(
+        'Succès',
+        'Configuration des commissions mise à jour',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 3),
+      );
     } catch (e) {
-      print('[DashboardController] Error in fetchStatistics: $e');
-      rethrow;
+      print('[DashboardController] Error configuring commissions: $e');
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors de la configuration';
+
+      Get.snackbar(
+        'Erreur',
+        'Impossible de mettre à jour la configuration',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 4),
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  Future<void> fetchRecentOrders() async {
+  Future<void> configureRewards({
+    required int rewardPoints,
+    required String rewardType,
+  }) async {
     try {
-      print('[DashboardController] Fetching recent orders');
-      final data = await DashboardService.getRecentOrders();
-      recentOrders.value = data.map((order) => Order.fromJson(order)).toList();
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+
+      await DashboardService.configureRewards(
+        rewardPoints: rewardPoints,
+        rewardType: rewardType,
+      );
+
+      Get.snackbar(
+        'Succès',
+        'Configuration des récompenses mise à jour',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 3),
+      );
     } catch (e) {
-      print('[DashboardController] Error fetching recent orders: $e');
-      rethrow;
+      print('[DashboardController] Error configuring rewards: $e');
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors de la configuration';
+
+      Get.snackbar(
+        'Erreur',
+        'Impossible de mettre à jour la configuration',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 4),
+      );
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  Future<void> fetchRevenueChartData() async {
-    try {
-      print('[DashboardController] Fetching revenue chart data');
-      final data = await DashboardService.getRevenueChart();
-      if (data.containsKey('labels') && data.containsKey('data')) {
-        revenueChartLabels.value = List<String>.from(data['labels']);
-        revenueChartData.value = List<double>.from(
-            (data['data'] as List).map((value) => (value as num).toDouble()));
-      }
-    } catch (e) {
-      print('[DashboardController] Error fetching revenue chart data: $e');
-      revenueChartLabels.value = [];
-      revenueChartData.value = [];
-      rethrow;
-    }
-  }
-
-  Future<void> fetchOrdersByStatus() async {
-    try {
-      print('[DashboardController] Fetching orders by status');
-      final data = await DashboardService.getOrdersByStatus();
-      ordersByStatus.value = data;
-    } catch (e) {
-      print('[DashboardController] Error fetching orders by status: $e');
-      rethrow;
-    }
-  }
-
-  // Méthodes pour les graphiques
-  List<ChartData> getOrdersChartData() {
-    return ordersByStatus.entries
-        .map((entry) => ChartData(
-              label: entry.key,
-              value: entry.value.toDouble(),
-              color: _getStatusColor(entry.key),
-            ))
-        .toList();
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'PENDING':
-        return AppColors.warning;
-      case 'COLLECTING':
-        return AppColors.primary;
-      case 'COLLECTED':
-        return AppColors.primaryLight;
-      case 'PROCESSING':
-        return AppColors.primary;
-      case 'READY':
-        return AppColors.success;
-      case 'DELIVERING':
-        return AppColors.primary;
-      case 'DELIVERED':
-        return AppColors.success;
-      case 'CANCELLED':
-        return AppColors.error;
-      default:
-        return AppColors.textSecondary;
-    }
+  Future<void> refreshDashboard() async {
+    await fetchDashboardData();
   }
 }

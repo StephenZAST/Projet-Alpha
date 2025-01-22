@@ -9,8 +9,9 @@ class AuthService {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'auth_user';
   static final _storage = GetStorage();
+  static final _api = ApiService();
 
-  static const String baseAuthPath = 'auth';
+  static const String baseAuthPath = '/auth';
 
   static String? get token => _storage.read(_tokenKey);
   static User? get currentUser {
@@ -32,24 +33,20 @@ class AuthService {
       String email, String password) async {
     try {
       print('[AuthService] Attempting login with email: $email');
-      final response = await ApiService.post(
+      final response = await _api.post(
         '$baseAuthPath/admin/login',
-        {
+        data: {
           'email': email,
           'password': password,
         },
       );
 
-      print('[AuthService] Raw login response: $response');
+      final responseData = response.data;
+      print('[AuthService] Raw login response: $responseData');
 
-      if (response['success'] && response['data'] != null) {
-        final innerData = response['data']['data'];
-        if (innerData == null) {
-          throw 'Invalid response structure';
-        }
-
-        final token = innerData['token'];
-        final userData = innerData['user'];
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final userData = responseData['data']['user'];
+        final token = responseData['data']['token'];
 
         if (token == null || userData == null) {
           throw 'Missing token or user data';
@@ -92,8 +89,10 @@ class AuthService {
         }
       }
 
-      print('[AuthService] Login failed: ${response['message']}');
-      return response;
+      return {
+        'success': false,
+        'message': responseData['error'] ?? 'Login failed',
+      };
     } catch (e) {
       print('[AuthService] Login error: $e');
       return {
@@ -108,12 +107,13 @@ class AuthService {
       if (token == null) return null;
 
       print('[AuthService] Getting current user data');
-      final response = await ApiService.get('$baseAuthPath/admin/me');
+      final response = await _api.get('$baseAuthPath/admin/me');
+      final responseData = response.data;
 
-      print('[AuthService] Current user response: $response');
+      print('[AuthService] Current user response: $responseData');
 
-      if (response['success'] && response['data'] != null) {
-        final userData = response['data'];
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final userData = responseData['data'];
 
         print('[AuthService] User data before parsing: $userData');
 
@@ -148,15 +148,15 @@ class AuthService {
     String newPassword,
   ) async {
     try {
-      final response = await ApiService.post(
-        '$baseAuthPath/admin/change-password',
-        {
+      final response = await _api.post(
+        '$baseAuthPath/change-password',
+        data: {
           'currentPassword': currentPassword,
           'newPassword': newPassword,
         },
       );
 
-      return response;
+      return response.data;
     } catch (e) {
       print('[AuthService] Change password error: $e');
       return {
@@ -168,7 +168,10 @@ class AuthService {
 
   static Future<void> logout() async {
     try {
-      await ApiService.post('$baseAuthPath/logout', {});
+      await _api.post(
+        '$baseAuthPath/logout',
+        data: {},
+      );
     } catch (e) {
       print('[AuthService] Logout error: $e');
     } finally {

@@ -2,32 +2,133 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/orders_controller.dart';
-import '../../widgets/loading_overlay.dart';
-import 'components/orders_header.dart';
+import '../../models/enums.dart';
 import 'components/order_filters.dart';
+import 'components/orders_header.dart';
 import 'components/orders_table.dart';
+import 'components/order_details.dart';
 
-class OrdersScreen extends StatelessWidget {
+class OrdersScreen extends StatefulWidget {
+  @override
+  _OrdersScreenState createState() => _OrdersScreenState();
+}
+
+class _OrdersScreenState extends State<OrdersScreen> {
+  final controller = Get.find<OrdersController>();
+
+  @override
+  void initState() {
+    super.initState();
+    controller.fetchOrders();
+  }
+
+  void _updateStatus(String orderId, OrderStatus newStatus) {
+    controller.updateOrderStatus(orderId, newStatus);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<OrdersController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SafeArea(
-      child: LoadingOverlay(
-        isLoading: controller.isLoading.value,
-        child: SingleChildScrollView(
+    return Scaffold(
+      body: SafeArea(
+        child: Container(
           padding: EdgeInsets.all(defaultPadding),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               OrdersHeader(),
               SizedBox(height: defaultPadding),
               OrderFilters(),
               SizedBox(height: defaultPadding),
-              Obx(() => OrdersTable(
-                    orders: controller.orders,
-                    onStatusUpdate: (orderId, newStatus) =>
-                        controller.updateOrderStatus(orderId, newStatus),
-                  )),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(defaultPadding),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: AppRadius.radiusMD,
+                    border: Border.all(
+                      color:
+                          isDark ? AppColors.borderDark : AppColors.borderLight,
+                      width: 1,
+                    ),
+                  ),
+                  child: Obx(() {
+                    if (controller.isLoading.value) {
+                      return Center(
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(AppColors.primary),
+                        ),
+                      );
+                    }
+
+                    if (controller.hasError.value) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: AppColors.error,
+                            ),
+                            SizedBox(height: AppSpacing.md),
+                            Text(
+                              controller.errorMessage.value,
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                            SizedBox(height: AppSpacing.md),
+                            ElevatedButton(
+                              onPressed: controller.fetchOrders,
+                              child: Text('Réessayer'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (controller.orders.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.inbox,
+                              size: 48,
+                              color: AppColors.textSecondary,
+                            ),
+                            SizedBox(height: AppSpacing.md),
+                            Text(
+                              'Aucune commande trouvée',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return OrdersTable(
+                      orders: controller.orders,
+                      onStatusUpdate: _updateStatus,
+                      onOrderSelect: (orderId) {
+                        controller.fetchOrderDetails(orderId);
+                        Get.dialog(
+                          Dialog(
+                            child: Container(
+                              width: 800,
+                              padding: EdgeInsets.all(defaultPadding),
+                              child: OrderDetails(),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+              ),
             ],
           ),
         ),

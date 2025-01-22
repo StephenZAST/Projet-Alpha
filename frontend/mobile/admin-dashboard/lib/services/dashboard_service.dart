@@ -1,120 +1,131 @@
-import 'api_service.dart';
-import '../constants.dart';
-import 'package:get/get.dart';
+import './api_service.dart';
 
 class DashboardService {
-  static const String baseAdminPath = 'admin';
-  static const String baseOrderPath = 'orders';
+  static final _api = ApiService();
 
   static Future<Map<String, dynamic>> getStatistics() async {
     try {
-      print('[DashboardService] Fetching statistics...');
-      final response = await ApiService.get('$baseAdminPath/statistics');
-      print('[DashboardService] Statistics response: $response');
-
-      if (!response['success']) {
-        throw response['message'] ?? 'Failed to fetch statistics';
+      final response = await _api.get('/admin/statistics');
+      if (response.data != null && response.data['data'] != null) {
+        return response.data['data'];
       }
-
-      if (response['data'] == null) {
-        throw 'Invalid response format';
-      }
-
-      return response['data'];
+      throw 'Erreur lors du chargement des statistiques';
     } catch (e) {
-      print('[DashboardService] Error fetching statistics: $e');
-      _showError('Erreur de chargement des statistiques', e.toString());
-
-      // Retourner des données par défaut en cas d'erreur
-      return {
-        'totalRevenue': 0.0,
-        'totalOrders': 0,
-        'totalCustomers': 0,
-        'recentOrders': [],
-        'ordersByStatus': {},
-      };
+      print('[DashboardService] Error getting statistics: $e');
+      throw 'Erreur lors du chargement des statistiques';
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getRecentOrders() async {
+  static Future<Map<String, dynamic>> getRecentOrders() async {
     try {
-      print('[DashboardService] Fetching recent orders...');
-      final response = await ApiService.get('$baseOrderPath/recent');
-      print('[DashboardService] Recent orders response: $response');
-
-      if (!response['success']) {
-        throw response['message'] ?? 'Failed to fetch recent orders';
+      final response = await _api.get('/admin/orders/recent');
+      if (response.data != null && response.data['data'] != null) {
+        return response.data['data'];
       }
-
-      if (response['data'] == null) {
-        return [];
-      }
-
-      return List<Map<String, dynamic>>.from(response['data']);
+      throw 'Erreur lors du chargement des commandes récentes';
     } catch (e) {
-      print('[DashboardService] Error fetching recent orders: $e');
-      _showError('Erreur de chargement des commandes récentes', e.toString());
-      return [];
+      print('[DashboardService] Error getting recent orders: $e');
+      throw 'Erreur lors du chargement des commandes récentes';
+    }
+  }
+
+  static Future<Map<String, dynamic>> getRevenueChartData() async {
+    try {
+      final response = await _api.get('/admin/revenue-chart');
+      if (response.data != null && response.data['data'] != null) {
+        final data = response.data['data'];
+        if (data['labels'] != null && data['data'] != null) {
+          return {
+            'labels': List<String>.from(data['labels']),
+            'data': List<double>.from(
+                data['data'].map((d) => (d as num).toDouble())),
+          };
+        }
+      }
+      throw 'Erreur lors du chargement des données du graphique';
+    } catch (e) {
+      print('[DashboardService] Error getting revenue chart data: $e');
+      throw 'Erreur lors du chargement des données du graphique';
     }
   }
 
   static Future<Map<String, int>> getOrdersByStatus() async {
     try {
-      print('[DashboardService] Fetching orders by status...');
-      final response = await ApiService.get('$baseOrderPath/by-status');
-      print('[DashboardService] Orders by status response: $response');
-
-      if (!response['success']) {
-        throw response['message'] ?? 'Failed to fetch orders by status';
+      final response = await _api.get('/admin/orders/by-status');
+      if (response.data != null && response.data['data'] != null) {
+        final Map<String, dynamic> data = response.data['data'];
+        return Map<String, int>.from(data);
       }
-
-      if (response['data'] == null) {
-        return {};
-      }
-
-      final data = response['data'] as Map<String, dynamic>;
-      return data.map(
-          (key, value) => MapEntry(key, int.tryParse(value.toString()) ?? 0));
-    } catch (e) {
-      print('[DashboardService] Error fetching orders by status: $e');
-      _showError('Erreur de chargement des statuts de commandes', e.toString());
       return {};
+    } catch (e) {
+      print('[DashboardService] Error getting orders by status: $e');
+      throw 'Erreur lors du chargement des statuts de commandes';
     }
   }
 
-  static Future<Map<String, dynamic>> getRevenueChart() async {
+  static Future<void> configureCommissions({
+    required double commissionRate,
+    required int rewardPoints,
+  }) async {
     try {
-      print('[DashboardService] Fetching revenue chart data...');
-      final response = await ApiService.get('$baseAdminPath/revenue-chart');
-      print('[DashboardService] Revenue chart response: $response');
-
-      if (!response['success']) {
-        throw response['message'] ?? 'Failed to fetch revenue chart data';
-      }
-
-      if (response['data'] == null) {
-        return {};
-      }
-
-      return response['data'];
+      await _api.put('/admin/config/commissions', data: {
+        'commissionRate': commissionRate,
+        'rewardPoints': rewardPoints,
+      });
     } catch (e) {
-      print('[DashboardService] Error fetching revenue chart: $e');
-      _showError('Erreur de chargement des données de revenus', e.toString());
-      return {};
+      print('[DashboardService] Error configuring commissions: $e');
+      throw 'Erreur lors de la configuration des commissions';
     }
   }
 
-  static void _showError(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      backgroundColor: AppColors.error,
-      colorText: AppColors.textLight,
-      snackPosition: SnackPosition.TOP,
-      padding: AppSpacing.paddingMD,
-      margin: AppSpacing.marginMD,
-      borderRadius: AppRadius.sm,
-      duration: Duration(seconds: 4),
-    );
+  static Future<void> configureRewards({
+    required int rewardPoints,
+    required String rewardType,
+  }) async {
+    try {
+      await _api.put('/admin/config/rewards', data: {
+        'rewardPoints': rewardPoints,
+        'rewardType': rewardType,
+      });
+    } catch (e) {
+      print('[DashboardService] Error configuring rewards: $e');
+      throw 'Erreur lors de la configuration des récompenses';
+    }
+  }
+
+  static Future<Map<String, dynamic>> getTotalRevenue() async {
+    try {
+      final response = await _api.get('/admin/revenue/total');
+      if (response.data != null && response.data['data'] != null) {
+        return response.data['data'];
+      }
+      throw 'Erreur lors du chargement des revenus';
+    } catch (e) {
+      print('[DashboardService] Error getting total revenue: $e');
+      throw 'Erreur lors du chargement des revenus';
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateAffiliateStatus({
+    required String affiliateId,
+    required String status,
+    required bool isActive,
+  }) async {
+    try {
+      final response = await _api.put(
+        '/admin/affiliates/$affiliateId/status',
+        data: {
+          'status': status,
+          'isActive': isActive,
+        },
+      );
+      if (response.data != null && response.data['data'] != null) {
+        return response.data['data'];
+      }
+      throw 'Erreur lors de la mise à jour du statut';
+    } catch (e) {
+      print('[DashboardService] Error updating affiliate status: $e');
+      throw 'Erreur lors de la mise à jour du statut';
+    }
   }
 }

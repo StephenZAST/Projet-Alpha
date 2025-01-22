@@ -2,56 +2,153 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/category_controller.dart';
+import '../../../models/category.dart';
 
-class CategoryDialog extends StatelessWidget {
+class CategoryDialog extends StatefulWidget {
+  final Category? category;
+
+  const CategoryDialog({Key? key, this.category}) : super(key: key);
+
+  @override
+  _CategoryDialogState createState() => _CategoryDialogState();
+}
+
+class _CategoryDialogState extends State<CategoryDialog> {
   final _formKey = GlobalKey<FormState>();
-  final nameController = TextEditingController();
-  final descriptionController = TextEditingController();
+  final controller = Get.find<CategoryController>();
+
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _iconNameController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.category?.name);
+    _descriptionController =
+        TextEditingController(text: widget.category?.description);
+    _iconNameController =
+        TextEditingController(text: widget.category?.iconName);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _iconNameController.dispose();
+    super.dispose();
+  }
+
+  void _handleSubmit() {
+    if (_formKey.currentState!.validate()) {
+      if (widget.category != null) {
+        // Mise à jour
+        controller.updateCategory(
+          id: widget.category!.id,
+          name: _nameController.text,
+          description: _descriptionController.text,
+          iconName: _iconNameController.text,
+        );
+      } else {
+        // Création
+        controller.createCategory(
+          name: _nameController.text,
+          description: _descriptionController.text,
+          iconName: _iconNameController.text,
+        );
+      }
+
+      Get.back();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Dialog(
       child: Container(
+        width: 500,
         padding: EdgeInsets.all(defaultPadding),
-        width: 400,
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('New Category',
-                  style: Theme.of(context).textTheme.titleLarge),
-              SizedBox(height: defaultPadding),
-              TextFormField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) =>
-                    value!.isEmpty ? 'Name is required' : null,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.category != null
+                        ? 'Modifier la catégorie'
+                        : 'Nouvelle catégorie',
+                    style: AppTextStyles.h2.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Get.back(),
+                    color: AppColors.textSecondary,
+                  ),
+                ],
               ),
-              SizedBox(height: defaultPadding),
+              SizedBox(height: AppSpacing.lg),
               TextFormField(
-                controller: descriptionController,
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Nom',
+                  hintText: 'Entrez le nom de la catégorie',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Le nom est requis';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 3,
                 decoration: InputDecoration(
                   labelText: 'Description',
-                  border: OutlineInputBorder(),
+                  hintText: 'Entrez une description',
                 ),
               ),
-              SizedBox(height: defaultPadding * 2),
+              SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _iconNameController,
+                decoration: InputDecoration(
+                  labelText: 'Icône',
+                  hintText: 'Nom de l\'icône (ex: folder)',
+                ),
+              ),
+              SizedBox(height: AppSpacing.xl),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
                     onPressed: () => Get.back(),
-                    child: Text('Cancel'),
+                    child: Text('Annuler'),
                   ),
-                  SizedBox(width: defaultPadding),
-                  ElevatedButton(
-                    onPressed: _submit,
-                    child: Text('Save'),
-                  ),
+                  SizedBox(width: AppSpacing.md),
+                  Obx(() => ElevatedButton(
+                        onPressed:
+                            controller.isLoading.value ? null : _handleSubmit,
+                        child: controller.isLoading.value
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : Text('Enregistrer'),
+                      )),
                 ],
               ),
             ],
@@ -59,14 +156,5 @@ class CategoryDialog extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
-      Get.find<CategoryController>().createCategory(
-        nameController.text,
-        descriptionController.text,
-      );
-    }
   }
 }

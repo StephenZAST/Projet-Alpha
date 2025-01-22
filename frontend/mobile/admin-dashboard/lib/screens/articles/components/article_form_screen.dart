@@ -1,112 +1,216 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../constants.dart';
-import '../../../controllers/article_controller.dart';
 import '../../../models/article.dart';
-import 'package:dotted_border/dotted_border.dart';
-import 'category_dropdown.dart';
+import '../../../controllers/article_controller.dart';
+import '../../../constants.dart';
 
-class ArticleFormScreen extends StatelessWidget {
+class ArticleFormScreen extends StatefulWidget {
   final Article? article;
-  final _formKey = GlobalKey<FormState>();
-  final nameController = TextEditingController();
-  final descriptionController = TextEditingController();
-  final priceController = TextEditingController();
 
-  ArticleFormScreen({this.article}) {
-    if (article != null) {
-      nameController.text = article!.name;
-      descriptionController.text = article!.description;
-      priceController.text = article!.price.toString();
+  const ArticleFormScreen({Key? key, this.article}) : super(key: key);
+
+  @override
+  _ArticleFormScreenState createState() => _ArticleFormScreenState();
+}
+
+class _ArticleFormScreenState extends State<ArticleFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final controller = Get.find<ArticleController>();
+
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _basePriceController;
+  late TextEditingController _premiumPriceController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.article?.name);
+    _descriptionController =
+        TextEditingController(text: widget.article?.description);
+    _basePriceController = TextEditingController(
+      text: widget.article?.basePrice.toString() ?? '',
+    );
+    _premiumPriceController = TextEditingController(
+      text: widget.article?.premiumPrice.toString() ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _basePriceController.dispose();
+    _premiumPriceController.dispose();
+    super.dispose();
+  }
+
+  void _handleSubmit() {
+    if (_formKey.currentState!.validate()) {
+      if (widget.article != null) {
+        // Mise à jour
+        controller.updateArticle(
+          widget.article!.id,
+          name: _nameController.text,
+          description: _descriptionController.text,
+          basePrice: double.parse(_basePriceController.text),
+          premiumPrice: double.parse(_premiumPriceController.text),
+          categoryId: controller.selectedCategory.value,
+        );
+      } else {
+        // Création
+        if (controller.selectedCategory.value == null) {
+          Get.snackbar(
+            'Erreur',
+            'Veuillez sélectionner une catégorie',
+            backgroundColor: AppColors.error,
+            colorText: AppColors.textLight,
+            snackPosition: SnackPosition.TOP,
+          );
+          return;
+        }
+
+        controller.createArticle(
+          name: _nameController.text,
+          description: _descriptionController.text,
+          basePrice: double.parse(_basePriceController.text),
+          premiumPrice: double.parse(_premiumPriceController.text),
+          categoryId: controller.selectedCategory.value!,
+        );
+      }
+
+      Get.back();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(article == null ? 'New Article' : 'Edit Article'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(defaultPadding),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Dialog(
+      child: Container(
+        width: 800,
+        padding: EdgeInsets.all(defaultPadding),
+        child: Form(
+          key: _formKey,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DottedBorder(
-                borderType: BorderType.RRect,
-                radius: Radius.circular(12),
-                child: Container(
-                  height: 200,
-                  width: double.infinity,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.cloud_upload, size: 40),
-                      SizedBox(height: defaultPadding),
-                      Text('Click to upload image'),
-                    ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.article != null
+                        ? 'Modifier l\'article'
+                        : 'Nouvel article',
+                    style: AppTextStyles.h2.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
                   ),
-                ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Get.back(),
+                    color: AppColors.textSecondary,
+                  ),
+                ],
               ),
-              SizedBox(height: defaultPadding),
-              CategoryDropdown(),
-              SizedBox(height: defaultPadding),
+              SizedBox(height: AppSpacing.lg),
               TextFormField(
-                controller: nameController,
+                controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
+                  labelText: 'Nom',
+                  hintText: 'Entrez le nom de l\'article',
                 ),
-                validator: (value) =>
-                    value!.isEmpty ? 'Name is required' : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Le nom est requis';
+                  }
+                  return null;
+                },
               ),
-              SizedBox(height: defaultPadding),
+              SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: descriptionController,
+                controller: _descriptionController,
                 maxLines: 3,
                 decoration: InputDecoration(
                   labelText: 'Description',
-                  border: OutlineInputBorder(),
+                  hintText: 'Entrez une description',
                 ),
               ),
-              SizedBox(height: defaultPadding),
-              TextFormField(
-                controller: priceController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Price',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) =>
-                    value!.isEmpty ? 'Price is required' : null,
+              SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _basePriceController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Prix de base',
+                        hintText: 'Entrez le prix de base',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Le prix est requis';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Prix invalide';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _premiumPriceController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Prix premium',
+                        hintText: 'Entrez le prix premium',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Le prix premium est requis';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Prix invalide';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: defaultPadding * 2),
-              ElevatedButton(
-                onPressed: _submitForm,
-                child: Text('Save Article'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                ),
+              SizedBox(height: AppSpacing.xl),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(),
+                    child: Text('Annuler'),
+                  ),
+                  SizedBox(width: AppSpacing.md),
+                  Obx(() => ElevatedButton(
+                        onPressed:
+                            controller.isLoading.value ? null : _handleSubmit,
+                        child: controller.isLoading.value
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text('Enregistrer'),
+                      )),
+                ],
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      final articleData = {
-        'id': article?.id ?? '',
-        'name': nameController.text,
-        'description': descriptionController.text,
-        'price': double.parse(priceController.text),
-        'categoryId': Get.find<ArticleController>().selectedCategory.value,
-      };
-
-      Get.find<ArticleController>().createArticle(articleData);
-    }
   }
 }

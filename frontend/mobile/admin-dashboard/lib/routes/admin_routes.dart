@@ -4,12 +4,15 @@ import '../controllers/menu_app_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import '../controllers/orders_controller.dart';
 import '../controllers/notification_controller.dart';
+import '../controllers/article_controller.dart';
+import '../controllers/category_controller.dart';
+import '../controllers/service_controller.dart';
+import '../controllers/article_service_controller.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/auth/admin_login_screen.dart';
 import '../screens/orders/orders_screen.dart';
 import '../screens/orders/order_details_screen.dart';
 import '../screens/orders/order_create_screen.dart';
-import '../screens/products/products_screen.dart';
 import '../screens/users/users_screen.dart';
 import '../screens/profile/admin_profile_screen.dart';
 import '../screens/services/services_screen.dart';
@@ -26,17 +29,25 @@ class InitialBinding extends Bindings {
 class DashboardBinding extends Bindings {
   @override
   void dependencies() {
+    // Navigation et Dashboard
     Get.put(MenuAppController());
     Get.put(DashboardController());
     Get.put(NotificationController());
     Get.put(OrdersController());
+
+    // Articles et catégories
+    Get.put(CategoryController());
+    Get.put(ArticleController());
+
+    // Services et associations
+    Get.put(ServiceController());
+    Get.put(ArticleServiceController());
   }
 }
 
 class AdminRoutes {
   static const String dashboard = '/dashboard';
   static const String orders = '/orders';
-  static const String products = '/products';
   static const String users = '/users';
   static const String login = '/login';
   static const String profile = '/profile';
@@ -74,12 +85,6 @@ class AdminRoutes {
           page: () => OrderDetailsScreen(),
         ),
       ],
-    ),
-    GetPage(
-      name: products,
-      page: () => ProductsScreen(),
-      binding: DashboardBinding(),
-      middlewares: [AuthMiddleware(redirectTo: login)],
     ),
     GetPage(
       name: users,
@@ -126,5 +131,17 @@ class AdminRoutes {
 
   static void goToProfile() {
     Get.toNamed(profile);
+  }
+
+  static void goToServices() {
+    Get.toNamed(services);
+  }
+
+  static void goToCategories() {
+    Get.toNamed(categories);
+  }
+
+  static void goToUsers() {
+    Get.toNamed(users);
   }
 }

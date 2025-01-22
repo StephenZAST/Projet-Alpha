@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../../constants.dart';
 import '../../../controllers/dashboard_controller.dart';
-import '../../../models/chart_data.dart';
+import '../../../models/enums.dart';
 
 class OrderStatusChart extends StatelessWidget {
   @override
@@ -25,87 +25,168 @@ class OrderStatusChart extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Statuts des commandes',
+            'Statut des commandes',
             style: AppTextStyles.h3.copyWith(
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
           SizedBox(height: AppSpacing.lg),
-          Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return Center(
-                  child: CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.primary),
+          Obx(() {
+            if (controller.isLoading.value) {
+              return Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              );
+            }
+
+            if (controller.orderStatusCount.isEmpty) {
+              return Center(
+                child: Text(
+                  'Aucune donnée disponible',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                );
-              }
+                ),
+              );
+            }
 
-              final data = controller.getOrdersChartData();
+            final data = controller.orderStatusCount.entries.map((entry) {
+              final status = entry.key.toOrderStatus();
+              return _ChartData(
+                status.label,
+                entry.value.toDouble(),
+                status.color,
+              );
+            }).toList();
 
-              if (data.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.pie_chart,
-                        size: 48,
+            final total = data.fold<double>(0, (sum, item) => sum + item.value);
+
+            return Column(
+              children: [
+                SizedBox(
+                  height: 200,
+                  child: SfCircularChart(
+                    legend: Legend(
+                      isVisible: true,
+                      position: LegendPosition.bottom,
+                      orientation: LegendItemOrientation.horizontal,
+                      overflowMode: LegendItemOverflowMode.wrap,
+                      textStyle: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
-                      SizedBox(height: AppSpacing.md),
-                      Text(
-                        'Aucune donnée disponible',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
+                    ),
+                    tooltipBehavior: TooltipBehavior(enable: true),
+                    series: <CircularSeries>[
+                      DoughnutSeries<_ChartData, String>(
+                        dataSource: data,
+                        xValueMapper: (_ChartData data, _) => data.label,
+                        yValueMapper: (_ChartData data, _) => data.value,
+                        pointColorMapper: (_ChartData data, _) => data.color,
+                        dataLabelSettings: DataLabelSettings(
+                          isVisible: true,
+                          labelPosition: ChartDataLabelPosition.outside,
+                          textStyle: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          builder:
+                              (data, point, series, pointIndex, seriesIndex) {
+                            final chartData = data as _ChartData;
+                            final percentage = (chartData.value / total * 100)
+                                .toStringAsFixed(1);
+                            return Text(
+                              '$percentage%',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],
                   ),
-                );
-              }
+                ),
+                SizedBox(height: AppSpacing.md),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: data
+                      .map((item) => _LegendItem(
+                            color: item.color,
+                            label: item.label,
+                            value: item.value.toInt(),
+                          ))
+                      .toList(),
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
 
-              return SfCircularChart(
-                margin: EdgeInsets.zero,
-                legend: Legend(
-                  isVisible: true,
-                  position: LegendPosition.bottom,
-                  orientation: LegendItemOrientation.horizontal,
-                  overflowMode: LegendItemOverflowMode.wrap,
-                  textStyle: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                  ),
-                ),
-                tooltipBehavior: TooltipBehavior(
-                  enable: true,
-                  color: Theme.of(context).cardColor,
-                  textStyle: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                  ),
-                ),
-                series: <CircularSeries>[
-                  DoughnutSeries<ChartData, String>(
-                    dataSource: data,
-                    xValueMapper: (ChartData data, _) => data.label,
-                    yValueMapper: (ChartData data, _) => data.value,
-                    pointColorMapper: (ChartData data, _) => data.color,
-                    dataLabelMapper: (ChartData data, _) =>
-                        '${data.label}\n${data.value.toInt()}',
-                    dataLabelSettings: DataLabelSettings(
-                      isVisible: true,
-                      labelPosition: ChartDataLabelPosition.outside,
-                      textStyle: AppTextStyles.bodySmall.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                    ),
-                    enableTooltip: true,
-                    animationDuration: 1500,
-                    innerRadius: '60%',
-                  ),
-                ],
-              );
-            }),
+class _ChartData {
+  final String label;
+  final double value;
+  final Color color;
+
+  _ChartData(this.label, this.value, this.color);
+}
+
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  final int value;
+
+  const _LegendItem({
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: AppRadius.radiusSM,
+        border: Border.all(
+          color: color.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(width: 4),
+          Text(
+            '($value)',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: color,
+            ),
           ),
         ],
       ),

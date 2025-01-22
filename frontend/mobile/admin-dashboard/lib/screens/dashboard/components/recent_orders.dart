@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../../constants.dart';
-import '../../../models/order.dart';
 import '../../../controllers/dashboard_controller.dart';
+import '../../../models/order.dart';
+import '../../../models/enums.dart';
 
 class RecentOrders extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<DashboardController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: EdgeInsets.all(defaultPadding),
       decoration: BoxDecoration(
-        color: AppColors.secondaryBg,
-        borderRadius: BorderRadius.circular(10),
+        color: Theme.of(context).cardColor,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -20,61 +29,156 @@ class RecentOrders extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Recent Orders",
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                'Commandes récentes',
+                style: AppTextStyles.h3.copyWith(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
-                icon: Icon(Icons.add),
-                label: Text("View All"),
-                onPressed: () {},
+              ),
+              TextButton.icon(
+                icon: Icon(Icons.refresh),
+                label: Text('Actualiser'),
+                onPressed: controller.refreshDashboard,
               ),
             ],
           ),
-          SizedBox(height: defaultPadding),
-          OrdersDataTable(),
+          SizedBox(height: AppSpacing.lg),
+          Obx(() {
+            if (controller.isLoading.value) {
+              return Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+              );
+            }
+
+            if (controller.recentOrders.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.inbox,
+                      size: 48,
+                      color: AppColors.textSecondary,
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Aucune commande récente',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: controller.recentOrders.length,
+              separatorBuilder: (context, index) => Divider(height: 1),
+              itemBuilder: (context, index) {
+                final order = controller.recentOrders[index];
+                return _OrderListItem(order: order);
+              },
+            );
+          }),
         ],
       ),
     );
   }
 }
 
-class OrdersDataTable extends StatelessWidget {
+class _OrderListItem extends StatelessWidget {
+  final Order order;
+
+  const _OrderListItem({required this.order});
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<DashboardController>();
+    final status = order.status.toOrderStatus();
+    final formattedDate =
+        DateFormat('dd/MM/yyyy HH:mm').format(order.createdAt);
+    final currencyFormat = NumberFormat.currency(
+      locale: 'fr_FR',
+      symbol: 'fcfa',
+      decimalDigits: 0,
+    );
 
-    return Obx(() => SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: [
-              DataColumn(label: Text("Order ID")),
-              DataColumn(label: Text("Customer")),
-              DataColumn(label: Text("Amount")),
-              DataColumn(label: Text("Status")),
-              DataColumn(label: Text("Date")),
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                order.customerName ?? 'Client inconnu',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Commande #${order.id}',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ],
-            rows: controller.recentOrders
-                .map((order) => orderDataRow(order))
-                .toList(),
           ),
-        ));
-  }
-
-  DataRow orderDataRow(Order order) {
-    return DataRow(
-      cells: [
-        DataCell(Text(order.id.substring(0, 8))),
-        DataCell(Text(order.user?.email ?? 'N/A')),
-        DataCell(Text("\$${order.totalAmount.toStringAsFixed(2)}")),
-        DataCell(Text(OrderStatusExtension(OrderStatus.values.firstWhere(
-          (s) => s.toString().split('.').last == order.status,
-          orElse: () => OrderStatus.PENDING,
-        )).label)),
-        DataCell(Text("${order.createdAt.toLocal()}".split(' ')[0])),
-      ],
+          Text(
+            currencyFormat.format(order.totalAmount),
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+      subtitle: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            formattedDate,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 4,
+            ),
+            decoration: BoxDecoration(
+              color: status.color.withOpacity(0.1),
+              borderRadius: AppRadius.radiusSM,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  status.icon,
+                  size: 14,
+                  color: status.color,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  status.label,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: status.color,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      onTap: () {
+        // TODO: Naviguer vers les détails de la commande
+      },
     );
   }
 }

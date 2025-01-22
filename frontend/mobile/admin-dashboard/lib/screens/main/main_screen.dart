@@ -1,28 +1,46 @@
-import 'package:admin/controllers/menu_app_controller.dart';
-import 'package:admin/responsive.dart';
-import 'package:admin/screens/dashboard/dashboard_screen.dart';
-import 'package:admin/screens/main/components/admin_side_menu.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:get/get.dart';
+import '../../controllers/menu_app_controller.dart';
+import '../../responsive.dart';
+import '../dashboard/dashboard_screen.dart';
+import 'components/admin_side_menu.dart';
 
 class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final MenuAppController menuController = Get.find<MenuAppController>();
+
     return Scaffold(
-      key: context.read<MenuAppController>().scaffoldKey,
+      key: menuController.scaffoldKey,
       drawer: AdminSideMenu(),
       body: SafeArea(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Affiche le menu latéral en permanence sur desktop
             if (Responsive.isDesktop(context))
               Expanded(
                 flex: 1,
                 child: AdminSideMenu(),
               ),
+            // Contenu principal
             Expanded(
               flex: 5,
-              child: DashboardScreen(),
+              child: Obx(() {
+                switch (menuController.selectedIndex) {
+                  case 0:
+                    return DashboardScreen();
+                  default:
+                    return Navigator(
+                      key: Get.nestedKey(1),
+                      onGenerateRoute: (settings) {
+                        return GetPageRoute(
+                          page: () => DashboardScreen(),
+                        );
+                      },
+                    );
+                }
+              }),
             ),
           ],
         ),

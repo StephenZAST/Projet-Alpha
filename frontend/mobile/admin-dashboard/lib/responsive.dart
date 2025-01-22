@@ -12,31 +12,52 @@ class Responsive extends StatelessWidget {
     required this.desktop,
   }) : super(key: key);
 
-// This size work fine on my design, maybe you need some customization depends on your design
+  // Breakpoints constants
+  static const double MOBILE_BREAKPOINT = 850;
+  static const double TABLET_BREAKPOINT = 1100;
 
-  // This isMobile, isTablet, isDesktop help us later
+  // Largeur du menu latéral en fonction de la taille de l'écran
+  static double getSideMenuWidth(BuildContext context) {
+    if (isDesktop(context)) return 250;
+    if (isTablet(context)) return 200;
+    return 190;
+  }
+
+  // Helpers pour détecter le type d'appareil
   static bool isMobile(BuildContext context) =>
-      MediaQuery.of(context).size.width < 850;
+      MediaQuery.of(context).size.width < MOBILE_BREAKPOINT;
 
   static bool isTablet(BuildContext context) =>
-      MediaQuery.of(context).size.width < 1100 &&
-      MediaQuery.of(context).size.width >= 850;
+      MediaQuery.of(context).size.width < TABLET_BREAKPOINT &&
+      MediaQuery.of(context).size.width >= MOBILE_BREAKPOINT;
 
   static bool isDesktop(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 1100;
+      MediaQuery.of(context).size.width >= TABLET_BREAKPOINT;
+
+  // Retourne le padding approprié en fonction de la taille de l'écran
+  static EdgeInsets getScreenPadding(BuildContext context) {
+    if (isDesktop(context)) {
+      return const EdgeInsets.all(16.0);
+    }
+    if (isTablet(context)) {
+      return const EdgeInsets.all(12.0);
+    }
+    return const EdgeInsets.all(8.0);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final Size _size = MediaQuery.of(context).size;
-    // If our width is more than 1100 then we consider it a desktop
-    if (_size.width >= 1100) {
+    final Size size = MediaQuery.of(context).size;
+
+    // Layout responsive en fonction de la taille de l'écran
+    if (size.width >= TABLET_BREAKPOINT) {
       return desktop;
     }
-    // If width it less then 1100 and more then 850 we consider it as tablet
-    else if (_size.width >= 850 && tablet != null) {
+    // Si la largeur est entre MOBILE_BREAKPOINT et TABLET_BREAKPOINT et qu'un layout tablet existe
+    else if (size.width >= MOBILE_BREAKPOINT && tablet != null) {
       return tablet!;
     }
-    // Or less then that we called it mobile
+    // Si la largeur est inférieure à MOBILE_BREAKPOINT ou qu'aucun layout tablet n'existe
     else {
       return mobile;
     }
