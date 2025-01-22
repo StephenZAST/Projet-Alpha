@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+import '../constants.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../routes/admin_routes.dart';
@@ -7,69 +7,104 @@ import '../routes/admin_routes.dart';
 class AuthController extends GetxController {
   final user = Rxn<User>();
   final isLoading = false.obs;
-  final storage = GetStorage();
 
   bool get isAuthenticated => user.value != null;
 
   @override
   void onInit() {
     super.onInit();
+    ever(user, (_) => _handleAuthStateChange());
     checkAuth();
+  }
+
+  void _handleAuthStateChange() {
+    if (user.value == null) {
+      Get.offAllNamed(AdminRoutes.login);
+    }
   }
 
   Future<void> checkAuth() async {
     isLoading.value = true;
     try {
-      final token = storage.read('token');
-      if (token != null && !isTokenExpired()) {
-        final userData = await AuthService.getCurrentUser();
-        user.value = userData;
+      // Utiliser le token stocké dans AuthService
+      if (AuthService.token != null) {
+        await _refreshUserData();
+      } else {
+        logout();
       }
     } catch (e) {
+      _handleError('Erreur d\'authentification', e);
       logout();
     } finally {
       isLoading.value = false;
     }
   }
 
-  bool isTokenExpired() {
-    final expiry = storage.read('tokenExpiry');
-    if (expiry == null) return true;
-    return DateTime.parse(expiry).isBefore(DateTime.now());
+  Future<void> _refreshUserData() async {
+    try {
+      final userData = await AuthService.getCurrentUser();
+      if (userData != null) {
+        user.value = userData;
+      } else {
+        throw 'Données utilisateur invalides';
+      }
+    } catch (e) {
+      throw 'Impossible de récupérer les données utilisateur: $e';
+    }
   }
 
   Future<void> login(String email, String password) async {
     try {
       isLoading.value = true;
+
       final response = await AuthService.login(email, password);
 
-      // Vérifier la structure de la réponse
-      if (response['success'] == true && response['data'] != null) {
-        // Stocker le token
-        storage.write('token', response['data']['token']);
-        // Stocker les informations utilisateur
-        storage.write('user', response['data']['user']);
-
-        // Rediriger vers le dashboard
-        AdminRoutes.goToDashboard();
-      } else {
-        throw 'Invalid response format';
+      if (!response['success']) {
+        throw response['message'] ?? 'Erreur de connexion';
       }
-    } catch (e) {
+
+      if (response['data'] == null) {
+        throw 'Données de réponse invalides';
+      }
+
+      // Le token est déjà géré par AuthService
+      await _refreshUserData();
+      Get.offAllNamed(AdminRoutes.dashboard);
+
       Get.snackbar(
-        'Error',
-        'Login failed: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
+        'Succès',
+        'Connexion réussie',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+        snackPosition: SnackPosition.TOP,
+        padding: AppSpacing.paddingMD,
+        margin: AppSpacing.marginMD,
+        borderRadius: AppRadius.sm,
+        duration: Duration(seconds: 3),
       );
+    } catch (e) {
+      _handleError('Erreur de connexion', e);
     } finally {
       isLoading.value = false;
     }
   }
 
   void logout() {
-    storage.remove('token');
-    storage.remove('tokenExpiry');
+    AuthService.clearSession();
     user.value = null;
-    Get.offAllNamed('/login');
+  }
+
+  void _handleError(String title, dynamic error) {
+    Get.snackbar(
+      title,
+      error.toString(),
+      backgroundColor: AppColors.error,
+      colorText: AppColors.textLight,
+      snackPosition: SnackPosition.TOP,
+      padding: AppSpacing.paddingMD,
+      margin: AppSpacing.marginMD,
+      borderRadius: AppRadius.sm,
+      duration: Duration(seconds: 4),
+    );
   }
 }
