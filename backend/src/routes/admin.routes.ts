@@ -9,6 +9,51 @@ const router = express.Router();
 // Protection des routes avec authentification
 router.use(authenticateToken as express.RequestHandler);
 
+// Routes statistiques et dashboard
+router.get(
+  '/statistics',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await AdminController.getDashboardStatistics(req, res);
+  })
+);
+
+router.get(
+  '/revenue-chart',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    const data = await AdminService.getRevenueChartData();
+    res.json({ 
+      success: true, 
+      data 
+    });
+  })
+);
+
+router.get(
+  '/total-revenue',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    const revenue = await AdminService.getTotalRevenue();
+    res.json({ 
+      success: true, 
+      data: revenue 
+    });
+  })
+);
+
+router.get(
+  '/total-customers',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    const customers = await AdminService.getTotalCustomers();
+    res.json({ 
+      success: true, 
+      data: customers 
+    });
+  })
+);
+
 // Routes super admin
 router.post(
   '/configure-commissions',
@@ -26,7 +71,7 @@ router.post(
   })
 );
 
-// Routes admin
+// Routes gestion des services et articles
 router.post(
   '/create-service',
   authorizeRoles(['ADMIN']) as express.RequestHandler,
@@ -56,33 +101,6 @@ router.get(
   authorizeRoles(['ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await AdminController.getAllArticles(req, res);
-  })
-);
-
-router.get(
-  '/statistics',
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await AdminController.getDashboardStatistics(req, res);
-  })
-);
-
-// Nouvelles routes pour les statistiques individuelles
-router.get(
-  '/total-revenue',
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    const revenue = await AdminService.getTotalRevenue();
-    res.json({ data: revenue });
-  })
-);
-
-router.get(
-  '/total-customers',
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    const customers = await AdminService.getTotalCustomers();
-    res.json({ data: customers });
   })
 );
 

@@ -1,0 +1,252 @@
+{
+  "info": {
+    "name": "Alpha Laundry Dashboard API Tests",
+    "description": "Collection complète pour tester les endpoints du dashboard administrateur",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentification",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/admin/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "admin", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Statistiques",
+      "item": [
+        {
+          "name": "Dashboard Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "statistics"]
+            }
+          }
+        },
+        {
+          "name": "Revenue Chart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/revenue-chart",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "revenue-chart"]
+            }
+          }
+        },
+        {
+          "name": "Total Revenue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/total-revenue",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "total-revenue"]
+            }
+          }
+        },
+        {
+          "name": "Total Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/total-customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "total-customers"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Commandes",
+      "item": [
+        {
+          "name": "Recent Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/recent?limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "recent"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Orders By Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/by-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "by-status"]
+            }
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PROCESSING\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/:orderId/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", ":orderId", "status"],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "{{orderId}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{adminToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Ici vous pouvez ajouter des scripts pour configurer les variables avant les tests",
+          "// Par exemple, obtenir un token d'authentification"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Scripts de test automatique",
+          "if (pm.response.code === 200) {",
+          "    pm.test(\"Status code is 200\", function () {",
+          "        pm.response.to.have.status(200);",
+          "    });",
+          "    ",
+          "    pm.test(\"Response has success:true\", function () {",
+          "        var jsonData = pm.response.json();",
+          "        pm.expect(jsonData.success).to.eql(true);",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "votre_token_admin_ici",
+      "type": "string"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@example.com",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "votre_mot_de_passe_ici",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "id_commande_test",
+      "type": "string"
+    }
+  ]
+}

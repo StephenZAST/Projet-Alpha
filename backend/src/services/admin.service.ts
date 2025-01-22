@@ -303,4 +303,55 @@ export class AdminService {
     if (error) throw error;
     return data;
   }
+
+  static async getRevenueChartData(): Promise<{ labels: string[], data: number[] }> {
+    try {
+      // Obtenir la date d'il y a 7 jours
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      // Requête pour obtenir les commandes des 7 derniers jours
+      const { data, error } = await supabase
+        .from('orders')
+        .select('created_at, total_amount')
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .eq('status', 'DELIVERED')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Créer un map pour stocker les revenus par jour
+      const dailyRevenue = new Map<string, number>();
+      
+      // Initialiser les 7 derniers jours avec 0
+      for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        dailyRevenue.set(dateStr, 0);
+      }
+
+      // Calculer les revenus par jour
+      data?.forEach(order => {
+        const dateStr = new Date(order.created_at).toISOString().split('T')[0];
+        const currentAmount = dailyRevenue.get(dateStr) || 0;
+        dailyRevenue.set(dateStr, currentAmount + (order.total_amount || 0));
+      });
+
+      // Convertir en format pour le graphique
+      const sortedEntries = Array.from(dailyRevenue.entries())
+        .sort((a, b) => a[0].localeCompare(b[0])); // Trier par date
+
+      return {
+        labels: sortedEntries.map(([date]) => {
+          const [year, month, day] = date.split('-');
+          return `${day}/${month}`; // Format: DD/MM
+        }),
+        data: sortedEntries.map(([, amount]) => amount),
+      };
+    } catch (error) {
+      console.error('Error fetching revenue chart data:', error);
+      throw new Error('Failed to fetch revenue chart data');
+    }
+  }
 }
