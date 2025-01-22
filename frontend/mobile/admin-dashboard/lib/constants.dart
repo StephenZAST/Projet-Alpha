@@ -2,44 +2,146 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary Colors
-  static const Color primary = Color(0xFF0045CE);
-  static const Color primaryLight = Color(0xFF1E4AE9);
-  static const Color primaryDark = Color(0xFF00349B);
+  static const Color primary = Color(0xFF2563EB); // Modern blue
+  static const Color primaryLight = Color(0xFF60A5FA); // Light blue
+  static const Color primaryDark = Color(0xFF1E40AF); // Dark blue
+
+  // Accent Colors
+  static const Color accent = Color(0xFF0EA5E9); // Sky blue
+  static const Color accentLight = Color(0xFF7DD3FC); // Light sky blue
+  static const Color accentDark = Color(0xFF0369A1); // Dark sky blue
 
   // Status Colors
-  static const Color success = Color(0xFF00AC4F);
-  static const Color successLight = Color(0xFFDCF5E8);
-  static const Color error = Color(0xFFD00049);
-  static const Color errorLight = Color(0xFFFFE0E3);
-  static const Color warning = Color(0xFFD29302);
-  static const Color warningLight = Color(0xFFFCE6B3);
+  static const Color success = Color(0xFF22C55E); // Modern green
+  static const Color successLight = Color(0xFFDCFCE7);
+  static const Color error = Color(0xFFEF4444); // Modern red
+  static const Color errorLight = Color(0xFFFFE4E6);
+  static const Color warning = Color(0xFFF59E0B); // Modern amber
+  static const Color warningLight = Color(0xFFFEF3C7);
 
   // Background Colors
-  static const Color bgColor = Color(0xFF212332);
-  static const Color secondaryBg = Color(0xFF2A2D3E);
-  static const Color cardBg = Color(0xFF2C2F3F);
+  static const Color bgColor = Color(0xFFF8FAFC); // Light gray background
+  static const Color secondaryBg = Color(0xFFFFFFFF); // White
+  static const Color cardBg = Color(0xFFFFFFFF); // White
+  static const Color darkBg = Color(0xFF1E293B); // Dark mode background
 
   // Text Colors
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFA4A6B3);
-  static const Color textMuted = Color(0xFF6C757D);
+  static const Color textPrimary = Color(0xFF0F172A); // Very dark blue gray
+  static const Color textSecondary = Color(0xFF475569); // Slate gray
+  static const Color textMuted = Color(0xFF64748B); // Light slate gray
+  static const Color textLight = Color(0xFFFFFFFF); // White text
 
   // Grays
   static const Color white = Color(0xFFFFFFFF);
-  static const Color gray50 = Color(0xFFF9FBFF);
-  static const Color gray100 = Color(0xFFF0F5F8);
-  static const Color gray200 = Color(0xFFEAECF0);
-  static const Color gray300 = Color(0xFFD0D5DD);
-  static const Color gray400 = Color(0xFF98A2B3);
-  static const Color gray500 = Color(0xFF667085);
-  static const Color gray600 = Color(0xFF475467);
-  static const Color gray700 = Color(0xFF344054);
-  static const Color gray800 = Color(0xFF1D2939);
-  static const Color gray900 = Color(0xFF101828);
+  static const Color gray50 = Color(0xFFF8FAFC);
+  static const Color gray100 = Color(0xFFF1F5F9);
+  static const Color gray200 = Color(0xFFE2E8F0);
+  static const Color gray300 = Color(0xFFCBD5E1);
+  static const Color gray400 = Color(0xFF94A3B8);
+  static const Color gray500 = Color(0xFF64748B);
+  static const Color gray600 = Color(0xFF475569);
+  static const Color gray700 = Color(0xFF334155);
+  static const Color gray800 = Color(0xFF1E293B);
+  static const Color gray900 = Color(0xFF0F172A);
 
   // Border Colors
-  static const Color borderLight = Color(0xFFEAECF0);
-  static const Color borderDark = Color(0xFF2C2F3F);
+  static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color borderDark = Color(0xFF334155);
 }
 
-const defaultPadding = 16.0;
+class AppSpacing {
+  static const double xs = 4.0;
+  static const double sm = 8.0;
+  static const double md = 16.0;
+  static const double lg = 24.0;
+  static const double xl = 32.0;
+  static const double xxl = 48.0;
+
+  // Padding
+  static const EdgeInsets paddingXS = EdgeInsets.all(xs);
+  static const EdgeInsets paddingSM = EdgeInsets.all(sm);
+  static const EdgeInsets paddingMD = EdgeInsets.all(md);
+  static const EdgeInsets paddingLG = EdgeInsets.all(lg);
+
+  // Margin
+  static const EdgeInsets marginXS = EdgeInsets.all(xs);
+  static const EdgeInsets marginSM = EdgeInsets.all(sm);
+  static const EdgeInsets marginMD = EdgeInsets.all(md);
+  static const EdgeInsets marginLG = EdgeInsets.all(lg);
+}
+
+class AppRadius {
+  static const double xs = 4.0;
+  static const double sm = 8.0;
+  static const double md = 12.0;
+  static const double lg = 16.0;
+  static const double xl = 24.0;
+  static const double full = 999.0;
+
+  static final BorderRadius radiusXS = BorderRadius.circular(xs);
+  static final BorderRadius radiusSM = BorderRadius.circular(sm);
+  static final BorderRadius radiusMD = BorderRadius.circular(md);
+  static final BorderRadius radiusLG = BorderRadius.circular(lg);
+  static final BorderRadius radiusXL = BorderRadius.circular(xl);
+  static final BorderRadius radiusFull = BorderRadius.circular(full);
+}
+
+class AppTextStyles {
+  static const String fontFamily = 'Inter';
+
+  // Headings
+  static const TextStyle h1 = TextStyle(
+    fontSize: 32.0,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.5,
+  );
+
+  static const TextStyle h2 = TextStyle(
+    fontSize: 24.0,
+    fontWeight: FontWeight.bold,
+    letterSpacing: -0.25,
+  );
+
+  static const TextStyle h3 = TextStyle(
+    fontSize: 20.0,
+    fontWeight: FontWeight.bold,
+  );
+
+  static const TextStyle h4 = TextStyle(
+    fontSize: 18.0,
+    fontWeight: FontWeight.bold,
+  );
+
+  // Body text
+  static const TextStyle bodyLarge = TextStyle(
+    fontSize: 16.0,
+    fontWeight: FontWeight.normal,
+  );
+
+  static const TextStyle bodyMedium = TextStyle(
+    fontSize: 14.0,
+    fontWeight: FontWeight.normal,
+  );
+
+  static const TextStyle bodySmall = TextStyle(
+    fontSize: 12.0,
+    fontWeight: FontWeight.normal,
+  );
+
+  // Button text
+  static const TextStyle buttonLarge = TextStyle(
+    fontSize: 16.0,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.25,
+  );
+
+  static const TextStyle buttonMedium = TextStyle(
+    fontSize: 14.0,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.25,
+  );
+}
+
+// Default values
+const defaultPadding = AppSpacing.md;
+const defaultRadius = AppRadius.md;

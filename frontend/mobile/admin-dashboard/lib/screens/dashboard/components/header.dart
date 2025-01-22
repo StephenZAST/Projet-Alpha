@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
+import '../../../widgets/theme_switch.dart';
 
 class Header extends StatelessWidget {
   final String title;
@@ -15,28 +16,53 @@ class Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+    return Container(
+      padding: AppSpacing.paddingMD,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: Get.isDarkMode ? AppColors.borderDark : AppColors.borderLight,
+          width: 1,
+        ),
+      ),
       child: Row(
         children: [
           if (!Responsive.isDesktop(context))
             IconButton(
-              icon: Icon(Icons.menu),
+              icon: Icon(Icons.menu,
+                  color: Get.isDarkMode
+                      ? AppColors.textLight
+                      : AppColors.textPrimary),
               onPressed: () => context.read<MenuAppController>().controlMenu(),
             ),
+          if (!Responsive.isDesktop(context)) SizedBox(width: AppSpacing.md),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge,
+            style: AppTextStyles.h3.copyWith(
+              color:
+                  Get.isDarkMode ? AppColors.textLight : AppColors.textPrimary,
+            ),
           ),
-          Spacer(),
+          if (!Responsive.isMobile(context))
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: SearchField(),
+              ),
+            ),
+          if (!Responsive.isMobile(context)) ThemeSwitch(),
+          SizedBox(width: AppSpacing.md),
           NotificationBadge(),
           IconButton(
-            icon: Icon(Icons.notifications, color: AppColors.textPrimary),
-            onPressed: () {
-              Get.to(() => NotificationsScreen());
-            },
+            icon: Icon(
+              Icons.notifications_outlined,
+              color:
+                  Get.isDarkMode ? AppColors.textLight : AppColors.textPrimary,
+            ),
+            onPressed: () => Get.to(() => NotificationsScreen()),
           ),
-          SizedBox(width: defaultPadding),
+          SizedBox(width: AppSpacing.md),
           ProfileCard(),
         ],
       ),
@@ -45,36 +71,46 @@ class Header extends StatelessWidget {
 }
 
 class ProfileCard extends StatelessWidget {
-  const ProfileCard({
-    Key? key,
-  }) : super(key: key);
+  const ProfileCard({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(left: defaultPadding),
       padding: EdgeInsets.symmetric(
-        horizontal: defaultPadding,
-        vertical: defaultPadding / 2,
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: AppColors.secondaryBg,
-        borderRadius: const BorderRadius.all(Radius.circular(10)),
-        border: Border.all(color: Colors.white10),
+        color: Get.isDarkMode ? AppColors.gray800 : AppColors.gray50,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: Get.isDarkMode ? AppColors.borderDark : AppColors.borderLight,
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
-          Image.asset(
-            "assets/images/profile_pic.png",
-            height: 38,
+          CircleAvatar(
+            backgroundImage: AssetImage("assets/images/profile_pic.png"),
+            radius: 16,
           ),
-          if (!Responsive.isMobile(context))
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: defaultPadding / 2),
-              child: Text("Angelina Jolie"),
+          if (!Responsive.isMobile(context)) ...[
+            SizedBox(width: AppSpacing.sm),
+            Text(
+              "Admin",
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Get.isDarkMode
+                    ? AppColors.textLight
+                    : AppColors.textPrimary,
+              ),
             ),
-          Icon(Icons.keyboard_arrow_down),
+          ],
+          SizedBox(width: AppSpacing.xs),
+          Icon(
+            Icons.keyboard_arrow_down,
+            color: Get.isDarkMode ? AppColors.textLight : AppColors.textPrimary,
+            size: 20,
+          ),
         ],
       ),
     );
@@ -82,32 +118,44 @@ class ProfileCard extends StatelessWidget {
 }
 
 class SearchField extends StatelessWidget {
-  const SearchField({
-    Key? key,
-  }) : super(key: key);
+  const SearchField({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      style: AppTextStyles.bodyMedium.copyWith(
+        color: Get.isDarkMode ? AppColors.textLight : AppColors.textPrimary,
+      ),
       decoration: InputDecoration(
-        hintText: "Search",
-        fillColor: AppColors.secondaryBg,
-        filled: true,
-        border: OutlineInputBorder(
-          borderSide: BorderSide.none,
-          borderRadius: const BorderRadius.all(Radius.circular(10)),
+        hintText: "Rechercher...",
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: Get.isDarkMode ? AppColors.gray500 : AppColors.gray400,
         ),
-        suffixIcon: InkWell(
-          onTap: () {},
-          child: Container(
-            padding: EdgeInsets.all(defaultPadding * 0.75),
-            margin: EdgeInsets.symmetric(horizontal: defaultPadding / 2),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-            ),
-            child: SvgPicture.asset("assets/icons/Search.svg"),
+        fillColor: Get.isDarkMode ? AppColors.gray800 : AppColors.gray50,
+        filled: true,
+        contentPadding: EdgeInsets.all(AppSpacing.sm),
+        border: OutlineInputBorder(
+          borderRadius: AppRadius.radiusMD,
+          borderSide: BorderSide(
+            color:
+                Get.isDarkMode ? AppColors.borderDark : AppColors.borderLight,
           ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.radiusMD,
+          borderSide: BorderSide(
+            color:
+                Get.isDarkMode ? AppColors.borderDark : AppColors.borderLight,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadius.radiusMD,
+          borderSide: BorderSide(color: AppColors.primary, width: 2),
+        ),
+        prefixIcon: Icon(
+          Icons.search,
+          color: Get.isDarkMode ? AppColors.gray400 : AppColors.gray500,
+          size: 20,
         ),
       ),
     );

@@ -2,10 +2,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../constants.dart';
 import '../../../controllers/orders_controller.dart';
-import '../../../models/order.dart';
 import 'package:get/get.dart';
 
-class OrderStatusChart extends StatelessWidget {
+class OrderStatusChart extends GetView<OrdersController> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -22,29 +21,36 @@ class OrderStatusChart extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           SizedBox(height: defaultPadding),
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                sectionsSpace: 0,
-                centerSpaceRadius: 40,
-                sections: _getChartSections(),
-                startDegreeOffset: -90,
-              ),
-            ),
-          ),
-          ChartLegend(),
+          Obx(() => SizedBox(
+                height: 200,
+                child: controller.ordersByStatus.isEmpty
+                    ? Center(child: Text('No data available'))
+                    : PieChart(
+                        PieChartData(
+                          sectionsSpace: 0,
+                          centerSpaceRadius: 40,
+                          sections: _getChartSections(),
+                          startDegreeOffset: -90,
+                        ),
+                      ),
+              )),
+          Obx(() => ChartLegend(ordersByStatus: controller.ordersByStatus)),
         ],
       ),
     );
   }
 
   List<PieChartSectionData> _getChartSections() {
-    final controller = Get.find<OrdersController>();
-    return OrderStatus.values.map((status) {
-      final percentage = controller.getOrderPercentageByStatus(status.name);
+    if (controller.ordersByStatus.isEmpty) return [];
+
+    final total =
+        controller.ordersByStatus.values.fold(0, (sum, count) => sum + count);
+
+    return controller.ordersByStatus.entries.map((entry) {
+      final percentage = total > 0 ? (entry.value / total) * 100 : 0.0;
+
       return PieChartSectionData(
-        color: status.color,
+        color: _getStatusColor(entry.key),
         value: percentage,
         title: '${percentage.toStringAsFixed(1)}%',
         radius: 60,
@@ -56,14 +62,33 @@ class OrderStatusChart extends StatelessWidget {
       );
     }).toList();
   }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'PENDING':
+        return AppColors.warning;
+      case 'PROCESSING':
+        return AppColors.primary;
+      case 'DELIVERED':
+        return AppColors.success;
+      case 'CANCELLED':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
+    }
+  }
 }
 
 class ChartLegend extends StatelessWidget {
+  final Map<String, int> ordersByStatus;
+
+  const ChartLegend({Key? key, required this.ordersByStatus}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: OrderStatus.values
-          .map((status) => Padding(
+      children: ordersByStatus.entries
+          .map((entry) => Padding(
                 padding: EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
@@ -71,19 +96,19 @@ class ChartLegend extends StatelessWidget {
                       width: 12,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: status.color,
+                        color: _getStatusColor(entry.key),
                         shape: BoxShape.circle,
                       ),
                     ),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        status.label,
+                        entry.key,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
                     Text(
-                      '${Get.find<OrdersController>().getOrderCountByStatus(status.name)}',
+                      '${entry.value}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -91,5 +116,20 @@ class ChartLegend extends StatelessWidget {
               ))
           .toList(),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'PENDING':
+        return AppColors.warning;
+      case 'PROCESSING':
+        return AppColors.primary;
+      case 'DELIVERED':
+        return AppColors.success;
+      case 'CANCELLED':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
+    }
   }
 }
