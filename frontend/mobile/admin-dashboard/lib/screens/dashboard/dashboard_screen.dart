@@ -28,104 +28,105 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: Material(
-        type: MaterialType.transparency,
-        child: RefreshIndicator(
-          onRefresh: controller.refreshDashboard,
-          child: Obx(() {
-            if (controller.isLoading.value) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(AppColors.primary),
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    Text(
-                      'Chargement du tableau de bord...',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            if (controller.hasError.value) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: AppColors.error,
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    Text(
-                      controller.errorMessage.value,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.error,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    ElevatedButton.icon(
-                      onPressed: controller.fetchDashboardData,
-                      icon: Icon(Icons.refresh),
-                      label: Text('Réessayer'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textLight,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.lg,
-                          vertical: AppSpacing.sm,
+    return SafeArea(
+      child: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Material(
+            type: MaterialType.transparency,
+            child: RefreshIndicator(
+              onRefresh: controller.refreshDashboard,
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(AppColors.primary),
                         ),
+                        SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Chargement du tableau de bord...',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (controller.hasError.value) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: AppColors.error,
+                        ),
+                        SizedBox(height: AppSpacing.md),
+                        Text(
+                          controller.errorMessage.value,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.error,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: AppSpacing.md),
+                        ElevatedButton.icon(
+                          onPressed: controller.fetchDashboardData,
+                          icon: Icon(Icons.refresh),
+                          label: Text('Réessayer'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textLight,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.sm,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Stack(
+                  children: [
+                    SingleChildScrollView(
+                      padding: EdgeInsets.all(defaultPadding),
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        children: [
+                          Header(title: "Tableau de bord"),
+                          SizedBox(height: defaultPadding),
+                          StatisticsCards(),
+                          SizedBox(height: defaultPadding),
+                          RevenueChart(),
+                          SizedBox(height: defaultPadding),
+                          OrderStatusMetrics(),
+                          SizedBox(height: defaultPadding),
+                          _buildMainContent(context),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      right: defaultPadding,
+                      bottom: defaultPadding,
+                      child: FloatingActionButton(
+                        onPressed: controller.refreshDashboard,
+                        backgroundColor: AppColors.primary,
+                        child: Icon(Icons.refresh, color: AppColors.textLight),
+                        tooltip: 'Rafraîchir les données',
                       ),
                     ),
                   ],
-                ),
-              );
-            }
-
-            return Stack(
-              children: [
-                SingleChildScrollView(
-                  padding: EdgeInsets.all(defaultPadding),
-                  physics: AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    children: [
-                      Header(title: "Tableau de bord"),
-                      SizedBox(height: defaultPadding),
-                      StatisticsCards(),
-                      SizedBox(height: defaultPadding),
-                      RevenueChart(),
-                      SizedBox(height: defaultPadding),
-                      OrderStatusMetrics(),
-                      SizedBox(height: defaultPadding),
-                      _buildMainContent(context),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  right: defaultPadding,
-                  bottom: defaultPadding,
-                  child: FloatingActionButton(
-                    onPressed: controller.refreshDashboard,
-                    backgroundColor: AppColors.primary,
-                    child: Icon(Icons.refresh, color: AppColors.textLight),
-                    tooltip: 'Rafraîchir les données',
-                  ),
-                ),
-              ],
-            );
-          }),
-        ),
+                );
+              }),
+            )),
       ),
     );
   }

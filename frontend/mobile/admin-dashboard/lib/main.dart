@@ -34,7 +34,6 @@ class AdminDashboard extends StatelessWidget {
           initialRoute: AdminRoutes.splash,
           getPages: AdminRoutes.routes,
           defaultGlobalState: false,
-          initialBinding: InitialBinding(),
         );
       },
     );

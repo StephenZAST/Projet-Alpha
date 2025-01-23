@@ -20,21 +20,6 @@ class MainScreen extends StatelessWidget {
       child: Scaffold(
         key: menuController.scaffoldKey,
         drawer: AdminSideMenu(),
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          leading: IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: () {
-              if (menuController.scaffoldKey.currentState?.isDrawerOpen ??
-                  false) {
-                Navigator.pop(context);
-              } else {
-                menuController.scaffoldKey.currentState?.openDrawer();
-              }
-            },
-          ),
-        ),
         body: SafeArea(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

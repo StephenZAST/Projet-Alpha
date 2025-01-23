@@ -43,9 +43,13 @@ class Header extends StatelessWidget {
                 color: isDark ? AppColors.textLight : AppColors.textPrimary,
               ),
               onPressed: () {
-                final state = menuController.scaffoldKey.currentState;
-                if (state != null && !state.isDrawerOpen) {
-                  state.openDrawer();
+                if (!Responsive.isDesktop(context)) {
+                  if (menuController.scaffoldKey.currentState?.isDrawerOpen ??
+                      false) {
+                    Get.back();
+                  } else {
+                    menuController.scaffoldKey.currentState?.openDrawer();
+                  }
                 }
               },
             ),
