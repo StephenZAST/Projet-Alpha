@@ -6,19 +6,21 @@ import 'api_service.dart';
 import '../constants.dart';
 
 class AuthService {
-  static const String _tokenKey = 'auth_token';
-  static const String _userKey = 'auth_user';
+  static const String _tokenKey =
+      'token'; // Changé pour correspondre à ApiService
+  static const String _userKey = 'user';
   static final _storage = GetStorage();
   static final _api = ApiService();
 
-  static const String baseAuthPath = '/auth';
+  static const String baseAuthPath = '/auth'; // Retiré le /api préfixe
 
   static String? get token => _storage.read(_tokenKey);
   static User? get currentUser {
     final userData = _storage.read(_userKey);
     if (userData != null) {
       try {
-        final Map<String, dynamic> jsonData = json.decode(userData);
+        final Map<String, dynamic> jsonData =
+            userData is String ? json.decode(userData) : userData;
         print('[AuthService] Stored user data: $jsonData');
         return User.fromJson(jsonData);
       } catch (e) {
@@ -64,7 +66,8 @@ class AuthService {
         // Sauvegarder le token
         await _storage.write(_tokenKey, token);
         // Sauvegarder les données utilisateur
-        await _storage.write(_userKey, json.encode(userData));
+        await _storage.write(
+            _userKey, userData); // Sauvegarde directe de l'objet
 
         print('[AuthService] Login successful');
         print('[AuthService] Token saved: $token');
@@ -89,10 +92,7 @@ class AuthService {
         }
       }
 
-      return {
-        'success': false,
-        'message': responseData['error'] ?? 'Login failed',
-      };
+      throw responseData['message'] ?? 'Login failed';
     } catch (e) {
       print('[AuthService] Login error: $e');
       return {
@@ -126,7 +126,7 @@ class AuthService {
           }
 
           final user = User.fromJson(userData);
-          await _storage.write(_userKey, json.encode(userData));
+          await _storage.write(_userKey, userData);
           print(
               '[AuthService] Current user data fetched and saved successfully: ${user.toJson()}');
           return user;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/admin_notification.dart';
 import '../services/notification_service.dart';
+import '../constants.dart';
 import 'dart:async';
 
 class NotificationController extends GetxController {
@@ -9,93 +10,215 @@ class NotificationController extends GetxController {
   final filteredNotifications = <AdminNotification>[].obs;
   final isLoading = false.obs;
   final currentFilter = 'all'.obs;
+  final currentPriority = Rxn<NotificationPriority>();
   final unreadCount = 0.obs;
+  final hasMoreNotifications = true.obs;
+  final _currentPage = 1.obs;
+  static const int _pageSize = 20;
+  Timer? _refreshTimer;
   StreamSubscription? _subscription;
 
   @override
   void onInit() {
     super.onInit();
     fetchNotifications();
-    // Retarder l'initialisation du WebSocket
-    Future.delayed(Duration(seconds: 2), () {
-      _initializeWebSocket();
+    fetchUnreadCount();
+    _initializeRefreshTimer();
+  }
+
+  void _initializeRefreshTimer() {
+    // Rafraîchir le compteur toutes les 30 secondes
+    _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      fetchUnreadCount();
     });
   }
 
-  void _initializeWebSocket() {
-    // TODO: Implement WebSocket connection for real-time notifications
+  Future<void> fetchUnreadCount() async {
+    try {
+      final count = await NotificationService.getUnreadCount();
+      unreadCount.value = count;
+    } catch (e) {
+      print('Error fetching unread count: $e');
+    }
   }
 
-  Future<void> fetchNotifications() async {
+  Future<void> fetchNotifications({bool refresh = false}) async {
+    if (refresh) {
+      _currentPage.value = 1;
+      hasMoreNotifications.value = true;
+    }
+
+    if (!hasMoreNotifications.value && !refresh) return;
+
     isLoading.value = true;
     try {
-      final fetchedNotifications =
-          await NotificationService.getAdminNotifications();
-      notifications.value = fetchedNotifications;
-      applyFilter();
-      updateUnreadCount();
+      final fetchedNotifications = await NotificationService.getNotifications(
+        page: _currentPage.value,
+        limit: _pageSize,
+      );
+
+      if (refresh) {
+        notifications.clear();
+      }
+
+      if (fetchedNotifications.isEmpty) {
+        hasMoreNotifications.value = false;
+      } else {
+        notifications.addAll(fetchedNotifications);
+        _currentPage.value++;
+      }
+
+      _sortAndFilterNotifications();
+      await fetchUnreadCount();
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Failed to fetch notifications: $e',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        'Erreur',
+        'Impossible de charger les notifications',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 3),
       );
     } finally {
       isLoading.value = false;
     }
   }
 
+  Future<void> loadMoreNotifications() async {
+    if (!isLoading.value && hasMoreNotifications.value) {
+      await fetchNotifications();
+    }
+  }
+
   Future<void> markAsRead(AdminNotification notification) async {
+    if (notification.isRead) return;
+
     try {
       await NotificationService.markAsRead(notification.id);
-      notification.isRead = true;
-      updateUnreadCount();
-      applyFilter();
+      final index = notifications.indexWhere((n) => n.id == notification.id);
+      if (index != -1) {
+        notifications[index] = notification.copyWith(isRead: true);
+      }
+      await fetchUnreadCount();
+      _sortAndFilterNotifications();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to mark notification as read');
+      Get.snackbar(
+        'Erreur',
+        'Impossible de marquer la notification comme lue',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
     }
   }
 
   Future<void> markAllAsRead() async {
     try {
       await NotificationService.markAllAsRead();
-      notifications.forEach((notification) => notification.isRead = true);
-      updateUnreadCount();
-      applyFilter();
-      Get.snackbar('Success', 'All notifications marked as read');
+      notifications.assignAll(
+          notifications.map((n) => n.copyWith(isRead: true)).toList());
+      await fetchUnreadCount();
+      _sortAndFilterNotifications();
+      Get.snackbar(
+        'Succès',
+        'Toutes les notifications ont été marquées comme lues',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to mark all notifications as read');
+      Get.snackbar(
+        'Erreur',
+        'Impossible de marquer toutes les notifications comme lues',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
     }
   }
 
-  void applyFilter() {
-    switch (currentFilter.value) {
-      case 'unread':
-        filteredNotifications.value =
-            notifications.where((n) => !n.isRead).toList();
-        break;
-      case 'orders':
-        filteredNotifications.value = notifications
-            .where((n) => n.type == NotificationType.ORDER)
-            .toList();
-        break;
-      case 'system':
-        filteredNotifications.value = notifications
-            .where((n) => n.type == NotificationType.SYSTEM)
-            .toList();
-        break;
-      default:
-        filteredNotifications.value = notifications;
+  void _sortAndFilterNotifications() {
+    List<AdminNotification> filtered = List.from(notifications);
+
+    // Appliquer le filtre de type
+    if (currentFilter.value != 'all') {
+      filtered = filtered.where((n) {
+        switch (currentFilter.value) {
+          case 'unread':
+            return !n.isRead;
+          case 'orders':
+            return n.type == NotificationType.ORDER;
+          case 'delivery':
+            return n.type == NotificationType.DELIVERY;
+          case 'users':
+            return n.type == NotificationType.USER;
+          case 'payments':
+            return n.type == NotificationType.PAYMENT;
+          case 'system':
+            return n.type == NotificationType.SYSTEM;
+          case 'affiliate':
+            return n.type == NotificationType.AFFILIATE;
+          default:
+            return true;
+        }
+      }).toList();
     }
+
+    // Appliquer le filtre de priorité
+    if (currentPriority.value != null) {
+      filtered =
+          filtered.where((n) => n.priority == currentPriority.value).toList();
+    }
+
+    // Trier par priorité puis par date
+    filtered.sort((a, b) {
+      // D'abord par priorité (URGENT en premier)
+      final priorityCompare = b.priority.index.compareTo(a.priority.index);
+      if (priorityCompare != 0) return priorityCompare;
+
+      // Ensuite par date (plus récent en premier)
+      return b.createdAt.compareTo(a.createdAt);
+    });
+
+    filteredNotifications.value = filtered;
   }
 
   void setFilter(String filter) {
     currentFilter.value = filter;
-    applyFilter();
+    _sortAndFilterNotifications();
+  }
+
+  void setPriority(NotificationPriority? priority) {
+    currentPriority.value = priority;
+    _sortAndFilterNotifications();
+  }
+
+  Future<void> deleteNotification(AdminNotification notification) async {
+    try {
+      await NotificationService.deleteNotification(notification.id);
+      notifications.remove(notification);
+      _sortAndFilterNotifications();
+      if (!notification.isRead) {
+        await fetchUnreadCount();
+      }
+      Get.snackbar(
+        'Succès',
+        'Notification supprimée',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Erreur',
+        'Impossible de supprimer la notification',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
+    }
   }
 
   void handleNotificationAction(AdminNotification notification) {
+    if (!notification.isRead) {
+      markAsRead(notification);
+    }
+
     switch (notification.type) {
       case NotificationType.ORDER:
         Get.toNamed('/orders/${notification.referenceId}');
@@ -103,19 +226,30 @@ class NotificationController extends GetxController {
       case NotificationType.USER:
         Get.toNamed('/users/${notification.referenceId}');
         break;
-      default:
-        // Handle other notification types
+      case NotificationType.PAYMENT:
+        Get.toNamed('/payments/${notification.referenceId}');
+        break;
+      case NotificationType.DELIVERY:
+        Get.toNamed('/delivery/${notification.referenceId}');
+        break;
+      case NotificationType.AFFILIATE:
+        Get.toNamed('/affiliates/${notification.referenceId}');
+        break;
+      case NotificationType.SYSTEM:
+        // Les notifications système peuvent avoir différentes actions
+        _handleSystemNotification(notification);
         break;
     }
-    markAsRead(notification);
   }
 
-  void updateUnreadCount() {
-    unreadCount.value = notifications.where((n) => !n.isRead).length;
+  void _handleSystemNotification(AdminNotification notification) {
+    // À implémenter selon les besoins spécifiques
+    print('System notification: ${notification.message}');
   }
 
   @override
   void onClose() {
+    _refreshTimer?.cancel();
     _subscription?.cancel();
     super.onClose();
   }

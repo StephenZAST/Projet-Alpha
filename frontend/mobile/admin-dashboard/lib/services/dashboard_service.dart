@@ -2,11 +2,11 @@ import './api_service.dart';
 
 class DashboardService {
   static final _api = ApiService();
-  static const String adminBasePath = '/api/admin';
+  static const String adminBasePath = '/admin';
 
   static Future<Map<String, dynamic>> getStatistics() async {
     try {
-      final response = await _api.get('$adminBasePath/dashboard/statistics');
+      final response = await _api.get('$adminBasePath/statistics');
       if (response.data != null && response.data['data'] != null) {
         final data = response.data['data'];
         return {
@@ -27,7 +27,8 @@ class DashboardService {
 
   static Future<Map<String, dynamic>> getRecentOrders() async {
     try {
-      final response = await _api.get('$adminBasePath/orders/recent');
+      // Cette route est dans order.routes.ts
+      final response = await _api.get('/orders/recent');
       if (response.data != null && response.data['data'] != null) {
         final orders = response.data['data'] as List;
         return {
@@ -71,7 +72,8 @@ class DashboardService {
 
   static Future<Map<String, int>> getOrdersByStatus() async {
     try {
-      final response = await _api.get('$adminBasePath/orders/by-status');
+      // Cette route est dans order.routes.ts
+      final response = await _api.get('/orders/by-status');
       if (response.data != null && response.data['data'] != null) {
         return Map<String, int>.from(response.data['data']);
       }
@@ -88,7 +90,7 @@ class DashboardService {
   }) async {
     try {
       await _api.post(
-        '$adminBasePath/configure/commissions',
+        '$adminBasePath/configure-commissions',
         data: {
           'commissionRate': commissionRate,
           'rewardPoints': rewardPoints,
@@ -106,7 +108,7 @@ class DashboardService {
   }) async {
     try {
       await _api.post(
-        '$adminBasePath/configure/rewards',
+        '$adminBasePath/configure-rewards',
         data: {
           'rewardPoints': rewardPoints,
           'rewardType': rewardType,
@@ -120,7 +122,7 @@ class DashboardService {
 
   static Future<double> getTotalRevenue() async {
     try {
-      final response = await _api.get('$adminBasePath/revenue/total');
+      final response = await _api.get('$adminBasePath/total-revenue');
       if (response.data != null && response.data['data'] != null) {
         return (response.data['data'] as num).toDouble();
       }
@@ -137,7 +139,7 @@ class DashboardService {
     required bool isActive,
   }) async {
     try {
-      final response = await _api.post(
+      final response = await _api.patch(
         '$adminBasePath/affiliates/$affiliateId/status',
         data: {
           'status': status,

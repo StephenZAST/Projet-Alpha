@@ -5,8 +5,10 @@ import '../routes/admin_routes.dart';
 class MenuAppController extends GetxController {
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   final _selectedIndex = 0.obs;
+  final _currentRoute = ''.obs;
 
   int get selectedIndex => _selectedIndex.value;
+  String get currentRoute => _currentRoute.value;
 
   void controlMenu() {
     if (!scaffoldKey.currentState!.isDrawerOpen) {
@@ -14,33 +16,44 @@ class MenuAppController extends GetxController {
     }
   }
 
+  void _navigateTo(String route, {bool offAll = false}) {
+    if (offAll) {
+      Get.offAllNamed(route);
+    } else {
+      Get.toNamed(route);
+    }
+    _currentRoute.value = route;
+    updateIndexFromRoute(route);
+  }
+
   void updateSelectedIndex(int index) {
     _selectedIndex.value = index;
     // Navigation basée sur l'index sélectionné
     switch (index) {
       case 0:
-        Get.offAllNamed(AdminRoutes.dashboard);
+        _navigateTo(AdminRoutes.dashboard, offAll: true);
         break;
       case 1:
-        Get.toNamed(AdminRoutes.orders);
+        _navigateTo(AdminRoutes.orders);
         break;
       case 2:
-        Get.toNamed(AdminRoutes.services);
+        _navigateTo(AdminRoutes.services);
         break;
       case 3:
-        Get.toNamed(AdminRoutes.categories);
+        _navigateTo(AdminRoutes.categories);
         break;
       case 4:
-        Get.toNamed(AdminRoutes.users);
+        _navigateTo(AdminRoutes.users);
         break;
       case 5:
-        Get.toNamed(AdminRoutes.profile);
+        _navigateTo(AdminRoutes.profile);
         break;
     }
   }
 
   // Méthode pour mettre à jour l'index en fonction de la route actuelle
   void updateIndexFromRoute(String route) {
+    _currentRoute.value = route;
     switch (route) {
       case AdminRoutes.dashboard:
         _selectedIndex.value = 0;
@@ -70,9 +83,11 @@ class MenuAppController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Écouter les changements de route pour mettre à jour l'index sélectionné
-    ever(Get.routing.current as RxString, (String route) {
-      updateIndexFromRoute(route);
-    });
+    // Initialiser avec la route actuelle
+    _currentRoute.value = Get.currentRoute;
+    updateIndexFromRoute(_currentRoute.value);
+
+    // Écouter les changements de route
+    ever(_currentRoute, (route) => print('Route changed to: $route'));
   }
 }

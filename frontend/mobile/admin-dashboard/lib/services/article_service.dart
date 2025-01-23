@@ -5,7 +5,7 @@ import './api_service.dart';
 
 class ArticleService {
   static final _api = ApiService();
-  static const _baseUrl = '/api/articles';
+  static const _baseUrl = '/articles';
 
   static Future<List<Article>> getAllArticles() async {
     try {
@@ -152,11 +152,14 @@ class ArticleService {
 
   static Future<List<Article>> getArticlesByCategory(String categoryId) async {
     try {
-      // Récupérer tous les articles et filtrer par catégorie côté client
-      final articles = await getAllArticles();
-      return articles
-          .where((article) => article.categoryId == categoryId)
-          .toList();
+      final response = await _api.get('$_baseUrl/category/$categoryId');
+      if (response.data != null && response.data['success'] == true) {
+        return (response.data['data'] as List)
+            .map((json) => Article.fromJson(json))
+            .toList();
+      }
+      throw response.data?['message'] ??
+          'Erreur lors du chargement des articles';
     } catch (e) {
       print('[ArticleService] Error getting articles by category: $e');
       throw 'Erreur lors du chargement des articles par catégorie';

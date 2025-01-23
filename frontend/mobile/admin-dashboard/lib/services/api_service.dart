@@ -1,20 +1,25 @@
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:get_storage/get_storage.dart';
+import 'package:get/get.dart';
+import '../routes/admin_routes.dart';
+import '../constants.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
-  late final Dio _dio;
+  late final dio.Dio _dio;
   final _storage = GetStorage();
+
+  static const String _tokenKey = 'token';
 
   factory ApiService() {
     return _instance;
   }
 
   ApiService._internal() {
-    _dio = Dio(BaseOptions(
+    _dio = dio.Dio(dio.BaseOptions(
       baseUrl: 'http://localhost:3001/api',
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 5),
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
       contentType: 'application/json',
       validateStatus: (status) {
         return status! < 500;
@@ -26,27 +31,59 @@ class ApiService {
 
   void _setupInterceptors() {
     _dio.interceptors.add(
-      InterceptorsWrapper(
+      dio.InterceptorsWrapper(
         onRequest: (options, handler) {
+          print('[ApiService] Making request to: ${options.path}');
           // Ajouter le token d'authentification s'il existe
-          final token = _storage.read('token');
+          final token = _storage.read(_tokenKey);
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           return handler.next(options);
         },
         onResponse: (response, handler) {
+          print('[ApiService] Response from: ${response.requestOptions.path}');
+          print('[ApiService] Status code: ${response.statusCode}');
+
+          if (response.statusCode == 401) {
+            print('[ApiService] Unauthorized access, clearing session');
+            _handleUnauthorized();
+            return handler.reject(
+              dio.DioError(
+                requestOptions: response.requestOptions,
+                error: 'Session expirée. Veuillez vous reconnecter.',
+                type: dio.DioErrorType.badResponse,
+                response: response,
+              ),
+            );
+          }
           return handler.next(response);
         },
         onError: (error, handler) {
-          print('[ApiService] Error: ${error.message}');
+          print(
+              '[ApiService] Error on ${error.requestOptions.path}: ${error.message}');
+
+          if (error.response?.statusCode == 401) {
+            print('[ApiService] Unauthorized error, clearing session');
+            _handleUnauthorized();
+          }
+
           return handler.next(error);
         },
       ),
     );
   }
 
-  Future<Response> get(String path,
+  void _handleUnauthorized() {
+    _storage.remove(_tokenKey);
+    _storage.remove('user');
+    // Rediriger vers la page de connexion
+    if (Get.currentRoute != AdminRoutes.login) {
+      Get.offAllNamed(AdminRoutes.login);
+    }
+  }
+
+  Future<dio.Response> get(String path,
       {Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.get(
@@ -60,7 +97,7 @@ class ApiService {
     }
   }
 
-  Future<Response> post(String path, {dynamic data}) async {
+  Future<dio.Response> post(String path, {dynamic data}) async {
     try {
       final response = await _dio.post(
         path,
@@ -73,7 +110,7 @@ class ApiService {
     }
   }
 
-  Future<Response> put(String path, {dynamic data}) async {
+  Future<dio.Response> put(String path, {dynamic data}) async {
     try {
       final response = await _dio.put(
         path,
@@ -86,7 +123,7 @@ class ApiService {
     }
   }
 
-  Future<Response> patch(String path, {dynamic data}) async {
+  Future<dio.Response> patch(String path, {dynamic data}) async {
     try {
       final response = await _dio.patch(
         path,
@@ -99,7 +136,7 @@ class ApiService {
     }
   }
 
-  Future<Response> delete(String path) async {
+  Future<dio.Response> delete(String path) async {
     try {
       final response = await _dio.delete(path);
       _handleResponse(response);
@@ -109,25 +146,35 @@ class ApiService {
     }
   }
 
-  void _handleResponse(Response response) {
+  void _handleResponse(dio.Response response) {
     if (response.statusCode == 401) {
-      // Token expiré ou invalide
-      _storage.remove('token');
+      _handleUnauthorized();
       throw 'Session expirée. Veuillez vous reconnecter.';
     }
   }
 
   String _handleError(dynamic error) {
-    if (error is DioError) {
+    if (error is dio.DioError) {
+      print('[ApiService] DioError: ${error.type} - ${error.message}');
       switch (error.type) {
-        case DioErrorType.connectionTimeout:
-        case DioErrorType.sendTimeout:
-        case DioErrorType.receiveTimeout:
-          return 'Délai d\'attente dépassé';
-        case DioErrorType.badResponse:
-          return error.response?.data['message'] ?? 'Erreur serveur';
+        case dio.DioErrorType.connectionTimeout:
+        case dio.DioErrorType.sendTimeout:
+        case dio.DioErrorType.receiveTimeout:
+          return 'La connexion au serveur a échoué. Veuillez vérifier votre connexion internet.';
+        case dio.DioErrorType.badResponse:
+          final statusCode = error.response?.statusCode;
+          final message = error.response?.data['message'] ?? 'Erreur serveur';
+
+          if (statusCode == 401) {
+            return 'Session expirée. Veuillez vous reconnecter.';
+          } else if (statusCode == 403) {
+            return 'Accès refusé. Vous n\'avez pas les permissions nécessaires.';
+          }
+          return message;
+        case dio.DioErrorType.cancel:
+          return 'La requête a été annulée';
         default:
-          return 'Une erreur est survenue';
+          return 'Une erreur est survenue lors de la communication avec le serveur';
       }
     }
     return error.toString();

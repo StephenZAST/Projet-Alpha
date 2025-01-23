@@ -3,7 +3,7 @@ import './api_service.dart';
 
 class ServiceService {
   static final _api = ApiService();
-  static const _baseUrl = '/api/services';
+  static const _baseUrl = '/services';
 
   static Future<List<Service>> getAllServices() async {
     try {

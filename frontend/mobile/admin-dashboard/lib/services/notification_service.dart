@@ -1,73 +1,103 @@
-import 'package:get/get.dart';
 import '../models/admin_notification.dart';
 import './api_service.dart';
 
 class NotificationService {
   static final _api = ApiService();
-  static const String basePath = '/api/notifications';
-  static const String adminBasePath = '/api/admin/notifications';
+  static const String basePath = '/notifications';
 
-  // Méthodes spécifiques à l'admin
-  static Future<List<AdminNotification>> getAdminNotifications() async {
+  static Future<List<AdminNotification>> getNotifications({
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
-      final response = await _api.get(adminBasePath);
-      final List<dynamic> data = response.data['data'] ?? [];
-      return data.map((json) => AdminNotification.fromJson(json)).toList();
-    } catch (e) {
-      print('[NotificationService] Error getting admin notifications: $e');
-      return [];
-    }
-  }
-
-  static Future<bool> markAllAsRead() async {
-    try {
-      await _api.post(
-        '$adminBasePath/mark-all-read',
-        data: {},
+      final response = await _api.get(
+        basePath,
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+        },
       );
-      return true;
-    } catch (e) {
-      print(
-          '[NotificationService] Error marking all notifications as read: $e');
-      return false;
-    }
-  }
 
-  // Méthodes génériques pour notifications
-  static Future<List<AdminNotification>> getNotifications() async {
-    try {
-      final response = await _api.get(basePath);
-      final List<dynamic> data = response.data['data'] ?? [];
-      return data.map((json) => AdminNotification.fromJson(json)).toList();
+      if (response.data != null && response.data['data'] != null) {
+        final List<dynamic> data = response.data['data'];
+        return data.map((json) => AdminNotification.fromJson(json)).toList();
+      }
+      return [];
     } catch (e) {
       print('[NotificationService] Error getting notifications: $e');
-      return [];
+      throw 'Erreur lors du chargement des notifications';
     }
   }
 
-  static Future<bool> markAsRead(String notificationId) async {
+  static Future<int> getUnreadCount() async {
     try {
-      await _api.post(
+      final response = await _api.get('$basePath/unread');
+      if (response.data != null && response.data['count'] != null) {
+        return response.data['count'] as int;
+      }
+      return 0;
+    } catch (e) {
+      print('[NotificationService] Error getting unread count: $e');
+      return 0;
+    }
+  }
+
+  static Future<void> markAsRead(String notificationId) async {
+    try {
+      await _api.patch(
         '$basePath/$notificationId/read',
         data: {},
       );
-      return true;
     } catch (e) {
       print('[NotificationService] Error marking notification as read: $e');
-      return false;
+      throw 'Erreur lors du marquage de la notification';
     }
   }
 
-  static Future<bool> deleteNotification(String notificationId) async {
+  static Future<void> markAllAsRead() async {
     try {
       await _api.post(
-        '$basePath/$notificationId/delete',
+        '$basePath/mark-all-read',
         data: {},
       );
-      return true;
+    } catch (e) {
+      print('[NotificationService] Error marking all as read: $e');
+      throw 'Erreur lors du marquage des notifications';
+    }
+  }
+
+  static Future<void> deleteNotification(String notificationId) async {
+    try {
+      await _api.delete('$basePath/$notificationId');
     } catch (e) {
       print('[NotificationService] Error deleting notification: $e');
-      return false;
+      throw 'Erreur lors de la suppression de la notification';
+    }
+  }
+
+  static Future<Map<String, dynamic>> getPreferences() async {
+    try {
+      final response = await _api.get('$basePath/preferences');
+      if (response.data != null && response.data['data'] != null) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      return {};
+    } catch (e) {
+      print('[NotificationService] Error getting preferences: $e');
+      throw 'Erreur lors du chargement des préférences';
+    }
+  }
+
+  static Future<void> updatePreferences(
+      Map<String, dynamic> preferences) async {
+    try {
+      await _api.put(
+        '$basePath/preferences',
+        data: preferences,
+      );
+    } catch (e) {
+      print('[NotificationService] Error updating preferences: $e');
+      throw 'Erreur lors de la mise à jour des préférences';
     }
   }
 
@@ -79,13 +109,16 @@ class NotificationService {
     if (difference.inMinutes < 1) {
       return 'À l\'instant';
     } else if (difference.inHours < 1) {
-      return 'Il y a ${difference.inMinutes} min';
+      final minutes = difference.inMinutes;
+      return 'Il y a $minutes ${minutes > 1 ? 'minutes' : 'minute'}';
     } else if (difference.inDays < 1) {
-      return 'Il y a ${difference.inHours}h';
+      final hours = difference.inHours;
+      return 'Il y a $hours ${hours > 1 ? 'heures' : 'heure'}';
     } else if (difference.inDays < 7) {
-      return 'Il y a ${difference.inDays}j';
+      final days = difference.inDays;
+      return 'Il y a $days ${days > 1 ? 'jours' : 'jour'}';
     } else {
-      return '${time.day}/${time.month}/${time.year}';
+      return '${time.day.toString().padLeft(2, '0')}/${time.month.toString().padLeft(2, '0')}/${time.year}';
     }
   }
 }

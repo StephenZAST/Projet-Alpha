@@ -7,6 +7,7 @@ import '../routes/admin_routes.dart';
 class AuthController extends GetxController {
   final user = Rxn<User>();
   final isLoading = false.obs;
+  final _currentRoute = ''.obs;
 
   bool get isAuthenticated => user.value != null;
 
@@ -17,15 +18,20 @@ class AuthController extends GetxController {
     _initializeAuth();
   }
 
-  void _initializeAuth() async {
-    print('[AuthController] Initializing auth state');
-    final savedUser = AuthService.currentUser;
-    if (savedUser != null) {
-      print('[AuthController] Found saved user: ${savedUser.toJson()}');
-      user.value = savedUser;
-      await checkAuth();
-    } else {
-      print('[AuthController] No saved user found');
+  Future<void> _initializeAuth() async {
+    try {
+      print('[AuthController] Initializing auth state');
+      final savedUser = AuthService.currentUser;
+      if (savedUser != null) {
+        print('[AuthController] Found saved user: ${savedUser.toJson()}');
+        user.value = savedUser;
+        await checkAuth();
+      } else {
+        print('[AuthController] No saved user found');
+        user.value = null;
+      }
+    } catch (e) {
+      print('[AuthController] Error initializing auth: $e');
       user.value = null;
     }
   }
@@ -67,7 +73,7 @@ class AuthController extends GetxController {
       final response = await AuthService.login(email, password);
       print('[AuthController] Login response: $response');
 
-      if (response['success']) {
+      if (response['success'] == true) {
         final userData = response['data']['user'];
         if (userData != null) {
           try {
@@ -78,7 +84,7 @@ class AuthController extends GetxController {
 
             // Attendre un peu avant de rediriger pour laisser le temps aux animations
             await Future.delayed(Duration(milliseconds: 100));
-            Get.offAllNamed(AdminRoutes.dashboard);
+            _navigateTo(AdminRoutes.dashboard);
 
             Get.snackbar(
               'Succès',
@@ -117,20 +123,33 @@ class AuthController extends GetxController {
       if (user.value == null) {
         print('[AuthController] No user, redirecting to login');
         if (Get.currentRoute != AdminRoutes.login) {
-          Get.offAllNamed(AdminRoutes.login);
+          _navigateTo(AdminRoutes.login);
         }
       } else if (Get.currentRoute != AdminRoutes.dashboard) {
         print('[AuthController] User authenticated, redirecting to dashboard');
-        Get.offAllNamed(AdminRoutes.dashboard);
+        _navigateTo(AdminRoutes.dashboard);
       }
     });
+  }
+
+  void _navigateTo(String route) {
+    try {
+      _currentRoute.value = route;
+      Get.offAllNamed(route);
+    } catch (e) {
+      print('[AuthController] Navigation error: $e');
+      // En cas d'erreur de navigation, on tente de revenir à la page de login
+      if (route != AdminRoutes.login) {
+        Get.offAllNamed(AdminRoutes.login);
+      }
+    }
   }
 
   void logout() {
     print('[AuthController] Logging out');
     AuthService.clearSession();
     user.value = null;
-    Get.offAllNamed(AdminRoutes.login);
+    _navigateTo(AdminRoutes.login);
   }
 
   void _handleError(String title, dynamic error) {
