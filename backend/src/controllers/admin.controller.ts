@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AdminService } from '../services/admin.service';
+import { OrderStatus } from '../models/types';
 
 export class AdminController {
   static async configureCommissions(req: Request, res: Response) {
@@ -192,6 +193,50 @@ export class AdminController {
         success: false,
         error: 'Internal Server Error',
         message: error.message || 'Failed to fetch revenue chart data'
+      });
+    }
+  }
+
+  static async getAllOrders(req: Request, res: Response) {
+    try {
+      console.log('[Admin Controller] Getting all orders...');
+      const userId = req.user?.id;
+      if (!userId) {
+        console.log('[Admin Controller] Unauthorized access attempt');
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const status = req.query.status as OrderStatus | undefined;
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+      const result = await AdminService.getAllOrders({
+        page,
+        limit,
+        status,
+        startDate,
+        endDate
+      });
+
+      console.log('[Admin Controller] Orders retrieved successfully');
+      res.json({
+        success: true,
+        data: result.data,
+        pagination: {
+          total: result.total,
+          page,
+          limit,
+          totalPages: Math.ceil(result.total / limit)
+        }
+      });
+    } catch (error: any) {
+      console.error('[Admin Controller] Error getting all orders:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: error.message || 'Failed to fetch orders'
       });
     }
   }

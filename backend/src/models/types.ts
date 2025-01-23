@@ -444,3 +444,17 @@ export interface RewardConfig {
   reward_type: string;
   updated_at: Date;
 }
+
+// Admin Order Management Types
+export interface GetAllOrdersParams {
+  page: number;
+  limit: number;
+  status?: OrderStatus;
+  startDate?: Date;
+  endDate?: Date;
+}
+
+export interface PaginatedOrdersResponse {
+  data: Order[];
+  total: number;
+}

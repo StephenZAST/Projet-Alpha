@@ -4,17 +4,43 @@ import '../models/enums.dart';
 import '../services/order_service.dart';
 import '../constants.dart';
 
+/// Contrôleur pour la gestion des commandes avec pagination
+///
+/// Fonctionnalités :
+/// - Chargement paginé des commandes
+/// - Filtrage par statut
+/// - Recherche textuelle
+/// - Statistiques et métriques
+/// - Navigation entre les pages
+///
+/// La pagination est gérée via :
+/// - [currentPage] : Page actuelle (commence à 1)
+/// - [itemsPerPage] : Nombre d'éléments par page
+/// - [totalPages] : Nombre total de pages disponibles
+///
+/// Utilisez [nextPage] et [previousPage] pour naviguer entre les pages,
+/// ou [setItemsPerPage] pour modifier le nombre d'éléments par page.
 class OrdersController extends GetxController {
+  // État de chargement et erreurs
   final isLoading = false.obs;
+  final hasError = false.obs;
+  final errorMessage = ''.obs;
+
+  // Données des commandes
   final orders = <Order>[].obs;
   final selectedOrder = Rxn<Order>();
   final totalOrders = 0.obs;
   final totalAmount = 0.0.obs;
   final orderStatusCount = <String, int>{}.obs;
-  final hasError = false.obs;
-  final errorMessage = ''.obs;
+
+  // Filtres et recherche
   final selectedStatus = Rxn<OrderStatus>();
   final searchQuery = ''.obs;
+
+  // État de pagination
+  final currentPage = 1.obs;
+  final itemsPerPage = 50.obs;
+  final totalPages = 0.obs;
 
   @override
   void onInit() {
@@ -22,27 +48,32 @@ class OrdersController extends GetxController {
     fetchOrders();
   }
 
-  Future<void> fetchOrders() async {
+  Future<void> fetchOrders({bool resetPage = false}) async {
     try {
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
 
-      final result = await OrderService.getOrders();
-      orders.value = result;
-
-      // Calculer les totaux
-      totalOrders.value = orders.length;
-      totalAmount.value =
-          orders.fold(0, (sum, order) => sum + (order.totalAmount ?? 0));
-
-      // Compter les commandes par statut
-      final statusCount = <String, int>{};
-      for (var order in orders) {
-        final status = order.status;
-        statusCount[status] = (statusCount[status] ?? 0) + 1;
+      if (resetPage) {
+        currentPage.value = 1;
       }
-      orderStatusCount.value = statusCount;
+
+      final result = await OrderService.loadOrdersPage(
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        status: selectedStatus.value?.name,
+      );
+
+      orders.value = result.orders;
+      totalOrders.value = result.total;
+      totalPages.value = result.totalPages;
+
+      // Calculer le montant total
+      totalAmount.value =
+          result.orders.fold(0, (sum, order) => sum + (order.totalAmount ?? 0));
+
+      // Mettre à jour les compteurs par statut
+      await _updateStatusCounts();
     } catch (e) {
       print('[OrdersController] Error fetching orders: $e');
       hasError.value = true;
@@ -81,45 +112,79 @@ class OrdersController extends GetxController {
   }
 
   // Méthodes de filtrage
+  /// Filtre les commandes par statut et réinitialise la pagination
   void filterByStatus(OrderStatus? status) {
     selectedStatus.value = status;
-    _applyFilters();
+    fetchOrders(resetPage: true);
+  }
+
+  /// Met à jour les compteurs de statuts des commandes
+  Future<void> _updateStatusCounts() async {
+    try {
+      final allOrders = await OrderService.getOrders();
+      final statusCount = <String, int>{};
+      for (var order in allOrders) {
+        final status = order.status;
+        statusCount[status] = (statusCount[status] ?? 0) + 1;
+      }
+      orderStatusCount.value = statusCount;
+    } catch (e) {
+      print('[OrdersController] Error updating status counts: $e');
+    }
+  }
+
+  /// Navigue à la page suivante
+  void nextPage() {
+    if (currentPage.value < totalPages.value) {
+      currentPage.value++;
+      fetchOrders();
+    }
+  }
+
+  /// Navigue à la page précédente
+  void previousPage() {
+    if (currentPage.value > 1) {
+      currentPage.value--;
+      fetchOrders();
+    }
   }
 
   void searchOrders(String query) {
     searchQuery.value = query;
-    _applyFilters();
+    fetchOrders(resetPage: true);
   }
 
   void _applyFilters() async {
     try {
       isLoading.value = true;
-      List<Order> filteredOrders = await OrderService.getOrders();
 
-      // Appliquer le filtre de statut
-      if (selectedStatus.value != null) {
-        filteredOrders = filteredOrders
-            .where((order) => order.status == selectedStatus.value!.name)
-            .toList();
-      }
+      // Réinitialiser la pagination
+      currentPage.value = 1;
 
-      // Appliquer la recherche
-      if (searchQuery.value.isNotEmpty) {
-        final query = searchQuery.value.toLowerCase();
-        filteredOrders = filteredOrders.where((order) {
-          return order.id.toLowerCase().contains(query) ||
-              (order.customerName?.toLowerCase() ?? '').contains(query) ||
-              (order.customerEmail?.toLowerCase() ?? '').contains(query);
-        }).toList();
-      }
+      // Charger les commandes filtrées avec pagination
+      final result = await OrderService.loadOrdersPage(
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        status: selectedStatus.value?.name,
+      );
 
-      orders.value = filteredOrders;
+      orders.value = result.orders;
+      totalOrders.value = result.total;
+      totalPages.value = result.totalPages;
     } catch (e) {
       print('[OrdersController] Error applying filters: $e');
       hasError.value = true;
       errorMessage.value = 'Erreur lors du filtrage des commandes';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Change le nombre d'éléments par page
+  void setItemsPerPage(int value) {
+    if (value > 0) {
+      itemsPerPage.value = value;
+      fetchOrders(resetPage: true);
     }
   }
 
@@ -158,9 +223,17 @@ class OrdersController extends GetxController {
     }
   }
 
+  /// Réinitialise tous les filtres et la pagination
   void clearFilters() {
+    // Réinitialiser les filtres
     selectedStatus.value = null;
     searchQuery.value = '';
-    fetchOrders();
+
+    // Réinitialiser la pagination
+    currentPage.value = 1;
+    itemsPerPage.value = 50; // Valeur par défaut
+
+    // Recharger les données
+    fetchOrders(resetPage: true);
   }
 }

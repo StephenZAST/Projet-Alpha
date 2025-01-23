@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/orders_controller.dart';
 import '../../models/enums.dart';
+import '../../widgets/pagination_controls.dart';
 import 'components/order_filters.dart';
 import 'components/orders_header.dart';
 import 'components/orders_table.dart';
@@ -110,21 +111,39 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       );
                     }
 
-                    return OrdersTable(
-                      orders: controller.orders,
-                      onStatusUpdate: _updateStatus,
-                      onOrderSelect: (orderId) {
-                        controller.fetchOrderDetails(orderId);
-                        Get.dialog(
-                          Dialog(
-                            child: Container(
-                              width: 800,
-                              padding: EdgeInsets.all(defaultPadding),
-                              child: OrderDetails(),
-                            ),
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: OrdersTable(
+                            orders: controller.orders,
+                            onStatusUpdate: _updateStatus,
+                            onOrderSelect: (orderId) {
+                              controller.fetchOrderDetails(orderId);
+                              Get.dialog(
+                                Dialog(
+                                  child: Container(
+                                    width: 800,
+                                    padding: EdgeInsets.all(defaultPadding),
+                                    child: OrderDetails(),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(defaultPadding),
+                          child: PaginationControls(
+                            currentPage: controller.currentPage.value,
+                            totalPages: controller.totalPages.value,
+                            itemsPerPage: controller.itemsPerPage.value,
+                            totalItems: controller.totalOrders.value,
+                            onNextPage: controller.nextPage,
+                            onPreviousPage: controller.previousPage,
+                            onItemsPerPageChanged: controller.setItemsPerPage,
+                          ),
+                        ),
+                      ],
                     );
                   }),
                 ),

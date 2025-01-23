@@ -1,27 +1,81 @@
 import '../models/order.dart';
+import '../models/orders_page_data.dart';
 import 'api_service.dart';
 
 class OrderService {
   static final _api = ApiService();
   static const String _basePath = '/orders';
 
+  /// Récupère toutes les commandes (méthode existante pour compatibilité)
   static Future<List<Order>> getOrders() async {
     try {
-      // Route spécifique pour les admins, protégée par authorizeRoles(['ADMIN'])
-      final response = await _api.get('$_basePath/all-orders');
-      if (response.data != null && response.data['data'] != null) {
-        final List<dynamic> data = response.data['data'];
-        return data.map((json) => Order.fromJson(json)).toList();
+      final result =
+          await loadOrdersPage(limit: 1000); // Charge toutes les commandes
+      return result.orders;
+    } catch (e) {
+      print('[OrderService] Error getting all orders: $e');
+      throw 'Erreur lors du chargement des commandes';
+    }
+  }
+
+  /// Charge une page de commandes avec pagination et filtres
+  /// @param page Le numéro de la page à récupérer (commence à 1)
+  /// @param limit Le nombre maximum de commandes par page
+  /// @param status Filtre optionnel sur le statut des commandes
+  /// @param startDate Filtre optionnel sur la date de début
+  /// @param endDate Filtre optionnel sur la date de fin
+  static Future<OrdersPageData> loadOrdersPage({
+    int page = 1,
+    int limit = 50,
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      print(
+          '[OrderService] Fetching orders with params: page=$page, limit=$limit, status=$status');
+      final Map<String, dynamic> queryParams = {
+        'page': page,
+        'limit': limit,
+      };
+
+      if (status != null) {
+        queryParams['status'] = status;
       }
-      return [];
+      if (startDate != null) {
+        queryParams['startDate'] = startDate.toIso8601String();
+      }
+      if (endDate != null) {
+        queryParams['endDate'] = endDate.toIso8601String();
+      }
+
+      final response =
+          await _api.get('/admin/orders', queryParameters: queryParams);
+      print('[OrderService] Response received: ${response.data}');
+
+      if (response.data != null) {
+        return OrdersPageData(
+          orders: (response.data['data'] as List)
+              .map((json) => Order.fromJson(json))
+              .toList(),
+          total: response.data['pagination']['total'] as int,
+          currentPage: page,
+          limit: limit,
+          totalPages: response.data['pagination']['totalPages'] as int,
+        );
+      }
+
+      print('[OrderService] No orders data found');
+      return OrdersPageData.empty();
     } catch (e) {
       print('[OrderService] Error getting orders: $e');
-      throw 'Erreur lors du chargement des commandes';
+      throw 'Erreur lors du chargement des commandes. Détails : $e';
     }
   }
 
   static Future<Order> getOrderById(String id) async {
     try {
+      print('[OrderService] Fetching order details for ID: $id');
       final response = await _api.get('$_basePath/$id');
       if (response.data != null && response.data['data'] != null) {
         return Order.fromJson(response.data['data']);
@@ -35,10 +89,13 @@ class OrderService {
 
   static Future<List<Order>> getRecentOrders({int limit = 5}) async {
     try {
+      print('[OrderService] Fetching recent orders with limit: $limit');
       final response = await _api.get(
         '$_basePath/recent',
         queryParameters: {'limit': limit},
       );
+      print('[OrderService] Recent orders response: ${response.data}');
+
       if (response.data != null && response.data['data'] != null) {
         final List<dynamic> data = response.data['data'];
         return data.map((json) => Order.fromJson(json)).toList();
@@ -52,7 +109,10 @@ class OrderService {
 
   static Future<Map<String, int>> getOrdersByStatus() async {
     try {
+      print('[OrderService] Fetching orders by status');
       final response = await _api.get('$_basePath/by-status');
+      print('[OrderService] Orders by status response: ${response.data}');
+
       if (response.data != null && response.data['data'] != null) {
         final Map<String, dynamic> data = response.data['data'];
         return data.map((key, value) => MapEntry(key, (value as num).toInt()));
@@ -67,10 +127,12 @@ class OrderService {
   static Future<void> updateOrderStatus(
       String orderId, String newStatus) async {
     try {
+      print('[OrderService] Updating order status: $orderId to $newStatus');
       await _api.patch(
         '$_basePath/$orderId/status',
         data: {'status': newStatus},
       );
+      print('[OrderService] Order status updated successfully');
     } catch (e) {
       print('[OrderService] Error updating order status: $e');
       throw 'Erreur lors de la mise à jour du statut';
@@ -79,10 +141,13 @@ class OrderService {
 
   static Future<Order> createOrder(Map<String, dynamic> orderData) async {
     try {
+      print('[OrderService] Creating new order with data: $orderData');
       final response = await _api.post(
         '$_basePath/create-order',
         data: orderData,
       );
+      print('[OrderService] Create order response: ${response.data}');
+
       if (response.data != null && response.data['data'] != null) {
         return Order.fromJson(response.data['data']);
       }
@@ -95,7 +160,9 @@ class OrderService {
 
   static Future<void> deleteOrder(String orderId) async {
     try {
+      print('[OrderService] Deleting order: $orderId');
       await _api.delete('$_basePath/$orderId');
+      print('[OrderService] Order deleted successfully');
     } catch (e) {
       print('[OrderService] Error deleting order: $e');
       throw 'Erreur lors de la suppression de la commande';
@@ -104,7 +171,7 @@ class OrderService {
 
   static Future<List<Order>> searchOrders(String query) async {
     try {
-      // En attendant l'implémentation backend, on filtre les commandes côté client
+      print('[OrderService] Searching orders with query: $query');
       final allOrders = await getOrders();
       if (query.isEmpty) return allOrders;
 
@@ -126,15 +193,19 @@ class OrderService {
 
   static Future<Map<String, dynamic>> getOrderStatistics() async {
     try {
+      print('[OrderService] Fetching order statistics');
       final statusData = await getOrdersByStatus();
       final total = statusData.values.fold<int>(0, (sum, count) => sum + count);
 
-      return {
+      final result = {
         'byStatus': statusData,
         'total': total,
         'percentages': statusData.map((status, count) => MapEntry(status,
             total > 0 ? (count / total * 100).toStringAsFixed(1) : '0')),
       };
+
+      print('[OrderService] Order statistics: $result');
+      return result;
     } catch (e) {
       print('[OrderService] Error getting order statistics: $e');
       throw 'Erreur lors du chargement des statistiques';

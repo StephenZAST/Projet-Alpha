@@ -1,5 +1,14 @@
 import supabase from '../config/database';
-import { Service, Article, DashboardStatistics, SystemConfig, RewardConfig, DashboardOrder } from '../models/types';
+import {
+  Service,
+  Article,
+  DashboardStatistics,
+  SystemConfig,
+  RewardConfig,
+  DashboardOrder,
+  GetAllOrdersParams,
+  PaginatedOrdersResponse
+} from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
 
@@ -257,6 +266,62 @@ export class AdminService {
       console.error('Error fetching dashboard statistics:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       throw new Error(`Failed to fetch dashboard statistics: ${errorMessage}`);
+    }
+  }
+
+  static async getAllOrders(params: GetAllOrdersParams): Promise<PaginatedOrdersResponse> {
+    try {
+      console.log('[AdminService] Getting all orders with params:', params);
+      const { page, limit, status, startDate, endDate } = params;
+      const offset = (page - 1) * limit;
+
+      // Construire la requête de base
+      let query = supabase
+        .from('orders')
+        .select(`
+          *,
+          service:services(*),
+          user:users(id, email, first_name, last_name),
+          address:addresses(*),
+          items:order_items(
+            *,
+            article:articles(
+              *,
+              category:article_categories(name)
+            )
+          )
+        `, { count: 'exact' })
+        .order('createdAt', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      // Ajouter les filtres si présents
+      if (status) {
+        query = query.eq('status', status);
+      }
+      if (startDate) {
+        query = query.gte('createdAt', startDate.toISOString());
+      }
+      if (endDate) {
+        query = query.lte('createdAt', endDate.toISOString());
+      }
+
+      // Exécuter la requête
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('[AdminService] Error fetching orders:', error);
+        throw error;
+      }
+
+      console.log(`[AdminService] Retrieved ${data?.length} orders out of ${count} total`);
+
+      return {
+        data: data || [],
+        total: count || 0
+      };
+    } catch (error) {
+      console.error('[AdminService] Error in getAllOrders:', error);
+      throw new Error(`Failed to fetch orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

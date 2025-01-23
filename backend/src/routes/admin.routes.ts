@@ -9,6 +9,15 @@ const router = express.Router();
 // Protection des routes avec authentification
 router.use(authenticateToken as express.RequestHandler);
 
+// Route pour obtenir toutes les commandes avec pagination et filtres
+router.get(
+  '/orders',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await AdminController.getAllOrders(req, res);
+  })
+);
+
 // Routes statistiques et dashboard
 router.get(
   '/statistics',
