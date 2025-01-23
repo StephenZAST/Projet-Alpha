@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:admin/controllers/auth_controller.dart';
 import 'package:get/get.dart';
 import '../models/order.dart';
 import '../services/dashboard_service.dart';
@@ -28,11 +29,37 @@ class DashboardController extends GetxController {
   Timer? _refreshTimer;
   static const refreshInterval = Duration(minutes: 5);
 
+  // État initial du dashboard
+  final isInitialized = false.obs;
+
   @override
   void onInit() {
     super.onInit();
-    fetchDashboardData();
-    _startRefreshTimer();
+    // Observer l'état de l'authentification
+    ever(Get.find<AuthController>().user, (user) {
+      if (user != null && !isInitialized.value) {
+        isInitialized.value = true;
+        fetchDashboardData();
+        _startRefreshTimer();
+      } else if (user == null) {
+        // Réinitialiser les données si l'utilisateur est déconnecté
+        _clearDashboardData();
+        _refreshTimer?.cancel();
+      }
+    });
+  }
+
+  void _clearDashboardData() {
+    totalRevenue.value = 0.0;
+    totalOrders.value = 0;
+    totalCustomers.value = 0;
+    recentOrders.clear();
+    orderStatusCount.clear();
+    revenueChartData.value = {
+      'labels': <String>[],
+      'data': <double>[],
+    };
+    isInitialized.value = false;
   }
 
   @override

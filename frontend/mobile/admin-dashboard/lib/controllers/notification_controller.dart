@@ -1,3 +1,4 @@
+import 'package:admin/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/admin_notification.dart';
@@ -21,9 +22,18 @@ class NotificationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchNotifications();
-    fetchUnreadCount();
-    _initializeRefreshTimer();
+    // On n'initialise les notifications que si l'utilisateur est authentifié
+    ever(Get.find<AuthController>().user, (user) {
+      if (user != null) {
+        fetchNotifications();
+        fetchUnreadCount();
+        _initializeRefreshTimer();
+      } else {
+        _refreshTimer?.cancel();
+        notifications.clear();
+        unreadCount.value = 0;
+      }
+    });
   }
 
   void _initializeRefreshTimer() {

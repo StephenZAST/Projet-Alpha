@@ -16,10 +16,25 @@ class MainScreen extends StatelessWidget {
     final MenuAppController menuController = Get.find<MenuAppController>();
 
     return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Scaffold(
         key: menuController.scaffoldKey,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         drawer: AdminSideMenu(),
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          leading: IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () {
+              if (menuController.scaffoldKey.currentState?.isDrawerOpen ??
+                  false) {
+                Navigator.pop(context);
+              } else {
+                menuController.scaffoldKey.currentState?.openDrawer();
+              }
+            },
+          ),
+        ),
         body: SafeArea(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

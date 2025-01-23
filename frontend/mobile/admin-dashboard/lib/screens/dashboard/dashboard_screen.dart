@@ -28,9 +28,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: RefreshIndicator(
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Material(
+        type: MaterialType.transparency,
+        child: RefreshIndicator(
           onRefresh: controller.refreshDashboard,
           child: Obx(() {
             if (controller.isLoading.value) {
@@ -122,7 +124,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             );
-          })),
+          }),
+        ),
+      ),
     );
   }
 
