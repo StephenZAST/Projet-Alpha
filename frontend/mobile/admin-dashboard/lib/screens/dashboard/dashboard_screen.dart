@@ -28,9 +28,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        body: RefreshIndicator(
+    return Material(
+      type: MaterialType.transparency,
+      child: RefreshIndicator(
           onRefresh: controller.refreshDashboard,
           child: Obx(() {
             if (controller.isLoading.value) {
@@ -91,32 +91,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             }
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.all(defaultPadding),
-              physics: AlwaysScrollableScrollPhysics(),
-              child: Column(
-                children: [
-                  Header(title: "Tableau de bord"),
-                  SizedBox(height: defaultPadding),
-                  StatisticsCards(),
-                  SizedBox(height: defaultPadding),
-                  RevenueChart(),
-                  SizedBox(height: defaultPadding),
-                  OrderStatusMetrics(),
-                  SizedBox(height: defaultPadding),
-                  _buildMainContent(context),
-                ],
-              ),
+            return Stack(
+              children: [
+                SingleChildScrollView(
+                  padding: EdgeInsets.all(defaultPadding),
+                  physics: AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    children: [
+                      Header(title: "Tableau de bord"),
+                      SizedBox(height: defaultPadding),
+                      StatisticsCards(),
+                      SizedBox(height: defaultPadding),
+                      RevenueChart(),
+                      SizedBox(height: defaultPadding),
+                      OrderStatusMetrics(),
+                      SizedBox(height: defaultPadding),
+                      _buildMainContent(context),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  right: defaultPadding,
+                  bottom: defaultPadding,
+                  child: FloatingActionButton(
+                    onPressed: controller.refreshDashboard,
+                    backgroundColor: AppColors.primary,
+                    child: Icon(Icons.refresh, color: AppColors.textLight),
+                    tooltip: 'Rafraîchir les données',
+                  ),
+                ),
+              ],
             );
-          }),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: controller.refreshDashboard,
-          backgroundColor: AppColors.primary,
-          child: Icon(Icons.refresh, color: AppColors.textLight),
-          tooltip: 'Rafraîchir les données',
-        ),
-      ),
+          })),
     );
   }
 

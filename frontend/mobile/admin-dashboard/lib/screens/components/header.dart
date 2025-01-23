@@ -20,12 +20,6 @@ class Header extends StatelessWidget {
           ),
           Spacer(),
           NotificationBadge(),
-          IconButton(
-            icon: Icon(Icons.notifications),
-            onPressed: () {
-              Get.to(() => NotificationsScreen());
-            },
-          ),
         ],
       ),
     );

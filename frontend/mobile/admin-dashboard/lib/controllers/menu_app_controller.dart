@@ -11,8 +11,9 @@ class MenuAppController extends GetxController {
   String get currentRoute => _currentRoute.value;
 
   void controlMenu() {
-    if (!scaffoldKey.currentState!.isDrawerOpen) {
-      scaffoldKey.currentState!.openDrawer();
+    final state = scaffoldKey.currentState;
+    if (state != null && !state.isDrawerOpen) {
+      state.openDrawer();
     }
   }
 

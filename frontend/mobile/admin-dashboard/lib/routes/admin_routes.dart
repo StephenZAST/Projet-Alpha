@@ -1,3 +1,5 @@
+import '../screens/splash_screen.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/menu_app_controller.dart';
@@ -18,13 +20,23 @@ import '../screens/users/users_screen.dart';
 import '../screens/profile/admin_profile_screen.dart';
 import '../screens/services/services_screen.dart';
 import '../screens/categories/categories_screen.dart';
+import '../screens/notifications/notifications_screen.dart';
 import '../middleware/auth_middleware.dart';
 
 class InitialBinding extends Bindings {
   @override
   void dependencies() {
-    Get.put(AuthController(), permanent: true);
+    // Core system controllers
     Get.put(ThemeController(), permanent: true);
+    Get.put(AuthController(), permanent: true);
+    Get.put(MenuAppController(), permanent: true);
+    Get.put(NotificationController(), permanent: true);
+
+    // Initialize auth controller
+    final authController = Get.find<AuthController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      authController.verifyAuth();
+    });
   }
 }
 
@@ -32,9 +44,13 @@ class DashboardBinding extends Bindings {
   @override
   void dependencies() {
     // Navigation et Dashboard
-    Get.put(MenuAppController());
+    if (!Get.isRegistered<MenuAppController>()) {
+      Get.put(MenuAppController(), permanent: true);
+    }
     Get.put(DashboardController());
-    Get.put(NotificationController());
+    if (!Get.isRegistered<NotificationController>()) {
+      Get.put(NotificationController(), permanent: true);
+    }
     Get.put(OrdersController());
 
     // Articles et catégories
@@ -48,6 +64,7 @@ class DashboardBinding extends Bindings {
 }
 
 class AdminRoutes {
+  static const String splash = '/';
   static const String dashboard = '/dashboard';
   static const String orders = '/orders';
   static const String users = '/users';
@@ -55,8 +72,14 @@ class AdminRoutes {
   static const String profile = '/profile';
   static const String services = '/services';
   static const String categories = '/categories';
+  static const String notifications = '/notifications';
 
-  static final routes = [
+  static final routes = <GetPage>[
+    GetPage(
+      name: splash,
+      page: () => SplashScreen(),
+      binding: InitialBinding(),
+    ),
     GetPage(
       name: login,
       page: () => AdminLoginScreen(),
@@ -112,6 +135,14 @@ class AdminRoutes {
       binding: DashboardBinding(),
       middlewares: [AuthMiddleware(redirectTo: login)],
     ),
+    GetPage(
+      name: notifications,
+      page: () => NotificationsScreen(),
+      binding: DashboardBinding(),
+      middlewares: [AuthMiddleware(redirectTo: login)],
+      transition: Transition.rightToLeft,
+      transitionDuration: Duration(milliseconds: 200),
+    ),
   ];
 
   // Navigation helpers
@@ -145,5 +176,9 @@ class AdminRoutes {
 
   static void goToUsers() {
     Get.toNamed(users);
+  }
+
+  static void goToNotifications() {
+    Get.toNamed(notifications);
   }
 }

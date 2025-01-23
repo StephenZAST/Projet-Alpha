@@ -42,7 +42,12 @@ class Header extends StatelessWidget {
                 Icons.menu,
                 color: isDark ? AppColors.textLight : AppColors.textPrimary,
               ),
-              onPressed: menuController.controlMenu,
+              onPressed: () {
+                final state = menuController.scaffoldKey.currentState;
+                if (state != null && !state.isDrawerOpen) {
+                  state.openDrawer();
+                }
+              },
             ),
           if (!Responsive.isDesktop(context)) SizedBox(width: AppSpacing.md),
           Expanded(
@@ -88,7 +93,7 @@ class Header extends StatelessWidget {
                 ),
               ],
             ),
-            onPressed: () => Get.toNamed('/notifications'),
+            onPressed: () => AdminRoutes.goToNotifications(),
             tooltip: 'Notifications',
           ),
           SizedBox(width: AppSpacing.md),

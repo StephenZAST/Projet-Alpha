@@ -31,7 +31,7 @@ class AdminDashboard extends StatelessWidget {
               themeController.darkMode ? ThemeMode.dark : ThemeMode.light,
           defaultTransition: Transition.fadeIn,
           transitionDuration: Duration(milliseconds: 200),
-          initialRoute: AdminRoutes.login,
+          initialRoute: AdminRoutes.splash,
           getPages: AdminRoutes.routes,
           defaultGlobalState: false,
           initialBinding: InitialBinding(),

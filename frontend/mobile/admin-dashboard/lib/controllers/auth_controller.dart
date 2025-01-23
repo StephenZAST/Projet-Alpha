@@ -18,6 +18,14 @@ class AuthController extends GetxController {
     _initializeAuth();
   }
 
+  Future<void> verifyAuth() async {
+    if (AuthService.token != null) {
+      await _verifyToken();
+    } else {
+      _navigateToLogin();
+    }
+  }
+
   Future<void> _initializeAuth() async {
     try {
       print('[AuthController] Initializing auth state');
@@ -25,41 +33,38 @@ class AuthController extends GetxController {
       if (savedUser != null) {
         print('[AuthController] Found saved user: ${savedUser.toJson()}');
         user.value = savedUser;
-        await checkAuth();
+        if (AuthService.token != null) {
+          await _verifyToken();
+        } else {
+          _navigateToLogin();
+        }
       } else {
         print('[AuthController] No saved user found');
-        user.value = null;
+        _navigateToLogin();
       }
     } catch (e) {
       print('[AuthController] Error initializing auth: $e');
-      user.value = null;
+      _navigateToLogin();
     }
   }
 
-  Future<void> checkAuth() async {
-    print('[AuthController] Checking auth status');
+  Future<void> _verifyToken() async {
+    print('[AuthController] Verifying token');
     isLoading.value = true;
     try {
-      if (AuthService.token != null) {
-        print('[AuthController] Token found, refreshing user data');
-        final userData = await AuthService.getCurrentUser();
-        if (userData != null) {
-          print(
-              '[AuthController] User data refreshed successfully: ${userData.toJson()}');
-          user.value = userData;
-          _handleAuthStateChange();
-        } else {
-          print('[AuthController] Failed to refresh user data');
-          throw 'Failed to refresh user data';
-        }
+      final userData = await AuthService.getCurrentUser();
+      if (userData != null) {
+        print(
+            '[AuthController] Token verified, user data: ${userData.toJson()}');
+        user.value = userData;
+        _navigateToDashboard();
       } else {
-        print('[AuthController] No token found, logging out');
-        logout();
+        print('[AuthController] Token invalid');
+        _handleLogout();
       }
     } catch (e) {
-      print('[AuthController] Auth check error: $e');
-      _handleError('Erreur d\'authentification', e);
-      logout();
+      print('[AuthController] Token verification error: $e');
+      _handleLogout();
     } finally {
       isLoading.value = false;
     }
@@ -81,10 +86,7 @@ class AuthController extends GetxController {
             print(
                 '[AuthController] User created successfully: ${newUser.toJson()}');
             user.value = newUser;
-
-            // Attendre un peu avant de rediriger pour laisser le temps aux animations
-            await Future.delayed(Duration(milliseconds: 100));
-            _navigateTo(AdminRoutes.dashboard);
+            _navigateToDashboard();
 
             Get.snackbar(
               'Succès',
@@ -113,43 +115,29 @@ class AuthController extends GetxController {
     }
   }
 
-  void _handleAuthStateChange() {
-    print('[AuthController] Handling auth state change');
-    print('[AuthController] User: ${user.value?.toJson()}');
-    print('[AuthController] Current route: ${Get.currentRoute}');
-
-    // Navigation sûre avec un délai
-    Future.delayed(Duration(milliseconds: 100), () {
-      if (user.value == null) {
-        print('[AuthController] No user, redirecting to login');
-        if (Get.currentRoute != AdminRoutes.login) {
-          _navigateTo(AdminRoutes.login);
-        }
-      } else if (Get.currentRoute != AdminRoutes.dashboard) {
-        print('[AuthController] User authenticated, redirecting to dashboard');
-        _navigateTo(AdminRoutes.dashboard);
-      }
-    });
+  void logout() {
+    print('[AuthController] Logging out');
+    _handleLogout();
   }
 
-  void _navigateTo(String route) {
-    try {
-      _currentRoute.value = route;
-      Get.offAllNamed(route);
-    } catch (e) {
-      print('[AuthController] Navigation error: $e');
-      // En cas d'erreur de navigation, on tente de revenir à la page de login
-      if (route != AdminRoutes.login) {
-        Get.offAllNamed(AdminRoutes.login);
-      }
+  void _handleLogout() {
+    AuthService.clearSession();
+    user.value = null;
+    _navigateToLogin();
+  }
+
+  void _navigateToLogin() {
+    if (Get.currentRoute != AdminRoutes.login) {
+      _currentRoute.value = AdminRoutes.login;
+      Get.offAllNamed(AdminRoutes.login);
     }
   }
 
-  void logout() {
-    print('[AuthController] Logging out');
-    AuthService.clearSession();
-    user.value = null;
-    _navigateTo(AdminRoutes.login);
+  void _navigateToDashboard() {
+    if (Get.currentRoute != AdminRoutes.dashboard) {
+      _currentRoute.value = AdminRoutes.dashboard;
+      Get.offAllNamed(AdminRoutes.dashboard);
+    }
   }
 
   void _handleError(String title, dynamic error) {

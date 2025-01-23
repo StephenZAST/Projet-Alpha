@@ -3,6 +3,11 @@ import 'package:get/get.dart';
 import '../../controllers/menu_app_controller.dart';
 import '../../responsive.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../orders/orders_screen.dart';
+import '../services/services_screen.dart';
+import '../categories/categories_screen.dart';
+import '../users/users_screen.dart';
+import '../profile/admin_profile_screen.dart';
 import 'components/admin_side_menu.dart';
 
 class MainScreen extends StatelessWidget {
@@ -10,39 +15,45 @@ class MainScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final MenuAppController menuController = Get.find<MenuAppController>();
 
-    return Scaffold(
-      key: menuController.scaffoldKey,
-      drawer: AdminSideMenu(),
-      body: SafeArea(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Affiche le menu latéral en permanence sur desktop
-            if (Responsive.isDesktop(context))
+    return Material(
+      child: Scaffold(
+        key: menuController.scaffoldKey,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        drawer: AdminSideMenu(),
+        body: SafeArea(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Affiche le menu latéral en permanence sur desktop
+              if (Responsive.isDesktop(context))
+                Expanded(
+                  flex: 1,
+                  child: AdminSideMenu(),
+                ),
+              // Contenu principal
               Expanded(
-                flex: 1,
-                child: AdminSideMenu(),
+                flex: 5,
+                child: Obx(() {
+                  switch (menuController.selectedIndex) {
+                    case 0:
+                      return DashboardScreen();
+                    case 1:
+                      return OrdersScreen();
+                    case 2:
+                      return ServicesScreen();
+                    case 3:
+                      return CategoriesScreen();
+                    case 4:
+                      return UsersScreen();
+                    case 5:
+                      return AdminProfileScreen();
+                    default:
+                      return DashboardScreen();
+                  }
+                }),
               ),
-            // Contenu principal
-            Expanded(
-              flex: 5,
-              child: Obx(() {
-                switch (menuController.selectedIndex) {
-                  case 0:
-                    return DashboardScreen();
-                  default:
-                    return Navigator(
-                      key: Get.nestedKey(1),
-                      onGenerateRoute: (settings) {
-                        return GetPageRoute(
-                          page: () => DashboardScreen(),
-                        );
-                      },
-                    );
-                }
-              }),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
