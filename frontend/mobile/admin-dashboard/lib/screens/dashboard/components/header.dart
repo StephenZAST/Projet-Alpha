@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/auth_controller.dart';
+import '../../../controllers/menu_app_controller.dart';
 import '../../../responsive.dart';
 import '../../../constants.dart';
 import '../../../routes/admin_routes.dart';
 
-class Header extends StatelessWidget {
+class Header extends GetView<MenuAppController> {
   final String title;
 
   const Header({
@@ -18,28 +19,29 @@ class Header extends StatelessWidget {
     final authController = Get.find<AuthController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      padding: AppSpacing.paddingMD,
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black12 : Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: Offset(0, 2),
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: AppSpacing.paddingMD,
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: AppRadius.radiusMD,
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            width: 1,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          if (!Responsive.isDesktop(context))
-            Builder(
-              builder: (context) => IconButton(
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black12 : Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            if (!Responsive.isDesktop(context))
+              IconButton(
                 icon: Icon(
                   Icons.menu,
                   color: isDark ? AppColors.textLight : AppColors.textPrimary,
@@ -48,60 +50,63 @@ class Header extends StatelessWidget {
                   print('[Header] Menu button pressed');
                   print(
                       '[Header] Is Desktop: ${Responsive.isDesktop(context)}');
-                  Scaffold.of(context).openDrawer();
+                  controller.controlMenu();
                 },
               ),
-            ),
-          if (!Responsive.isDesktop(context)) SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Text(
-              title,
-              style: AppTextStyles.h3.copyWith(
-                color: isDark ? AppColors.textLight : AppColors.textPrimary,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: Icon(
-              Get.isDarkMode ? Icons.light_mode : Icons.dark_mode,
-              color: isDark ? AppColors.textLight : AppColors.textPrimary,
-            ),
-            onPressed: () => Get.changeThemeMode(
-              Get.isDarkMode ? ThemeMode.light : ThemeMode.dark,
-            ),
-            tooltip: Get.isDarkMode ? 'Mode clair' : 'Mode sombre',
-          ),
-          SizedBox(width: AppSpacing.md),
-          IconButton(
-            icon: Stack(
-              children: [
-                Icon(
-                  Icons.notifications_outlined,
+            if (!Responsive.isDesktop(context)) SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                title,
+                style: AppTextStyles.h3.copyWith(
                   color: isDark ? AppColors.textLight : AppColors.textPrimary,
                 ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: BoxConstraints(
-                      minWidth: 8,
-                      minHeight: 8,
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                Get.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              ),
+              onPressed: () => Get.changeThemeMode(
+                Get.isDarkMode ? ThemeMode.light : ThemeMode.dark,
+              ),
+              tooltip: Get.isDarkMode ? 'Mode clair' : 'Mode sombre',
+            ),
+            SizedBox(width: AppSpacing.md),
+            IconButton(
+              icon: Stack(
+                children: [
+                  Icon(
+                    Icons.notifications_outlined,
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: BoxConstraints(
+                        minWidth: 8,
+                        minHeight: 8,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              onPressed: () => AdminRoutes.goToNotifications(),
+              tooltip: 'Notifications',
             ),
-            onPressed: () => AdminRoutes.goToNotifications(),
-            tooltip: 'Notifications',
-          ),
-          SizedBox(width: AppSpacing.md),
-          Obx(() => _buildProfileMenu(authController, isDark)),
-        ],
+            SizedBox(width: AppSpacing.md),
+            Material(
+              type: MaterialType.transparency,
+              child: Obx(() => _buildProfileMenu(authController, isDark)),
+            ),
+          ],
+        ),
       ),
     );
   }

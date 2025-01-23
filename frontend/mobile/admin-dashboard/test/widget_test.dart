@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin/main.dart';
 
 void main() {
-  testWidgets('Dashboard app smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(AdminDashboard());
+  testWidgets('App smoke test', (WidgetTester tester) async {
+    await tester.pumpWidget(MyApp());
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
