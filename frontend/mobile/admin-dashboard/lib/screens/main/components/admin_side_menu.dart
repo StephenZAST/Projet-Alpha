@@ -20,12 +20,14 @@ class AdminSideMenu extends StatelessWidget {
           DrawerHeader(
             child: Image.asset("assets/images/logo.png"),
           ),
+          // DASHBOARD
           DrawerListTile(
-            title: "Dashboard",
+            title: "Tableau de bord",
             icon: Icons.dashboard_outlined,
             isSelected: selectedIndex == 0,
             onPress: () => onItemSelected(0),
           ),
+          // COMMANDES
           DrawerListTile(
             title: "Commandes",
             icon: Icons.shopping_cart_outlined,
@@ -33,6 +35,7 @@ class AdminSideMenu extends StatelessWidget {
             onPress: () => onItemSelected(1),
           ),
           const Divider(color: AppColors.borderLight),
+          // GESTION DES SERVICES
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
@@ -57,11 +60,42 @@ class AdminSideMenu extends StatelessWidget {
             onPress: () => onItemSelected(3),
           ),
           const Divider(color: AppColors.borderLight),
+          // GESTION DES UTILISATEURS
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              "GESTION DES UTILISATEURS",
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
           DrawerListTile(
             title: "Utilisateurs",
             icon: Icons.people_outline,
             isSelected: selectedIndex == 4,
             onPress: () => onItemSelected(4),
+          ),
+          const Divider(color: AppColors.borderLight),
+          // NOTIFICATIONS ET PROFIL
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              "NOTIFICATIONS & PROFIL",
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          DrawerListTile(
+            title: "Notifications",
+            icon: Icons.notifications_outlined,
+            isSelected: selectedIndex == 6,
+            onPress: () => onItemSelected(6),
           ),
           DrawerListTile(
             title: "Mon Profil",
@@ -100,13 +134,14 @@ class DrawerListTile extends StatelessWidget {
         leading: Icon(
           icon,
           color: isSelected ? AppColors.primary : AppColors.textSecondary,
+          size: 22,
         ),
         title: Text(
           title,
           style: TextStyle(
             color: isSelected ? AppColors.primary : AppColors.textSecondary,
             fontSize: 14,
-            fontWeight: FontWeight.w500,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
       ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/admin_notification.dart';
 import '../services/notification_service.dart';
+import '../routes/admin_routes.dart';
 import '../constants.dart';
 import 'dart:async';
 
@@ -22,6 +23,7 @@ class NotificationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    print('[NotificationController] Initializing');
     // On n'initialise les notifications que si l'utilisateur est authentifié
     ever(Get.find<AuthController>().user, (user) {
       if (user != null) {
@@ -36,6 +38,40 @@ class NotificationController extends GetxController {
     });
   }
 
+  void handleNotificationAction(AdminNotification notification) {
+    if (!notification.isRead) {
+      markAsRead(notification);
+    }
+
+    // Navigation basée sur le type et l'index
+    switch (notification.type) {
+      case NotificationType.ORDER:
+        AdminRoutes.navigateByIndex(1); // Index des commandes
+        break;
+      case NotificationType.USER:
+        AdminRoutes.navigateByIndex(4); // Index des utilisateurs
+        break;
+      case NotificationType.PAYMENT:
+        // Gestion des paiements (si implémenté)
+        break;
+      case NotificationType.DELIVERY:
+        // Gestion des livraisons (si implémenté)
+        break;
+      case NotificationType.AFFILIATE:
+        // Gestion des affiliés (si implémenté)
+        break;
+      case NotificationType.SYSTEM:
+        _handleSystemNotification(notification);
+        break;
+    }
+  }
+
+  void _handleSystemNotification(AdminNotification notification) {
+    // À implémenter selon les besoins spécifiques
+    print(
+        '[NotificationController] System notification: ${notification.message}');
+  }
+
   void _initializeRefreshTimer() {
     // Rafraîchir le compteur toutes les 30 secondes
     _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
@@ -48,11 +84,12 @@ class NotificationController extends GetxController {
       final count = await NotificationService.getUnreadCount();
       unreadCount.value = count;
     } catch (e) {
-      print('Error fetching unread count: $e');
+      print('[NotificationController] Error fetching unread count: $e');
     }
   }
 
   Future<void> fetchNotifications({bool refresh = false}) async {
+    print('[NotificationController] Fetching notifications, refresh: $refresh');
     if (refresh) {
       _currentPage.value = 1;
       hasMoreNotifications.value = true;
@@ -80,7 +117,10 @@ class NotificationController extends GetxController {
 
       _sortAndFilterNotifications();
       await fetchUnreadCount();
+      print(
+          '[NotificationController] Fetched ${notifications.length} notifications');
     } catch (e) {
+      print('[NotificationController] Error fetching notifications: $e');
       Get.snackbar(
         'Erreur',
         'Impossible de charger les notifications',
@@ -91,12 +131,6 @@ class NotificationController extends GetxController {
       );
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  Future<void> loadMoreNotifications() async {
-    if (!isLoading.value && hasMoreNotifications.value) {
-      await fetchNotifications();
     }
   }
 
@@ -112,6 +146,7 @@ class NotificationController extends GetxController {
       await fetchUnreadCount();
       _sortAndFilterNotifications();
     } catch (e) {
+      print('[NotificationController] Error marking notification as read: $e');
       Get.snackbar(
         'Erreur',
         'Impossible de marquer la notification comme lue',
@@ -135,6 +170,7 @@ class NotificationController extends GetxController {
         colorText: AppColors.textLight,
       );
     } catch (e) {
+      print('[NotificationController] Error marking all as read: $e');
       Get.snackbar(
         'Erreur',
         'Impossible de marquer toutes les notifications comme lues',
@@ -153,18 +189,6 @@ class NotificationController extends GetxController {
         switch (currentFilter.value) {
           case 'unread':
             return !n.isRead;
-          case 'orders':
-            return n.type == NotificationType.ORDER;
-          case 'delivery':
-            return n.type == NotificationType.DELIVERY;
-          case 'users':
-            return n.type == NotificationType.USER;
-          case 'payments':
-            return n.type == NotificationType.PAYMENT;
-          case 'system':
-            return n.type == NotificationType.SYSTEM;
-          case 'affiliate':
-            return n.type == NotificationType.AFFILIATE;
           default:
             return true;
         }
@@ -191,6 +215,7 @@ class NotificationController extends GetxController {
   }
 
   void setFilter(String filter) {
+    print('[NotificationController] Setting filter to: $filter');
     currentFilter.value = filter;
     _sortAndFilterNotifications();
   }
@@ -200,65 +225,9 @@ class NotificationController extends GetxController {
     _sortAndFilterNotifications();
   }
 
-  Future<void> deleteNotification(AdminNotification notification) async {
-    try {
-      await NotificationService.deleteNotification(notification.id);
-      notifications.remove(notification);
-      _sortAndFilterNotifications();
-      if (!notification.isRead) {
-        await fetchUnreadCount();
-      }
-      Get.snackbar(
-        'Succès',
-        'Notification supprimée',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de supprimer la notification',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-      );
-    }
-  }
-
-  void handleNotificationAction(AdminNotification notification) {
-    if (!notification.isRead) {
-      markAsRead(notification);
-    }
-
-    switch (notification.type) {
-      case NotificationType.ORDER:
-        Get.toNamed('/orders/${notification.referenceId}');
-        break;
-      case NotificationType.USER:
-        Get.toNamed('/users/${notification.referenceId}');
-        break;
-      case NotificationType.PAYMENT:
-        Get.toNamed('/payments/${notification.referenceId}');
-        break;
-      case NotificationType.DELIVERY:
-        Get.toNamed('/delivery/${notification.referenceId}');
-        break;
-      case NotificationType.AFFILIATE:
-        Get.toNamed('/affiliates/${notification.referenceId}');
-        break;
-      case NotificationType.SYSTEM:
-        // Les notifications système peuvent avoir différentes actions
-        _handleSystemNotification(notification);
-        break;
-    }
-  }
-
-  void _handleSystemNotification(AdminNotification notification) {
-    // À implémenter selon les besoins spécifiques
-    print('System notification: ${notification.message}');
-  }
-
   @override
   void onClose() {
+    print('[NotificationController] Closing');
     _refreshTimer?.cancel();
     _subscription?.cancel();
     super.onClose();

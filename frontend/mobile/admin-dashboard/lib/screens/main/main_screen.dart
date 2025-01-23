@@ -8,13 +8,10 @@ import '../services/services_screen.dart';
 import '../categories/categories_screen.dart';
 import '../users/users_screen.dart';
 import '../profile/admin_profile_screen.dart';
+import '../notifications/notifications_screen.dart';
 import 'components/admin_side_menu.dart';
 
 class MainScreen extends GetView<MenuAppController> {
-  final Widget? child;
-
-  const MainScreen({Key? key, this.child}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     print('[MainScreen] Building with scaffoldKey: ${controller.scaffoldKey}');
@@ -26,6 +23,7 @@ class MainScreen extends GetView<MenuAppController> {
         onItemSelected: controller.updateIndex,
       ),
       drawerEnableOpenDragGesture: true,
+      onDrawerChanged: controller.setDrawerState,
       body: SafeArea(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,19 +40,45 @@ class MainScreen extends GetView<MenuAppController> {
             // Contenu principal
             Expanded(
               flex: 5,
-              child: Material(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: child ??
-                    DashboardScreen(), // Utiliser l'enfant passé ou DashboardScreen par défaut
-              ),
+              child: Obx(() {
+                print(
+                    '[MainScreen] Rebuilding content with index: ${controller.selectedIndex}');
+                Widget content;
+                switch (controller.selectedIndex) {
+                  case 0:
+                    content = DashboardScreen();
+                    break;
+                  case 1:
+                    content = OrdersScreen();
+                    break;
+                  case 2:
+                    content = ServicesScreen();
+                    break;
+                  case 3:
+                    content = CategoriesScreen();
+                    break;
+                  case 4:
+                    content = UsersScreen();
+                    break;
+                  case 5:
+                    content = AdminProfileScreen();
+                    break;
+                  case 6:
+                    content = NotificationsScreen();
+                    break;
+                  default:
+                    content = DashboardScreen();
+                }
+                print('[MainScreen] Selected content: ${content.runtimeType}');
+                return Material(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: content,
+                );
+              }),
             ),
           ],
         ),
       ),
     );
-  }
-
-  static Widget withChild(Widget child) {
-    return MainScreen(child: child);
   }
 }

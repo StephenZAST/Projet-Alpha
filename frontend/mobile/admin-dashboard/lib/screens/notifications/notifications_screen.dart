@@ -1,62 +1,87 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
+import '../../components/custom_header.dart';
 import '../../controllers/notification_controller.dart';
 import 'components/notification_tile.dart';
 
 class NotificationsScreen extends StatelessWidget {
+  final controller = Get.find<NotificationController>();
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<NotificationController>();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Notifications'),
-        actions: [
-          TextButton.icon(
-            icon: Icon(Icons.check_circle_outline),
-            label: Text('Mark all as read'),
-            onPressed: controller.markAllAsRead,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildFilterTabs(controller),
-          Expanded(
-            child: Obx(() => controller.isLoading.value
-                ? Center(child: CircularProgressIndicator())
-                : controller.notifications.isEmpty
-                    ? _buildEmptyState()
-                    : _buildNotificationsList(controller)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterTabs(NotificationController controller) {
     return Container(
       padding: EdgeInsets.all(defaultPadding),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FilterChip(
-            label: Text('All'),
-            selected: controller.currentFilter.value == 'all',
-            onSelected: (_) => controller.setFilter('all'),
+          CustomHeader(
+            title: 'Notifications',
+            actions: [
+              TextButton.icon(
+                icon: Icon(Icons.check_circle_outline),
+                label: Text('Tout marquer comme lu'),
+                onPressed: controller.markAllAsRead,
+              ),
+            ],
           ),
-          SizedBox(width: 8),
-          FilterChip(
-            label: Text('Unread'),
-            selected: controller.currentFilter.value == 'unread',
-            onSelected: (_) => controller.setFilter('unread'),
+          SizedBox(height: defaultPadding),
+          _buildFilterTabs(),
+          SizedBox(height: defaultPadding),
+          Expanded(
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  ),
+                );
+              }
+
+              if (controller.notifications.isEmpty) {
+                return _buildEmptyState();
+              }
+
+              return _buildNotificationsList();
+            }),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNotificationsList(NotificationController controller) {
+  Widget _buildFilterTabs() {
+    return Row(
+      children: [
+        Obx(() => FilterChip(
+              label: Text('Tous'),
+              selected: controller.currentFilter.value == 'all',
+              onSelected: (_) => controller.setFilter('all'),
+              selectedColor: AppColors.primary.withOpacity(0.2),
+              labelStyle: TextStyle(
+                color: controller.currentFilter.value == 'all'
+                    ? AppColors.primary
+                    : AppColors.textPrimary,
+              ),
+            )),
+        SizedBox(width: 8),
+        Obx(() => FilterChip(
+              label: Text('Non lus'),
+              selected: controller.currentFilter.value == 'unread',
+              onSelected: (_) => controller.setFilter('unread'),
+              selectedColor: AppColors.primary.withOpacity(0.2),
+              labelStyle: TextStyle(
+                color: controller.currentFilter.value == 'unread'
+                    ? AppColors.primary
+                    : AppColors.textPrimary,
+              ),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildNotificationsList() {
     return RefreshIndicator(
       onRefresh: controller.fetchNotifications,
       child: ListView.builder(
@@ -74,9 +99,28 @@ class NotificationsScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.notifications_none, size: 64, color: AppColors.gray400),
+          Icon(
+            Icons.notifications_none,
+            size: 64,
+            color: AppColors.gray400,
+          ),
           SizedBox(height: defaultPadding),
-          Text('No notifications yet'),
+          Text(
+            'Aucune notification',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          SizedBox(height: defaultPadding / 2),
+          ElevatedButton.icon(
+            onPressed: () => controller.fetchNotifications(refresh: true),
+            icon: Icon(Icons.refresh),
+            label: Text('Rafraîchir'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
         ],
       ),
     );

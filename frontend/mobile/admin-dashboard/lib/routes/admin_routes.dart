@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../screens/main/main_screen.dart';
-import '../screens/dashboard/dashboard_screen.dart';
-import '../screens/orders/orders_screen.dart';
-import '../screens/services/services_screen.dart';
-import '../screens/categories/categories_screen.dart';
-import '../screens/users/users_screen.dart';
-import '../screens/profile/admin_profile_screen.dart';
 import '../screens/auth/admin_login_screen.dart';
-import '../screens/notifications/notifications_screen.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/menu_app_controller.dart';
 import '../controllers/dashboard_controller.dart';
+import '../controllers/notification_controller.dart';
+import '../controllers/orders_controller.dart';
+import '../controllers/service_controller.dart';
+import '../controllers/category_controller.dart';
 import '../middleware/auth_middleware.dart';
 
 class AdminBinding extends Bindings {
   @override
   void dependencies() {
+    // Core controllers - permanent
     if (!Get.isRegistered<AuthController>()) {
       Get.put(AuthController(), permanent: true);
     }
@@ -27,13 +25,20 @@ class AdminBinding extends Bindings {
     if (!Get.isRegistered<MenuAppController>()) {
       Get.put(MenuAppController(), permanent: true);
     }
+    if (!Get.isRegistered<NotificationController>()) {
+      Get.put(NotificationController(), permanent: true);
+    }
 
-    // Controllers non permanents
+    // Feature controllers - lazy loaded
     Get.lazyPut(() => DashboardController(), fenix: true);
+    Get.lazyPut(() => OrdersController(), fenix: true);
+    Get.lazyPut(() => ServiceController(), fenix: true);
+    Get.lazyPut(() => CategoryController(), fenix: true);
   }
 }
 
 class AdminRoutes {
+  // Routes définies
   static const String login = '/login';
   static const String main = '/';
   static const String dashboard = '/dashboard';
@@ -44,96 +49,111 @@ class AdminRoutes {
   static const String profile = '/profile';
   static const String notifications = '/notifications';
 
+  // Mapping index -> route
+  static String getRouteByIndex(int index) {
+    switch (index) {
+      case 0:
+        return dashboard;
+      case 1:
+        return orders;
+      case 2:
+        return services;
+      case 3:
+        return categories;
+      case 4:
+        return users;
+      case 5:
+        return profile;
+      case 6:
+        return notifications;
+      default:
+        return dashboard;
+    }
+  }
+
+  // Mapping route -> index
+  static int getIndexByRoute(String route) {
+    switch (route) {
+      case dashboard:
+        return 0;
+      case orders:
+        return 1;
+      case services:
+        return 2;
+      case categories:
+        return 3;
+      case users:
+        return 4;
+      case profile:
+        return 5;
+      case notifications:
+        return 6;
+      default:
+        return 0;
+    }
+  }
+
   static final routes = [
-    // Route de login - Sans MainScreen car c'est une page indépendante
+    // Route de login
     GetPage(
       name: login,
       page: () => AdminLoginScreen(),
       binding: AdminBinding(),
+      transition: Transition.fadeIn,
     ),
 
-    // Route principale - Conteneur par défaut avec DashboardScreen
+    // Route principale avec MainScreen qui gère la navigation interne
     GetPage(
       name: main,
       page: () => MainScreen(),
       binding: AdminBinding(),
       middlewares: [AuthMiddleware()],
     ),
-
-    // Routes protégées - Toutes enveloppées dans MainScreen
-    GetPage(
-      name: dashboard,
-      page: () => MainScreen.withChild(DashboardScreen()),
-      binding: AdminBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-
-    GetPage(
-      name: orders,
-      page: () => MainScreen.withChild(OrdersScreen()),
-      binding: AdminBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-
-    GetPage(
-      name: services,
-      page: () => MainScreen.withChild(ServicesScreen()),
-      binding: AdminBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-
-    GetPage(
-      name: categories,
-      page: () => MainScreen.withChild(CategoriesScreen()),
-      binding: AdminBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-
-    GetPage(
-      name: users,
-      page: () => MainScreen.withChild(UsersScreen()),
-      binding: AdminBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-
-    GetPage(
-      name: profile,
-      page: () => MainScreen.withChild(AdminProfileScreen()),
-      binding: AdminBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
-
-    GetPage(
-      name: notifications,
-      page: () => MainScreen.withChild(NotificationsScreen()),
-      binding: AdminBinding(),
-      middlewares: [AuthMiddleware()],
-    ),
   ];
 
   // Navigation helpers
+  static bool canGoBack() {
+    return Get.previousRoute.isNotEmpty;
+  }
+
+  static void goBack() {
+    if (canGoBack()) {
+      Get.back();
+    }
+  }
+
+  static void navigateByIndex(int index) {
+    final menuController = Get.find<MenuAppController>();
+    menuController.updateIndex(index);
+  }
+
+  static void navigateByRoute(String route) {
+    final menuController = Get.find<MenuAppController>();
+    menuController.updateIndex(getIndexByRoute(route));
+  }
+
   static void goToDashboard() {
-    Get.offAllNamed(dashboard);
+    navigateByIndex(0);
   }
 
   static void goToOrders() {
-    Get.toNamed(orders);
+    navigateByIndex(1);
   }
 
   static void goToServices() {
-    Get.toNamed(services);
+    navigateByIndex(2);
   }
 
   static void goToCategories() {
-    Get.toNamed(categories);
+    navigateByIndex(3);
   }
 
   static void goToUsers() {
-    Get.toNamed(users);
+    navigateByIndex(4);
   }
 
   static void goToProfile() {
-    Get.toNamed(profile);
+    navigateByIndex(5);
   }
 
   static void goToLogin() {
@@ -141,6 +161,6 @@ class AdminRoutes {
   }
 
   static void goToNotifications() {
-    Get.toNamed(notifications);
+    navigateByIndex(6);
   }
 }
