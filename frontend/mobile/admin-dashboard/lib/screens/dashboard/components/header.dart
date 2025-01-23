@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../controllers/menu_app_controller.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../responsive.dart';
 import '../../../constants.dart';
@@ -9,11 +8,13 @@ import '../../../routes/admin_routes.dart';
 class Header extends StatelessWidget {
   final String title;
 
-  const Header({Key? key, required this.title}) : super(key: key);
+  const Header({
+    Key? key,
+    required this.title,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final menuController = Get.find<MenuAppController>();
     final authController = Get.find<AuthController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -37,21 +38,19 @@ class Header extends StatelessWidget {
       child: Row(
         children: [
           if (!Responsive.isDesktop(context))
-            IconButton(
-              icon: Icon(
-                Icons.menu,
-                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            Builder(
+              builder: (context) => IconButton(
+                icon: Icon(
+                  Icons.menu,
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                ),
+                onPressed: () {
+                  print('[Header] Menu button pressed');
+                  print(
+                      '[Header] Is Desktop: ${Responsive.isDesktop(context)}');
+                  Scaffold.of(context).openDrawer();
+                },
               ),
-              onPressed: () {
-                if (!Responsive.isDesktop(context)) {
-                  if (menuController.scaffoldKey.currentState?.isDrawerOpen ??
-                      false) {
-                    Get.back();
-                  } else {
-                    menuController.scaffoldKey.currentState?.openDrawer();
-                  }
-                }
-              },
             ),
           if (!Responsive.isDesktop(context)) SizedBox(width: AppSpacing.md),
           Expanded(

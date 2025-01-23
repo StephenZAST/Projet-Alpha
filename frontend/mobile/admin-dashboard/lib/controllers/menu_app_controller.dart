@@ -3,20 +3,49 @@ import 'package:get/get.dart';
 import '../routes/admin_routes.dart';
 
 class MenuAppController extends GetxController {
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  GlobalKey<ScaffoldState> scaffoldKey =
+      GlobalKey<ScaffoldState>(debugLabel: 'MainScaffold');
   final _selectedIndex = 0.obs;
   final _currentRoute = ''.obs;
+  final _isDrawerOpen = false.obs;
 
   int get selectedIndex => _selectedIndex.value;
   String get currentRoute => _currentRoute.value;
+  bool get isDrawerOpen => _isDrawerOpen.value;
+
+  @override
+  void onInit() {
+    super.onInit();
+    print('[MenuAppController] Initializing with scaffoldKey: $scaffoldKey');
+    _currentRoute.value = Get.currentRoute;
+    updateIndexFromRoute(_currentRoute.value);
+    ever(_currentRoute,
+        (route) => print('[MenuAppController] Route changed to: $route'));
+  }
+
+  void setDrawerState(bool isOpen) {
+    _isDrawerOpen.value = isOpen;
+  }
 
   void controlMenu() {
-    if (Get.isDialogOpen ?? false) return;
+    try {
+      print('[MenuAppController] controlMenu called');
+      print('[MenuAppController] scaffoldKey: $scaffoldKey');
+      print('[MenuAppController] currentState: ${scaffoldKey.currentState}');
 
-    if (scaffoldKey.currentState?.isDrawerOpen ?? false) {
-      scaffoldKey.currentState?.closeDrawer();
-    } else {
-      scaffoldKey.currentState?.openDrawer();
+      if (scaffoldKey.currentState != null) {
+        if (scaffoldKey.currentState!.isDrawerOpen) {
+          scaffoldKey.currentState?.closeDrawer();
+          _isDrawerOpen.value = false;
+        } else {
+          scaffoldKey.currentState?.openDrawer();
+          _isDrawerOpen.value = true;
+        }
+      } else {
+        print('[MenuAppController] Error: scaffoldKey.currentState is null');
+      }
+    } catch (e) {
+      print('[MenuAppController] Error controlling drawer: $e');
     }
   }
 
@@ -32,7 +61,6 @@ class MenuAppController extends GetxController {
 
   void updateSelectedIndex(int index) {
     _selectedIndex.value = index;
-    // Navigation basée sur l'index sélectionné
     switch (index) {
       case 0:
         _navigateTo(AdminRoutes.dashboard, offAll: true);
@@ -55,7 +83,6 @@ class MenuAppController extends GetxController {
     }
   }
 
-  // Méthode pour mettre à jour l'index en fonction de la route actuelle
   void updateIndexFromRoute(String route) {
     _currentRoute.value = route;
     switch (route) {
@@ -82,16 +109,5 @@ class MenuAppController extends GetxController {
           _selectedIndex.value = 1;
         }
     }
-  }
-
-  @override
-  void onInit() {
-    super.onInit();
-    // Initialiser avec la route actuelle
-    _currentRoute.value = Get.currentRoute;
-    updateIndexFromRoute(_currentRoute.value);
-
-    // Écouter les changements de route
-    ever(_currentRoute, (route) => print('Route changed to: $route'));
   }
 }
