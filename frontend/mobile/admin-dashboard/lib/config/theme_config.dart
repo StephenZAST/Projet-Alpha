@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 
 class ThemeConfig {
   static ThemeData lightTheme(BuildContext context) {
-    return ThemeData.light().copyWith(
+    return ThemeData(
+      useMaterial3: true,
       scaffoldBackgroundColor: AppColors.bgColor,
       primaryColor: AppColors.primary,
+      fontFamily: AppTextStyles.fontFamily,
       canvasColor: AppColors.secondaryBg,
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,
@@ -15,8 +16,7 @@ class ThemeConfig {
         background: AppColors.bgColor,
         error: AppColors.error,
       ),
-      textTheme:
-          GoogleFonts.interTextTheme(Theme.of(context).textTheme).copyWith(
+      textTheme: TextTheme(
         displayLarge: AppTextStyles.h1.copyWith(color: AppColors.textPrimary),
         displayMedium: AppTextStyles.h2.copyWith(color: AppColors.textPrimary),
         displaySmall: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
@@ -114,9 +114,11 @@ class ThemeConfig {
   }
 
   static ThemeData darkTheme(BuildContext context) {
-    return ThemeData.dark().copyWith(
+    return ThemeData(
+      useMaterial3: true,
       scaffoldBackgroundColor: AppColors.darkBg,
       primaryColor: AppColors.primary,
+      fontFamily: AppTextStyles.fontFamily,
       canvasColor: AppColors.gray800,
       colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
@@ -125,8 +127,7 @@ class ThemeConfig {
         background: AppColors.darkBg,
         error: AppColors.error,
       ),
-      textTheme:
-          GoogleFonts.interTextTheme(Theme.of(context).textTheme).copyWith(
+      textTheme: TextTheme(
         displayLarge: AppTextStyles.h1.copyWith(color: AppColors.textLight),
         displayMedium: AppTextStyles.h2.copyWith(color: AppColors.textLight),
         displaySmall: AppTextStyles.h3.copyWith(color: AppColors.textLight),

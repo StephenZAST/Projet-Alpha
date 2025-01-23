@@ -13,21 +13,22 @@ class ThemeSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<ThemeController>(
+    return GetX<ThemeController>(
+      init: ThemeController(),
       builder: (controller) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
             icon: Icon(
-              controller.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              controller.darkMode ? Icons.light_mode : Icons.dark_mode,
               color:
-                  controller.isDarkMode ? AppColors.warning : AppColors.gray600,
+                  controller.darkMode ? AppColors.warning : AppColors.gray600,
               size: 22,
             ),
-            tooltip: controller.isDarkMode
+            tooltip: controller.darkMode
                 ? 'Passer au thème clair'
                 : 'Passer au thème sombre',
-            onPressed: controller.changeTheme,
+            onPressed: controller.toggleTheme,
             padding: EdgeInsets.all(AppSpacing.sm),
             splashRadius: 24,
           ),
@@ -35,7 +36,7 @@ class ThemeSwitch extends StatelessWidget {
             Padding(
               padding: EdgeInsets.only(left: AppSpacing.sm),
               child: Text(
-                controller.isDarkMode ? 'Mode Clair' : 'Mode Sombre',
+                controller.darkMode ? 'Mode Clair' : 'Mode Sombre',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: Get.isDarkMode
                       ? AppColors.textLight

@@ -7,15 +7,13 @@ import '../../../controllers/dashboard_controller.dart';
 class StatisticsCards extends StatelessWidget {
   final currencyFormat = NumberFormat.currency(
     locale: 'fr_FR',
-    symbol: 'fcfa',
+    symbol: 'FCFA',
     decimalDigits: 0,
   );
 
   double _calculateGrowth(DashboardController controller) {
-    if (controller.revenueChartData.isEmpty) return 0;
-
-    final data = controller.revenueChartData['data'] as List<double>?;
-    if (data == null || data.length < 2) return 0;
+    final data = controller.chartData;
+    if (data.length < 2) return 0;
 
     final currentValue = data.last;
     final previousValue = data[data.length - 2];
@@ -32,8 +30,20 @@ class StatisticsCards extends StatelessWidget {
     return Obx(() {
       if (controller.isLoading.value) {
         return Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+              SizedBox(height: AppSpacing.md),
+              Text(
+                'Chargement des statistiques...',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
         );
       }
@@ -53,15 +63,15 @@ class StatisticsCards extends StatelessWidget {
           _StatCard(
             title: 'Revenus Totaux',
             value: currencyFormat.format(controller.totalRevenue.value),
-            icon: Icons.monetization_on,
+            icon: Icons.monetization_on_outlined,
             iconColor: AppColors.success,
             change: revenueGrowth,
             isDark: isDark,
           ),
           _StatCard(
             title: 'Commandes',
-            value: '${controller.totalOrders}',
-            icon: Icons.shopping_cart,
+            value: controller.totalOrders.toString(),
+            icon: Icons.shopping_cart_outlined,
             iconColor: AppColors.primary,
             change: 0,
             isDark: isDark,
@@ -69,8 +79,8 @@ class StatisticsCards extends StatelessWidget {
           ),
           _StatCard(
             title: 'Clients',
-            value: '${controller.totalCustomers}',
-            icon: Icons.people,
+            value: controller.totalCustomers.toString(),
+            icon: Icons.people_outline,
             iconColor: AppColors.accent,
             change: 0,
             isDark: isDark,
@@ -78,8 +88,8 @@ class StatisticsCards extends StatelessWidget {
           ),
           _StatCard(
             title: 'En cours',
-            value: '${controller.orderStatusCount['PROCESSING'] ?? 0}',
-            icon: Icons.pending_actions,
+            value: controller.getOrderCountByStatus('PROCESSING').toString(),
+            icon: Icons.pending_actions_outlined,
             iconColor: AppColors.warning,
             change: 0,
             isDark: isDark,
@@ -126,7 +136,8 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 300),
       padding: EdgeInsets.all(defaultPadding),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -135,6 +146,13 @@ class _StatCard extends StatelessWidget {
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black12 : Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -152,23 +170,37 @@ class _StatCard extends StatelessWidget {
                 child: Icon(icon, color: iconColor),
               ),
               if (showChange && change != 0)
-                Row(
-                  children: [
-                    Icon(
-                      change >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
-                      color: change >= 0 ? AppColors.success : AppColors.error,
-                      size: 16,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      '${change.abs().toStringAsFixed(1)}%',
-                      style: AppTextStyles.bodySmall.copyWith(
+                AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (change >= 0 ? AppColors.success : AppColors.error)
+                        .withOpacity(0.1),
+                    borderRadius: AppRadius.radiusSM,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        change >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
                         color:
                             change >= 0 ? AppColors.success : AppColors.error,
-                        fontWeight: FontWeight.w600,
+                        size: 16,
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 4),
+                      Text(
+                        '${change.abs().toStringAsFixed(1)}%',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color:
+                              change >= 0 ? AppColors.success : AppColors.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),

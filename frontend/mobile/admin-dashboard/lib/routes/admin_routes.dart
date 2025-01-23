@@ -8,6 +8,7 @@ import '../controllers/article_controller.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/service_controller.dart';
 import '../controllers/article_service_controller.dart';
+import '../controllers/theme_controller.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/auth/admin_login_screen.dart';
 import '../screens/orders/orders_screen.dart';
@@ -23,6 +24,7 @@ class InitialBinding extends Bindings {
   @override
   void dependencies() {
     Get.put(AuthController(), permanent: true);
+    Get.put(ThemeController(), permanent: true);
   }
 }
 

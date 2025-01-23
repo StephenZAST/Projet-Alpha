@@ -101,55 +101,64 @@ class AppRadius {
 }
 
 class AppTextStyles {
-  static const String fontFamily = 'Inter';
+  static const String fontFamily = 'SourceSansPro';
 
   // Headings
   static const TextStyle h1 = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 32.0,
     fontWeight: FontWeight.bold,
     letterSpacing: -0.5,
   );
 
   static const TextStyle h2 = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 24.0,
     fontWeight: FontWeight.bold,
     letterSpacing: -0.25,
   );
 
   static const TextStyle h3 = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 20.0,
     fontWeight: FontWeight.bold,
   );
 
   static const TextStyle h4 = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 18.0,
     fontWeight: FontWeight.bold,
   );
 
   // Body text
   static const TextStyle bodyLarge = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 16.0,
     fontWeight: FontWeight.normal,
   );
 
   static const TextStyle bodyMedium = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 14.0,
     fontWeight: FontWeight.normal,
   );
 
   static const TextStyle bodySmall = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 12.0,
     fontWeight: FontWeight.normal,
   );
 
   // Button text
   static const TextStyle buttonLarge = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 16.0,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.25,
   );
 
   static const TextStyle buttonMedium = TextStyle(
+    fontFamily: fontFamily,
     fontSize: 14.0,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.25,

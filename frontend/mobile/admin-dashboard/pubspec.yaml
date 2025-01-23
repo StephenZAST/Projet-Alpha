@@ -13,7 +13,6 @@ dependencies:
     sdk: flutter
   get: ^4.6.5
   get_storage: ^2.1.1
-  google_fonts: ^4.0.4
   intl: ^0.18.0
   flutter_svg: ^2.0.5
   dio: ^5.3.2
@@ -43,12 +42,35 @@ flutter:
     - assets/icons/
 
   fonts:
-    - family: Inter
+    - family: SourceSansPro
       fonts:
-        - asset: assets/fonts/Inter-Regular.ttf
-        - asset: assets/fonts/Inter-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Inter-SemiBold.ttf
+        - asset: assets/source-sans-pro/SourceSansPro-Regular.ttf
+          weight: 400
+        - asset: assets/source-sans-pro/SourceSansPro-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/source-sans-pro/SourceSansPro-Light.ttf
+          weight: 300
+        - asset: assets/source-sans-pro/SourceSansPro-LightItalic.ttf
+          weight: 300
+          style: italic
+        - asset: assets/source-sans-pro/SourceSansPro-Semibold.ttf
           weight: 600
-        - asset: assets/fonts/Inter-Bold.ttf
+        - asset: assets/source-sans-pro/SourceSansPro-SemiboldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: assets/source-sans-pro/SourceSansPro-Bold.ttf
           weight: 700
+        - asset: assets/source-sans-pro/SourceSansPro-BoldItalic.ttf
+          weight: 700
+          style: italic
+        - asset: assets/source-sans-pro/SourceSansPro-Black.ttf
+          weight: 900
+        - asset: assets/source-sans-pro/SourceSansPro-BlackItalic.ttf
+          weight: 900
+          style: italic
+        - asset: assets/source-sans-pro/SourceSansPro-ExtraLight.ttf
+          weight: 200
+        - asset: assets/source-sans-pro/SourceSansPro-ExtraLightItalic.ttf
+          weight: 200
+          style: italic

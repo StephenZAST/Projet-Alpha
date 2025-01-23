@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import '../models/order.dart';
 import '../services/dashboard_service.dart';
@@ -14,16 +15,37 @@ class DashboardController extends GetxController {
   final totalCustomers = 0.obs;
 
   // Données pour les graphiques
-  final revenueChartData = <String, List<dynamic>>{}.obs;
+  final revenueChartData = Rx<Map<String, List<dynamic>>>({
+    'labels': <String>[],
+    'data': <double>[],
+  });
   final orderStatusCount = <String, int>{}.obs;
 
   // Commandes récentes
   final recentOrders = <Order>[].obs;
 
+  // Timer pour le rafraîchissement automatique
+  Timer? _refreshTimer;
+  static const refreshInterval = Duration(minutes: 5);
+
   @override
   void onInit() {
     super.onInit();
     fetchDashboardData();
+    _startRefreshTimer();
+  }
+
+  @override
+  void onClose() {
+    _refreshTimer?.cancel();
+    super.onClose();
+  }
+
+  void _startRefreshTimer() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(refreshInterval, (timer) {
+      fetchDashboardData();
+    });
   }
 
   Future<void> fetchDashboardData() async {
@@ -37,10 +59,8 @@ class DashboardController extends GetxController {
       totalRevenue.value = (stats['totalRevenue'] as num).toDouble();
       totalOrders.value = stats['totalOrders'] as int;
       totalCustomers.value = stats['totalCustomers'] as int;
-
-      // Récupérer les commandes par statut
-      final statusData = await DashboardService.getOrdersByStatus();
-      orderStatusCount.value = statusData;
+      orderStatusCount.value =
+          Map<String, int>.from(stats['ordersByStatus'] ?? {});
 
       // Récupérer les commandes récentes
       final recentData = await DashboardService.getRecentOrders();
@@ -96,6 +116,9 @@ class DashboardController extends GetxController {
         snackPosition: SnackPosition.TOP,
         duration: Duration(seconds: 3),
       );
+
+      // Rafraîchir les données après la mise à jour
+      await fetchDashboardData();
     } catch (e) {
       print('[DashboardController] Error configuring commissions: $e');
       hasError.value = true;
@@ -136,6 +159,9 @@ class DashboardController extends GetxController {
         snackPosition: SnackPosition.TOP,
         duration: Duration(seconds: 3),
       );
+
+      // Rafraîchir les données après la mise à jour
+      await fetchDashboardData();
     } catch (e) {
       print('[DashboardController] Error configuring rewards: $e');
       hasError.value = true;
@@ -157,4 +183,12 @@ class DashboardController extends GetxController {
   Future<void> refreshDashboard() async {
     await fetchDashboardData();
   }
+
+  // Helpers pour l'accès aux données du graphique
+  List<String> get chartLabels =>
+      revenueChartData.value['labels'] as List<String>;
+  List<double> get chartData => revenueChartData.value['data'] as List<double>;
+
+  // Helper pour obtenir le statut d'une commande
+  int getOrderCountByStatus(String status) => orderStatusCount[status] ?? 0;
 }

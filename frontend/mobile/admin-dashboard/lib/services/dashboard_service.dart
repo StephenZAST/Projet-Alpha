@@ -2,12 +2,21 @@ import './api_service.dart';
 
 class DashboardService {
   static final _api = ApiService();
+  static const String adminBasePath = '/api/admin';
 
   static Future<Map<String, dynamic>> getStatistics() async {
     try {
-      final response = await _api.get('/admin/statistics');
+      final response = await _api.get('$adminBasePath/dashboard/statistics');
       if (response.data != null && response.data['data'] != null) {
-        return response.data['data'];
+        final data = response.data['data'];
+        return {
+          'totalRevenue': (data['totalRevenue'] as num).toDouble(),
+          'totalOrders': data['totalOrders'] as int,
+          'totalCustomers': data['totalCustomers'] as int,
+          'ordersByStatus': Map<String, int>.from(data['ordersByStatus'] ?? {}),
+          'recentOrders':
+              List<Map<String, dynamic>>.from(data['recentOrders'] ?? []),
+        };
       }
       throw 'Erreur lors du chargement des statistiques';
     } catch (e) {
@@ -18,9 +27,21 @@ class DashboardService {
 
   static Future<Map<String, dynamic>> getRecentOrders() async {
     try {
-      final response = await _api.get('/admin/orders/recent');
+      final response = await _api.get('$adminBasePath/orders/recent');
       if (response.data != null && response.data['data'] != null) {
-        return response.data['data'];
+        final orders = response.data['data'] as List;
+        return {
+          'orders': orders
+              .map((order) => {
+                    'id': order['id'],
+                    'totalAmount': order['totalAmount'],
+                    'status': order['status'],
+                    'createdAt': order['createdAt'],
+                    'service': order['service'],
+                    'user': order['user'],
+                  })
+              .toList(),
+        };
       }
       throw 'Erreur lors du chargement des commandes récentes';
     } catch (e) {
@@ -31,16 +52,15 @@ class DashboardService {
 
   static Future<Map<String, dynamic>> getRevenueChartData() async {
     try {
-      final response = await _api.get('/admin/revenue-chart');
+      final response = await _api.get('$adminBasePath/revenue-chart');
       if (response.data != null && response.data['data'] != null) {
         final data = response.data['data'];
-        if (data['labels'] != null && data['data'] != null) {
-          return {
-            'labels': List<String>.from(data['labels']),
-            'data': List<double>.from(
-                data['data'].map((d) => (d as num).toDouble())),
-          };
-        }
+        return {
+          'labels': List<String>.from(data['labels']),
+          'data': List<double>.from(
+            data['data'].map((d) => (d as num).toDouble()),
+          ),
+        };
       }
       throw 'Erreur lors du chargement des données du graphique';
     } catch (e) {
@@ -51,10 +71,9 @@ class DashboardService {
 
   static Future<Map<String, int>> getOrdersByStatus() async {
     try {
-      final response = await _api.get('/admin/orders/by-status');
+      final response = await _api.get('$adminBasePath/orders/by-status');
       if (response.data != null && response.data['data'] != null) {
-        final Map<String, dynamic> data = response.data['data'];
-        return Map<String, int>.from(data);
+        return Map<String, int>.from(response.data['data']);
       }
       return {};
     } catch (e) {
@@ -68,10 +87,13 @@ class DashboardService {
     required int rewardPoints,
   }) async {
     try {
-      await _api.put('/admin/config/commissions', data: {
-        'commissionRate': commissionRate,
-        'rewardPoints': rewardPoints,
-      });
+      await _api.post(
+        '$adminBasePath/configure/commissions',
+        data: {
+          'commissionRate': commissionRate,
+          'rewardPoints': rewardPoints,
+        },
+      );
     } catch (e) {
       print('[DashboardService] Error configuring commissions: $e');
       throw 'Erreur lors de la configuration des commissions';
@@ -83,21 +105,24 @@ class DashboardService {
     required String rewardType,
   }) async {
     try {
-      await _api.put('/admin/config/rewards', data: {
-        'rewardPoints': rewardPoints,
-        'rewardType': rewardType,
-      });
+      await _api.post(
+        '$adminBasePath/configure/rewards',
+        data: {
+          'rewardPoints': rewardPoints,
+          'rewardType': rewardType,
+        },
+      );
     } catch (e) {
       print('[DashboardService] Error configuring rewards: $e');
       throw 'Erreur lors de la configuration des récompenses';
     }
   }
 
-  static Future<Map<String, dynamic>> getTotalRevenue() async {
+  static Future<double> getTotalRevenue() async {
     try {
-      final response = await _api.get('/admin/revenue/total');
+      final response = await _api.get('$adminBasePath/revenue/total');
       if (response.data != null && response.data['data'] != null) {
-        return response.data['data'];
+        return (response.data['data'] as num).toDouble();
       }
       throw 'Erreur lors du chargement des revenus';
     } catch (e) {
@@ -112,13 +137,14 @@ class DashboardService {
     required bool isActive,
   }) async {
     try {
-      final response = await _api.put(
-        '/admin/affiliates/$affiliateId/status',
+      final response = await _api.post(
+        '$adminBasePath/affiliates/$affiliateId/status',
         data: {
           'status': status,
           'isActive': isActive,
         },
       );
+
       if (response.data != null && response.data['data'] != null) {
         return response.data['data'];
       }
