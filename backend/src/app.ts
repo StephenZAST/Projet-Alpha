@@ -94,7 +94,7 @@ const adminLimiter = rateLimit({
 
 const standardLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limite standard
+  max: 10000, // limite standard
   standardHeaders: true,
   legacyHeaders: false,
 });

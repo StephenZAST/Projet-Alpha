@@ -379,13 +379,22 @@ export class OrderService {
       }
 
       // 4. Si le statut est "DELIVERED", mettre à jour les statistiques
-      if (status === 'DELIVERED') {
+      // Vérifier si la commande est déjà DELIVERED
+      if (order.status === 'DELIVERED') {
+        console.error(`Order ${orderId} is already in DELIVERED status`);
+        throw new Error('Cannot update order that is already delivered');
+      }
+
+      // Si la nouvelle mise à jour est DELIVERED
+      if (newStatus === 'DELIVERED') {
         try {
+          console.log(`Processing DELIVERED status for order ${orderId}`);
+          
           // Récupérer les détails de la commande pour les statistiques
           const orderDetails = await this.getOrderDetails(orderId, order.userId);
           
           // Ajouter à l'historique des commandes livrées
-          await supabase
+          const { error: historyError } = await supabase
             .from('delivery_history')
             .insert([{
               order_id: orderId,
@@ -395,16 +404,24 @@ export class OrderService {
               created_at: new Date()
             }]);
 
+          if (historyError) {
+            console.error('Error adding to delivery history:', historyError);
+          }
+
           // Log de la mise à jour dans les statistiques
-          await supabase
+          const { error: logError } = await supabase
             .from('order_status_logs')
             .insert([{
               order_id: orderId,
               previous_status: order.status,
-              new_status: status,
+              new_status: newStatus,
               updated_by: userId,
               created_at: new Date()
             }]);
+
+          if (logError) {
+            console.error('Error adding status log:', logError);
+          }
 
         } catch (statsError) {
           console.error('Error updating delivery statistics:', statsError);
@@ -413,12 +430,19 @@ export class OrderService {
       }
 
       // 5. Notifier le client du changement de statut
-      await NotificationService.createOrderNotification(
-        order.userId,
-        orderId,
-        'ORDER_STATUS_UPDATED',
-        { newStatus: status }
-      );
+      console.log(`Sending notification for order ${orderId} status update`);
+      try {
+        await NotificationService.createOrderNotification(
+          order.userId,
+          orderId,
+          'ORDER_STATUS_UPDATED',
+          { newStatus: newStatus }
+        );
+        console.log('Notification sent successfully');
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError);
+        // Ne pas bloquer la mise à jour du statut si la notification échoue
+      }
 
       return updatedOrder;
     } catch (error) {
