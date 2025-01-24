@@ -124,10 +124,37 @@ class OrderService {
     }
   }
 
+  // Map des transitions de statut valides
+  static final Map<String, List<String>> validTransitions = {
+    'PENDING': ['COLLECTING'],
+    'COLLECTING': ['COLLECTED'],
+    'COLLECTED': ['PROCESSING'],
+    'PROCESSING': ['READY'],
+    'READY': ['DELIVERING'],
+    'DELIVERING': ['DELIVERED'],
+    'DELIVERED': [],
+    'CANCELLED': []
+  };
+
+  // Vérifier si une transition est valide
+  static bool isValidTransition(String currentStatus, String newStatus) {
+    final validNextStatuses = validTransitions[currentStatus] ?? [];
+    return validNextStatuses.contains(newStatus);
+  }
+
   static Future<void> updateOrderStatus(
       String orderId, String newStatus) async {
     try {
       print('[OrderService] Updating order status: $orderId to $newStatus');
+
+      // Obtenir d'abord les détails de la commande pour vérifier le statut actuel
+      final order = await getOrderById(orderId);
+
+      // Vérifier si la transition est valide
+      if (!isValidTransition(order.status, newStatus)) {
+        throw 'Transition de statut invalide : ${order.status} -> $newStatus n\'est pas autorisé';
+      }
+
       final response = await _api.patch(
         '$_basePath/$orderId/status',
         data: {'status': newStatus},
@@ -145,7 +172,8 @@ class OrderService {
 
       if (response.statusCode! >= 400) {
         print('[OrderService] Error response: ${response.data}');
-        final message = response.data?['message'] ??
+        final message = response.data?['error'] ??
+            response.data?['message'] ??
             'Erreur lors de la mise à jour du statut';
         throw message;
       }
@@ -153,7 +181,10 @@ class OrderService {
       print('[OrderService] Order status updated successfully');
     } catch (e) {
       print('[OrderService] Error updating order status: $e');
-      rethrow; // Propager l'erreur avec le message original
+      if (e is String) {
+        throw e; // Propager les messages d'erreur personnalisés
+      }
+      throw 'Erreur lors de la mise à jour du statut : ${e.toString()}';
     }
   }
 

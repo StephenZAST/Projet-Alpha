@@ -311,9 +311,31 @@ export class OrderService {
     } as Order;
   }
 
-  static async updateOrderStatus(orderId: string, status: OrderStatus, userId: string, userRole: string): Promise<Order> {
+  // Définir les transitions de statut valides
+  private static readonly validStatusTransitions: Record<OrderStatus, OrderStatus[]> = {
+    'PENDING': ['COLLECTING'],
+    'COLLECTING': ['COLLECTED'],
+    'COLLECTED': ['PROCESSING'],
+    'PROCESSING': ['READY'],
+    'READY': ['DELIVERING'],
+    'DELIVERING': ['DELIVERED'],
+    'DELIVERED': [],  // Statut final
+    'CANCELLED': []   // Statut final
+  };
+
+  // Valider la transition de statut
+  private static validateStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): boolean {
+    const validNextStatuses = this.validStatusTransitions[currentStatus];
+    return validNextStatuses.includes(newStatus);
+  }
+
+  static async updateOrderStatus(orderId: string, newStatus: OrderStatus, userId: string, userRole: string): Promise<Order> {
     try {
-      // 1. Vérifier si la commande existe
+      console.log(`Attempting to update order ${orderId} to status ${newStatus}`);
+      
+      console.log(`Starting status update process for order ${orderId}`);
+
+      // 1. Vérifier si la commande existe et obtenir son statut actuel
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .select('*')
@@ -321,52 +343,72 @@ export class OrderService {
         .single();
 
       if (orderError || !order) {
+        console.error('Order not found:', orderError);
         throw new Error('Order not found');
       }
 
       // 2. Vérifier les autorisations
       const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'DELIVERY'];
       if (!allowedRoles.includes(userRole)) {
+        console.error(`Unauthorized role ${userRole} attempting to update order status`);
         throw new Error('Unauthorized to update order status');
       }
 
-      // 3. Mettre à jour le statut
+      // 3. Valider la transition de statut
+      if (!this.validateStatusTransition(order.status, newStatus)) {
+        console.error(`Invalid status transition from ${order.status} to ${newStatus}`);
+        throw new Error(`Invalid status transition from ${order.status} to ${newStatus}`);
+      }
+
+      console.log(`Updating order ${orderId} from ${order.status} to ${newStatus}`);
+
+      // 4. Mettre à jour le statut
       const { data: updatedOrder, error: updateError } = await supabase
         .from('orders')
-        .update({ 
-          status,
+        .update({
+          status: newStatus,
           updatedAt: new Date()
         })
         .eq('id', orderId)
         .select()
         .single();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating order status:', updateError);
+        throw updateError;
+      }
 
-      // 4. Si le statut est "DELIVERED", archiver la commande
+      // 4. Si le statut est "DELIVERED", mettre à jour les statistiques
       if (status === 'DELIVERED') {
-        // Vérifier d'abord si la commande n'est pas déjà archivée
-        const { data: existingArchive } = await supabase
-          .from('orders_archive')
-          .select('id')
-          .eq('id', orderId)
-          .single();
+        try {
+          // Récupérer les détails de la commande pour les statistiques
+          const orderDetails = await this.getOrderDetails(orderId, order.userId);
+          
+          // Ajouter à l'historique des commandes livrées
+          await supabase
+            .from('delivery_history')
+            .insert([{
+              order_id: orderId,
+              user_id: order.userId,
+              delivery_date: new Date(),
+              total_amount: orderDetails.totalAmount,
+              created_at: new Date()
+            }]);
 
-        if (!existingArchive) {
-          // Archiver uniquement si la commande n'est pas déjà archivée
-          const archiveData = {
-            ...order,
-            archived_at: new Date(),
-            status: 'DELIVERED'
-          };
+          // Log de la mise à jour dans les statistiques
+          await supabase
+            .from('order_status_logs')
+            .insert([{
+              order_id: orderId,
+              previous_status: order.status,
+              new_status: status,
+              updated_by: userId,
+              created_at: new Date()
+            }]);
 
-          const { error: archiveError } = await supabase
-            .from('orders_archive')
-            .insert([archiveData]);
-
-          if (archiveError && !archiveError.message.includes('duplicate key')) {
-            console.error('Archive error:', archiveError);
-          }
+        } catch (statsError) {
+          console.error('Error updating delivery statistics:', statsError);
+          // Ne pas bloquer la mise à jour du statut si les stats échouent
         }
       }
 

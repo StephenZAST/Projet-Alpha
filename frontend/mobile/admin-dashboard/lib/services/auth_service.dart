@@ -46,9 +46,11 @@ class AuthService {
       final responseData = response.data;
       print('[AuthService] Raw login response: $responseData');
 
-      if (responseData['success'] == true && responseData['data'] != null) {
-        final userData = responseData['data']['user'];
-        final token = responseData['data']['token'];
+      // Vérifier la réponse de manière plus flexible
+      if (responseData != null && responseData['data'] != null) {
+        final data = responseData['data'];
+        final userData = data['user'];
+        final token = data['token'];
 
         if (token == null || userData == null) {
           throw 'Missing token or user data';
@@ -112,7 +114,7 @@ class AuthService {
 
       print('[AuthService] Current user response: $responseData');
 
-      if (responseData['success'] == true && responseData['data'] != null) {
+      if (responseData != null && responseData['data'] != null) {
         final userData = responseData['data'];
 
         print('[AuthService] User data before parsing: $userData');

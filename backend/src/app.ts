@@ -24,6 +24,8 @@ import blogArticleRoutes from './routes/blogArticle.routes';
 import orderItemRoutes from './routes/orderItem.routes';
 import archiveRoutes from './routes/archive.routes';  // Ajouter cet import
 import './scheduler'; // Importer le scheduler pour démarrer les tâches cron
+import { Request, ParamsDictionary, Response, NextFunction } from 'express-serve-static-core';
+import { ParsedQs } from 'qs';
 
 // Load environment variables
 dotenv.config();
@@ -74,34 +76,37 @@ app.use(cors({
 }));
 
 // Rate limiting configuration
-const standardLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  keyGenerator: (req) => req.ip as string,
+// Rate limiting configuration
+const loginLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 heure
+  max: 20, // 20 tentatives par heure
+  message: { message: 'Trop de tentatives de connexion, veuillez réessayer plus tard.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: (req: express.Request): number => {
-    // Vérifier si l'utilisateur est admin
-    if (req.user && ['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
-      return 10000; // Limite très élevée pour les admins
-    }
-    return 1000; // Limite standard pour les autres
-  },
-  keyGenerator: (req) => (req.user?.id || req.ip) as string,
+  max: 5000, // limite élevée
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// Routes admin avec limite élevée
+const standardLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limite standard
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Appliquer les limites par route
+app.use('/api/auth/admin/login', loginLimiter);
 app.use('/api/admin', adminLimiter);
 app.use('/api/orders', adminLimiter);
 app.use('/api/notifications', adminLimiter);
-
-// Autres routes avec limite standard
 app.use('/api', standardLimiter);
-
 // Routes
-app.use('/api/auth', authRoutes); // Utiliser directement la route sans middleware
+app.use('/api/auth', authRoutes);
 
 app.use('/api/orders', (req, res, next) => {
   console.log('Orders Routes Middleware:', req.user);
@@ -168,3 +173,7 @@ app.listen(PORT, () => {
 });
 
 export default app;
+function limiter(req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>, number>, next: NextFunction): void {
+  throw new Error('Function not implemented.');
+}
+

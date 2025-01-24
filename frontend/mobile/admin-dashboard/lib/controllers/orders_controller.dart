@@ -4,22 +4,6 @@ import '../models/enums.dart';
 import '../services/order_service.dart';
 import '../constants.dart';
 
-/// Contrôleur pour la gestion des commandes avec pagination
-///
-/// Fonctionnalités :
-/// - Chargement paginé des commandes
-/// - Filtrage par statut
-/// - Recherche textuelle
-/// - Statistiques et métriques
-/// - Navigation entre les pages
-///
-/// La pagination est gérée via :
-/// - [currentPage] : Page actuelle (commence à 1)
-/// - [itemsPerPage] : Nombre d'éléments par page
-/// - [totalPages] : Nombre total de pages disponibles
-///
-/// Utilisez [nextPage] et [previousPage] pour naviguer entre les pages,
-/// ou [setItemsPerPage] pour modifier le nombre d'éléments par page.
 class OrdersController extends GetxController {
   // État de chargement et erreurs
   final isLoading = false.obs;
@@ -112,13 +96,11 @@ class OrdersController extends GetxController {
   }
 
   // Méthodes de filtrage
-  /// Filtre les commandes par statut et réinitialise la pagination
   void filterByStatus(OrderStatus? status) {
     selectedStatus.value = status;
     fetchOrders(resetPage: true);
   }
 
-  /// Met à jour les compteurs de statuts des commandes
   Future<void> _updateStatusCounts() async {
     try {
       final allOrders = await OrderService.getOrders();
@@ -133,7 +115,6 @@ class OrdersController extends GetxController {
     }
   }
 
-  /// Navigue à la page suivante
   void nextPage() {
     if (currentPage.value < totalPages.value) {
       currentPage.value++;
@@ -141,7 +122,6 @@ class OrdersController extends GetxController {
     }
   }
 
-  /// Navigue à la page précédente
   void previousPage() {
     if (currentPage.value > 1) {
       currentPage.value--;
@@ -154,49 +134,33 @@ class OrdersController extends GetxController {
     fetchOrders(resetPage: true);
   }
 
-  void _applyFilters() async {
-    try {
-      isLoading.value = true;
-
-      // Réinitialiser la pagination
-      currentPage.value = 1;
-
-      // Charger les commandes filtrées avec pagination
-      final result = await OrderService.loadOrdersPage(
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-        status: selectedStatus.value?.name,
-      );
-
-      orders.value = result.orders;
-      totalOrders.value = result.total;
-      totalPages.value = result.totalPages;
-    } catch (e) {
-      print('[OrdersController] Error applying filters: $e');
-      hasError.value = true;
-      errorMessage.value = 'Erreur lors du filtrage des commandes';
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  /// Change le nombre d'éléments par page
-  void setItemsPerPage(int value) {
-    if (value > 0) {
-      itemsPerPage.value = value;
-      fetchOrders(resetPage: true);
-    }
-  }
-
   Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     try {
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
 
+      // Trouver la commande actuelle
+      final order = orders.firstWhereOrNull((o) => o.id == orderId);
+      if (order == null) {
+        throw 'Commande non trouvée';
+      }
+
+      // Vérifier si la transition est valide
+      if (!OrderService.isValidTransition(order.status, newStatus.name)) {
+        throw 'La transition de "${order.status}" à "${newStatus.name}" n\'est pas autorisée';
+      }
+
+      // Mettre à jour le statut
       await OrderService.updateOrderStatus(orderId, newStatus.name);
 
-      // Mise à jour réussie
+      // Attendre un court instant pour la synchronisation
+      await Future.delayed(Duration(milliseconds: 500));
+
+      // Rafraîchir les données
+      await fetchOrders();
+
+      // Notification de succès
       Get.snackbar(
         'Succès',
         'La commande est maintenant ${newStatus.label.toLowerCase()}',
@@ -205,15 +169,11 @@ class OrdersController extends GetxController {
         snackPosition: SnackPosition.TOP,
         duration: Duration(seconds: 3),
       );
-
-      // Rafraîchir la liste après un court délai pour laisser le temps au backend
-      await Future.delayed(Duration(milliseconds: 500));
-      await fetchOrders();
     } catch (e) {
       print('[OrdersController] Error updating order status: $e');
       hasError.value = true;
 
-      // Déterminer le message d'erreur approprié
+      // Analyser l'erreur pour un message approprié
       String errorTitle = 'Erreur';
       String errorMsg = e.toString();
 
@@ -222,8 +182,10 @@ class OrdersController extends GetxController {
         errorMsg = 'Veuillez vous reconnecter pour continuer';
       } else if (errorMsg.contains('permissions')) {
         errorTitle = 'Accès refusé';
-      } else {
-        errorMsg = 'Impossible de mettre à jour le statut de la commande';
+      } else if (errorMsg.contains('transition')) {
+        errorTitle = 'Action non autorisée';
+      } else if (errorMsg.contains('commande non trouvée')) {
+        errorTitle = 'Erreur de données';
       }
 
       errorMessage.value = errorMsg;
@@ -240,17 +202,18 @@ class OrdersController extends GetxController {
     }
   }
 
-  /// Réinitialise tous les filtres et la pagination
+  void setItemsPerPage(int value) {
+    if (value > 0) {
+      itemsPerPage.value = value;
+      fetchOrders(resetPage: true);
+    }
+  }
+
   void clearFilters() {
-    // Réinitialiser les filtres
     selectedStatus.value = null;
     searchQuery.value = '';
-
-    // Réinitialiser la pagination
     currentPage.value = 1;
-    itemsPerPage.value = 50; // Valeur par défaut
-
-    // Recharger les données
+    itemsPerPage.value = 50;
     fetchOrders(resetPage: true);
   }
 }
