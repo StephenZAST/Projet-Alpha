@@ -4,6 +4,7 @@ import '../constants.dart';
 enum OrderStatus {
   PENDING,
   COLLECTING,
+  COLLECTED,
   PROCESSING,
   READY,
   DELIVERING,
@@ -18,6 +19,8 @@ extension OrderStatusExtension on OrderStatus {
         return 'En attente';
       case OrderStatus.COLLECTING:
         return 'En collecte';
+      case OrderStatus.COLLECTED:
+        return 'Collecté';
       case OrderStatus.PROCESSING:
         return 'En traitement';
       case OrderStatus.READY:
@@ -37,6 +40,8 @@ extension OrderStatusExtension on OrderStatus {
         return AppColors.warning;
       case OrderStatus.COLLECTING:
         return AppColors.primaryLight;
+      case OrderStatus.COLLECTED:
+        return AppColors.info;
       case OrderStatus.PROCESSING:
         return AppColors.primary;
       case OrderStatus.READY:
@@ -56,6 +61,8 @@ extension OrderStatusExtension on OrderStatus {
         return Icons.hourglass_empty;
       case OrderStatus.COLLECTING:
         return Icons.directions_car;
+      case OrderStatus.COLLECTED:
+        return Icons.check_circle_outline;
       case OrderStatus.PROCESSING:
         return Icons.local_laundry_service;
       case OrderStatus.READY:

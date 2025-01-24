@@ -195,24 +195,41 @@ class OrdersController extends GetxController {
       errorMessage.value = '';
 
       await OrderService.updateOrderStatus(orderId, newStatus.name);
-      await fetchOrders(); // Rafraîchir la liste
 
+      // Mise à jour réussie
       Get.snackbar(
         'Succès',
-        'Statut de la commande mis à jour',
+        'La commande est maintenant ${newStatus.label.toLowerCase()}',
         backgroundColor: AppColors.success,
         colorText: AppColors.textLight,
         snackPosition: SnackPosition.TOP,
         duration: Duration(seconds: 3),
       );
+
+      // Rafraîchir la liste après un court délai pour laisser le temps au backend
+      await Future.delayed(Duration(milliseconds: 500));
+      await fetchOrders();
     } catch (e) {
       print('[OrdersController] Error updating order status: $e');
       hasError.value = true;
-      errorMessage.value = 'Erreur lors de la mise à jour du statut';
 
+      // Déterminer le message d'erreur approprié
+      String errorTitle = 'Erreur';
+      String errorMsg = e.toString();
+
+      if (errorMsg.contains('Session expirée')) {
+        errorTitle = 'Session expirée';
+        errorMsg = 'Veuillez vous reconnecter pour continuer';
+      } else if (errorMsg.contains('permissions')) {
+        errorTitle = 'Accès refusé';
+      } else {
+        errorMsg = 'Impossible de mettre à jour le statut de la commande';
+      }
+
+      errorMessage.value = errorMsg;
       Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour le statut de la commande',
+        errorTitle,
+        errorMsg,
         backgroundColor: AppColors.error,
         colorText: AppColors.textLight,
         snackPosition: SnackPosition.TOP,

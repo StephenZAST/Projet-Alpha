@@ -193,6 +193,10 @@ class _StatusUpdateButton extends StatelessWidget {
   OrderStatus? _getNextStatus(OrderStatus current) {
     switch (current) {
       case OrderStatus.PENDING:
+        return OrderStatus.COLLECTING;
+      case OrderStatus.COLLECTING:
+        return OrderStatus.COLLECTED;
+      case OrderStatus.COLLECTED:
         return OrderStatus.PROCESSING;
       case OrderStatus.PROCESSING:
         return OrderStatus.READY;
@@ -200,7 +204,8 @@ class _StatusUpdateButton extends StatelessWidget {
         return OrderStatus.DELIVERING;
       case OrderStatus.DELIVERING:
         return OrderStatus.DELIVERED;
-      default:
+      case OrderStatus.DELIVERED:
+      case OrderStatus.CANCELLED:
         return null;
     }
   }

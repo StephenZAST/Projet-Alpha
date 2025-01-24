@@ -128,14 +128,32 @@ class OrderService {
       String orderId, String newStatus) async {
     try {
       print('[OrderService] Updating order status: $orderId to $newStatus');
-      await _api.patch(
+      final response = await _api.patch(
         '$_basePath/$orderId/status',
         data: {'status': newStatus},
       );
+
+      if (response.statusCode == 401) {
+        print('[OrderService] Authorization error updating status');
+        throw 'Session expirée. Veuillez vous reconnecter.';
+      }
+
+      if (response.statusCode == 403) {
+        print('[OrderService] Permission denied updating status');
+        throw 'Vous n\'avez pas les permissions nécessaires pour cette action.';
+      }
+
+      if (response.statusCode! >= 400) {
+        print('[OrderService] Error response: ${response.data}');
+        final message = response.data?['message'] ??
+            'Erreur lors de la mise à jour du statut';
+        throw message;
+      }
+
       print('[OrderService] Order status updated successfully');
     } catch (e) {
       print('[OrderService] Error updating order status: $e');
-      throw 'Erreur lors de la mise à jour du statut';
+      rethrow; // Propager l'erreur avec le message original
     }
   }
 
