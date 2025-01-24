@@ -40,7 +40,10 @@ class RevenueChart extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.refresh, color: AppColors.textSecondary),
+                icon: Icon(
+                  Icons.refresh,
+                  color: isDark ? AppColors.textLight : AppColors.textSecondary,
+                ),
                 onPressed: controller.refreshDashboard,
               ),
             ],
@@ -60,7 +63,9 @@ class RevenueChart extends StatelessWidget {
                     Text(
                       'Chargement des données...',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -79,13 +84,18 @@ class RevenueChart extends StatelessWidget {
                     Icon(
                       Icons.show_chart,
                       size: 48,
-                      color: AppColors.textSecondary.withOpacity(0.5),
+                      color: (isDark
+                              ? AppColors.textLight
+                              : AppColors.textSecondary)
+                          .withOpacity(0.5),
                     ),
                     SizedBox(height: AppSpacing.sm),
                     Text(
                       'Aucune donnée disponible',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -100,7 +110,8 @@ class RevenueChart extends StatelessWidget {
                 primaryXAxis: CategoryAxis(
                   majorGridLines: MajorGridLines(width: 0),
                   labelStyle: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color:
+                        isDark ? AppColors.textLight : AppColors.textSecondary,
                   ),
                   labelRotation: -45,
                   interval: 1,
@@ -109,10 +120,13 @@ class RevenueChart extends StatelessWidget {
                   numberFormat: currencyFormat,
                   majorGridLines: MajorGridLines(
                     width: 1,
-                    color: AppColors.borderLight.withOpacity(0.5),
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight.withOpacity(0.5),
                   ),
                   labelStyle: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color:
+                        isDark ? AppColors.textLight : AppColors.textSecondary,
                   ),
                 ),
                 tooltipBehavior: TooltipBehavior(

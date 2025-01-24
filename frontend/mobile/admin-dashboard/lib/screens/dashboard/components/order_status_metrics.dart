@@ -40,7 +40,8 @@ class OrderStatusMetrics extends StatelessWidget {
                 Text(
                   'Chargement des statuts...',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                    color:
+                        isDark ? AppColors.textLight : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -72,7 +73,8 @@ class OrderStatusMetrics extends StatelessWidget {
                 IconButton(
                   icon: Icon(
                     Icons.refresh_outlined,
-                    color: AppColors.textSecondary,
+                    color:
+                        isDark ? AppColors.textLight : AppColors.textSecondary,
                   ),
                   onPressed: controller.refreshDashboard,
                   tooltip: 'Actualiser',
@@ -207,7 +209,7 @@ class _StatusCard extends StatelessWidget {
           Text(
             status.label,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: isDark ? AppColors.textLight : AppColors.textSecondary,
             ),
           ),
           SizedBox(height: AppSpacing.sm),

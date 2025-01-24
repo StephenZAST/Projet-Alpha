@@ -1,9 +1,12 @@
+import 'package:admin/widgets/shared/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/category_controller.dart';
 import '../../models/category.dart';
+import '../../widgets/shared/header.dart';
 import 'components/category_dialog.dart';
+import 'components/header_actions.dart';
 
 class CategoriesScreen extends StatelessWidget {
   @override
@@ -18,47 +21,13 @@ class CategoriesScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Catégories',
-                    style: AppTextStyles.h1.copyWith(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.add),
-                    label: Text('Nouvelle catégorie'),
-                    onPressed: () => Get.dialog(CategoryDialog()),
+              Header(
+                title: 'Catégories',
+                actions: [
+                  Expanded(
+                    child: CategoryHeaderActions(controller: controller),
                   ),
                 ],
-              ),
-              SizedBox(height: AppSpacing.lg),
-              TextField(
-                onChanged: controller.searchCategories,
-                decoration: InputDecoration(
-                  hintText: 'Rechercher une catégorie...',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(color: AppColors.primary),
-                  ),
-                ),
               ),
               SizedBox(height: AppSpacing.lg),
               Expanded(
@@ -85,12 +54,15 @@ class CategoriesScreen extends StatelessWidget {
                           SizedBox(height: AppSpacing.md),
                           Text(
                             controller.errorMessage.value,
-                            style: TextStyle(color: AppColors.error),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.error,
+                            ),
                           ),
                           SizedBox(height: AppSpacing.md),
-                          ElevatedButton(
+                          AppButton(
+                            label: 'Réessayer',
+                            icon: Icons.refresh_outlined,
                             onPressed: controller.fetchCategories,
-                            child: Text('Réessayer'),
                           ),
                         ],
                       ),
@@ -105,13 +77,16 @@ class CategoriesScreen extends StatelessWidget {
                           Icon(
                             Icons.category_outlined,
                             size: 48,
-                            color: AppColors.textSecondary,
+                            color:
+                                isDark ? AppColors.gray600 : AppColors.gray400,
                           ),
                           SizedBox(height: AppSpacing.md),
                           Text(
                             'Aucune catégorie trouvée',
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textSecondary,
+                              color: isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -142,7 +117,9 @@ class CategoriesScreen extends StatelessWidget {
                               ? Text(
                                   category.description!,
                                   style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.textSecondary,
+                                    color: isDark
+                                        ? AppColors.textLight
+                                        : AppColors.textSecondary,
                                   ),
                                 )
                               : null,
@@ -154,7 +131,9 @@ class CategoriesScreen extends StatelessWidget {
                                 onPressed: () => Get.dialog(
                                   CategoryDialog(category: category),
                                 ),
-                                color: AppColors.textSecondary,
+                                color: isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textSecondary,
                               ),
                               IconButton(
                                 icon: Icon(Icons.delete),
@@ -192,15 +171,14 @@ class CategoriesScreen extends StatelessWidget {
           'Êtes-vous sûr de vouloir supprimer la catégorie "${category.name}" ?',
         ),
         actions: [
-          TextButton(
-            child: Text('Annuler'),
+          AppButton(
+            label: 'Annuler',
+            variant: AppButtonVariant.secondary,
             onPressed: () => Get.back(),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
-            child: Text('Supprimer'),
+          AppButton(
+            label: 'Supprimer',
+            variant: AppButtonVariant.error,
             onPressed: () {
               Get.back();
               controller.deleteCategory(category.id);

@@ -40,7 +40,7 @@ class StatisticsCards extends StatelessWidget {
               Text(
                 'Chargement des statistiques...',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: isDark ? AppColors.textLight : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -215,7 +215,7 @@ class _StatCard extends StatelessWidget {
           Text(
             title,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: isDark ? AppColors.textLight : AppColors.textSecondary,
             ),
           ),
         ],

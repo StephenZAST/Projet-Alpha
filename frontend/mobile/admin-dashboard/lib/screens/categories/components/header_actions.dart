@@ -1,41 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
-import '../../../controllers/orders_controller.dart';
-import '../../../widgets/shared/header.dart';
+import '../../../controllers/category_controller.dart';
 import '../../../widgets/shared/app_button.dart';
+import 'category_dialog.dart';
 
-class OrdersHeader extends StatelessWidget {
-  final searchController = TextEditingController();
+class CategoryHeaderActions extends StatelessWidget {
+  final CategoryController controller;
+
+  const CategoryHeaderActions({
+    Key? key,
+    required this.controller,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final OrdersController controller = Get.find<OrdersController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Header(
-      title: "Commandes",
-      actions: [
+    return Row(
+      children: [
         Expanded(
           child: TextField(
-            controller: searchController,
+            onChanged: controller.searchCategories,
             decoration: InputDecoration(
-              hintText: "Rechercher des commandes...",
+              hintText: 'Rechercher une catégorie...',
               prefixIcon: Icon(
                 Icons.search,
                 color: isDark ? AppColors.textLight : AppColors.textSecondary,
               ),
               border: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
+                borderRadius: AppRadius.radiusSM,
                 borderSide: BorderSide(
                   color: isDark ? AppColors.borderDark : AppColors.borderLight,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: AppRadius.radiusMD,
+                borderRadius: AppRadius.radiusSM,
                 borderSide: BorderSide(
                   color: isDark ? AppColors.borderDark : AppColors.borderLight,
                 ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppRadius.radiusSM,
+                borderSide: BorderSide(color: AppColors.primary),
               ),
               filled: true,
               fillColor: Theme.of(context).cardColor,
@@ -43,14 +50,13 @@ class OrdersHeader extends StatelessWidget {
             style: AppTextStyles.bodyMedium.copyWith(
               color: isDark ? AppColors.textLight : AppColors.textPrimary,
             ),
-            onChanged: controller.searchOrders,
           ),
         ),
         SizedBox(width: defaultPadding),
         AppButton(
-          label: "Nouvelle commande",
+          label: 'Nouvelle catégorie',
           icon: Icons.add,
-          onPressed: () => Get.toNamed('/orders/create'),
+          onPressed: () => Get.dialog(CategoryDialog()),
         ),
       ],
     );

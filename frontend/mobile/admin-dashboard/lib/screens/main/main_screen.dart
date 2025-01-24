@@ -17,6 +17,14 @@ class MainScreen extends GetView<MenuAppController> {
 
   @override
   Widget build(BuildContext context) {
+    // Sync with current route
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentRoute = Get.currentRoute;
+      if (currentRoute != '/' && currentRoute != '') {
+        controller.syncWithRoute(currentRoute);
+      }
+    });
+
     return Scaffold(
       key: controller.scaffoldKey,
       drawer: AdminSideMenu(

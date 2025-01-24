@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
-import '../../components/custom_header.dart';
+import '../../widgets/shared/header.dart';
+import '../../widgets/shared/app_button.dart';
 import '../../controllers/service_controller.dart';
 
 class ServicesScreen extends StatelessWidget {
@@ -9,22 +10,20 @@ class ServicesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: EdgeInsets.all(defaultPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CustomHeader(
+          Header(
             title: 'Services',
             actions: [
-              ElevatedButton.icon(
-                icon: Icon(Icons.add),
-                label: Text('Nouveau Service'),
+              AppButton(
+                label: 'Nouveau Service',
+                icon: Icons.add,
                 onPressed: () => _showCreateServiceDialog(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
               ),
             ],
           ),
@@ -48,6 +47,7 @@ class ServicesScreen extends StatelessWidget {
   }
 
   Widget _buildServicesList(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return RefreshIndicator(
       onRefresh: () => controller.fetchServices(),
       child: ListView.builder(
@@ -70,7 +70,9 @@ class ServicesScreen extends StatelessWidget {
                     Text(
                       service.description!,
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -108,6 +110,7 @@ class ServicesScreen extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -115,24 +118,20 @@ class ServicesScreen extends StatelessWidget {
           Icon(
             Icons.cleaning_services_outlined,
             size: 64,
-            color: AppColors.gray400,
+            color: isDark ? AppColors.gray600 : AppColors.gray400,
           ),
           SizedBox(height: defaultPadding),
           Text(
             'Aucun service',
             style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textSecondary,
+              color: isDark ? AppColors.textLight : AppColors.textSecondary,
             ),
           ),
           SizedBox(height: defaultPadding / 2),
-          ElevatedButton.icon(
+          AppButton(
+            label: 'Ajouter un service',
+            icon: Icons.add,
             onPressed: () => _showCreateServiceDialog(context),
-            icon: Icon(Icons.add),
-            label: Text('Ajouter un service'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
           ),
         ],
       ),
@@ -180,11 +179,13 @@ class ServicesScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
+          AppButton(
+            label: 'Annuler',
+            variant: AppButtonVariant.secondary,
             onPressed: () => Get.back(),
-            child: Text('Annuler'),
           ),
-          ElevatedButton(
+          AppButton(
+            label: 'Créer',
             onPressed: () {
               final name = nameController.text.trim();
               final price = double.tryParse(priceController.text) ?? 0;
@@ -199,7 +200,6 @@ class ServicesScreen extends StatelessWidget {
                 Get.back();
               }
             },
-            child: Text('Créer'),
           ),
         ],
       ),
@@ -249,11 +249,13 @@ class ServicesScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
+          AppButton(
+            label: 'Annuler',
+            variant: AppButtonVariant.secondary,
             onPressed: () => Get.back(),
-            child: Text('Annuler'),
           ),
-          ElevatedButton(
+          AppButton(
+            label: 'Mettre à jour',
             onPressed: () {
               final name = nameController.text.trim();
               final price = double.tryParse(priceController.text) ?? 0;
@@ -269,7 +271,6 @@ class ServicesScreen extends StatelessWidget {
                 Get.back();
               }
             },
-            child: Text('Mettre à jour'),
           ),
         ],
       ),
@@ -282,20 +283,18 @@ class ServicesScreen extends StatelessWidget {
         title: Text('Supprimer le Service'),
         content: Text('Êtes-vous sûr de vouloir supprimer ce service ?'),
         actions: [
-          TextButton(
+          AppButton(
+            label: 'Annuler',
+            variant: AppButtonVariant.secondary,
             onPressed: () => Get.back(),
-            child: Text('Annuler'),
           ),
-          ElevatedButton(
+          AppButton(
+            label: 'Supprimer',
+            variant: AppButtonVariant.error,
             onPressed: () {
               controller.deleteService(service.id);
               Get.back();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Supprimer'),
           ),
         ],
       ),

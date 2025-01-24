@@ -1,3 +1,4 @@
+import 'package:admin/widgets/shared/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
@@ -62,11 +63,47 @@ class _CategoryDialogState extends State<CategoryDialog> {
     }
   }
 
+  InputDecoration _buildInputDecoration(
+      String label, String hint, bool isDark) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      labelStyle: TextStyle(
+        color: isDark ? AppColors.textLight : AppColors.textSecondary,
+      ),
+      hintStyle: TextStyle(
+        color: isDark ? AppColors.gray600 : AppColors.gray400,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: AppRadius.radiusSM,
+        borderSide: BorderSide(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: AppRadius.radiusSM,
+        borderSide: BorderSide(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppRadius.radiusSM,
+        borderSide: BorderSide(color: AppColors.primary),
+      ),
+      filled: true,
+      fillColor: isDark ? AppColors.gray800.withOpacity(0.5) : Colors.white,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textStyle = TextStyle(
+      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+    );
 
     return Dialog(
+      backgroundColor: Theme.of(context).dialogBackgroundColor,
       child: Container(
         width: 500,
         padding: EdgeInsets.all(defaultPadding),
@@ -84,22 +121,26 @@ class _CategoryDialogState extends State<CategoryDialog> {
                         ? 'Modifier la catégorie'
                         : 'Nouvelle catégorie',
                     style: AppTextStyles.h2.copyWith(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                     ),
                   ),
                   IconButton(
                     icon: Icon(Icons.close),
                     onPressed: () => Get.back(),
-                    color: AppColors.textSecondary,
+                    color:
+                        isDark ? AppColors.textLight : AppColors.textSecondary,
                   ),
                 ],
               ),
               SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Nom',
-                  hintText: 'Entrez le nom de la catégorie',
+                style: textStyle,
+                decoration: _buildInputDecoration(
+                  'Nom',
+                  'Entrez le nom de la catégorie',
+                  isDark,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -111,43 +152,39 @@ class _CategoryDialogState extends State<CategoryDialog> {
               SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _descriptionController,
+                style: textStyle,
                 maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'Entrez une description',
+                decoration: _buildInputDecoration(
+                  'Description',
+                  'Entrez une description',
+                  isDark,
                 ),
               ),
               SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _iconNameController,
-                decoration: InputDecoration(
-                  labelText: 'Icône',
-                  hintText: 'Nom de l\'icône (ex: folder)',
+                style: textStyle,
+                decoration: _buildInputDecoration(
+                  'Icône',
+                  'Nom de l\'icône (ex: folder)',
+                  isDark,
                 ),
               ),
               SizedBox(height: AppSpacing.xl),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
+                  AppButton(
+                    label: 'Annuler',
+                    variant: AppButtonVariant.secondary,
                     onPressed: () => Get.back(),
-                    child: Text('Annuler'),
                   ),
                   SizedBox(width: AppSpacing.md),
-                  Obx(() => ElevatedButton(
+                  Obx(() => AppButton(
+                        label: 'Enregistrer',
                         onPressed:
-                            controller.isLoading.value ? null : _handleSubmit,
-                        child: controller.isLoading.value
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
-                                ),
-                              )
-                            : Text('Enregistrer'),
+                            controller.isLoading.value ? () {} : _handleSubmit,
+                        isLoading: controller.isLoading.value,
                       )),
                 ],
               ),

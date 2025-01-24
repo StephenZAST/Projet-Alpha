@@ -1,3 +1,4 @@
+import 'package:admin/widgets/shared/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
@@ -77,12 +78,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             SizedBox(height: AppSpacing.md),
                             Text(
                               controller.errorMessage.value,
-                              style: TextStyle(color: AppColors.error),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: AppColors.error,
+                              ),
                             ),
                             SizedBox(height: AppSpacing.md),
-                            ElevatedButton(
+                            AppButton(
+                              label: 'Réessayer',
+                              icon: Icons.refresh_outlined,
                               onPressed: controller.fetchOrders,
-                              child: Text('Réessayer'),
+                              variant: AppButtonVariant.primary,
                             ),
                           ],
                         ),
@@ -97,13 +102,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             Icon(
                               Icons.inbox,
                               size: 48,
-                              color: AppColors.textSecondary,
+                              color: isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textSecondary,
                             ),
                             SizedBox(height: AppSpacing.md),
                             Text(
                               'Aucune commande trouvée',
                               style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textSecondary,
+                                color: isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textSecondary,
                               ),
                             ),
                           ],

@@ -1,3 +1,4 @@
+import 'package:admin/controllers/menu_app_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -25,6 +26,15 @@ class ThemeController extends GetxController {
 
   void _applyTheme() {
     Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
+    // Reset the menu state to avoid UI glitches
+    if (Get.isRegistered<MenuAppController>()) {
+      final menuController = Get.find<MenuAppController>();
+      final currentIndex = menuController.selectedIndex.value;
+      // Preserve the current route while refreshing the state
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        menuController.updateIndex(currentIndex);
+      });
+    }
   }
 
   void toggleTheme() {
