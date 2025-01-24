@@ -83,8 +83,6 @@
 ## 5. Système de Localisation
 - Adresses GPS clients
 - Carte interactive livreurs
-- Suivi en temps réel
-- Optimisation des routes
 
 ## 6. Données à Tracker
 - Commandes
