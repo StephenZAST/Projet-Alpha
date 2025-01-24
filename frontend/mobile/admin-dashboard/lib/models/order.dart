@@ -30,26 +30,45 @@ class Order {
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      id: json['id'],
-      customerId: json['customerId'],
-      customerName: json['customerName'],
-      customerEmail: json['customerEmail'],
-      customerPhone: json['customerPhone'],
-      status: json['status'] ?? 'PENDING',
-      totalAmount: (json['totalAmount'] as num).toDouble(),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt:
-          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
-      items: json['items'] != null
-          ? (json['items'] as List)
-              .map((item) => OrderItem.fromJson(item))
-              .toList()
-          : null,
-      deliveryAddress: json['deliveryAddress'],
-      notes: json['notes'],
-      isPaid: json['isPaid'] ?? false,
-    );
+    try {
+      return Order(
+        id: json['id']?.toString() ??
+            '', // Convertir en String et valeur par défaut
+        customerId: json['customerId']?.toString(),
+        customerName: json['customerName']?.toString(),
+        customerEmail: json['customerEmail']?.toString(),
+        customerPhone: json['customerPhone']?.toString(),
+        status: json['status']?.toString() ?? 'PENDING',
+        totalAmount: json['totalAmount'] != null
+            ? (json['totalAmount'] as num).toDouble()
+            : 0.0, // Valeur par défaut si null
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'].toString())
+            : DateTime.now(), // Valeur par défaut
+        updatedAt: json['updatedAt'] != null
+            ? DateTime.parse(json['updatedAt'].toString())
+            : null,
+        items: json['items'] != null
+            ? (json['items'] as List)
+                .map((item) => OrderItem.fromJson(item))
+                .toList()
+            : null,
+        deliveryAddress: json['deliveryAddress']?.toString(),
+        notes: json['notes']?.toString(),
+        isPaid: json['isPaid'] ?? false,
+      );
+    } catch (e) {
+      print('Error parsing Order JSON: $e');
+      print('Problematic JSON: $json');
+      // Retourner un ordre "vide" mais valide en cas d'erreur
+      return Order(
+        id: json['id']?.toString() ?? 'error',
+        status: 'ERROR',
+        totalAmount: 0,
+        createdAt: DateTime.now(),
+        isPaid: false,
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -121,16 +140,29 @@ class OrderItem {
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
-    return OrderItem(
-      id: json['id'],
-      name: json['name'],
-      quantity: json['quantity'],
-      price: (json['price'] as num).toDouble(),
-      discount: json['discount'] != null
-          ? (json['discount'] as num).toDouble()
-          : null,
-      notes: json['notes'],
-    );
+    try {
+      return OrderItem(
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? 'Unnamed Item',
+        quantity:
+            json['quantity'] != null ? (json['quantity'] as num).toInt() : 1,
+        price: json['price'] != null ? (json['price'] as num).toDouble() : 0.0,
+        discount: json['discount'] != null
+            ? (json['discount'] as num).toDouble()
+            : null,
+        notes: json['notes']?.toString(),
+      );
+    } catch (e) {
+      print('Error parsing OrderItem JSON: $e');
+      print('Problematic JSON: $json');
+      // Retourner un item "vide" mais valide en cas d'erreur
+      return OrderItem(
+        id: '',
+        name: 'Error Item',
+        quantity: 1,
+        price: 0,
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {

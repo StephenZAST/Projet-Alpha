@@ -25,6 +25,8 @@ class OrdersTable extends StatelessWidget {
       decimalDigits: 0,
     );
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return DataTable2(
       columnSpacing: defaultPadding,
       minWidth: 600,
@@ -55,7 +57,14 @@ class OrdersTable extends StatelessWidget {
         ),
       ],
       rows: orders.map((order) {
-        final status = order.status.toOrderStatus();
+        OrderStatus orderStatus;
+        try {
+          orderStatus = order.status.toOrderStatus();
+        } catch (e) {
+          print(
+              'Error parsing order status: ${order.status} - ${e.toString()}');
+          orderStatus = OrderStatus.PENDING;
+        }
 
         return DataRow(
           onSelectChanged: (_) => onOrderSelect(order.id),
@@ -75,13 +84,16 @@ class OrdersTable extends StatelessWidget {
                   order.customerName ?? 'N/A',
                   style: AppTextStyles.bodySmall.copyWith(
                     fontWeight: FontWeight.w500,
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
                   ),
                 ),
                 if (order.customerEmail != null)
                   Text(
                     order.customerEmail!,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                      color: isDark
+                          ? AppColors.textLight.withOpacity(0.7)
+                          : AppColors.textSecondary,
                       fontSize: 11,
                     ),
                   ),
@@ -89,12 +101,15 @@ class OrdersTable extends StatelessWidget {
             )),
             DataCell(Text(
               DateFormat('dd/MM/yyyy HH:mm').format(order.createdAt),
-              style: AppTextStyles.bodySmall,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              ),
             )),
             DataCell(Text(
               currencyFormat.format(order.totalAmount),
               style: AppTextStyles.bodySmall.copyWith(
                 fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
               ),
             )),
             DataCell(Container(
@@ -103,22 +118,22 @@ class OrdersTable extends StatelessWidget {
                 vertical: 4,
               ),
               decoration: BoxDecoration(
-                color: status.color.withOpacity(0.1),
+                color: orderStatus.color.withOpacity(0.1),
                 borderRadius: AppRadius.radiusSM,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    status.icon,
+                    orderStatus.icon,
                     size: 14,
-                    color: status.color,
+                    color: orderStatus.color,
                   ),
                   SizedBox(width: 4),
                   Text(
-                    status.label,
+                    orderStatus.label,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: status.color,
+                      color: orderStatus.color,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -130,6 +145,7 @@ class OrdersTable extends StatelessWidget {
               children: [
                 _StatusUpdateButton(
                   order: order,
+                  currentStatus: orderStatus,
                   onStatusUpdate: onStatusUpdate,
                 ),
                 IconButton(
@@ -150,16 +166,17 @@ class OrdersTable extends StatelessWidget {
 
 class _StatusUpdateButton extends StatelessWidget {
   final Order order;
+  final OrderStatus currentStatus;
   final Function(String, OrderStatus) onStatusUpdate;
 
   const _StatusUpdateButton({
     required this.order,
+    required this.currentStatus,
     required this.onStatusUpdate,
   });
 
   @override
   Widget build(BuildContext context) {
-    final currentStatus = order.status.toOrderStatus();
     final nextStatus = _getNextStatus(currentStatus);
 
     if (nextStatus == null) return SizedBox.shrink();

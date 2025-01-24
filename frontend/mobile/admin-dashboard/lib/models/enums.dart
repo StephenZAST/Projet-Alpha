@@ -70,12 +70,20 @@ extension OrderStatusExtension on OrderStatus {
   }
 }
 
-extension OrderStatusParser on String {
+extension OrderStatusParser on String? {
   OrderStatus toOrderStatus() {
-    return OrderStatus.values.firstWhere(
-      (status) => status.name == this.toUpperCase(),
-      orElse: () => OrderStatus.PENDING,
-    );
+    if (this == null || this!.isEmpty) {
+      return OrderStatus.PENDING;
+    }
+    try {
+      return OrderStatus.values.firstWhere(
+        (status) => status.name == this!.toUpperCase(),
+        orElse: () => OrderStatus.PENDING,
+      );
+    } catch (e) {
+      print('Error parsing OrderStatus from string: $this');
+      return OrderStatus.PENDING;
+    }
   }
 }
 

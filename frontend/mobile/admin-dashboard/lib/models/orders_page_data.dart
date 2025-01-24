@@ -16,16 +16,37 @@ class OrdersPageData {
   });
 
   factory OrdersPageData.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> ordersList = json['data'] as List;
-    final pagination = json['pagination'] as Map<String, dynamic>;
+    try {
+      // Vérifier et convertir la liste des commandes
+      final List<Order> ordersList = [];
+      if (json['data'] != null && json['data'] is List) {
+        for (var orderJson in json['data']) {
+          try {
+            ordersList.add(Order.fromJson(orderJson));
+          } catch (e) {
+            print('Error parsing order: $e');
+            print('Problematic order JSON: $orderJson');
+            // Continue avec la prochaine commande
+            continue;
+          }
+        }
+      }
 
-    return OrdersPageData(
-      orders: ordersList.map((e) => Order.fromJson(e)).toList(),
-      total: pagination['total'] as int,
-      currentPage: pagination['page'] as int,
-      limit: pagination['limit'] as int,
-      totalPages: pagination['totalPages'] as int,
-    );
+      // Récupérer et valider les données de pagination
+      final pagination = json['pagination'] as Map<String, dynamic>? ?? {};
+
+      return OrdersPageData(
+        orders: ordersList,
+        total: _parseIntSafely(pagination['total']) ?? 0,
+        currentPage: _parseIntSafely(pagination['page']) ?? 1,
+        limit: _parseIntSafely(pagination['limit']) ?? 10,
+        totalPages: _parseIntSafely(pagination['totalPages']) ?? 1,
+      );
+    } catch (e) {
+      print('Error parsing OrdersPageData: $e');
+      print('Problematic JSON: $json');
+      return OrdersPageData.empty();
+    }
   }
 
   factory OrdersPageData.empty() {
@@ -47,4 +68,21 @@ class OrdersPageData {
           'totalPages': totalPages,
         },
       };
+
+  // Méthode utilitaire pour parser les entiers de manière sécurisée
+  static int? _parseIntSafely(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) {
+      try {
+        return int.parse(value);
+      } catch (_) {
+        return null;
+      }
+    }
+    if (value is double) {
+      return value.toInt();
+    }
+    return null;
+  }
 }
