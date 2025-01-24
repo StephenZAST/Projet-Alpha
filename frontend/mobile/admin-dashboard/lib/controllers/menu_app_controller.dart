@@ -3,18 +3,13 @@ import 'package:get/get.dart';
 import '../routes/admin_routes.dart';
 
 class MenuAppController extends GetxController {
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-  final _selectedIndex = 0.obs;
-  final _isDrawerOpen = false.obs;
-  final _currentRoute = ''.obs;
-
-  int get selectedIndex => _selectedIndex.value;
-  bool get isDrawerOpen => _isDrawerOpen.value;
-  String get currentRoute => _currentRoute.value;
+  final scaffoldKey = GlobalKey<ScaffoldState>(debugLabel: 'MainScaffold');
+  final selectedIndex = 0.obs;
+  final isDrawerOpen = false.obs;
+  final currentRoute = ''.obs;
 
   void controlMenu() {
     print('[MenuAppController] controlMenu called');
-    print('[MenuAppController] scaffoldKey: $scaffoldKey');
 
     try {
       if (scaffoldKey.currentState == null) {
@@ -25,11 +20,11 @@ class MenuAppController extends GetxController {
       if (!scaffoldKey.currentState!.isDrawerOpen) {
         print('[MenuAppController] Opening drawer');
         scaffoldKey.currentState!.openDrawer();
-        _isDrawerOpen.value = true;
+        isDrawerOpen.value = true;
       } else {
         print('[MenuAppController] Closing drawer');
         scaffoldKey.currentState!.closeDrawer();
-        _isDrawerOpen.value = false;
+        isDrawerOpen.value = false;
       }
     } catch (e) {
       print('[MenuAppController] Error controlling drawer: $e');
@@ -38,22 +33,22 @@ class MenuAppController extends GetxController {
 
   void closeDrawer() {
     scaffoldKey.currentState?.closeDrawer();
-    _isDrawerOpen.value = false;
+    isDrawerOpen.value = false;
   }
 
   void updateIndex(int index) {
     print('[MenuAppController] Updating index to: $index');
-    _selectedIndex.value = index;
-    _currentRoute.value = AdminRoutes.getRouteByIndex(index);
+    selectedIndex.value = index;
+    currentRoute.value = AdminRoutes.getRouteByIndex(index);
 
     // Fermer le drawer après la sélection sur mobile
-    if (_isDrawerOpen.value) {
+    if (isDrawerOpen.value) {
       closeDrawer();
     }
   }
 
   void setDrawerState(bool isOpen) {
-    _isDrawerOpen.value = isOpen;
+    isDrawerOpen.value = isOpen;
   }
 
   // Navigation directe via index
@@ -67,7 +62,7 @@ class MenuAppController extends GetxController {
 
   // Obtenir le titre de la page actuelle
   String getCurrentPageTitle() {
-    switch (_selectedIndex.value) {
+    switch (selectedIndex.value) {
       case 0:
         return 'Tableau de bord';
       case 1:
@@ -89,11 +84,11 @@ class MenuAppController extends GetxController {
 
   // Synchroniser l'index avec la route actuelle
   void syncWithRoute(String route) {
-    if (route != _currentRoute.value) {
+    if (route != currentRoute.value) {
       final index = AdminRoutes.getIndexByRoute(route);
-      if (index != _selectedIndex.value) {
-        _selectedIndex.value = index;
-        _currentRoute.value = route;
+      if (index != selectedIndex.value) {
+        selectedIndex.value = index;
+        currentRoute.value = route;
       }
     }
   }
@@ -103,20 +98,12 @@ class MenuAppController extends GetxController {
     super.onInit();
     print('[MenuAppController] Initialized with scaffoldKey: $scaffoldKey');
 
-    // Écouter les changements de route
-    ever(_currentRoute, (route) {
-      print('[MenuAppController] Route changed to: $route');
-    });
-
-    // Écouter les changements d'index
-    ever(_selectedIndex, (index) {
+    ever(selectedIndex, (index) {
       print('[MenuAppController] Index changed to: $index');
     });
-  }
 
-  @override
-  void onReady() {
-    super.onReady();
-    print('[MenuAppController] Ready with scaffoldKey: $scaffoldKey');
+    ever(currentRoute, (route) {
+      print('[MenuAppController] Route changed to: $route');
+    });
   }
 }

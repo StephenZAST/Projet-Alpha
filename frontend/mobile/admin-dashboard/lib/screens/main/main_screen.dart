@@ -12,15 +12,15 @@ import '../notifications/notifications_screen.dart';
 import 'components/admin_side_menu.dart';
 
 class MainScreen extends GetView<MenuAppController> {
+  static const _mobileDrawerKey = Key('mobile-drawer');
+  static const _desktopDrawerKey = Key('desktop-drawer');
+
   @override
   Widget build(BuildContext context) {
-    print('[MainScreen] Building with scaffoldKey: ${controller.scaffoldKey}');
-
     return Scaffold(
       key: controller.scaffoldKey,
       drawer: AdminSideMenu(
-        selectedIndex: controller.selectedIndex,
-        onItemSelected: controller.updateIndex,
+        key: _mobileDrawerKey,
       ),
       drawerEnableOpenDragGesture: true,
       onDrawerChanged: controller.setDrawerState,
@@ -33,8 +33,7 @@ class MainScreen extends GetView<MenuAppController> {
               Expanded(
                 flex: 1,
                 child: AdminSideMenu(
-                  selectedIndex: controller.selectedIndex,
-                  onItemSelected: controller.updateIndex,
+                  key: _desktopDrawerKey,
                 ),
               ),
             // Contenu principal
@@ -44,7 +43,7 @@ class MainScreen extends GetView<MenuAppController> {
                 print(
                     '[MainScreen] Rebuilding content with index: ${controller.selectedIndex}');
                 Widget content;
-                switch (controller.selectedIndex) {
+                switch (controller.selectedIndex.value) {
                   case 0:
                     content = DashboardScreen();
                     break;
