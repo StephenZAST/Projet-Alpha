@@ -82,7 +82,7 @@ export class AuthService {
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, {
-      expiresIn: '1h',
+      expiresIn: '168h', // 7 jours
     });
 
     return { user, token };
@@ -328,7 +328,7 @@ export class AuthService {
       const token = jwt.sign(
         { id: user.id, role: user.role },
         JWT_SECRET!,
-        { expiresIn: '1h' }
+        { expiresIn: '168h' } // 7 jours (comme pour le login)
       );
 
       return {

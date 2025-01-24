@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import rateLimit from 'express-rate-limit';
+import jwt from 'jsonwebtoken';
 
 // Import all routes
 import authRoutes from './routes/auth.routes';
@@ -28,11 +29,11 @@ import './scheduler'; // Importer le scheduler pour démarrer les tâches cron
 dotenv.config();
 
 const app = express();
-
 // Middleware globaux
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Configure CORS to allow all localhost origins
 // Configure CORS to allow all localhost origins
 const allowedOrigins = [
   'http://localhost:3000',   // React default
@@ -72,12 +73,32 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting configuration
+const standardLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
+  keyGenerator: (req) => req.ip as string,
 });
-app.use('/api', limiter);
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: (req: express.Request): number => {
+    // Vérifier si l'utilisateur est admin
+    if (req.user && ['ADMIN', 'SUPER_ADMIN'].includes(req.user.role)) {
+      return 10000; // Limite très élevée pour les admins
+    }
+    return 1000; // Limite standard pour les autres
+  },
+  keyGenerator: (req) => (req.user?.id || req.ip) as string,
+});
+
+// Routes admin avec limite élevée
+app.use('/api/admin', adminLimiter);
+app.use('/api/orders', adminLimiter);
+app.use('/api/notifications', adminLimiter);
+
+// Autres routes avec limite standard
+app.use('/api', standardLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes); // Utiliser directement la route sans middleware
