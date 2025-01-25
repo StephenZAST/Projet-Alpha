@@ -20,7 +20,16 @@ export class OrderService {
   static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
     const { userId, serviceId, addressId, isRecurring, recurrenceType, collectionDate, deliveryDate, affiliateCode, serviceTypeId, paymentMethod } = orderData;
 
-    console.log('Creating order with data:', orderData);
+    console.log('Creating order:', {
+      userId,
+      serviceId,
+      itemsCount: orderData.items.length,
+      items: orderData.items.map(item => ({
+        articleId: item.articleId,
+        quantity: item.quantity,
+        isPremium: item.premiumPrice
+      }))
+    });
 
     const { data: service } = await supabase
       .from('services')
@@ -46,14 +55,38 @@ export class OrderService {
     let totalAmount = service.price;
     
     const items = orderData.items;
-    const { data: articles } = await supabase
+    console.log('Fetching articles for items:', items.map(item => item.articleId));
+    const { data: articles, error: articlesQueryError } = await supabase
       .from('articles')
-      .select('*')
+      .select(`
+        *,
+        category:article_categories(
+          id,
+          name
+        )
+      `)
       .in('id', items.map(item => item.articleId));
 
+    if (articlesQueryError) {
+      console.error('Error fetching articles:', articlesQueryError);
+      throw articlesQueryError;
+    }
+
     if (!articles || articles.length !== items.length) {
+      console.error('Articles mismatch:', {
+        requestedIds: items.map(item => item.articleId),
+        foundArticles: articles?.map(a => ({ id: a.id, name: a.name })) || []
+      });
       throw new Error('One or more articles not found');
     }
+
+    console.log('Found articles:', articles.map(a => ({
+      id: a.id,
+      name: a.name,
+      category: a.category?.name,
+      basePrice: a.basePrice,
+      premiumPrice: a.premiumPrice
+    })));
 
     // Variables for tracking discounts and total amount
     let appliedDiscounts: AppliedDiscount[] = [];
@@ -112,42 +145,39 @@ export class OrderService {
 
     console.log('Order created successfully:', order);
 
-    // 1. Créer les items de commande avec les prix exacts
-    console.log('Creating order items with accurate prices');
-    
-    // Vérifier que les articles existent toujours et récupérer leurs détails complets
-    const { data: latestArticles, error: articlesError } = await supabase
-      .from('articles')
-      .select(`
-        *,
-        category:article_categories(
-          id,
-          name
-        )
-      `)
-      .in('id', items.map(item => item.articleId));
-
-    if (articlesError || !latestArticles || latestArticles.length !== items.length) {
-      console.error('Error verifying articles:', articlesError);
-      throw new Error('One or more articles not found or deleted');
-    }
-
-    console.log('Articles found:', latestArticles.map(a => ({
-      id: a.id,
-      name: a.name,
-      category: a.category?.name
+    // Création des items de commande
+    console.log('Creating order items...');
+    console.log('Processing items:', items.map(item => ({
+      articleId: item.articleId,
+      quantity: item.quantity,
+      isPremium: item.premiumPrice
     })));
+    
+    // Créer les items un par un pour éviter les problèmes de transaction
+    const itemPromises = items.map(async (item: { articleId: string; quantity: number; premiumPrice?: boolean }) => {
+      // 1. Récupérer l'article et son prix
+      const { data: article, error: articleError } = await supabase
+        .from('articles')
+        .select('*, category:article_categories(*)')
+        .eq('id', item.articleId)
+        .single();
 
-    // 2. Préparer les items avec les informations complètes
-    const orderItems = items.map((item: { articleId: string; quantity: number; premiumPrice?: boolean }) => {
-      const article = latestArticles.find(a => a.id === item.articleId);
-      if (!article) {
+      if (articleError || !article) {
+        console.error('Error fetching article:', articleError);
         throw new Error(`Article not found: ${item.articleId}`);
       }
-      
+
+      console.log('Found article:', {
+        id: article.id,
+        name: article.name,
+        category: article.category?.name
+      });
+
+      // 2. Calculer le prix unitaire
       const unitPrice = item.premiumPrice ? article.premiumPrice : article.basePrice;
-      
-      return {
+
+      // 3. Créer l'item de commande
+      const orderItem = {
         id: uuidv4(),
         orderId: order.id,
         articleId: item.articleId,
@@ -157,35 +187,59 @@ export class OrderService {
         createdAt: new Date(),
         updatedAt: new Date()
       };
+
+      // 4. Insérer l'item
+      const { error: insertError } = await supabase
+        .from('order_items')
+        .insert([orderItem]);
+
+      if (insertError) {
+        console.error('Error inserting order item:', insertError);
+        throw insertError;
+      }
+
+      return orderItem;
     });
 
-    // 3. Insérer et récupérer les items avec toutes leurs relations
-    const { data: insertedItems, error: itemsError } = await supabase
+    // Attendre que tous les items soient créés
+    console.log('Waiting for all items to be created...');
+    const createdItems = await Promise.all(itemPromises);
+    console.log(`Successfully created ${createdItems.length} order items`);
+
+    // Récupérer les items avec leurs relations complètes
+    const { data: insertedItems, error: fetchError } = await supabase
       .from('order_items')
-      .insert(orderItems)
       .select(`
         *,
-        article:articles(
+        article:articles!inner(
           *,
-          category:article_categories(*)
+          category:article_categories!inner(*)
         )
-      `);
+      `)
+      .eq('orderId', order.id)
+      .order('created_at', { ascending: true });
 
-    console.log('Order items creation result:', {
-      success: !itemsError,
-      itemsCount: insertedItems?.length || 0,
-      error: itemsError ? itemsError.message : null
+    console.log('Fetching complete order items:', {
+      orderId: order.id,
+      success: !fetchError,
+      itemsFound: insertedItems?.length || 0
     });
 
-    if (itemsError) {
-      console.error('Error creating order items:', itemsError);
-      throw itemsError;
+    if (fetchError) {
+      console.error('Error fetching inserted items:', fetchError);
+      throw fetchError;
     }
 
-    if (!insertedItems || insertedItems.length === 0) {
-      console.error('No items were inserted');
-      throw new Error('Failed to create order items');
-    }
+    console.log('Retrieved complete order items:', {
+      count: insertedItems?.length || 0,
+      items: insertedItems?.map(item => ({
+        id: item.id,
+        articleName: item.article?.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice
+      }))
+    });
+
 
     console.log('Order items created successfully:', {
       count: insertedItems.length,
@@ -213,7 +267,7 @@ export class OrderService {
 
     // 1. D'abord calculer et appliquer les réductions
     if (orderData.offerIds?.length) {
-      const articleIds = orderItems.map(item => item.articleId);
+      const articleIds = items.map(item => item.articleId);
       const { finalAmount, appliedDiscounts } = await this.calculateDiscounts(
         userId,
         totalAmount,
@@ -340,7 +394,7 @@ export class OrderService {
       {
         orderId: order.id,
         totalAmount: totalAmount,
-        items: orderItems.map(item => ({
+        items: items.map(item => ({
           name: articles.find(a => a.id === item.articleId)?.name,
           quantity: item.quantity
         }))
@@ -504,13 +558,19 @@ export class OrderService {
       .from('orders')
       .select(`
         *,
-        service:services(*),
-        address:addresses(*),
-        items:order_items(
-          *,
-          article:articles(
-            *,
-            category:article_categories(name)
+        service:services!inner(*),
+        address:addresses!inner(*),
+        items:order_items!inner(
+          id,
+          quantity,
+          unitPrice,
+          article:articles!inner(
+            id,
+            name,
+            basePrice,
+            premiumPrice,
+            description,
+            category:article_categories!inner(name)
           )
         )
       `)
