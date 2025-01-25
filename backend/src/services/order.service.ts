@@ -108,41 +108,98 @@ export class OrderService {
 
     console.log('Order items created successfully:', orderItems);
 
-    let affiliate;
+    // Variables pour le traitement des affiliés et réductions
+    let affiliate = null;
     let commissionAmount = 0;
 
-    // Si un code affilié est fourni, calculer et attribuer la commission
+    // Calculer les réductions si des offres sont appliquées
+    if (orderData.offerIds?.length) {
+      const articleIds = orderItems.map(item => item.articleId);
+      const { finalAmount, appliedDiscounts } = await this.calculateDiscounts(
+        userId,
+        totalAmount,
+        articleIds,
+        orderData.offerIds
+      );
+
+      // Mettre à jour le montant total
+      totalAmount = finalAmount;
+
+      // Enregistrer les offres utilisées
+      const userOffers = appliedDiscounts.map(discount => ({
+        user_id: userId,
+        offer_id: discount.offerId,
+        order_id: order.id,
+        discount_amount: discount.discountAmount,
+        used_at: new Date()
+      }));
+
+      await supabase.from('user_offers').insert(userOffers);
+      
+      console.log('Discounts applied:', { totalAmount: totalAmount, appliedDiscounts: appliedDiscounts });
+    }
+
+    // Si un code affilié est fourni, calculer et attribuer la commission après les réductions
     if (orderData.affiliateCode) {
+      console.log('[OrderService] Processing affiliate code:', orderData.affiliateCode);
+      
       const { data: affiliateData } = await supabase
         .from('affiliate_profiles')
         .select('*')
-        .eq('affiliate_code', orderData.affiliateCode)
+        .eq('affiliateCode', orderData.affiliateCode)
+        .eq('is_active', true)
+        .eq('status', 'ACTIVE')
         .single();
 
       if (affiliateData) {
         affiliate = affiliateData;
-        commissionAmount = totalAmount * 0.1; // 10% de commission
+        console.log('[OrderService] Found active affiliate:', affiliate.id);
         
-        await supabase
+        // Utiliser le taux de commission de l'affilié ou le taux par défaut
+        const commissionRate = affiliate.commission_rate || 10;
+        commissionAmount = totalAmount * (commissionRate / 100);
+        
+        console.log('[OrderService] Calculating commission:', {
+          totalAmount,
+          commissionRate,
+          commissionAmount
+        });
+
+        const { error: updateError } = await supabase
           .from('affiliate_profiles')
-          .update({ 
+          .update({
             commission_balance: affiliate.commission_balance + commissionAmount,
-            total_earned: affiliate.total_earned + commissionAmount
+            total_earned: affiliate.total_earned + commissionAmount,
+            total_referrals: affiliate.total_referrals + 1
           })
           .eq('id', affiliate.id);
 
+        if (updateError) {
+          console.error('[OrderService] Error updating affiliate balance:', updateError);
+          throw updateError;
+        }
+
         // Créer une transaction de commission
-        await supabase
+        const { error: transactionError } = await supabase
           .from('commission_transactions')
           .insert([{
             affiliate_id: affiliate.id,
             order_id: order.id,
             amount: commissionAmount,
-            status: 'PENDING'
+            status: 'PENDING',
+            created_at: new Date()
           }]);
+
+        if (transactionError) {
+          console.error('[OrderService] Error creating commission transaction:', transactionError);
+          throw transactionError;
+        }
+
+        console.log('[OrderService] Affiliate commission processed successfully');
+      } else {
+        console.warn('[OrderService] No active affiliate found for code:', orderData.affiliateCode);
       }
     }
-
     console.log('Affiliate commission processed:', { affiliate, commissionAmount });
 
     // Calculer les réductions si des offres sont appliquées
