@@ -229,8 +229,8 @@ export interface Order {
   paymentMethod: PaymentMethod;
 }
 
-export type OrderStatus = 
-  | 'PENDING' 
+export type OrderStatus =
+  | 'PENDING'
   | 'COLLECTING'
   | 'COLLECTED'
   | 'PROCESSING'
@@ -240,6 +240,19 @@ export type OrderStatus =
   | 'CANCELLED';
 
 export type RecurrenceType = 'NONE' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
+
+export interface CreateOrderResponse {
+  order: Order;
+  pricing: {
+    subtotal: number;
+    discounts: AppliedDiscount[];
+    total: number;
+  };
+  rewards: {
+    pointsEarned: number;
+    currentBalance: number;
+  };
+}
 
 // Address related types
 export interface Address {
@@ -284,6 +297,7 @@ export interface CreateOrderDTO {
   items: {
     articleId: string;
     quantity: number;
+    premiumPrice?: boolean;
   }[];
   offerIds?: string[];
   paymentMethod: PaymentMethod;

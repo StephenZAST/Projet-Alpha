@@ -1,12 +1,22 @@
 import supabase from '../config/database';
-import { AppliedDiscount, CreateOrderDTO, Order, OrderStatus, PaymentStatus, RecurrenceType } from '../models/types';
+import { AppliedDiscount, CreateOrderDTO, CreateOrderResponse, Order, OrderStatus, PaymentStatus, RecurrenceType } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
 import { LoyaltyService } from './loyalty.service';
 
 export class OrderService {
   
-  static async createOrder(orderData: CreateOrderDTO): Promise<Order> {
+  private static async getCurrentLoyaltyPoints(userId: string): Promise<number> {
+    const { data: loyalty } = await supabase
+      .from('loyalty_points')
+      .select('points_balance')
+      .eq('user_id', userId)
+      .single();
+
+    return loyalty?.points_balance || 0;
+  }
+
+  static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
     const { userId, serviceId, addressId, isRecurring, recurrenceType, collectionDate, deliveryDate, affiliateCode, serviceTypeId, paymentMethod } = orderData;
 
     console.log('Creating order with data:', orderData);
@@ -44,15 +54,23 @@ export class OrderService {
       throw new Error('One or more articles not found');
     }
 
-    // Add articles prices to total
+    // Variables for tracking discounts and total amount
+    let appliedDiscounts: AppliedDiscount[] = [];
+    let subtotalAmount = service.price;
+
+    // Calculate total amount with premium prices if applicable
     items.forEach(item => {
       const article = articles.find(a => a.id === item.articleId);
       if (article) {
-        totalAmount += article.basePrice * item.quantity;
+        const price = item.premiumPrice ? article.premiumPrice : article.basePrice;
+        subtotalAmount += price * item.quantity;
       }
     });
 
-    // Mapper les noms de colonnes pour correspondre à la base de données
+    totalAmount = subtotalAmount;
+    console.log('Calculated initial total amount:', totalAmount);
+
+    // Prepare order data for database
     const orderToInsert = {
       id: uuidv4(),
       userId,
@@ -263,14 +281,41 @@ export class OrderService {
       // Ne pas bloquer la création de la commande si l'attribution des points échoue
     }
 
-    // 5. Retourner les détails de la commande
-    console.log('Returning order details');
-    const orderDetails = await this.getOrderDetails(order.id, userId);
-    
-    return {
-      ...orderDetails,
-      totalAmount
+    // 5. Mettre à jour le montant total final de la commande
+    const { error: updateTotalError } = await supabase
+      .from('orders')
+      .update({ totalAmount })
+      .eq('id', order.id);
+
+    if (updateTotalError) {
+      console.error('Error updating final total amount:', updateTotalError);
+      throw updateTotalError;
     }
+
+    console.log('Final total amount updated:', totalAmount);
+
+    // 6. Récupérer et retourner les détails complets de la commande
+    const orderDetails = await this.getOrderDetails(order.id, userId);
+    const finalOrderResponse: CreateOrderResponse = {
+      order: orderDetails,
+      pricing: {
+        subtotal: subtotalAmount,
+        discounts: appliedDiscounts,
+        total: totalAmount
+      },
+      rewards: {
+        pointsEarned: Math.floor(totalAmount),
+        currentBalance: await this.getCurrentLoyaltyPoints(userId)
+      }
+    };
+
+    console.log('Returning complete order response:', {
+      orderId: orderDetails.id,
+      total: totalAmount,
+      itemsCount: orderDetails.items?.length || 0
+    });
+
+    return finalOrderResponse;
   }
 
   static async getUserOrders(userId: string): Promise<Order[]> {

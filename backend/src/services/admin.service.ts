@@ -420,14 +420,14 @@ export class AdminService {
       };
 
       // 4. Utiliser OrderService pour créer la commande
-      const order = await OrderService.createOrder(orderToCreate);
+      const orderResponse = await OrderService.createOrder(orderToCreate);
 
       // 5. Ajouter une note administrative si fournie
       if (orderData.adminNote) {
         await supabase
           .from('order_notes')
           .insert({
-            order_id: order.id,
+            order_id: orderResponse.order.id,
             admin_id: orderData.createdBy,
             note: orderData.adminNote,
             created_at: new Date()
@@ -441,18 +441,23 @@ export class AdminService {
           admin_id: orderData.createdBy,
           action: 'CREATE_ORDER',
           entity_type: 'ORDER',
-          entity_id: order.id,
+          entity_id: orderResponse.order.id,
           details: {
             customerId: orderData.customerId,
             createdAt: new Date(),
-            adminNote: orderData.adminNote
+            adminNote: orderData.adminNote,
+            totalAmount: orderResponse.pricing.total
           },
           created_at: new Date()
         });
 
-      console.log('[AdminService] Order created successfully:', order.id);
+      console.log('[AdminService] Order created successfully:', {
+        orderId: orderResponse.order.id,
+        total: orderResponse.pricing.total,
+        pointsEarned: orderResponse.rewards.pointsEarned
+      });
       
-      return order;
+      return orderResponse.order;
     } catch (error) {
       console.error('[AdminService] Error creating order:', error);
       throw error;
