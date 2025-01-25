@@ -1,0 +1,271 @@
+{
+  "info": {
+    "name": "Alpha Laundry Affiliate Withdrawal Tests",
+    "description": "Collection pour tester les endpoints de retrait des affiliés",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Liste des demandes de retrait",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/admin/withdrawals",
+          "host": ["{{baseUrl}}"],
+          "path": ["admin", "withdrawals"]
+        }
+      },
+      "response": [
+        {
+          "name": "Succès",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/withdrawals"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"data\": [\n        {\n            \"id\": \"wd_123\",\n            \"affiliateId\": \"aff_456\",\n            \"amount\": 100.50,\n            \"status\": \"PENDING\",\n            \"createdAt\": \"2024-01-25T04:30:00.000Z\"\n        }\n    ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Rejet d'une demande de retrait",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Informations bancaires incorrectes\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/admin/withdrawals/:withdrawalId/reject",
+          "host": ["{{baseUrl}}"],
+          "path": ["admin", "withdrawals", ":withdrawalId", "reject"],
+          "variable": [
+            {
+              "key": "withdrawalId",
+              "value": "withdrawal_id_here"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Succès",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Informations bancaires incorrectes\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/withdrawals/:withdrawalId/reject"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"data\": {\n        \"id\": \"wd_123\",\n        \"status\": \"REJECTED\",\n        \"updatedAt\": \"2024-01-25T04:30:00.000Z\",\n        \"reason\": \"Informations bancaires incorrectes\"\n    }\n}"
+        },
+        {
+          "name": "Erreur - Raison manquante",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/withdrawals/:withdrawalId/reject"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"error\": \"Reason is required for rejection\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Approbation d'une demande de retrait",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/admin/withdrawals/:withdrawalId/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["admin", "withdrawals", ":withdrawalId", "approve"],
+          "variable": [
+            {
+              "key": "withdrawalId",
+              "value": "withdrawal_id_here"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Succès",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/withdrawals/:withdrawalId/approve"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"data\": {\n        \"id\": \"wd_123\",\n        \"status\": \"APPROVED\",\n        \"updatedAt\": \"2024-01-25T04:30:00.000Z\"\n    }\n}"
+        },
+        {
+          "name": "Erreur - Déjà traité",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/withdrawals/:withdrawalId/approve"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"error\": \"Withdrawal request has already been processed\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Statistiques des affiliés",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/admin/affiliates/stats",
+          "host": ["{{baseUrl}}"],
+          "path": ["admin", "affiliates", "stats"]
+        }
+      },
+      "response": [
+        {
+          "name": "Succès",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/affiliates/stats"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"data\": {\n        \"pendingWithdrawals\": 5,\n        \"totalCommissionsPaid\": 1250.75,\n        \"activeAffiliates\": 10\n    }\n}"
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{adminToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Vous pouvez ajouter ici des scripts de pré-requête si nécessaire"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "adminToken",
+      "value": "votre_token_admin_ici",
+      "type": "string"
+    },
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api",
+      "type": "string"
+    }
+  ]
+}

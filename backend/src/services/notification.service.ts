@@ -213,6 +213,123 @@ export class NotificationService {
   /**
    * Construit un message de notification à partir d'un template
    */
+  static async getUserNotifications(userId: string, page = 1, limit = 20) {
+    try {
+      const { data, error, count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact' })
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+
+      if (error) throw error;
+
+      return {
+        notifications: data || [],
+        total: count || 0,
+        page,
+        totalPages: Math.ceil((count || 0) / limit)
+      };
+    } catch (error) {
+      console.error('[NotificationService] Error getting user notifications:', error);
+      throw new Error('Failed to get user notifications');
+    }
+  }
+
+  static async getUnreadCount(userId: string): Promise<number> {
+    try {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact' })
+        .eq('user_id', userId)
+        .eq('read', false);
+
+      if (error) throw error;
+      return count || 0;
+    } catch (error) {
+      console.error('[NotificationService] Error getting unread count:', error);
+      throw new Error('Failed to get unread count');
+    }
+  }
+
+  static async markAsRead(userId: string, notificationId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('[NotificationService] Error marking notification as read:', error);
+      throw new Error('Failed to mark notification as read');
+    }
+  }
+
+  static async markAllAsRead(userId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', userId)
+        .eq('read', false);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('[NotificationService] Error marking all notifications as read:', error);
+      throw new Error('Failed to mark all notifications as read');
+    }
+  }
+
+  static async deleteNotification(userId: string, notificationId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('[NotificationService] Error deleting notification:', error);
+      throw new Error('Failed to delete notification');
+    }
+  }
+
+  static async getNotificationPreferences(userId: string): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('notification_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('[NotificationService] Error getting notification preferences:', error);
+      throw new Error('Failed to get notification preferences');
+    }
+  }
+
+  static async updateNotificationPreferences(userId: string, preferences: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('notification_preferences')
+        .upsert({
+          user_id: userId,
+          ...preferences,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('[NotificationService] Error updating notification preferences:', error);
+      throw new Error('Failed to update notification preferences');
+    }
+  }
+
   private static buildNotificationMessage(
     template: string,
     data: Record<string, any>

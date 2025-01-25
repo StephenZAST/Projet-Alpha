@@ -229,5 +229,223 @@ export class OrderController {
     return data || { pointsBalance: 0 };
   }
 
-  // Autres méthodes du contrôleur...
+  static async getRecentOrders(req: Request, res: Response) {
+    try {
+      const { limit = 5 } = req.query;
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          user:users(first_name, last_name),
+          service:services(name),
+          items:order_items(
+            quantity,
+            article:articles(name)
+          )
+        `)
+        .order('createdAt', { ascending: false })
+        .limit(Number(limit));
+
+      if (error) throw error;
+      res.json({ data: orders });
+    } catch (error: any) {
+      console.error('[OrderController] Error getting recent orders:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getOrdersByStatus(req: Request, res: Response) {
+    try {
+      const { data: ordersByStatus, error } = await supabase
+        .from('orders')
+        .select('status, count')
+        .select('*')
+        .then((result) => {
+          const orders = result.data || [];
+          return orders.reduce((acc: Record<string, number>, order) => {
+            acc[order.status] = (acc[order.status] || 0) + 1;
+            return acc;
+          }, {});
+        });
+
+      if (error) throw error;
+      res.json({ data: ordersByStatus });
+    } catch (error: any) {
+      console.error('[OrderController] Error getting orders by status:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getUserOrders(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select('*, service:services(name)')
+        .eq('userId', userId)
+        .order('createdAt', { ascending: false });
+
+      if (error) throw error;
+      res.json({ data: orders });
+    } catch (error: any) {
+      console.error('[OrderController] Error getting user orders:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getOrderDetails(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params;
+      const { data: order, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          user:users(first_name, last_name, email, phone),
+          service:services(name),
+          address:addresses(*),
+          items:order_items(
+            quantity,
+            unit_price,
+            article:articles(*)
+          )
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (error) throw error;
+      if (!order) return res.status(404).json({ error: 'Order not found' });
+
+      res.json({ data: order });
+    } catch (error: any) {
+      console.error('[OrderController] Error getting order details:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async generateInvoice(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params;
+      
+      // Récupérer les détails de la commande directement depuis Supabase
+      const { data: order, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          user:users(first_name, last_name, email, phone),
+          service:services(name),
+          address:addresses(*),
+          items:order_items(
+            quantity,
+            unit_price,
+            article:articles(*)
+          )
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (error) throw error;
+      if (!order) return res.status(404).json({ error: 'Order not found' });
+
+      const doc = new PDFDocument();
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=invoice-${orderId}.pdf`);
+      
+      doc.pipe(res);
+      // Générer le contenu de la facture
+      doc.fontSize(25).text('Facture', 100, 50);
+      doc.fontSize(12).text(`Commande: ${orderId}`, 100, 100);
+      // ... Ajouter plus de contenu
+      doc.end();
+    } catch (error: any) {
+      console.error('[OrderController] Error generating invoice:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async calculateTotal(req: Request, res: Response) {
+    try {
+      const { items, appliedOfferIds } = req.body;
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      const pricing = await PricingService.calculateOrderTotal({
+        items,
+        userId,
+        appliedOfferIds
+      });
+
+      res.json({ data: pricing });
+    } catch (error: any) {
+      console.error('[OrderController] Error calculating total:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getAllOrders(req: Request, res: Response) {
+    try {
+      const { page = 1, limit = 20, status, startDate, endDate } = req.query;
+
+      let query = supabase
+        .from('orders')
+        .select(`
+          *,
+          user:users(first_name, last_name),
+          service:services(name)
+        `);
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      if (startDate && endDate) {
+        query = query
+          .gte('createdAt', startDate as string)
+          .lte('createdAt', endDate as string);  
+      }
+
+      const offset = (Number(page) - 1) * Number(limit);
+      const { data: orders, error, count } = await query
+        .range(offset, offset + Number(limit) - 1)
+        .order('createdAt', { ascending: false });
+
+      if (error) throw error;
+
+      res.json({
+        data: orders,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total: count || 0,
+          totalPages: Math.ceil((count || 0) / Number(limit))
+        }
+      });
+    } catch (error: any) {
+      console.error('[OrderController] Error getting all orders:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async deleteOrder(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params;
+      const userRole = req.user?.role;
+
+      if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) throw error;
+      res.json({ message: 'Order deleted successfully' });
+    } catch (error: any) {
+      console.error('[OrderController] Error deleting order:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

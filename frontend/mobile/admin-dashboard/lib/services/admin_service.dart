@@ -177,6 +177,19 @@ class AdminService {
     }
   }
 
+  static Future<void> rejectWithdrawal(
+      String withdrawalId, String reason) async {
+    try {
+      await _api.patch(
+        '/admin/withdrawals/$withdrawalId/reject',
+        data: {'reason': reason},
+      );
+    } catch (e) {
+      print('[AdminService] Error rejecting withdrawal: $e');
+      throw 'Erreur lors du rejet du retrait';
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> getWithdrawals() async {
     try {
       final response = await _api.get('/admin/withdrawals');

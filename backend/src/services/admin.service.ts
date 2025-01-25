@@ -172,12 +172,14 @@ export class AdminService {
     if (error) throw error;
 
     // Notifier l'affilié
-    await NotificationService.create(
+    await NotificationService.sendNotification(
       affiliate.user_id,
-      'ACCOUNT_STATUS',
-      'Statut du compte mis à jour',
-      `Votre compte affilié est maintenant ${status.toLowerCase()}`,
-      { status, isActive }
+      'AFFILIATE_STATUS_UPDATED',
+      {
+        status,
+        isActive,
+        message: `Votre compte affilié est maintenant ${status.toLowerCase()}`
+      }
     );
 
     return data;

@@ -9,6 +9,31 @@ class AffiliateController extends GetxController {
   final isLoading = false.obs;
   final hasError = false.obs;
   final errorMessage = ''.obs;
+  final rejectionReason = ''.obs;
+
+  void rejectWithdrawal(String requestId, String reason) async {
+    try {
+      isLoading(true);
+      await AdminService.rejectWithdrawal(requestId, reason);
+      loadWithdrawals(); // Recharger les demandes après le rejet
+      Get.snackbar(
+        'Succès',
+        'Demande rejetée avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+      );
+    } catch (e) {
+      errorMessage.value = e.toString();
+      Get.snackbar(
+        'Erreur',
+        'Impossible de rejeter la demande: ${e.toString()}',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
+    } finally {
+      isLoading(false);
+    }
+  }
 
   // Données des affiliés
   final affiliates = <Affiliate>[].obs;

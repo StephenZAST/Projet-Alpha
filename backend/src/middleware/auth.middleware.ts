@@ -48,3 +48,6 @@ export const authorizeRoles = (roles: string[]) => {
     next();
   };
 };
+
+// Export as alias for backward compatibility
+export const authMiddleware = authenticateToken;

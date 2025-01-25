@@ -133,6 +133,9 @@ class WithdrawalRequests extends StatelessWidget {
                           icon: Icon(Icons.check_circle_outline),
                           label: Text('Approuver'),
                           style: TextButton.styleFrom(
+                            backgroundColor: isDark
+                                ? AppColors.success.withOpacity(0.1)
+                                : Colors.transparent,
                             foregroundColor: AppColors.success,
                           ),
                           onPressed: () =>
@@ -143,10 +146,52 @@ class WithdrawalRequests extends StatelessWidget {
                           icon: Icon(Icons.cancel_outlined),
                           label: Text('Rejeter'),
                           style: TextButton.styleFrom(
+                            backgroundColor: isDark
+                                ? AppColors.error.withOpacity(0.1)
+                                : Colors.transparent,
                             foregroundColor: AppColors.error,
                           ),
                           onPressed: () {
-                            // TODO: Implémenter le rejet
+                            Get.dialog(
+                              AlertDialog(
+                                title: Text('Rejeter la demande'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                        'Veuillez indiquer la raison du rejet'),
+                                    SizedBox(height: AppSpacing.md),
+                                    TextField(
+                                      decoration: InputDecoration(
+                                        hintText: 'Raison du rejet',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      onChanged: (value) => controller
+                                          .rejectionReason.value = value,
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    child: Text('Annuler'),
+                                    onPressed: () => Get.back(),
+                                  ),
+                                  TextButton(
+                                    child: Text('Confirmer'),
+                                    onPressed: () {
+                                      if (controller
+                                          .rejectionReason.value.isNotEmpty) {
+                                        controller.rejectWithdrawal(
+                                          request.id,
+                                          controller.rejectionReason.value,
+                                        );
+                                        Get.back();
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
                           },
                         ),
                       ],

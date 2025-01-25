@@ -107,12 +107,39 @@ export class AffiliateService {
     if (updateError) throw updateError;
 
     // Notifier l'admin
-    await NotificationService.create(
+    // Notifier les admins de la demande de retrait
+    // Notifier les admins de la demande de retrait
+    const { data: admins } = await supabase
+      .from('users')
+      .select('id')
+      .in('role', ['ADMIN', 'SUPER_ADMIN']);
+
+    if (admins) {
+      for (const admin of admins) {
+        await NotificationService.sendNotification(
+          admin.id,
+          'WITHDRAWAL_REQUESTED',
+          {
+            affiliateId: affiliateId,
+            amount: amount,
+            transactionId: transaction.id,
+            userName: `${affiliateProfile.user_id}`,
+            status: 'PENDING',
+            message: `Nouvelle demande de retrait de ${amount}€`
+          }
+        );
+      }
+    }
+    // Notifier l'affilié de sa demande
+    await NotificationService.sendNotification(
       affiliateProfile.user_id,
-      'PROMOTIONS',
-      "Demande de retrait",
-      `L'affilié ${affiliateId} a demandé un retrait de ${amount} €.`,
-      { amount, transactionId: transaction.id }
+      'WITHDRAWAL_REQUESTED',
+      {
+        amount: amount,
+        transactionId: transaction.id,
+        status: 'PENDING',
+        message: `Votre demande de retrait de ${amount}€ a été enregistrée et est en attente de validation.`
+      }
     );
 
     return transaction;
@@ -267,6 +294,207 @@ export class AffiliateService {
       .single();
 
     return nextLevel;
+  }
+
+  static async getWithdrawals(
+    pagination: PaginationParams,
+    status?: string
+  ) {
+    const { page = 1, limit = 10 } = pagination;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let query = supabase
+      .from('commission_transactions')
+      .select(`
+        *,
+        affiliate:affiliate_profiles(
+          id,
+          user:users(
+            id,
+            email,
+            firstName,
+            lastName
+          )
+        )
+      `, { count: 'exact' })
+      .eq('type', 'WITHDRAWAL')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) throw error;
+
+    return {
+      data,
+      pagination: {
+        total: count || 0,
+        currentPage: page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit)
+      }
+    };
+  }
+
+  static async rejectWithdrawal(withdrawalId: string, reason: string) {
+    const { data: withdrawal, error: getError } = await supabase
+      .from('commission_transactions')
+      .select('*, affiliate:affiliate_profiles(user_id, commission_balance)')
+      .eq('id', withdrawalId)
+      .eq('type', 'WITHDRAWAL')
+      .single();
+
+    if (getError || !withdrawal) {
+      throw new Error('Withdrawal not found');
+    }
+
+    if (withdrawal.status !== 'PENDING') {
+      throw new Error('Withdrawal cannot be rejected - invalid status');
+    }
+
+    // Recréditer le montant sur le compte de l'affilié
+    const { error: updateError } = await supabase
+      .from('affiliate_profiles')
+      .update({
+        commission_balance: withdrawal.affiliate.commission_balance - withdrawal.amount // Le montant est négatif dans la transaction
+      })
+      .eq('id', withdrawal.affiliate_id);
+
+    if (updateError) throw updateError;
+
+    // Mettre à jour le statut de la transaction
+    const { data: updatedWithdrawal, error: txError } = await supabase
+      .from('commission_transactions')
+      .update({
+        status: 'REJECTED',
+        notes: reason
+      })
+      .eq('id', withdrawalId)
+      .select()
+      .single();
+
+    if (txError) throw txError;
+
+    // Notifier l'affilié
+    await NotificationService.sendNotification(
+      withdrawal.affiliate.user_id,
+      'WITHDRAWAL_REJECTED',
+      {
+        amount: withdrawal.amount,
+        transactionId: withdrawalId,
+        reason: reason,
+        status: 'REJECTED'
+      }
+    );
+
+    return {
+      ...updatedWithdrawal,
+      userId: withdrawal.affiliate.user_id
+    };
+  }
+
+  static async getAllAffiliates(
+    pagination: PaginationParams,
+    filters: { status?: string; query?: string; }
+  ) {
+    const { page = 1, limit = 10 } = pagination;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let query = supabase
+      .from('affiliate_profiles')
+      .select(`
+        *,
+        user:users(
+          id,
+          email,
+          firstName,
+          lastName,
+          phone
+        )
+      `, { count: 'exact' });
+
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
+
+    if (filters.query) {
+      query = query.or(`
+        user.email.ilike.%${filters.query}%,
+        user.firstName.ilike.%${filters.query}%,
+        user.lastName.ilike.%${filters.query}%,
+        affiliateCode.ilike.%${filters.query}%
+      `);
+    }
+
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) throw error;
+
+    return {
+      data,
+      pagination: {
+        total: count || 0,
+        currentPage: page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit)
+      }
+    };
+  }
+
+  static async updateAffiliateStatus(
+    affiliateId: string,
+    status: string,
+    isActive: boolean
+  ) {
+    // Vérifier si l'affilié existe
+    const { data: affiliate, error: checkError } = await supabase
+      .from('affiliate_profiles')
+      .select('id, status')
+      .eq('id', affiliateId)
+      .single();
+
+    if (checkError || !affiliate) {
+      throw new Error('Affiliate not found');
+    }
+
+    // Mettre à jour le statut
+    const { data: updatedAffiliate, error } = await supabase
+      .from('affiliate_profiles')
+      .update({
+        status,
+        is_active: isActive,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', affiliateId)
+      .select(`
+        *,
+        user:users(id)
+      `)
+      .single();
+
+    if (error) throw error;
+
+    // Notifier l'affilié du changement de statut
+    await NotificationService.sendNotification(
+      updatedAffiliate.user.id,
+      'AFFILIATE_STATUS_UPDATED',
+      {
+        status,
+        isActive,
+        previousStatus: affiliate.status,
+        message: `Votre compte affilié est maintenant ${status.toLowerCase()}${isActive ? '' : ' et inactif'}`
+      }
+    );
+
+    return updatedAffiliate;
   }
 
   static async updateAffiliateLevel(affiliateId: string) {

@@ -52,30 +52,31 @@ export class OrderService {
       }
     });
 
-    const newOrder: Order = {
+    // Mapper les noms de colonnes pour correspondre à la base de données
+    const orderToInsert = {
       id: uuidv4(),
-      userId: userId,
+      userId,
       service_id: serviceId,
       service_type_id: serviceTypeId,
       address_id: addressId,
-      affiliateCode: affiliateCode,
+      affiliateCode,
       status: 'PENDING',
-      isRecurring: isRecurring,
-      recurrenceType: recurrenceType,
+      isRecurring,
+      recurrenceType,
       nextRecurrenceDate: isRecurring ? collectionDate : null,
-      totalAmount: totalAmount,
-      collectionDate: collectionDate,
-      deliveryDate: deliveryDate,
+      totalAmount,
+      collectionDate: collectionDate || null,
+      deliveryDate: deliveryDate || null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      paymentStatus: 'PENDING', // Add this line
-      paymentMethod: paymentMethod // Add this line
+      paymentStatus: 'PENDING',
+      paymentMethod
     };
 
     // Start a transaction
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert([newOrder])
+      .insert([orderToInsert])
       .select()
       .single();
 
@@ -172,19 +173,25 @@ export class OrderService {
     }
 
     // Créer notification pour le client
-    await NotificationService.createOrderNotification(
+    await NotificationService.sendNotification(
       userId,
-      order.id,
-      'ORDER_CREATED'
+      'ORDER_CREATED',
+      {
+        orderId: order.id,
+        totalAmount: totalAmount,
+        items: orderItems.map(item => ({
+          name: articles.find(a => a.id === item.articleId)?.name,
+          quantity: item.quantity
+        }))
+      }
     );
 
     // Si code affilié, notifier l'affilié
     if (orderData.affiliateCode && affiliate) {
-      await NotificationService.createAffiliateNotification(
+      await NotificationService.sendAffiliateNotification(
         affiliate.user_id,
-        userId,
         order.id,
-        commissionAmount
+        totalAmount
       );
     }
     
@@ -218,7 +225,8 @@ export class OrderService {
           )
         )
       `)
-      .eq('userId', userId);
+      .eq('userId', userId)
+      .order('createdAt', { ascending: false });
 
     console.log('Raw query result:', data);
 
@@ -235,9 +243,9 @@ export class OrderService {
     // Transform data
     return userOrders.map(order => ({
       id: order.id,
-      userId: order.user_id,
-      service_id: order.service_id,
-      address_id: order.address_id,
+      userId: order.userId,  // Garder en camelCase car c'est pour l'API
+      service_id: order.service_id,  // Garder en snake_case car c'est pour la BD
+      address_id: order.address_id,  // Garder en snake_case car c'est pour la BD
       affiliateCode: order.affiliateCode,
       status: order.status,
       isRecurring: order.isRecurring,
@@ -432,11 +440,14 @@ export class OrderService {
       // 5. Notifier le client du changement de statut
       console.log(`Sending notification for order ${orderId} status update`);
       try {
-        await NotificationService.createOrderNotification(
+        await NotificationService.sendNotification(
           order.userId,
-          orderId,
           'ORDER_STATUS_UPDATED',
-          { newStatus: newStatus }
+          {
+            orderId: orderId,
+            newStatus: newStatus,
+            message: `Votre commande est maintenant ${newStatus.toLowerCase()}`
+          }
         );
         console.log('Notification sent successfully');
       } catch (notifError) {

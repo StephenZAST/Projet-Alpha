@@ -75,7 +75,7 @@ export interface PointTransaction {
 }
 
 // Notification related types
-export type NotificationType = 
+export type NotificationType =
   | 'ORDER_CREATED'
   | 'ORDER_STATUS_UPDATED'
   | 'ORDER_COLLECTED'
@@ -83,7 +83,12 @@ export type NotificationType =
   | 'ORDER_DELIVERED'
   | 'PAYMENT_RECEIVED'
   | 'POINTS_EARNED'
-  | 'SPECIAL_OFFER';
+  | 'SPECIAL_OFFER'
+  | 'WITHDRAWAL_REQUESTED'
+  | 'WITHDRAWAL_APPROVED'
+  | 'WITHDRAWAL_REJECTED'
+  | 'AFFILIATE_STATUS_UPDATED'
+  | 'COMMISSION_EARNED';
 
 export interface Notification {
   id: string;
