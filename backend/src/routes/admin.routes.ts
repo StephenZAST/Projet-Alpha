@@ -9,12 +9,21 @@ const router = express.Router();
 // Protection des routes avec authentification
 router.use(authenticateToken as express.RequestHandler);
 
-// Route pour obtenir toutes les commandes avec pagination et filtres
+// Routes de gestion des commandes
 router.get(
   '/orders',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await AdminController.getAllOrders(req, res);
+  })
+);
+
+// Route pour créer une commande au nom d'un client
+router.post(
+  '/orders/create-for-customer',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await AdminController.createOrderForCustomer(req, res);
   })
 );
 

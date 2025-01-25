@@ -289,6 +289,27 @@ export interface CreateOrderDTO {
   paymentMethod: PaymentMethod;
 }
 
+export interface AdminCreateOrderDTO {
+  customerId: string;  // ID du client pour qui l'admin crée la commande
+  serviceId: string;
+  addressId: string;
+  serviceTypeId?: string;
+  isRecurring: boolean;
+  recurrenceType: RecurrenceType;
+  collectionDate?: Date;
+  deliveryDate?: Date;
+  affiliateCode?: string;
+  items: {
+    articleId: string;
+    quantity: number;
+    isPremium?: boolean;  // Option pour le prix premium
+  }[];
+  offerIds?: string[];
+  paymentMethod: PaymentMethod;
+  adminNote?: string;  // Note optionnelle de l'administrateur
+  createdBy: string;   // ID de l'admin qui crée la commande
+}
+
 export interface CreateOrderItemDTO {
     orderId: string;
   articleId: string;

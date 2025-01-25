@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AdminService } from '../services/admin.service';
-import { OrderStatus } from '../models/types';
+import { AdminCreateOrderDTO, OrderStatus } from '../models/types';
 
 export class AdminController {
   static async configureCommissions(req: Request, res: Response) {
@@ -193,6 +193,44 @@ export class AdminController {
         success: false,
         error: 'Internal Server Error',
         message: error.message || 'Failed to fetch revenue chart data'
+      });
+    }
+  }
+
+  static async createOrderForCustomer(req: Request, res: Response) {
+    try {
+      const adminId = req.user?.id;
+      const userRole = req.user?.role;
+
+      if (!adminId || !userRole || !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Unauthorized: Only administrators can create orders for customers'
+        });
+      }
+
+      const orderData: AdminCreateOrderDTO = {
+        ...req.body,
+        createdBy: adminId
+      };
+
+      console.log('[AdminController] Creating order for customer:', orderData.customerId);
+
+      const order = await AdminService.createOrderForCustomer(orderData);
+
+      return res.status(201).json({
+        success: true,
+        data: order,
+        message: 'Order created successfully'
+      });
+
+    } catch (error) {
+      console.error('[AdminController] Error creating order:', error);
+      const status = (error as Error).message.includes('not found') ? 404 : 500;
+      return res.status(status).json({
+        success: false,
+        message: (error as Error).message || 'Failed to create order',
+        error: process.env.NODE_ENV === 'development' ? error : undefined
       });
     }
   }

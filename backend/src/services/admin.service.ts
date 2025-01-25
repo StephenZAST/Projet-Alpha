@@ -7,10 +7,14 @@ import {
   RewardConfig,
   DashboardOrder,
   GetAllOrdersParams,
-  PaginatedOrdersResponse
+  PaginatedOrdersResponse,
+  CreateOrderDTO,
+  AdminCreateOrderDTO,
+  Order
 } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
+import { OrderService } from './order.service';
 
 export class AdminService {
   static async configureCommissions(commissionRate: number, rewardPoints: number): Promise<SystemConfig> {
@@ -370,6 +374,89 @@ export class AdminService {
 
     if (error) throw error;
     return count || 0;
+  }
+
+  static async createOrderForCustomer(orderData: AdminCreateOrderDTO): Promise<Order> {
+    try {
+      console.log('[AdminService] Creating order for customer:', orderData.customerId);
+
+      // 1. Vérifier que le client existe
+      const { data: customer, error: customerError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', orderData.customerId)
+        .single();
+
+      if (customerError || !customer) {
+        throw new Error('Customer not found');
+      }
+
+      // 2. Vérifier l'adresse
+      const { data: address, error: addressError } = await supabase
+        .from('addresses')
+        .select('*')
+        .eq('id', orderData.addressId)
+        .eq('user_id', orderData.customerId)
+        .single();
+
+      if (addressError || !address) {
+        throw new Error('Invalid address for customer');
+      }
+
+      // 3. Créer la commande en utilisant le service existant
+      const orderToCreate: CreateOrderDTO = {
+        userId: orderData.customerId,
+        serviceId: orderData.serviceId,
+        addressId: orderData.addressId,
+        serviceTypeId: orderData.serviceTypeId,
+        isRecurring: orderData.isRecurring,
+        recurrenceType: orderData.recurrenceType,
+        collectionDate: orderData.collectionDate,
+        deliveryDate: orderData.deliveryDate,
+        affiliateCode: orderData.affiliateCode,
+        items: orderData.items,
+        offerIds: orderData.offerIds,
+        paymentMethod: orderData.paymentMethod
+      };
+
+      // 4. Utiliser OrderService pour créer la commande
+      const order = await OrderService.createOrder(orderToCreate);
+
+      // 5. Ajouter une note administrative si fournie
+      if (orderData.adminNote) {
+        await supabase
+          .from('order_notes')
+          .insert({
+            order_id: order.id,
+            admin_id: orderData.createdBy,
+            note: orderData.adminNote,
+            created_at: new Date()
+          });
+      }
+
+      // 6. Enregistrer l'action de l'administrateur
+      await supabase
+        .from('admin_logs')
+        .insert({
+          admin_id: orderData.createdBy,
+          action: 'CREATE_ORDER',
+          entity_type: 'ORDER',
+          entity_id: order.id,
+          details: {
+            customerId: orderData.customerId,
+            createdAt: new Date(),
+            adminNote: orderData.adminNote
+          },
+          created_at: new Date()
+        });
+
+      console.log('[AdminService] Order created successfully:', order.id);
+      
+      return order;
+    } catch (error) {
+      console.error('[AdminService] Error creating order:', error);
+      throw error;
+    }
   }
 
   static async getTotalCustomers(): Promise<number> {
