@@ -19,33 +19,62 @@ export class RewardsService {
       const pointsToAward = Math.floor(order.totalAmount * this.DEFAULT_POINTS_PER_AMOUNT);
 
       // 2. Mettre à jour le solde de points
+      console.log('[RewardsService] Processing points for user:', userId, 'Amount:', pointsToAward);
+
+      // 2.1 Vérifier si le profil existe
       const { data: loyalty, error: loyaltyError } = await supabase
         .from('loyalty_points')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle(); // Utiliser maybeSingle au lieu de single pour éviter l'erreur
 
-      if (loyaltyError && loyaltyError.message !== 'No rows found') throw loyaltyError;
+      console.log('[RewardsService] Existing loyalty profile:', loyalty);
 
+      if (loyaltyError) {
+        console.error('[RewardsService] Error checking loyalty profile:', loyaltyError);
+        throw loyaltyError;
+      }
+
+      let result;
       if (loyalty) {
-        // Mettre à jour le profil existant
-        await supabase
+        // 2.2 Mettre à jour le profil existant
+        console.log('[RewardsService] Updating existing profile');
+        const { data: updatedLoyalty, error: updateError } = await supabase
           .from('loyalty_points')
           .update({
-            pointsBalance: loyalty.pointsBalance + pointsToAward,
-            totalEarned: loyalty.totalEarned + pointsToAward
+            "pointsBalance": loyalty.pointsBalance + pointsToAward,
+            "totalEarned": loyalty.totalEarned + pointsToAward
           })
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('[RewardsService] Error updating loyalty points:', updateError);
+          throw updateError;
+        }
+        result = updatedLoyalty;
       } else {
-        // Créer un nouveau profil
-        await supabase
+        // 2.3 Créer un nouveau profil
+        console.log('[RewardsService] Creating new loyalty profile');
+        const { data: newLoyalty, error: insertError } = await supabase
           .from('loyalty_points')
           .insert([{
             user_id: userId,
-            pointsBalance: pointsToAward,
-            totalEarned: pointsToAward
-          }]);
+            "pointsBalance": pointsToAward,
+            "totalEarned": pointsToAward
+          }])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('[RewardsService] Error creating loyalty profile:', insertError);
+          throw insertError;
+        }
+        result = newLoyalty;
       }
+
+      console.log('[RewardsService] Points processing successful:', result);
 
       // 3. Enregistrer la transaction
       await this.createPointTransaction(userId, pointsToAward, 'EARNED', source, order.id);

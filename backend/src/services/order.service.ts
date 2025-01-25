@@ -7,7 +7,7 @@ import { LoyaltyService } from './loyalty.service';
 export class OrderService {
   
   static async createOrder(orderData: CreateOrderDTO): Promise<Order> {
-    const { userId, serviceId, addressId, items, isRecurring, recurrenceType, collectionDate, deliveryDate, affiliateCode, serviceTypeId, paymentMethod } = orderData;
+    const { userId, serviceId, addressId, isRecurring, recurrenceType, collectionDate, deliveryDate, affiliateCode, serviceTypeId, paymentMethod } = orderData;
 
     console.log('Creating order with data:', orderData);
 
@@ -34,7 +34,7 @@ export class OrderService {
     // Calculate total amount including articles
     let totalAmount = service.price;
     
-    // Fetch all articles prices
+    const items = orderData.items;
     const { data: articles } = await supabase
       .from('articles')
       .select('*')
@@ -71,7 +71,7 @@ export class OrderService {
       updatedAt: new Date(),
       paymentStatus: 'PENDING',
       paymentMethod
-    };
+    }; // Retirer items car ce n'est pas une colonne de la table orders
 
     // Start a transaction
     const { data: order, error: orderError } = await supabase

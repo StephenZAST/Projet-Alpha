@@ -66,11 +66,10 @@ export class OrderController {
         collectionDate,
         deliveryDate,
         affiliateCode,
-        items,
         paymentMethod,
         totalAmount: pricing.total,
         status: 'PENDING' as OrderStatus
-      };
+      }; // Retirer items car ce n'est pas une colonne de la table orders
 
       const { data: order, error } = await supabase
         .from('orders')
@@ -98,13 +97,36 @@ export class OrderController {
 
       await Promise.all(itemPromises);
 
-      // 4. Traiter les points de fidélité
-      const earnedPoints = Math.floor(pricing.total * SYSTEM_CONSTANTS.POINTS.ORDER_MULTIPLIER);
-      await RewardsService.processOrderPoints(userId, order, 'ORDER');
+      // 4. Récupérer la commande complète avec les items
+      console.log('[OrderController] Getting complete order details');
+      const completeOrder = {
+        ...order,
+        totalAmount: pricing.total,
+        items: await this.getOrderItems(order.id)
+      };
+      console.log('[OrderController] Complete order:', {
+        id: completeOrder.id,
+        userId: completeOrder.userId,
+        totalAmount: completeOrder.totalAmount,
+        itemsCount: completeOrder.items.length
+      });
 
-      // 5. Si code affilié, traiter la commission
+      // 5. Traiter les points de fidélité
+      console.log('[OrderController] Calculating loyalty points');
+      const earnedPoints = Math.floor(pricing.total * SYSTEM_CONSTANTS.POINTS.ORDER_MULTIPLIER);
+      console.log('[OrderController] Points to award:', earnedPoints);
+      
+      try {
+        await RewardsService.processOrderPoints(userId, completeOrder, 'ORDER');
+        console.log('[OrderController] Points processing successful');
+      } catch (error) {
+        console.error('[OrderController] Error in points processing:', error);
+        throw error;
+      }
+
+      // 6. Si code affilié, traiter la commission
       if (affiliateCode) {
-        await RewardsService.processAffiliateCommission(order);
+        await RewardsService.processAffiliateCommission(completeOrder);
       }
 
       // 6. Envoyer les notifications
