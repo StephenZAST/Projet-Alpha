@@ -143,6 +143,12 @@ class AppTextStyles {
     fontWeight: FontWeight.normal,
   );
 
+  static const TextStyle bodyBold = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14.0,
+    fontWeight: FontWeight.bold,
+  );
+
   static const TextStyle bodySmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12.0,

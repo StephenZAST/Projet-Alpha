@@ -1,7 +1,18 @@
+import 'dart:developer';
+
+import 'package:admin/models/article.dart';
+import 'package:admin/models/user.dart';
 import 'package:get/get.dart';
 import '../models/order.dart';
 import '../models/enums.dart';
+import '../models/user.dart';
+import '../models/article.dart';
+import '../models/service.dart';
+import '../models/address.dart';
 import '../services/order_service.dart';
+import '../services/user_service.dart';
+import '../services/pricing_service.dart';
+import '../services/service_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
@@ -16,6 +27,21 @@ class OrdersController extends GetxController {
   final totalOrders = 0.obs;
   final totalAmount = 0.0.obs;
   final orderStatusCount = <String, int>{}.obs;
+
+  // État pour la création/modification de commande
+  final clients = <User>[].obs;
+  final selectedClientId = RxnString();
+  final clientAddresses = <Address>[].obs;
+  final selectedAddressId = RxnString();
+  final articles = <Article>[].obs;
+  final selectedItems = <Map<String, dynamic>>[].obs;
+  final services = <Service>[].obs;
+  final selectedServiceId = RxnString();
+  final orderTotal = 0.0.obs;
+
+  // État du formulaire de commande
+  final isEditMode = false.obs;
+  final currentOrderId = RxnString();
 
   // Filtres et recherche
   final selectedStatus = Rxn<OrderStatus>();
@@ -215,5 +241,143 @@ class OrdersController extends GetxController {
     currentPage.value = 1;
     itemsPerPage.value = 50;
     fetchOrders(resetPage: true);
+  }
+
+  // Méthodes pour la création/édition de commande
+  Future<void> loadClients() async {
+    try {
+      final result = await UserService.getClients();
+      clients.value = result;
+    } catch (e) {
+      print('[OrdersController] Error loading clients: $e');
+      throw 'Erreur lors du chargement des clients';
+    }
+  }
+
+  Future<void> loadArticles() async {
+    try {
+      final result = await PricingService.getAllArticles();
+      articles.value = result;
+    } catch (e) {
+      print('[OrdersController] Error loading articles: $e');
+      throw 'Erreur lors du chargement des articles';
+    }
+  }
+
+  Future<void> loadServices() async {
+    try {
+      final result = await ServiceService.getAllServices();
+      services.value = result;
+    } catch (e) {
+      print('[OrdersController] Error loading services: $e');
+      throw 'Erreur lors du chargement des services';
+    }
+  }
+
+  void selectClient(String clientId) {
+    selectedClientId.value = clientId;
+    loadClientAddresses(clientId);
+  }
+
+  Future<void> loadClientAddresses(String clientId) async {
+    try {
+      final result = await UserService.getUserAddresses(clientId);
+      clientAddresses.value = result;
+      if (result.isNotEmpty) {
+        final defaultAddress = result.firstWhereOrNull((a) => a.isDefault);
+        selectedAddressId.value = defaultAddress?.id ?? result.first.id;
+      }
+    } catch (e) {
+      print('[OrdersController] Error loading client addresses: $e');
+      throw 'Erreur lors du chargement des adresses';
+    }
+  }
+
+  void selectAddress(String addressId) {
+    selectedAddressId.value = addressId;
+  }
+
+  void addItem(String articleId) {
+    final article = articles.firstWhere((a) => a.id == articleId);
+    selectedItems.add({
+      'articleId': articleId,
+      'quantity': 1,
+      'isPremium': false,
+      'price': article.basePrice,
+    });
+    _calculateTotal();
+  }
+
+  void updateItemPrice(int index, bool isPremium) {
+    final item = selectedItems[index];
+    final article = articles.firstWhere((a) => a.id == item['articleId']);
+    item['isPremium'] = isPremium;
+    item['price'] = isPremium ? article.premiumPrice : article.basePrice;
+    selectedItems[index] = item;
+    _calculateTotal();
+  }
+
+  void removeItem(int index) {
+    selectedItems.removeAt(index);
+    _calculateTotal();
+  }
+
+  void _calculateTotal() {
+    double total = 0;
+    for (var item in selectedItems) {
+      total += (item['price'] as double) * (item['quantity'] as int);
+    }
+    orderTotal.value = total;
+  }
+
+  Future<void> createOrder(Map<String, dynamic> orderData) async {
+    try {
+      isLoading.value = true;
+      final result = await OrderService.createOrder(orderData);
+      Get.back();
+      fetchOrders();
+      Get.snackbar(
+        'Succès',
+        'Commande créée avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+      );
+    } catch (e) {
+      print('[OrdersController] Error creating order: $e');
+      Get.snackbar(
+        'Erreur',
+        'Impossible de créer la commande',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updateOrder(
+      String orderId, Map<String, dynamic> orderData) async {
+    try {
+      isLoading.value = true;
+      await OrderService.updateOrder(orderId, orderData);
+      Get.back();
+      fetchOrders();
+      Get.snackbar(
+        'Succès',
+        'Commande mise à jour avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+      );
+    } catch (e) {
+      print('[OrdersController] Error updating order: $e');
+      Get.snackbar(
+        'Erreur',
+        'Impossible de mettre à jour la commande',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

@@ -207,6 +207,40 @@ class OrderService {
     }
   }
 
+  static Future<void> updateOrder(
+      String orderId, Map<String, dynamic> orderData) async {
+    try {
+      print('[OrderService] Updating order: $orderId with data: $orderData');
+      final response = await _api.put(
+        '$_basePath/$orderId',
+        data: orderData,
+      );
+
+      if (response.statusCode == 401) {
+        throw 'Session expirée. Veuillez vous reconnecter.';
+      }
+
+      if (response.statusCode == 403) {
+        throw 'Vous n\'avez pas les permissions nécessaires pour cette action.';
+      }
+
+      if (response.statusCode! >= 400) {
+        final message = response.data?['error'] ??
+            response.data?['message'] ??
+            'Erreur lors de la mise à jour de la commande';
+        throw message;
+      }
+
+      print('[OrderService] Order updated successfully');
+    } catch (e) {
+      print('[OrderService] Error updating order: $e');
+      if (e is String) {
+        throw e;
+      }
+      throw 'Erreur lors de la mise à jour de la commande : ${e.toString()}';
+    }
+  }
+
   static Future<void> deleteOrder(String orderId) async {
     try {
       print('[OrderService] Deleting order: $orderId');

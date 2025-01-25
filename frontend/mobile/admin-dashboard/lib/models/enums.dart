@@ -9,8 +9,12 @@ enum OrderStatus {
   READY,
   DELIVERING,
   DELIVERED,
-  CANCELLED,
+  CANCELLED
 }
+
+enum PaymentMethod { CASH, ORANGE_MONEY }
+
+enum AppButtonVariant { primary, secondary, error, success }
 
 extension OrderStatusExtension on OrderStatus {
   String get label {
@@ -31,27 +35,29 @@ extension OrderStatusExtension on OrderStatus {
         return 'Livré';
       case OrderStatus.CANCELLED:
         return 'Annulé';
+      default:
+        return '';
     }
   }
 
   Color get color {
     switch (this) {
       case OrderStatus.PENDING:
-        return AppColors.warning;
+        return AppColors.pending;
       case OrderStatus.COLLECTING:
-        return AppColors.primaryLight;
+        return AppColors.processing;
       case OrderStatus.COLLECTED:
-        return AppColors.info;
+        return AppColors.completed;
       case OrderStatus.PROCESSING:
-        return AppColors.primary;
+        return AppColors.processing;
       case OrderStatus.READY:
-        return AppColors.success;
+        return AppColors.completed;
       case OrderStatus.DELIVERING:
-        return AppColors.accent;
+        return AppColors.processing;
       case OrderStatus.DELIVERED:
-        return AppColors.success;
+        return AppColors.delivered;
       case OrderStatus.CANCELLED:
-        return AppColors.error;
+        return AppColors.cancelled;
     }
   }
 
@@ -90,6 +96,44 @@ extension OrderStatusParser on String? {
     } catch (e) {
       print('Error parsing OrderStatus from string: $this');
       return OrderStatus.PENDING;
+    }
+  }
+}
+
+extension PaymentMethodExtension on String {
+  PaymentMethod toPaymentMethod() {
+    try {
+      return PaymentMethod.values.firstWhere(
+        (method) => method.name == toUpperCase(),
+        orElse: () => PaymentMethod.CASH,
+      );
+    } catch (e) {
+      print('Error parsing PaymentMethod from string: $this');
+      return PaymentMethod.CASH;
+    }
+  }
+}
+
+extension PaymentMethodLabel on PaymentMethod {
+  String get label {
+    switch (this) {
+      case PaymentMethod.CASH:
+        return 'Espèces';
+      case PaymentMethod.ORANGE_MONEY:
+        return 'Orange Money';
+      default:
+        return name;
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case PaymentMethod.CASH:
+        return Icons.payments_outlined;
+      case PaymentMethod.ORANGE_MONEY:
+        return Icons.phone_android;
+      default:
+        return Icons.payment;
     }
   }
 }
