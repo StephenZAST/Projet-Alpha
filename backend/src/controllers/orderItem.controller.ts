@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { OrderItemService } from '../services/orderItem.service';
+import { OrderItemService } from '../services/order.service/orderItem.service';
 
 export class OrderItemController {
   static async createOrderItem(req: Request, res: Response) {
@@ -26,6 +26,16 @@ export class OrderItemController {
   static async getAllOrderItems(req: Request, res: Response) {
     try {
       const result = await OrderItemService.getAllOrderItems();
+      res.json({ data: result });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getOrderItemsByOrderId(req: Request, res: Response) {
+    try {
+      const orderId = req.params.orderId;
+      const result = await OrderItemService.getOrderItemsByOrderId(orderId);
       res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

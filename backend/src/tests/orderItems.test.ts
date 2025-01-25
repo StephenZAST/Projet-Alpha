@@ -15,7 +15,7 @@ const supabase = createClient(
     }
   }
 );
-import { OrderService } from '../services/order.service';
+import { OrderService } from '../services/order.service/order.service';
 import { CreateOrderDTO, Order, OrderItem } from '../models/types';
 
 // Charger les variables d'environnement depuis le fichier .env

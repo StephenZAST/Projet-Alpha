@@ -1,0 +1,178 @@
+import supabase from '../../config/database';
+import { AppliedDiscount } from '../../models/types';
+
+export class OrderPaymentService {
+  static async getCurrentLoyaltyPoints(userId: string): Promise<number> {
+    const { data: loyalty } = await supabase
+      .from('loyalty_points')
+      .select('points_balance')
+      .eq('user_id', userId)
+      .single();
+
+    return loyalty?.points_balance || 0;
+  }
+
+  static async calculateDiscounts(
+    userId: string,
+    totalAmount: number,
+    articleIds: string[],
+    appliedOfferIds: string[]
+  ): Promise<{
+    finalAmount: number;
+    appliedDiscounts: AppliedDiscount[];
+  }> {
+    let finalAmount = totalAmount;
+    const appliedDiscounts: AppliedDiscount[] = [];
+
+    const { data: availableOffers } = await supabase
+      .from('offers')
+      .select('*, articles:offer_articles(article_id)')
+      .eq('is_active', true)
+      .lte('start_date', new Date().toISOString())
+      .gte('end_date', new Date().toISOString())
+      .in('id', appliedOfferIds);
+
+    if (!availableOffers) return { finalAmount, appliedDiscounts };
+
+    const sortedOffers = availableOffers.sort((a, b) =>
+      (a.isCumulative === b.isCumulative) ? 0 : a.isCumulative ? 1 : -1
+    );
+
+    for (const offer of sortedOffers) {
+      const offerArticleIds = offer.articles.map((a: any) => a.article_id);
+      const hasValidArticles = articleIds.some(id => offerArticleIds.includes(id));
+
+      if (!hasValidArticles) continue;
+      if (offer.minPurchaseAmount && totalAmount < offer.minPurchaseAmount) continue;
+
+      let discountAmount = 0;
+
+      switch (offer.discountType) {
+        case 'PERCENTAGE':
+          discountAmount = (totalAmount * offer.discountValue) / 100;
+          break;
+        case 'FIXED_AMOUNT':
+          discountAmount = offer.discountValue;
+          break;
+        case 'POINTS_EXCHANGE':
+          const { data: loyalty } = await supabase
+            .from('loyalty_points')
+            .select('points_balance')
+            .eq('user_id', userId)
+            .single();
+
+          if (!loyalty || loyalty.points_balance < offer.pointsRequired!) continue;
+
+          discountAmount = offer.discountValue;
+
+          await supabase
+            .from('loyalty_points')
+            .update({
+              points_balance: loyalty.points_balance - offer.pointsRequired!
+            })
+            .eq('user_id', userId);
+          break;
+      }
+
+      if (offer.maxDiscountAmount) {
+        discountAmount = Math.min(discountAmount, offer.maxDiscountAmount);
+      }
+
+      finalAmount -= discountAmount;
+      appliedDiscounts.push({ offerId: offer.id, discountAmount });
+
+      if (!offer.isCumulative) break;
+    }
+
+    return {
+      finalAmount: Math.max(finalAmount, 0),
+      appliedDiscounts
+    };
+  }
+
+  static async processAffiliateCommission(
+    orderId: string,
+    affiliateCode: string,
+    totalAmount: number
+  ): Promise<void> {
+    const { data: affiliate } = await supabase
+      .from('affiliate_profiles')
+      .select('*')
+      .eq('affiliateCode', affiliateCode)
+      .eq('is_active', true)
+      .eq('status', 'ACTIVE')
+      .single();
+
+    if (!affiliate) return;
+
+    const commissionRate = affiliate.commission_rate || 10;
+    const commissionAmount = totalAmount * (commissionRate / 100);
+
+    const { error: updateError } = await supabase
+      .from('affiliate_profiles')
+      .update({
+        commission_balance: affiliate.commission_balance + commissionAmount,
+        total_earned: affiliate.total_earned + commissionAmount,
+        total_referrals: affiliate.total_referrals + 1
+      })
+      .eq('id', affiliate.id);
+
+    if (updateError) {
+      console.error('[OrderService] Error updating affiliate balance:', updateError);
+      throw updateError;
+    }
+
+    const { error: transactionError } = await supabase
+      .from('commission_transactions')
+      .insert([{
+        affiliate_id: affiliate.id,
+        order_id: orderId,
+        amount: commissionAmount,
+        status: 'PENDING',
+        created_at: new Date()
+      }]);
+
+    if (transactionError) {
+      console.error('[OrderService] Error creating commission transaction:', transactionError);
+      throw transactionError;
+    }
+  }
+
+  static async calculateTotal(items: { articleId: string; quantity: number }[]): Promise<number> {
+    let totalAmount = 0;
+
+    const { data: articles } = await supabase
+      .from('articles')
+      .select('*')
+      .in('id', items.map(item => item.articleId));
+
+    if (!articles || articles.length !== items.length) {
+      throw new Error('One or more articles not found');
+    }
+
+    items.forEach(item => {
+      const article = articles.find(a => a.id === item.articleId);
+      if (article) {
+        totalAmount += article.basePrice * item.quantity;
+      }
+    });
+
+    return totalAmount;
+  }
+
+  static async updatePaymentStatus(
+    orderId: string,
+    paymentStatus: string,
+    userId: string
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        paymentStatus,
+        updatedAt: new Date()
+      })
+      .eq('id', orderId);
+
+    if (error) throw error;
+  }
+}

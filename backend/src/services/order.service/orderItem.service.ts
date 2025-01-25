@@ -1,5 +1,5 @@
-import supabase from '../config/database';
-import { OrderItem, CreateOrderItemDTO } from '../models/types';
+import supabase from '../../config/database';
+import { OrderItem, CreateOrderItemDTO } from '../../models/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class OrderItemService {
@@ -44,9 +44,35 @@ export class OrderItemService {
   static async getAllOrderItems(): Promise<OrderItem[]> {
     const { data, error } = await supabase
       .from('order_items')
-      .select('*');
+      .select(`
+        *,
+        article:articles(
+          *,
+          category:article_categories(*)
+        ),
+        service:services(*)
+      `);
 
     if (error) throw error;
+
+    return data;
+  }
+
+  static async getOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
+    const { data, error } = await supabase
+      .from('order_items')
+      .select(`
+        *,
+        article:articles(
+          *,
+          category:article_categories(*)
+        ),
+        service:services(*)
+      `)
+      .eq('orderId', orderId);
+
+    if (error) throw error;
+    if (!data) return [];
 
     return data;
   }

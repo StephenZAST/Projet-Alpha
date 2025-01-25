@@ -25,6 +25,13 @@ router.get(
 );
 
 router.get(
+  '/order/:orderId',
+  asyncHandler(async (req: Request, res: Response) => {
+    await OrderItemController.getOrderItemsByOrderId(req, res);
+  })
+);
+
+router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
     await OrderItemController.getAllOrderItems(req, res);

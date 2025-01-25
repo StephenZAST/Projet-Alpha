@@ -14,7 +14,7 @@ import {
 } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
-import { OrderService } from './order.service';
+import { OrderService } from './order.service/order.service';
 
 export class AdminService {
   static async configureCommissions(commissionRate: number, rewardPoints: number): Promise<SystemConfig> {
