@@ -3,6 +3,7 @@ import { AppliedDiscount, CreateOrderDTO, CreateOrderResponse, Order, OrderStatu
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
 import { LoyaltyService } from './loyalty.service';
+import { error } from 'console';
 
 export class OrderService {
   
@@ -70,7 +71,14 @@ export class OrderService {
     totalAmount = subtotalAmount;
     console.log('Calculated initial total amount:', totalAmount);
 
-    // Prepare order data for database
+    // Calculer le montant total initial avant de créer la commande
+    console.log('Initial amounts:', {
+      servicePrice: service.price,
+      subtotalAmount,
+      itemsCount: items.length
+    });
+    
+    // Mapper les noms de colonnes pour correspondre à la base de données
     const orderToInsert = {
       id: uuidv4(),
       userId,
@@ -82,14 +90,16 @@ export class OrderService {
       isRecurring,
       recurrenceType,
       nextRecurrenceDate: isRecurring ? collectionDate : null,
-      totalAmount,
+      totalAmount: subtotalAmount, // Utiliser le montant calculé
       collectionDate: collectionDate || null,
       deliveryDate: deliveryDate || null,
       createdAt: new Date(),
       updatedAt: new Date(),
       paymentStatus: 'PENDING',
       paymentMethod
-    }; // Retirer items car ce n'est pas une colonne de la table orders
+    };
+
+    console.log('Creating order with total amount:', subtotalAmount);
 
     // Start a transaction
     const { data: order, error: orderError } = await supabase
@@ -102,29 +112,104 @@ export class OrderService {
 
     console.log('Order created successfully:', order);
 
-    // Create order items
+    // 1. Créer les items de commande avec les prix exacts
+    console.log('Creating order items with accurate prices');
+    
+    // Vérifier que les articles existent toujours et récupérer leurs détails complets
+    const { data: latestArticles, error: articlesError } = await supabase
+      .from('articles')
+      .select(`
+        *,
+        category:article_categories(
+          id,
+          name
+        )
+      `)
+      .in('id', items.map(item => item.articleId));
+
+    if (articlesError || !latestArticles || latestArticles.length !== items.length) {
+      console.error('Error verifying articles:', articlesError);
+      throw new Error('One or more articles not found or deleted');
+    }
+
+    console.log('Articles found:', latestArticles.map(a => ({
+      id: a.id,
+      name: a.name,
+      category: a.category?.name
+    })));
+
+    // 2. Préparer les items avec les informations complètes
     const orderItems = items.map((item: { articleId: string; quantity: number; premiumPrice?: boolean }) => {
-      const article = articles.find(a => a.id === item.articleId);
-      const unitPrice = item.premiumPrice ? article?.premiumPrice : article?.basePrice;
+      const article = latestArticles.find(a => a.id === item.articleId);
+      if (!article) {
+        throw new Error(`Article not found: ${item.articleId}`);
+      }
+      
+      const unitPrice = item.premiumPrice ? article.premiumPrice : article.basePrice;
+      
       return {
         id: uuidv4(),
         orderId: order.id,
         articleId: item.articleId,
         serviceId: serviceId,
         quantity: item.quantity,
-        unitPrice: unitPrice || 0,
+        unitPrice: unitPrice,
         createdAt: new Date(),
         updatedAt: new Date()
       };
     });
 
-    const { error: itemsError } = await supabase
+    // 3. Insérer et récupérer les items avec toutes leurs relations
+    const { data: insertedItems, error: itemsError } = await supabase
       .from('order_items')
-      .insert(orderItems);
+      .insert(orderItems)
+      .select(`
+        *,
+        article:articles(
+          *,
+          category:article_categories(*)
+        )
+      `);
 
-    if (itemsError) throw itemsError;
+    console.log('Order items creation result:', {
+      success: !itemsError,
+      itemsCount: insertedItems?.length || 0,
+      error: itemsError ? itemsError.message : null
+    });
 
-    console.log('Order items created successfully:', orderItems);
+    if (itemsError) {
+      console.error('Error creating order items:', itemsError);
+      throw itemsError;
+    }
+
+    if (!insertedItems || insertedItems.length === 0) {
+      console.error('No items were inserted');
+      throw new Error('Failed to create order items');
+    }
+
+    console.log('Order items created successfully:', {
+      count: insertedItems.length,
+      items: insertedItems.map(item => ({
+        id: item.id,
+        articleName: item.article?.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice
+      }))
+    });
+
+    // Mettre à jour l'ordre avec les items
+    order.items = insertedItems;
+
+    // Update order with initial total amount
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({ totalAmount: subtotalAmount })
+      .eq('id', order.id);
+
+    if (updateError) {
+      console.error('Error updating order total amount:', updateError);
+      throw updateError;
+    }
 
     // 1. D'abord calculer et appliquer les réductions
     if (orderData.offerIds?.length) {
@@ -294,28 +379,60 @@ export class OrderService {
 
     console.log('Final total amount updated:', totalAmount);
 
-    // 6. Récupérer et retourner les détails complets de la commande
-    const orderDetails = await this.getOrderDetails(order.id, userId);
-    const finalOrderResponse: CreateOrderResponse = {
-      order: orderDetails,
+    // 6. Préparer la réponse finale
+    console.log('Preparing final order response');
+
+    // Construire l'objet order complet avec les items
+    const completeOrder = {
+      ...order,
+      items: insertedItems || [],
+      service,
+      address,
+      serviceId,
+      addressId,
+      totalAmount: subtotalAmount,
+      createdAt: new Date(order.createdAt),
+      updatedAt: new Date(order.updatedAt)
+    };
+
+    // Log des détails finaux
+    // Log des détails finaux
+    console.log('Order details:', {
+      id: completeOrder.id,
+      itemsCount: completeOrder.items.length,
+      total: subtotalAmount,
+      items: completeOrder.items.map((item: {
+        id: string;
+        articleId: string;
+        quantity: number;
+        unitPrice: number;
+        article?: {
+          name: string;
+        };
+      }) => ({
+        id: item.id,
+        articleId: item.articleId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        articleName: item.article?.name
+      }))
+    });
+
+    // Construire et retourner la réponse finale
+    const finalResponse: CreateOrderResponse = {
+      order: completeOrder,
       pricing: {
         subtotal: subtotalAmount,
         discounts: appliedDiscounts,
-        total: totalAmount
+        total: subtotalAmount
       },
       rewards: {
-        pointsEarned: Math.floor(totalAmount),
+        pointsEarned: Math.floor(subtotalAmount),
         currentBalance: await this.getCurrentLoyaltyPoints(userId)
       }
     };
 
-    console.log('Returning complete order response:', {
-      orderId: orderDetails.id,
-      total: totalAmount,
-      itemsCount: orderDetails.items?.length || 0
-    });
-
-    return finalOrderResponse;
+    return finalResponse;
   }
 
   static async getUserOrders(userId: string): Promise<Order[]> {
@@ -380,9 +497,10 @@ export class OrderService {
     }));  }
 
   static async getOrderDetails(orderId: string, userId: string): Promise<Order> {
-    console.log('Fetching order details:', { orderId, userId }); // Debug log
-
-    const { data, error } = await supabase
+    console.log('Fetching order details with items for:', orderId);
+    
+    // 1. Récupérer la commande avec ses relations
+    const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
         *,
@@ -397,30 +515,56 @@ export class OrderService {
         )
       `)
       .eq('id', orderId)
-      .single(); // Changed from array to single result
+      .single();
 
-    if (error) {
-      console.error('Error fetching order:', error);
-      throw error;
+    if (orderError) {
+      console.error('Error fetching order:', orderError);
+      throw orderError;
     }
 
-    if (!data) {
+    if (!order) {
       console.error('No order found with ID:', orderId);
       throw new Error('Order not found');
     }
 
-    // Map snake_case to camelCase
+    // La commande contient déjà les items grâce à la requête précédente
+    console.log('Processing order data with items:', {
+      orderId: order.id,
+      itemsCount: order.items?.length || 0,
+      totalAmount: order.totalAmount
+    });
+
     return {
-      ...data,
-      serviceId: data.service_id,
-      addressId: data.address_id,
-      userId: data.user_id,
-      service: data.service,
-      address: data.address,
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at),
-      items: data.items?.map((item: any) => ({
-        ...item,
+      ...order,
+      serviceId: order.service_id,
+      addressId: order.address_id,
+      userId: order.user_id,
+      service: order.service,
+      address: order.address,
+      createdAt: new Date(order.created_at),
+      updatedAt: new Date(order.updated_at),
+      items: order.items?.map((item: {
+        id: string;
+        orderId: string;
+        articleId: string;
+        quantity: number;
+        unitPrice: number;
+        article: {
+          id: string;
+          name: string;
+          basePrice: number;
+          premiumPrice: number;
+          description?: string;
+          category?: {
+            name: string;
+          };
+        };
+      }) => ({
+        id: item.id,
+        orderId: item.orderId,
+        articleId: item.articleId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
         article: {
           ...item.article,
           categoryName: item.article.category?.name
