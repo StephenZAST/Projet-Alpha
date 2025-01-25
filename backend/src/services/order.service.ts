@@ -108,11 +108,7 @@ export class OrderService {
 
     console.log('Order items created successfully:', orderItems);
 
-    // Variables pour le traitement des affiliés et réductions
-    let affiliate = null;
-    let commissionAmount = 0;
-
-    // Calculer les réductions si des offres sont appliquées
+    // 1. D'abord calculer et appliquer les réductions
     if (orderData.offerIds?.length) {
       const articleIds = orderItems.map(item => item.articleId);
       const { finalAmount, appliedDiscounts } = await this.calculateDiscounts(
@@ -122,7 +118,13 @@ export class OrderService {
         orderData.offerIds
       );
 
-      // Mettre à jour le montant total
+      console.log('Calculating discounts:', {
+        originalAmount: totalAmount,
+        finalAmount,
+        appliedDiscounts
+      });
+
+      // Mettre à jour le montant total après réductions
       totalAmount = finalAmount;
 
       // Enregistrer les offres utilisées
@@ -134,13 +136,34 @@ export class OrderService {
         used_at: new Date()
       }));
 
-      await supabase.from('user_offers').insert(userOffers);
-      
-      console.log('Discounts applied:', { totalAmount: totalAmount, appliedDiscounts: appliedDiscounts });
+      const { error: offersError } = await supabase.from('user_offers').insert(userOffers);
+      if (offersError) {
+        console.error('Error applying discounts:', offersError);
+        throw offersError;
+      }
+
+      console.log('Discounts applied successfully:', {
+        newTotalAmount: totalAmount,
+        appliedDiscounts: appliedDiscounts
+      });
+
+      // Mettre à jour le montant total de la commande
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ totalAmount })
+        .eq('id', order.id);
+
+      if (updateError) {
+        console.error('Error updating order total amount:', updateError);
+        throw updateError;
+      }
     }
 
-    // Si un code affilié est fourni, calculer et attribuer la commission après les réductions
-    if (orderData.affiliateCode) {
+    // 2. Ensuite traiter la commission d'affilié sur le montant final
+    let affiliate = null;
+    let commissionAmount = 0;
+
+    if (affiliateCode) {
       console.log('[OrderService] Processing affiliate code:', orderData.affiliateCode);
       
       const { data: affiliateData } = await supabase
@@ -200,36 +223,14 @@ export class OrderService {
         console.warn('[OrderService] No active affiliate found for code:', orderData.affiliateCode);
       }
     }
-    console.log('Affiliate commission processed:', { affiliate, commissionAmount });
+    console.log('Processing complete:', {
+      orderId: order.id,
+      totalAmount,
+      affiliate: affiliate ? affiliate.id : null,
+      commissionAmount
+    });
 
-    // Calculer les réductions si des offres sont appliquées
-    if (orderData.offerIds?.length) {
-      const articleIds = orderItems.map(item => item.articleId);
-      const { finalAmount, appliedDiscounts } = await this.calculateDiscounts(
-        userId,
-        totalAmount,
-        articleIds,
-        orderData.offerIds
-      );
-
-      // Mettre à jour le montant total
-      totalAmount = finalAmount;
-
-      // Enregistrer les offres utilisées
-      const userOffers = appliedDiscounts.map(discount => ({
-        user_id: userId,
-        offer_id: discount.offerId,
-        order_id: order.id,
-        discount_amount: discount.discountAmount,
-        used_at: new Date()
-      }));
-
-      await supabase.from('user_offers').insert(userOffers);
-    
-      console.log('Discounts applied:', { totalAmount: totalAmount, appliedDiscounts: appliedDiscounts });
-    }
-
-    // Créer notification pour le client
+    // 3. Envoyer les notifications
     await NotificationService.sendNotification(
       userId,
       'ORDER_CREATED',
@@ -252,16 +253,23 @@ export class OrderService {
       );
     }
     
+    // 4. Attribuer les points de fidélité sur le montant final (après réductions)
+    try {
+      console.log('Attributing loyalty points for amount:', totalAmount);
+      await LoyaltyService.earnPoints(userId, Math.floor(totalAmount), 'ORDER', order.id);
+      console.log('Loyalty points attributed successfully');
+    } catch (error) {
+      console.error('Error attributing loyalty points:', error);
+      // Ne pas bloquer la création de la commande si l'attribution des points échoue
+    }
+
+    // 5. Retourner les détails de la commande
     console.log('Returning order details');
     const orderDetails = await this.getOrderDetails(order.id, userId);
-    const finalTotalAmount = orderDetails.items?.reduce((acc, item) => acc + (item.unitPrice * item.quantity), 0) || 0;
-
-    // Attribuer des points de fidélité au client
-    await LoyaltyService.earnPoints(userId, finalTotalAmount, 'ORDER', order.id);
-
+    
     return {
       ...orderDetails,
-      totalAmount: finalTotalAmount
+      totalAmount
     }
   }
 
