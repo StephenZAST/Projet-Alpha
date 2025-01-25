@@ -14,12 +14,44 @@ class AppColors {
   // Status Colors
   static const Color success = Color(0xFF22C55E); // Modern green
   static const Color successLight = Color(0xFFDCFCE7);
+  static const Color successDark = Color(0xFF166534);
   static const Color error = Color(0xFFEF4444); // Modern red
   static const Color errorLight = Color(0xFFFFE4E6);
+  static const Color errorDark = Color(0xFFB91C1C);
   static const Color warning = Color(0xFFF59E0B); // Modern amber
   static const Color warningLight = Color(0xFFFEF3C7);
+  static const Color warningDark = Color(0xFFB45309);
   static const Color info = Color(0xFF3B82F6); // Info blue
   static const Color infoLight = Color(0xFFDBEAFE);
+  static const Color infoDark = Color(0xFF1D4ED8);
+
+  // Vibrant Colors
+  static const Color violet = Color(0xFF8B5CF6); // Violet
+  static const Color violetLight = Color(0xFFEDE9FE);
+  static const Color violetDark = Color(0xFF6D28D9);
+  static const Color pink = Color(0xFFEC4899); // Pink
+  static const Color pinkLight = Color(0xFFFCE7F3);
+  static const Color pinkDark = Color(0xFFBE185D);
+  static const Color teal = Color(0xFF14B8A6); // Teal
+  static const Color tealLight = Color(0xFFCCFBF1);
+  static const Color tealDark = Color(0xFF0F766E);
+  static const Color indigo = Color(0xFF6366F1); // Indigo
+  static const Color indigoLight = Color(0xFFE0E7FF);
+  static const Color indigoDark = Color(0xFF4338CA);
+  static const Color orange = Color(0xFFF97316); // Orange
+  static const Color orangeLight = Color(0xFFFFEDD5);
+  static const Color orangeDark = Color(0xFFC2410C);
+
+  // Custom Accent Colors
+  static const Color rose = Color(0xFFF43F5E); // Rose
+  static const Color roseLight = Color(0xFFFFE4E6);
+  static const Color roseDark = Color(0xFFBE123C);
+  static const Color lime = Color(0xFF84CC16); // Lime
+  static const Color limeLight = Color(0xFFECFCCB);
+  static const Color limeDark = Color(0xFF4D7C0F);
+  static const Color cyan = Color(0xFF06B6D4); // Cyan
+  static const Color cyanLight = Color(0xFFCFFAFE);
+  static const Color cyanDark = Color(0xFF0E7490);
 
   // Order Status Colors
   static const Color pending = Color(0xFFF59E0B); // Amber

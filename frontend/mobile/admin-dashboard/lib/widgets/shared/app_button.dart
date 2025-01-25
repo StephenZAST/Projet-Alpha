@@ -6,6 +6,14 @@ enum AppButtonVariant {
   secondary,
   outline,
   error,
+  success,
+  info,
+  warning,
+  violet,
+  pink,
+  teal,
+  indigo,
+  orange,
 }
 
 class AppButton extends StatelessWidget {
@@ -43,20 +51,45 @@ class AppButton extends StatelessWidget {
           return Colors.transparent;
         case AppButtonVariant.error:
           return AppColors.error;
+        case AppButtonVariant.success:
+          return AppColors.success;
+        case AppButtonVariant.info:
+          return AppColors.info;
+        case AppButtonVariant.warning:
+          return AppColors.warning;
+        case AppButtonVariant.violet:
+          return AppColors.violet;
+        case AppButtonVariant.pink:
+          return AppColors.pink;
+        case AppButtonVariant.teal:
+          return AppColors.teal;
+        case AppButtonVariant.indigo:
+          return AppColors.indigo;
+        case AppButtonVariant.orange:
+          return AppColors.orange;
       }
+      return AppColors.primary; // Valeur par défaut
     }
 
     Color getTextColor() {
       switch (variant) {
         case AppButtonVariant.primary:
+        case AppButtonVariant.error:
+        case AppButtonVariant.success:
+        case AppButtonVariant.info:
+        case AppButtonVariant.warning:
+        case AppButtonVariant.violet:
+        case AppButtonVariant.pink:
+        case AppButtonVariant.teal:
+        case AppButtonVariant.indigo:
+        case AppButtonVariant.orange:
           return AppColors.textLight;
         case AppButtonVariant.secondary:
           return isDark ? AppColors.textLight : AppColors.textPrimary;
         case AppButtonVariant.outline:
           return isDark ? AppColors.textLight : AppColors.primary;
-        case AppButtonVariant.error:
-          return AppColors.textLight;
       }
+      return AppColors.textLight; // Valeur par défaut
     }
 
     BoxBorder? getBorder() {
