@@ -2,183 +2,142 @@ import supabase from '../../config/database';
 import { CreateOrderDTO, CreateOrderResponse, AppliedDiscount } from '../../models/types';
 import { NotificationService } from '../notification.service';
 import { LoyaltyService } from '../loyalty.service';
-import { v4 as uuidv4 } from 'uuid';
 import { OrderPaymentService } from './orderPayment.service';
 
 export class OrderCreateService {
-  static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
-    const { userId, serviceId, addressId, isRecurring, recurrenceType, collectionDate, deliveryDate, affiliateCode, serviceTypeId, paymentMethod } = orderData;
-
-    const { data: service } = await supabase
-      .from('services')
-      .select('*')
-      .eq('id', serviceId)
-      .single();
-
-    if (!service) {
-      throw new Error('Service not found');
-    }
-
-    const { data: address } = await supabase
-      .from('addresses')
-      .select('*')
-      .eq('id', addressId)
-      .single();
-
-    if (!address) {
-      throw new Error('Address not found');
-    }
-
-    const items = orderData.items;
-    const { data: articles, error: articlesQueryError } = await supabase
-      .from('articles')
-      .select(`
+  private static readonly ORDER_SELECT = `
+    *,
+    user:users(*),
+    service:services(*),
+    address:addresses(*),
+    items:order_items(
+      *,
+      article:articles(
         *,
-        category:article_categories(
-          id,
-          name
-        )
-      `)
-      .in('id', items.map(item => item.articleId));
+        category:article_categories(*)
+      )
+    )
+  `;
 
-    if (articlesQueryError) {
-      console.error('Error fetching articles:', articlesQueryError);
-      throw articlesQueryError;
-    }
+  static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
+    try {
+      const { 
+        userId, 
+        serviceId, 
+        addressId, 
+        isRecurring, 
+        recurrenceType, 
+        collectionDate, 
+        deliveryDate, 
+        affiliateCode, 
+        serviceTypeId, 
+        paymentMethod,
+        items 
+      } = orderData;
 
-    if (!articles || articles.length !== items.length) {
-      throw new Error('One or more articles not found');
-    }
-
-    let subtotalAmount = service.price || 0;
-    items.forEach(item => {
-      const article = articles.find(a => a.id === item.articleId);
-      if (article) {
-        const price = item.premiumPrice ? article.premiumPrice : article.basePrice;
-        if (typeof price === 'number' && typeof item.quantity === 'number') {
-          subtotalAmount += price * item.quantity;
-        } else {
-          throw new Error(`Invalid price or quantity for article ${item.articleId}`);
+      // 1. Utiliser la procédure stockée pour créer la commande avec ses items
+      const { data: orderResult, error: procedureError } = await supabase.rpc(
+        'create_order_with_items',
+        {
+          p_userid: userId,
+          p_serviceid: serviceId,
+          p_addressid: addressId,
+          p_isrecurring: isRecurring,
+          p_recurrencetype: recurrenceType,
+          p_collectiondate: collectionDate,
+          p_deliverydate: deliveryDate,
+          p_affiliatecode: affiliateCode,
+          p_service_type_id: serviceTypeId,
+          p_paymentmethod: paymentMethod,
+          p_items: items.map(item => ({
+            articleId: item.articleId,
+            quantity: item.quantity,
+            isPremium: item.premiumPrice || false
+          }))
         }
-      } else {
-        throw new Error(`Article not found: ${item.articleId}`);
-      }
-    });
+      );
 
-    let finalAmount = subtotalAmount;
-    let appliedDiscounts: AppliedDiscount[] = [];
+      if (procedureError) throw procedureError;
 
-    const orderToInsert = {
-      id: uuidv4(),
-      userId,
-      service_id: serviceId,
-      service_type_id: serviceTypeId,
-      address_id: addressId,
-      affiliateCode,
-      status: 'PENDING',
-      isRecurring,
-      recurrenceType,
-      nextRecurrenceDate: isRecurring ? collectionDate : null,
-      totalAmount: subtotalAmount,
-      collectionDate: collectionDate || null,
-      deliveryDate: deliveryDate || null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      paymentStatus: 'PENDING',
-      paymentMethod
-    };
-
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert([orderToInsert])
-      .select()
-      .single();
-
-    if (orderError) throw orderError;
-
-    const itemPromises = items.map(async (item) => {
-      const article = articles.find(a => a.id === item.articleId);
-      if (!article) throw new Error(`Article not found: ${item.articleId}`);
-
-      const unitPrice = item.premiumPrice ? article.premiumPrice : article.basePrice;
-
-      const { data: orderItem, error: insertError } = await supabase
-        .from('order_items')
-        .insert([{
-          orderId: order.id,
-          articleId: item.articleId,
-          serviceId: serviceId,
-          quantity: item.quantity,
-          unitPrice: unitPrice
-        }])
-        .select(`
-          *,
-          article:articles(
-            *,
-            category:article_categories(*)
-          )
-        `)
+      // 2. Récupérer la commande complète avec toutes les relations
+      const { data: completeOrder, error: fetchError } = await supabase
+        .from('orders')
+        .select(this.ORDER_SELECT)
+        .eq('id', orderResult[0].id)
         .single();
 
-      if (insertError || !orderItem) throw insertError || new Error('Failed to create order item');
-      return orderItem;
-    });
+      if (fetchError) throw fetchError;
 
-    const insertedItems = await Promise.all(itemPromises);
+      const totalAmount = orderResult[0].totalAmount;
 
-    if (orderData.offerIds?.length) {
-      const articleIds = items.map(item => item.articleId);
-      const discountResult = await OrderPaymentService.calculateDiscounts(
+      // 3. Appliquer les réductions si nécessaire
+      let finalAmount = totalAmount;
+      let appliedDiscounts: AppliedDiscount[] = [];
+
+      if (orderData.offerIds?.length) {
+        const articleIds = items.map(item => item.articleId);
+        const discountResult = await OrderPaymentService.calculateDiscounts(
+          userId,
+          finalAmount,
+          articleIds,
+          orderData.offerIds
+        );
+        finalAmount = discountResult.finalAmount;
+        appliedDiscounts = discountResult.appliedDiscounts;
+
+        // Mettre à jour le montant total après réductions
+        await supabase
+          .from('orders')
+          .update({ totalAmount: finalAmount })
+          .eq('id', orderResult[0].id);
+      }
+
+      // 4. Traiter la commission d'affilié
+      if (affiliateCode) {
+        await OrderPaymentService.processAffiliateCommission(
+          orderResult[0].id,
+          affiliateCode,
+          finalAmount
+        );
+      }
+
+      // 5. Traiter les points de fidélité
+      const earnedPoints = Math.floor(finalAmount);
+      await LoyaltyService.earnPoints(userId, earnedPoints, 'ORDER', orderResult[0].id);
+
+      // 6. Envoyer la notification
+      await NotificationService.sendNotification(
         userId,
-        finalAmount,
-        articleIds,
-        orderData.offerIds
+        'ORDER_CREATED',
+        {
+          orderId: orderResult[0].id,
+          totalAmount: finalAmount,
+          items: completeOrder.items.map((item: { article: { name: string }, quantity: number }) => ({
+            name: item.article.name,
+            quantity: item.quantity
+          }))
+        }
       );
-      finalAmount = discountResult.finalAmount;
-      appliedDiscounts = discountResult.appliedDiscounts;
-    }
 
-    if (affiliateCode) {
-      await OrderPaymentService.processAffiliateCommission(order.id, affiliateCode, finalAmount);
-    }
+      // 7. Obtenir le solde actuel des points
+      const currentPoints = await OrderPaymentService.getCurrentLoyaltyPoints(userId);
 
-    await NotificationService.sendNotification(
-      userId,
-      'ORDER_CREATED',
-      {
-        orderId: order.id,
-        totalAmount: finalAmount,
-        items: items.map(item => ({
-          name: articles.find(a => a.id === item.articleId)?.name,
-          quantity: item.quantity
-        }))
-      }
-    );
+      return {
+        order: completeOrder,
+        pricing: {
+          subtotal: totalAmount,
+          discounts: appliedDiscounts,
+          total: finalAmount
+        },
+        rewards: {
+          pointsEarned: earnedPoints,
+          currentBalance: currentPoints
+        }
+      };
 
-    try {
-      await LoyaltyService.earnPoints(userId, Math.floor(finalAmount), 'ORDER', order.id);
     } catch (error) {
-      console.error('Error attributing loyalty points:', error);
+      console.error('[OrderCreateService] Error:', error);
+      throw error;
     }
-
-    const currentLoyaltyPoints = await OrderPaymentService.getCurrentLoyaltyPoints(userId);
-
-    return {
-      order: {
-        ...order,
-        items: insertedItems,
-        service,
-        address
-      },
-      pricing: {
-        subtotal: subtotalAmount,
-        discounts: appliedDiscounts,
-        total: finalAmount
-      },
-      rewards: {
-        pointsEarned: Math.floor(finalAmount),
-        currentBalance: currentLoyaltyPoints
-      }
-    };
   }
 }

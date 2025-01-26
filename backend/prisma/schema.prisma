@@ -1,12 +1,130 @@
-### 3. Vérifier la structure de la table service dans la base de données
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
-Assurez-vous que la colonne `price` est bien définie dans votre schéma de base de données et qu'elle a une valeur par défaut:
+generator client {
+  provider = "prisma-client-js"
+}
 
-model Service {
-  id          String   @id @default(uuid())
-  name        String
+enum OrderStatus {
+  PENDING
+  COLLECTING
+  COLLECTED
+  PROCESSING
+  READY
+  DELIVERING
+  DELIVERED
+  CANCELLED
+}
+
+enum RecurrenceType {
+  NONE
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum PaymentMethodEnum {
+  CASH
+  ORANGE_MONEY
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+  SUPER_ADMIN
+}
+
+model LoyaltyPoints {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id       String   @db.Uuid
+  pointsBalance Int      @default(0)
+  totalEarned   Int      @default(0)
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @default(now()) @db.Timestamptz
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("loyalty_points")
+}
+
+model User {
+  id            String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email         String        @db.VarChar
+  password      String        @db.VarChar
+  first_name    String?       @db.VarChar
+  last_name     String?       @db.VarChar
+  phone         String?       @db.VarChar
+  role          UserRole      @default(CLIENT)
+  referral_code String?       @db.VarChar
+  created_at    DateTime      @default(now()) @db.Timestamptz
+  updated_at    DateTime      @default(now()) @db.Timestamptz
+  loyaltyPoints LoyaltyPoints[]
+  orders        Order[]
+
+  @@map("users")
+}
+
+model Order {
+  id                 String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId            String          @db.Uuid
+  serviceId         String          @db.Uuid
+  addressId         String          @db.Uuid
+  affiliateCode     String?
+  status            OrderStatus     @default(PENDING)
+  isRecurring       Boolean         @default(false)
+  recurrenceType    RecurrenceType  @default(NONE)
+  nextRecurrenceDate DateTime?      @db.Timestamptz
+  totalAmount       Decimal?        @db.Decimal
+  collectionDate    DateTime?       @db.Timestamptz
+  deliveryDate      DateTime?       @db.Timestamptz
+  createdAt         DateTime        @default(now()) @db.Timestamptz
+  updatedAt         DateTime        @default(now()) @db.Timestamptz
+  service_type_id   String?         @db.Uuid
+  paymentMethod     PaymentMethodEnum @default(CASH)
+  items             OrderItem[]
+  user              User             @relation(fields: [userId], references: [id])
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  orderId   String   @db.Uuid
+  articleId String   @db.Uuid
+  serviceId String   @db.Uuid
+  quantity  Int
+  unitPrice Decimal  @db.Decimal
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @default(now()) @db.Timestamptz
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  article   Article  @relation(fields: [articleId], references: [id])
+
+  @@unique([orderId, articleId])
+  @@map("order_items")
+}
+
+model Article {
+  id           String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  categoryId   String          @db.Uuid
+  name         String          @db.VarChar
+  description  String?
+  basePrice    Decimal        @db.Decimal
+  createdAt    DateTime       @default(now()) @db.Timestamptz
+  updatedAt    DateTime       @default(now()) @db.Timestamptz
+  premiumPrice Decimal        @default(0) @db.Decimal
+  category     ArticleCategory @relation(fields: [categoryId], references: [id])
+  orderItems   OrderItem[]
+
+  @@map("articles")
+}
+
+model ArticleCategory {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name        String    @db.VarChar
   description String?
-  price       Float    @default(0) // Ajouter une valeur par défaut
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  articles    Article[]
+
+  @@map("article_categories")
 }
