@@ -15,6 +15,22 @@ interface CreateOrderItemData {
   isPremium?: boolean;
 }
 
+interface OrderItem {
+  orderId: string;
+  articleId: string;
+  serviceId: string;
+  quantity: number;
+  unitPrice: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface Article {
+  id: string;
+  basePrice: number;
+  premiumPrice: number;
+}
+
 export class OrderCreateController {
   static async createOrder(req: Request, res: Response) {
     console.log('[OrderController] Starting order creation');
@@ -36,13 +52,15 @@ export class OrderCreateController {
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
       // 1. Calculer le prix total avec les réductions
+      console.log('[OrderController] Calculating total price for items:', items);
       const pricing = await PricingService.calculateOrderTotal({
         items,
         userId,
         appliedOfferIds
       });
+      console.log('[OrderController] Price calculation result:', pricing);
 
-      // 2. Créer la commande
+      // 2. Créer la commande avec le montant total
       const orderData = {
         userId,
         serviceId,
@@ -66,36 +84,42 @@ export class OrderCreateController {
         .single();
 
       if (error) throw error;
+      console.log('[OrderController] Order created:', order.id);
 
-      // 3. Créer les items
-      const articlesData = await Promise.all(items.map(async (item: CreateOrderItemData) => {
-        const { data: article, error: articleError } = await supabase
-          .from('articles')
-          .select('*, category:article_categories(*)')
-          .eq('id', item.articleId)
-          .single();
-
-        if (articleError || !article) {
-          throw new Error(`Article not found: ${item.articleId}`);
-        }
-
-        return {
-          article,
-          quantity: item.quantity,
-          isPremium: item.isPremium || false
-        };
-      }));
-
-      // 4. Créer les items de commande
-      const orderItems = articlesData.map(({ article, quantity, isPremium }) => ({
+      // 3. Créer les items de commande
+      const orderItems: OrderItem[] = items.map((item: CreateOrderItemData) => ({
         orderId: order.id,
-        articleId: article.id,
+        articleId: item.articleId,
         serviceId,
-        quantity,
-        unitPrice: isPremium ? article.premiumPrice : article.basePrice,
+        quantity: item.quantity,
+        unitPrice: 0, // Sera mis à jour après la récupération des articles
         createdAt: new Date(),
         updatedAt: new Date()
       }));
+
+      // Récupérer les articles pour obtenir les prix
+      const { data: articles, error: articlesError } = await supabase
+        .from('articles')
+        .select('id, basePrice, premiumPrice')
+        .in('id', items.map((item: CreateOrderItemData) => item.articleId));
+
+      if (articlesError || !articles) {
+        throw new Error('Failed to fetch articles');
+      }
+
+      const articleMap = new Map<string, Article>(
+        articles.map(article => [article.id, article])
+      );
+
+      // Mettre à jour les prix des items
+      orderItems.forEach((item: OrderItem, index: number) => {
+        const article = articleMap.get(item.articleId);
+        if (article) {
+          item.unitPrice = items[index].isPremium ? article.premiumPrice : article.basePrice;
+        } else {
+          throw new Error(`Article not found: ${item.articleId}`);
+        }
+      });
 
       const { error: itemsError } = await supabase
         .from('order_items')
@@ -105,24 +129,27 @@ export class OrderCreateController {
         console.error('Error creating order items:', itemsError);
         throw itemsError;
       }
+      console.log('[OrderController] Order items created');
 
-      // 5. Récupérer la commande complète
+      // 4. Récupérer la commande complète avec les items
       const completeOrder = {
         ...order,
         totalAmount: pricing.total,
         items: await OrderSharedMethods.getOrderItems(order.id)
       };
 
-      // 6. Traiter les points de fidélité
+      // 5. Traiter les points de fidélité
       const earnedPoints = Math.floor(pricing.total * SYSTEM_CONSTANTS.POINTS.ORDER_MULTIPLIER);
       await RewardsService.processOrderPoints(userId, completeOrder, 'ORDER');
+      console.log('[OrderController] Loyalty points processed:', earnedPoints);
 
-      // 7. Traiter la commission d'affilié
+      // 6. Traiter la commission d'affilié
       if (affiliateCode) {
         await RewardsService.processAffiliateCommission(completeOrder);
+        console.log('[OrderController] Affiliate commission processed');
       }
 
-      // 8. Envoyer les notifications
+      // 7. Envoyer les notifications
       await NotificationService.createOrderNotification(
         userId,
         order.id,
@@ -132,8 +159,9 @@ export class OrderCreateController {
           earnedPoints
         }
       );
+      console.log('[OrderController] Notifications sent');
 
-      // 9. Préparer la réponse
+      // 8. Préparer la réponse
       const response = {
         order: completeOrder,
         pricing,
