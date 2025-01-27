@@ -144,9 +144,25 @@ export class OrderCreateController {
       console.log('[OrderController] Loyalty points processed:', earnedPoints);
 
       // 6. Traiter la commission d'affilié
+      let affiliateCommission = null;
       if (affiliateCode) {
+        // La commission sera traitée par RewardsService
         await RewardsService.processAffiliateCommission(completeOrder);
         console.log('[OrderController] Affiliate commission processed');
+
+        // Récupérer les détails de la commission pour la réponse
+        const { data: commissionTx } = await supabase
+          .from('commission_transactions')
+          .select('amount, affiliate_id')
+          .eq('order_id', order.id)
+          .single();
+
+        if (commissionTx) {
+          affiliateCommission = {
+            amount: commissionTx.amount,
+            affiliateId: commissionTx.affiliate_id
+          };
+        }
       }
 
       // 7. Envoyer les notifications
@@ -156,7 +172,8 @@ export class OrderCreateController {
         'ORDER_CREATED',
         {
           pricing,
-          earnedPoints
+          earnedPoints,
+          affiliateCommission
         }
       );
       console.log('[OrderController] Notifications sent');
@@ -168,7 +185,8 @@ export class OrderCreateController {
         rewards: {
           pointsEarned: earnedPoints,
           currentBalance: await OrderSharedMethods.getUserPoints(userId)
-        }
+        },
+        affiliateCommission
       };
 
       res.json({ data: response });

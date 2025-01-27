@@ -5,6 +5,7 @@ export class RewardsService {
   // Configuration par défaut
   private static readonly DEFAULT_POINTS_PER_AMOUNT = 1; // 1 point par unité monétaire
   private static readonly DEFAULT_COMMISSION_RATE = 0.1; // 10% de commission
+  private static readonly PARENT_COMMISSION_RATE = 0.1; // 10% de la commission du filleul pour chaque niveau
 
   /**
    * Gère les points gagnés pour une commande
@@ -129,32 +130,35 @@ export class RewardsService {
   /**
    * Traite les commissions d'affiliation
    */
-  static async processAffiliateCommission(
-    order: Order
-  ): Promise<void> {
+  static async processAffiliateCommission(order: Order): Promise<void> {
     try {
       if (!order.affiliateCode) return;
 
-      // 1. Trouver le profil d'affilié
+      // 1. Trouver le profil d'affilié avec son niveau
       const { data: affiliate, error: affiliateError } = await supabase
         .from('affiliate_profiles')
-        .select('*')
-        .eq('affiliate_code', order.affiliateCode)
+        .select(`
+          *,
+          level:affiliate_levels(*)
+        `)
+        .eq('affiliateCode', order.affiliateCode)
+        .eq('isActive', true)
         .single();
 
       if (affiliateError) throw affiliateError;
 
-      // 2. Calculer la commission
-      const commissionAmount = order.totalAmount * (affiliate.commission_rate / 100);
+      // 2. Calculer la commission basée sur le niveau
+      const commissionRate = affiliate.level?.commissionRate || this.DEFAULT_COMMISSION_RATE;
+      const commissionAmount = order.totalAmount * commissionRate;
 
       // 3. Mettre à jour le solde de commission
       await supabase
         .from('affiliate_profiles')
         .update({
-          commission_balance: affiliate.commission_balance + commissionAmount,
-          total_earned: affiliate.total_earned + commissionAmount,
-          monthly_earnings: affiliate.monthly_earnings + commissionAmount,
-          total_referrals: affiliate.total_referrals + 1
+          commissionBalance: affiliate.commissionBalance + commissionAmount,
+          totalEarned: affiliate.totalEarned + commissionAmount,
+          monthlyEarnings: affiliate.monthlyEarnings + commissionAmount,
+          totalReferrals: affiliate.totalReferrals + 1
         })
         .eq('id', affiliate.id);
 
@@ -162,25 +166,14 @@ export class RewardsService {
       await supabase
         .from('commission_transactions')
         .insert([{
-          affiliate_id: affiliate.id,
-          order_id: order.id,
+          affiliateId: affiliate.id,
+          orderId: order.id,
           amount: commissionAmount,
           status: 'PENDING'
         }]);
 
-      // 5. Si l'affilié a un parent, lui donner une commission secondaire
-      if (affiliate.parent_affiliate_id) {
-        const { data: parentAffiliate } = await supabase
-          .from('affiliate_profiles')
-          .select('*')
-          .eq('id', affiliate.parent_affiliate_id)
-          .single();
-
-        if (parentAffiliate) {
-          const parentCommission = commissionAmount * 0.1; // 10% de la commission du filleul
-          await this.processSecondaryCommission(parentAffiliate.id, order.id, parentCommission);
-        }
-      }
+      // 5. Processus récursif pour les commissions des parents
+      await this.processParentCommissions(affiliate.parentAffiliateId, order.id, commissionAmount, 1);
 
     } catch (error) {
       console.error('[RewardsService] Error processing affiliate commission:', error);
