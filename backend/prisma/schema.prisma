@@ -1,3 +1,35 @@
+// This schema uses a stored procedure 'create_order_with_items' for order creation
+// The procedure handles:
+// - Order creation with all items
+// - Price calculations
+// - Transaction handling
+// To see the implementation: backend/prisma/migrations/[timestamp]_stored_procedures.sql
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Important: Orders are created using the stored procedure 'create_order_with_items'
+// Call signature:
+// create_order_with_items(
+//   p_userId UUID,
+//   p_serviceId UUID,
+//   p_addressId UUID,
+//   p_isRecurring BOOLEAN,
+//   p_recurrenceType recurrence_type,
+//   p_collectionDate TIMESTAMPTZ,
+//   p_deliveryDate TIMESTAMPTZ,
+//   p_affiliateCode TEXT,
+//   p_service_type_id UUID,
+//   p_paymentMethod payment_method_enum,
+//   p_items order_item_input[]
+// )
+
 // Enums
 enum PaymentMethod {
   CASH

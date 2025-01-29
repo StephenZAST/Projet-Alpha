@@ -299,4 +299,56 @@ export class RewardsService {
       throw new Error('Failed to process secondary commission');
     }
   }
+
+  /**
+   * Processus récursif pour traiter les commissions des affiliés parents
+   * @param parentAffiliateId - ID de l'affilié parent
+   * @param orderId - ID de la commande
+   * @param baseCommissionAmount - Montant de la commission de base
+   * @param level - Niveau actuel dans la hiérarchie
+   * @param maxLevels - Nombre maximum de niveaux à traiter
+   */
+  private static async processParentCommissions(
+    parentAffiliateId: string | null,
+    orderId: string,
+    baseCommissionAmount: number,
+    level: number,
+    maxLevels: number = 3
+  ): Promise<void> {
+    // Arrêter la récursion si on atteint les conditions limites
+    if (!parentAffiliateId || level > maxLevels) return;
+
+    try {
+      // 1. Calculer la commission du niveau parent (10% de la commission du niveau inférieur)
+      const parentCommissionAmount = baseCommissionAmount * this.PARENT_COMMISSION_RATE;
+
+      // 2. Traiter la commission pour ce parent
+      await this.processSecondaryCommission(
+        parentAffiliateId,
+        orderId,
+        parentCommissionAmount
+      );
+
+      // 3. Obtenir le parent suivant
+      const { data: parentAffiliate } = await supabase
+        .from('affiliate_profiles')
+        .select('parent_affiliate_id')
+        .eq('id', parentAffiliateId)
+        .single();
+
+      // 4. Traiter récursivement le niveau suivant si un parent existe
+      if (parentAffiliate?.parent_affiliate_id) {
+        await this.processParentCommissions(
+          parentAffiliate.parent_affiliate_id,
+          orderId,
+          parentCommissionAmount,
+          level + 1,
+          maxLevels
+        );
+      }
+    } catch (error) {
+      console.error('[RewardsService] Error processing parent commissions:', error);
+      throw new Error('Failed to process parent commissions');
+    }
+  }
 }

@@ -1,3 +1,28 @@
+// This schema uses a stored procedure 'create_order_with_items' for order creation
+// The procedure handles:
+// - Order creation with all items
+// - Price calculations including premium prices
+// - Atomic transaction handling
+// For implementation details see: backend/prisma/migrations/[timestamp]_stored_procedures.sql
+
+// Important: Orders are created using the stored procedure 'create_order_with_items'
+// This procedure ensures data consistency and handles all related calculations in a single transaction
+// Call signature:
+// create_order_with_items(
+//   p_userId UUID,            -- User creating the order
+//   p_serviceId UUID,        -- Selected service
+//   p_addressId UUID,        -- Delivery address
+//   p_isRecurring BOOLEAN,   -- Recurring order flag
+//   p_recurrenceType recurrence_type,  -- Type of recurrence
+//   p_collectionDate TIMESTAMPTZ,      -- Collection date
+//   p_deliveryDate TIMESTAMPTZ,        -- Delivery date
+//   p_affiliateCode TEXT,              -- Optional affiliate code
+//   p_service_type_id UUID,           -- Service type
+//   p_paymentMethod payment_method_enum, -- Payment method
+//   p_items order_item_input[]         -- Array of order items
+// )
+// Returns: Order details with calculated totals and created items
+
 // Notification Models
 model Notification {
   id         String           @id @default(uuid()) @db.Uuid

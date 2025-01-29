@@ -1,135 +1,291 @@
 {
   "info": {
-    "name": "Affiliate",
-    "description": "Affiliate management endpoints",
+    "_postman_id": "af3e7c52-8b1e-4d8c-9f2e-1a2b3c4d5e6f",
+    "name": "Système d'Affiliation",
+    "description": "Collection pour tester le système d'affiliation",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Get Dashboard",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/affiliate/dashboard",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "affiliate", "dashboard"]
-        }
-      }
-    },
-    {
-      "name": "Get Commissions",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/affiliate/commissions",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "affiliate", "commissions"]
-        }
-      }
-    },
-    {
-      "name": "Request Withdrawal",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/affiliate/withdraw",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "affiliate", "withdraw"]
+      "name": "1. Gestion des Affiliés",
+      "item": [
+        {
+          "name": "1.1 Création et Configuration",
+          "item": [
+            {
+              "name": "Devenir affilié",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"parentAffiliateCode\": \"{{optionalParentCode}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/affiliate/register",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["affiliate", "register"]
+                },
+                "description": "Permet à un utilisateur de devenir affilié"
+              }
+            },
+            {
+              "name": "Obtenir les niveaux",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/affiliate/levels",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["affiliate", "levels"]
+                },
+                "description": "Récupère les informations sur les niveaux d'affiliation"
+              }
+            },
+            {
+              "name": "Générer code d'affiliation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/affiliate/generate-code",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["affiliate", "generate-code"]
+                },
+                "description": "Génère un nouveau code d'affiliation"
+              }
+            }
+          ]
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"amount\": 100.00\n}"
-        }
-      }
-    },
-    {
-      "name": "Generate Affiliate Code",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/affiliate/generate-code",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "affiliate", "generate-code"]
-        }
-      }
-    },
-    {
-      "name": "Create Affiliate",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/auth/become-affiliate",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "auth", "become-affiliate"]
-        }
-      }
-    },
-    {
-      "name": "Create Customer with Affiliate Code",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/api/affiliate/create-customer",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "affiliate", "create-customer"]
+        {
+          "name": "1.2 Gestion des Filleuls",
+          "item": [
+            {
+              "name": "Inscription avec code affilié",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"client@example.com\",\n    \"password\": \"password123\",\n    \"firstName\": \"Jean\",\n    \"lastName\": \"Dupont\",\n    \"phone\": \"+33600000000\",\n    \"affiliateCode\": \"{{affiliateCode}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/affiliate/register-with-code",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["affiliate", "register-with-code"]
+                },
+                "description": "Inscription d'un nouveau client avec code affilié"
+              }
+            },
+            {
+              "name": "Appliquer code affilié",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"affiliateCode\": \"{{affiliateCode}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/affiliate/apply-code",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["affiliate", "apply-code"]
+                },
+                "description": "Applique un code affilié à un client existant"
+              }
+            },
+            {
+              "name": "Liste des filleuls",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/affiliate/referrals",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["affiliate", "referrals"]
+                },
+                "description": "Liste des filleuls de l'affilié"
+              }
+            }
+          ]
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"customer@example.com\",\n    \"password\": \"password123\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"phone\": \"+22500000000\",\n    \"affiliateCode\": \"AFF123456\"\n}"
+        {
+          "name": "1.3 Commissions et Paiements",
+          "item": [
+            {
+              "name": "Liste des commissions",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/affiliate/commissions",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["affiliate", "commissions"]
+                },
+                "description": "Historique des commissions"
+              }
+            },
+            {
+              "name": "Demande de retrait",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"amount\": 100.00\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/affiliate/withdrawal",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["affiliate", "withdrawal"]
+                },
+                "description": "Demande de retrait des commissions"
+              }
+            }
+          ]
         }
+      ]
+    },
+    {
+      "name": "2. Administration",
+      "item": [
+        {
+          "name": "Liste des affiliés",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/admin/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "admin", "list"]
+            },
+            "description": "Liste complète des affiliés (admin)"
+          }
+        },
+        {
+          "name": "Liste des retraits",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/admin/withdrawals",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "admin", "withdrawals"]
+            },
+            "description": "Liste des demandes de retrait (admin)"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
       }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Status code is 200 or 201\", function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "userToken",
+      "value": "votre_token_utilisateur",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "votre_token_admin",
+      "type": "string"
+    },
+    {
+      "key": "affiliateCode",
+      "value": "CODE123",
+      "type": "string"
     }
   ]
 }

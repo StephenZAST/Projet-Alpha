@@ -5,6 +5,14 @@ import { LoyaltyService } from '../loyalty.service';
 import { OrderPaymentService } from './orderPayment.service';
 
 export class OrderCreateService {
+  // Important: Cette classe utilise la procédure stockée 'create_order_with_items'
+  // Pour plus de détails sur la procédure, voir: backend/prisma/migrations/[timestamp]_stored_procedures.sql
+  // La procédure gère de manière atomique :
+  // - La création de la commande
+  // - L'ajout des articles
+  // - Le calcul des prix
+  // - La gestion des transactions
+
   private static readonly ORDER_SELECT = `
     *,
     user:users(*),
