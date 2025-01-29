@@ -1,130 +1,320 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
+// Enums
+enum PaymentMethod {
+  CASH
+  // Add other payment methods as needed
 }
 
 enum OrderStatus {
   PENDING
-  COLLECTING
-  COLLECTED
-  PROCESSING
-  READY
-  DELIVERING
-  DELIVERED
-  CANCELLED
+  // Add other status types as needed
 }
 
 enum RecurrenceType {
   NONE
-  WEEKLY
-  BIWEEKLY
-  MONTHLY
+  // Add other recurrence types as needed
 }
 
-enum PaymentMethodEnum {
-  CASH
-  ORANGE_MONEY
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+  // Add other discount types as needed
+}
+
+enum NotificationType {
+  ORDER_STATUS
+  PAYMENT
+  SYSTEM
+  // Add other notification types as needed
 }
 
 enum UserRole {
-  CLIENT
   ADMIN
-  SUPER_ADMIN
+  USER
+  PROVIDER
+  CLIENT
+  // Add other roles as needed
 }
 
-model LoyaltyPoints {
-  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id       String   @db.Uuid
-  pointsBalance Int      @default(0)
-  totalEarned   Int      @default(0)
-  createdAt     DateTime @default(now()) @db.Timestamptz
-  updatedAt     DateTime @default(now()) @db.Timestamptz
-  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+  // Add other statuses as needed
+}
 
-  @@map("loyalty_points")
+enum AffiliateStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+  // Add other statuses as needed
+}
+
+enum PointTransactionType {
+  EARN
+  SPEND
+  REFUND
+  // Add other types as needed
+}
+
+enum PointSource {
+  ORDER
+  REFERRAL
+  REWARD
+  SYSTEM
+  // Add other sources as needed
+}
+
+// Order Model
+model Order {
+  id                 String         @id @default(uuid()) @db.Uuid
+  paymentMethod      PaymentMethod? @default(CASH)
+  status            OrderStatus?   @default(PENDING)
+  isRecurring       Boolean?       @default(false)
+  recurrenceType    RecurrenceType? @default(NONE)
+  nextRecurrenceDate DateTime?      @db.Timestamptz
+  totalAmount       Decimal?       @db.Decimal
+  collectionDate    DateTime?      @db.Timestamptz
+  deliveryDate      DateTime?      @db.Timestamptz
+  createdAt         DateTime?      @default(now()) @db.Timestamptz
+  updatedAt         DateTime?      @default(now()) @db.Timestamptz
+  affiliateCode     String?
+
+  // Foreign keys and relations
+  addressId        String?        @db.Uuid
+  address          Address?       @relation(fields: [addressId], references: [id])
+  
+  serviceId        String?        @db.Uuid
+  service          Service?       @relation(fields: [serviceId], references: [id])
+  
+  service_type_id  String?        @db.Uuid
+  serviceType      ServiceType?   @relation(fields: [service_type_id], references: [id])
+  
+  userId           String         @db.Uuid
+  user            User           @relation(fields: [userId], references: [id])
+
+  orderItems       OrderItem[]
+  commissionTransaction CommissionTransaction?
+  archive          OrderArchive?
+  userOffers       UserOffer[]
+
+  // Indexes
+  @@index([service_type_id])
+  @@index([serviceId])
+  @@index([addressId])
+  @@index([userId])
+  @@index([status])
+  @@index([paymentMethod])
+}
+
+model OrderArchive {
+  id                String    @id @db.Uuid
+  address_id        String?   @db.Uuid
+  affiliatecode     String?   @db.VarChar(255)
+  status            String    @db.VarChar(50)
+  isrecurring      Boolean?
+  recurrencetype   String?   @db.VarChar(50)
+  nextrecurrencedate DateTime? @db.Timestamptz
+  totalAmount      Decimal    @db.Decimal
+  collectiondate   DateTime?  @db.Timestamptz
+  deliverydate     DateTime?  @db.Timestamptz
+  createdAt        DateTime?  @db.Timestamptz
+  updatedat        DateTime?  @db.Timestamptz
+  service_id       String?    @db.Uuid
+  service_type_id  String?    @db.Uuid
+  userId           String?    @db.Uuid
+  archived_at      DateTime?  @default(now()) @db.Timestamptz
+
+  // Relations
+  order            Order     @relation(fields: [id], references: [id])
+  address          Address?  @relation(fields: [address_id], references: [id])
+  service          Service?  @relation(fields: [service_id], references: [id])
+  serviceType      ServiceType? @relation(fields: [service_type_id], references: [id])
+  user             User?     @relation(fields: [userId], references: [id])
+
+  // Indexes
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([archived_at])
 }
 
 model User {
-  id            String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email         String        @db.VarChar
-  password      String        @db.VarChar
-  first_name    String?       @db.VarChar
-  last_name     String?       @db.VarChar
-  phone         String?       @db.VarChar
-  role          UserRole      @default(CLIENT)
-  referral_code String?       @db.VarChar
-  created_at    DateTime      @default(now()) @db.Timestamptz
-  updated_at    DateTime      @default(now()) @db.Timestamptz
-  loyaltyPoints LoyaltyPoints[]
-  orders        Order[]
+  model User {
+    id                        String    @id @default(uuid()) @db.Uuid
+    email                     String    @unique @db.VarChar(255)
+    password                  String    @db.VarChar(255)
+    first_name                String    @db.VarChar(100)
+    last_name                 String    @db.VarChar(100)
+    phone                     String?   @unique @db.VarChar(20)
+    role                      UserRole  @default(CLIENT)
+    referral_code            String?   @db.VarChar(20)
+    created_at               DateTime  @default(now()) @db.Timestamptz
+    updated_at               DateTime  @default(now()) @db.Timestamptz
+    instance_id              String?   @db.Uuid
+    aud                      String?   @db.VarChar(255)
+    encrypted_password       String?   @db.VarChar(255)
+    email_confirmed_at       DateTime? @db.Timestamptz
+    invited_at               DateTime? @db.Timestamptz
+    confirmation_token       String?   @db.VarChar(255)
+    confirmation_sent_at     DateTime? @db.Timestamptz
+    recovery_token          String?   @db.VarChar(255)
+    recovery_sent_at        DateTime? @db.Timestamptz
+    email_change_token_new  String?   @db.VarChar(255)
+    email_change            String?   @db.VarChar(255)
+    email_change_sent_at    DateTime? @db.Timestamptz
+    last_sign_in_at         DateTime? @db.Timestamptz
+    raw_app_meta_data       Json?     @db.JsonB
+    raw_user_meta_data      Json?     @db.JsonB
+    is_super_admin          Boolean?
+    phone_confirmed_at      DateTime? @db.Timestamptz
+    phone_change            String?   @default("") @db.Text
+    phone_change_token      String?   @default("") @db.VarChar(255)
+    phone_change_sent_at    DateTime? @db.Timestamptz
+    confirmed_at            DateTime? @db.Timestamptz
+    email_change_token_current String? @default("") @db.VarChar(255)
+    email_change_confirm_status Int?    @default(0) @db.SmallInt
+    banned_until            DateTime? @db.Timestamptz
+    reauthentication_token  String?   @default("") @db.VarChar(255)
+    reauthentication_sent_at DateTime? @db.Timestamptz
+    is_sso_user            Boolean   @default(false)
+    deleted_at             DateTime? @db.Timestamptz
+    is_anonymous           Boolean   @default(false)
+  
+    // Relations
+    orders                  Order[]
+    notifications          Notification[]
+    notificationPreferences NotificationPreferences?
+    loyaltyPoints          LoyaltyPoints?
+    addresses              Address[]
+    archivedOrders         OrderArchive[]
+    pointTransactions      PointTransaction[]
+    resetCodes             ResetCode[]
+    rewardClaims           RewardClaim[]
+    userOffers             UserOffer[]
+    affiliateProfile       AffiliateProfile?
+  
+    // Indexes
+    @@index([email])
+    @@index([referral_code])
+    @@index([instance_id])
+    @@index([is_anonymous])
+    @@index([instance_id, email])
+    @@unique([confirmation_token], map: "confirmation_token_idx", where: "confirmation_token !~ '^[0-9 ]$'")
+    @@unique([email_change_token_current], map: "email_change_token_current_idx", where: "email_change_token_current !~ '^[0-9 ]$'")
+    @@unique([email_change_token_new], map: "email_change_token_new_idx", where: "email_change_token_new !~ '^[0-9 ]$'")
+    @@unique([reauthentication_token], map: "reauthentication_token_idx", where: "reauthentication_token !~ '^[0-9 ]$'")
+    @@unique([recovery_token], map: "recovery_token_idx", where: "recovery_token !~ '^[0-9 ]*$'")
+    @@unique([email], map: "users_email_partial_key", where: "is_sso_user = false")
 
-  @@map("users")
+model Address {
+  id            String    @id @default(uuid()) @db.Uuid
+  user_id       String?   @db.Uuid
+  name          String?   @db.VarChar(255)
+  street        String    @db.VarChar(255)
+  city          String    @db.VarChar(100)
+  postal_code   String?   @db.VarChar(20)
+  gps_latitude  Decimal?  @db.Decimal
+  gps_longitude Decimal?  @db.Decimal
+  is_default    Boolean?  @default(false)
+  created_at    DateTime? @default(now()) @db.Timestamptz
+  updated_at    DateTime? @default(now()) @db.Timestamptz
+
+  // Relations
+  user          User?     @relation(fields: [user_id], references: [id])
+  orders        Order[]
+  archivedOrders OrderArchive[]
 }
 
-model Order {
-  id                 String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  userId            String          @db.Uuid
-  serviceId         String          @db.Uuid
-  addressId         String          @db.Uuid
-  affiliateCode     String?
-  status            OrderStatus     @default(PENDING)
-  isRecurring       Boolean         @default(false)
-  recurrenceType    RecurrenceType  @default(NONE)
-  nextRecurrenceDate DateTime?      @db.Timestamptz
-  totalAmount       Decimal?        @db.Decimal
-  collectionDate    DateTime?       @db.Timestamptz
-  deliveryDate      DateTime?       @db.Timestamptz
-  createdAt         DateTime        @default(now()) @db.Timestamptz
-  updatedAt         DateTime        @default(now()) @db.Timestamptz
-  service_type_id   String?         @db.Uuid
-  paymentMethod     PaymentMethodEnum @default(CASH)
-  items             OrderItem[]
-  user              User             @relation(fields: [userId], references: [id])
+model Service {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String          @db.VarChar
+  description     String?
+  price           Int
+  created_at      DateTime        @default(now()) @db.Timestamptz
+  updated_at      DateTime        @default(now()) @db.Timestamptz
 
-  @@map("orders")
+  // Relations
+  orders          Order[]
+  orderItems      OrderItem[]
+  articleServices ArticleService[]
+  archivedOrders  OrderArchive[]
+}
+
+model ServiceType {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar
+  description String?
+  created_at  DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  orders      Order[]
+  archivedOrders OrderArchive[]
 }
 
 model OrderItem {
-  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  orderId   String   @db.Uuid
-  articleId String   @db.Uuid
-  serviceId String   @db.Uuid
-  quantity  Int
-  unitPrice Decimal  @db.Decimal
-  createdAt DateTime @default(now()) @db.Timestamptz
-  updatedAt DateTime @default(now()) @db.Timestamptz
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  article   Article  @relation(fields: [articleId], references: [id])
+  id         String   @id @default(uuid()) @db.Uuid
+  orderId    String   @db.Uuid
+  articleId  String   @db.Uuid
+  serviceId  String   @db.Uuid
+  quantity   Int
+  unitPrice  Decimal  @db.Decimal
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  updatedAt  DateTime @default(now()) @db.Timestamptz
 
+  // Relations
+  order      Order    @relation(fields: [orderId], references: [id])
+  article    Article  @relation(fields: [articleId], references: [id])
+  service    Service  @relation(fields: [serviceId], references: [id])
+
+  // Indexes and constraints
   @@unique([orderId, articleId])
-  @@map("order_items")
+  @@index([orderId])
+  @@index([articleId])
 }
 
 model Article {
-  id           String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  categoryId   String          @db.Uuid
-  name         String          @db.VarChar
-  description  String?
-  basePrice    Decimal        @db.Decimal
-  createdAt    DateTime       @default(now()) @db.Timestamptz
-  updatedAt    DateTime       @default(now()) @db.Timestamptz
-  premiumPrice Decimal        @default(0) @db.Decimal
-  category     ArticleCategory @relation(fields: [categoryId], references: [id])
-  orderItems   OrderItem[]
+  id            String           @id @default(uuid()) @db.Uuid
+  categoryId    String?         @db.Uuid
+  name          String          @db.VarChar
+  description   String?
+  basePrice     Decimal?        @db.Decimal
+  premiumPrice  Decimal         @default(0) @db.Decimal
+  createdAt     DateTime        @default(now()) @db.Timestamptz
+  updatedAt     DateTime        @default(now()) @db.Timestamptz
+  articleServices ArticleService[]
+  priceHistory  PriceHistory[]
 
-  @@map("articles")
+  // Relations
+  category      ArticleCategory? @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  offerArticles OfferArticle[]
+
+  // Indexes
+  @@index([categoryId])
 }
 
 model ArticleCategory {
-  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id          String    @id @default(uuid()) @db.Uuid
   name        String    @db.VarChar
   description String?
   createdAt   DateTime  @default(now()) @db.Timestamptz
   articles    Article[]
+}
 
-  @@map("article_categories")
+model ArticleService {
+  id              String    @id @default(uuid()) @db.Uuid
+  articleId       String    @db.Uuid
+  serviceId       String    @db.Uuid
+  priceMultiplier Decimal   @default(1.0) @db.Decimal
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  article         Article   @relation(fields: [articleId], references: [id])
+  service         Service   @relation(fields: [serviceId], references: [id])
+
+  // Indexes
+  @@index([articleId])
+  @@index([serviceId])
 }
