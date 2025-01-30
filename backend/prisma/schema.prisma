@@ -32,26 +32,40 @@ Les triggers automatiques Supabase ne sont pas documentés ici
 // process_affiliate_commission (Procedure)
 // Description: Traite les commissions directes et indirectes
 // Paramètres: p_order_id, p_order_amount, p_affiliate_code
-// Actions: Distribution des commissions et mise à jour des niveaux
+// Règles métier:
+// - Commission directe = 40% du montant * taux selon parrainage:
+//   * 20% si ≥ 20 parrainages
+//   * 15% si ≥ 10 parrainages
+//   * 10% par défaut
+// - Commission indirecte = 10% de la commission directe (pour le parent)
 
 // update_affiliate_level (Procedure)
-// Description: Met à jour le niveau d'un affilié selon ses gains
+// Description: Met à jour le niveau d'un affilié selon ses gains totaux
 // Paramètre: p_affiliate_id
-// Action: Ajuste le niveau et les taux de commission
+// Action: Ajuste le niveau selon les seuils de gains définis
 
 /* 3. Gestion des Retraits */
 // process_withdrawal_request (Procedure)
 // Description: Traite une demande de retrait
 // Paramètres: p_affiliate_id, p_amount
-// Validations: Montant minimum 25000 FCFA, solde suffisant
+// Règles métier:
+// - Montant minimum: 25000 FCFA
+// - Compte affilié doit être ACTIF
+// - Solde suffisant requis
 
 // approve_withdrawal (Procedure)
 // Description: Approuve un retrait en attente
 // Paramètre: p_withdrawal_id
+// Actions: 
+// - Vérifie statut PENDING
+// - Change statut vers APPROVED
 
 // reject_withdrawal (Procedure)
 // Description: Rejette un retrait avec remboursement
 // Paramètres: p_withdrawal_id, p_reason
+// Actions:
+// - Change statut vers REJECTED
+// - Rembourse le montant au solde de l'affilié
 
 Note: Les autres fonctions et triggers sont soit automatiquement générés par 
 Supabase, soit servent uniquement à la maintenance interne de la base de données.
