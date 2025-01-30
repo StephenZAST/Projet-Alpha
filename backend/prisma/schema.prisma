@@ -10,128 +10,50 @@ import * from "./schemas/business"
 /*
 DOCUMENTATION DE LA BASE DE DONNÉES
 
-Pour obtenir une liste complète et à jour des fonctions et procédures stockées de la base de données,
-utilisez le script SQL fourni dans le fichier 'db_functions.sql'.
-
-Exécutez-le dans votre client PostgreSQL avec :
-```sql
-\i db_functions.sql
-```
-
-Ce script liste toutes les fonctions et procédures du schéma public avec :
-- Leur nom
-- Leur type (Function/Procedure)
-- Leur code source complet
-- Leur description (si disponible)
+Pour obtenir une liste à jour des fonctions et procédures, utilisez db_functions.sql
+Les index sont définis directement dans les modèles Prisma avec @@index
+Les triggers automatiques Supabase ne sont pas documentés ici
 */
 
-// Principales Procédures Stockées Documentées
-/*
-1. create_order_with_items
-Description: Gère la création de commande avec tous les articles
-Localisation: backend/prisma/migrations/[timestamp]_stored_procedures.sql
-Paramètres:
-  - p_userId UUID               -- User creating the order
-  - p_serviceId UUID           -- Selected service
-  - p_addressId UUID           -- Delivery address
-  - p_isRecurring BOOLEAN      -- Recurring order flag
-  - p_recurrenceType TEXT      -- Type of recurrence
-  - p_collectionDate TIMESTAMPTZ -- Collection date
-  - p_deliveryDate TIMESTAMPTZ -- Delivery date
-  - p_affiliateCode TEXT       -- Optional affiliate code
-  - p_service_type_id UUID     -- Service type
-  - p_paymentMethod TEXT       -- Payment method
-  - p_items JSON[]             -- Array of order items
-Retourne: UUID (order_id)
+// ======= FONCTIONS ET PROCÉDURES MÉTIER ESSENTIELLES =======
 
-2. process_affiliate_commission
-Description: Gère le calcul et la distribution des commissions
-Localisation: backend/prisma/migrations/20250129_affiliate_procedures.sql
-Paramètres:
-  - p_order_id UUID           -- Order ID for commission
-  - p_order_amount DECIMAL    -- Order amount for calculation
-  - p_affiliate_code TEXT     -- Affiliate code used
-Retourne: void
+/* 1. Gestion des Commandes */
+// create_order_with_items (Function)
+// Description: Crée une commande et ses items de manière atomique
+// Paramètres: p_userId, p_serviceId, p_addressId, p_isRecurring, p_items[]
+// Retourne: Détails de la commande créée
 
-3. update_affiliate_level
-Description: Met à jour le niveau d'un affilié basé sur ses gains
-Localisation: backend/prisma/migrations/20250129_affiliate_procedures.sql
-Paramètres:
-  - p_affiliate_id UUID      -- Affiliate ID to update
-Retourne: void
+// cleanup_old_orders (Function)
+// Description: Archive les commandes terminées > 30 jours
+// Paramètre: days_threshold (défaut: 30)
+// Retourne: Nombre d'archives créées
 
-4. reset_monthly_earnings
-Description: Réinitialise les gains mensuels de tous les affiliés actifs
-Localisation: backend/prisma/migrations/20250129_affiliate_procedures.sql
-Paramètres: Aucun
-Retourne: void
-*/
+/* 2. Système d'Affiliation */
+// process_affiliate_commission (Procedure)
+// Description: Traite les commissions directes et indirectes
+// Paramètres: p_order_id, p_order_amount, p_affiliate_code
+// Actions: Distribution des commissions et mise à jour des niveaux
 
-// Database Triggers
-/*
-1. before_order_insert
-Table: orders
-Événement: BEFORE INSERT
-Description: Vérifie et calcule les prix avant insertion d'une commande
+// update_affiliate_level (Procedure)
+// Description: Met à jour le niveau d'un affilié selon ses gains
+// Paramètre: p_affiliate_id
+// Action: Ajuste le niveau et les taux de commission
 
-2. after_order_status_update
-Table: orders
-Événement: AFTER UPDATE OF status
-Description: Gère les notifications et points de fidélité après changement de statut
+/* 3. Gestion des Retraits */
+// process_withdrawal_request (Procedure)
+// Description: Traite une demande de retrait
+// Paramètres: p_affiliate_id, p_amount
+// Validations: Montant minimum 25000 FCFA, solde suffisant
 
-3. after_commission_transaction
-Table: commission_transactions
-Événement: AFTER INSERT
-Description: Met à jour les soldes des affiliés après nouvelle commission
-*/
+// approve_withdrawal (Procedure)
+// Description: Approuve un retrait en attente
+// Paramètre: p_withdrawal_id
 
-// Important Indexes
-/*
-1. Users & Authentication
-- users_email_idx (email)
-- users_referral_code_idx (referral_code)
-- users_instance_id_idx (instance_id, email)
+// reject_withdrawal (Procedure)
+// Description: Rejette un retrait avec remboursement
+// Paramètres: p_withdrawal_id, p_reason
 
-2. Orders
-- orders_status_idx (status)
-- orders_user_id_idx (user_id)
-- orders_created_at_idx (created_at)
-- orders_affiliate_code_idx (affiliate_code)
-
-3. Affiliates
-- affiliate_profiles_code_idx (affiliate_code)
-- affiliate_profiles_user_id_idx (user_id)
-- affiliate_transactions_status_idx (status)
-
-4. Articles & Services
-- articles_category_id_idx (category_id)
-- services_name_idx (name)
-- article_services_article_id_idx (article_id, service_id)
-
-5. Notifications & Offers
-- notifications_user_id_type_idx (user_id, type)
-- offers_active_dates_idx (is_active, start_date, end_date)
-*/
-
-// Foreign Key Constraints
-/*
-1. User Relations
-- addresses_user_id_fkey
-- orders_user_id_fkey
-- notifications_user_id_fkey
-- loyalty_points_user_id_fkey
-
-2. Order Relations
-- order_items_order_id_fkey
-- order_items_article_id_fkey
-- order_items_service_id_fkey
-
-3. Affiliate Relations
-- affiliate_profiles_user_id_fkey
-- affiliate_profiles_parent_id_fkey
-- commission_transactions_affiliate_id_fkey
-
-4. Blog Relations
-- blog_articles_category_id_fkey
-- blog_articles_author_id_fkey
-*/
+Note: Les autres fonctions et triggers sont soit automatiquement générés par 
+Supabase, soit servent uniquement à la maintenance interne de la base de données.
+Pour plus de detailler sur les differente detaille d'une fonction ou d'une Procedure 
+nous pouvons execuer la commande approprier pour voir les detaille de la fonction ou de la pro
