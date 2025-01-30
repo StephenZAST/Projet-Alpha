@@ -1,23 +1,5 @@
 [
   {
-    "trigger_schema": "pgsodium",
-    "trigger_name": "key_encrypt_secret_trigger_raw_key",
-    "trigger_event": "INSERT",
-    "table_schema": "pgsodium",
-    "table_name": "key",
-    "trigger_definition": "EXECUTE FUNCTION pgsodium.key_encrypt_secret_raw_key()",
-    "trigger_timing": "BEFORE"
-  },
-  {
-    "trigger_schema": "pgsodium",
-    "trigger_name": "key_encrypt_secret_trigger_raw_key",
-    "trigger_event": "UPDATE",
-    "table_schema": "pgsodium",
-    "table_name": "key",
-    "trigger_definition": "EXECUTE FUNCTION pgsodium.key_encrypt_secret_raw_key()",
-    "trigger_timing": "BEFORE"
-  },
-  {
     "trigger_schema": "public",
     "trigger_name": "after_affiliate_earnings_update",
     "trigger_event": "UPDATE",
@@ -141,51 +123,6 @@
     "table_schema": "public",
     "table_name": "users",
     "trigger_definition": "EXECUTE FUNCTION update_updated_at_column()",
-    "trigger_timing": "BEFORE"
-  },
-  {
-    "trigger_schema": "realtime",
-    "trigger_name": "tr_check_filters",
-    "trigger_event": "INSERT",
-    "table_schema": "realtime",
-    "table_name": "subscription",
-    "trigger_definition": "EXECUTE FUNCTION realtime.subscription_check_filters()",
-    "trigger_timing": "BEFORE"
-  },
-  {
-    "trigger_schema": "realtime",
-    "trigger_name": "tr_check_filters",
-    "trigger_event": "UPDATE",
-    "table_schema": "realtime",
-    "table_name": "subscription",
-    "trigger_definition": "EXECUTE FUNCTION realtime.subscription_check_filters()",
-    "trigger_timing": "BEFORE"
-  },
-  {
-    "trigger_schema": "storage",
-    "trigger_name": "update_objects_updated_at",
-    "trigger_event": "UPDATE",
-    "table_schema": "storage",
-    "table_name": "objects",
-    "trigger_definition": "EXECUTE FUNCTION storage.update_updated_at_column()",
-    "trigger_timing": "BEFORE"
-  },
-  {
-    "trigger_schema": "vault",
-    "trigger_name": "secrets_encrypt_secret_trigger_secret",
-    "trigger_event": "INSERT",
-    "table_schema": "vault",
-    "table_name": "secrets",
-    "trigger_definition": "EXECUTE FUNCTION vault.secrets_encrypt_secret_secret()",
-    "trigger_timing": "BEFORE"
-  },
-  {
-    "trigger_schema": "vault",
-    "trigger_name": "secrets_encrypt_secret_trigger_secret",
-    "trigger_event": "UPDATE",
-    "table_schema": "vault",
-    "table_name": "secrets",
-    "trigger_definition": "EXECUTE FUNCTION vault.secrets_encrypt_secret_secret()",
     "trigger_timing": "BEFORE"
   }
 ]
