@@ -1,5 +1,6 @@
 import { AffiliateProfileService } from './affiliateProfile.service';
 import { AffiliateCommissionService } from './affiliateCommission.service';
+import { AffiliateWithdrawalService } from './affiliateWithdrawal.service';
 import { PaginationParams } from '../../utils/pagination';
 import supabase from '../../config/database';
 
@@ -21,110 +22,10 @@ export class AffiliateService {
   static resetMonthlyEarnings = AffiliateCommissionService.resetMonthlyEarnings;
 
   // Withdrawal Management
-  static async requestWithdrawal(affiliateId: string, amount: number) {
-    try {
-      const { error } = await supabase.rpc(
-        'process_withdrawal_request',
-        {
-          p_affiliate_id: affiliateId,
-          p_amount: amount
-        }
-      );
-
-      if (error) throw error;
-
-      // Récupérer la transaction créée
-      const { data: transaction } = await supabase
-        .from('commissionTransactions')
-        .select('*')
-        .eq('affiliate_id', affiliateId)
-        .eq('type', 'WITHDRAWAL')
-        .eq('status', 'PENDING')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      return transaction;
-    } catch (error: any) {
-      throw new Error(error.message);
-    }
-  }
-
-  static async getWithdrawals(pagination: PaginationParams, status?: string) {
-    const { page = 1, limit = 10 } = pagination;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-
-    let query = supabase
-      .from('commissionTransactions')
-      .select(`
-        *,
-        affiliate:affiliate_profiles(
-          id,
-          user:users(
-            email,
-            firstName,
-            lastName
-          )
-        )
-      `, { count: 'exact' })
-      .eq('type', 'WITHDRAWAL');
-
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    if (error) throw error;
-
-    return {
-      data,
-      pagination: {
-        total: count || 0,
-        currentPage: page,
-        limit,
-        totalPages: Math.ceil((count || 0) / limit)
-      }
-    };
-  }
-
-  static async rejectWithdrawal(withdrawalId: string, reason: string) {
-    try {
-      const { error } = await supabase.rpc(
-        'reject_withdrawal',
-        {
-          p_withdrawal_id: withdrawalId,
-          p_reason: reason
-        }
-      );
-
-      if (error) throw error;
-
-      return { message: 'Withdrawal rejected successfully' };
-    } catch (error: any) {
-      throw new Error(error.message);
-    }
-  }
-
-  static async approveWithdrawal(withdrawalId: string) {
-    try {
-      const { error } = await supabase.rpc(
-        'approve_withdrawal',
-        {
-          p_withdrawal_id: withdrawalId
-        }
-      );
-
-      if (error) throw error;
-
-      return { message: 'Withdrawal approved successfully' };
-    } catch (error: any) {
-      throw new Error(error.message);
-    }
-  }
+  static requestWithdrawal = AffiliateWithdrawalService.requestWithdrawal;
+  static getWithdrawals = AffiliateWithdrawalService.getWithdrawals;
+  static approveWithdrawal = AffiliateWithdrawalService.approveWithdrawal;
+  static rejectWithdrawal = AffiliateWithdrawalService.rejectWithdrawal;
 
   // Administrative Functions
   static async getAllAffiliates(
@@ -142,8 +43,8 @@ export class AffiliateService {
         user:users(
           id,
           email,
-          firstName,
-          lastName,
+          first_name,
+          last_name,
           phone
         )
       `, { count: 'exact' });
@@ -155,9 +56,9 @@ export class AffiliateService {
     if (filters.query) {
       query = query.or(`
         user.email.ilike.%${filters.query}%,
-        user.firstName.ilike.%${filters.query}%,
-        user.lastName.ilike.%${filters.query}%,
-        affiliateCode.ilike.%${filters.query}%
+        user.first_name.ilike.%${filters.query}%,
+        user.last_name.ilike.%${filters.query}%,
+        affiliate_code.ilike.%${filters.query}%
       `);
     }
 
@@ -167,8 +68,17 @@ export class AffiliateService {
 
     if (error) throw error;
 
+    const transformedData = data?.map(item => ({
+      ...item,
+      user: item.user ? {
+        ...item.user,
+        firstName: item.user.first_name,
+        lastName: item.user.last_name
+      } : null
+    }));
+
     return {
-      data,
+      data: transformedData,
       pagination: {
         total: count || 0,
         currentPage: page,
@@ -203,11 +113,22 @@ export class AffiliateService {
       .eq('id', affiliateId)
       .select(`
         *,
-        user:users(id)
+        user:users(
+          id,
+          email,
+          first_name,
+          last_name,
+          phone
+        )
       `)
       .single();
 
     if (error) throw error;
+
+    if (updatedAffiliate?.user) {
+      updatedAffiliate.user.firstName = updatedAffiliate.user.first_name;
+      updatedAffiliate.user.lastName = updatedAffiliate.user.last_name;
+    }
 
     return updatedAffiliate;
   }
@@ -246,8 +167,16 @@ export class AffiliateService {
 
     if (userError) throw userError;
 
-    return user;
+    return {
+      ...user,
+      firstName: user.first_name,
+      lastName: user.last_name
+    };
   }
 }
 
-export { AffiliateProfileService, AffiliateCommissionService };
+export { 
+  AffiliateProfileService, 
+  AffiliateCommissionService,
+  AffiliateWithdrawalService
+};

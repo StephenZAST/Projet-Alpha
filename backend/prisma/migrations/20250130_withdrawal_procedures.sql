@@ -40,7 +40,7 @@ BEGIN
     END IF;
 
     -- Créer la transaction de retrait
-    INSERT INTO commissionTransactions (
+    INSERT INTO commission_transactions (
         id,
         affiliate_id,
         amount,
@@ -80,7 +80,7 @@ BEGIN
     -- Récupérer les informations du retrait
     SELECT affiliate_id, ABS(amount)
     INTO v_affiliate_id, v_amount
-    FROM commissionTransactions
+    FROM commission_transactions
     WHERE id = p_withdrawal_id
     AND type = 'WITHDRAWAL'
     AND status = 'PENDING';
@@ -90,7 +90,7 @@ BEGIN
     END IF;
 
     -- Mettre à jour le statut de la transaction
-    UPDATE commissionTransactions
+    UPDATE commission_transactions
     SET status = 'REJECTED',
         updated_at = NOW()
     WHERE id = p_withdrawal_id;
@@ -111,7 +111,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     -- Vérifier et mettre à jour le statut
-    UPDATE commissionTransactions
+    UPDATE commission_transactions
     SET status = 'APPROVED',
         updated_at = NOW()
     WHERE id = p_withdrawal_id

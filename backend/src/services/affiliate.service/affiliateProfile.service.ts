@@ -6,38 +6,43 @@ export class AffiliateProfileService {
     const { data: profile, error } = await supabase
       .from('affiliate_profiles')
       .select(`
-        *,
+        id,
+        user_id,
+        affiliate_code,
+        parent_affiliate_id,
+        commission_balance,
+        total_earned,
+        created_at,
+        updated_at,
+        commission_rate,
+        is_active,
+        total_referrals,
+        monthly_earnings,
+        level_id,
+        status,
         user:users(
           id,
           email,
-          firstName,
-          lastName,
+          first_name,
+          last_name,
           phone
         ),
-        commissionTransactions(
+        commissionTransactions:commission_transactions(
+          id,
           amount,
           status,
           created_at
         ),
-        childAffiliates:affiliate_profiles(
+        level:affiliate_levels(
           id,
-          total_earned
+          name,
+          commissionRate
         )
       `)
       .eq('user_id', userId)
       .single();
 
     if (error) throw error;
-    if (profile) {
-      return {
-        ...profile,
-        user: profile.user ? {
-          ...profile.user,
-          firstName: profile.user.first_name,
-          lastName: profile.user.last_name
-        } : null
-      };
-    }
     return profile;
   }
 
@@ -61,13 +66,15 @@ export class AffiliateProfileService {
         user:users(
           id,
           email,
-          firstName,
-          lastName
+          first_name,
+          last_name,
+          phone
         ),
         total_earned,
         total_referrals,
         monthly_earnings,
-        created_at
+        created_at,
+        status
       `)
       .eq('parent_affiliate_id', userId);
 
@@ -76,21 +83,29 @@ export class AffiliateProfileService {
   }
 
   static async getCurrentLevel(userId: string) {
-    const { data: profile, error } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('affiliate_profiles')
-      .select('total_referrals')
+      .select(`
+        id,
+        total_referrals,
+        total_earned,
+        level_id,
+        level:affiliate_levels(
+          id,
+          name,
+          commission_rate
+        )
+      `)
       .eq('user_id', userId)
-      .maybeSingle();
+      .single();
 
-    if (error) throw error;
+    if (profileError) throw profileError;
     if (!profile) throw new Error('Affiliate profile not found');
 
-    const referralCount = profile.total_referrals;
     let currentLevel;
-
-    if (referralCount < 10) {
+    if (profile.total_referrals < 10) {
       currentLevel = COMMISSION_LEVELS.LEVEL1;
-    } else if (referralCount < 20) {
+    } else if (profile.total_referrals < 20) {
       currentLevel = COMMISSION_LEVELS.LEVEL2;
     } else {
       currentLevel = COMMISSION_LEVELS.LEVEL3;
@@ -98,19 +113,21 @@ export class AffiliateProfileService {
 
     return {
       currentLevel: {
-        rate: currentLevel.rate,
-        minReferrals: currentLevel.min,
-        maxReferrals: currentLevel.max === Infinity ? null : currentLevel.max
+        ...currentLevel,
+        current: {
+          referrals: profile.total_referrals,
+          earnings: profile.total_earned
+        }
       },
-      nextLevel: this.getNextLevel(referralCount)
+      nextLevel: this.getNextLevel(profile.total_referrals)
     };
   }
 
-  static async generateAffiliateCode(affiliateId: string) {
+  static async generateAffiliateCode(userId: string) {
     const { data: affiliate } = await supabase
       .from('affiliate_profiles')
       .select('id, affiliate_code')
-      .eq('id', affiliateId)
+      .eq('user_id', userId)
       .single();
 
     if (!affiliate) {
@@ -126,7 +143,7 @@ export class AffiliateProfileService {
     const { data, error } = await supabase
       .from('affiliate_profiles')
       .update({ affiliate_code: newCode })
-      .eq('id', affiliateId)
+      .eq('id', affiliate.id)
       .select()
       .single();
 
@@ -135,11 +152,6 @@ export class AffiliateProfileService {
     return data;
   }
 
-  /**
-   * Crée un nouveau profil d'affilié
-   * @param userId ID de l'utilisateur
-   * @param parentAffiliateCode Code d'affiliation du parent (optionnel)
-   */
   static async createAffiliate(userId: string, parentAffiliateCode?: string) {
     let parentId: string | null = null;
     let level_id: string | null = null;
@@ -200,40 +212,27 @@ export class AffiliateProfileService {
           commission_balance: 0,
           total_earned: 0,
           level_id: level_id,
-          status: 'ACTIVE',
+          status: 'PENDING',
           is_active: true,
           total_referrals: 0,
           monthly_earnings: 0,
-          commission_rate: 10.00, // Taux de départ
+          commission_rate: 10.00,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])
-        .select(`
-          *,
-          affiliateLevel (
-            id,
-            name,
-            commission_rate
-          ),
-          parentAffiliate (
-            id,
-            affiliate_code
-          )
-        `)
+        .select()
         .single();
 
       if (error) throw error;
 
-      // 5. Mettre à jour le compteur de filleuls du parent si nécessaire
+      // 5. Incrémenter le compteur de filleuls du parent
       if (parentId) {
-        await supabase
-          .from('affiliate_profiles')
-          .update({
-            total_referrals: supabase.rpc('increment_referral_count', {
-              p_affiliate_id: parentId
-            })
-          })
-          .eq('id', parentId);
+        const { error: updateError } = await supabase.rpc(
+          'increment_referral_count',
+          { p_affiliate_id: parentId }
+        );
+
+        if (updateError) throw updateError;
       }
 
       return data;
@@ -243,106 +242,16 @@ export class AffiliateProfileService {
     }
   }
 
-  /**
-   * Applique un code d'affiliation à un client
-   */
-  /**
-   * Applique un code d'affiliation à un client existant
-   * @param userId ID de l'utilisateur client
-   * @param affiliateCode Code d'affiliation à appliquer
-   */
-  static async applyAffiliateCode(userId: string, affiliateCode: string) {
-    try {
-      // 1. Vérifier le statut de l'utilisateur
-      const { data: user } = await supabase
-        .from('users')
-        .select('referral_code, role')
-        .eq('id', userId)
-        .single();
-
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      if (user.role !== 'CLIENT') {
-        throw new Error('Only clients can use affiliate codes');
-      }
-
-      if (user.referral_code) {
-        throw new Error('User already has an affiliate code');
-      }
-
-      // 2. Vérifier l'affilié et son statut
-      const { data: affiliate } = await supabase
-        .from('affiliate_profiles')
-        .select('id, user_id, status, is_active')
-        .eq('affiliate_code', affiliateCode)
-        .single();
-
-      if (!affiliate) {
-        throw new Error('Invalid affiliate code');
-      }
-
-      if (!affiliate.is_active || affiliate.status !== 'ACTIVE') {
-        throw new Error('This affiliate account is not active');
-      }
-
-      if (affiliate.user_id === userId) {
-        throw new Error('Cannot use your own affiliate code');
-      }
-
-      // 3. Appliquer le code et mettre à jour la date
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          referral_code: affiliateCode,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
-
-      if (updateError) throw updateError;
-
-      // 4. Incrémenter le compteur de filleuls de l'affilié
-      await supabase
-        .from('affiliate_profiles')
-        .update({
-          total_referrals: supabase.rpc('increment_referral_count', {
-            p_affiliate_id: affiliate.id
-          }),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', affiliate.id);
-
-      // 5. Créer une notification pour l'affilié
-      await supabase
-        .from('notifications')
-        .insert([{
-          user_id: affiliate.user_id,
-          type: 'SYSTEM',
-          message: `Un nouveau client a utilisé votre code d'affiliation`,
-          created_at: new Date().toISOString()
-        }]);
-
-      return {
-        success: true,
-        affiliateId: affiliate.id
-      };
-    } catch (error) {
-      console.error('[AffiliateProfileService] Apply affiliate code error:', error);
-      throw error;
-    }
-  }
-
   private static getNextLevel(currentReferrals: number) {
     if (currentReferrals < 10) {
       return {
-        rate: COMMISSION_LEVELS.LEVEL2.rate,
+        ...COMMISSION_LEVELS.LEVEL2,
         requiredReferrals: 10,
         remaining: 10 - currentReferrals
       };
     } else if (currentReferrals < 20) {
       return {
-        rate: COMMISSION_LEVELS.LEVEL3.rate,
+        ...COMMISSION_LEVELS.LEVEL3,
         requiredReferrals: 20,
         remaining: 20 - currentReferrals
       };

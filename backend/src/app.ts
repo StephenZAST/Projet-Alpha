@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import rateLimit from 'express-rate-limit';
-import jwt from 'jsonwebtoken';
 
 // Import all routes
 import authRoutes from './routes/auth.routes';
@@ -22,21 +21,19 @@ import articleServiceRoutes from './routes/articleService.routes';
 import blogCategoryRoutes from './routes/blogCategory.routes';
 import blogArticleRoutes from './routes/blogArticle.routes';
 import orderItemRoutes from './routes/orderItem.routes';
-import archiveRoutes from './routes/archive.routes';  // Ajouter cet import
+import archiveRoutes from './routes/archive.routes';
 import './scheduler'; // Importer le scheduler pour démarrer les tâches cron
-import { Request, ParamsDictionary, Response, NextFunction } from 'express-serve-static-core';
-import { ParsedQs } from 'qs';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+
 // Middleware globaux
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configure CORS to allow all localhost origins
-// Configure CORS to allow all localhost origins
+// Configure CORS
 const allowedOrigins = [
   'http://localhost:3000',   // React default
   'http://localhost:3001',   // Your API
@@ -53,10 +50,8 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Check if the origin is localhost
     if (
       allowedOrigins.some(allowedOrigin => {
         if (allowedOrigin instanceof RegExp) {
@@ -75,7 +70,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 }));
 
-// Rate limiting configuration
 // Rate limiting configuration
 const loginLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
@@ -105,34 +99,14 @@ app.use('/api/admin', adminLimiter);
 app.use('/api/orders', adminLimiter);
 app.use('/api/notifications', adminLimiter);
 app.use('/api', standardLimiter);
+
 // Routes
 app.use('/api/auth', authRoutes);
-
-app.use('/api/orders', (req, res, next) => {
-  console.log('Orders Routes Middleware:', req.user);
-  orderRoutes(req, res, next);
-});
-
-app.use('/api/delivery', (req, res, next) => {
-  console.log('Delivery Routes Middleware:', req.user);
-  deliveryRoutes(req, res, next);
-});
-
-app.use('/api/affiliate', (req, res, next) => {
-  console.log('Affiliate Routes Middleware:', req.user);
-  affiliateRoutes(req, res, next);
-});
-
-app.use('/api/loyalty', (req, res, next) => {
-  console.log('Loyalty Routes Middleware:', req.user);
-  loyaltyRoutes(req, res, next);
-});
-
-app.use('/api/notifications', (req, res, next) => {
-  console.log('Notifications Routes Middleware:', req.user);
-  notificationRoutes(req, res, next);
-});
-
+app.use('/api/orders', orderRoutes);
+app.use('/api/delivery', deliveryRoutes);
+app.use('/api/affiliate', affiliateRoutes);
+app.use('/api/loyalty', loyaltyRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/admin', adminRoutes);
@@ -173,7 +147,3 @@ app.listen(PORT, () => {
 });
 
 export default app;
-function limiter(req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>, number>, next: NextFunction): void {
-  throw new Error('Function not implemented.');
-}
-
