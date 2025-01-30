@@ -19,10 +19,6 @@ ORDER BY
     kind,  -- Tri d'abord par type (p pour procédures, f pour fonctions)
     function_name;  -- Puis par nom de fonction
 
-
-
-    -- autre script pour d'autre element comme index et trigger s
-
     SELECT 
     trigger_schema,
     trigger_name,
