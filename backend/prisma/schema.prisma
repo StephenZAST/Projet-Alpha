@@ -12,7 +12,6 @@ DOCUMENTATION DE LA BASE DE DONNÉES
 
 Pour obtenir une liste à jour des fonctions et procédures, utilisez db_functions.sql
 Les index sont définis directement dans les modèles Prisma avec @@index
-Les triggers automatiques Supabase ne sont pas documentés ici
 */
 
 // ======= FONCTIONS ET PROCÉDURES MÉTIER ESSENTIELLES =======
@@ -53,21 +52,45 @@ Les triggers automatiques Supabase ne sont pas documentés ici
 // - Compte affilié doit être ACTIF
 // - Solde suffisant requis
 
-// approve_withdrawal (Procedure)
-// Description: Approuve un retrait en attente
-// Paramètre: p_withdrawal_id
-// Actions: 
-// - Vérifie statut PENDING
-// - Change statut vers APPROVED
+// approve_withdrawal (Procedure) & reject_withdrawal (Procedure)
+// Description: Gère l'approbation/rejet des retraits
+// Actions respectives:
+// - Approuve: Change statut vers APPROVED
+// - Rejette: Change statut vers REJECTED et rembourse
 
-// reject_withdrawal (Procedure)
-// Description: Rejette un retrait avec remboursement
-// Paramètres: p_withdrawal_id, p_reason
-// Actions:
-// - Change statut vers REJECTED
-// - Rembourse le montant au solde de l'affilié
+// ======= TRIGGERS MÉTIER IMPORTANTS =======
 
-Note: Les autres fonctions et triggers sont soit automatiquement générés par 
-Supabase, soit servent uniquement à la maintenance interne de la base de données.
-Pour plus de detailler sur les differente detaille d'une fonction ou d'une Procedure 
-nous pouvons execuer la commande approprier pour voir les detaille de la fonction ou de la pro
+/* 1. Triggers de Commande */
+// archive_completed_orders_trigger (AFTER UPDATE ON orders)
+// Déclenché: Quand une commande passe à DELIVERED
+// Action: Archive automatiquement la commande
+// Fonction: archive_completed_orders()
+
+/* 2. Triggers d'Affiliation */
+// after_affiliate_earnings_update (AFTER UPDATE ON affiliate_profiles)
+// Déclenché: Modification des gains d'un affilié
+// Action: Met à jour automatiquement le niveau
+// Fonction: trigger_update_affiliate_level()
+
+/* 3. Triggers d'Initialisation */
+// create_user_loyalty_points (AFTER INSERT ON users)
+// Déclenché: Création d'un nouvel utilisateur
+// Action: Initialise les points de fidélité
+// Fonction: initialize_user_loyalty_points()
+
+/* 4. Triggers de Maintenance (updated_at) */
+// Ces triggers mettent à jour automatiquement le champ updated_at
+// Tables concernées:
+// - users, orders, order_items
+// - articles, services
+// - addresses, notifications
+// - loyalty_points
+// - blog_articles, blog_categories
+// Fonctions utilisées:
+// - update_updated_at_column()
+// - update_orders_timestamp()
+// - update_order_items_updated_at()
+// - update_loyalty_points_updated_at()
+
+Note: Les triggers système de Supabase (pgsodium, realtime, storage, vault)
+ne sont pas documentés ici car ils sont gérés automatiquement par la plateforme.
