@@ -28,6 +28,16 @@ export class AffiliateProfileService {
       .single();
 
     if (error) throw error;
+    if (profile) {
+      return {
+        ...profile,
+        user: profile.user ? {
+          ...profile.user,
+          firstName: profile.user.first_name,
+          lastName: profile.user.last_name
+        } : null
+      };
+    }
     return profile;
   }
 
@@ -70,9 +80,10 @@ export class AffiliateProfileService {
       .from('affiliate_profiles')
       .select('total_referrals')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
+    if (!profile) throw new Error('Affiliate profile not found');
 
     const referralCount = profile.total_referrals;
     let currentLevel;

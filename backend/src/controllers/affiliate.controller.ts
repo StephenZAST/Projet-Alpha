@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { AffiliateService } from '../services/affiliate.service/index';
 import { validatePaginationParams } from '../utils/pagination';
-import { NotificationService } from '../services/notification.service';
+import supabase from '../config/database';
+import { INDIRECT_COMMISSION_RATE, PROFIT_MARGIN_RATE } from '../services/affiliate.service/constants';
 
 export class AffiliateController {
   static async getProfile(req: Request, res: Response) {
@@ -18,47 +19,35 @@ export class AffiliateController {
 
   static async getLevels(req: Request, res: Response) {
     try {
-      const levels = [
-        {
-          id: "LEVEL1",
-          name: "Débutant",
-          minReferrals: 0,
-          maxReferrals: 9,
-          commissionRate: 0.10,
-          description: "10% de commission sur les ventes directes"
-        },
-        {
-          id: "LEVEL2",
-          name: "Intermédiaire",
-          minReferrals: 10,
-          maxReferrals: 19,
-          commissionRate: 0.15,
-          description: "15% de commission sur les ventes directes"
-        },
-        {
-          id: "LEVEL3",
-          name: "Expert",
-          minReferrals: 20,
-          maxReferrals: null,
-          commissionRate: 0.20,
-          description: "20% de commission sur les ventes directes"
-        }
-      ];
+      const { data: levels, error } = await supabase
+        .from('affiliate_levels')
+        .select('*')
+        .order('min_earnings', { ascending: true });
+
+      if (error) throw error;
+
+      const formattedLevels = levels.map(level => ({
+        id: level.id,
+        name: level.name,
+        minEarnings: level.min_earnings,
+        commissionRate: level.commission_rate,
+        description: `${level.commission_rate}% de commission sur les ventes directes`
+      }));
 
       const additionalInfo = {
         indirectCommission: {
-          rate: 0.10,
-          description: "10% de commission sur les ventes des filleuls directs"
+          rate: INDIRECT_COMMISSION_RATE * 100,
+          description: `${INDIRECT_COMMISSION_RATE * 100}% de commission sur les ventes des filleuls directs`
         },
         profitMargin: {
-          rate: 0.40,
-          description: "Le bénéfice net est calculé comme 40% du prix total"
+          rate: PROFIT_MARGIN_RATE * 100,
+          description: `Le bénéfice net est calculé comme ${PROFIT_MARGIN_RATE * 100}% du prix total`
         }
       };
 
       res.json({
         data: {
-          levels,
+          levels: formattedLevels,
           additionalInfo
         }
       });
@@ -144,6 +133,18 @@ export class AffiliateController {
       res.json({ data: result });
     } catch (error: any) {
       console.error('Reject withdrawal error:', error);
+      res.status(error.message.includes('not found') ? 404 : 500)
+        .json({ error: error.message });
+    }
+  }
+
+  static async approveWithdrawal(req: Request, res: Response) {
+    try {
+      const { withdrawalId } = req.params;
+      const result = await AffiliateService.approveWithdrawal(withdrawalId);
+      res.json({ data: result });
+    } catch (error: any) {
+      console.error('Approve withdrawal error:', error);
       res.status(error.message.includes('not found') ? 404 : 500)
         .json({ error: error.message });
     }

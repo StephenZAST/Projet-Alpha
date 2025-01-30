@@ -1,11 +1,11 @@
 {
   "info": {
-    "name": "23 Alpha Laundry - Withdrawal Tests",
+    "name": "22 Alpha Laundry - Commission Tests",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "1. Authentication",
+      "name": "1. Auth",
       "item": [
         {
           "name": "Login as Affiliate",
@@ -64,7 +64,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin.test@alphaomedia.com\",\n  \"password\": \"admin123\"\n}"
+              "raw": "{\n  \"email\": \"admin@alphaomedia.com\",\n  \"password\": \"admin123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -76,10 +76,66 @@
       ]
     },
     {
-      "name": "2. Workflow Tests",
+      "name": "2. Affiliate Profile",
       "item": [
         {
-          "name": "1. Request Withdrawal (Below Minimum)",
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{affiliateToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Get Commissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{affiliateToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/commissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "commissions"]
+            }
+          }
+        },
+        {
+          "name": "Get Current Level",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{affiliateToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/current-level",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "current-level"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Commission Management",
+      "item": [
+        {
+          "name": "Request Withdrawal",
           "request": {
             "method": "POST",
             "header": [
@@ -94,7 +150,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 20000\n}"
+              "raw": "{\n  \"amount\": 25000\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/affiliate/withdrawal",
@@ -104,44 +160,39 @@
           }
         },
         {
-          "name": "2. Request Valid Withdrawal",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const response = pm.response.json();",
-                  "pm.environment.set('withdrawalId', response.data.id);"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "Get Withdrawals",
           "request": {
-            "method": "POST",
+            "method": "GET",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{affiliateToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"amount\": 50000\n}"
-            },
             "url": {
-              "raw": "{{baseUrl}}/affiliate/withdrawal",
+              "raw": "{{baseUrl}}/affiliate/withdrawals?page=1&limit=10",
               "host": ["{{baseUrl}}"],
-              "path": ["affiliate", "withdrawal"]
+              "path": ["affiliate", "withdrawals"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
             }
           }
-        },
+        }
+      ]
+    },
+    {
+      "name": "4. Admin Management",
+      "item": [
         {
-          "name": "3. Admin Views Pending Withdrawals",
+          "name": "List All Withdrawals",
           "request": {
             "method": "GET",
             "header": [
@@ -164,7 +215,30 @@
           }
         },
         {
-          "name": "4. Admin Rejects Withdrawal",
+          "name": "Approve Withdrawal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/admin/withdrawals/:id/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "admin", "withdrawals", ":id", "approve"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "withdrawal-id-here"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Withdrawal",
           "request": {
             "method": "PATCH",
             "header": [
@@ -179,83 +253,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reason\": \"Document manquant\"\n}"
+              "raw": "{\n  \"reason\": \"Documentation insuffisante\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/affiliate/admin/withdrawals/{{withdrawalId}}/reject",
+              "raw": "{{baseUrl}}/affiliate/admin/withdrawals/:id/reject",
               "host": ["{{baseUrl}}"],
-              "path": ["affiliate", "admin", "withdrawals", "{{withdrawalId}}", "reject"]
-            }
-          }
-        },
-        {
-          "name": "5. Request Another Withdrawal",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const response = pm.response.json();",
-                  "pm.environment.set('withdrawalId', response.data.id);"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{affiliateToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"amount\": 50000\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/affiliate/withdrawal",
-              "host": ["{{baseUrl}}"],
-              "path": ["affiliate", "withdrawal"]
-            }
-          }
-        },
-        {
-          "name": "6. Admin Approves Withdrawal",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/affiliate/admin/withdrawals/{{withdrawalId}}/approve",
-              "host": ["{{baseUrl}}"],
-              "path": ["affiliate", "admin", "withdrawals", "{{withdrawalId}}", "approve"]
-            }
-          }
-        },
-        {
-          "name": "7. View Updated Profile Balance",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{affiliateToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/affiliate/profile",
-              "host": ["{{baseUrl}}"],
-              "path": ["affiliate", "profile"]
+              "path": ["affiliate", "admin", "withdrawals", ":id", "reject"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "withdrawal-id-here"
+                }
+              ]
             }
           }
         }

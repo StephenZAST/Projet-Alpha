@@ -1,0 +1,352 @@
+{
+  "info": {
+    "name": "22 Alpha Laundry - Affiliate API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Affiliate Routes",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+22501020304\",\n  \"notificationPreferences\": {\n    \"email\": true,\n    \"sms\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Get Commissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/commissions?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "commissions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Request Withdrawal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 25000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/withdrawal",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "withdrawal"]
+            }
+          }
+        },
+        {
+          "name": "Get Referrals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/referrals",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "referrals"]
+            }
+          }
+        },
+        {
+          "name": "Get Commission Levels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/levels",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "levels"]
+            }
+          }
+        },
+        {
+          "name": "Get Current Level",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/current-level",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "current-level"]
+            }
+          }
+        },
+        {
+          "name": "Generate Affiliate Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/generate-code",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "generate-code"]
+            }
+          }
+        },
+        {
+          "name": "Register Customer with Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"client@example.com\",\n  \"password\": \"strongpassword123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phone\": \"+22501020304\",\n  \"affiliateCode\": \"ABC123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/register-with-code",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "register-with-code"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Routes",
+      "item": [
+        {
+          "name": "List All Affiliates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/admin/list?page=1&limit=10&status=ACTIVE&query=",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "admin", "list"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE"
+                },
+                {
+                  "key": "query",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Withdrawals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/admin/withdrawals?page=1&limit=10&status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "admin", "withdrawals"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Withdrawal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Insufficient documentation provided\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/admin/withdrawals/:withdrawalId/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "admin", "withdrawals", ":withdrawalId", "reject"],
+              "variable": [
+                {
+                  "key": "withdrawalId",
+                  "value": "123e4567-e89b-12d3-a456-426614174000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Affiliate Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SUSPENDED\",\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/affiliate/admin/affiliates/:affiliateId/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["affiliate", "admin", "affiliates", ":affiliateId", "status"],
+              "variable": [
+                {
+                  "key": "affiliateId",
+                  "value": "123e4567-e89b-12d3-a456-426614174000"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

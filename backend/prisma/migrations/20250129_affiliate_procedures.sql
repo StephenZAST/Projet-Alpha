@@ -1,25 +1,27 @@
--- Procédure pour calculer et mettre à jour les commissions
+-- Suppression des procédures existantes si elles existent
+DROP PROCEDURE IF EXISTS process_affiliate_commission(UUID, DECIMAL, TEXT);
+DROP PROCEDURE IF EXISTS update_affiliate_level(UUID);
+DROP PROCEDURE IF EXISTS reset_monthly_earnings();
+DROP FUNCTION IF EXISTS calculate_available_commission(UUID);
+DROP FUNCTION IF EXISTS increment_referral_count(UUID);
+
+-- Procédure pour calculer et distribuer les commissions d'affiliation
 CREATE OR REPLACE PROCEDURE process_affiliate_commission(
     p_order_id UUID,
     p_order_amount DECIMAL,
-    p_affiliate_code VARCHAR
+    p_affiliate_code TEXT
 )
 LANGUAGE plpgsql
 AS $$
 DECLARE
     v_affiliate_id UUID;
+    v_direct_commission DECIMAL;
+    v_indirect_commission DECIMAL;
     v_parent_id UUID;
-    v_commission_rate DECIMAL;
-    v_commission_amount DECIMAL;
-    v_level_id UUID;
-    v_current_date TIMESTAMPTZ;
 BEGIN
-    -- Récupérer la date courante
-    v_current_date := CURRENT_TIMESTAMP;
-
-    -- Récupérer l'affilié principal
-    SELECT id, parent_affiliate_id, commission_rate, level_id
-    INTO v_affiliate_id, v_parent_id, v_commission_rate, v_level_id
+    -- Récupérer l'ID de l'affilié
+    SELECT id, parent_affiliate_id
+    INTO v_affiliate_id, v_parent_id
     FROM affiliate_profiles
     WHERE affiliate_code = p_affiliate_code AND is_active = true;
 
@@ -27,74 +29,78 @@ BEGIN
         RAISE EXCEPTION 'Affiliate not found or inactive';
     END IF;
 
-    -- Calculer la commission principale
-    v_commission_amount := (p_order_amount * v_commission_rate / 100);
+    -- Calculer la commission directe en utilisant total_referrals
+    SELECT (p_order_amount * 0.4) * (
+        CASE
+            WHEN total_referrals >= 20 THEN 0.20 -- 20%
+            WHEN total_referrals >= 10 THEN 0.15 -- 15%
+            ELSE 0.10 -- 10%
+        END
+    )
+    INTO v_direct_commission
+    FROM affiliate_profiles
+    WHERE id = v_affiliate_id;
 
-    -- Insérer la transaction de commission principale
-    INSERT INTO commission_transactions (
+    -- Créer la transaction de commission directe
+    INSERT INTO commissionTransactions (
         id,
         affiliate_id,
         order_id,
         amount,
+        type,
         status,
         created_at
     ) VALUES (
         gen_random_uuid(),
         v_affiliate_id,
         p_order_id,
-        v_commission_amount,
-        'PENDING',
-        v_current_date
+        v_direct_commission,
+        'COMMISSION',
+        'APPROVED',
+        NOW()
     );
 
-    -- Mettre à jour les statistiques de l'affilié
-    UPDATE affiliate_profiles
-    SET 
-        commission_balance = commission_balance + v_commission_amount,
-        total_earned = total_earned + v_commission_amount,
-        monthly_earnings = monthly_earnings + v_commission_amount,
-        updated_at = v_current_date
+    -- Mettre à jour le solde et les statistiques de l'affilié
+    UPDATE affiliate_profiles SET
+        commission_balance = commission_balance + v_direct_commission,
+        total_earned = total_earned + v_direct_commission,
+        monthly_earnings = monthly_earnings + v_direct_commission
     WHERE id = v_affiliate_id;
 
-    -- Traiter la commission du parent si existant
-    WHILE v_parent_id IS NOT NULL LOOP
-        -- Récupérer les infos du parent
-        SELECT id, parent_affiliate_id, commission_rate
-        INTO v_affiliate_id, v_parent_id, v_commission_rate
-        FROM affiliate_profiles
-        WHERE id = v_parent_id AND is_active = true;
+    -- Si l'affilié a un parent, traiter la commission indirecte
+    IF v_parent_id IS NOT NULL THEN
+        -- Calculer la commission indirecte (10% de la commission directe)
+        v_indirect_commission := v_direct_commission * 0.1;
 
-        IF v_affiliate_id IS NOT NULL THEN
-            -- Calculer la commission indirecte (10% de la commission principale)
-            v_commission_amount := (v_commission_amount * 0.10);
+        -- Créer la transaction de commission indirecte
+        INSERT INTO commissionTransactions (
+            id,
+            affiliate_id,
+            order_id,
+            amount,
+            type,
+            status,
+            created_at
+        ) VALUES (
+            gen_random_uuid(),
+            v_parent_id,
+            p_order_id,
+            v_indirect_commission,
+            'INDIRECT_COMMISSION',
+            'APPROVED',
+            NOW()
+        );
 
-            -- Insérer la transaction de commission indirecte
-            INSERT INTO commission_transactions (
-                id,
-                affiliate_id,
-                order_id,
-                amount,
-                status,
-                created_at
-            ) VALUES (
-                gen_random_uuid(),
-                v_affiliate_id,
-                p_order_id,
-                v_commission_amount,
-                'PENDING',
-                v_current_date
-            );
+        -- Mettre à jour le solde et les statistiques du parent
+        UPDATE affiliate_profiles SET
+            commission_balance = commission_balance + v_indirect_commission,
+            total_earned = total_earned + v_indirect_commission,
+            monthly_earnings = monthly_earnings + v_indirect_commission
+        WHERE id = v_parent_id;
+    END IF;
 
-            -- Mettre à jour les statistiques du parent
-            UPDATE affiliate_profiles
-            SET 
-                commission_balance = commission_balance + v_commission_amount,
-                total_earned = total_earned + v_commission_amount,
-                monthly_earnings = monthly_earnings + v_commission_amount,
-                updated_at = v_current_date
-            WHERE id = v_affiliate_id;
-        END IF;
-    END LOOP;
+    -- Mettre à jour le niveau de l'affilié
+    CALL update_affiliate_level(v_affiliate_id);
 END;
 $$;
 
@@ -108,31 +114,22 @@ DECLARE
     v_total_earned DECIMAL;
     v_new_level_id UUID;
 BEGIN
-    -- Récupérer le total gagné par l'affilié
-    SELECT total_earned
-    INTO v_total_earned
+    -- Récupérer le total des gains
+    SELECT total_earned INTO v_total_earned
     FROM affiliate_profiles
     WHERE id = p_affiliate_id;
 
     -- Trouver le niveau approprié
-    SELECT id
-    INTO v_new_level_id
+    SELECT id INTO v_new_level_id
     FROM affiliate_levels
-    WHERE min_earnings <= v_total_earned
-    ORDER BY min_earnings DESC
+    WHERE "minEarnings" <= v_total_earned
+    ORDER BY "minEarnings" DESC
     LIMIT 1;
 
-    -- Mettre à jour le niveau si nécessaire
+    -- Mettre à jour le niveau de l'affilié
     IF v_new_level_id IS NOT NULL THEN
-        UPDATE affiliate_profiles
-        SET 
-            level_id = v_new_level_id,
-            commission_rate = (
-                SELECT commission_rate 
-                FROM affiliate_levels 
-                WHERE id = v_new_level_id
-            ),
-            updated_at = CURRENT_TIMESTAMP
+        UPDATE affiliate_profiles SET
+            level_id = v_new_level_id
         WHERE id = p_affiliate_id;
     END IF;
 END;
@@ -144,55 +141,43 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     UPDATE affiliate_profiles
-    SET 
-        monthly_earnings = 0,
-        updated_at = CURRENT_TIMESTAMP
+    SET monthly_earnings = 0
     WHERE is_active = true;
 END;
 $$;
 
--- Fonction pour calculer la commission totale disponible
+-- Fonction pour calculer les commissions disponibles
 CREATE OR REPLACE FUNCTION calculate_available_commission(
     p_affiliate_id UUID
-)
-RETURNS DECIMAL
+) RETURNS DECIMAL
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_total DECIMAL;
+    v_total_commission DECIMAL;
 BEGIN
-    SELECT COALESCE(SUM(amount), 0)
-    INTO v_total
-    FROM commission_transactions
-    WHERE affiliate_id = p_affiliate_id
-    AND status = 'PENDING';
+    SELECT COALESCE(commission_balance, 0)
+    INTO v_total_commission
+    FROM affiliate_profiles
+    WHERE id = p_affiliate_id;
 
-    RETURN v_total;
+    RETURN v_total_commission;
 END;
 $$;
 
--- Index pour améliorer les performances
-CREATE INDEX IF NOT EXISTS idx_commission_transactions_status 
-ON commission_transactions(status);
-
-CREATE INDEX IF NOT EXISTS idx_affiliate_profiles_total_earned 
-ON affiliate_profiles(total_earned);
-
-CREATE INDEX IF NOT EXISTS idx_affiliate_profiles_monthly_earnings 
-ON affiliate_profiles(monthly_earnings);
-
--- Trigger pour mettre à jour automatiquement le niveau après une commission
-CREATE OR REPLACE FUNCTION trigger_update_affiliate_level()
-RETURNS TRIGGER AS $$
+-- Fonction pour incrémenter le compteur de filleuls
+CREATE OR REPLACE FUNCTION increment_referral_count(
+    p_affiliate_id UUID
+) RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_new_count INTEGER;
 BEGIN
-    IF NEW.total_earned <> OLD.total_earned THEN
-        CALL update_affiliate_level(NEW.id);
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+    UPDATE affiliate_profiles
+    SET total_referrals = total_referrals + 1
+    WHERE id = p_affiliate_id
+    RETURNING total_referrals INTO v_new_count;
 
-CREATE OR REPLACE TRIGGER after_affiliate_earnings_update
-    AFTER UPDATE OF total_earned ON affiliate_profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION trigger_update_affiliate_level();
+    RETURN v_new_count;
+END;
+$$;

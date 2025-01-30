@@ -27,7 +27,7 @@ router.get('/admin/list',
 );
 
 // Gestion des demandes de retrait (admin)
-router.get('/admin/withdrawals', 
+router.get('/withdrawals', 
   authMiddleware,
   (req, res, next) => {
     if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
@@ -48,6 +48,18 @@ router.patch('/admin/withdrawals/:withdrawalId/reject',
     next();
   },
   AffiliateController.rejectWithdrawal
+);
+
+// Approbation d'une demande de retrait (admin)
+router.patch('/admin/withdrawals/:withdrawalId/approve',
+  authMiddleware,
+  (req, res, next) => {
+    if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+  },
+  AffiliateController.approveWithdrawal
 );
 
 // Mise à jour du statut d'un affilié (admin)

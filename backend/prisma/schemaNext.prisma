@@ -1,12 +1,10 @@
-// This schema uses a stored procedure 'create_order_with_items' for order creation
-// The procedure handles:
+// This schema uses several stored procedures for order and affiliate management:
+
+// 1. create_order_with_items - Order Creation Procedure
+// Handles:
 // - Order creation with all items
 // - Price calculations including premium prices
 // - Atomic transaction handling
-// For implementation details see: backend/prisma/migrations/[timestamp]_stored_procedures.sql
-
-// Important: Orders are created using the stored procedure 'create_order_with_items'
-// This procedure ensures data consistency and handles all related calculations in a single transaction
 // Call signature:
 // create_order_with_items(
 //   p_userId UUID,            -- User creating the order
@@ -21,7 +19,37 @@
 //   p_paymentMethod payment_method_enum, -- Payment method
 //   p_items order_item_input[]         -- Array of order items
 // )
-// Returns: Order details with calculated totals and created items
+
+// 2. process_affiliate_commission - Commission Processing Procedure
+// Handles:
+// - Commission calculation for direct and indirect affiliates
+// - Multi-level commission distribution
+// - Transaction records creation
+// Call signature:
+// process_affiliate_commission(
+//   p_order_id UUID,          -- Order ID for commission
+//   p_order_amount DECIMAL,   -- Order amount for calculation
+//   p_affiliate_code TEXT     -- Affiliate code used
+// )
+
+// 3. update_affiliate_level - Level Management Procedure
+// Handles:
+// - Affiliate level updates based on earnings
+// - Commission rate adjustments
+// Call signature:
+// update_affiliate_level(
+//   p_affiliate_id UUID      -- Affiliate ID to update
+// )
+
+// 4. reset_monthly_earnings - Monthly Reset Procedure
+// Handles:
+// - Monthly earnings reset for all active affiliates
+// Call signature:
+// reset_monthly_earnings()     -- No parameters needed
+
+// For implementation details see:
+// - Orders: backend/prisma/migrations/[timestamp]_stored_procedures.sql
+// - Affiliates: backend/prisma/migrations/20250129_affiliate_procedures.sql
 
 // Notification Models
 model Notification {

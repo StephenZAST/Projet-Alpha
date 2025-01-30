@@ -13,14 +13,118 @@ export class AffiliateService {
   static createAffiliate = AffiliateProfileService.createAffiliate;
 
   // Commission Management
-  static getWithdrawals = AffiliateCommissionService.getWithdrawals;
-  static getCommissions = async (affiliateId: string, pagination: PaginationParams) => {
-    return AffiliateCommissionService.getWithdrawals(pagination);
-  };
-  static requestWithdrawal = AffiliateCommissionService.requestWithdrawal;
-  static rejectWithdrawal = AffiliateCommissionService.rejectWithdrawal;
+  static getCommissions = AffiliateCommissionService.getCommissions;
   static calculateCommission = AffiliateCommissionService.calculateCommission;
   static calculateIndirectCommission = AffiliateCommissionService.calculateIndirectCommission;
+  static processNewCommission = AffiliateCommissionService.processNewCommission;
+  static updateAffiliateLevels = AffiliateCommissionService.updateAffiliateLevels;
+  static resetMonthlyEarnings = AffiliateCommissionService.resetMonthlyEarnings;
+
+  // Withdrawal Management
+  static async requestWithdrawal(affiliateId: string, amount: number) {
+    try {
+      const { error } = await supabase.rpc(
+        'process_withdrawal_request',
+        {
+          p_affiliate_id: affiliateId,
+          p_amount: amount
+        }
+      );
+
+      if (error) throw error;
+
+      // Récupérer la transaction créée
+      const { data: transaction } = await supabase
+        .from('commissionTransactions')
+        .select('*')
+        .eq('affiliate_id', affiliateId)
+        .eq('type', 'WITHDRAWAL')
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      return transaction;
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async getWithdrawals(pagination: PaginationParams, status?: string) {
+    const { page = 1, limit = 10 } = pagination;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let query = supabase
+      .from('commissionTransactions')
+      .select(`
+        *,
+        affiliate:affiliate_profiles(
+          id,
+          user:users(
+            email,
+            firstName,
+            lastName
+          )
+        )
+      `, { count: 'exact' })
+      .eq('type', 'WITHDRAWAL');
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) throw error;
+
+    return {
+      data,
+      pagination: {
+        total: count || 0,
+        currentPage: page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit)
+      }
+    };
+  }
+
+  static async rejectWithdrawal(withdrawalId: string, reason: string) {
+    try {
+      const { error } = await supabase.rpc(
+        'reject_withdrawal',
+        {
+          p_withdrawal_id: withdrawalId,
+          p_reason: reason
+        }
+      );
+
+      if (error) throw error;
+
+      return { message: 'Withdrawal rejected successfully' };
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
+
+  static async approveWithdrawal(withdrawalId: string) {
+    try {
+      const { error } = await supabase.rpc(
+        'approve_withdrawal',
+        {
+          p_withdrawal_id: withdrawalId
+        }
+      );
+
+      if (error) throw error;
+
+      return { message: 'Withdrawal approved successfully' };
+    } catch (error: any) {
+      throw new Error(error.message);
+    }
+  }
 
   // Administrative Functions
   static async getAllAffiliates(
