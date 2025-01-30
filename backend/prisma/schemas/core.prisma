@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum PaymentMethod {
+  CASH
+  ORANGE_MONEY
+}
+
+enum OrderStatus {
+  PENDING
+  COLLECTING
+  COLLECTED
+  PROCESSING
+  READY
+  DELIVERING
+  DELIVERED
+  CANCELLED
+}
+
+enum RecurrenceType {
+  NONE
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  POINTS_EXCHANGE
+}
+
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_STATUS_UPDATED
+  ORDER_COLLECTED
+  ORDER_READY
+  ORDER_DELIVERED
+  PAYMENT_RECEIVED
+  POINTS_EARNED
+  SPECIAL_OFFER
+  WITHDRAWAL_REQUESTED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  AFFILIATE_STATUS_UPDATED
+  COMMISSION_EARNED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  CLIENT
+  AFFILIATE
+  DELIVERY
+}
+
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}
+
+enum AffiliateStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum PointTransactionType {
+  EARNED
+  SPENT
+}
+
+enum PointSource {
+  ORDER
+  REFERRAL
+  REWARD
+}

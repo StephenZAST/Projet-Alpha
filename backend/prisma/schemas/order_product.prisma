@@ -1,0 +1,161 @@
+// Import required enums from core schema
+import { PaymentMethod, OrderStatus, RecurrenceType } from "./core"
+
+model Order {
+  id                 String         @id @default(uuid()) @db.Uuid
+  paymentMethod      PaymentMethod? @default(CASH)
+  status            OrderStatus?   @default(PENDING)
+  isRecurring       Boolean?       @default(false)
+  recurrenceType    RecurrenceType? @default(NONE)
+  nextRecurrenceDate DateTime?      @db.Timestamptz
+  totalAmount       Decimal?       @db.Decimal
+  collectionDate    DateTime?      @db.Timestamptz
+  deliveryDate      DateTime?      @db.Timestamptz
+  createdAt         DateTime?      @default(now()) @db.Timestamptz
+  updatedAt         DateTime?      @default(now()) @db.Timestamptz
+  affiliateCode     String?
+
+  // Foreign keys and relations
+  addressId        String?        @db.Uuid
+  address          Address?       @relation(fields: [addressId], references: [id])
+  
+  serviceId        String?        @db.Uuid
+  service          Service?       @relation(fields: [serviceId], references: [id])
+  
+  service_type_id  String?        @db.Uuid
+  serviceType      ServiceType?   @relation(fields: [service_type_id], references: [id])
+  
+  userId           String         @db.Uuid
+  user            User           @relation(fields: [userId], references: [id])
+
+  orderItems       OrderItem[]
+  commissionTransaction CommissionTransaction[]
+  archive          OrderArchive?
+  userOffers       UserOffer[]
+
+  @@index([service_type_id])
+  @@index([serviceId])
+  @@index([addressId])
+  @@index([userId])
+  @@index([status])
+  @@index([paymentMethod])
+}
+
+model OrderArchive {
+  id                String    @id @db.Uuid
+  address_id        String?   @db.Uuid
+  affiliatecode     String?   @db.VarChar(255)
+  status            String    @db.VarChar(50)
+  isrecurring      Boolean?
+  recurrencetype   String?   @db.VarChar(50)
+  nextrecurrencedate DateTime? @db.Timestamptz
+  totalAmount      Decimal    @db.Decimal
+  collectiondate   DateTime?  @db.Timestamptz
+  deliverydate     DateTime?  @db.Timestamptz
+  createdAt        DateTime?  @db.Timestamptz
+  updatedat        DateTime?  @db.Timestamptz
+  service_id       String?    @db.Uuid
+  service_type_id  String?    @db.Uuid
+  userId           String?    @db.Uuid
+  archived_at      DateTime?  @default(now()) @db.Timestamptz
+
+  // Relations
+  order            Order     @relation(fields: [id], references: [id])
+  address          Address?  @relation(fields: [address_id], references: [id])
+  service          Service?  @relation(fields: [service_id], references: [id])
+  serviceType      ServiceType? @relation(fields: [service_type_id], references: [id])
+  user             User?     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([archived_at])
+}
+
+model Service {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String          @db.VarChar
+  description     String?
+  price           Int
+  created_at      DateTime        @default(now()) @db.Timestamptz
+  updated_at      DateTime        @default(now()) @db.Timestamptz
+
+  // Relations
+  orders          Order[]
+  orderItems      OrderItem[]
+  articleServices ArticleService[]
+  archivedOrders  OrderArchive[]
+}
+
+model ServiceType {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar
+  description String?
+  created_at  DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  orders      Order[]
+  archivedOrders OrderArchive[]
+}
+
+model OrderItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  orderId    String   @db.Uuid
+  articleId  String   @db.Uuid
+  serviceId  String   @db.Uuid
+  quantity   Int
+  unitPrice  Decimal  @db.Decimal
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  updatedAt  DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  order      Order    @relation(fields: [orderId], references: [id])
+  article    Article  @relation(fields: [articleId], references: [id])
+  service    Service  @relation(fields: [serviceId], references: [id])
+
+  @@unique([orderId, articleId])
+  @@index([orderId])
+  @@index([articleId])
+}
+
+model Article {
+  id            String           @id @default(uuid()) @db.Uuid
+  categoryId    String?         @db.Uuid
+  name          String          @db.VarChar
+  description   String?
+  basePrice     Decimal?        @db.Decimal
+  premiumPrice  Decimal         @default(0) @db.Decimal
+  createdAt     DateTime        @default(now()) @db.Timestamptz
+  updatedAt     DateTime        @default(now()) @db.Timestamptz
+
+  // Relations
+  category      ArticleCategory? @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  articleServices ArticleService[]
+  offerArticles OfferArticle[]
+
+  @@index([categoryId])
+}
+
+model ArticleCategory {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar
+  description String?
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  articles    Article[]
+}
+
+model ArticleService {
+  id              String    @id @default(uuid()) @db.Uuid
+  articleId       String    @db.Uuid
+  serviceId       String    @db.Uuid
+  priceMultiplier Decimal   @default(1.0) @db.Decimal
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+
+  // Relations
+  article         Article   @relation(fields: [articleId], references: [id])
+  service         Service   @relation(fields: [serviceId], references: [id])
+
+  @@index([articleId])
+  @@index([serviceId])
+}

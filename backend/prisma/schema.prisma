@@ -1,437 +1,137 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Main Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-generator client {
-  provider = "prisma-client-js"
-}
+// Import all modular schemas
+import * from "./schemas/core"
+import * from "./schemas/auth_user"
+import * from "./schemas/order_product"
+import * from "./schemas/business"
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+/*
+DOCUMENTATION DE LA BASE DE DONNÉES
 
-// Enums
-enum PaymentMethod {
-  CASH
-  ORANGE_MONEY
-}
+Pour obtenir une liste complète et à jour des fonctions et procédures stockées de la base de données,
+utilisez le script SQL fourni dans le fichier 'db_functions.sql'.
 
-enum OrderStatus {
-  PENDING
-  COLLECTING
-  COLLECTED
-  PROCESSING
-  READY
-  DELIVERING
-  DELIVERED
-  CANCELLED
-}
+Exécutez-le dans votre client PostgreSQL avec :
+```sql
+\i db_functions.sql
+```
 
-enum RecurrenceType {
-  NONE
-  WEEKLY
-  BIWEEKLY
-  MONTHLY
-}
+Ce script liste toutes les fonctions et procédures du schéma public avec :
+- Leur nom
+- Leur type (Function/Procedure)
+- Leur code source complet
+- Leur description (si disponible)
+*/
 
-enum DiscountType {
-  PERCENTAGE
-  FIXED_AMOUNT
-  POINTS_EXCHANGE
-}
+// Principales Procédures Stockées Documentées
+/*
+1. create_order_with_items
+Description: Gère la création de commande avec tous les articles
+Localisation: backend/prisma/migrations/[timestamp]_stored_procedures.sql
+Paramètres:
+  - p_userId UUID               -- User creating the order
+  - p_serviceId UUID           -- Selected service
+  - p_addressId UUID           -- Delivery address
+  - p_isRecurring BOOLEAN      -- Recurring order flag
+  - p_recurrenceType TEXT      -- Type of recurrence
+  - p_collectionDate TIMESTAMPTZ -- Collection date
+  - p_deliveryDate TIMESTAMPTZ -- Delivery date
+  - p_affiliateCode TEXT       -- Optional affiliate code
+  - p_service_type_id UUID     -- Service type
+  - p_paymentMethod TEXT       -- Payment method
+  - p_items JSON[]             -- Array of order items
+Retourne: UUID (order_id)
 
-enum NotificationType {
-  ORDER_CREATED
-  ORDER_STATUS_UPDATED
-  ORDER_COLLECTED
-  ORDER_READY
-  ORDER_DELIVERED
-  PAYMENT_RECEIVED
-  POINTS_EARNED
-  SPECIAL_OFFER
-  WITHDRAWAL_REQUESTED
-  WITHDRAWAL_APPROVED
-  WITHDRAWAL_REJECTED
-  AFFILIATE_STATUS_UPDATED
-  COMMISSION_EARNED
-}
+2. process_affiliate_commission
+Description: Gère le calcul et la distribution des commissions
+Localisation: backend/prisma/migrations/20250129_affiliate_procedures.sql
+Paramètres:
+  - p_order_id UUID           -- Order ID for commission
+  - p_order_amount DECIMAL    -- Order amount for calculation
+  - p_affiliate_code TEXT     -- Affiliate code used
+Retourne: void
 
-enum UserRole {
-  SUPER_ADMIN
-  ADMIN
-  CLIENT
-  AFFILIATE
-  DELIVERY
-}
+3. update_affiliate_level
+Description: Met à jour le niveau d'un affilié basé sur ses gains
+Localisation: backend/prisma/migrations/20250129_affiliate_procedures.sql
+Paramètres:
+  - p_affiliate_id UUID      -- Affiliate ID to update
+Retourne: void
 
-enum CommissionStatus {
-  PENDING
-  APPROVED
-  PAID
-  REJECTED
-}
+4. reset_monthly_earnings
+Description: Réinitialise les gains mensuels de tous les affiliés actifs
+Localisation: backend/prisma/migrations/20250129_affiliate_procedures.sql
+Paramètres: Aucun
+Retourne: void
+*/
 
-enum AffiliateStatus {
-  PENDING
-  ACTIVE
-  SUSPENDED
-  INACTIVE
-}
+// Database Triggers
+/*
+1. before_order_insert
+Table: orders
+Événement: BEFORE INSERT
+Description: Vérifie et calcule les prix avant insertion d'une commande
 
-enum PointTransactionType {
-  EARNED
-  SPENT
-}
+2. after_order_status_update
+Table: orders
+Événement: AFTER UPDATE OF status
+Description: Gère les notifications et points de fidélité après changement de statut
 
-enum PointSource {
-  ORDER
-  REFERRAL
-  REWARD
-}
+3. after_commission_transaction
+Table: commission_transactions
+Événement: AFTER INSERT
+Description: Met à jour les soldes des affiliés après nouvelle commission
+*/
 
-// Models
-model User {
-  id                        String    @id @default(uuid()) @db.Uuid
-  email                     String    @unique @db.VarChar(255)
-  password                  String    @db.VarChar(255)
-  first_name                String    @db.VarChar(100)
-  last_name                 String    @db.VarChar(100)
-  phone                     String?   @unique @db.VarChar(20)
-  role                      UserRole  @default(CLIENT)
-  referral_code            String?   @db.VarChar(20)
-  created_at               DateTime  @default(now()) @db.Timestamptz
-  updated_at               DateTime  @default(now()) @db.Timestamptz
-  instance_id              String?   @db.Uuid
-  aud                      String?   @db.VarChar(255)
-  encrypted_password       String?   @db.VarChar(255)
-  email_confirmed_at       DateTime? @db.Timestamptz
-  invited_at               DateTime? @db.Timestamptz
-  confirmation_token       String?   @db.VarChar(255)
-  confirmation_sent_at     DateTime? @db.Timestamptz
-  recovery_token          String?   @db.VarChar(255)
-  recovery_sent_at        DateTime? @db.Timestamptz
-  email_change_token_new  String?   @db.VarChar(255)
-  email_change            String?   @db.VarChar(255)
-  email_change_sent_at    DateTime? @db.Timestamptz
-  last_sign_in_at         DateTime? @db.Timestamptz
-  raw_app_meta_data       Json?     @db.JsonB
-  raw_user_meta_data      Json?     @db.JsonB
-  is_super_admin          Boolean?
-  phone_confirmed_at      DateTime? @db.Timestamptz
-  phone_change            String?   @default("") @db.Text
-  phone_change_token      String?   @default("") @db.VarChar(255)
-  phone_change_sent_at    DateTime? @db.Timestamptz
-  confirmed_at            DateTime? @db.Timestamptz
-  email_change_token_current String? @default("") @db.VarChar(255)
-  email_change_confirm_status Int?    @default(0) @db.SmallInt
-  banned_until            DateTime? @db.Timestamptz
-  reauthentication_token  String?   @default("") @db.VarChar(255)
-  reauthentication_sent_at DateTime? @db.Timestamptz
-  is_sso_user            Boolean   @default(false)
-  deleted_at             DateTime? @db.Timestamptz
-  is_anonymous           Boolean   @default(false)
+// Important Indexes
+/*
+1. Users & Authentication
+- users_email_idx (email)
+- users_referral_code_idx (referral_code)
+- users_instance_id_idx (instance_id, email)
 
-  // Relations
-  orders                  Order[]
-  notifications          Notification[]
-  notificationPreferences NotificationPreferences?
-  loyaltyPoints          LoyaltyPoints?
-  addresses              Address[]
-  archivedOrders         OrderArchive[]
-  pointTransactions      PointTransaction[]
-  resetCodes             ResetCode[]
-  rewardClaims           RewardClaim[]
-  userOffers             UserOffer[]
-  affiliateProfile       AffiliateProfile?
-  blogArticles          BlogArticle[]
+2. Orders
+- orders_status_idx (status)
+- orders_user_id_idx (user_id)
+- orders_created_at_idx (created_at)
+- orders_affiliate_code_idx (affiliate_code)
 
-  // Indexes
-  @@index([email])
-  @@index([referral_code])
-  @@index([instance_id])
-  @@index([is_anonymous])
-  @@index([instance_id, email])
-  @@unique([email_change_token_current])
-  @@unique([email_change_token_new])
-  @@unique([reauthentication_token])
-  @@unique([recovery_token])
-  @@unique([confirmation_token])
-  @@unique([email])
-}
+3. Affiliates
+- affiliate_profiles_code_idx (affiliate_code)
+- affiliate_profiles_user_id_idx (user_id)
+- affiliate_transactions_status_idx (status)
 
-model Address {
-  id            String    @id @default(uuid()) @db.Uuid
-  user_id       String?   @db.Uuid
-  name          String?   @db.VarChar(255)
-  street        String    @db.VarChar(255)
-  city          String    @db.VarChar(100)
-  postal_code   String?   @db.VarChar(20)
-  gps_latitude  Decimal?  @db.Decimal
-  gps_longitude Decimal?  @db.Decimal
-  is_default    Boolean?  @default(false)
-  created_at    DateTime? @default(now()) @db.Timestamptz
-  updated_at    DateTime? @default(now()) @db.Timestamptz
+4. Articles & Services
+- articles_category_id_idx (category_id)
+- services_name_idx (name)
+- article_services_article_id_idx (article_id, service_id)
 
-  // Relations
-  user          User?     @relation(fields: [user_id], references: [id])
-  orders        Order[]
-  archivedOrders OrderArchive[]
-}
+5. Notifications & Offers
+- notifications_user_id_type_idx (user_id, type)
+- offers_active_dates_idx (is_active, start_date, end_date)
+*/
 
-model Order {
-  id                 String         @id @default(uuid()) @db.Uuid
-  paymentMethod      PaymentMethod? @default(CASH)
-  status            OrderStatus?   @default(PENDING)
-  isRecurring       Boolean?       @default(false)
-  recurrenceType    RecurrenceType? @default(NONE)
-  nextRecurrenceDate DateTime?      @db.Timestamptz
-  totalAmount       Decimal?       @db.Decimal
-  collectionDate    DateTime?      @db.Timestamptz
-  deliveryDate      DateTime?      @db.Timestamptz
-  createdAt         DateTime?      @default(now()) @db.Timestamptz
-  updatedAt         DateTime?      @default(now()) @db.Timestamptz
-  affiliateCode     String?
+// Foreign Key Constraints
+/*
+1. User Relations
+- addresses_user_id_fkey
+- orders_user_id_fkey
+- notifications_user_id_fkey
+- loyalty_points_user_id_fkey
 
-  // Foreign keys and relations
-  addressId        String?        @db.Uuid
-  address          Address?       @relation(fields: [addressId], references: [id])
-  
-  serviceId        String?        @db.Uuid
-  service          Service?       @relation(fields: [serviceId], references: [id])
-  
-  service_type_id  String?        @db.Uuid
-  serviceType      ServiceType?   @relation(fields: [service_type_id], references: [id])
-  
-  userId           String         @db.Uuid
-  user            User           @relation(fields: [userId], references: [id])
+2. Order Relations
+- order_items_order_id_fkey
+- order_items_article_id_fkey
+- order_items_service_id_fkey
 
-  orderItems       OrderItem[]
-  commissionTransaction CommissionTransaction[]
-  archive          OrderArchive?
-  userOffers       UserOffer[]
+3. Affiliate Relations
+- affiliate_profiles_user_id_fkey
+- affiliate_profiles_parent_id_fkey
+- commission_transactions_affiliate_id_fkey
 
-  // Indexes
-  @@index([service_type_id])
-  @@index([serviceId])
-  @@index([addressId])
-  @@index([userId])
-  @@index([status])
-  @@index([paymentMethod])
-}
-
-model OrderArchive {
-  id                String    @id @db.Uuid
-  address_id        String?   @db.Uuid
-  affiliatecode     String?   @db.VarChar(255)
-  status            String    @db.VarChar(50)
-  isrecurring      Boolean?
-  recurrencetype   String?   @db.VarChar(50)
-  nextrecurrencedate DateTime? @db.Timestamptz
-  totalAmount      Decimal    @db.Decimal
-  collectiondate   DateTime?  @db.Timestamptz
-  deliverydate     DateTime?  @db.Timestamptz
-  createdAt        DateTime?  @db.Timestamptz
-  updatedat        DateTime?  @db.Timestamptz
-  service_id       String?    @db.Uuid
-  service_type_id  String?    @db.Uuid
-  userId           String?    @db.Uuid
-  archived_at      DateTime?  @default(now()) @db.Timestamptz
-
-  // Relations
-  order            Order     @relation(fields: [id], references: [id])
-  address          Address?  @relation(fields: [address_id], references: [id])
-  service          Service?  @relation(fields: [service_id], references: [id])
-  serviceType      ServiceType? @relation(fields: [service_type_id], references: [id])
-  user             User?     @relation(fields: [userId], references: [id])
-
-  // Indexes
-  @@index([userId])
-  @@index([status])
-  @@index([createdAt])
-  @@index([archived_at])
-}
-
-model Service {
-  id              String           @id @default(uuid()) @db.Uuid
-  name            String          @db.VarChar
-  description     String?
-  price           Int
-  created_at      DateTime        @default(now()) @db.Timestamptz
-  updated_at      DateTime        @default(now()) @db.Timestamptz
-
-  // Relations
-  orders          Order[]
-  orderItems      OrderItem[]
-  articleServices ArticleService[]
-  archivedOrders  OrderArchive[]
-}
-
-model ServiceType {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @db.VarChar
-  description String?
-  created_at  DateTime  @default(now()) @db.Timestamptz
-
-  // Relations
-  orders      Order[]
-  archivedOrders OrderArchive[]
-}
-
-model OrderItem {
-  id         String   @id @default(uuid()) @db.Uuid
-  orderId    String   @db.Uuid
-  articleId  String   @db.Uuid
-  serviceId  String   @db.Uuid
-  quantity   Int
-  unitPrice  Decimal  @db.Decimal
-  createdAt  DateTime @default(now()) @db.Timestamptz
-  updatedAt  DateTime @default(now()) @db.Timestamptz
-
-  // Relations
-  order      Order    @relation(fields: [orderId], references: [id])
-  article    Article  @relation(fields: [articleId], references: [id])
-  service    Service  @relation(fields: [serviceId], references: [id])
-
-  // Indexes and constraints
-  @@unique([orderId, articleId])
-  @@index([orderId])
-  @@index([articleId])
-}
-
-model Article {
-  id            String           @id @default(uuid()) @db.Uuid
-  categoryId    String?         @db.Uuid
-  name          String          @db.VarChar
-  description   String?
-  basePrice     Decimal?        @db.Decimal
-  premiumPrice  Decimal         @default(0) @db.Decimal
-  createdAt     DateTime        @default(now()) @db.Timestamptz
-  updatedAt     DateTime        @default(now()) @db.Timestamptz
-
-  // Relations
-  category      ArticleCategory? @relation(fields: [categoryId], references: [id])
-  orderItems    OrderItem[]
-  articleServices ArticleService[]
-  offerArticles OfferArticle[]
-
-  // Indexes
-  @@index([categoryId])
-}
-
-model ArticleCategory {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @db.VarChar
-  description String?
-  createdAt   DateTime  @default(now()) @db.Timestamptz
-  articles    Article[]
-}
-
-model AffiliateProfile {
-  id               String    @id @default(uuid()) @db.Uuid
-  userId           String    @unique @db.Uuid
-  affiliateCode    String    @unique @db.VarChar(50)
-  parentAffiliateId String?  @db.Uuid
-  commissionBalance Decimal  @default(0) @db.Decimal
-  totalEarned      Decimal  @default(0) @db.Decimal
-  monthlyEarnings  Decimal  @default(0) @db.Decimal
-  totalReferrals   Int      @default(0)
-  status           AffiliateStatus @default(PENDING)
-  isActive         Boolean  @default(false)
-  createdAt        DateTime @default(now()) @db.Timestamptz
-  updatedAt        DateTime @default(now()) @db.Timestamptz
-  levelId          String?  @db.Uuid
-
-  // Relations
-  user             User     @relation(fields: [userId], references: [id])
-  parentAffiliate  AffiliateProfile? @relation("AffiliateHierarchy", fields: [parentAffiliateId], references: [id])
-  childAffiliates  AffiliateProfile[] @relation("AffiliateHierarchy")
-  level            AffiliateLevel? @relation(fields: [levelId], references: [id])
-  commissionTransactions CommissionTransaction[]
-
-  @@index([affiliateCode])
-  @@index([parentAffiliateId])
-  @@index([levelId])
-}
-
-model AffiliateLevel {
-  id            String    @id @default(uuid()) @db.Uuid
-  name          String    @db.VarChar(50)
-  minEarnings   Decimal  @db.Decimal
-  commissionRate Decimal  @db.Decimal
-  createdAt     DateTime @default(now()) @db.Timestamptz
-  updatedAt     DateTime @default(now()) @db.Timestamptz
-
-  // Relations
-  affiliates    AffiliateProfile[]
-
-  @@index([minEarnings])
-}
-
-model CommissionTransaction {
-  id           String    @id @default(uuid()) @db.Uuid
-  affiliateId  String    @db.Uuid
-  orderId      String?   @db.Uuid
-  amount       Decimal   @db.Decimal
-  type         String    @db.VarChar(50) // 'COMMISSION', 'WITHDRAWAL', 'INDIRECT_COMMISSION'
-  status       CommissionStatus @default(PENDING)
-  createdAt    DateTime @default(now()) @db.Timestamptz
-  updatedAt    DateTime @default(now()) @db.Timestamptz
-
-  // Relations
-  affiliate    AffiliateProfile @relation(fields: [affiliateId], references: [id])
-  order        Order?    @relation(fields: [orderId], references: [id])
-
-  @@index([affiliateId])
-  @@index([orderId])
-  @@index([type])
-  @@index([status])
-  @@index([createdAt])
-}
-
-model BlogCategory {
-  id          String       @id @default(uuid()) @db.Uuid
-  name        String       @unique @db.VarChar(255)
-  description String?
-  createdAt   DateTime     @default(now()) @db.Timestamptz
-  updatedAt   DateTime     @default(now()) @db.Timestamptz
-  articles    BlogArticle[]
-
-  @@map("blog_categories")
-}
-
-model BlogArticle {
-  id          String       @id @default(uuid()) @db.Uuid
-  title       String       @db.VarChar(255)
-  content     String       @db.Text
-  categoryId  String?      @db.Uuid
-  authorId    String       @db.Uuid
-  createdAt   DateTime     @default(now()) @db.Timestamptz
-  updatedAt   DateTime     @default(now()) @db.Timestamptz
-  publishedAt DateTime?    @db.Timestamptz
-  isPublished Boolean      @default(false)
-
-  // Relations
-  category    BlogCategory? @relation(fields: [categoryId], references: [id])
-  author      User         @relation(fields: [authorId], references: [id])
-
-  @@index([categoryId])
-  @@index([authorId])
-  @@index([publishedAt])
-  @@map("blog_articles")
-}
-
-model ArticleService {
-  id              String    @id @default(uuid()) @db.Uuid
-  articleId       String    @db.Uuid
-  serviceId       String    @db.Uuid
-  priceMultiplier Decimal   @default(1.0) @db.Decimal
-  createdAt       DateTime  @default(now()) @db.Timestamptz
-
-  // Relations
-  article         Article   @relation(fields: [articleId], references: [id])
-  service         Service   @relation(fields: [serviceId], references: [id])
-
-  // Indexes
-  @@index([articleId])
-  @@index([serviceId])
-}
+4. Blog Relations
+- blog_articles_category_id_fkey
+- blog_articles_author_id_fkey
+*/
