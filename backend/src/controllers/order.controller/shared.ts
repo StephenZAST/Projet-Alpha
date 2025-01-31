@@ -34,7 +34,7 @@ export class OrderSharedMethods {
           )
         )
       `)
-      .eq('orderId', orderId);
+      .eq('order_id', orderId);  // Correction : orderId -> order_id
 
     if (error) {
       console.error('Error fetching order items:', error);
@@ -44,10 +44,23 @@ export class OrderSharedMethods {
     if (!items) return [];
 
     return items.map(item => ({
-      ...item,
+      id: item.id,
+      orderId: item.order_id,       // Conversion snake_case -> camelCase
+      articleId: item.article_id,    // pour la réponse API
+      serviceId: item.service_id,
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at,
       article: {
         ...item.article,
-        category: item.article?.category || null
+        categoryId: item.article?.category_id,  // Conversion pour la réponse
+        createdAt: item.article?.created_at,
+        updatedAt: item.article?.updated_at,
+        category: item.article?.category ? {
+          ...item.article.category,
+          createdAt: item.article.category.created_at
+        } : null
       }
     }));
   }
@@ -55,7 +68,7 @@ export class OrderSharedMethods {
   static async getUserPoints(userId: string): Promise<number> {
     const { data, error } = await supabase
       .from('loyalty_points')
-      .select('pointsBalance')
+      .select('points_balance')  // Correction : pointsBalance -> points_balance
       .eq('user_id', userId)
       .single();
 
@@ -65,7 +78,7 @@ export class OrderSharedMethods {
       return 0;
     }
     
-    return data?.pointsBalance || 0;
+    return data?.points_balance || 0;  // Utilisation du nom exact de la colonne
   }
 
   static async getOrderWithDetails(orderId: string) {
@@ -98,6 +111,34 @@ export class OrderSharedMethods {
       throw error;
     }
 
-    return order;
+    // Conversion snake_case -> camelCase pour la réponse API
+    const formattedOrder = {
+      ...order,
+      userId: order.user_id,
+      serviceId: order.service_id,
+      addressId: order.address_id,
+      serviceTypeId: order.service_type_id,
+      totalAmount: order.total_amount,
+      isRecurring: order.is_recurring,
+      recurrenceType: order.recurrence_type,
+      nextRecurrenceDate: order.next_recurrence_date,
+      collectionDate: order.collection_date,
+      deliveryDate: order.delivery_date,
+      affiliateCode: order.affiliate_code,
+      paymentMethod: order.payment_method,
+      createdAt: order.created_at,
+      updatedAt: order.updated_at,
+      items: order.items?.map((item: any) => ({
+        ...item,
+        orderId: item.order_id,
+        articleId: item.article_id,
+        serviceId: item.service_id,
+        unitPrice: item.unit_price,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at
+      }))
+    };
+
+    return formattedOrder;
   }
 }

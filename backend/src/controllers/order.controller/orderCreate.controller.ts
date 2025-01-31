@@ -45,7 +45,8 @@ export class OrderCreateController {
         affiliateCode,
         items,
         paymentMethod,
-        appliedOfferIds
+        appliedOfferIds,
+        serviceTypeId  // Pour service_type_id
       } = req.body;
       
       const userId = req.user?.id;
@@ -60,21 +61,23 @@ export class OrderCreateController {
       });
       console.log('[OrderController] Price calculation result:', pricing);
 
-      // 2. Créer la commande avec le montant total
+      // 2. Créer la commande avec le montant total en utilisant les noms de colonnes exacts du schéma Prisma
       const orderData = {
         userId,
         serviceId,
         addressId,
         isRecurring,
         recurrenceType,
+        nextRecurrenceDate: null,
+        totalAmount: pricing.total,
         collectionDate,
         deliveryDate,
         affiliateCode,
         paymentMethod,
-        totalAmount: pricing.total,
         status: 'PENDING' as OrderStatus,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        service_type_id: serviceTypeId  // Utilisation du nom exact de la colonne
       };
 
       const { data: order, error } = await supabase
@@ -121,9 +124,18 @@ export class OrderCreateController {
         }
       });
 
+      // Insérer les items en utilisant les noms de colonnes exacts du schéma Prisma
       const { error: itemsError } = await supabase
         .from('order_items')
-        .insert(orderItems);
+        .insert(orderItems.map(item => ({
+          orderId: item.orderId,
+          articleId: item.articleId,
+          serviceId: item.serviceId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        })));
 
       if (itemsError) {
         console.error('Error creating order items:', itemsError);
@@ -146,21 +158,20 @@ export class OrderCreateController {
       // 6. Traiter la commission d'affilié
       let affiliateCommission = null;
       if (affiliateCode) {
-        // La commission sera traitée par RewardsService
         await RewardsService.processAffiliateCommission(completeOrder);
         console.log('[OrderController] Affiliate commission processed');
 
         // Récupérer les détails de la commission pour la réponse
         const { data: commissionTx } = await supabase
           .from('commission_transactions')
-          .select('amount, affiliate_id')
-          .eq('order_id', order.id)
+          .select('amount, affiliate_id')  // Utilisation du nom exact de la colonne
+          .eq('order_id', order.id)  // Utilisation du nom exact de la colonne
           .single();
 
         if (commissionTx) {
           affiliateCommission = {
             amount: commissionTx.amount,
-            affiliateId: commissionTx.affiliate_id
+            affiliateId: commissionTx.affiliate_id  // Conversion du snake_case vers camelCase pour la réponse
           };
         }
       }

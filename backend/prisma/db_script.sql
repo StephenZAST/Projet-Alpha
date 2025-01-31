@@ -111,3 +111,83 @@ SELECT nspname FROM pg_namespace
 WHERE nspname NOT LIKE 'pg_%' 
 AND nspname != 'information_schema';
 
+
+-- List all tables first to verify
+SELECT DISTINCT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+
+-- Then list structure for each table without truncation
+SELECT 
+    c.table_schema,
+    c.table_name,
+    string_agg(
+        c.column_name || ' ' || 
+        c.data_type || 
+        CASE 
+            WHEN c.character_maximum_length IS NOT NULL 
+            THEN '(' || c.character_maximum_length || ')'
+            ELSE ''
+        END || 
+        CASE WHEN c.is_nullable = 'NO' THEN ' NOT NULL' ELSE '' END,
+        E'\n'
+    ) as columns
+FROM information_schema.columns c
+JOIN information_schema.tables t 
+    ON c.table_name = t.table_name 
+    AND c.table_schema = t.table_schema
+WHERE t.table_schema = 'public'  
+    AND t.table_type = 'BASE TABLE'
+GROUP BY c.table_schema, c.table_name
+ORDER BY c.table_name;
+
+-- List foreign key relationships
+SELECT
+    tc.table_name AS source_table,
+    kcu.column_name AS source_column,
+    ccu.table_name AS target_table,
+    ccu.column_name AS target_column
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage ccu
+    ON ccu.constraint_name = tc.constraint_name
+WHERE tc.table_schema = 'public'
+  AND tc.constraint_type = 'FOREIGN KEY'
+ORDER BY source_table, source_column;
+
+
+
+
+all schema
+[
+  {
+    "nspname": "auth"
+  },
+  {
+    "nspname": "realtime"
+  },
+  {
+    "nspname": "vault"
+  },
+  {
+    "nspname": "graphql_public"
+  },
+  {
+    "nspname": "graphql"
+  },
+  {
+    "nspname": "public"
+  },
+  {
+    "nspname": "extensions"
+  },
+  {
+    "nspname": "storage"
+  },
+  {
+    "nspname": "cron"
+  }
+]
