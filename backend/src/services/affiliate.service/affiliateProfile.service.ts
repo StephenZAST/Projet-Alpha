@@ -3,47 +3,75 @@ import { COMMISSION_LEVELS } from './constants';
 
 export class AffiliateProfileService {
   static async getProfile(userId: string) {
-    const { data: profile, error } = await supabase
-      .from('affiliate_profiles')
-      .select(`
-        id,
-        user_id,
-        affiliate_code,
-        parent_affiliate_id,
-        commission_balance,
-        total_earned,
-        created_at,
-        updated_at,
-        commission_rate,
-        is_active,
-        total_referrals,
-        monthly_earnings,
-        level_id,
-        status,
-        user:users(
-          id,
-          email,
-          first_name,
-          last_name,
-          phone
-        ),
-        commissionTransactions:commission_transactions(
-          id,
-          amount,
-          status,
-          created_at
-        ),
-        level:affiliate_levels(
-          id,
-          name,
-          commissionRate
-        )
-      `)
-      .eq('user_id', userId)
-      .single();
+    try {
+      console.log('[AffiliateProfileService] Getting profile for user:', userId);
 
-    if (error) throw error;
-    return profile;
+      // First check if user exists and is an affiliate
+      const { data: profile, error } = await supabase
+        .from('affiliate_profiles')
+        .select(`
+          id,
+          user_id,
+          affiliate_code,
+          parent_affiliate_id,
+          commission_balance,
+          total_earned,
+          created_at,
+          updated_at,
+          commission_rate,
+          is_active,
+          total_referrals,
+          monthly_earnings,
+          level_id,
+          status,
+          user:users(
+            id,
+            email,
+            first_name,
+            last_name,
+            phone
+          ),
+          level:affiliate_levels(
+            id,
+            name,
+            commission_rate
+          )
+        `)
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('[AffiliateProfileService] Error fetching profile:', error);
+        throw error;
+      }
+
+      if (!profile) {
+        console.error('[AffiliateProfileService] Profile not found for user:', userId);
+        throw new Error('Affiliate profile not found');
+      }
+
+      // Fetch recent transactions separately
+      const { data: transactions, error: transactionError } = await supabase
+        .from('commissionTransactions')
+        .select('id, amount, status, created_at')
+        .eq('affiliate_id', profile.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (transactionError) {
+        console.error('[AffiliateProfileService] Error fetching transactions:', transactionError);
+        // Don't throw here, just log the error and continue
+      }
+
+      return {
+        ...profile,
+        recentTransactions: transactions || []
+      };
+
+    } catch (error: any) {
+      console.error('[AffiliateProfileService] GetProfile error:', error);
+      throw error;
+    }
   }
 
   static async updateProfile(userId: string, updates: { phone?: string; notificationPreferences?: any }) {

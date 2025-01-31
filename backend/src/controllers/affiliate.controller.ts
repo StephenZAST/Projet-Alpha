@@ -6,15 +6,22 @@ import { INDIRECT_COMMISSION_RATE, PROFIT_MARGIN_RATE } from '../services/affili
 
 export class AffiliateController {
   static async getProfile(req: Request, res: Response) {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+   try {
+     const userId = req.user?.id;
+     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-      const profile = await AffiliateService.getProfile(userId);
-      res.json({ data: profile });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
+     const profile = await AffiliateService.getProfile(userId);
+     res.json({
+       data: profile,
+       meta: {
+         transactionsCount: profile.recentTransactions?.length || 0
+       }
+     });
+   } catch (error: any) {
+     console.error('[AffiliateController] GetProfile error:', error);
+     const status = error.message === 'Affiliate profile not found' ? 404 : 500;
+     res.status(status).json({ error: error.message });
+   }
   }
 
   static async getLevels(req: Request, res: Response) {

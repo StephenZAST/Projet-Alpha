@@ -1,0 +1,320 @@
+{
+  "info": {
+    "name": "22 Affiliate System Tests",
+    "description": "Test suite for the affiliate system including profiles, commissions, withdrawals and admin operations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Affiliate Profile",
+      "item": [
+        {
+          "name": "Get Affiliate Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "affiliate", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Affiliate Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"notificationPreferences\": {\n    \"emailNotifications\": true,\n    \"pushNotifications\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "affiliate", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Generate Affiliate Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/generate-code",
+              "host": ["{{base_url}}"],
+              "path": ["api", "affiliate", "generate-code"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Commission Management",
+      "item": [
+        {
+          "name": "Get Commissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/commissions?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "affiliate", "commissions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Current Level",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/current-level",
+              "host": ["{{base_url}}"],
+              "path": ["api", "affiliate", "current-level"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Withdrawal Management",
+      "item": [
+        {
+          "name": "Request Withdrawal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 25000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/withdrawal",
+              "host": ["{{base_url}}"],
+              "path": ["api", "affiliate", "withdrawal"]
+            }
+          }
+        },
+        {
+          "name": "Get Withdrawals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/admin/withdrawals?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "affiliate", "admin", "withdrawals"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Operations",
+      "item": [
+        {
+          "name": "List All Affiliates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/admin/list?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "affiliate", "admin", "list"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Withdrawal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/admin/withdrawals/{{withdrawal_id}}/approve",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "affiliate",
+                "admin",
+                "withdrawals",
+                "{{withdrawal_id}}",
+                "approve"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Withdrawal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Insufficient documentation provided\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/admin/withdrawals/{{withdrawal_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "affiliate",
+                "admin",
+                "withdrawals",
+                "{{withdrawal_id}}",
+                "reject"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Affiliate Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/affiliate/admin/affiliates/{{affiliate_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "affiliate",
+                "admin",
+                "affiliates",
+                "{{affiliate_id}}",
+                "status"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

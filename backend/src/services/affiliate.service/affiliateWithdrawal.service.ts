@@ -18,7 +18,7 @@ export class AffiliateWithdrawalService {
 
       // Create withdrawal transaction
       const { data: transaction, error: createError } = await supabase
-        .from('commission_transactions')
+        .from('commissionTransactions')
         .insert([{
           affiliate_id: affiliateId,
           amount: -amount, // Negative amount for withdrawals
@@ -43,7 +43,7 @@ export class AffiliateWithdrawalService {
       if (updateError) {
         // Rollback the transaction creation if balance update fails
         await supabase
-          .from('commission_transactions')
+          .from('commissionTransactions')
           .delete()
           .eq('id', transaction.id);
         throw updateError;
@@ -61,7 +61,7 @@ export class AffiliateWithdrawalService {
     const to = from + limit - 1;
 
     let query = supabase
-      .from('commission_transactions')
+      .from('commissionTransactions')
       .select(`
         *,
         affiliate:affiliate_profiles(
@@ -113,7 +113,7 @@ export class AffiliateWithdrawalService {
 
   static async rejectWithdrawal(withdrawalId: string, reason: string) {
     const { data: withdrawal, error: findError } = await supabase
-      .from('commission_transactions')
+      .from('commissionTransactions')
       .select('*, affiliate:affiliate_profiles(commission_balance)')
       .eq('id', withdrawalId)
       .eq('type', 'WITHDRAWAL')
@@ -130,7 +130,7 @@ export class AffiliateWithdrawalService {
 
     // Start transaction
     const { error: updateError } = await supabase
-      .from('commission_transactions')
+      .from('commissionTransactions')
       .update({
         status: 'REJECTED',
         updated_at: new Date().toISOString()
@@ -155,7 +155,7 @@ export class AffiliateWithdrawalService {
 
   static async approveWithdrawal(withdrawalId: string) {
     const { data: withdrawal, error: findError } = await supabase
-      .from('commission_transactions')
+      .from('commissionTransactions')
       .select('*')
       .eq('id', withdrawalId)
       .eq('type', 'WITHDRAWAL')
@@ -167,7 +167,7 @@ export class AffiliateWithdrawalService {
     }
 
     const { error: updateError } = await supabase
-      .from('commission_transactions')
+      .from('commissionTransactions')
       .update({
         status: 'APPROVED',
         updated_at: new Date().toISOString()

@@ -205,19 +205,32 @@ export class AffiliateCommissionService {
 
   static async resetMonthlyEarnings() {
     try {
-      const { error } = await supabase.rpc('reset_monthly_earnings');
+      // Call the reset_monthly_earnings function and get the number of updated affiliates
+      const { data, error } = await supabase.rpc('reset_monthly_earnings', {});
 
-      if (error) throw error;
+      if (error) {
+        console.error('[AffiliateCommissionService] Reset monthly earnings DB error:', error);
+        throw new Error('Failed to reset monthly earnings: ' + error.message);
+      }
 
-      // Notifier les affiliés actifs
-      const { data: activeAffiliates } = await supabase
+      const updatedCount = data as number;
+      console.log(`[AffiliateCommissionService] Reset monthly earnings for ${updatedCount} affiliates`);
+
+      // Get all active affiliates for notifications
+      const { data: activeAffiliates, error: queryError } = await supabase
         .from('affiliate_profiles')
         .select('user_id')
         .eq('is_active', true);
 
-      if (activeAffiliates) {
-        for (const affiliate of activeAffiliates) {
-          await NotificationService.sendNotification(
+      if (queryError) {
+        console.error('[AffiliateCommissionService] Error fetching active affiliates:', queryError);
+        throw new Error('Failed to fetch active affiliates: ' + queryError.message);
+      }
+
+      // Send notifications to all active affiliates
+      if (activeAffiliates && activeAffiliates.length > 0) {
+        await Promise.all(activeAffiliates.map(affiliate =>
+          NotificationService.sendNotification(
             affiliate.user_id,
             'COMMISSION_EARNED' as NotificationType,
             {
@@ -228,11 +241,18 @@ export class AffiliateCommissionService {
                 timestamp: new Date().toISOString()
               }
             }
-          );
-        }
+          ).catch(err => {
+            console.error(`Failed to send notification to affiliate ${affiliate.user_id}:`, err);
+            // Don't throw, continue with other notifications
+          })
+        ));
       }
 
-      return true;
+      return {
+        success: true,
+        updatedCount,
+        notificationsSent: activeAffiliates?.length || 0
+      };
     } catch (error) {
       console.error('[AffiliateCommissionService] Reset monthly earnings error:', error);
       throw error;
