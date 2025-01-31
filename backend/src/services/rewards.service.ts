@@ -43,8 +43,8 @@ export class RewardsService {
         const { data: updatedLoyalty, error: updateError } = await supabase
           .from('loyalty_points')
           .update({
-            pointsBalance: loyalty.pointsBalance + pointsToAward,
-            totalEarned: loyalty.totalEarned + pointsToAward
+            points_balance: loyalty.points_balance + pointsToAward,
+            total_earned: loyalty.total_earned + pointsToAward
           })
           .eq('user_id', userId)
           .select()
@@ -62,10 +62,10 @@ export class RewardsService {
           .from('loyalty_points')
           .insert([{
             user_id: userId,
-            pointsBalance: pointsToAward,
-            totalEarned: pointsToAward,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            points_balance: pointsToAward,
+            total_earned: pointsToAward,
+            created_at: new Date(),
+            updated_at: new Date()
           }])
           .select()
           .single();
@@ -109,9 +109,9 @@ export class RewardsService {
       await supabase
         .from('loyalty_points')
         .update({
-          pointsBalance: loyalty.pointsBalance + pointsAmount,
-          totalEarned: loyalty.totalEarned + pointsAmount,
-          updatedAt: new Date()
+          points_balance: loyalty.points_balance + pointsAmount,
+          total_earned: loyalty.total_earned + pointsAmount,
+          updated_at: new Date()
         })
         .eq('user_id', referrerId);
 
@@ -203,7 +203,7 @@ export class RewardsService {
         .single();
 
       if (loyaltyError) throw loyaltyError;
-      if (loyalty.pointsBalance < points) {
+      if (loyalty.points_balance < points) {
         throw new Error('Insufficient points balance');
       }
 
@@ -214,8 +214,8 @@ export class RewardsService {
       await supabase
         .from('loyalty_points')
         .update({
-          pointsBalance: loyalty.pointsBalance - points,
-          updatedAt: new Date()
+          points_balance: loyalty.points_balance - points,
+          updated_at: new Date()
         })
         .eq('user_id', userId);
 
