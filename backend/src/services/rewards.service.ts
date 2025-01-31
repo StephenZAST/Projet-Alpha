@@ -43,8 +43,8 @@ export class RewardsService {
         const { data: updatedLoyalty, error: updateError } = await supabase
           .from('loyalty_points')
           .update({
-            points_balance: loyalty.points_balance + pointsToAward,
-            total_earned: loyalty.total_earned + pointsToAward
+            pointsBalance: loyalty.pointsBalance + pointsToAward,
+            totalEarned: loyalty.totalEarned + pointsToAward
           })
           .eq('user_id', userId)
           .select()
@@ -62,10 +62,12 @@ export class RewardsService {
           .from('loyalty_points')
           .insert([{
             user_id: userId,
-            points_balance: pointsToAward,
-            total_earned: pointsToAward,
-            created_at: new Date(),
-            updated_at: new Date()
+            pointsBalance: pointsToAward,
+            totalEarned: pointsToAward,
+            createdAt: new Date(),
+  // Exact name in DB
+            updatedAt: new Date()
+            // Database columns: pointsBalance, totalEarned, createdAt, updatedAt
           }])
           .select()
           .single();
@@ -109,9 +111,10 @@ export class RewardsService {
       await supabase
         .from('loyalty_points')
         .update({
-          points_balance: loyalty.points_balance + pointsAmount,
-          total_earned: loyalty.total_earned + pointsAmount,
-          updated_at: new Date()
+          pointsBalance: loyalty.pointsBalance + pointsAmount,
+          totalEarned: loyalty.totalEarned + pointsAmount,
+          updatedAt: new Date()
+          // Database columns: pointsBalance, totalEarned, createdAt, updatedAt
         })
         .eq('user_id', referrerId);
 
@@ -142,7 +145,10 @@ export class RewardsService {
         .from('affiliate_profiles')
         .select(`
           *,
-          level:affiliate_levels(*)
+          level:affiliate_levels!left(
+            id,
+            commissionRate
+          )
         `)
         .eq('affiliate_code', order.affiliateCode)
         .eq('is_active', true)
@@ -151,7 +157,7 @@ export class RewardsService {
       if (affiliateError) throw affiliateError;
 
       // 2. Calculer la commission basée sur le niveau
-      const commissionRate = affiliate.level?.commission_rate || this.DEFAULT_COMMISSION_RATE;
+      const commissionRate = affiliate.level?.commissionRate || this.DEFAULT_COMMISSION_RATE;
       const commissionAmount = order.totalAmount * commissionRate;
 
       // 3. Mettre à jour le solde de commission
@@ -168,7 +174,7 @@ export class RewardsService {
 
       // 4. Créer une transaction de commission
       await supabase
-        .from('commission_transactions')
+        .from('commissionTransactions')
         .insert([{
           affiliate_id: affiliate.id,
           order_id: order.id,
@@ -178,7 +184,7 @@ export class RewardsService {
         }]);
 
       // 5. Processus récursif pour les commissions des parents
-      await this.processParentCommissions(affiliate.parent_affiliate_id, order.id, commissionAmount, 1);
+      await this.processParentCommissions(affiliate.parent_affiliateId, order.id, commissionAmount, 1);
 
     } catch (error) {
       console.error('[RewardsService] Error processing affiliate commission:', error);
@@ -203,7 +209,7 @@ export class RewardsService {
         .single();
 
       if (loyaltyError) throw loyaltyError;
-      if (loyalty.points_balance < points) {
+      if (loyalty.pointsBalance < points) {
         throw new Error('Insufficient points balance');
       }
 
@@ -214,8 +220,9 @@ export class RewardsService {
       await supabase
         .from('loyalty_points')
         .update({
-          points_balance: loyalty.points_balance - points,
-          updated_at: new Date()
+          pointsBalance: loyalty.pointsBalance - points,
+          updatedAt: new Date()
+          // Database columns: pointsBalance, totalEarned, createdAt, updatedAt
         })
         .eq('user_id', userId);
 
@@ -249,12 +256,12 @@ export class RewardsService {
       const { error } = await supabase
         .from('point_transactions')
         .insert([{
-          user_id: userId,
+          userId: userId,
           points,
           type,
           source,
-          reference_id: referenceId,
-          created_at: new Date()
+          referenceId: referenceId,
+          createdAt: new Date()
         }]);
 
       if (error) throw error;
@@ -294,7 +301,7 @@ export class RewardsService {
 
       // Créer la transaction
       await supabase
-        .from('commission_transactions')
+        .from('commissionTransactions')
         .insert([{
           affiliate_id: affiliateId,
           order_id: orderId,
@@ -336,14 +343,14 @@ export class RewardsService {
       // 3. Obtenir le parent suivant
       const { data: parentAffiliate } = await supabase
         .from('affiliate_profiles')
-        .select('parent_affiliate_id')
+        .select('parent_affiliateId')
         .eq('id', parentAffiliateId)
         .single();
 
       // 4. Traiter récursivement le niveau suivant si un parent existe
-      if (parentAffiliate?.parent_affiliate_id) {
+      if (parentAffiliate?.parent_affiliateId) {
         await this.processParentCommissions(
-          parentAffiliate.parent_affiliate_id,
+          parentAffiliate.parent_affiliateId,
           orderId,
           parentCommissionAmount,
           level + 1,

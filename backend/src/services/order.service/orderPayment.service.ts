@@ -95,46 +95,65 @@ export class OrderPaymentService {
     affiliateCode: string,
     totalAmount: number
   ): Promise<void> {
-    const { data: affiliate } = await supabase
+    const { data: affiliate, error: affiliateError } = await supabase
       .from('affiliate_profiles')
-      .select('*')
-      .eq('affiliateCode', affiliateCode)
+      .select(`
+        *,
+        level:affiliate_levels!left(
+          id,
+          commissionRate
+        )
+      `)
+      .eq('affiliate_code', affiliateCode)
       .eq('is_active', true)
       .eq('status', 'ACTIVE')
       .single();
 
-    if (!affiliate) return;
-
-    const commissionRate = affiliate.commission_rate || 10;
-    const commissionAmount = totalAmount * (commissionRate / 100);
-
-    const { error: updateError } = await supabase
-      .from('affiliate_profiles')
-      .update({
-        commission_balance: affiliate.commission_balance + commissionAmount,
-        total_earned: affiliate.total_earned + commissionAmount,
-        total_referrals: affiliate.total_referrals + 1
-      })
-      .eq('id', affiliate.id);
-
-    if (updateError) {
-      console.error('[OrderService] Error updating affiliate balance:', updateError);
-      throw updateError;
+    if (affiliateError) {
+      console.error('[OrderPaymentService] Error finding affiliate:', affiliateError);
+      throw new Error('Failed to find affiliate');
     }
 
-    const { error: transactionError } = await supabase
-      .from('commission_transactions')
-      .insert([{
-        affiliate_id: affiliate.id,
-        order_id: orderId,
-        amount: commissionAmount,
-        status: 'PENDING',
-        created_at: new Date()
-      }]);
+    if (!affiliate) {
+      console.error('[OrderPaymentService] No affiliate found for code:', affiliateCode);
+      throw new Error('Affiliate not found');
+    }
 
-    if (transactionError) {
-      console.error('[OrderService] Error creating commission transaction:', transactionError);
-      throw transactionError;
+    try {
+      const commissionRate = affiliate.level?.commissionRate || affiliate.commission_rate || 10;
+      const commissionAmount = totalAmount * (commissionRate / 100);
+
+      const { error: updateError } = await supabase
+        .from('affiliate_profiles')
+        .update({
+          commission_balance: affiliate.commission_balance + commissionAmount,
+          total_earned: affiliate.total_earned + commissionAmount,
+          total_referrals: affiliate.total_referrals + 1
+        })
+        .eq('id', affiliate.id);
+
+      if (updateError) {
+        console.error('[OrderPaymentService] Error updating affiliate balance:', updateError);
+        throw new Error(`Failed to update affiliate balance: ${updateError.message || 'Unknown error'}`);
+      }
+
+      const { error: transactionError } = await supabase
+        .from('commissionTransactions')
+        .insert([{
+          affiliate_id: affiliate.id,
+          order_id: orderId,
+          amount: commissionAmount,
+          status: 'PENDING',
+          created_at: new Date()
+        }]);
+
+      if (transactionError) {
+        console.error('[OrderPaymentService] Error creating commission transaction:', transactionError);
+        throw new Error(`Failed to create commission transaction: ${transactionError.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('[OrderService] Error processing affiliate commission:', error);
+      throw error;
     }
   }
 

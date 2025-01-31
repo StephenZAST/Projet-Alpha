@@ -1,7 +1,7 @@
 # Tables Additionnelles
 
 ## Affiliate System
-### Affiliate Levels
+### Affiliate Levels (Table: affiliate_levels)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -11,7 +11,7 @@
 | created_at | timestamp with time zone | |
 | updated_at | timestamp with time zone | |
 
-### Commission Transactions
+### Commission Transactions (Table: commissionTransactions)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -22,7 +22,7 @@
 | created_at | timestamp with time zone | |
 
 ## Point System
-### Point Transactions
+### Point Transactions (Table: point_transactions)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -35,7 +35,7 @@
 | conversion_rate | numeric | |
 | createdAt | timestamp with time zone | |
 
-### Notifications
+### Notifications (Table: notifications)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -46,7 +46,7 @@
 | created_at | timestamp with time zone | |
 | updated_at | timestamp with time zone | |
 
-## Article Services
+## Article Services (Table: article_services)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -55,11 +55,10 @@
 | priceMultiplier | numeric | NOT NULL |
 | createdAt | timestamp with time zone | |
 
-
 # Tables Manquantes
 
 ## Reward System
-### Reward Claims
+### Reward Claims (Table: reward_claims)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -68,7 +67,7 @@
 | points_spent | integer | NOT NULL |
 | created_at | timestamp with time zone | |
 
-## User Offers
+## User Offers (Table: user_offers)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |

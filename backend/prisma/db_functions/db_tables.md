@@ -1,7 +1,7 @@
 # Database Structure
 
 ## User Management
-### Users
+### Users (Table: users)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -15,7 +15,7 @@
 | created_at | timestamp with time zone | |
 | updated_at | timestamp with time zone | |
 
-### Addresses
+### Addresses (Table: addresses)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -31,7 +31,7 @@
 | updated_at | timestamp with time zone | |
 
 ## Articles and Services
-### Articles
+### Articles (Table: articles)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -43,7 +43,7 @@
 | createdAt | timestamp with time zone | |
 | updatedAt | timestamp with time zone | |
 
-### Services
+### Services (Table: services)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -54,7 +54,7 @@
 | updated_at | timestamp with time zone | |
 
 ## Orders
-### Orders
+### Orders (Table: orders)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -75,7 +75,7 @@
 | updatedAt | timestamp with time zone | |
 
 ## Loyalty System
-### Loyalty Points
+### Loyalty Points (Table: loyalty_points)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -85,7 +85,7 @@
 | createdAt | timestamp with time zone | |
 | updatedAt | timestamp with time zone | |
 
-### Rewards
+### Rewards (Table: rewards)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -97,7 +97,7 @@
 | updated_at | timestamp with time zone | |
 
 ## Affiliate System
-### Affiliate Profiles
+### Affiliate Profiles (Table: affiliate_profiles)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -116,7 +116,7 @@
 | updated_at | timestamp with time zone | |
 
 ## Blog System
-### Blog Articles
+### Blog Articles (Table: blog_articles)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -130,7 +130,7 @@
 | updated_at | timestamp with time zone | |
 
 ## Offers and Discounts
-### Offers
+### Offers (Table: offers)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -149,7 +149,7 @@
 | created_at | timestamp with time zone | |
 | updated_at | timestamp with time zone | |
 
-### Discount Rules
+### Discount Rules (Table: discount_rules)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -160,7 +160,7 @@
 | priority | integer | |
 | created_at | timestamp with time zone | |
 
-### Offer Articles
+### Offer Articles (Table: offer_articles)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -169,7 +169,7 @@
 | created_at | timestamp with time zone | |
 
 ## Price Management
-### Price Configurations
+### Price Configurations (Table: price_configurations)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -179,7 +179,7 @@
 | is_active | boolean | |
 | created_at | timestamp with time zone | |
 
-### Price History
+### Price History (Table: price_history)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -191,7 +191,7 @@
 | created_at | timestamp with time zone | |
 
 ## Order Management
-### Order Items
+### Order Items (Table: order_items)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -203,7 +203,7 @@
 | createdAt | timestamp with time zone | NOT NULL |
 | updatedAt | timestamp with time zone | NOT NULL |
 
-### Orders Archive
+### Orders Archive (Table: orders_archive)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -224,7 +224,7 @@
 | archived_at | timestamp with time zone | |
 
 ## Categories
-### Article Categories
+### Article Categories (Table: article_categories)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -232,7 +232,7 @@
 | description | text | |
 | createdAt | timestamp with time zone | |
 
-### Blog Categories
+### Blog Categories (Table: blog_categories)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -242,7 +242,7 @@
 | updated_at | timestamp with time zone | |
 
 ## Service Management
-### Service Types
+### Service Types (Table: service_types)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -251,7 +251,7 @@
 | created_at | timestamp with time zone | |
 
 ## Notifications
-### Notification Rules
+### Notification Rules (Table: notification_rules)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -261,7 +261,7 @@
 | is_active | boolean | |
 | created_at | timestamp with time zone | |
 
-### Notification Preferences
+### Notification Preferences (Table: notification_preferences)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
@@ -277,7 +277,7 @@
 | updated_at | timestamp with time zone | |
 
 ## Security
-### Reset Codes
+### Reset Codes (Table: reset_codes)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |

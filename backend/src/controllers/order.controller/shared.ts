@@ -34,7 +34,7 @@ export class OrderSharedMethods {
           )
         )
       `)
-      .eq('order_id', orderId);  // Correction : orderId -> order_id
+      .eq('orderId', orderId);  // Correction : orderId -> order_id
 
     if (error) {
       console.error('Error fetching order items:', error);

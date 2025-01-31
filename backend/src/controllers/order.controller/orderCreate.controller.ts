@@ -46,7 +46,7 @@ export class OrderCreateController {
         items,
         paymentMethod,
         appliedOfferIds,
-        serviceTypeId  // Pour service_type_id
+        serviceTypeId
       } = req.body;
       
       const userId = req.user?.id;
@@ -61,7 +61,7 @@ export class OrderCreateController {
       });
       console.log('[OrderController] Price calculation result:', pricing);
 
-      // 2. Créer la commande avec le montant total en utilisant les noms de colonnes exacts du schéma Prisma
+      // 2. Créer la commande avec le montant total
       const orderData = {
         userId,
         serviceId,
@@ -77,7 +77,7 @@ export class OrderCreateController {
         status: 'PENDING' as OrderStatus,
         createdAt: new Date(),
         updatedAt: new Date(),
-        service_type_id: serviceTypeId  // Utilisation du nom exact de la colonne
+        service_type_id: serviceTypeId  // Garde le snake_case car c'est le nom exact dans la DB
       };
 
       const { data: order, error } = await supabase
@@ -124,7 +124,7 @@ export class OrderCreateController {
         }
       });
 
-      // Insérer les items en utilisant les noms de colonnes exacts du schéma Prisma
+      // Insérer les items
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems.map(item => ({
@@ -163,15 +163,15 @@ export class OrderCreateController {
 
         // Récupérer les détails de la commission pour la réponse
         const { data: commissionTx } = await supabase
-          .from('commission_transactions')
-          .select('amount, affiliate_id')  // Utilisation du nom exact de la colonne
-          .eq('order_id', order.id)  // Utilisation du nom exact de la colonne
+          .from('commissionTransactions')
+          .select('amount, affiliate_id')
+          .eq('order_id', order.id)
           .single();
 
         if (commissionTx) {
           affiliateCommission = {
             amount: commissionTx.amount,
-            affiliateId: commissionTx.affiliate_id  // Conversion du snake_case vers camelCase pour la réponse
+            affiliate_id: commissionTx.affiliate_id
           };
         }
       }
