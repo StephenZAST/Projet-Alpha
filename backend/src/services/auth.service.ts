@@ -112,14 +112,44 @@ export class AuthService {
   }
 
   static async createAffiliate(userId: string): Promise<User> {
-    const { data: user, error } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('users')
       .update({ role: 'AFFILIATE' })
       .eq('id', userId)
       .select()
       .single();
 
-    if (error) throw error;
+    if (userError) throw userError;
+
+    // Generate a unique affiliate code
+    const affiliateCode = Math.random().toString(36).substr(2, 9).toUpperCase();
+
+    // Create the affiliate profile
+    const { error: profileError } = await supabase
+      .from('affiliate_profiles')
+      .insert([{
+        user_id: userId,
+        affiliate_code: affiliateCode,
+        parent_affiliate_id: null,
+        commission_balance: 0,
+        total_earned: 0,
+        monthly_earnings: 0,
+        total_referrals: 0,
+        commission_rate: 10.00,
+        status: 'PENDING',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }]);
+
+    if (profileError) {
+      // If profile creation fails, revert user role
+      await supabase
+        .from('users')
+        .update({ role: 'CLIENT' })
+        .eq('id', userId);
+      throw profileError;
+    }
 
     return user;
   }
