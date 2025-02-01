@@ -6,9 +6,14 @@ import { AuthService } from '../services/auth.service';
 declare global {
   namespace Express {
     interface Request {
-      user?: User;
+      user?: Partial<User>;
     }
   }
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET must be defined');
 }
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
@@ -26,9 +31,21 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as User;
+      const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string };
+      
+      if (!decoded || !decoded.id || !decoded.role) {
+        console.error('Invalid token payload');
+        return res.status(401).json({ error: 'Invalid token payload' });
+      }
+
       console.log('Decoded token:', decoded);
-      req.user = decoded;
+      
+      // Only set the fields we know exist in the token
+      req.user = {
+        id: decoded.id,
+        role: decoded.role as User['role']
+      };
+
       next();
     } catch (error) {
       console.error('Token verification failed:', error);
@@ -42,7 +59,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
 
 export const authorizeRoles = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user || !req.user.role || !roles.includes(req.user.role)) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
     next();

@@ -34,7 +34,7 @@ export class AffiliateProfileService {
           level:affiliate_levels(
             id,
             name,
-            commission_rate
+            "commissionRate"
           )
         `)
         .eq('user_id', userId)
