@@ -24,12 +24,22 @@ export class AffiliateProfileService {
           monthly_earnings,
           level_id,
           status,
-          user:users(
+          user_details:users!inner(
             id,
             email,
             first_name,
             last_name,
-            phone
+            phone,
+            notification_preferences(
+              id,
+              email,
+              sms,
+              push,
+              promotions,
+              order_updates,
+              payments,
+              loyalty
+            )
           ),
           level:affiliate_levels(
             id,
@@ -74,16 +84,119 @@ export class AffiliateProfileService {
     }
   }
 
-  static async updateProfile(userId: string, updates: { phone?: string; notificationPreferences?: any }) {
-    const { data, error } = await supabase
-      .from('affiliate_profiles')
-      .update(updates)
-      .eq('user_id', userId)
-      .select()
-      .single();
+  static async updateProfile(userId: string, updates: {
+    phone?: string;
+    notificationPreferences?: {
+      email?: boolean;
+      sms?: boolean;
+      push?: boolean;
+      promotions?: boolean;
+      order_updates?: boolean;
+      payments?: boolean;
+      loyalty?: boolean;
+    }
+  }) {
+    try {
+      // 1. Update phone in users table if provided
+      if (updates.phone) {
+        const { error: userError } = await supabase
+          .from('users')
+          .update({ phone: updates.phone })
+          .eq('id', userId);
 
-    if (error) throw error;
-    return data;
+        if (userError) throw userError;
+      }
+
+      // 2. Update notification preferences if provided
+      if (updates.notificationPreferences) {
+        // Validate preference fields
+        const validPrefs = {
+          user_id: userId,
+          email: !!updates.notificationPreferences.email,
+          sms: !!updates.notificationPreferences.sms,
+          push: !!updates.notificationPreferences.push,
+          promotions: !!updates.notificationPreferences.promotions,
+          order_updates: !!updates.notificationPreferences.order_updates,
+          payments: !!updates.notificationPreferences.payments,
+          loyalty: !!updates.notificationPreferences.loyalty,
+          updated_at: new Date().toISOString()
+        };
+
+        // Check if preferences already exist
+        const { data: existingPrefs } = await supabase
+          .from('notification_preferences')
+          .select('id, created_at')
+          .eq('user_id', userId)
+          .single();
+
+        const prefsData = {
+          ...validPrefs,
+          created_at: existingPrefs?.created_at || new Date().toISOString()
+        };
+
+        const { error: prefsError } = await supabase
+          .from('notification_preferences')
+          .upsert([prefsData], {
+            onConflict: 'user_id'
+          });
+
+        if (prefsError) {
+          console.error('[AffiliateProfileService] Error updating preferences:', prefsError);
+          throw new Error('Failed to update notification preferences');
+        }
+      }
+
+      // 3. Get updated profile data using the same structure as getProfile
+      const { data: profile, error: profileError } = await supabase
+        .from('affiliate_profiles')
+        .select(`
+          id,
+          user_id,
+          affiliate_code,
+          parent_affiliate_id,
+          commission_balance,
+          total_earned,
+          created_at,
+          updated_at,
+          commission_rate,
+          is_active,
+          total_referrals,
+          monthly_earnings,
+          level_id,
+          status,
+          user_details:users!inner(
+            id,
+            email,
+            first_name,
+            last_name,
+            phone,
+            notification_preferences(
+              id,
+              email,
+              sms,
+              push,
+              promotions,
+              order_updates,
+              payments,
+              loyalty
+            )
+          ),
+          level:affiliate_levels(
+            id,
+            name,
+            "commissionRate"
+          )
+        `)
+        .eq('user_id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+      return profile;
+
+    } catch (error) {
+      console.error('[AffiliateProfileService] UpdateProfile error:', error);
+      throw error;
+    }
   }
 
   static async getReferrals(userId: string) {
@@ -91,12 +204,22 @@ export class AffiliateProfileService {
       .from('affiliate_profiles')
       .select(`
         id,
-        user:users(
+        user_details:users(
           id,
           email,
           first_name,
           last_name,
-          phone
+          phone,
+          notification_preferences(
+            id,
+            email,
+            sms,
+            push,
+            promotions,
+            order_updates,
+            payments,
+            loyalty
+          )
         ),
         total_earned,
         total_referrals,
@@ -284,6 +407,6 @@ export class AffiliateProfileService {
         remaining: 20 - currentReferrals
       };
     }
-    return null; // Niveau maximum atteint
+    return null; // Maximum level reached
   }
 }

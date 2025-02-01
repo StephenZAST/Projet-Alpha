@@ -1,0 +1,54 @@
+{
+  "info": {
+    "_postman_id": "eb2a6b5f-3d8c-4e47-9d89-f99a8e5c7d25",
+    "name": "Affiliate Profile Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Affiliate Profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{affiliate_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/affiliate/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "affiliate", "profile"]
+        }
+      }
+    },
+    {
+      "name": "Update Affiliate Profile",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{affiliate_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"+1234567890\",\n  \"notificationPreferences\": {\n    \"email\": true,\n    \"sms\": true,\n    \"push\": false,\n    \"promotions\": true,\n    \"order_updates\": true,\n    \"payments\": true,\n    \"loyalty\": false\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/affiliate/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "affiliate", "profile"]
+        }
+      }
+    }
+  ]
+}
