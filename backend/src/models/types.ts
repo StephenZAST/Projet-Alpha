@@ -230,6 +230,7 @@ export interface Order {
 }
 
 export type OrderStatus =
+  | 'DRAFT'      // For flash orders that are not yet completed
   | 'PENDING'
   | 'COLLECTING'
   | 'COLLECTED'
@@ -238,6 +239,22 @@ export type OrderStatus =
   | 'DELIVERING'
   | 'DELIVERED'
   | 'CANCELLED';
+
+export interface FlashOrder extends Omit<Order, 'serviceId' | 'items' | 'totalAmount'> {
+  notes?: string;
+}
+
+export interface CompleteFlashOrderDTO {
+  serviceId: string;
+  serviceTypeId?: string;
+  items: {
+    articleId: string;
+    quantity: number;
+    unitPrice: number;
+  }[];
+  collectionDate?: Date;
+  deliveryDate?: Date;
+}
 
 export type RecurrenceType = 'NONE' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
 

@@ -1,7 +1,9 @@
 import express from 'express';
 import { OrderController } from '../controllers/order.controller/index';
+import { FlashOrderController } from '../controllers/order.controller/flashOrder.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { validateOrder } from '../middleware/validators';
+import { validateCreateFlashOrder, validateCompleteFlashOrder } from '../middleware/flashOrderValidator';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
@@ -21,7 +23,7 @@ router.use((req, res, next) => {
 // Protection des routes avec authentification
 router.use(authenticateToken);
 
-// Routes client
+// Routes commande standard
 router.post(
   '/',
   validateOrder,
@@ -48,6 +50,13 @@ router.post(
   asyncHandler(OrderController.calculateTotal)
 );
 
+// Routes commande flash
+router.post(
+  '/flash',
+  validateCreateFlashOrder,
+  asyncHandler(FlashOrderController.createFlashOrder)
+);
+
 // Routes récentes et statuts
 router.get(
   '/recent',
@@ -60,6 +69,19 @@ router.get(
 );
 
 // Routes admin et livreur
+router.get(
+  '/draft/all',
+  authorizeRoles(['ADMIN', 'DELIVERY']),
+  asyncHandler(FlashOrderController.getAllDraftOrders)
+);
+
+router.patch(
+  '/draft/:orderId/complete',
+  authorizeRoles(['ADMIN', 'DELIVERY']),
+  validateCompleteFlashOrder,
+  asyncHandler(FlashOrderController.completeDraftOrder)
+);
+
 router.patch(
   '/:orderId/status',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN', 'DELIVERY']),

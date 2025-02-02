@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { OrderCreateController } from './orderCreate.controller';
 import { OrderQueryController } from './orderQuery.controller';
 import { OrderStatusController } from './orderStatus.controller';
+import { FlashOrderController } from './flashOrder.controller';
 import { OrderSharedMethods } from './shared';
 
 export class OrderController {
@@ -48,6 +49,19 @@ export class OrderController {
     await OrderStatusController.deleteOrder(req, res);
   }
 
+  // Méthodes de commande flash
+  static async createFlashOrder(req: Request, res: Response): Promise<void> {
+    await FlashOrderController.createFlashOrder(req, res);
+  }
+
+  static async getAllDraftOrders(req: Request, res: Response): Promise<void> {
+    await FlashOrderController.getAllDraftOrders(req, res);
+  }
+
+  static async completeDraftOrder(req: Request, res: Response): Promise<void> {
+    await FlashOrderController.completeDraftOrder(req, res);
+  }
+
   // Méthodes partagées
   static getOrderItems = OrderSharedMethods.getOrderItems;
   static getUserPoints = OrderSharedMethods.getUserPoints;
@@ -58,5 +72,6 @@ export {
   OrderCreateController,
   OrderQueryController,
   OrderStatusController,
+  FlashOrderController,
   OrderSharedMethods
 };
