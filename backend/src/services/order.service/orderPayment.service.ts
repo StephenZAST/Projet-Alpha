@@ -95,6 +95,7 @@ export class OrderPaymentService {
     affiliateCode: string,
     totalAmount: number
   ): Promise<void> {
+    // 1. Vérifier si l'affilié existe
     const { data: affiliate, error: affiliateError } = await supabase
       .from('affiliate_profiles')
       .select(`
@@ -102,11 +103,14 @@ export class OrderPaymentService {
         level:affiliate_levels!left(
           id,
           commissionRate
+        ),
+        user:users(
+          email,
+          first_name,
+          last_name
         )
       `)
       .eq('affiliate_code', affiliateCode)
-      .eq('is_active', true)
-      .eq('status', 'ACTIVE')
       .single();
 
     if (affiliateError) {
@@ -118,6 +122,24 @@ export class OrderPaymentService {
       console.error('[OrderPaymentService] No affiliate found for code:', affiliateCode);
       throw new Error('Affiliate not found');
     }
+
+    // 2. Vérifier le statut et l'état actif
+    if (!affiliate.is_active || affiliate.status !== 'ACTIVE') {
+      console.error('[OrderPaymentService] Affiliate is not active:', {
+        code: affiliateCode,
+        is_active: affiliate.is_active,
+        status: affiliate.status,
+        user: affiliate.user
+      });
+      throw new Error(`Affiliate is not active. Status: ${affiliate.status}, IsActive: ${affiliate.is_active}`);
+    }
+
+    console.log('[OrderPaymentService] Found active affiliate:', {
+      id: affiliate.id,
+      code: affiliate.affiliate_code,
+      level: affiliate.level,
+      user: affiliate.user
+    });
 
     try {
       const commissionRate = affiliate.level?.commissionRate || affiliate.commission_rate || 10;

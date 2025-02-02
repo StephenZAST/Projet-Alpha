@@ -161,7 +161,22 @@ ORDER BY source_table, source_column;
 
 
 
-all schema
+
+-- requette pour verifier toutes les differente procedure et fonction liee a une table ou fesant reference a cette table 
+
+
+SELECT p.proname AS procedure_name,
+       pg_get_functiondef(p.oid) AS procedure_definition
+FROM pg_proc p
+WHERE p.prosrc LIKE '%orders%';
+
+
+
+
+
+-- all schema
+
+
 [
   {
     "nspname": "auth"

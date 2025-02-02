@@ -148,11 +148,35 @@ export class RewardsService {
           level:affiliate_levels!left(
             id,
             commissionRate
+          ),
+          user:users(
+            email,
+            first_name,
+            last_name
           )
         `)
         .eq('affiliate_code', order.affiliateCode)
         .eq('is_active', true)
+        .eq('status', 'ACTIVE')
         .single();
+
+      if (affiliateError) {
+        console.error('[RewardsService] Error finding affiliate:', affiliateError);
+        throw new Error('Failed to find affiliate profile');
+      }
+
+      if (!affiliate) {
+        console.error('[RewardsService] No active affiliate found for code:', order.affiliateCode);
+        throw new Error('No active affiliate found with this code');
+      }
+
+      console.log('[RewardsService] Found active affiliate:', {
+        id: affiliate.id,
+        code: affiliate.affiliate_code,
+        status: affiliate.status,
+        is_active: affiliate.is_active,
+        user: affiliate.user
+      });
 
       if (affiliateError) throw affiliateError;
 
