@@ -1,5 +1,6 @@
 import supabase from '../../config/database';
 import { COMMISSION_LEVELS } from './constants';
+import { AffiliateLevel } from '../../models/types';
 
 export class AffiliateProfileService {
   static async getProfile(userId: string) {
@@ -234,7 +235,19 @@ export class AffiliateProfileService {
   }
 
   static async getCurrentLevel(userId: string) {
-    const { data: profile, error: profileError } = await supabase
+    interface ProfileWithLevel {
+      id: string;
+      total_referrals: number;
+      total_earned: number;
+      level_id: string | null;
+      level: {
+        id: string;
+        name: string;
+        commissionRate: number;
+      }[] | null;
+    }
+
+    const { data: profiles, error: profileError } = await supabase
       .from('affiliate_profiles')
       .select(`
         id,
@@ -244,33 +257,41 @@ export class AffiliateProfileService {
         level:affiliate_levels(
           id,
           name,
-          commission_rate
+          "commissionRate"
         )
       `)
       .eq('user_id', userId)
       .single();
 
     if (profileError) throw profileError;
-    if (!profile) throw new Error('Affiliate profile not found');
+    if (!profiles) throw new Error('Affiliate profile not found');
 
-    let currentLevel;
-    if (profile.total_referrals < 10) {
-      currentLevel = COMMISSION_LEVELS.LEVEL1;
-    } else if (profile.total_referrals < 20) {
-      currentLevel = COMMISSION_LEVELS.LEVEL2;
-    } else {
-      currentLevel = COMMISSION_LEVELS.LEVEL3;
-    }
+    // Determine level based on database value or calculated level
+    const calculatedLevel = profiles.total_referrals < 10
+      ? COMMISSION_LEVELS.LEVEL1
+      : profiles.total_referrals < 20
+        ? COMMISSION_LEVELS.LEVEL2
+        : COMMISSION_LEVELS.LEVEL3;
+
+    // Use database level if available, otherwise use calculated level
+    const currentLevel = profiles.level?.[0] ? {
+      name: profiles.level[0].name,
+      rate: Number(profiles.level[0].commissionRate) / 100, // Convert to decimal and ensure it's a number
+      current: {
+        referrals: profiles.total_referrals,
+        earnings: profiles.total_earned
+      }
+    } : {
+      ...calculatedLevel,
+      current: {
+        referrals: profiles.total_referrals,
+        earnings: profiles.total_earned
+      }
+    };
 
     return {
-      currentLevel: {
-        ...currentLevel,
-        current: {
-          referrals: profile.total_referrals,
-          earnings: profile.total_earned
-        }
-      },
-      nextLevel: this.getNextLevel(profile.total_referrals)
+      currentLevel,
+      nextLevel: profiles.total_referrals >= 20 ? null : AffiliateProfileService.getNextLevel(profiles.total_referrals)
     };
   }
 

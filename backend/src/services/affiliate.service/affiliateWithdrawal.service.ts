@@ -22,7 +22,6 @@ export class AffiliateWithdrawalService {
         .insert([{
           affiliate_id: affiliateId,
           amount: -amount, // Negative amount for withdrawals
-          type: 'WITHDRAWAL',
           status: 'PENDING',
           created_at: new Date().toISOString()
         }])
@@ -60,29 +59,23 @@ export class AffiliateWithdrawalService {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    let query = supabase
-      .from('commissionTransactions')
-      .select(`
-        *,
-        affiliate:affiliate_profiles(
-          id,
-          user:users(
+    const { data, error, count } = await supabase
+        .from('commissionTransactions')
+        .select(`
+          *,
+          affiliate:affiliate_profiles(
             id,
-            email,
-            first_name,
-            last_name,
-            phone
+            user:users(
+              id,
+              email,
+              first_name,
+              last_name,
+              phone
+            )
           )
-        )
-      `, { count: 'exact' })
-      .eq('type', 'WITHDRAWAL');
-
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
+        `, { count: 'exact' })
+        .is('order_id', null) // Les retraits n'ont pas d'order_id
+        .eq('status', status || 'PENDING')
       .range(from, to);
 
     if (error) throw error;
@@ -116,7 +109,7 @@ export class AffiliateWithdrawalService {
       .from('commissionTransactions')
       .select('*, affiliate:affiliate_profiles(commission_balance)')
       .eq('id', withdrawalId)
-      .eq('type', 'WITHDRAWAL')
+      .is('order_id', null)
       .eq('status', 'PENDING')
       .single();
 
@@ -158,7 +151,7 @@ export class AffiliateWithdrawalService {
       .from('commissionTransactions')
       .select('*')
       .eq('id', withdrawalId)
-      .eq('type', 'WITHDRAWAL')
+      .is('order_id', null)
       .eq('status', 'PENDING')
       .single();
 
@@ -177,5 +170,62 @@ export class AffiliateWithdrawalService {
     if (updateError) throw updateError;
 
     return { message: 'Withdrawal approved successfully' };
+  }
+
+  static async getPendingWithdrawals(pagination: PaginationParams) {
+    const { page = 1, limit = 10 } = pagination;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, error, count } = await supabase
+      .from('commissionTransactions')
+      .select(`
+        *,
+        affiliate:affiliate_profiles(
+          id,
+          commission_balance,
+          user:users(
+            id,
+            email,
+            first_name,
+            last_name,
+            phone
+          )
+        )
+      `, { count: 'exact' })
+      .is('order_id', null)
+      .eq('status', 'PENDING')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) throw error;
+
+    const transformedData = data?.map(item => ({
+      id: item.id,
+      amount: Math.abs(item.amount),
+      status: item.status,
+      createdAt: item.created_at,
+      affiliate: item.affiliate ? {
+        id: item.affiliate.id,
+        currentBalance: item.affiliate.commission_balance,
+        user: item.affiliate.user ? {
+          id: item.affiliate.user.id,
+          email: item.affiliate.user.email,
+          firstName: item.affiliate.user.first_name,
+          lastName: item.affiliate.user.last_name,
+          phone: item.affiliate.user.phone
+        } : null
+      } : null
+    }));
+
+    return {
+      data: transformedData,
+      pagination: {
+        total: count || 0,
+        currentPage: page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit)
+      }
+    };
   }
 }

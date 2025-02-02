@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AffiliateService } from '../services/affiliate.service/index';
+import { AffiliateService, AffiliateWithdrawalService } from '../services/affiliate.service/index';
 import { validatePaginationParams } from '../utils/pagination';
 import supabase from '../config/database';
 import { INDIRECT_COMMISSION_RATE, PROFIT_MARGIN_RATE } from '../services/affiliate.service/constants';
@@ -99,8 +99,29 @@ export class AffiliateController {
         return res.status(400).json({ error: 'Invalid amount' });
       }
 
-      const result = await AffiliateService.requestWithdrawal(userId, amount);
-      res.json({ data: result });
+      if (typeof amount !== 'number') {
+        return res.status(400).json({ error: 'Amount must be a number' });
+      }
+
+      const { data: profile } = await supabase
+        .from('affiliate_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+      if (!profile) {
+        return res.status(404).json({ error: 'Affiliate profile not found' });
+      }
+
+      const result = await AffiliateWithdrawalService.requestWithdrawal(profile.id, amount);
+      res.json({
+        data: {
+          id: result.id,
+          amount: Math.abs(result.amount),
+          status: result.status,
+          createdAt: result.created_at
+        }
+      });
     } catch (error: any) {
       console.error('Withdrawal request error:', error);
       res.status(error.message.includes('not found') ? 404 : 500)
@@ -110,23 +131,49 @@ export class AffiliateController {
 
   static async getWithdrawals(req: Request, res: Response) {
     try {
+      // Vérifier les droits admin
+      if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const pagination = validatePaginationParams(req.query);
       const { status } = req.query;
       
-      const withdrawals = await AffiliateService.getWithdrawals(
+      const withdrawals = await AffiliateWithdrawalService.getWithdrawals(
         pagination,
         status as string | undefined
       );
       
-      res.json({ data: withdrawals });
+      res.json(withdrawals);
     } catch (error: any) {
       console.error('Get withdrawals error:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
+  static async getPendingWithdrawals(req: Request, res: Response) {
+    try {
+      // Vérifier les droits admin
+      if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const pagination = validatePaginationParams(req.query);
+      const withdrawals = await AffiliateWithdrawalService.getWithdrawals(pagination, 'PENDING');
+      res.json(withdrawals);
+    } catch (error: any) {
+      console.error('Get pending withdrawals error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async rejectWithdrawal(req: Request, res: Response) {
     try {
+      // Vérifier les droits admin
+      if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const { withdrawalId } = req.params;
       const { reason } = req.body;
 
@@ -136,7 +183,7 @@ export class AffiliateController {
         });
       }
 
-      const result = await AffiliateService.rejectWithdrawal(withdrawalId, reason);
+      const result = await AffiliateWithdrawalService.rejectWithdrawal(withdrawalId, reason);
       res.json({ data: result });
     } catch (error: any) {
       console.error('Reject withdrawal error:', error);
@@ -147,8 +194,13 @@ export class AffiliateController {
 
   static async approveWithdrawal(req: Request, res: Response) {
     try {
+      // Vérifier les droits admin
+      if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
       const { withdrawalId } = req.params;
-      const result = await AffiliateService.approveWithdrawal(withdrawalId);
+      const result = await AffiliateWithdrawalService.approveWithdrawal(withdrawalId);
       res.json({ data: result });
     } catch (error: any) {
       console.error('Approve withdrawal error:', error);
