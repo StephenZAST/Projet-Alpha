@@ -52,6 +52,11 @@
 | orders_archive | service_id | services | id |
 | orders_archive | service_type_id | service_types | id |
 
+### Order Notes Relations
+| Source Table | Source Column | Target Table | Target Column |
+|-------------|---------------|--------------|---------------|
+| order_notes | order_id | orders | id |
+
 ## Blog System Relations
 ### Blog Related Relations
 | Source Table | Source Column | Target Table | Target Column |

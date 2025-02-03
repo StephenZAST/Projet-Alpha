@@ -32,17 +32,17 @@ async function testCreateFlashOrder() {
     console.log(JSON.stringify(response.data.data, null, 2));
 
     // Vérifier le statut
-    const order = response.data.data.order;
+    const order = response.data.data;
     console.log('\n🔍 Vérification des détails:');
     console.log(`- ID de la commande: ${order.id}`);
-    console.log(`- Status: ${order.status} (devrait être PENDING)`);
-    console.log(`- Note: ${response.data.data.note || 'Aucune note'}`);
+    console.log(`- Status: ${order.status} (devrait être DRAFT)`);
+    console.log(`- Adresse: ${order.address?.street}, ${order.address?.city}`);
+    console.log(`- Client: ${order.user?.firstName} ${order.user?.lastName}`);
+    console.log(`- Note: ${order.note || 'Aucune note'}`);
 
   } catch (error: any) {
     console.error('\n❌ Erreur lors du test:', error.message);
-    if (error.code === 'ECONNREFUSED') {
-      console.log("\n💡 Assurez-vous que le serveur est démarré avec 'npm run dev' avant d'exécuter ce test.");
-    } else if (error.response) {
+    if (error.response) {
       console.log('\nDétails de l\'erreur:', {
         status: error.response.status,
         statusText: error.response.statusText,

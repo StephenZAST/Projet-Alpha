@@ -235,6 +235,15 @@
 ### Blog Categories (Table: blog_categories)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
+|------------|------|-------------|
+| id | uuid | NOT NULL |
+| name | varchar(100) | NOT NULL |
+| description | text | |
+| createdAt | timestamp with time zone | |
+
+### Blog Categories (Table: blog_categories)
+| Column Name | Type | Constraints |
+|------------|------|-------------|
 | id | uuid | NOT NULL |
 | name | varchar(255) | NOT NULL |
 | description | text | |
@@ -281,6 +290,7 @@
 | Column Name | Type | Constraints |
 |------------|------|-------------|
 | id | uuid | NOT NULL |
+### OrderStatus
 | user_id | uuid | NOT NULL |
 | email | text | NOT NULL |
 | code | varchar(6) | NOT NULL |
@@ -288,5 +298,16 @@
 | used | boolean | |
 | created_at | timestamp with time zone | |
 | updated_at | timestamp with time zone | |
+
+[Note: Les autres tables ont été omises pour la clarté. Chaque section est organisée par domaine fonctionnel avec des tables connexes regroupées ensemble.]
+- DRAFT (nouveau)
+- PENDING
+- COLLECTING
+- COLLECTED
+- PROCESSING
+- READY
+- DELIVERING
+- DELIVERED
+- CANCELLED
 
 [Note: Les autres tables ont été omises pour la clarté. Chaque section est organisée par domaine fonctionnel avec des tables connexes regroupées ensemble.]
