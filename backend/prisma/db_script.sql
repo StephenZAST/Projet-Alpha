@@ -206,3 +206,14 @@ WHERE p.prosrc LIKE '%orders%';
     "nspname": "cron"
   }
 ]
+
+
+
+-- Afficher toutes les valeurs de l'énumération status de la table orders
+SELECT 
+    t.typname as "Type Name",
+    e.enumlabel as "Status Values"
+FROM pg_type t 
+JOIN pg_enum e ON t.oid = e.enumtypid  
+WHERE t.typname = 'order_status'
+ORDER BY e.enumsortorder;

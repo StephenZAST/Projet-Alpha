@@ -68,18 +68,18 @@ router.get(
   asyncHandler(OrderController.getOrdersByStatus)
 );
 
-// Routes admin et livreur
+// Routes admin et livreur pour les commandes flash
 router.get(
-  '/draft/all',
+  '/flash/pending',
   authorizeRoles(['ADMIN', 'DELIVERY']),
-  asyncHandler(FlashOrderController.getAllDraftOrders)
+  asyncHandler(FlashOrderController.getAllPendingOrders)
 );
 
 router.patch(
-  '/draft/:orderId/complete',
+  '/flash/:orderId/complete',
   authorizeRoles(['ADMIN', 'DELIVERY']),
   validateCompleteFlashOrder,
-  asyncHandler(FlashOrderController.completeDraftOrder)
+  asyncHandler(FlashOrderController.completeFlashOrder)
 );
 
 router.patch(

@@ -5,6 +5,7 @@ import { NotificationService } from '../notification.service';
 export class OrderStatusService {
   // Définition des transitions de statut valides
   private static readonly validStatusTransitions: Record<OrderStatus, OrderStatus[]> = {
+    'DRAFT': ['PENDING'],      // Pour les commandes flash
     'PENDING': ['COLLECTING'],
     'COLLECTING': ['COLLECTED'],
     'COLLECTED': ['PROCESSING'],

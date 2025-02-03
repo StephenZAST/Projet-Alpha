@@ -97,6 +97,7 @@ export class OrderStatusController {
 
   private static isValidStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): boolean {
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
+      'DRAFT': ['PENDING'],
       'PENDING': ['COLLECTING'],
       'COLLECTING': ['COLLECTED'],
       'COLLECTED': ['PROCESSING'],

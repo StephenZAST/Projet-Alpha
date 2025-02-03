@@ -54,12 +54,12 @@ export class OrderController {
     await FlashOrderController.createFlashOrder(req, res);
   }
 
-  static async getAllDraftOrders(req: Request, res: Response): Promise<void> {
-    await FlashOrderController.getAllDraftOrders(req, res);
+  static async getAllPendingOrders(req: Request, res: Response): Promise<void> {
+    await FlashOrderController.getAllPendingOrders(req, res);
   }
 
-  static async completeDraftOrder(req: Request, res: Response): Promise<void> {
-    await FlashOrderController.completeDraftOrder(req, res);
+  static async completeFlashOrder(req: Request, res: Response): Promise<void> {
+    await FlashOrderController.completeFlashOrder(req, res);
   }
 
   // Méthodes partagées
