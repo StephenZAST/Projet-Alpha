@@ -82,7 +82,9 @@ class AuthController extends GetxController {
         final userData = response['data']['user'];
         if (userData != null) {
           try {
-            final newUser = User.fromJson(userData);
+            // Convertir explicitement en Map<String, dynamic>
+            final userMap = Map<String, dynamic>.from(userData);
+            final newUser = User.fromJson(userMap);
             print(
                 '[AuthController] User created successfully: ${newUser.toJson()}');
             user.value = newUser;

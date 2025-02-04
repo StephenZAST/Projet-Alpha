@@ -22,7 +22,8 @@ class ApiService {
       receiveTimeout: const Duration(seconds: 10),
       contentType: 'application/json',
       validateStatus: (status) {
-        return status! < 500;
+        // Accepter tous les statuts pour gérer les erreurs manuellement
+        return true;
       },
     ));
 
@@ -57,6 +58,14 @@ class ApiService {
               ),
             );
           }
+
+          if (response.statusCode == 500) {
+            print(
+                '[ApiService] Server error on ${response.requestOptions.path}: ${response.data}');
+            // Retourner une réponse vide mais valide plutôt qu'une erreur
+            response.data = {'data': null, 'success': false};
+          }
+
           return handler.next(response);
         },
         onError: (error, handler) {

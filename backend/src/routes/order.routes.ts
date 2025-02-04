@@ -35,6 +35,10 @@ router.get(
   asyncHandler(OrderController.getUserOrders)
 );
 
+// Placer ces routes AVANT la route '/:orderId'
+router.get('/by-status', asyncHandler(OrderController.getOrdersByStatus));
+router.get('/recent', asyncHandler(OrderController.getRecentOrders));
+
 router.get(
   '/:orderId',
   asyncHandler(OrderController.getOrderDetails)
@@ -55,17 +59,6 @@ router.post(
   '/flash',
   validateCreateFlashOrder,
   asyncHandler(FlashOrderController.createFlashOrder)
-);
-
-// Routes récentes et statuts
-router.get(
-  '/recent',
-  asyncHandler(OrderController.getRecentOrders)
-);
-
-router.get(
-  '/by-status',
-  asyncHandler(OrderController.getOrdersByStatus)
 );
 
 // Routes admin et livreur pour les commandes flash

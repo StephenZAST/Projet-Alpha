@@ -67,28 +67,36 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-      phone: json['phone'] as String?,
-      role: UserRole.values.firstWhere(
-        (e) =>
-            e.toString().split('.').last ==
-            (json['role'] as String).toUpperCase(),
-        orElse: () => UserRole.CLIENT,
-      ),
-      referralCode: json['referralCode'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-      isActive: json['isActive'] as bool? ?? true,
-      loyaltyPoints: json['loyaltyPoints'] as int? ?? 0,
-      affiliateBalance: json['affiliateBalance'] != null
-          ? (json['affiliateBalance'] as num).toDouble()
-          : null,
-      affiliateCode: json['affiliateCode'] as String?,
-    );
+    try {
+      return User(
+        id: json['id'] as String,
+        email: json['email'] as String,
+        firstName: json['firstName'] ?? '', // Valeur par défaut si null
+        lastName: json['lastName'] ?? '', // Valeur par défaut si null
+        phone: json['phone'],
+        role: UserRole.values.firstWhere(
+          (e) =>
+              e.toString().split('.').last ==
+              (json['role'] as String).toUpperCase(),
+          orElse: () => UserRole.CLIENT,
+        ),
+        referralCode: json['referralCode'],
+        createdAt: DateTime.parse(
+            json['createdAt'] ?? DateTime.now().toIso8601String()),
+        updatedAt: DateTime.parse(
+            json['updatedAt'] ?? DateTime.now().toIso8601String()),
+        isActive: json['isActive'] ?? true,
+        loyaltyPoints: json['loyaltyPoints'] ?? 0,
+        affiliateBalance: json['affiliateBalance'] != null
+            ? (json['affiliateBalance'] as num).toDouble()
+            : null,
+        affiliateCode: json['affiliateCode'],
+      );
+    } catch (e) {
+      print('Error parsing User JSON: $e');
+      print('Problematic JSON: $json');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {

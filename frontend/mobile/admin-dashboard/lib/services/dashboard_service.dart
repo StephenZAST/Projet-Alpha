@@ -27,27 +27,18 @@ class DashboardService {
 
   static Future<Map<String, dynamic>> getRecentOrders() async {
     try {
-      // Cette route est dans order.routes.ts
-      final response = await _api.get('/orders/recent');
+      final response = await _api.get('/orders',
+          queryParameters: {'limit': '5', 'sort': 'createdAt:desc'});
+
       if (response.data != null && response.data['data'] != null) {
-        final orders = response.data['data'] as List;
         return {
-          'orders': orders
-              .map((order) => {
-                    'id': order['id'],
-                    'totalAmount': order['totalAmount'],
-                    'status': order['status'],
-                    'createdAt': order['createdAt'],
-                    'service': order['service'],
-                    'user': order['user'],
-                  })
-              .toList(),
+          'orders': response.data['data'],
         };
       }
-      throw 'Erreur lors du chargement des commandes récentes';
+      return {'orders': []};
     } catch (e) {
       print('[DashboardService] Error getting recent orders: $e');
-      throw 'Erreur lors du chargement des commandes récentes';
+      return {'orders': []};
     }
   }
 

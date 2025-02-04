@@ -88,61 +88,64 @@ export class OrderQueryController {
 
   static async getRecentOrders(req: Request, res: Response) {
     try {
-      const { limit = 5 } = req.query;
-      
-      const { data: orders, error } = await supabase
+      const limit = parseInt(req.query.limit?.toString() || '5');
+
+      const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
           user:users(
             first_name,
-            last_name
+            last_name,
+            email
           ),
           service:services(
             id,
-            name,
-            description
-          )
+            name
+          ),
+          address:addresses(*)
         `)
         .order('createdAt', { ascending: false })
-        .limit(Number(limit));
+        .limit(limit);
 
       if (error) throw error;
 
-      // Récupérer les items pour chaque commande
-      const completeOrders = await Promise.all(
-        orders.map(async (order) => ({
-          ...order,
-          items: await OrderSharedMethods.getOrderItems(order.id)
-        }))
-      );
-
-      res.json({ data: completeOrders });
-    } catch (error: any) {
-      console.error('[OrderController] Error getting recent orders:', error);
-      res.status(500).json({ error: error.message });
+      res.json({
+        success: true,
+        data: data
+      });
+    } catch (error) {
+      console.error('Error fetching recent orders:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch recent orders'
+      });
     }
   }
 
   static async getOrdersByStatus(req: Request, res: Response) {
     try {
-      const { data: ordersByStatus, error } = await supabase
+      const { data: orders, error } = await supabase
         .from('orders')
-        .select('status, count')
-        .select('*')
-        .then((result) => {
-          const orders = result.data || [];
-          return orders.reduce((acc: Record<string, number>, order) => {
-            acc[order.status] = (acc[order.status] || 0) + 1;
-            return acc;
-          }, {});
-        });
+        .select('status');
 
       if (error) throw error;
-      res.json({ data: ordersByStatus });
-    } catch (error: any) {
-      console.error('[OrderController] Error getting orders by status:', error);
-      res.status(500).json({ error: error.message });
+
+      const statusCount = orders.reduce((acc: Record<string, number>, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      res.json({
+        success: true,
+        data: statusCount
+      });
+    } catch (error) {
+      console.error('Error fetching orders by status:', error);
+      res.status(500).json({
+        success: false, 
+        error: 'Failed to fetch orders by status'
+      });
     }
   }
 

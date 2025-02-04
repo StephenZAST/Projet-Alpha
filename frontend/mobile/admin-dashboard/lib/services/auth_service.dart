@@ -65,26 +65,40 @@ class AuthService {
           throw 'Missing required user data fields';
         }
 
+        // Vérifier et compléter les données manquantes
+        final completeUserData = {
+          ...userData,
+          'firstName': userData['firstName'] ?? '',
+          'lastName': userData['lastName'] ?? '',
+          'createdAt':
+              userData['createdAt'] ?? DateTime.now().toIso8601String(),
+          'updatedAt':
+              userData['updatedAt'] ?? DateTime.now().toIso8601String(),
+          'isActive': userData['isActive'] ?? true,
+          'loyaltyPoints': userData['loyaltyPoints'] ?? 0,
+        };
+
         // Sauvegarder le token
         await _storage.write(_tokenKey, token);
         // Sauvegarder les données utilisateur
         await _storage.write(
-            _userKey, userData); // Sauvegarde directe de l'objet
+            _userKey, completeUserData); // Sauvegarde directe de l'objet
 
         print('[AuthService] Login successful');
         print('[AuthService] Token saved: $token');
-        print('[AuthService] User data saved: $userData');
+        print('[AuthService] User data saved: $completeUserData');
 
         // Tester la création de l'objet User avant de retourner
         try {
-          final user = User.fromJson(userData);
+          final user =
+              User.fromJson(Map<String, dynamic>.from(completeUserData));
           print(
               '[AuthService] User object created successfully: ${user.toJson()}');
 
           return {
             'success': true,
             'data': {
-              'user': userData,
+              'user': completeUserData,
               'token': token,
             }
           };

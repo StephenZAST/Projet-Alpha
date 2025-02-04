@@ -81,7 +81,7 @@ class DashboardController extends GetxController {
       hasError.value = false;
       errorMessage.value = '';
 
-      // Récupérer les statistiques générales
+      // Récupérer les statistiques générales d'abord
       final stats = await DashboardService.getStatistics();
       totalRevenue.value = (stats['totalRevenue'] as num).toDouble();
       totalOrders.value = stats['totalOrders'] as int;
@@ -89,11 +89,20 @@ class DashboardController extends GetxController {
       orderStatusCount.value =
           Map<String, int>.from(stats['ordersByStatus'] ?? {});
 
-      // Récupérer les commandes récentes
-      final recentData = await DashboardService.getRecentOrders();
-      recentOrders.value = (recentData['orders'] as List)
-          .map((json) => Order.fromJson(json))
-          .toList();
+      // Gestion plus robuste des commandes récentes
+      try {
+        final recentData = await DashboardService.getRecentOrders();
+        if (recentData['orders'] != null) {
+          recentOrders.value = (recentData['orders'] as List)
+              .map((json) => Order.fromJson(json))
+              .toList();
+        } else {
+          recentOrders.value = [];
+        }
+      } catch (e) {
+        print('[DashboardController] Error fetching recent orders: $e');
+        recentOrders.value = [];
+      }
 
       // Récupérer les données du graphique de revenus
       final chartData = await DashboardService.getRevenueChartData();
