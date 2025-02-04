@@ -28,6 +28,9 @@ class OrdersController extends GetxController {
   final totalAmount = 0.0.obs;
   final orderStatusCount = <String, int>{}.obs;
 
+  // Ajouter cette propriété pour les commandes en brouillon
+  final draftOrders = <Order>[].obs;
+
   // État pour la création/modification de commande
   final clients = <User>[].obs;
   final selectedClientId = RxnString();
@@ -56,6 +59,7 @@ class OrdersController extends GetxController {
   void onInit() {
     super.onInit();
     fetchOrders();
+    loadDraftOrders(); // Charger aussi les brouillons
   }
 
   Future<void> fetchOrders({bool resetPage = false}) async {
@@ -376,6 +380,18 @@ class OrdersController extends GetxController {
         backgroundColor: AppColors.error,
         colorText: AppColors.textLight,
       );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> loadDraftOrders() async {
+    try {
+      isLoading.value = true;
+      final drafts = await OrderService.getDraftOrders();
+      draftOrders.value = drafts;
+    } catch (e) {
+      print('[OrdersController] Error loading draft orders: $e');
     } finally {
       isLoading.value = false;
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants.dart';
 
 enum OrderStatus {
+  DRAFT, // Ajouter en premier
   PENDING,
   COLLECTING,
   COLLECTED,
@@ -19,6 +20,8 @@ enum AppButtonVariant { primary, secondary, error, success }
 extension OrderStatusExtension on OrderStatus {
   String get label {
     switch (this) {
+      case OrderStatus.DRAFT:
+        return 'Brouillon'; // Ajouter le label pour DRAFT
       case OrderStatus.PENDING:
         return 'En attente';
       case OrderStatus.COLLECTING:
@@ -42,6 +45,8 @@ extension OrderStatusExtension on OrderStatus {
 
   Color get color {
     switch (this) {
+      case OrderStatus.DRAFT:
+        return AppColors.gray400; // Couleur pour les commandes en brouillon
       case OrderStatus.PENDING:
         return AppColors.pending;
       case OrderStatus.COLLECTING:
@@ -63,6 +68,8 @@ extension OrderStatusExtension on OrderStatus {
 
   IconData get icon {
     switch (this) {
+      case OrderStatus.DRAFT:
+        return Icons.edit_note; // Icône pour les commandes en brouillon
       case OrderStatus.PENDING:
         return Icons.hourglass_empty;
       case OrderStatus.COLLECTING:

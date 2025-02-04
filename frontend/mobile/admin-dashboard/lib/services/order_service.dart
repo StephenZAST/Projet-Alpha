@@ -126,6 +126,7 @@ class OrderService {
 
   // Map des transitions de statut valides
   static final Map<String, List<String>> validTransitions = {
+    'DRAFT': ['PENDING'], // Ajouter la transition depuis DRAFT
     'PENDING': ['COLLECTING'],
     'COLLECTING': ['COLLECTED'],
     'COLLECTED': ['PROCESSING'],
@@ -292,6 +293,23 @@ class OrderService {
     } catch (e) {
       print('[OrderService] Error getting order statistics: $e');
       throw 'Erreur lors du chargement des statistiques';
+    }
+  }
+
+  static Future<List<Order>> getDraftOrders() async {
+    try {
+      final response =
+          await _api.get('$_basePath', queryParameters: {'status': 'DRAFT'});
+
+      if (response.data != null && response.data['data'] != null) {
+        return (response.data['data'] as List)
+            .map((json) => Order.fromJson(json))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('[OrderService] Error getting draft orders: $e');
+      throw 'Erreur lors du chargement des commandes en brouillon';
     }
   }
 }
