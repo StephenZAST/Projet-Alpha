@@ -32,8 +32,9 @@ class OrderService {
     DateTime? endDate,
   }) async {
     try {
-      print(
-          '[OrderService] Fetching orders with params: page=$page, limit=$limit, status=$status');
+      print('===== LOADING ORDERS PAGE =====');
+      print('Params: page=$page, limit=$limit, status=$status');
+
       final Map<String, dynamic> queryParams = {
         'page': page,
         'limit': limit,
@@ -51,24 +52,44 @@ class OrderService {
 
       final response =
           await _api.get('/admin/orders', queryParameters: queryParams);
-      print('[OrderService] Response received: ${response.data}');
+      print('Raw API Response: ${response.data}');
 
       if (response.data != null) {
+        print(
+            'Processing ${(response.data['data'] as List?)?.length ?? 0} orders');
+
+        final orders = (response.data['data'] as List?)
+                ?.map((json) {
+                  try {
+                    print('Processing order ID: ${json['id']}');
+                    return Order.fromJson(json);
+                  } catch (e) {
+                    print('Error processing individual order: $e');
+                    print('Problematic order data: $json');
+                    return null;
+                  }
+                })
+                .whereType<Order>()
+                .toList() ??
+            [];
+
+        print('Successfully processed ${orders.length} orders');
+
         return OrdersPageData(
-          orders: (response.data['data'] as List)
-              .map((json) => Order.fromJson(json))
-              .toList(),
-          total: response.data['pagination']['total'] as int,
+          orders: orders,
+          total: response.data['pagination']?['total'] as int? ?? 0,
           currentPage: page,
           limit: limit,
-          totalPages: response.data['pagination']['totalPages'] as int,
+          totalPages: response.data['pagination']?['totalPages'] as int? ?? 1,
         );
       }
 
-      print('[OrderService] No orders data found');
+      print('No data found in response');
       return OrdersPageData.empty();
-    } catch (e) {
-      print('[OrderService] Error getting orders: $e');
+    } catch (e, stackTrace) {
+      print('===== ERROR LOADING ORDERS =====');
+      print('Error: $e');
+      print('Stack trace: $stackTrace');
       throw 'Erreur lors du chargement des commandes. Détails : $e';
     }
   }
@@ -90,20 +111,36 @@ class OrderService {
   static Future<List<Order>> getRecentOrders({int limit = 5}) async {
     try {
       print('[OrderService] Fetching recent orders with limit: $limit');
+      // Corriger l'URL pour utiliser /orders/recent au lieu de /orders
       final response = await _api.get(
-        '$_basePath/recent',
+        '$_basePath/recent', // Correction de l'endpoint
         queryParameters: {'limit': limit},
       );
       print('[OrderService] Recent orders response: ${response.data}');
 
       if (response.data != null && response.data['data'] != null) {
-        final List<dynamic> data = response.data['data'];
-        return data.map((json) => Order.fromJson(json)).toList();
+        return (response.data['data'] as List)
+            .map((json) {
+              try {
+                // Gérer le cas où price est null dans le service
+                if (json['service'] != null &&
+                    json['service']['price'] == null) {
+                  json['service']['price'] = 0;
+                }
+                return Order.fromJson(json);
+              } catch (e) {
+                print('[OrderService] Error parsing order: $e');
+                print('[OrderService] Problematic order: $json');
+                return null;
+              }
+            })
+            .whereType<Order>()
+            .toList();
       }
       return [];
     } catch (e) {
       print('[OrderService] Error getting recent orders: $e');
-      throw 'Erreur lors du chargement des commandes récentes';
+      return []; // Retourner une liste vide au lieu de lancer une exception
     }
   }
 
@@ -310,6 +347,60 @@ class OrderService {
     } catch (e) {
       print('[OrderService] Error getting draft orders: $e');
       throw 'Erreur lors du chargement des commandes en brouillon';
+    }
+  }
+
+  static Future<Order> createFlashOrder({
+    required String addressId,
+    String? notes,
+  }) async {
+    try {
+      print('[OrderService] Creating flash order');
+      final response = await _api.post(
+        '$_basePath/flash',
+        data: {
+          'addressId': addressId,
+          'notes': notes,
+        },
+      );
+
+      if (response.data != null && response.data['data'] != null) {
+        return Order.fromJson(response.data['data']);
+      }
+      throw 'Erreur lors de la création de la commande flash';
+    } catch (e) {
+      print('[OrderService] Error creating flash order: $e');
+      throw 'Erreur lors de la création de la commande flash';
+    }
+  }
+
+  static Future<Order> completeFlashOrder(
+    String orderId, {
+    required String serviceId,
+    required List<Map<String, dynamic>> items,
+    String? serviceTypeId,
+    DateTime? collectionDate,
+    DateTime? deliveryDate,
+  }) async {
+    try {
+      final response = await _api.patch(
+        '$_basePath/flash/$orderId/complete',
+        data: {
+          'serviceId': serviceId,
+          'items': items,
+          'serviceTypeId': serviceTypeId,
+          'collectionDate': collectionDate?.toIso8601String(),
+          'deliveryDate': deliveryDate?.toIso8601String(),
+        },
+      );
+
+      if (response.data != null && response.data['data'] != null) {
+        return Order.fromJson(response.data['data']);
+      }
+      throw 'Erreur lors de la mise à jour de la commande flash';
+    } catch (e) {
+      print('[OrderService] Error completing flash order: $e');
+      throw 'Erreur lors de la mise à jour de la commande flash';
     }
   }
 }

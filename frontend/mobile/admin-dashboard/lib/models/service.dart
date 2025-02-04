@@ -1,7 +1,8 @@
 class Service {
   final String id;
   final String name;
-  final double price;
+  final double? price;
+  // Prix optionnel pour les services flash
   final String? description;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -9,22 +10,49 @@ class Service {
   Service({
     required this.id,
     required this.name,
-    required this.price,
+    this.price,
     this.description,
     required this.createdAt,
     this.updatedAt,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
-    return Service(
-      id: json['id'],
-      name: json['name'],
-      price: (json['price'] as num).toDouble(),
-      description: json['description'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt:
-          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
-    );
+    try {
+      // Conversion des timestamps avec gestion des formats snake_case
+      DateTime parseTimestamp(String? value) {
+        if (value == null) return DateTime.now();
+        try {
+          return DateTime.parse(value);
+        } catch (e) {
+          print('Error parsing timestamp: $e');
+          return DateTime.now();
+        }
+      }
+
+      return Service(
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        price: json['price'] != null ? (json['price'] as num).toDouble() : null,
+        description: json['description']?.toString(),
+        createdAt: parseTimestamp(json['created_at'] ?? json['createdAt']),
+        updatedAt: json['updated_at'] != null
+            ? parseTimestamp(json['updated_at'])
+            : (json['updatedAt'] != null
+                ? parseTimestamp(json['updatedAt'])
+                : null),
+      );
+    } catch (e, stackTrace) {
+      print('Error parsing Service: $e');
+      print('Stack trace: $stackTrace');
+      print('Problematic JSON: $json');
+
+      // Retourner un service par défaut au lieu de propager l'erreur
+      return Service(
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? 'Service inconnu',
+        createdAt: DateTime.now(),
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {

@@ -64,19 +64,22 @@ class OrdersController extends GetxController {
 
   Future<void> fetchOrders({bool resetPage = false}) async {
     try {
+      print('===== FETCHING ORDERS =====');
+      print('Reset page: $resetPage');
+      print('Current page: ${currentPage.value}');
+      print('Selected status: ${selectedStatus.value}');
+
       isLoading.value = true;
       hasError.value = false;
-      errorMessage.value = '';
-
-      if (resetPage) {
-        currentPage.value = 1;
-      }
 
       final result = await OrderService.loadOrdersPage(
         page: currentPage.value,
         limit: itemsPerPage.value,
         status: selectedStatus.value?.name,
       );
+
+      print('Received ${result.orders.length} orders');
+      print('Total pages: ${result.totalPages}');
 
       orders.value = result.orders;
       totalOrders.value = result.total;
@@ -88,10 +91,12 @@ class OrdersController extends GetxController {
 
       // Mettre à jour les compteurs par statut
       await _updateStatusCounts();
-    } catch (e) {
-      print('[OrdersController] Error fetching orders: $e');
+    } catch (e, stackTrace) {
+      print('===== ERROR IN ORDERS CONTROLLER =====');
+      print('Error: $e');
+      print('Stack trace: $stackTrace');
       hasError.value = true;
-      errorMessage.value = 'Erreur lors du chargement des commandes';
+      errorMessage.value = 'Erreur lors du chargement des commandes: $e';
     } finally {
       isLoading.value = false;
     }

@@ -8,7 +8,8 @@ import 'enums.dart';
 class Order {
   final String id;
   final String userId;
-  final String serviceId;
+  final String? serviceId;
+  // Optionnel pour les commandes flash en DRAFT
   final String addressId;
   final String? affiliateCode;
   final String status;
@@ -21,9 +22,10 @@ class Order {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final List<OrderItem>? items;
-  final String? notes;
+  final String? notes; // Notes spécifiques aux commandes flash
   final PaymentStatus paymentStatus;
   final PaymentMethod paymentMethod;
+  final bool isFlashOrder; // Indicateur pour les commandes flash
 
   // Relations
   final Service? service;
@@ -40,7 +42,8 @@ class Order {
   Order({
     required this.id,
     required this.userId,
-    required this.serviceId,
+    this.serviceId,
+    // Maintenant optionnel
     required this.addressId,
     this.affiliateCode,
     required this.status,
@@ -59,25 +62,67 @@ class Order {
     this.service,
     this.address,
     this.user,
+    this.isFlashOrder = false, // Par défaut, ce n'est pas une commande flash
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
     try {
+      print('[DEBUG] Raw JSON for Order: $json'); // Nouveau log
+
+      // Vérifier et convertir les champs qui peuvent être null
+      String safeString(dynamic value) {
+        if (value == null) return '';
+        return value.toString();
+      }
+
+      print('===== DEBUG ORDER PARSING =====');
+      print('1. Starting to parse order: ${json['id']}');
+      print('2. Raw status value: ${json['status']}');
+      print('3. Raw total amount: ${json['totalAmount']}');
+      print('[Order] Parsing order data: ${json['id']}');
+
+      // Sécuriser la conversion du montant total
+      double parseTotalAmount(dynamic value) {
+        if (value == null) return 0.0;
+        if (value is num) return value.toDouble();
+        if (value is String) {
+          try {
+            return double.parse(value);
+          } catch (e) {
+            return 0.0;
+          }
+        }
+        return 0.0;
+      }
+
+      // Ajout de logs pour déboguer
+      print('Raw status from API: ${json['status']}');
+
+      // Correction de la conversion du statut
+      final rawStatus = json['status']?.toString().toUpperCase() ?? 'PENDING';
+      // Détecter si c'est une commande flash (status DRAFT ou présence de notes)
+      final isFlash = rawStatus == 'DRAFT' || json['notes'] != null;
+      print('Processed status: $rawStatus');
+
+      // Log avant de retourner l'objet
+      print('4. Successfully parsed order with status: $rawStatus');
+      print('===== END ORDER PARSING =====');
+
       return Order(
-        id: json['id']?.toString() ?? '',
-        userId: json['userId']?.toString() ?? '',
-        serviceId: json['service_id']?.toString() ?? '',
-        addressId: json['address_id']?.toString() ?? '',
+        id: safeString(json['id']),
+        userId: safeString(json['userId']),
+        serviceId: isFlash && rawStatus == 'DRAFT'
+            ? null
+            : safeString(json['service_id']),
+        addressId: safeString(json['address_id']),
         affiliateCode: json['affiliateCode']?.toString(),
-        status: json['status']?.toString().toUpperCase() ?? 'PENDING',
+        status: (json['status']?.toString() ?? 'PENDING').toUpperCase(),
         isRecurring: json['isRecurring'] ?? false,
         recurrenceType: json['recurrenceType']?.toString(),
         nextRecurrenceDate: json['nextRecurrenceDate'] != null
             ? DateTime.parse(json['nextRecurrenceDate'].toString())
             : null,
-        totalAmount: json['totalAmount'] != null
-            ? (json['totalAmount'] as num).toDouble()
-            : 0.0,
+        totalAmount: parseTotalAmount(json['totalAmount']),
         collectionDate: json['collectionDate'] != null
             ? DateTime.parse(json['collectionDate'].toString())
             : null,
@@ -95,7 +140,8 @@ class Order {
                 .map((item) => OrderItem.fromJson(item))
                 .toList()
             : null,
-        notes: json['notes']?.toString(),
+        notes: json['notes']
+            ?.toString(), // Ajout des notes pour les commandes flash
         paymentStatus:
             (json['paymentStatus']?.toString() ?? 'PENDING').toPaymentStatus(),
         paymentMethod:
@@ -105,22 +151,16 @@ class Order {
         address:
             json['address'] != null ? Address.fromJson(json['address']) : null,
         user: json['user'] != null ? User.fromJson(json['user']) : null,
+        isFlashOrder: isFlash,
       );
-    } catch (e) {
-      print('Error parsing Order JSON: $e');
-      print('Problematic JSON: $json');
-      return Order(
-        id: json['id']?.toString() ?? 'error',
-        userId: '',
-        serviceId: '',
-        addressId: '',
-        status: 'ERROR',
-        isRecurring: false,
-        totalAmount: 0,
-        createdAt: DateTime.now(),
-        paymentStatus: PaymentStatus.PENDING,
-        paymentMethod: PaymentMethod.CASH,
-      );
+    } catch (e, stackTrace) {
+      print('===== ERROR PARSING ORDER =====');
+      print('Error type: ${e.runtimeType}'); // Ajout du type d'erreur
+      print('Error details: $e');
+      print('Stack trace: $stackTrace');
+      print('Raw JSON data: $json');
+      print('===== END ERROR =====');
+      rethrow; // Propager l'erreur pour un meilleur débogage
     }
   }
 
@@ -128,7 +168,7 @@ class Order {
     return {
       'id': id,
       'userId': userId,
-      'service_id': serviceId,
+      'service_id': serviceId ?? '',
       'address_id': addressId,
       'affiliateCode': affiliateCode,
       'status': status,

@@ -78,9 +78,13 @@ class ServicesScreen extends StatelessWidget {
                   ],
                   SizedBox(height: 4),
                   Text(
-                    '${service.price.toStringAsFixed(2)} €',
+                    service.price != null
+                        ? '${service.price!.toStringAsFixed(2)} €'
+                        : 'Prix variable',
                     style: AppTextStyles.bodyLarge.copyWith(
-                      color: AppColors.primary,
+                      color: service.price != null
+                          ? AppColors.primary
+                          : AppColors.warning,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -258,10 +262,12 @@ class ServicesScreen extends StatelessWidget {
             label: 'Mettre à jour',
             onPressed: () {
               final name = nameController.text.trim();
-              final price = double.tryParse(priceController.text) ?? 0;
+              final price = priceController.text.isEmpty
+                  ? null
+                  : double.tryParse(priceController.text);
               final description = descriptionController.text.trim();
 
-              if (name.isNotEmpty && price > 0) {
+              if (name.isNotEmpty && (price == null || price > 0)) {
                 controller.updateService(
                   id: service.id,
                   name: name,

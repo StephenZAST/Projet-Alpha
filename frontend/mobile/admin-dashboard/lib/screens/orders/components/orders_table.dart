@@ -72,14 +72,32 @@ class OrdersTable extends StatelessWidget {
             DataCell(Text(
               '#${order.id}',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.primary,
+                color:
+                    order.isFlashOrder ? AppColors.warning : AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
+              overflow: TextOverflow.ellipsis,
             )),
             DataCell(Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (order.isFlashOrder)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    margin: EdgeInsets.only(bottom: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withOpacity(0.1),
+                      borderRadius: AppRadius.radiusSM,
+                    ),
+                    child: Text(
+                      'FLASH',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 Text(
                   order.customerName ?? 'N/A',
                   style: AppTextStyles.bodySmall.copyWith(
@@ -109,6 +127,9 @@ class OrdersTable extends StatelessWidget {
               currencyFormat.format(order.totalAmount),
               style: AppTextStyles.bodySmall.copyWith(
                 fontWeight: FontWeight.w600,
+                fontStyle: order.isFlashOrder && order.totalAmount == 0
+                    ? FontStyle.italic
+                    : FontStyle.normal,
                 color: isDark ? AppColors.textLight : AppColors.textPrimary,
               ),
             )),
@@ -237,6 +258,10 @@ class OrdersTable extends StatelessWidget {
         return Icons.help_outline;
     }
   }
+
+  String _normalizeStatus(String status) {
+    return status.trim().toUpperCase();
+  }
 }
 
 class _StatusUpdateButton extends StatelessWidget {
@@ -269,6 +294,8 @@ class _StatusUpdateButton extends StatelessWidget {
     switch (current) {
       case OrderStatus.PENDING:
         return OrderStatus.COLLECTING;
+      case OrderStatus.DRAFT:
+        return OrderStatus.PENDING;
       case OrderStatus.COLLECTING:
         return OrderStatus.COLLECTED;
       case OrderStatus.COLLECTED:

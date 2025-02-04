@@ -34,14 +34,37 @@ class OrderDetails extends StatelessWidget {
               children: [
                 Text(
                   'Commande #${order.id}',
-                  style: AppTextStyles.h2.copyWith(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
+                  style: AppTextStyles.h2,
                 ),
-                IconButton(
-                  icon: Icon(Icons.close),
-                  onPressed: () => Get.back(),
-                  color: AppColors.textSecondary,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (order.isFlashOrder) ...[
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: 4,
+                        ),
+                        margin: EdgeInsets.only(right: AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withOpacity(0.1),
+                          borderRadius: AppRadius.radiusSM,
+                        ),
+                        child: Text(
+                          'FLASH',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                    IconButton(
+                      icon: Icon(Icons.close),
+                      onPressed: () => Get.back(),
+                      color: AppColors.textSecondary,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -55,6 +78,15 @@ class OrderDetails extends StatelessWidget {
             ],
             Divider(height: AppSpacing.xl),
             _buildItemsSection(order, currencyFormat, isDark),
+            if (order.isFlashOrder && order.service == null) ...[
+              Divider(height: AppSpacing.xl),
+              Text(
+                'Service à définir',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.warning,
+                ),
+              ),
+            ],
             if (order.notes?.isNotEmpty == true) ...[
               Divider(height: AppSpacing.xl),
               _buildNotesSection(order, isDark),
@@ -286,7 +318,9 @@ class OrderDetails extends StatelessWidget {
               ),
             ),
             Text(
-              currencyFormat.format(order.totalAmount),
+              order.isFlashOrder && order.totalAmount == 0
+                  ? 'À définir'
+                  : currencyFormat.format(order.totalAmount),
               style: AppTextStyles.h3.copyWith(
                 color: Theme.of(Get.context!).textTheme.bodyLarge?.color,
               ),

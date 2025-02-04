@@ -21,7 +21,7 @@ extension OrderStatusExtension on OrderStatus {
   String get label {
     switch (this) {
       case OrderStatus.DRAFT:
-        return 'Brouillon'; // Ajouter le label pour DRAFT
+        return 'Flash'; // Changé de 'Brouillon' à 'Flash'
       case OrderStatus.PENDING:
         return 'En attente';
       case OrderStatus.COLLECTING:
