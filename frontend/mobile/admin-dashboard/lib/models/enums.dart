@@ -92,16 +92,19 @@ extension OrderStatusExtension on OrderStatus {
 
 extension OrderStatusParser on String? {
   OrderStatus toOrderStatus() {
-    if (this == null || this!.isEmpty) {
-      return OrderStatus.PENDING;
-    }
+    if (this == null) return OrderStatus.PENDING;
+
+    final status = this!.toUpperCase();
     try {
       return OrderStatus.values.firstWhere(
-        (status) => status.name == this!.toUpperCase(),
-        orElse: () => OrderStatus.PENDING,
+        (e) => e.toString().split('.').last == status,
+        orElse: () {
+          print('Status inconnu: $status, utilisation de PENDING par défaut');
+          return OrderStatus.PENDING;
+        },
       );
     } catch (e) {
-      print('Error parsing OrderStatus from string: $this');
+      print('Erreur lors de la conversion du status: $this - $e');
       return OrderStatus.PENDING;
     }
   }

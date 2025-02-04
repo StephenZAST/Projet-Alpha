@@ -118,22 +118,22 @@ class OrdersTable extends StatelessWidget {
                 vertical: 4,
               ),
               decoration: BoxDecoration(
-                color: orderStatus.color.withOpacity(0.1),
+                color: _getStatusColor(order.status).withOpacity(0.1),
                 borderRadius: AppRadius.radiusSM,
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    orderStatus.icon,
+                    _getStatusIcon(order.status),
                     size: 14,
-                    color: orderStatus.color,
+                    color: _getStatusColor(order.status),
                   ),
                   SizedBox(width: 4),
                   Text(
-                    orderStatus.label,
+                    _getStatusLabel(order.status),
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: orderStatus.color,
+                      color: _getStatusColor(order.status),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -161,6 +161,81 @@ class OrdersTable extends StatelessWidget {
         );
       }).toList(),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'DRAFT':
+        return AppColors.gray400;
+      case 'PENDING':
+        return AppColors.warning;
+      case 'COLLECTING':
+        return AppColors.info;
+      case 'COLLECTED':
+        return AppColors.accent;
+      case 'PROCESSING':
+        return AppColors.primary;
+      case 'READY':
+        return AppColors.violet;
+      case 'DELIVERING':
+        return AppColors.orange;
+      case 'DELIVERED':
+        return AppColors.success;
+      case 'CANCELLED':
+        return AppColors.error;
+      default:
+        return AppColors.gray400;
+    }
+  }
+
+  String _getStatusLabel(String status) {
+    switch (status.toUpperCase()) {
+      case 'DRAFT':
+        return 'Brouillon';
+      case 'PENDING':
+        return 'En attente';
+      case 'COLLECTING':
+        return 'En collecte';
+      case 'COLLECTED':
+        return 'Collecté';
+      case 'PROCESSING':
+        return 'En traitement';
+      case 'READY':
+        return 'Prêt';
+      case 'DELIVERING':
+        return 'En livraison';
+      case 'DELIVERED':
+        return 'Livré';
+      case 'CANCELLED':
+        return 'Annulé';
+      default:
+        return 'Inconnu';
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toUpperCase()) {
+      case 'DRAFT':
+        return Icons.edit_note;
+      case 'PENDING':
+        return Icons.pending_actions;
+      case 'COLLECTING':
+        return Icons.directions_run;
+      case 'COLLECTED':
+        return Icons.check_circle_outline;
+      case 'PROCESSING':
+        return Icons.local_laundry_service;
+      case 'READY':
+        return Icons.thumb_up_outlined;
+      case 'DELIVERING':
+        return Icons.local_shipping_outlined;
+      case 'DELIVERED':
+        return Icons.task_alt;
+      case 'CANCELLED':
+        return Icons.cancel_outlined;
+      default:
+        return Icons.help_outline;
+    }
   }
 }
 

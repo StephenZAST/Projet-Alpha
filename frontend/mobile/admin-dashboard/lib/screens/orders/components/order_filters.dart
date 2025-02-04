@@ -33,35 +33,44 @@ class OrderFilters extends StatelessWidget {
           Obx(() => Wrap(
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.sm,
-                children: OrderStatus.values.map((status) {
-                  final isSelected = controller.selectedStatus.value == status;
-                  return FilterChip(
-                    label: Text(
-                      status.label,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: isSelected
-                            ? AppColors.textLight
-                            : Theme.of(context).textTheme.bodyMedium?.color,
+                children: [
+                  FilterChip(
+                    label: Text('Tous'),
+                    selected: controller.selectedStatus.value == null,
+                    onSelected: (_) => controller.filterByStatus(null),
+                    // ...style properties...
+                  ),
+                  ...OrderStatus.values.map((status) {
+                    final isSelected =
+                        controller.selectedStatus.value == status;
+                    return FilterChip(
+                      label: Text(
+                        status.label,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isSelected
+                              ? AppColors.textLight
+                              : Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
                       ),
-                    ),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      controller.filterByStatus(selected ? status : null);
-                    },
-                    selectedColor: status.color,
-                    backgroundColor: status.color.withOpacity(0.1),
-                    checkmarkColor: AppColors.textLight,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: AppRadius.radiusSM,
-                      side: BorderSide(
-                        color: isSelected
-                            ? status.color
-                            : status.color.withOpacity(0.5),
-                        width: 1,
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        controller.filterByStatus(selected ? status : null);
+                      },
+                      selectedColor: status.color,
+                      backgroundColor: status.color.withOpacity(0.1),
+                      checkmarkColor: AppColors.textLight,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.radiusSM,
+                        side: BorderSide(
+                          color: isSelected
+                              ? status.color
+                              : status.color.withOpacity(0.5),
+                          width: 1,
+                        ),
                       ),
-                    ),
-                  );
-                }).toList(),
+                    );
+                  }).toList(),
+                ],
               )),
           SizedBox(height: AppSpacing.md),
           TextField(

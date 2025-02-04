@@ -69,7 +69,7 @@ class Order {
         serviceId: json['service_id']?.toString() ?? '',
         addressId: json['address_id']?.toString() ?? '',
         affiliateCode: json['affiliateCode']?.toString(),
-        status: json['status']?.toString() ?? 'PENDING',
+        status: json['status']?.toString().toUpperCase() ?? 'PENDING',
         isRecurring: json['isRecurring'] ?? false,
         recurrenceType: json['recurrenceType']?.toString(),
         nextRecurrenceDate: json['nextRecurrenceDate'] != null
