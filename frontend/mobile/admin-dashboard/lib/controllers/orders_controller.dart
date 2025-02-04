@@ -64,13 +64,11 @@ class OrdersController extends GetxController {
 
   Future<void> fetchOrders({bool resetPage = false}) async {
     try {
-      print('===== FETCHING ORDERS =====');
-      print('Reset page: $resetPage');
-      print('Current page: ${currentPage.value}');
-      print('Selected status: ${selectedStatus.value}');
-
       isLoading.value = true;
       hasError.value = false;
+      errorMessage.value = '';
+
+      print('[OrdersController] Fetching orders, page: ${currentPage.value}');
 
       final result = await OrderService.loadOrdersPage(
         page: currentPage.value,
@@ -78,25 +76,15 @@ class OrdersController extends GetxController {
         status: selectedStatus.value?.name,
       );
 
-      print('Received ${result.orders.length} orders');
-      print('Total pages: ${result.totalPages}');
+      print('[OrdersController] Received ${result.orders.length} orders');
 
       orders.value = result.orders;
       totalOrders.value = result.total;
       totalPages.value = result.totalPages;
-
-      // Calculer le montant total
-      totalAmount.value =
-          result.orders.fold(0, (sum, order) => sum + (order.totalAmount ?? 0));
-
-      // Mettre à jour les compteurs par statut
-      await _updateStatusCounts();
-    } catch (e, stackTrace) {
-      print('===== ERROR IN ORDERS CONTROLLER =====');
-      print('Error: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
+      print('[OrdersController] Fetch error: $e');
       hasError.value = true;
-      errorMessage.value = 'Erreur lors du chargement des commandes: $e';
+      errorMessage.value = 'Erreur de chargement';
     } finally {
       isLoading.value = false;
     }

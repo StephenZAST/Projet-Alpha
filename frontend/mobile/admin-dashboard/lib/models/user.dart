@@ -68,33 +68,44 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     try {
+      print('[User] Parsing user data: ${json['id']}');
+
+      String safeString(dynamic value, String defaultValue) {
+        if (value == null) return defaultValue;
+        return value.toString();
+      }
+
       return User(
-        id: json['id'] as String,
-        email: json['email'] as String,
-        firstName: json['firstName'] ?? '', // Valeur par défaut si null
-        lastName: json['lastName'] ?? '', // Valeur par défaut si null
-        phone: json['phone'],
+        id: safeString(json['id'], ''),
+        email: safeString(json['email'], ''),
+        firstName: safeString(
+            json['firstName'] ?? json['first_name'], ''), // Ajout de first_name
+        lastName: safeString(
+            json['lastName'] ?? json['last_name'], ''), // Ajout de last_name
+        phone: json['phone']?.toString(),
         role: UserRole.values.firstWhere(
           (e) =>
               e.toString().split('.').last ==
-              (json['role'] as String).toUpperCase(),
+              (json['role'] ?? 'CLIENT').toString().toUpperCase(),
           orElse: () => UserRole.CLIENT,
         ),
-        referralCode: json['referralCode'],
-        createdAt: DateTime.parse(
-            json['createdAt'] ?? DateTime.now().toIso8601String()),
-        updatedAt: DateTime.parse(
-            json['updatedAt'] ?? DateTime.now().toIso8601String()),
+        referralCode: json['referralCode']?.toString(),
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'].toString())
+            : DateTime.now(),
+        updatedAt: json['updatedAt'] != null
+            ? DateTime.parse(json['updatedAt'].toString())
+            : DateTime.now(),
         isActive: json['isActive'] ?? true,
         loyaltyPoints: json['loyaltyPoints'] ?? 0,
         affiliateBalance: json['affiliateBalance'] != null
             ? (json['affiliateBalance'] as num).toDouble()
             : null,
-        affiliateCode: json['affiliateCode'],
+        affiliateCode: json['affiliateCode']?.toString(),
       );
     } catch (e) {
-      print('Error parsing User JSON: $e');
-      print('Problematic JSON: $json');
+      print('[User] Error parsing User JSON: $e');
+      print('[User] Problematic JSON: $json');
       rethrow;
     }
   }

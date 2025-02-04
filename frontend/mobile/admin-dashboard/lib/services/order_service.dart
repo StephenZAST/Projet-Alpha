@@ -32,66 +32,84 @@ class OrderService {
     DateTime? endDate,
   }) async {
     try {
-      print('===== LOADING ORDERS PAGE =====');
-      print('Params: page=$page, limit=$limit, status=$status');
-
-      final Map<String, dynamic> queryParams = {
+      print('[OrderService] Loading orders page...');
+      final response = await _api.get('/admin/orders', queryParameters: {
         'page': page,
         'limit': limit,
-      };
+        if (status != null) 'status': status,
+        if (startDate != null) 'startDate': startDate.toIso8601String(),
+        if (endDate != null) 'endDate': endDate.toIso8601String(),
+      });
 
-      if (status != null) {
-        queryParams['status'] = status;
-      }
-      if (startDate != null) {
-        queryParams['startDate'] = startDate.toIso8601String();
-      }
-      if (endDate != null) {
-        queryParams['endDate'] = endDate.toIso8601String();
-      }
+      print('[OrderService] Raw API response: ${response.data}');
 
-      final response =
-          await _api.get('/admin/orders', queryParameters: queryParams);
-      print('Raw API Response: ${response.data}');
-
-      if (response.data != null) {
-        print(
-            'Processing ${(response.data['data'] as List?)?.length ?? 0} orders');
-
-        final orders = (response.data['data'] as List?)
-                ?.map((json) {
-                  try {
-                    print('Processing order ID: ${json['id']}');
-                    return Order.fromJson(json);
-                  } catch (e) {
-                    print('Error processing individual order: $e');
-                    print('Problematic order data: $json');
-                    return null;
-                  }
-                })
-                .whereType<Order>()
-                .toList() ??
-            [];
-
-        print('Successfully processed ${orders.length} orders');
-
-        return OrdersPageData(
-          orders: orders,
-          total: response.data['pagination']?['total'] as int? ?? 0,
-          currentPage: page,
-          limit: limit,
-          totalPages: response.data['pagination']?['totalPages'] as int? ?? 1,
-        );
+      if (response.data == null || response.data['data'] == null) {
+        print('[OrderService] No data found in response');
+        return OrdersPageData.empty();
       }
 
-      print('No data found in response');
+      final List<Order> orders = [];
+      final List rawOrders = response.data['data'] as List;
+
+      for (var item in rawOrders) {
+        try {
+          // Normaliser les champs
+          final normalizedData = _normalizeOrderData(item);
+          final order = Order.fromJson(normalizedData);
+          orders.add(order);
+          print('[OrderService] Successfully parsed order: ${order.id}');
+        } catch (e) {
+          print('[OrderService] Error parsing order: $e');
+          print('[OrderService] Problematic data: $item');
+          // Continue au lieu de throw pour ne pas bloquer toutes les commandes
+          continue;
+        }
+      }
+
+      return OrdersPageData(
+        orders: orders,
+        total: response.data['pagination']?['total'] ?? 0,
+        currentPage: page,
+        limit: limit,
+        totalPages: response.data['pagination']?['totalPages'] ?? 1,
+      );
+    } catch (e) {
+      print('[OrderService] Error loading orders: $e');
       return OrdersPageData.empty();
-    } catch (e, stackTrace) {
-      print('===== ERROR LOADING ORDERS =====');
-      print('Error: $e');
-      print('Stack trace: $stackTrace');
-      throw 'Erreur lors du chargement des commandes. Détails : $e';
     }
+  }
+
+  // Ajouter cette méthode helper
+  static Map<String, dynamic> _normalizeOrderData(dynamic rawData) {
+    final data = Map<String, dynamic>.from(rawData);
+
+    // Normaliser les données utilisateur
+    if (data['user'] != null) {
+      final userData = Map<String, dynamic>.from(data['user']);
+      data['user'] = {
+        ...userData,
+        'firstName': userData['first_name'] ?? userData['firstName'] ?? '',
+        'lastName': userData['last_name'] ?? userData['lastName'] ?? '',
+        'email': userData['email'] ?? '',
+        'phone': userData['phone'] ?? '',
+        'role': userData['role'] ?? 'CLIENT',
+        'createdAt': userData['created_at'] ??
+            userData['createdAt'] ??
+            DateTime.now().toIso8601String(),
+        'updatedAt': userData['updated_at'] ?? userData['updatedAt'],
+      };
+    }
+
+    // Normaliser les champs de base
+    return {
+      ...data,
+      'serviceId': data['service_id'] ?? data['serviceId'],
+      'addressId': data['address_id'] ?? data['addressId'],
+      'userId': data['user_id'] ?? data['userId'],
+      'paymentMethod': data['paymentMethod'] ?? 'CASH',
+      'paymentStatus': data['paymentStatus'] ?? 'PENDING',
+      'totalAmount': data['totalAmount'] ?? 0,
+    };
   }
 
   static Future<Order> getOrderById(String id) async {
