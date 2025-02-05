@@ -1,4 +1,5 @@
 import 'package:admin/models/user.dart';
+import 'order_metadata.dart';
 
 import 'article.dart';
 import 'address.dart';
@@ -26,6 +27,8 @@ class Order {
   final PaymentStatus paymentStatus;
   final PaymentMethod paymentMethod;
   final bool isFlashOrder; // Indicateur pour les commandes flash
+  final OrderMetadata? metadata;
+  final String? note;
 
   // Relations
   final Service? service;
@@ -63,6 +66,8 @@ class Order {
     this.address,
     this.user,
     this.isFlashOrder = false, // Par défaut, ce n'est pas une commande flash
+    this.metadata,
+    this.note,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -142,6 +147,10 @@ class Order {
             json['address'] != null ? Address.fromJson(json['address']) : null,
         user: json['user'] != null ? User.fromJson(json['user']) : null,
         isFlashOrder: isFlash,
+        metadata: json['metadata'] != null
+            ? OrderMetadata.fromJson(json['metadata'])
+            : null,
+        note: json['note'],
       );
     } catch (e) {
       print('Error parsing order: $e');
