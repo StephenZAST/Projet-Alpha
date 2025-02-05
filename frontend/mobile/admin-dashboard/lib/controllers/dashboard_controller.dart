@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../models/order.dart';
 import '../services/dashboard_service.dart';
 import '../constants.dart';
+import '../services/order_service.dart'; // Ajouter cet import
 
 class DashboardController extends GetxController {
   final isLoading = false.obs;
@@ -21,6 +22,9 @@ class DashboardController extends GetxController {
     'data': <double>[],
   });
   final orderStatusCount = <String, int>{}.obs;
+
+  // Données pour le graphique des revenus
+  final revenueData = <Map<String, dynamic>>[].obs;
 
   // Commandes récentes
   final recentOrders = <Order>[].obs;
@@ -78,55 +82,61 @@ class DashboardController extends GetxController {
   Future<void> fetchDashboardData() async {
     try {
       isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
 
-      // Récupérer les statistiques générales d'abord
-      final stats = await DashboardService.getStatistics();
-      totalRevenue.value = (stats['totalRevenue'] as num).toDouble();
-      totalOrders.value = stats['totalOrders'] as int;
-      totalCustomers.value = stats['totalCustomers'] as int;
-      orderStatusCount.value =
-          Map<String, int>.from(stats['ordersByStatus'] ?? {});
-
-      // Gestion plus robuste des commandes récentes
-      try {
-        final recentData = await DashboardService.getRecentOrders();
-        if (recentData['orders'] != null) {
-          recentOrders.value = (recentData['orders'] as List)
-              .map((json) => Order.fromJson(json))
-              .toList();
-        } else {
-          recentOrders.value = [];
-        }
-      } catch (e) {
-        print('[DashboardController] Error fetching recent orders: $e');
-        recentOrders.value = [];
-      }
-
-      // Récupérer les données du graphique de revenus
-      final chartData = await DashboardService.getRevenueChartData();
-      revenueChartData.value = {
-        'labels': chartData['labels'] as List<String>,
-        'data': (chartData['data'] as List)
-            .map((e) => (e as num).toDouble())
-            .toList(),
-      };
+      // Charger les commandes récentes et les statistiques en parallèle
+      await Future.wait([
+        _loadRecentOrders(),
+        _loadOrderStats(),
+        _loadRevenueStats(), // Ajout du chargement des revenus
+      ]);
     } catch (e) {
       print('[DashboardController] Error fetching dashboard data: $e');
       hasError.value = true;
       errorMessage.value = 'Erreur lors du chargement des données';
-
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les données du tableau de bord',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
-      );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _loadOrderStats() async {
+    try {
+      final stats = await OrderService.getOrderStatistics();
+      orderStatusCount.value = stats['byStatus'] as Map<String, int>;
+      totalOrders.value = stats['total'] as int;
+
+      // Mise à jour des données du graphique
+      final percentages = stats['percentages'] as Map<String, String>;
+      revenueChartData.value = {
+        'labels': percentages.keys.toList(),
+        'data': percentages.values.map((v) => double.parse(v)).toList(),
+      };
+    } catch (e) {
+      print('[DashboardController] Error loading order stats: $e');
+    }
+  }
+
+  Future<void> _loadRecentOrders() async {
+    try {
+      final recent = await OrderService.getRecentOrders(limit: 5);
+      print('[DashboardController] Loaded ${recent.length} recent orders');
+      recentOrders.assignAll(recent);
+    } catch (e) {
+      print('[DashboardController] Error loading recent orders: $e');
+      recentOrders.clear();
+    }
+  }
+
+  Future<void> _loadRevenueStats() async {
+    try {
+      final stats = await OrderService.getRevenueStatistics();
+      revenueData.value = stats;
+
+      // Calculer le revenu total
+      final total = stats.fold<double>(
+          0, (sum, item) => sum + (item['amount'] as double));
+      totalRevenue.value = total;
+    } catch (e) {
+      print('[DashboardController] Error loading revenue stats: $e');
     }
   }
 

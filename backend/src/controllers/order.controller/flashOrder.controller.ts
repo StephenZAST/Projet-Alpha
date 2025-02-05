@@ -5,60 +5,68 @@ import { OrderStatus } from '../../models/types';
 interface FlashOrderData {
   addressId: string;
   notes?: string;
+  note?: string;  // Ajouter cette propriété pour accepter les deux formats
+}
+
+interface OrderItem {
+  articleId: string;
+  quantity: number;
+  unitPrice: number;
+  isPremium?: boolean;
 }
 
 export class FlashOrderController {
   static async createFlashOrder(req: Request, res: Response) {
-    console.log('[FlashOrderController] Starting flash order creation');
+    console.log('[FlashOrderController] Creating flash order with data:', req.body);
     try {
-      const { addressId, notes } = req.body as FlashOrderData;
+      const { addressId, notes, note } = req.body as FlashOrderData;
       const userId = req.user?.id;
       
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        console.error('[FlashOrderController] No userId found in request');
+        return res.status(401).json({ error: 'Unauthorized - User ID required' });
       }
 
-      // 1. Créer la commande avec uniquement les informations essentielles
-      const orderData = {
-        userId,
-        addressId,
-        status: 'PENDING' as OrderStatus, // Utiliser PENDING au lieu de DRAFT
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        totalAmount: 0 // Sera mis à jour plus tard
-      };
+      const noteText = notes || note; // Accepter les deux formats
+      console.log('[FlashOrderController] Using note:', noteText);
 
-      // Créer la commande avec le trigger qui insérera la note
-      let { data: order, error } = await supabase.rpc('create_flash_order', {
-        order_data: orderData,
-        note_text: notes || ''
+      console.log('[FlashOrderController] Creating order for user:', userId);
+
+      // Créer la commande avec les métadonnées
+      const { data, error } = await supabase.rpc('create_flash_order_with_metadata', {
+        order_data: {
+          userId: userId,
+          addressId: addressId,
+          status: 'DRAFT',
+          totalAmount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        metadata: {
+          is_flash_order: true,
+          note: noteText // Ajouter la note dans les métadonnées aussi
+        },
+        note_text: noteText
       });
 
       if (error) {
-        console.error('[FlashOrderController] Error creating flash order:', error);
-        throw error;
+        console.error('[FlashOrderController] Error:', error);
+        return res.status(500).json({ error: error.message });
       }
 
-      if (!order) {
-        console.error('[FlashOrderController] create_flash_order RPC did not return order data');
-        throw new Error('Failed to create flash order. Please try again.');
+      if (!data) {
+        console.error('[FlashOrderController] No data returned');
+        return res.status(500).json({ error: 'Failed to create order' });
       }
 
-      console.log('[FlashOrderController] Flash order created:', order.id);
-
-      // 2. Envoyer la réponse
-      res.json({
-        data: {
-          order,
-          message: 'Flash order created successfully. We will process your order soon.'
-        }
-      });
+      console.log('[FlashOrderController] Order created successfully:', data);
+      res.json({ data: data });
 
     } catch (error: any) {
-      console.error('[FlashOrderController] Error:', error);
+      console.error('[FlashOrderController] Unexpected error:', error);
       res.status(500).json({
-        error: error.message || 'Error creating flash order',
-        details: process.env.NODE_ENV === 'development' ? error : undefined
+        error: 'Failed to create flash order',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   }
@@ -90,77 +98,154 @@ export class FlashOrderController {
 
   static async completeFlashOrder(req: Request, res: Response) {
     try {
-      console.log('[FlashOrderController] Starting complete flash order...');
-      console.log('[FlashOrderController] Order ID:', req.params.orderId);
-      console.log('[FlashOrderController] Payload:', JSON.stringify(req.body, null, 2));
+      const { orderId } = req.params;
+      console.log('[FlashOrderController] Completing order:', orderId);
 
-      // Vérifier si la commande existe et est en DRAFT
-      const { data: existingOrder, error: checkError } = await supabase
+      // 1. Vérifier d'abord que la commande existe et est une commande flash
+      const { data: flashOrder, error: checkError } = await supabase
         .from('orders')
-        .select('*')
-        .eq('id', req.params.orderId)
-        .eq('status', 'DRAFT')
+        .select(`
+          *,
+          metadata:order_metadata!inner(*)
+        `)
+        .eq('id', orderId)
+        .eq('order_metadata.is_flash_order', true)
         .single();
 
-      if (checkError) {
-        console.error('[FlashOrderController] Error checking order:', checkError);
-        throw checkError;
+      if (checkError || !flashOrder) {
+        console.error('[FlashOrderController] Order not found or not a flash order:', checkError);
+        return res.status(404).json({ error: 'Flash order not found' });
       }
 
-      if (!existingOrder) {
-        console.error('[FlashOrderController] Order not found or not in DRAFT status');
-        return res.status(404).json({
-          error: 'Order not found or not in DRAFT status'
+      if (flashOrder.status !== 'DRAFT') {
+        return res.status(400).json({ 
+          error: `Cannot complete order in status: ${flashOrder.status}. Order must be in DRAFT status.`
         });
       }
 
-      console.log('[FlashOrderController] Existing order found:', existingOrder);
+      const {
+        serviceId,
+        items,
+        serviceTypeId,
+        collectionDate,
+        deliveryDate
+      } = req.body;
 
-      // Appeler la procédure stockée
-      console.log('[FlashOrderController] Calling stored procedure...');
-      const { data: result, error } = await supabase.rpc(
-        'complete_flash_order',
-        {
-          p_order_id: req.params.orderId,
-          p_service_id: req.body.serviceId,
-          p_items: req.body.items,
-          p_collection_date: req.body.collectionDate,
-          p_delivery_date: req.body.deliveryDate
+      // 2. Mettre à jour la commande
+      const { data: updatedOrder, error: updateError } = await supabase
+        .from('orders')
+        .update({
+          serviceId,
+          service_type_id: serviceTypeId,
+          collectionDate,
+          deliveryDate,
+          status: 'COLLECTING',
+          updatedAt: new Date()
+        })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('[FlashOrderController] Error updating order:', updateError);
+        throw updateError;
+      }
+
+      // 3. Ajouter les items
+      if (items && items.length > 0) {
+        const orderItems = items.map((item: OrderItem) => ({
+          orderId,
+          articleId: item.articleId,
+          serviceId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItems);
+
+        if (itemsError) {
+          console.error('[FlashOrderController] Error inserting items:', itemsError);
+          throw itemsError;
         }
+      }
+
+      // 4. Calculer le total avec typage explicite
+      const total = items.reduce((sum: number, item: OrderItem) => 
+        sum + (item.quantity * item.unitPrice), 
+        0
       );
+      
+      // 5. Mettre à jour le total
+      const { error: totalError } = await supabase
+        .from('orders')
+        .update({ totalAmount: total })
+        .eq('id', orderId);
+
+      if (totalError) {
+        console.error('[FlashOrderController] Error updating total:', totalError);
+        throw totalError;
+      }
+
+      // 6. Récupérer la commande finale avec toutes ses relations
+      const { data: completedOrder, error: fetchError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          user:users(first_name, last_name, phone, email),
+          address:addresses(*),
+          items:order_items(*),
+          metadata:order_metadata(*)
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      res.json({ 
+        data: completedOrder,
+        message: 'Flash order completed successfully'
+      });
+
+    } catch (error: any) {
+      console.error('[FlashOrderController] Error completing flash order:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getDraftFlashOrders(req: Request, res: Response) {
+    try {
+      console.log('[FlashOrderController] Fetching draft flash orders');
+      
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          metadata:order_metadata!inner(*),
+          user:users(
+            first_name,
+            last_name,
+            phone
+          ),
+          address:addresses(*)
+        `)
+        .eq('status', 'DRAFT')
+        .eq('order_metadata.is_flash_order', true)
+        .order('createdAt', { ascending: false }); // Changé de created_at à createdAt
 
       if (error) {
-        console.error('[FlashOrderController] Stored procedure error:', error);
+        console.error('[FlashOrderController] Database error:', error);
         throw error;
       }
 
-      console.log('[FlashOrderController] Stored procedure result:', result);
-
-      // Vérifier que le résultat est bien formaté
-      if (!result || !result.data || !result.data.order) {
-        console.error('[FlashOrderController] Invalid response format:', result);
-        throw new Error('Invalid response format from stored procedure');
-      }
-
-      console.log('[FlashOrderController] Successfully completed flash order');
-      res.json(result);
-
+      console.log('[FlashOrderController] Found draft orders:', orders?.length);
+      res.json({ data: orders });
     } catch (error: any) {
-      console.error('[FlashOrderController] Error details:', {
-        message: error.message,
-        code: error.code,
-        hint: error.hint,
-        details: error.details
-      });
-      
-      res.status(500).json({
-        error: error.message,
-        details: process.env.NODE_ENV === 'development' ? {
-          code: error.code,
-          hint: error.hint,
-          details: error.details
-        } : undefined
-      });
+      console.error('[FlashOrderController] Error:', error);
+      res.status(500).json({ error: error.message });
     }
   }
 }

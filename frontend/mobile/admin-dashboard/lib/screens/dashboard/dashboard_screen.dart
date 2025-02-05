@@ -108,7 +108,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     OrderStatusMetrics(),
                     SizedBox(height: defaultPadding),
                     _buildMainContent(context),
-                    OrdersOverview(),
                   ],
                 ),
               ),

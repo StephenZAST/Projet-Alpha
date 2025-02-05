@@ -1,6 +1,19 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
+const generateToken = (user: any) => {
+  return jwt.sign(
+    { 
+      id: user.id, 
+      role: user.role,  // S'assurer que le rôle est inclus
+      email: user.email 
+    },
+    process.env.JWT_SECRET!,
+    { expiresIn: '7d' }
+  );
+};
 
 export class AuthController {
   static async register(req: Request, res: Response) {

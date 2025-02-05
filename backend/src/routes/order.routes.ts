@@ -23,6 +23,28 @@ router.use((req, res, next) => {
 // Protection des routes avec authentification
 router.use(authenticateToken);
 
+// Regrouper les routes flash en premier pour éviter les conflits
+router.route('/flash')
+  .post(
+    authenticateToken,
+    validateCreateFlashOrder,
+    asyncHandler(FlashOrderController.createFlashOrder)
+  )
+  // Corriger la méthode ici
+  .get(
+    authenticateToken,
+    authorizeRoles(['ADMIN', 'SUPER_ADMIN']),  // Explicitement autoriser SUPER_ADMIN
+    asyncHandler(FlashOrderController.getDraftFlashOrders)  // Utiliser getDraftFlashOrders au lieu de getAllFlashOrders
+  );
+
+// Route spécifique pour les commandes flash en DRAFT
+router.get(
+  '/flash/draft',
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN', 'MANAGER']), // Ajouter plus de rôles si nécessaire
+  asyncHandler(FlashOrderController.getDraftFlashOrders)
+);
+
 // Routes commande standard
 router.post(
   '/',
@@ -72,7 +94,7 @@ router.get(
 router.patch(
   '/flash/:orderId/complete',
   authenticateToken,
-  authorizeRoles(['ADMIN', 'DELIVERY']),
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),  // Explicitement autoriser SUPER_ADMIN
   validateCompleteFlashOrder,
   asyncHandler(FlashOrderController.completeFlashOrder)
 );

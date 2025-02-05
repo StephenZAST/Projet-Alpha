@@ -4,68 +4,78 @@ import '../../../constants.dart';
 import '../../../controllers/orders_controller.dart';
 import '../../../models/enums.dart';
 
-class OrdersOverview extends StatelessWidget {
+class OrdersOverview extends StatefulWidget {
+  @override
+  State<OrdersOverview> createState() => _OrdersOverviewState();
+}
+
+class _OrdersOverviewState extends State<OrdersOverview> {
   final controller = Get.find<OrdersController>();
+
+  @override
+  void initState() {
+    super.initState();
+    controller.loadDraftOrders();
+    controller.fetchOrders();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
-      child: Padding(
-        padding: EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Aperçu des commandes',
-              style: AppTextStyles.h3.copyWith(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
+      child: Obx(() {
+        if (controller.isLoading.value) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        return Padding(
+          padding: EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Aperçu des commandes',
+                style: AppTextStyles.h3.copyWith(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
               ),
-            ),
-            SizedBox(height: AppSpacing.lg),
-            Obx(() => Column(
-                  children: [
-                    _OrderTypeCard(
-                      title: 'Commandes Flash',
-                      count:
-                          controller.getOrderCountByStatus(OrderStatus.DRAFT),
-                      icon: Icons.flash_on,
-                      color: AppColors.warning,
-                      isDark: isDark,
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    _OrderTypeCard(
-                      title: 'En attente',
-                      count:
-                          controller.getOrderCountByStatus(OrderStatus.PENDING),
-                      icon: Icons.schedule,
-                      color: AppColors.pending,
-                      isDark: isDark,
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    _OrderTypeCard(
-                      title: 'En traitement',
-                      count: controller
-                          .getOrderCountByStatus(OrderStatus.PROCESSING),
-                      icon: Icons.local_laundry_service,
-                      color: AppColors.processing,
-                      isDark: isDark,
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    _OrderTypeCard(
-                      title: 'Livrées',
-                      count: controller
-                          .getOrderCountByStatus(OrderStatus.DELIVERED),
-                      icon: Icons.check_circle_outline,
-                      color: AppColors.success,
-                      isDark: isDark,
-                    ),
-                  ],
-                )),
-          ],
-        ),
-      ),
+              SizedBox(height: AppSpacing.lg),
+              _OrderTypeCard(
+                title: 'Commandes Flash',
+                count: controller.draftOrders.length,
+                icon: Icons.flash_on,
+                color: AppColors.warning,
+                isDark: isDark,
+              ),
+              SizedBox(height: AppSpacing.md),
+              _OrderTypeCard(
+                title: 'En attente',
+                count: controller.getOrderCountByStatus(OrderStatus.PENDING),
+                icon: Icons.schedule,
+                color: AppColors.pending,
+                isDark: isDark,
+              ),
+              SizedBox(height: AppSpacing.md),
+              _OrderTypeCard(
+                title: 'En traitement',
+                count: controller.getOrderCountByStatus(OrderStatus.PROCESSING),
+                icon: Icons.local_laundry_service,
+                color: AppColors.processing,
+                isDark: isDark,
+              ),
+              SizedBox(height: AppSpacing.md),
+              _OrderTypeCard(
+                title: 'Livrées',
+                count: controller.getOrderCountByStatus(OrderStatus.DELIVERED),
+                icon: Icons.check_circle_outline,
+                color: AppColors.success,
+                isDark: isDark,
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

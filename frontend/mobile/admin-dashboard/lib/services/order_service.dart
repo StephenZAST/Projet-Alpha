@@ -1,5 +1,4 @@
 import 'package:admin/models/flash_order_update.dart';
-import 'package:dio/dio.dart';
 
 import '../models/order.dart';
 import '../models/orders_page_data.dart';
@@ -7,13 +6,6 @@ import 'api_service.dart';
 
 class OrderService {
   static final _api = ApiService();
-  static final _dio = Dio(BaseOptions(
-    baseUrl: ApiService.baseUrl, // Utiliser le getter statique ici
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-  ));
   static const String _basePath = '/orders';
 
   /// Récupère toutes les commandes (méthode existante pour compatibilité)
@@ -363,18 +355,23 @@ class OrderService {
 
   static Future<List<Order>> getDraftOrders() async {
     try {
-      final response =
-          await _api.get('$_basePath', queryParameters: {'status': 'DRAFT'});
+      print('[OrderService] Fetching draft flash orders');
+      final response = await _api.get('$_basePath/flash/draft');
+
+      // Corriger l'appel print en utilisant string interpolation
+      print('[OrderService] Draft orders response: ${response.data}');
 
       if (response.data != null && response.data['data'] != null) {
-        return (response.data['data'] as List)
+        final orders = (response.data['data'] as List)
             .map((json) => Order.fromJson(json))
             .toList();
+        print('[OrderService] Parsed ${orders.length} draft orders');
+        return orders;
       }
       return [];
     } catch (e) {
       print('[OrderService] Error getting draft orders: $e');
-      throw 'Erreur lors du chargement des commandes en brouillon';
+      return [];
     }
   }
 
@@ -403,32 +400,48 @@ class OrderService {
   }
 
   static Future<Order> completeFlashOrder(
-      String orderId, Map<String, dynamic> updateData) async {
+      String orderId, FlashOrderUpdate updateData) async {
     try {
-      final token = ApiService.getToken();
-      if (token == null) {
-        throw 'Token d\'authentification non trouvé';
-      }
-
-      _dio.options.headers['Authorization'] = 'Bearer $token';
-
       print('[OrderService] Completing flash order: $orderId');
-      print('[OrderService] Update data: $updateData');
+      print('[OrderService] Update data: ${updateData.toJson()}');
 
-      final response = await _dio.patch(
-        '/orders/flash/$orderId/complete',
-        data: updateData,
+      final response = await _api.patch(
+        '$_basePath/flash/$orderId/complete',
+        data: updateData.toJson(),
       );
 
-      if (response.data == null || response.data['data'] == null) {
-        throw 'Réponse invalide du serveur';
+      if (response.data != null && response.data['data'] != null) {
+        return Order.fromJson(response.data['data']['order']);
       }
 
-      print('[OrderService] Complete flash order response: ${response.data}');
-      return Order.fromJson(response.data['data']['order']);
-    } catch (error) {
-      print('[OrderService] Error completing flash order: $error');
+      throw 'Réponse invalide du serveur';
+    } catch (e) {
+      print('[OrderService] Error completing flash order: $e');
       rethrow;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getRevenueStatistics() async {
+    try {
+      print('[OrderService] Fetching revenue statistics');
+      final response = await _api.get('$_basePath/revenue/stats');
+      // Corriger l'appel print en utilisant string interpolation
+      print('[OrderService] Revenue stats response: ${response.data}');
+
+      if (response.data != null && response.data['data'] != null) {
+        final List<dynamic> rawData = response.data['data'];
+        return rawData
+            .map((item) => {
+                  'date': item['date'],
+                  'amount': (item['amount'] as num).toDouble(),
+                  'count': item['count'] as int,
+                })
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('[OrderService] Error getting revenue statistics: $e');
+      return [];
     }
   }
 }

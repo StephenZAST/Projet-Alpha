@@ -3,7 +3,7 @@ import axios from 'axios';
 // Données de test
 const TEST_DATA = {
   addressId: "03802428-7c13-4e06-b153-bb5a9dde176a",
-  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImVhYjNjNWMwLTA3YTAtNDdjMi05NDQ2LTZkN2E0YTZkZjM3NyIsInJvbGUiOiJDTElFTlQiLCJpYXQiOjE3Mzg1MjA5NzcsImV4cCI6MTczOTEyNTc3N30.03ze8cVo-nE_pYt-_0P4fhoDmetLre6b3tNbvnfIAKc",
+  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjBjNTMyMzQ4LTFhYWQtNDNlNy05NDgzLTMxNDRjNDI5N2M0NiIsInJvbGUiOiJTVVBFUl9BRE1JTiIsImlhdCI6MTczODc2NDcwNSwiZXhwIjoxNzM5MzY5NTA1fQ.YYbCsSWNP8o7qvhuW1ueYceYnH1tvq1uxtVd872Ufzk",
   notes: "Commande rapide - chemises à repasser"
 };
 

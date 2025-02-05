@@ -55,6 +55,16 @@
 | priceMultiplier | numeric | NOT NULL |
 | createdAt | timestamp with time zone | |
 
+## Order Management
+### Order Metadata (Table: order_metadata)
+| Column Name | Type | Constraints |
+|------------|------|-------------|
+| order_id | uuid | PRIMARY KEY, REFERENCES orders(id) ON DELETE CASCADE |
+| is_flash_order | boolean | DEFAULT false |
+| metadata | jsonb | DEFAULT '{}'::jsonb |
+| created_at | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP |
+| updated_at | timestamp with time zone | DEFAULT CURRENT_TIMESTAMP |
+
 # Tables Manquantes
 
 ## Reward System

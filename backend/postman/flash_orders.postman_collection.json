@@ -1,0 +1,117 @@
+{
+  "info": {
+    "name": "Flash Orders API",
+    "description": "Collection pour tester les opérations sur les commandes flash",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Get Draft Flash Orders",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": "{{baseUrl}}/orders/flash/draft"
+      }
+    },
+    {
+      "name": "2. Create Flash Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.data && jsonData.data.id) {",
+              "    pm.environment.set(\"flashOrderId\", jsonData.data.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"addressId\": \"03802428-7c13-4e06-b153-bb5a9dde176a\",\n    \"notes\": \"Test commande flash - Créée via Postman\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/orders/flash"
+      }
+    },
+    {
+      "name": "3. Complete Flash Order",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"serviceId\": \"235d24ef-836d-4e87-aef1-bf028d5d8e3d\",\n    \"items\": [\n        {\n            \"articleId\": \"b75ab8ac-58ef-4cdb-b57e-6c8722449cce\",\n            \"quantity\": 2,\n            \"unitPrice\": 15,\n            \"isPremium\": false\n        }\n    ],\n    \"collectionDate\": \"{{$isoTimestamp}}\",\n    \"deliveryDate\": \"{{$isoTimestamp}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/orders/flash/{{flashOrderId}}/complete"
+      }
+    },
+    {
+      "name": "4. Get Flash Order Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": "{{baseUrl}}/orders/{{flashOrderId}}"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api"
+    },
+    {
+      "key": "token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjBjNTMyMzQ4LTFhYWQtNDNlNy05NDgzLTMxNDRjNDI5N2M0NiIsInJvbGUiOiJTVVBFUl9BRE1JTiIsImlhdCI6MTczODc2NDcwNSwiZXhwIjoxNzM5MzY5NTA1fQ.YYbCsSWNP8o7qvhuW1ueYceYnH1tvq1uxtVd872Ufzk"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  }
+}

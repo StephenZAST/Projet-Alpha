@@ -217,3 +217,10 @@ FROM pg_type t
 JOIN pg_enum e ON t.oid = e.enumtypid  
 WHERE t.typname = 'order_status'
 ORDER BY e.enumsortorder;
+
+
+
+-- Afficher les colonnes de la table d'une table donnée
+SELECT column_name, data_type, character_maximum_length, column_default, is_nullable
+FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE table_name = 'orders';

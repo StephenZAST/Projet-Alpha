@@ -57,12 +57,27 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
   }
 };
 
-export const authorizeRoles = (roles: string[]) => {
+export const authorizeRoles = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !req.user.role || !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
+    try {
+      console.log('User role:', req.user?.role);
+      console.log('Allowed roles:', allowedRoles);
+      
+      if (!req.user || !req.user.role) {
+        console.log('No user or role found in request');
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      if (!allowedRoles.includes(req.user.role)) {
+        console.log(`User role ${req.user.role} not in allowed roles:`, allowedRoles);
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      }
+
+      next();
+    } catch (error) {
+      console.error('Authorization error:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
-    next();
   };
 };
 

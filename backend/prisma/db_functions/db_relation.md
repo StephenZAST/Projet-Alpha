@@ -42,6 +42,12 @@
 | order_items | orderId | orders | id |
 | order_items | articleId | articles | id |
 | order_items | serviceId | services | id |
+| order_metadata | order_id | orders | id |
+
+### Order Metadata Relations
+| Source Table | Source Column | Target Table | Target Column |
+|-------------|---------------|--------------|---------------|
+| order_metadata | order_id | orders | id |
 
 ### Order Archive Relations
 | Source Table | Source Column | Target Table | Target Column |
