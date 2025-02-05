@@ -9,46 +9,56 @@ interface FlashOrderData {
 
 export class FlashOrderController {
   static async createFlashOrder(req: Request, res: Response) {
+    console.log('[FlashOrderController] Starting flash order creation');
     try {
-      console.log('[FlashOrderController] Creating flash order:', req.body);
-      const { addressId, notes } = req.body;
+      const { addressId, notes } = req.body as FlashOrderData;
       const userId = req.user?.id;
-
+      
       if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
+      // 1. Créer la commande avec uniquement les informations essentielles
       const orderData = {
         userId,
         addressId,
-        status: 'DRAFT',
-        totalAmount: 0
+        status: 'PENDING' as OrderStatus, // Utiliser PENDING au lieu de DRAFT
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        totalAmount: 0 // Sera mis à jour plus tard
       };
 
-      const { data: order, error } = await supabase.rpc(
-        'create_flash_order',
-        {
-          order_data: orderData,
-          note_text: notes || ''
-        }
-      );
+      // Créer la commande avec le trigger qui insérera la note
+      let { data: order, error } = await supabase.rpc('create_flash_order', {
+        order_data: orderData,
+        note_text: notes || ''
+      });
 
       if (error) {
-        console.error('[FlashOrderController] Error:', error);
+        console.error('[FlashOrderController] Error creating flash order:', error);
         throw error;
       }
 
-      console.log('[FlashOrderController] Order created successfully:', order);
-      res.status(201).json({ 
-        success: true,
-        data: order 
+      if (!order) {
+        console.error('[FlashOrderController] create_flash_order RPC did not return order data');
+        throw new Error('Failed to create flash order. Please try again.');
+      }
+
+      console.log('[FlashOrderController] Flash order created:', order.id);
+
+      // 2. Envoyer la réponse
+      res.json({
+        data: {
+          order,
+          message: 'Flash order created successfully. We will process your order soon.'
+        }
       });
 
     } catch (error: any) {
       console.error('[FlashOrderController] Error:', error);
       res.status(500).json({
-        success: false,
-        error: error.message || 'Failed to create flash order'
+        error: error.message || 'Error creating flash order',
+        details: process.env.NODE_ENV === 'development' ? error : undefined
       });
     }
   }

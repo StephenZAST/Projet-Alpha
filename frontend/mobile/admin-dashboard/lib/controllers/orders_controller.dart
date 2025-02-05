@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:admin/models/article.dart';
+import 'package:admin/models/flash_order_update.dart';
 import 'package:admin/models/user.dart';
 import 'package:get/get.dart';
 import '../models/order.dart';
@@ -54,6 +55,23 @@ class OrdersController extends GetxController {
   final currentPage = 1.obs;
   final itemsPerPage = 50.obs;
   final totalPages = 0.obs;
+
+  // État spécifique aux commandes flash
+  final selectedFlashOrder = Rxn<Order>();
+  final selectedArticles = <FlashOrderItem>[].obs;
+  final selectedService = Rxn<Service>();
+  final collectionDate = Rxn<DateTime>();
+  final deliveryDate = Rxn<DateTime>();
+
+  // Ajouter cette propriété pour gérer les changements non sauvegardés
+  bool get hasUnsavedChanges {
+    if (selectedFlashOrder.value == null) return false;
+
+    return selectedService.value != null ||
+        selectedArticles.isNotEmpty ||
+        collectionDate.value != null ||
+        deliveryDate.value != null;
+  }
 
   @override
   void onInit() {
@@ -385,6 +403,81 @@ class OrdersController extends GetxController {
       draftOrders.value = drafts;
     } catch (e) {
       print('[OrdersController] Error loading draft orders: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updateFlashOrder() async {
+    try {
+      if (selectedFlashOrder.value == null || selectedService.value == null) {
+        throw 'Informations manquantes';
+      }
+
+      isLoading.value = true;
+
+      final updateData = FlashOrderUpdate(
+        orderId: selectedFlashOrder.value!.id,
+        serviceId: selectedService.value!.id,
+        items: selectedArticles.toList(),
+        collectionDate: collectionDate.value,
+        deliveryDate: deliveryDate.value,
+      );
+
+      await OrderService.completeFlashOrder(
+        selectedFlashOrder.value!.id,
+        updateData,
+      );
+
+      Get.snackbar(
+        'Succès',
+        'Commande flash mise à jour avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+      );
+
+      await fetchOrders();
+      Get.back();
+    } catch (e) {
+      print('[OrdersController] Error updating flash order: $e');
+      Get.snackbar(
+        'Erreur',
+        'Impossible de mettre à jour la commande flash',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> initFlashOrderUpdate(String orderId) async {
+    try {
+      isLoading.value = true;
+
+      // Charger la commande flash
+      final order = await OrderService.getOrderById(orderId);
+      selectedFlashOrder.value = order;
+
+      // Charger les services et articles disponibles
+      await Future.wait([
+        loadServices(),
+        loadArticles(),
+      ]);
+
+      // Réinitialiser les sélections
+      selectedService.value = null;
+      selectedArticles.clear();
+      collectionDate.value = null;
+      deliveryDate.value = null;
+    } catch (e) {
+      print('Error initializing flash order update: $e');
+      Get.snackbar(
+        'Erreur',
+        'Impossible de charger les données nécessaires',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
     } finally {
       isLoading.value = false;
     }

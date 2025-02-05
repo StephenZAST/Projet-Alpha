@@ -25,3 +25,20 @@ This flutter dashboard library is versatile; it's tailored to work seamlessly on
 ![Preview](/gif.gif)
 
 ![App UI](/ui.png)
+
+## Commandes Flash
+
+Les commandes flash sont un nouveau type de commande permettant aux clients de créer rapidement une commande avec un minimum d'informations. L'administrateur peut ensuite compléter les détails :
+
+1. Le client crée une commande flash avec uniquement :
+   - Adresse de livraison
+   - Notes (optionnel)
+
+2. L'administrateur complète la commande avec :
+   - Service sélectionné
+   - Articles et quantités
+   - Dates de collecte et livraison
+
+### Utilisation
+
+[Documentation détaillée sur l'utilisation...]

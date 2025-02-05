@@ -9,6 +9,7 @@ import 'components/order_filters.dart';
 import 'components/orders_header.dart';
 import 'components/orders_table.dart';
 import 'components/order_details.dart';
+import '../../routes/admin_routes.dart'; // Ajouter cet import
 
 class OrdersScreen extends StatefulWidget {
   @override
@@ -33,6 +34,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Commandes'),
+        actions: [
+          // Ajouter le bouton pour les commandes flash
+          IconButton(
+            icon: Icon(Icons.flash_on),
+            tooltip: 'Commandes Flash',
+            onPressed: () => AdminRoutes.goToFlashOrders(),
+          ),
+          // ...existing actions...
+        ],
+      ),
       body: SafeArea(
         child: Container(
           padding: EdgeInsets.all(defaultPadding),

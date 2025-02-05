@@ -1,3 +1,5 @@
+import 'package:admin/screens/orders/flash_orders/flash_order_update_screen.dart';
+import 'package:admin/screens/orders/flash_orders/flash_orders_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../screens/main/main_screen.dart';
@@ -48,6 +50,10 @@ class AdminRoutes {
   static const String users = '/users';
   static const String profile = '/profile';
   static const String notifications = '/notifications';
+
+  // Ajouter les routes pour les commandes flash
+  static const String flashOrders = '/orders/flash';
+  static const String flashOrderUpdate = '/orders/flash/:id';
 
   // Mapping index -> route
   static String getRouteByIndex(int index) {
@@ -109,6 +115,25 @@ class AdminRoutes {
       binding: AdminBinding(),
       middlewares: [AuthMiddleware()],
     ),
+
+    // Routes pour les commandes flash
+    GetPage(
+      name: flashOrders,
+      page: () => FlashOrdersScreen(),
+      binding: AdminBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: flashOrderUpdate,
+      page: () {
+        final orderId = Get.parameters['id']!;
+        final controller = Get.find<OrdersController>();
+        controller.initFlashOrderUpdate(orderId);
+        return FlashOrderUpdateScreen();
+      },
+      binding: AdminBinding(),
+      transition: Transition.fadeIn,
+    ),
   ];
 
   // Navigation helpers
@@ -162,5 +187,14 @@ class AdminRoutes {
 
   static void goToNotifications() {
     navigateByIndex(6);
+  }
+
+  // Ajouter les méthodes de navigation
+  static void goToFlashOrders() {
+    Get.toNamed(flashOrders);
+  }
+
+  static void goToFlashOrderUpdate(String orderId) {
+    Get.toNamed('$flashOrderUpdate/$orderId');
   }
 }

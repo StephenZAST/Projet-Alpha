@@ -54,6 +54,29 @@ router.post(
   asyncHandler(OrderController.calculateTotal)
 );
 
+// Routes pour les commandes flash
+router.post(
+  '/flash',
+  authenticateToken,
+  validateCreateFlashOrder,
+  asyncHandler(FlashOrderController.createFlashOrder)
+);
+
+router.get(
+  '/flash/pending',
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'DELIVERY']),
+  asyncHandler(FlashOrderController.getAllPendingOrders)
+);
+
+router.patch(
+  '/flash/:orderId/complete',
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'DELIVERY']),
+  validateCompleteFlashOrder,
+  asyncHandler(FlashOrderController.completeFlashOrder)
+);
+
 // Routes commande flash
 router.post(
   '/flash',

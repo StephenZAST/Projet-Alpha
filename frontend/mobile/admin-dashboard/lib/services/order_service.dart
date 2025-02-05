@@ -1,3 +1,5 @@
+import 'package:admin/models/flash_order_update.dart';
+
 import '../models/order.dart';
 import '../models/orders_page_data.dart';
 import 'api_service.dart';
@@ -393,28 +395,24 @@ class OrderService {
   }
 
   static Future<Order> completeFlashOrder(
-    String orderId, {
-    required String serviceId,
-    required List<Map<String, dynamic>> items,
-    String? serviceTypeId,
-    DateTime? collectionDate,
-    DateTime? deliveryDate,
-  }) async {
+    String orderId,
+    FlashOrderUpdate updateData,
+  ) async {
     try {
+      print('[OrderService] Completing flash order: $orderId');
+      print('[OrderService] Update data: ${updateData.toJson()}');
+
       final response = await _api.patch(
         '$_basePath/flash/$orderId/complete',
-        data: {
-          'serviceId': serviceId,
-          'items': items,
-          'serviceTypeId': serviceTypeId,
-          'collectionDate': collectionDate?.toIso8601String(),
-          'deliveryDate': deliveryDate?.toIso8601String(),
-        },
+        data: updateData.toJson(),
       );
 
       if (response.data != null && response.data['data'] != null) {
-        return Order.fromJson(response.data['data']);
+        final updatedOrder = Order.fromJson(response.data['data']);
+        print('[OrderService] Flash order completed successfully');
+        return updatedOrder;
       }
+
       throw 'Erreur lors de la mise à jour de la commande flash';
     } catch (e) {
       print('[OrderService] Error completing flash order: $e');
