@@ -1,4 +1,5 @@
 import 'package:admin/models/flash_order_update.dart';
+import 'package:dio/dio.dart';
 
 import '../models/order.dart';
 import '../models/orders_page_data.dart';
@@ -6,6 +7,13 @@ import 'api_service.dart';
 
 class OrderService {
   static final _api = ApiService();
+  static final _dio = Dio(BaseOptions(
+    baseUrl: ApiService.baseUrl, // Utiliser le getter statique ici
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+  ));
   static const String _basePath = '/orders';
 
   /// Récupère toutes les commandes (méthode existante pour compatibilité)
@@ -395,28 +403,32 @@ class OrderService {
   }
 
   static Future<Order> completeFlashOrder(
-    String orderId,
-    FlashOrderUpdate updateData,
-  ) async {
+      String orderId, Map<String, dynamic> updateData) async {
     try {
-      print('[OrderService] Completing flash order: $orderId');
-      print('[OrderService] Update data: ${updateData.toJson()}');
-
-      final response = await _api.patch(
-        '$_basePath/flash/$orderId/complete',
-        data: updateData.toJson(),
-      );
-
-      if (response.data != null && response.data['data'] != null) {
-        final updatedOrder = Order.fromJson(response.data['data']);
-        print('[OrderService] Flash order completed successfully');
-        return updatedOrder;
+      final token = ApiService.getToken();
+      if (token == null) {
+        throw 'Token d\'authentification non trouvé';
       }
 
-      throw 'Erreur lors de la mise à jour de la commande flash';
-    } catch (e) {
-      print('[OrderService] Error completing flash order: $e');
-      throw 'Erreur lors de la mise à jour de la commande flash';
+      _dio.options.headers['Authorization'] = 'Bearer $token';
+
+      print('[OrderService] Completing flash order: $orderId');
+      print('[OrderService] Update data: $updateData');
+
+      final response = await _dio.patch(
+        '/orders/flash/$orderId/complete',
+        data: updateData,
+      );
+
+      if (response.data == null || response.data['data'] == null) {
+        throw 'Réponse invalide du serveur';
+      }
+
+      print('[OrderService] Complete flash order response: ${response.data}');
+      return Order.fromJson(response.data['data']['order']);
+    } catch (error) {
+      print('[OrderService] Error completing flash order: $error');
+      rethrow;
     }
   }
 }

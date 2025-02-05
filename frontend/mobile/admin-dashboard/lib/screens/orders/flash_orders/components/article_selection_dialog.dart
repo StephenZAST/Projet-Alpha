@@ -1,9 +1,9 @@
+import 'package:admin/models/flash_order_update.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../constants.dart';
 import '../../../../controllers/orders_controller.dart';
 import '../../../../models/article.dart';
-import '../../../../models/flash_order_update.dart';
 
 class ArticleSelectionDialog extends StatefulWidget {
   @override
@@ -12,93 +12,131 @@ class ArticleSelectionDialog extends StatefulWidget {
 
 class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
   final controller = Get.find<OrdersController>();
-  late Article? selectedArticle;
+  Article? selectedArticle;
   int quantity = 1;
   bool isPremium = false;
-
-  @override
-  void initState() {
-    super.initState();
-    selectedArticle = null;
-  }
+  double? unitPrice;
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Ajouter un article'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Sélection de l'article
-          DropdownButtonFormField<Article>(
-            value: selectedArticle,
-            hint: Text('Sélectionner un article'),
-            items: controller.articles.map((article) {
-              return DropdownMenuItem(
-                value: article,
-                child: Text(article.name),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                selectedArticle = value;
-              });
-            },
-          ),
-          SizedBox(height: AppSpacing.md),
+    return Dialog(
+      child: Container(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        width: 500,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Ajouter un article', style: AppTextStyles.h3),
+            SizedBox(height: AppSpacing.lg),
 
-          // Quantité
-          Row(
-            children: [
-              Text('Quantité:'),
-              Spacer(),
-              IconButton(
-                icon: Icon(Icons.remove),
-                onPressed:
-                    quantity > 1 ? () => setState(() => quantity--) : null,
+            // Sélection de l'article
+            DropdownButtonFormField<Article>(
+              value: selectedArticle,
+              decoration: InputDecoration(
+                labelText: 'Article',
+                border: OutlineInputBorder(),
               ),
-              Text(quantity.toString()),
-              IconButton(
-                icon: Icon(Icons.add),
-                onPressed: () => setState(() => quantity++),
+              items: controller.articles.map((article) {
+                return DropdownMenuItem(
+                  value: article,
+                  child: Text(article.name),
+                );
+              }).toList(),
+              onChanged: (article) {
+                setState(() {
+                  selectedArticle = article;
+                  unitPrice =
+                      isPremium ? article?.premiumPrice : article?.basePrice;
+                });
+              },
+            ),
+            SizedBox(height: AppSpacing.md),
+
+            // Prix premium et quantité
+            Row(
+              children: [
+                Expanded(
+                  child: CheckboxListTile(
+                    title: Text('Service Premium'),
+                    value: isPremium,
+                    onChanged: (value) {
+                      setState(() {
+                        isPremium = value ?? false;
+                        if (selectedArticle != null) {
+                          unitPrice = isPremium
+                              ? selectedArticle!.premiumPrice
+                              : selectedArticle!.basePrice;
+                        }
+                      });
+                    },
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Container(
+                  width: 120,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.remove),
+                        onPressed: quantity > 1
+                            ? () => setState(() => quantity--)
+                            : null,
+                      ),
+                      Text(quantity.toString()),
+                      IconButton(
+                        icon: Icon(Icons.add),
+                        onPressed: () => setState(() => quantity++),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            // Total
+            if (selectedArticle != null && unitPrice != null) ...[
+              SizedBox(height: AppSpacing.md),
+              Text(
+                'Total: ${(unitPrice! * quantity).toStringAsFixed(2)} FCFA',
+                style: AppTextStyles.h4,
               ),
             ],
-          ),
 
-          // Option Premium
-          CheckboxListTile(
-            title: Text('Service Premium'),
-            value: isPremium,
-            onChanged: (value) {
-              setState(() {
-                isPremium = value ?? false;
-              });
-            },
-          ),
-        ],
+            SizedBox(height: AppSpacing.xl),
+
+            // Actions
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: Text('Annuler'),
+                ),
+                SizedBox(width: AppSpacing.md),
+                ElevatedButton(
+                  onPressed: selectedArticle == null
+                      ? null
+                      : () {
+                          final price = isPremium
+                              ? selectedArticle!.premiumPrice
+                              : selectedArticle!.basePrice;
+
+                          controller.selectedArticles.add(FlashOrderItem(
+                            articleId: selectedArticle!.id,
+                            quantity: quantity,
+                            unitPrice: price,
+                            isPremium: isPremium,
+                          ));
+                          Get.back();
+                        },
+                  child: Text('Ajouter'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Get.back(),
-          child: Text('Annuler'),
-        ),
-        ElevatedButton(
-          onPressed: selectedArticle == null
-              ? null
-              : () {
-                  controller.selectedArticles.add(FlashOrderItem(
-                    articleId: selectedArticle!.id,
-                    quantity: quantity,
-                    unitPrice: isPremium
-                        ? selectedArticle!.premiumPrice
-                        : selectedArticle!.basePrice,
-                    isPremium: isPremium,
-                  ));
-                  Get.back();
-                },
-          child: Text('Ajouter'),
-        ),
-      ],
     );
   }
 }

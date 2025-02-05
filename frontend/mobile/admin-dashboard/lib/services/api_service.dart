@@ -15,9 +15,12 @@ class ApiService {
     return _instance;
   }
 
+  // Ajouter la propriété baseUrl en tant que getter statique
+  static String get baseUrl => 'http://localhost:3001/api';
+
   ApiService._internal() {
     _dio = dio.Dio(dio.BaseOptions(
-      baseUrl: 'http://localhost:3001/api',
+      baseUrl: baseUrl, // Utiliser le getter ici
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       contentType: 'application/json',
@@ -30,13 +33,17 @@ class ApiService {
     _setupInterceptors();
   }
 
+  static String? getToken() {
+    return GetStorage().read(_tokenKey);
+  }
+
   void _setupInterceptors() {
     _dio.interceptors.add(
       dio.InterceptorsWrapper(
         onRequest: (options, handler) {
           print('[ApiService] Making request to: ${options.path}');
-          // Ajouter le token d'authentification s'il existe
-          final token = _storage.read(_tokenKey);
+          // Utiliser la nouvelle méthode getToken
+          final token = getToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }

@@ -119,6 +119,16 @@ app.use('/api/blog-articles', blogArticleRoutes);
 app.use('/api/order-items', orderItemRoutes);
 app.use('/api/archives', archiveRoutes);
 
+// Ajouter la route health check
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    message: 'Server is running'
+  });
+});
+
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);

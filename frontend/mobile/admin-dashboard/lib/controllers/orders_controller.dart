@@ -1,7 +1,7 @@
 import 'dart:developer';
 
 import 'package:admin/models/article.dart';
-import 'package:admin/models/flash_order_update.dart';
+import 'package:admin/models/flash_order_update.dart' as flash_update;
 import 'package:admin/models/user.dart';
 import 'package:get/get.dart';
 import '../models/order.dart';
@@ -58,7 +58,8 @@ class OrdersController extends GetxController {
 
   // État spécifique aux commandes flash
   final selectedFlashOrder = Rxn<Order>();
-  final selectedArticles = <FlashOrderItem>[].obs;
+  final selectedArticles = <flash_update.FlashOrderItem>[]
+      .obs; // Utiliser la version du modèle flash_order_update
   final selectedService = Rxn<Service>();
   final collectionDate = Rxn<DateTime>();
   final deliveryDate = Rxn<DateTime>();
@@ -416,18 +417,26 @@ class OrdersController extends GetxController {
 
       isLoading.value = true;
 
-      final updateData = FlashOrderUpdate(
-        orderId: selectedFlashOrder.value!.id,
-        serviceId: selectedService.value!.id,
-        items: selectedArticles.toList(),
-        collectionDate: collectionDate.value,
-        deliveryDate: deliveryDate.value,
-      );
+      final orderId = selectedFlashOrder.value!.id;
+      final updateData = {
+        'serviceId': selectedService.value!.id,
+        'items': selectedArticles
+            .map((item) => ({
+                  'articleId': item.articleId,
+                  'quantity': item.quantity,
+                  'unitPrice': item.unitPrice,
+                  'isPremium': item.isPremium,
+                }))
+            .toList(),
+        'collectionDate': collectionDate.value?.toIso8601String(),
+        'deliveryDate': deliveryDate.value?.toIso8601String(),
+      };
 
-      await OrderService.completeFlashOrder(
-        selectedFlashOrder.value!.id,
-        updateData,
-      );
+      final order = await OrderService.completeFlashOrder(orderId, updateData);
+
+      // Rafraîchir les listes
+      await loadDraftOrders();
+      await fetchOrders();
 
       Get.snackbar(
         'Succès',
@@ -436,7 +445,6 @@ class OrdersController extends GetxController {
         colorText: AppColors.textLight,
       );
 
-      await fetchOrders();
       Get.back();
     } catch (e) {
       print('[OrdersController] Error updating flash order: $e');

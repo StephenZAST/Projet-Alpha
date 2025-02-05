@@ -172,6 +172,7 @@ class Order {
       'paymentMethod': paymentMethod.name,
       'service': service?.toJson(),
       'address': address?.toJson(),
+      'isFlashOrder': isFlashOrder,
     };
   }
 
@@ -352,4 +353,26 @@ class OrderItem {
 
   String get name => article?.name ?? 'Article inconnu';
   double get total => unitPrice * quantity;
+}
+
+// Classe spécifique pour les commandes flash
+class FlashOrderItem {
+  final String articleId;
+  final int quantity;
+  final double unitPrice;
+  final bool isPremium;
+
+  FlashOrderItem({
+    required this.articleId,
+    required this.quantity,
+    required this.unitPrice,
+    this.isPremium = false,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'articleId': articleId,
+        'quantity': quantity,
+        'unitPrice': unitPrice,
+        'isPremium': isPremium,
+      };
 }

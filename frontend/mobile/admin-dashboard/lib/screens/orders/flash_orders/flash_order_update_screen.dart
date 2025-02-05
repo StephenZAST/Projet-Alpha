@@ -9,6 +9,40 @@ import 'components/date_selection.dart';
 class FlashOrderUpdateScreen extends StatelessWidget {
   final controller = Get.find<OrdersController>();
 
+  bool validateForm() {
+    if (controller.selectedService.value == null) {
+      Get.snackbar(
+        'Erreur',
+        'Veuillez sélectionner un service',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
+      return false;
+    }
+
+    if (controller.selectedArticles.isEmpty) {
+      Get.snackbar(
+        'Erreur',
+        'Veuillez ajouter au moins un article',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
+      return false;
+    }
+
+    if (controller.collectionDate.value == null) {
+      Get.snackbar(
+        'Erreur',
+        'Veuillez définir une date de collecte',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(

@@ -90,93 +90,77 @@ export class FlashOrderController {
 
   static async completeFlashOrder(req: Request, res: Response) {
     try {
-      const { orderId } = req.params;
-      interface OrderItem {
-        articleId: string;
-        quantity: number;
-        unitPrice: number;
-      }
+      console.log('[FlashOrderController] Starting complete flash order...');
+      console.log('[FlashOrderController] Order ID:', req.params.orderId);
+      console.log('[FlashOrderController] Payload:', JSON.stringify(req.body, null, 2));
 
-      const {
-        serviceId,
-        items,
-        serviceTypeId,
-        collectionDate,
-        deliveryDate
-      }: {
-        serviceId: string;
-        items: OrderItem[];
-        serviceTypeId?: string;
-        collectionDate?: Date;
-        deliveryDate?: Date;
-      } = req.body;
-
-      // 1. Mettre à jour la commande
-      const { data: order, error: updateError } = await supabase
+      // Vérifier si la commande existe et est en DRAFT
+      const { data: existingOrder, error: checkError } = await supabase
         .from('orders')
-        .update({
-          serviceId,
-          service_type_id: serviceTypeId,
-          collectionDate,
-          deliveryDate,
-          status: 'COLLECTING' as OrderStatus, // Passer à COLLECTING une fois les détails ajoutés
-          updatedAt: new Date()
-        })
-        .eq('id', orderId)
-        .eq('status', 'PENDING')
-        .select()
+        .select('*')
+        .eq('id', req.params.orderId)
+        .eq('status', 'DRAFT')
         .single();
 
-      if (updateError) throw updateError;
-      if (!order) {
-        return res.status(404).json({ error: 'Flash order not found' });
+      if (checkError) {
+        console.error('[FlashOrderController] Error checking order:', checkError);
+        throw checkError;
       }
 
-      // 2. Ajouter les items
-      if (items && items.length > 0) {
-        const orderItems = items.map(item => ({
-          orderId,
-          articleId: item.articleId,
-          serviceId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(orderItems);
-
-        if (itemsError) throw itemsError;
+      if (!existingOrder) {
+        console.error('[FlashOrderController] Order not found or not in DRAFT status');
+        return res.status(404).json({
+          error: 'Order not found or not in DRAFT status'
+        });
       }
 
-      // 3. Récupérer la commande mise à jour avec tous les détails
-      const { data: completedOrder, error: fetchError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          user:users(
-            first_name,
-            last_name,
-            phone
-          ),
-          address:addresses(*),
-          items:order_items(*)
-        `)
-        .eq('id', orderId)
-        .single();
+      console.log('[FlashOrderController] Existing order found:', existingOrder);
 
-      if (fetchError) throw fetchError;
+      // Appeler la procédure stockée
+      console.log('[FlashOrderController] Calling stored procedure...');
+      const { data: result, error } = await supabase.rpc(
+        'complete_flash_order',
+        {
+          p_order_id: req.params.orderId,
+          p_service_id: req.body.serviceId,
+          p_items: req.body.items,
+          p_collection_date: req.body.collectionDate,
+          p_delivery_date: req.body.deliveryDate
+        }
+      );
 
-      res.json({ 
-        data: completedOrder,
-        message: 'Flash order updated successfully'
-      });
+      if (error) {
+        console.error('[FlashOrderController] Stored procedure error:', error);
+        throw error;
+      }
+
+      console.log('[FlashOrderController] Stored procedure result:', result);
+
+      // Vérifier que le résultat est bien formaté
+      if (!result || !result.data || !result.data.order) {
+        console.error('[FlashOrderController] Invalid response format:', result);
+        throw new Error('Invalid response format from stored procedure');
+      }
+
+      console.log('[FlashOrderController] Successfully completed flash order');
+      res.json(result);
 
     } catch (error: any) {
-      console.error('[FlashOrderController] Error completing flash order:', error);
-      res.status(500).json({ error: error.message });
+      console.error('[FlashOrderController] Error details:', {
+        message: error.message,
+        code: error.code,
+        hint: error.hint,
+        details: error.details
+      });
+      
+      res.status(500).json({
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? {
+          code: error.code,
+          hint: error.hint,
+          details: error.details
+        } : undefined
+      });
     }
   }
 }
