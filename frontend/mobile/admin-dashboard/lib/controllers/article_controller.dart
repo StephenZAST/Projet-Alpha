@@ -189,21 +189,4 @@ class ArticleController extends GetxController {
       isLoading.value = false;
     }
   }
-
-  void searchArticles(String query) {
-    if (query.isEmpty) {
-      fetchArticles();
-      return;
-    }
-
-    final searchResults = articles.where((article) {
-      final name = article.name.toLowerCase();
-      final description = article.description?.toLowerCase() ?? '';
-      final searchQuery = query.toLowerCase();
-
-      return name.contains(searchQuery) || description.contains(searchQuery);
-    }).toList();
-
-    articles.value = searchResults;
-  }
 }

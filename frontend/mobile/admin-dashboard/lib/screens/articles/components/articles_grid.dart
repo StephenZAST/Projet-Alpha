@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../models/article.dart';
 import '../../../responsive.dart';
+import '../../../controllers/article_controller.dart';
 import 'article_card.dart';
+import 'article_form_dialog.dart';
 
 class ArticlesGrid extends StatelessWidget {
   final List<Article> articles;
@@ -20,9 +23,11 @@ class ArticlesGrid extends StatelessWidget {
         mainAxisSpacing: defaultPadding,
       ),
       itemCount: articles.length,
-      itemBuilder: (context, index) => ArticleCard(
-        article: articles[index],
-      ),
+      itemBuilder: (context, index) {
+        final article = articles[index];
+        // Nous passons simplement l'article car ArticleCard gère maintenant ses propres actions
+        return ArticleCard(article: article);
+      },
     );
   }
 }

@@ -1,50 +1,34 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import { ArticleCategoryController } from '../controllers/articleCategory.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
-// // Protection des routes avec authentification
-// router.use(authenticateToken as express.RequestHandler);
+// Appliquer l'authentification à toutes les routes
+router.use(authenticateToken);
 
-// Routes admin
+// Routes publiques (nécessitent authentification mais pas d'autorisation spéciale)
+router.get('/', asyncHandler(ArticleCategoryController.getAllArticleCategories));
+router.get('/:categoryId', asyncHandler(ArticleCategoryController.getArticleCategoryById));
+
+// Routes protégées (nécessitent le rôle ADMIN)
 router.post(
   '/',
-  // authorizeRoles(['ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleCategoryController.createArticleCategory(req, res);
-  })
-);
-
-router.get(
-  '/:categoryId',
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleCategoryController.getArticleCategoryById(req, res);
-  })
-);
-
-router.get(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleCategoryController.getAllArticleCategories(req, res);
-  })
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(ArticleCategoryController.createArticleCategory)
 );
 
 router.patch(
   '/:categoryId',
-  authorizeRoles(['ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleCategoryController.updateArticleCategory(req, res);
-  })
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(ArticleCategoryController.updateArticleCategory)
 );
 
 router.delete(
   '/:categoryId',
-  authorizeRoles(['ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleCategoryController.deleteArticleCategory(req, res);
-  })
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(ArticleCategoryController.deleteArticleCategory)
 );
 
 export default router;

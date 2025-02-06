@@ -43,12 +43,42 @@ export class ArticleCategoryController {
 
   static async updateArticleCategory(req: Request, res: Response) {
     try {
+      console.log('[ArticleCategoryController] Update request:', {
+        id: req.params.categoryId,
+        data: req.body
+      });
+
       const categoryId = req.params.categoryId;
       const categoryData = req.body;
-      const result = await ArticleCategoryService.updateArticleCategory(categoryId, categoryData);
-      res.json({ data: result });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+
+      const result = await ArticleCategoryService.updateArticleCategory(
+        categoryId,
+        categoryData
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: result,
+        message: 'Category updated successfully'
+      });
+    } catch (error) {
+      console.error('[ArticleCategoryController] Update error:', error);
+      
+      if (error instanceof Error) {
+        if (error.message.includes('not found')) {
+          return res.status(404).json({
+            success: false,
+            message: 'Category not found',
+            error: error.message
+          });
+        }
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to update category',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
 

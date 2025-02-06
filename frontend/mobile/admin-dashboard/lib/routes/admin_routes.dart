@@ -45,6 +45,10 @@ class AdminBinding extends Bindings {
         fenix: true); // Ajout du ArticleController
     Get.lazyPut(() => ServiceTypeController(),
         fenix: true); // Ajout du ServiceTypeController
+    Get.lazyPut(() => CategoryController(),
+        fenix: true); // Nécessaire pour le CategoryDropdown
+    // S'assurer que CategoryController est injecté avant ArticlesScreen
+    Get.lazyPut(() => CategoryController(), fenix: true);
   }
 }
 
@@ -155,8 +159,9 @@ class AdminRoutes {
       name: '/articles',
       page: () => ArticlesScreen(),
       binding: BindingsBuilder(() {
-        if (!Get.isRegistered<ArticleController>()) {
-          Get.put(ArticleController());
+        Get.put(ArticleController());
+        if (!Get.isRegistered<CategoryController>()) {
+          Get.put(CategoryController());
         }
       }),
     ),

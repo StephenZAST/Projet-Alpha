@@ -3,26 +3,23 @@ import '../services/api_service.dart';
 import '../models/service.dart';
 
 class ServiceService {
-  static const String _baseUrl =
-      '/api/services'; // Correction du chemin de l'API
-  static final ApiService _api = ApiService();
+  static const String _baseUrl = '/api/services';
+  static final ApiService _apiService = ApiService();
 
   static Future<List<Service>> getAllServices() async {
     try {
-      final response = await _api.get(_baseUrl);
-
-      if (response.statusCode != 200) {
-        throw 'Erreur lors de la récupération des services: ${response.statusCode}';
-      }
+      final response = await _apiService.get(_baseUrl);
+      print('Service response: ${response.data}'); // Debug log
 
       if (response.data != null && response.data['data'] != null) {
-        return (response.data['data'] as List)
+        final List<Service> services = (response.data['data'] as List)
             .map((item) => Service.fromJson(item))
             .toList();
+        return services;
       }
       return [];
     } catch (e) {
-      print('[ServiceService] Error getting services: $e');
+      print('Error fetching services: $e');
       rethrow;
     }
   }
@@ -33,7 +30,7 @@ class ServiceService {
     String? description,
   }) async {
     try {
-      final response = await _api.post(_baseUrl, data: {
+      final response = await _apiService.post(_baseUrl, data: {
         'name': name,
         'price': price,
         if (description != null) 'description': description,
@@ -57,7 +54,7 @@ class ServiceService {
     String? description,
   }) async {
     try {
-      final response = await _api.patch('$_baseUrl/$id', data: {
+      final response = await _apiService.patch('$_baseUrl/$id', data: {
         if (name != null) 'name': name,
         if (price != null) 'price': price,
         if (description != null) 'description': description,
@@ -72,7 +69,7 @@ class ServiceService {
 
   static Future<void> deleteService(String id) async {
     try {
-      await _api.delete('$_baseUrl/$id');
+      await _apiService.delete('$_baseUrl/$id');
     } catch (e) {
       print('[ServiceService] Error deleting service: $e');
       rethrow;

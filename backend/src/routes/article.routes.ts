@@ -1,65 +1,33 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import { ArticleController } from '../controllers/article.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
-import { ArticleService } from '../services/article.service';
 
 const router = express.Router();
 
-// // Protection des routes avec authentification
-// router.use(authenticateToken as express.RequestHandler);
+// Routes publiques
+router.get('/', asyncHandler(ArticleController.getAllArticles));
+router.get('/:articleId', asyncHandler(ArticleController.getArticleById));
 
-// Routes admin
+// Routes protégées - nécessitent authentification
+router.use(authenticateToken);
+
+// Routes CRUD - Accessibles aux admins
 router.post(
   '/',
-  // authorizeRoles(['ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.createArticle(req, res);
-  })
-);
-
-router.get(
-  '/:articleId',
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.getArticleById(req, res);
-  })
-);
-
-router.get(
-  '/',
-  asyncHandler(async (req: Request, res: Response) => {
-    try {
-      const articles = await ArticleService.getAllArticles();
-      res.status(200).json({
-        success: true,
-        data: articles,
-        message: 'Articles retrieved successfully'
-      });
-    } catch (error) {
-      console.error('Error getting articles:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to retrieve articles',
-        error: error instanceof Error ? error.message : 'Database error'
-      });
-    }
-  })
+  asyncHandler(ArticleController.createArticle)
 );
 
 router.patch(
   '/:articleId',
-  authorizeRoles(['ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.updateArticle(req, res);
-  })
+  asyncHandler(ArticleController.updateArticle) // Suppression de la restriction ADMIN
 );
 
 router.delete(
   '/:articleId',
-  authorizeRoles(['ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await ArticleController.deleteArticle(req, res);
-  })
+  asyncHandler(ArticleController.deleteArticle)
 );
+
+router.post('/:articleId/archive', authorizeRoles(['ADMIN']), asyncHandler(ArticleController.archiveArticle));
 
 export default router;

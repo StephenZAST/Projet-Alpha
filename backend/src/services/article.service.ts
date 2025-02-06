@@ -48,7 +48,8 @@ export class ArticleService {
         .select(`
           *,
           category:article_categories(*)
-        `);
+        `)
+        .eq('isDeleted', false);  // Ne retourner que les articles actifs
 
       if (error) {
         console.error('Supabase error in getAllArticles:', error);
@@ -89,26 +90,121 @@ export class ArticleService {
     }
   }
 
-  static async updateArticle(articleId: string, articleData: Partial<Article>): Promise<Article> {
-    const { data, error } = await supabase
-      .from('articles')
-      .update(articleData)
-      .eq('id', articleId)
-      .select()
-      .single();
+  static async getArticlesForOrder(): Promise<Article[]> {
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select(`
+          *,
+          category:article_categories(name)
+        `)
+        .eq('isDeleted', false)
+        .order('name');
 
-    if (error) throw error;
-    if (!data) throw new Error('Article not found');
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('[ArticleService] Error getting articles for order:', error);
+      throw error;
+    }
+  }
 
-    return data;
+  static async updateArticle(articleId: string, updateData: Partial<Article>) {
+    try {
+      console.log('[ArticleService] Starting update for article:', articleId);
+
+      const { data: existingArticle, error: findError } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', articleId)
+        .single();
+
+      if (findError || !existingArticle) {
+        throw new Error('Article not found');
+      }
+
+      // Mise à jour avec les champs exacts de la BD
+      const updatePayload = {
+        name: updateData.name,
+        description: updateData.description,
+        basePrice: updateData.basePrice,
+        premiumPrice: updateData.premiumPrice,
+        categoryId: updateData.categoryId,
+        // Ne pas inclure updatedAt car il est mis à jour automatiquement par Supabase
+      };
+
+      console.log('[ArticleService] Update payload:', updatePayload);
+
+      const { data: updatedArticle, error: updateError } = await supabase
+        .from('articles')
+        .update(updatePayload)
+        .eq('id', articleId)
+        .select('*')
+        .single();
+
+      if (updateError) {
+        console.error('[ArticleService] Update error:', updateError);
+        throw updateError;
+      }
+
+      return updatedArticle;
+    } catch (error) {
+      console.error('[ArticleService] Error updating article:', error);
+      throw error;
+    }
   }
 
   static async deleteArticle(articleId: string): Promise<void> {
-    const { error } = await supabase
-      .from('articles')
-      .delete()
-      .eq('id', articleId);
+    try {
+      console.log('[ArticleService] Attempting to delete article:', articleId);
 
-    if (error) throw error;
+      // Vérifier si l'article existe
+      const { data: existingArticle, error: findError } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', articleId)
+        .single();
+
+      if (findError || !existingArticle) {
+        throw new Error('Article not found');
+      }
+
+      // Marquer comme supprimé au lieu de supprimer physiquement
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update({
+          isDeleted: true,
+          deletedAt: new Date().toISOString()
+        })
+        .eq('id', articleId);
+
+      if (updateError) throw updateError;
+
+      console.log('[ArticleService] Article marked as deleted:', articleId);
+    } catch (error) {
+      console.error('[ArticleService] Error deleting article:', error);
+      throw error;
+    }
+  }
+
+  static async archiveArticle(articleId: string, reason: string): Promise<void> {
+    try {
+      console.log('[ArticleService] Attempting to archive article:', articleId);
+
+      const { error } = await supabase.rpc('archive_article', {
+        p_article_id: articleId,
+        p_reason: reason
+      });
+
+      if (error) {
+        console.error('[ArticleService] Archive error:', error);
+        throw error;
+      }
+
+      console.log('[ArticleService] Article archived successfully:', articleId);
+    } catch (error) {
+      console.error('[ArticleService] Error archiving article:', error);
+      throw error;
+    }
   }
 }

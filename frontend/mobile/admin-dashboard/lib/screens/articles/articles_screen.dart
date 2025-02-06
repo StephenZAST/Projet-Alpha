@@ -1,5 +1,6 @@
 import 'package:admin/models/article.dart';
 import 'package:admin/screens/articles/components/article_card.dart';
+import 'package:admin/screens/articles/components/article_form_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
@@ -62,11 +63,7 @@ class ArticlesScreen extends GetView<ArticleController> {
                           itemBuilder: (context, index) {
                             final article = controller.articles[index];
                             return ArticleCard(
-                              article: article,
-                              onEdit: () =>
-                                  _showEditArticleDialog(context, article),
-                              onDelete: () =>
-                                  _showDeleteConfirmation(context, article),
+                              article: article, // Only pass the article
                             );
                           },
                         ),
@@ -96,8 +93,12 @@ class ArticlesScreen extends GetView<ArticleController> {
     );
   }
 
-  void _showEditArticleDialog(BuildContext context, Article article) {
-    // TODO: Implement edit dialog
+  void _showEditArticleDialog(Article article) {
+    print('[ArticlesScreen] Opening edit dialog for article: ${article.id}');
+    Get.dialog(
+      ArticleFormDialog(article: article),
+      barrierDismissible: false,
+    );
   }
 
   void _showDeleteConfirmation(BuildContext context, Article article) {

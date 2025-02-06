@@ -20,8 +20,9 @@ export class OrderCreateService {
     address:addresses(*),
     items:order_items(
       *,
-      article:articles(
+      article:articles!inner(
         *,
+        isDeleted:eq(false),
         category:article_categories(*)
       )
     )
@@ -29,6 +30,20 @@ export class OrderCreateService {
 
   static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
     try {
+      // Vérifier que tous les articles sont actifs
+      const articleIds = orderData.items.map(item => item.articleId);
+      const { data: articles, error: checkError } = await supabase
+        .from('articles')
+        .select('id')
+        .in('id', articleIds)
+        .eq('isDeleted', false);
+
+      if (checkError) throw checkError;
+      
+      if (articles.length !== articleIds.length) {
+        throw new Error('One or more articles are not available');
+      }
+
       const { 
         userId, 
         serviceId, 

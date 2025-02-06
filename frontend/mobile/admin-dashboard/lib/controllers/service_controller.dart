@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import '../models/service.dart';
-import '../models/service_type.dart'; // Ajout de l'import manquant
 import '../services/service_service.dart';
 import '../constants.dart';
 

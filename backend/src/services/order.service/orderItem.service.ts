@@ -18,15 +18,16 @@ export class OrderItemService {
   static async createOrderItem(orderItemData: CreateOrderItemDTO): Promise<OrderItem> {
     const { orderId, articleId, serviceId, quantity, unitPrice } = orderItemData;
 
-    // 1. Vérifier que l'article existe
+    // 1. Vérifier que l'article existe et n'est pas supprimé
     const { data: article, error: articleError } = await supabase
       .from('articles')
       .select('*')
       .eq('id', articleId)
+      .eq('isDeleted', false)
       .single();
 
     if (articleError || !article) {
-      throw new Error(`Article not found: ${articleId}`);
+      throw new Error(`Article not found or inactive: ${articleId}`);
     }
 
     // 2. Créer l'item de commande
@@ -79,7 +80,8 @@ export class OrderItemService {
     const { data, error } = await supabase
       .from('order_items')
       .select(this.itemSelect)
-      .eq('orderId', orderId);
+      .eq('orderId', orderId)
+      .eq('articles.isDeleted', false);
 
     if (error) throw error;
     if (!data) return [];

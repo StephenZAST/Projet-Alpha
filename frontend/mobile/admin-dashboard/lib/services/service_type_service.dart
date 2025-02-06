@@ -3,15 +3,28 @@ import '../services/api_service.dart';
 import '../models/service_type.dart';
 
 class ServiceTypeService {
-  static const String _baseUrl = '/api/service-types';
-  static final ApiService _api = ApiService();
+  // Correction du chemin de l'API pour correspondre au backend
+  static const String _baseUrl = '/api/service-types'; // Route simplifiée
+  static final ApiService _apiService = ApiService();
 
   static Future<List<ServiceType>> getAllServiceTypes() async {
     try {
-      final response = await _api.get(_baseUrl);
-      return _parseServiceTypeList(response.data);
+      print('[ServiceTypeService] Attempting to fetch from: $_baseUrl');
+      final response = await _apiService.get(_baseUrl);
+      print('[ServiceTypeService] Raw response: ${response.data}');
+
+      if (response.data != null && response.data['data'] != null) {
+        final List<ServiceType> types = (response.data['data'] as List)
+            .map((item) => ServiceType.fromJson(item))
+            .toList();
+        print(
+            '[ServiceTypeService] Parsed ${types.length} service types'); // Debug log
+        return types;
+      }
+      return [];
     } catch (e) {
-      print('[ServiceTypeService] Error getting service types: $e');
+      print('[ServiceTypeService] Error with specific URL: $_baseUrl');
+      print('[ServiceTypeService] Error details: $e');
       rethrow;
     }
   }
@@ -21,7 +34,8 @@ class ServiceTypeService {
     String? description,
   }) async {
     try {
-      final response = await _api.post(_baseUrl, data: {
+      final response = await _apiService.post(_baseUrl, data: {
+        // Correction ici
         'name': name,
         'description': description,
       });
@@ -38,7 +52,8 @@ class ServiceTypeService {
     String? description,
   }) async {
     try {
-      await _api.patch('$_baseUrl/$id', data: {
+      await _apiService.patch('$_baseUrl/$id', data: {
+        // Correction ici
         if (name != null) 'name': name,
         if (description != null) 'description': description,
       });
@@ -50,7 +65,7 @@ class ServiceTypeService {
 
   static Future<void> deleteServiceType(String id) async {
     try {
-      await _api.delete('$_baseUrl/$id');
+      await _apiService.delete('$_baseUrl/$id'); // Correction ici
     } catch (e) {
       print('[ServiceTypeService] Error deleting service type: $e');
       rethrow;

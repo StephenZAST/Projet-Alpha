@@ -168,7 +168,7 @@ ORDER BY source_table, source_column;
 SELECT p.proname AS procedure_name,
        pg_get_functiondef(p.oid) AS procedure_definition
 FROM pg_proc p
-WHERE p.prosrc LIKE '%orders%';
+WHERE p.prosrc LIKE '%articles%';
 
 
 
@@ -209,6 +209,40 @@ WHERE p.prosrc LIKE '%orders%';
 
 
 
+
+SELECT 
+    t.tgname AS trigger_name,
+    CASE 
+        WHEN t.tgenabled = 'O' THEN 'ENABLED'
+        ELSE 'DISABLED'
+    END AS status,
+    p.proname AS trigger_function,
+    CASE 
+        WHEN t.tgtype & 1 = 1 THEN 'ROW'
+        ELSE 'STATEMENT'
+    END AS trigger_level,
+    CASE
+        WHEN t.tgtype & 2 = 2 THEN 'BEFORE'
+        WHEN t.tgtype & 64 = 64 THEN 'INSTEAD OF'
+        ELSE 'AFTER'
+    END AS timing,
+    array_to_string(array(
+        SELECT event::text
+        FROM unnest(array[
+            CASE WHEN t.tgtype & 4 = 4 THEN 'INSERT' END,
+            CASE WHEN t.tgtype & 8 = 8 THEN 'DELETE' END,
+            CASE WHEN t.tgtype & 16 = 16 THEN 'UPDATE' END
+        ]) AS event
+        WHERE event IS NOT NULL
+    ), ', ') AS events
+FROM pg_trigger t
+JOIN pg_class c ON t.tgrelid = c.oid
+JOIN pg_proc p ON t.tgfoid = p.oid
+WHERE c.relname = 'articles'  -- Remplacez 'articles' par le nom de votre table
+AND NOT t.tgisinternal;
+
+
+
 -- Afficher toutes les valeurs de l'énumération status de la table orders
 SELECT 
     t.typname as "Type Name",
@@ -223,4 +257,4 @@ ORDER BY e.enumsortorder;
 -- Afficher les colonnes de la table d'une table donnée
 SELECT column_name, data_type, character_maximum_length, column_default, is_nullable
 FROM INFORMATION_SCHEMA.COLUMNS 
-WHERE table_name = 'orders';
+WHERE table_name = 'articles';

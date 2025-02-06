@@ -131,6 +131,14 @@ export interface Article {
   updatedAt: Date;
 }
 
+export interface ArticleUpdateDTO {
+  name?: string;
+  description?: string;
+  basePrice?: number;
+  premiumPrice?: number;
+  categoryId?: string;
+}
+
 export interface ServiceType {
   id: string;
   name: string;
