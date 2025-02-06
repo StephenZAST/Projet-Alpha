@@ -13,6 +13,7 @@ class AuthService {
   static final _api = ApiService();
 
   static const String baseAuthPath = '/auth'; // Retiré le /api préfixe
+  static const String _baseUrl = '/api/auth'; // Modifier le chemin de base
 
   static String? get token => _storage.read(_tokenKey);
   static User? get currentUser {
@@ -36,79 +37,35 @@ class AuthService {
     try {
       print('[AuthService] Attempting login with email: $email');
       final response = await _api.post(
-        '$baseAuthPath/admin/login',
+        '$_baseUrl/admin/login',
         data: {
           'email': email,
           'password': password,
         },
       );
 
-      final responseData = response.data;
-      print('[AuthService] Raw login response: $responseData');
+      print('[AuthService] Raw login response: ${response.data}');
 
-      // Vérifier la réponse de manière plus flexible
-      if (responseData != null && responseData['data'] != null) {
-        final data = responseData['data'];
-        final userData = data['user'];
-        final token = data['token'];
-
-        if (token == null || userData == null) {
-          throw 'Missing token or user data';
-        }
-
-        print('[AuthService] User data before parsing: $userData');
-
-        // S'assurer que les données requises sont présentes
-        if (userData['id'] == null ||
-            userData['email'] == null ||
-            userData['role'] == null) {
-          throw 'Missing required user data fields';
-        }
-
-        // Vérifier et compléter les données manquantes
-        final completeUserData = {
-          ...userData,
-          'firstName': userData['firstName'] ?? '',
-          'lastName': userData['lastName'] ?? '',
-          'createdAt':
-              userData['createdAt'] ?? DateTime.now().toIso8601String(),
-          'updatedAt':
-              userData['updatedAt'] ?? DateTime.now().toIso8601String(),
-          'isActive': userData['isActive'] ?? true,
-          'loyaltyPoints': userData['loyaltyPoints'] ?? 0,
-        };
-
-        // Sauvegarder le token
-        await _storage.write(_tokenKey, token);
-        // Sauvegarder les données utilisateur
-        await _storage.write(
-            _userKey, completeUserData); // Sauvegarde directe de l'objet
-
-        print('[AuthService] Login successful');
-        print('[AuthService] Token saved: $token');
-        print('[AuthService] User data saved: $completeUserData');
-
-        // Tester la création de l'objet User avant de retourner
-        try {
-          final user =
-              User.fromJson(Map<String, dynamic>.from(completeUserData));
-          print(
-              '[AuthService] User object created successfully: ${user.toJson()}');
+      if (response.statusCode == 200 && response.data != null) {
+        final responseData = response.data;
+        if (responseData['success'] == true && responseData['data'] != null) {
+          // Sauvegarder le token
+          await _storage.write(_tokenKey, responseData['data']['token']);
+          // Sauvegarder les données utilisateur
+          final userData = responseData['data']['user'];
+          await _storage.write('user', userData);
 
           return {
             'success': true,
-            'data': {
-              'user': completeUserData,
-              'token': token,
-            }
+            'data': responseData['data'],
           };
-        } catch (e) {
-          print('[AuthService] Error creating user object: $e');
-          throw 'Error parsing user data';
         }
       }
 
-      throw responseData['message'] ?? 'Login failed';
+      return {
+        'success': false,
+        'message': response.data['message'] ?? 'Une erreur est survenue',
+      };
     } catch (e) {
       print('[AuthService] Login error: $e');
       return {

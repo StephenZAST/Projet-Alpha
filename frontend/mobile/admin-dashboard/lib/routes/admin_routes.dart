@@ -17,15 +17,23 @@ import '../controllers/orders_controller.dart';
 import '../controllers/service_controller.dart';
 import '../controllers/category_controller.dart';
 import '../middleware/auth_middleware.dart';
-import '../screens/services/service_type_management_screen.dart';
 
 class AdminBinding extends Bindings {
   @override
   void dependencies() {
-    // Core controllers - permanent
+    print('[AdminBinding] Initializing bindings');
+
+    // S'assurer que les contrôleurs sont initialisés dans le bon ordre
     if (!Get.isRegistered<AuthController>()) {
       Get.put(AuthController(), permanent: true);
     }
+
+    // Initialiser le DashboardController de manière permanente
+    if (!Get.isRegistered<DashboardController>()) {
+      Get.put(DashboardController(), permanent: true);
+    }
+
+    // Ne réinitialiser les contrôleurs permanents que s'ils n'existent pas déjà
     if (!Get.isRegistered<ThemeController>()) {
       Get.put(ThemeController(), permanent: true);
     }
@@ -36,19 +44,13 @@ class AdminBinding extends Bindings {
       Get.put(NotificationController(), permanent: true);
     }
 
-    // Feature controllers - lazy loaded
-    Get.lazyPut(() => DashboardController(), fenix: true);
+    // Les contrôleurs qui peuvent être réinitialisés
     Get.lazyPut(() => OrdersController(), fenix: true);
     Get.lazyPut(() => ServiceController(), fenix: true);
+    Get.lazyPut(() => ArticleController(), fenix: true);
     Get.lazyPut(() => CategoryController(), fenix: true);
-    Get.lazyPut(() => ArticleController(),
-        fenix: true); // Ajout du ArticleController
-    Get.lazyPut(() => ServiceTypeController(),
-        fenix: true); // Ajout du ServiceTypeController
-    Get.lazyPut(() => CategoryController(),
-        fenix: true); // Nécessaire pour le CategoryDropdown
-    // S'assurer que CategoryController est injecté avant ArticlesScreen
-    Get.lazyPut(() => CategoryController(), fenix: true);
+
+    print('[AdminBinding] Dependencies initialization completed');
   }
 }
 
@@ -81,8 +83,9 @@ class AdminRoutes {
         return categories;
       case MenuIndices.articles:
         return '/articles'; // Ajout de la route articles
-      case MenuIndices.serviceTypes:
-        return '/service-types'; // Ajout de la route service-types
+      // Supprimer le case pour serviceTypes
+      // case MenuIndices.serviceTypes:
+      //   return '/service-types'; // Ajout de la route service-types
       case MenuIndices.users:
         return users;
       case MenuIndices.profile:
@@ -162,15 +165,6 @@ class AdminRoutes {
         Get.put(ArticleController());
         if (!Get.isRegistered<CategoryController>()) {
           Get.put(CategoryController());
-        }
-      }),
-    ),
-    GetPage(
-      name: '/service-types',
-      page: () => ServiceTypeManagementScreen(),
-      binding: BindingsBuilder(() {
-        if (!Get.isRegistered<ServiceTypeController>()) {
-          Get.put(ServiceTypeController());
         }
       }),
     ),

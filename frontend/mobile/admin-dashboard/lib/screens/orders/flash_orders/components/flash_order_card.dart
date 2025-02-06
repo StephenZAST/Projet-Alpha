@@ -59,7 +59,7 @@ class FlashOrderCard extends StatelessWidget {
               ],
               if (order.note != null || order.metadata?.note != null) ...[
                 Text(
-                  'Note: ${order.note ?? order.metadata?.note}',
+                  'Note: ${order.note ?? order.metadata?.note ?? ''}',
                   style: AppTextStyles.bodyMedium
                       .copyWith(color: secondaryTextColor),
                 ),

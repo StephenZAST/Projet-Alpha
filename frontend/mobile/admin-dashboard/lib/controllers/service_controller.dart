@@ -5,10 +5,10 @@ import '../constants.dart';
 
 class ServiceController extends GetxController {
   final services = <Service>[].obs;
-  final serviceTypes = <ServiceType>[].obs;
+  final serviceTypes = <Service>[].obs;
   final isLoading = false.obs;
   final errorMessage = ''.obs;
-  final selectedServiceType = Rxn<ServiceType>();
+  final selectedServiceType = Rxn<Service>();
 
   @override
   void onInit() {

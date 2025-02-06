@@ -3,7 +3,8 @@ import '../services/api_service.dart';
 import '../models/service.dart';
 
 class ServiceService {
-  static const String _baseUrl = '/api/services';
+  static const String _baseUrl =
+      '/api/services'; // Le chemin est correct maintenant
   static final ApiService _apiService = ApiService();
 
   static Future<List<Service>> getAllServices() async {

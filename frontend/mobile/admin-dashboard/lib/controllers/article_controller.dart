@@ -1,8 +1,10 @@
 import 'package:get/get.dart';
-import '../services/api_service.dart';
+import 'package:dio/dio.dart' as dio
+    show Response; // Ajouter l'import explicite pour Response avec prefix
+import '../services/article_service.dart';
 import '../models/article.dart';
 import '../constants.dart';
-import 'package:dio/dio.dart' as dio;
+import '../services/api_service.dart';
 
 class ArticleController extends GetxController {
   final isLoading = false.obs;
@@ -20,14 +22,9 @@ class ArticleController extends GetxController {
   Future<void> fetchArticles() async {
     try {
       isLoading.value = true;
-      final dio.Response response = await ApiService().get('/articles');
-
-      if (response.data != null && response.data['data'] != null) {
-        final List<Article> articlesList = (response.data['data'] as List)
-            .map((item) => Article.fromJson(item))
-            .toList();
-        articles.value = articlesList;
-      }
+      final result = await ArticleService
+          .getAllArticles(); // Cette méthode existe maintenant
+      articles.value = result;
     } catch (e) {
       errorMessage.value = 'Erreur lors du chargement des articles';
       Get.snackbar(
@@ -119,10 +116,11 @@ class ArticleController extends GetxController {
         premiumPrice: premiumPrice,
       );
 
-      final response = await ApiService().post('/articles', data: dto.toJson());
-      await fetchArticles(); // Rafraîchir la liste après création
+      // Utiliser le service article au lieu d'appeler directement l'API
+      await ArticleService.addNewArticle(dto);
+      await fetchArticles();
 
-      Get.back(); // Fermer le formulaire
+      Get.back();
       Get.snackbar(
         'Succès',
         'Article créé avec succès',
@@ -163,14 +161,11 @@ class ArticleController extends GetxController {
         isActive: isActive,
       );
 
-      final response = await ApiService().patch(
-        '/articles/$id',
-        data: dto.toJson(),
-      );
+      // Utiliser le service article
+      await ArticleService.updateArticle(id: id, dto: dto);
+      await fetchArticles();
 
-      await fetchArticles(); // Rafraîchir la liste après mise à jour
-
-      Get.back(); // Fermer le formulaire
+      Get.back();
       Get.snackbar(
         'Succès',
         'Article mis à jour avec succès',
@@ -182,6 +177,90 @@ class ArticleController extends GetxController {
       Get.snackbar(
         'Erreur',
         'Impossible de mettre à jour l\'article',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> archiveArticle(String id, String reason) async {
+    try {
+      isLoading.value = true;
+      await ArticleService.archiveArticle(id, reason);
+      await fetchArticles();
+
+      Get.back();
+      Get.snackbar(
+        'Succès',
+        'Article archivé avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.white,
+      );
+    } catch (e) {
+      errorMessage.value = 'Erreur lors de l\'archivage de l\'article';
+      Get.snackbar(
+        'Erreur',
+        'Impossible d\'archiver l\'article',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteArticle(String id) async {
+    try {
+      isLoading.value = true;
+      await ArticleService.deleteArticle(id);
+      await fetchArticles();
+
+      Get.snackbar(
+        'Succès',
+        'Article supprimé avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.white,
+      );
+    } catch (e) {
+      final isReferenced = e.toString().contains('referenced');
+      errorMessage.value = isReferenced
+          ? 'Cet article est utilisé dans des commandes existantes'
+          : 'Erreur lors de la suppression';
+
+      Get.snackbar(
+        'Erreur',
+        errorMessage.value,
+        backgroundColor: AppColors.error,
+        colorText: AppColors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> searchArticles(String query) async {
+    try {
+      isLoading.value = true;
+      if (query.isEmpty) {
+        await fetchArticles();
+        return;
+      }
+
+      final filteredArticles = articles.where((article) {
+        final name = article.name.toLowerCase();
+        final description = article.description?.toLowerCase() ?? '';
+        final searchQuery = query.toLowerCase();
+        return name.contains(searchQuery) || description.contains(searchQuery);
+      }).toList();
+
+      articles.value = filteredArticles;
+    } catch (e) {
+      errorMessage.value = 'Erreur lors de la recherche';
+      Get.snackbar(
+        'Erreur',
+        'Impossible de rechercher les articles',
         backgroundColor: AppColors.error,
         colorText: AppColors.white,
       );

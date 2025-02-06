@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../constants.dart';
 import '../../../models/article.dart';
 import '../../../controllers/article_controller.dart';
-import 'article_form_screen.dart';
 
 class ArticleCard extends StatelessWidget {
   final Article article;

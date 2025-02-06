@@ -15,8 +15,8 @@ class ApiService {
     return _instance;
   }
 
-  // Ajouter la propriété baseUrl en tant que getter statique
-  static String get baseUrl => 'http://localhost:3001/api';
+  // Modifier le baseUrl pour ne pas inclure /api
+  static String get baseUrl => 'http://localhost:3001';
 
   ApiService._internal() {
     _dio = dio.Dio(dio.BaseOptions(

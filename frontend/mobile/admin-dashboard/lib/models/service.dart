@@ -1,5 +1,3 @@
-import 'service_type.dart';
-
 class Service {
   final String id;
   final String name;
@@ -8,7 +6,6 @@ class Service {
   final String? typeId;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final ServiceType? type;
 
   Service({
     required this.id,
@@ -18,7 +15,6 @@ class Service {
     this.typeId,
     required this.createdAt,
     required this.updatedAt,
-    this.type,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
@@ -32,7 +28,6 @@ class Service {
       typeId: json['typeId']?.toString(),
       createdAt: DateTime.parse(json['created_at'] ?? json['createdAt']),
       updatedAt: DateTime.parse(json['updated_at'] ?? json['updatedAt']),
-      type: json['type'] != null ? ServiceType.fromJson(json['type']) : null,
     );
   }
 

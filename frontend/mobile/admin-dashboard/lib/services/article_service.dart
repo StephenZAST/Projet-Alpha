@@ -3,7 +3,8 @@ import '../services/api_service.dart';
 import '../models/article.dart';
 
 class ArticleService {
-  static const String _baseUrl = '/api/articles';
+  static const String _baseUrl =
+      '/api/articles'; // Le chemin est correct maintenant
   static final ApiService _api = ApiService();
 
   static Future<List<Article>> getAllArticles() async {
@@ -22,13 +23,12 @@ class ArticleService {
     }
   }
 
-  // Renommé pour éviter la duplication
   static Future<Article> addNewArticle(ArticleCreateDTO dto) async {
     try {
       final response = await _api.post(_baseUrl, data: dto.toJson());
       return Article.fromJson(response.data['data']);
     } catch (e) {
-      print('Error creating article: $e');
+      print('[ArticleService] Error creating article: $e');
       rethrow;
     }
   }
@@ -44,28 +44,40 @@ class ArticleService {
       );
       return Article.fromJson(response.data['data']);
     } catch (e) {
-      print('Error updating article: $e');
+      print('[ArticleService] Error updating article: $e');
       rethrow;
     }
   }
 
-  static Future<void> removeArticle(String id) async {
+  static Future<void> archiveArticle(String id, String reason) async {
     try {
-      await _api.delete('$_baseUrl/$id');
+      await _api.post('$_baseUrl/$id/archive', data: {'reason': reason});
     } catch (e) {
-      print('Error deleting article: $e');
+      print('[ArticleService] Error archiving article: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> deleteArticle(String id) async {
+    try {
+      final response = await _api.delete('$_baseUrl/$id');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete article');
+      }
+    } catch (e) {
+      print('[ArticleService] Error deleting article: $e');
       rethrow;
     }
   }
 
   static Future<List<Article>> searchArticles(String query) async {
     try {
-      final response = await _api.get('$_baseUrl/search', queryParameters: {
-        'q': query,
+      final response = await _api.get(_baseUrl, queryParameters: {
+        'search': query,
       });
       return _parseArticleList(response.data);
     } catch (e) {
-      print('Error searching articles: $e');
+      print('[ArticleService] Error searching articles: $e');
       rethrow;
     }
   }

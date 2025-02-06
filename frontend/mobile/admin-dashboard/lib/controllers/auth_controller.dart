@@ -1,3 +1,4 @@
+import 'package:admin/screens/auth/admin_login_screen.dart';
 import 'package:get/get.dart';
 import '../constants.dart';
 import '../models/user.dart';
@@ -78,29 +79,16 @@ class AuthController extends GetxController {
       final response = await AuthService.login(email, password);
       print('[AuthController] Login response: $response');
 
-      if (response['success'] == true) {
+      if (response['success'] == true && response['data'] != null) {
         final userData = response['data']['user'];
         if (userData != null) {
           try {
-            // Convertir explicitement en Map<String, dynamic>
             final userMap = Map<String, dynamic>.from(userData);
             final newUser = User.fromJson(userMap);
-            print(
-                '[AuthController] User created successfully: ${newUser.toJson()}');
             user.value = newUser;
             _navigateToDashboard();
-
-            Get.snackbar(
-              'Succès',
-              'Connexion réussie',
-              backgroundColor: AppColors.success,
-              colorText: AppColors.textLight,
-              snackPosition: SnackPosition.TOP,
-              margin: AppSpacing.marginMD,
-              duration: Duration(seconds: 3),
-            );
           } catch (e) {
-            print('[AuthController] Error creating user object: $e');
+            print('[AuthController] Error parsing user data: $e');
             throw 'Erreur lors de la création de l\'utilisateur';
           }
         } else {
@@ -129,9 +117,26 @@ class AuthController extends GetxController {
   }
 
   void _navigateToLogin() {
-    if (Get.currentRoute != AdminRoutes.login) {
-      _currentRoute.value = AdminRoutes.login;
-      Get.offAllNamed(AdminRoutes.login);
+    print('[AuthController] Attempting navigation to login');
+    try {
+      if (!Get.testMode) {
+        print('[AuthController] GetX not in test mode, setting test mode');
+        Get.testMode = true;
+      }
+
+      final currentRoute = Get.currentRoute;
+      print('[AuthController] Current route: $currentRoute');
+
+      if (currentRoute != AdminRoutes.login) {
+        print('[AuthController] Navigating to login page');
+        Get.offAllNamed(AdminRoutes.login);
+      } else {
+        print('[AuthController] Already on login page');
+      }
+    } catch (e) {
+      print('[AuthController] Navigation error: $e');
+      // Tenter une navigation alternative
+      Get.to(() => AdminLoginScreen());
     }
   }
 

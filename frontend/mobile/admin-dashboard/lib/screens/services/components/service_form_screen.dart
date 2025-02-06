@@ -1,4 +1,3 @@
-import 'package:admin/screens/services/components/service_type_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
@@ -11,14 +10,12 @@ class ServiceFormScreen extends StatelessWidget {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  String? selectedTypeId; // Changé de int? à String?
 
   ServiceFormScreen({this.service}) {
     if (service != null) {
       _nameController.text = service!.name;
       _priceController.text = service!.price.toString();
       _descriptionController.text = service!.description ?? '';
-      selectedTypeId = service!.typeId; // Maintenant c'est un String?
     }
   }
 
@@ -41,8 +38,6 @@ class ServiceFormScreen extends StatelessWidget {
                 style: AppTextStyles.h3,
               ),
               SizedBox(height: AppSpacing.lg),
-
-              // Champs du formulaire
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
@@ -57,7 +52,6 @@ class ServiceFormScreen extends StatelessWidget {
                 },
               ),
               SizedBox(height: AppSpacing.md),
-
               TextFormField(
                 controller: _priceController,
                 decoration: InputDecoration(
@@ -77,7 +71,6 @@ class ServiceFormScreen extends StatelessWidget {
                 },
               ),
               SizedBox(height: AppSpacing.md),
-
               TextFormField(
                 controller: _descriptionController,
                 decoration: InputDecoration(
@@ -86,18 +79,7 @@ class ServiceFormScreen extends StatelessWidget {
                 ),
                 maxLines: 3,
               ),
-              SizedBox(height: AppSpacing.md),
-
-              ServiceTypeSelector(
-                value: selectedTypeId, // Maintenant c'est un String?
-                onChanged: (String? value) {
-                  // Type explicite
-                  selectedTypeId = value;
-                },
-              ),
               SizedBox(height: AppSpacing.xl),
-
-              // Boutons d'action
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -114,7 +96,6 @@ class ServiceFormScreen extends StatelessWidget {
                             name: _nameController.text,
                             price: double.parse(_priceController.text),
                             description: _descriptionController.text,
-                            typeId: selectedTypeId,
                           );
                         } else {
                           controller.updateService(
@@ -122,7 +103,6 @@ class ServiceFormScreen extends StatelessWidget {
                             name: _nameController.text,
                             price: double.parse(_priceController.text),
                             description: _descriptionController.text,
-                            typeId: selectedTypeId,
                           );
                         }
                       }

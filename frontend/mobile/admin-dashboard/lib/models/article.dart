@@ -8,6 +8,8 @@ class Article {
   final String? category;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isDeleted;
+  final DateTime? deletedAt;
 
   Article({
     required this.id,
@@ -19,6 +21,8 @@ class Article {
     this.category,
     required this.createdAt,
     required this.updatedAt,
+    this.isDeleted = false,
+    this.deletedAt,
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
@@ -33,6 +37,9 @@ class Article {
           json['category'] is Map ? json['category']['name'] : json['category'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
+      isDeleted: json['isDeleted'] ?? false,
+      deletedAt:
+          json['deletedAt'] != null ? DateTime.parse(json['deletedAt']) : null,
     );
   }
 
@@ -47,6 +54,8 @@ class Article {
       'category': category,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'isDeleted': isDeleted,
+      'deletedAt': deletedAt?.toIso8601String(),
     };
   }
 }

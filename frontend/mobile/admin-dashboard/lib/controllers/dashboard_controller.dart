@@ -39,14 +39,24 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Observer l'état de l'authentification
-    ever(Get.find<AuthController>().user, (user) {
-      if (user != null && !isInitialized.value) {
-        isInitialized.value = true;
+    print('[DashboardController] Initializing');
+
+    // Charger les données immédiatement si l'utilisateur est déjà connecté
+    final authController = Get.find<AuthController>();
+    if (authController.isAuthenticated) {
+      print('[DashboardController] User is authenticated, loading data');
+      fetchDashboardData();
+    }
+
+    // Observer les changements d'authentification
+    ever(authController.user, (user) {
+      print('[DashboardController] Auth state changed: ${user != null}');
+      if (user != null) {
+        print('[DashboardController] User logged in, loading dashboard data');
         fetchDashboardData();
         _startRefreshTimer();
-      } else if (user == null) {
-        // Réinitialiser les données si l'utilisateur est déconnecté
+      } else {
+        print('[DashboardController] User logged out, clearing dashboard data');
         _clearDashboardData();
         _refreshTimer?.cancel();
       }
@@ -81,62 +91,46 @@ class DashboardController extends GetxController {
 
   Future<void> fetchDashboardData() async {
     try {
+      print('[DashboardController] Starting to fetch dashboard data');
       isLoading.value = true;
+      hasError.value = false;
 
-      // Charger les commandes récentes et les statistiques en parallèle
-      await Future.wait([
-        _loadRecentOrders(),
-        _loadOrderStats(),
-        _loadRevenueStats(), // Ajout du chargement des revenus
+      // Charger toutes les données en parallèle
+      final futures = await Future.wait([
+        DashboardService.getDashboardStatistics(),
+        DashboardService.getRevenueChartData(),
+        OrderService.getOrdersByStatus(),
+        OrderService.getRecentOrders(),
       ]);
+
+      print('[DashboardController] All data fetched, processing results');
+
+      // Traiter les résultats
+      final stats = futures[0] as Map<String, dynamic>;
+      totalRevenue.value = (stats['totalRevenue'] as num?)?.toDouble() ?? 0.0;
+      totalOrders.value = (stats['totalOrders'] as num?)?.toInt() ?? 0;
+      totalCustomers.value = (stats['totalCustomers'] as num?)?.toInt() ?? 0;
+
+      final chartData = futures[1] as Map<String, dynamic>;
+      revenueChartData.value = {
+        'labels': List<String>.from(chartData['labels'] ?? []),
+        'data': List<double>.from(
+            chartData['data']?.map((e) => (e as num).toDouble()) ?? []),
+      };
+
+      orderStatusCount.value = futures[2] as Map<String, int>;
+      recentOrders.value = futures[3] as List<Order>;
+
+      print('[DashboardController] Dashboard data updated successfully');
+      print('Revenue: ${totalRevenue.value}');
+      print('Orders: ${totalOrders.value}');
+      print('Customers: ${totalCustomers.value}');
     } catch (e) {
       print('[DashboardController] Error fetching dashboard data: $e');
       hasError.value = true;
       errorMessage.value = 'Erreur lors du chargement des données';
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  Future<void> _loadOrderStats() async {
-    try {
-      final stats = await OrderService.getOrderStatistics();
-      orderStatusCount.value = stats['byStatus'] as Map<String, int>;
-      totalOrders.value = stats['total'] as int;
-
-      // Mise à jour des données du graphique
-      final percentages = stats['percentages'] as Map<String, String>;
-      revenueChartData.value = {
-        'labels': percentages.keys.toList(),
-        'data': percentages.values.map((v) => double.parse(v)).toList(),
-      };
-    } catch (e) {
-      print('[DashboardController] Error loading order stats: $e');
-    }
-  }
-
-  Future<void> _loadRecentOrders() async {
-    try {
-      final recent = await OrderService.getRecentOrders(limit: 5);
-      print('[DashboardController] Loaded ${recent.length} recent orders');
-      recentOrders.assignAll(recent);
-    } catch (e) {
-      print('[DashboardController] Error loading recent orders: $e');
-      recentOrders.clear();
-    }
-  }
-
-  Future<void> _loadRevenueStats() async {
-    try {
-      final stats = await OrderService.getRevenueStatistics();
-      revenueData.value = stats;
-
-      // Calculer le revenu total
-      final total = stats.fold<double>(
-          0, (sum, item) => sum + (item['amount'] as double));
-      totalRevenue.value = total;
-    } catch (e) {
-      print('[DashboardController] Error loading revenue stats: $e');
     }
   }
 

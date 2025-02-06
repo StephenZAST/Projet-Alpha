@@ -2,8 +2,9 @@ import '../models/admin_notification.dart';
 import './api_service.dart';
 
 class NotificationService {
-  static final _api = ApiService();
-  static const String basePath = '/notifications';
+  static const String _baseUrl =
+      '/api/notifications'; // Modifier le chemin de base
+  static final ApiService _api = ApiService();
 
   static Future<List<AdminNotification>> getNotifications({
     int page = 1,
@@ -11,29 +12,41 @@ class NotificationService {
   }) async {
     try {
       final response = await _api.get(
-        basePath,
+        _baseUrl,
         queryParameters: {
           'page': page,
           'limit': limit,
         },
       );
 
+      if (response.statusCode == 404) {
+        print('[NotificationService] Endpoint not found');
+        return [];
+      }
+
       if (response.data != null && response.data['data'] != null) {
-        final List<dynamic> data = response.data['data'];
-        return data.map((json) => AdminNotification.fromJson(json)).toList();
+        return (response.data['data'] as List)
+            .map((item) => AdminNotification.fromJson(item))
+            .toList();
       }
       return [];
     } catch (e) {
       print('[NotificationService] Error getting notifications: $e');
-      throw 'Erreur lors du chargement des notifications';
+      return [];
     }
   }
 
   static Future<int> getUnreadCount() async {
     try {
-      final response = await _api.get('$basePath/unread');
-      if (response.data != null && response.data['count'] != null) {
-        return response.data['count'] as int;
+      final response =
+          await _api.get('$_baseUrl/unread/count'); // Modifier le chemin
+
+      if (response.statusCode == 404) {
+        return 0;
+      }
+
+      if (response.data != null && response.data['data'] != null) {
+        return response.data['data']['count'] ?? 0;
       }
       return 0;
     } catch (e) {
@@ -45,7 +58,7 @@ class NotificationService {
   static Future<void> markAsRead(String notificationId) async {
     try {
       await _api.patch(
-        '$basePath/$notificationId/read',
+        '$_baseUrl/$notificationId/read',
         data: {},
       );
     } catch (e) {
@@ -57,7 +70,7 @@ class NotificationService {
   static Future<void> markAllAsRead() async {
     try {
       await _api.post(
-        '$basePath/mark-all-read',
+        '$_baseUrl/mark-all-read',
         data: {},
       );
     } catch (e) {
@@ -68,7 +81,7 @@ class NotificationService {
 
   static Future<void> deleteNotification(String notificationId) async {
     try {
-      await _api.delete('$basePath/$notificationId');
+      await _api.delete('$_baseUrl/$notificationId');
     } catch (e) {
       print('[NotificationService] Error deleting notification: $e');
       throw 'Erreur lors de la suppression de la notification';
@@ -77,7 +90,7 @@ class NotificationService {
 
   static Future<Map<String, dynamic>> getPreferences() async {
     try {
-      final response = await _api.get('$basePath/preferences');
+      final response = await _api.get('$_baseUrl/preferences');
       if (response.data != null && response.data['data'] != null) {
         return response.data['data'] as Map<String, dynamic>;
       }
@@ -92,7 +105,7 @@ class NotificationService {
       Map<String, dynamic> preferences) async {
     try {
       await _api.put(
-        '$basePath/preferences',
+        '$_baseUrl/preferences',
         data: preferences,
       );
     } catch (e) {

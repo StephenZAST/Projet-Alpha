@@ -7,6 +7,7 @@ import 'api_service.dart';
 class OrderService {
   static final _api = ApiService();
   static const String _basePath = '/orders';
+  static const String _baseUrl = '/api/orders'; // Ajouter /api au début
 
   /// Récupère toutes les commandes (méthode existante pour compatibilité)
   static Future<List<Order>> getOrders() async {
@@ -130,54 +131,58 @@ class OrderService {
 
   static Future<List<Order>> getRecentOrders({int limit = 5}) async {
     try {
-      print('[OrderService] Fetching recent orders with limit: $limit');
-      // Corriger l'URL pour utiliser /orders/recent au lieu de /orders
-      final response = await _api.get(
-        '$_basePath/recent', // Correction de l'endpoint
-        queryParameters: {'limit': limit},
-      );
+      final response =
+          await _api.get('$_baseUrl/recent', queryParameters: {'limit': limit});
+
       print('[OrderService] Recent orders response: ${response.data}');
 
       if (response.data != null && response.data['data'] != null) {
-        return (response.data['data'] as List)
-            .map((json) {
-              try {
-                // Gérer le cas où price est null dans le service
-                if (json['service'] != null &&
-                    json['service']['price'] == null) {
-                  json['service']['price'] = 0;
-                }
-                return Order.fromJson(json);
-              } catch (e) {
-                print('[OrderService] Error parsing order: $e');
-                print('[OrderService] Problematic order: $json');
-                return null;
-              }
-            })
-            .whereType<Order>()
-            .toList();
+        final List<Order> orders = [];
+        final List rawOrders = response.data['data'] as List;
+
+        for (var item in rawOrders) {
+          try {
+            // Conversion sécurisée des champs numériques
+            final normalizedData = Map<String, dynamic>.from({
+              ...item,
+              'totalAmount':
+                  double.tryParse(item['totalAmount']?.toString() ?? '0') ??
+                      0.0,
+              'id': item['id']?.toString() ?? '',
+              'userId': item['userId']?.toString() ?? '',
+              'status': item['status']?.toString() ?? 'PENDING',
+              'paymentStatus': item['paymentStatus']?.toString() ?? 'PENDING',
+              'paymentMethod': item['paymentMethod']?.toString() ?? 'CASH',
+            });
+
+            orders.add(Order.fromJson(normalizedData));
+          } catch (e) {
+            print('[OrderService] Error parsing order: $e');
+            print('[OrderService] Problematic data: $item');
+          }
+        }
+        return orders;
       }
       return [];
     } catch (e) {
       print('[OrderService] Error getting recent orders: $e');
-      return []; // Retourner une liste vide au lieu de lancer une exception
+      return [];
     }
   }
 
   static Future<Map<String, int>> getOrdersByStatus() async {
     try {
-      print('[OrderService] Fetching orders by status');
-      final response = await _api.get('$_basePath/by-status');
-      print('[OrderService] Orders by status response: ${response.data}');
+      final response = await _api.get('$_baseUrl/by-status');
 
       if (response.data != null && response.data['data'] != null) {
-        final Map<String, dynamic> data = response.data['data'];
-        return data.map((key, value) => MapEntry(key, (value as num).toInt()));
+        final Map<String, dynamic> raw = response.data['data'];
+        return raw.map(
+            (key, value) => MapEntry(key, int.tryParse(value.toString()) ?? 0));
       }
       return {};
     } catch (e) {
       print('[OrderService] Error getting orders by status: $e');
-      throw 'Erreur lors du chargement des statistiques';
+      return {};
     }
   }
 

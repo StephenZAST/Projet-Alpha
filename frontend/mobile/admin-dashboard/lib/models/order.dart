@@ -1,5 +1,4 @@
 import 'package:admin/models/user.dart';
-import 'order_metadata.dart';
 
 import 'article.dart';
 import 'address.dart';
@@ -7,6 +6,19 @@ import 'service.dart';
 import 'enums.dart';
 
 class Order {
+  static PaymentMethod safePaymentMethod(dynamic value) {
+    if (value == null) return PaymentMethod.CASH;
+    final methodStr = value.toString().toUpperCase();
+    try {
+      return PaymentMethod.values.firstWhere(
+        (method) => method.name == methodStr,
+        orElse: () => PaymentMethod.CASH,
+      );
+    } catch (e) {
+      return PaymentMethod.CASH;
+    }
+  }
+
   final String id;
   final String userId;
   final String? serviceId;
@@ -27,8 +39,8 @@ class Order {
   final PaymentStatus paymentStatus;
   final PaymentMethod paymentMethod;
   final bool isFlashOrder; // Indicateur pour les commandes flash
-  final OrderMetadata? metadata;
-  final String? note;
+  final String? note; // Ajouter le champ note
+  final OrderMetadata? metadata; // Ajouter le champ metadata
 
   // Relations
   final Service? service;
@@ -66,8 +78,8 @@ class Order {
     this.address,
     this.user,
     this.isFlashOrder = false, // Par défaut, ce n'est pas une commande flash
-    this.metadata,
     this.note,
+    this.metadata,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -75,51 +87,28 @@ class Order {
       print('[Order] Parsing JSON data');
       print('Raw data: $json');
 
-      // Helper functions pour la conversion sécurisée
-      String safeString(dynamic value, {String defaultValue = ''}) {
-        if (value == null) return defaultValue;
-        return value.toString();
-      }
-
-      double safeDouble(dynamic value, {double defaultValue = 0.0}) {
-        if (value == null) return defaultValue;
-        if (value is num) return value.toDouble();
-        try {
-          return double.parse(value.toString());
-        } catch (_) {
-          return defaultValue;
-        }
-      }
-
-      PaymentMethod safePaymentMethod(dynamic value) {
-        if (value == null) return PaymentMethod.CASH;
-        try {
-          return value.toString().toPaymentMethod();
-        } catch (_) {
-          return PaymentMethod.CASH;
-        }
-      }
-
-      // Pour les commandes flash
-      final isFlash = json['status']?.toString().toUpperCase() == 'DRAFT';
-      if (isFlash) {
-        return FlashOrder.fromJson(json);
+      // Ajout de méthodes de conversion sécurisées
+      double safeDouble(dynamic value) {
+        if (value == null) return 0.0;
+        if (value is int) return value.toDouble();
+        if (value is double) return value;
+        return double.tryParse(value.toString()) ?? 0.0;
       }
 
       return Order(
-        id: safeString(json['id']),
-        userId: safeString(json['userId']),
-        serviceId: safeString(json['serviceId'] ?? json['service_id']),
-        addressId: safeString(json['addressId'] ?? json['address_id']),
+        id: json['id']?.toString() ?? '',
+        userId: json['userId']?.toString() ?? '',
+        serviceId: json['serviceId']?.toString(),
+        addressId: json['addressId']?.toString() ?? '',
         affiliateCode: json['affiliateCode']?.toString(),
-        status:
-            safeString(json['status'], defaultValue: 'PENDING').toUpperCase(),
+        status: json['status']?.toString() ?? 'PENDING',
         isRecurring: json['isRecurring'] ?? false,
         recurrenceType: json['recurrenceType']?.toString(),
         nextRecurrenceDate: json['nextRecurrenceDate'] != null
             ? DateTime.parse(json['nextRecurrenceDate'].toString())
             : null,
-        totalAmount: safeDouble(json['totalAmount']),
+        totalAmount: safeDouble(
+            json['totalAmount']), // Utilisation de la méthode sécurisée
         collectionDate: json['collectionDate'] != null
             ? DateTime.parse(json['collectionDate'].toString())
             : null,
@@ -146,11 +135,11 @@ class Order {
         address:
             json['address'] != null ? Address.fromJson(json['address']) : null,
         user: json['user'] != null ? User.fromJson(json['user']) : null,
-        isFlashOrder: isFlash,
+        isFlashOrder: json['isFlashOrder'] ?? false,
+        note: json['note']?.toString(),
         metadata: json['metadata'] != null
             ? OrderMetadata.fromJson(json['metadata'])
             : null,
-        note: json['note'],
       );
     } catch (e) {
       print('Error parsing order: $e');
@@ -182,6 +171,8 @@ class Order {
       'service': service?.toJson(),
       'address': address?.toJson(),
       'isFlashOrder': isFlashOrder,
+      'note': note,
+      'metadata': metadata?.toJson(),
     };
   }
 
@@ -384,4 +375,29 @@ class FlashOrderItem {
         'unitPrice': unitPrice,
         'isPremium': isPremium,
       };
+}
+
+// Ajouter la classe OrderMetadata
+class OrderMetadata {
+  final String? note;
+  final Map<String, dynamic>? additionalData;
+
+  OrderMetadata({
+    this.note,
+    this.additionalData,
+  });
+
+  factory OrderMetadata.fromJson(Map<String, dynamic> json) {
+    return OrderMetadata(
+      note: json['note']?.toString(),
+      additionalData: json['additionalData'] as Map<String, dynamic>?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'note': note,
+      'additionalData': additionalData,
+    };
+  }
 }

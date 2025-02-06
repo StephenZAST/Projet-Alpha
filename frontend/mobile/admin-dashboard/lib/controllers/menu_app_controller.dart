@@ -6,7 +6,6 @@ import '../screens/categories/categories_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
 import '../screens/orders/orders_screen.dart';
-import '../screens/service_types/service_types_screen.dart';
 import '../screens/services/services_screen.dart';
 import '../screens/users/users_screen.dart';
 import '../screens/profile/profile_screen.dart';
@@ -154,8 +153,6 @@ class MenuAppController extends GetxController {
         return CategoriesScreen();
       case MenuIndices.articles:
         return ArticlesScreen();
-      case MenuIndices.serviceTypes:
-        return ServiceTypesScreen();
       case MenuIndices.users:
         return UsersScreen();
       case MenuIndices.profile:

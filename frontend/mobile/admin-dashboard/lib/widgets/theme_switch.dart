@@ -13,39 +13,25 @@ class ThemeSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetX<ThemeController>(
-      init: ThemeController(),
-      builder: (controller) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            icon: Icon(
-              controller.darkMode ? Icons.light_mode : Icons.dark_mode,
-              color:
-                  controller.darkMode ? AppColors.warning : AppColors.gray600,
-              size: 22,
-            ),
-            tooltip: controller.darkMode
-                ? 'Passer au thème clair'
-                : 'Passer au thème sombre',
-            onPressed: controller.toggleTheme,
-            padding: EdgeInsets.all(AppSpacing.sm),
-            splashRadius: 24,
-          ),
-          if (showLabel)
-            Padding(
-              padding: EdgeInsets.only(left: AppSpacing.sm),
-              child: Text(
-                controller.darkMode ? 'Mode Clair' : 'Mode Sombre',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Get.isDarkMode
-                      ? AppColors.textLight
-                      : AppColors.textPrimary,
-                ),
+    final controller = Get.find<ThemeController>();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Obx(() => IconButton(
+              icon: Icon(
+                controller.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                color: Theme.of(context).iconTheme.color,
               ),
-            ),
-        ],
-      ),
+              onPressed: controller.toggleTheme,
+              tooltip: controller.isDarkMode ? 'Mode clair' : 'Mode sombre',
+            )),
+        if (showLabel)
+          Obx(() => Text(
+                controller.isDarkMode ? 'Mode sombre' : 'Mode clair',
+                style: Theme.of(context).textTheme.bodyMedium,
+              )),
+      ],
     );
   }
 }
