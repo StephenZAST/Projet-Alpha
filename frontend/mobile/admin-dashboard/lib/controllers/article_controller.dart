@@ -1,15 +1,15 @@
 import 'package:get/get.dart';
+import '../services/api_service.dart';
 import '../models/article.dart';
-import '../services/article_service.dart';
 import '../constants.dart';
+import 'package:dio/dio.dart' as dio;
 
 class ArticleController extends GetxController {
   final isLoading = false.obs;
-  final hasError = false.obs;
-  final errorMessage = ''.obs;
   final articles = <Article>[].obs;
-  final selectedArticle = Rxn<Article>();
-  final selectedCategory = Rxn<String>();
+  final errorMessage = ''.obs;
+  final selectedCategoryId = RxnString();
+  final selectedCategory = RxnString(); // Ajout de la propriété manquante
 
   @override
   void onInit() {
@@ -20,195 +20,47 @@ class ArticleController extends GetxController {
   Future<void> fetchArticles() async {
     try {
       isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
+      final dio.Response response = await ApiService().get('/articles');
 
-      final result = await ArticleService.getAllArticles();
-      articles.value = result;
+      if (response.data != null && response.data['data'] != null) {
+        final List<Article> articlesList = (response.data['data'] as List)
+            .map((item) => Article.fromJson(item))
+            .toList();
+        articles.value = articlesList;
+      }
     } catch (e) {
-      print('[ArticleController] Error fetching articles: $e');
-      hasError.value = true;
       errorMessage.value = 'Erreur lors du chargement des articles';
-
       Get.snackbar(
         'Erreur',
         'Impossible de charger les articles',
         backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
+        colorText: AppColors.white,
       );
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> createArticle({
-    required String name,
-    required double basePrice,
-    required double premiumPrice,
-    required String categoryId,
-    String? description,
-  }) async {
-    try {
-      isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
-
-      final dto = ArticleCreateDTO(
-        name: name,
-        basePrice: basePrice,
-        premiumPrice: premiumPrice,
-        categoryId: categoryId,
-        description: description,
-      );
-
-      await ArticleService.createArticle(dto);
+  Future<void> filterByCategory(String? categoryId) async {
+    selectedCategoryId.value = categoryId;
+    if (categoryId == null) {
       await fetchArticles();
-
-      Get.snackbar(
-        'Succès',
-        'Article créé avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 3),
-      );
-    } catch (e) {
-      print('[ArticleController] Error creating article: $e');
-      hasError.value = true;
-      errorMessage.value = 'Erreur lors de la création de l\'article';
-
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer l\'article',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
-      );
-    } finally {
-      isLoading.value = false;
+      return;
     }
-  }
 
-  Future<void> updateArticle(
-    String id, {
-    String? name,
-    String? categoryId,
-    String? description,
-    double? basePrice,
-    double? premiumPrice,
-    bool? isActive,
-  }) async {
     try {
       isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
+      final dio.Response response =
+          await ApiService().get('/articles?categoryId=$categoryId');
 
-      final dto = ArticleUpdateDTO(
-        name: name,
-        categoryId: categoryId,
-        description: description,
-        basePrice: basePrice,
-        premiumPrice: premiumPrice,
-        isActive: isActive,
-      );
-
-      await ArticleService.updateArticle(id: id, dto: dto);
-      await fetchArticles();
-
-      Get.snackbar(
-        'Succès',
-        'Article mis à jour avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 3),
-      );
+      if (response.data != null && response.data['data'] != null) {
+        final List<Article> filteredArticles = (response.data['data'] as List)
+            .map((item) => Article.fromJson(item))
+            .toList();
+        articles.value = filteredArticles;
+      }
     } catch (e) {
-      print('[ArticleController] Error updating article: $e');
-      hasError.value = true;
-      errorMessage.value = 'Erreur lors de la mise à jour de l\'article';
-
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour l\'article',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> deleteArticle(String id) async {
-    try {
-      isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
-
-      await ArticleService.deleteArticle(id);
-      await fetchArticles();
-
-      Get.snackbar(
-        'Succès',
-        'Article supprimé avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 3),
-      );
-    } catch (e) {
-      print('[ArticleController] Error deleting article: $e');
-      hasError.value = true;
-      errorMessage.value = 'Erreur lors de la suppression de l\'article';
-
-      Get.snackbar(
-        'Erreur',
-        'Impossible de supprimer l\'article',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
-      );
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> uploadImage(String articleId, String imagePath) async {
-    try {
-      isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
-
-      await ArticleService.uploadArticleImage(articleId, imagePath);
-      await fetchArticles();
-
-      Get.snackbar(
-        'Succès',
-        'Image téléchargée avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 3),
-      );
-    } catch (e) {
-      print('[ArticleController] Error uploading image: $e');
-      hasError.value = true;
-      errorMessage.value = 'Erreur lors du téléchargement de l\'image';
-
-      Get.snackbar(
-        'Erreur',
-        'Impossible de télécharger l\'image',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
-      );
+      errorMessage.value = 'Erreur lors du filtrage des articles';
     } finally {
       isLoading.value = false;
     }
@@ -226,37 +78,113 @@ class ArticleController extends GetxController {
   Future<void> _fetchArticlesByCategory(String categoryId) async {
     try {
       isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
+      final response = await ApiService().get('/articles', queryParameters: {
+        'categoryId': categoryId,
+      });
 
-      final result = await ArticleService.getArticlesByCategory(categoryId);
-      articles.value = result;
+      if (response.data != null && response.data['data'] != null) {
+        final List<Article> filteredArticles = (response.data['data'] as List)
+            .map((item) => Article.fromJson(item))
+            .toList();
+        articles.value = filteredArticles;
+      }
     } catch (e) {
-      print('[ArticleController] Error fetching articles by category: $e');
-      hasError.value = true;
-      errorMessage.value = 'Erreur lors du chargement des articles';
+      errorMessage.value = 'Erreur lors du filtrage par catégorie';
+      Get.snackbar(
+        'Erreur',
+        'Impossible de filtrer les articles',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.white,
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> searchArticles(String query) async {
+  Future<void> createArticle({
+    required String name,
+    required String categoryId,
+    required double basePrice,
+    required double premiumPrice,
+    String? description,
+  }) async {
     try {
       isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
 
-      if (query.isEmpty) {
-        await fetchArticles();
-        return;
-      }
+      final dto = ArticleCreateDTO(
+        name: name,
+        categoryId: categoryId,
+        description: description,
+        basePrice: basePrice,
+        premiumPrice: premiumPrice,
+      );
 
-      final results = await ArticleService.searchArticles(query);
-      articles.value = results;
+      final response = await ApiService().post('/articles', data: dto.toJson());
+      await fetchArticles(); // Rafraîchir la liste après création
+
+      Get.back(); // Fermer le formulaire
+      Get.snackbar(
+        'Succès',
+        'Article créé avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.white,
+      );
     } catch (e) {
-      print('[ArticleController] Error searching articles: $e');
-      hasError.value = true;
-      errorMessage.value = 'Erreur lors de la recherche';
+      errorMessage.value = 'Erreur lors de la création de l\'article';
+      Get.snackbar(
+        'Erreur',
+        'Impossible de créer l\'article',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updateArticle(
+    String id, {
+    String? name,
+    String? categoryId,
+    String? description,
+    double? basePrice,
+    double? premiumPrice,
+    bool? isActive,
+  }) async {
+    try {
+      isLoading.value = true;
+
+      final dto = ArticleUpdateDTO(
+        name: name,
+        categoryId: categoryId,
+        description: description,
+        basePrice: basePrice,
+        premiumPrice: premiumPrice,
+        isActive: isActive,
+      );
+
+      final response = await ApiService().patch(
+        '/articles/$id',
+        data: dto.toJson(),
+      );
+
+      await fetchArticles(); // Rafraîchir la liste après mise à jour
+
+      Get.back(); // Fermer le formulaire
+      Get.snackbar(
+        'Succès',
+        'Article mis à jour avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.white,
+      );
+    } catch (e) {
+      errorMessage.value = 'Erreur lors de la mise à jour de l\'article';
+      Get.snackbar(
+        'Erreur',
+        'Impossible de mettre à jour l\'article',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.white,
+      );
     } finally {
       isLoading.value = false;
     }

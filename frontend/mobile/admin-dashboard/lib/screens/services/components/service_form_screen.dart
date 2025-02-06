@@ -1,78 +1,34 @@
+import 'package:admin/screens/services/components/service_type_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/service_controller.dart';
 import '../../../models/service.dart';
 
-class ServiceFormScreen extends StatefulWidget {
+class ServiceFormScreen extends StatelessWidget {
   final Service? service;
-
-  const ServiceFormScreen({Key? key, this.service}) : super(key: key);
-
-  @override
-  _ServiceFormScreenState createState() => _ServiceFormScreenState();
-}
-
-class _ServiceFormScreenState extends State<ServiceFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final controller = Get.find<ServiceController>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  String? selectedTypeId; // Changé de int? à String?
 
-  late TextEditingController _nameController;
-  late TextEditingController _priceController;
-  late TextEditingController _descriptionController;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.service?.name);
-    _priceController = TextEditingController(
-      text: widget.service?.price.toString() ?? '',
-    );
-    _descriptionController = TextEditingController(
-      text: widget.service?.description,
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _priceController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
-  void _handleSubmit() {
-    if (_formKey.currentState!.validate()) {
-      final price = double.parse(_priceController.text);
-
-      if (widget.service != null) {
-        // Mise à jour
-        controller.updateService(
-          id: widget.service!.id,
-          name: _nameController.text,
-          price: price,
-          description: _descriptionController.text,
-        );
-      } else {
-        // Création
-        controller.createService(
-          name: _nameController.text,
-          price: price,
-          description: _descriptionController.text,
-        );
-      }
-
-      Get.back();
+  ServiceFormScreen({this.service}) {
+    if (service != null) {
+      _nameController.text = service!.name;
+      _priceController.text = service!.price.toString();
+      _descriptionController.text = service!.description ?? '';
+      selectedTypeId = service!.typeId; // Maintenant c'est un String?
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final controller = Get.find<ServiceController>();
 
     return Dialog(
       child: Container(
-        width: 500,
+        width: 600,
         padding: EdgeInsets.all(defaultPadding),
         child: Form(
           key: _formKey,
@@ -80,37 +36,18 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.service != null
-                        ? 'Modifier le service'
-                        : 'Nouveau service',
-                    style: AppTextStyles.h2.copyWith(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => Get.back(),
-                    color: AppColors.textSecondary,
-                  ),
-                ],
+              Text(
+                service == null ? 'Nouveau service' : 'Modifier le service',
+                style: AppTextStyles.h3,
               ),
               SizedBox(height: AppSpacing.lg),
+
+              // Champs du formulaire
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: 'Nom',
-                  hintText: 'Entrez le nom du service',
-                  border: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
+                  labelText: 'Nom du service',
+                  border: OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -120,20 +57,15 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
                 },
               ),
               SizedBox(height: AppSpacing.md),
+
               TextFormField(
                 controller: _priceController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: 'Prix',
-                  hintText: 'Entrez le prix du service',
-                  border: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
+                  border: OutlineInputBorder(),
+                  suffixText: 'FCFA',
                 ),
+                keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Le prix est requis';
@@ -145,22 +77,27 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
                 },
               ),
               SizedBox(height: AppSpacing.md),
+
               TextFormField(
                 controller: _descriptionController,
-                maxLines: 3,
                 decoration: InputDecoration(
                   labelText: 'Description',
-                  hintText: 'Entrez une description',
-                  border: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
+                  border: OutlineInputBorder(),
                 ),
+                maxLines: 3,
+              ),
+              SizedBox(height: AppSpacing.md),
+
+              ServiceTypeSelector(
+                value: selectedTypeId, // Maintenant c'est un String?
+                onChanged: (String? value) {
+                  // Type explicite
+                  selectedTypeId = value;
+                },
               ),
               SizedBox(height: AppSpacing.xl),
+
+              // Boutons d'action
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -169,21 +106,29 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
                     child: Text('Annuler'),
                   ),
                   SizedBox(width: AppSpacing.md),
-                  Obx(() => ElevatedButton(
-                        onPressed:
-                            controller.isLoading.value ? null : _handleSubmit,
-                        child: controller.isLoading.value
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
-                                ),
-                              )
-                            : Text('Enregistrer'),
-                      )),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        if (service == null) {
+                          controller.createService(
+                            name: _nameController.text,
+                            price: double.parse(_priceController.text),
+                            description: _descriptionController.text,
+                            typeId: selectedTypeId,
+                          );
+                        } else {
+                          controller.updateService(
+                            id: service!.id,
+                            name: _nameController.text,
+                            price: double.parse(_priceController.text),
+                            description: _descriptionController.text,
+                            typeId: selectedTypeId,
+                          );
+                        }
+                      }
+                    },
+                    child: Text(service == null ? 'Créer' : 'Mettre à jour'),
+                  ),
                 ],
               ),
             ],

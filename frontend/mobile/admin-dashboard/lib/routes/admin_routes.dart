@@ -1,3 +1,6 @@
+import 'package:admin/controllers/article_controller.dart';
+import 'package:admin/controllers/service_type_controller.dart';
+import 'package:admin/screens/articles/articles_screen.dart';
 import 'package:admin/screens/orders/flash_orders/flash_order_update_screen.dart';
 import 'package:admin/screens/orders/flash_orders/flash_orders_screen.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +16,7 @@ import '../controllers/orders_controller.dart';
 import '../controllers/service_controller.dart';
 import '../controllers/category_controller.dart';
 import '../middleware/auth_middleware.dart';
+import '../screens/services/service_type_management_screen.dart';
 
 class AdminBinding extends Bindings {
   @override
@@ -133,6 +137,20 @@ class AdminRoutes {
       },
       binding: AdminBinding(),
       transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: '/articles',
+      page: () => ArticlesScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(ArticleController());
+      }),
+    ),
+    GetPage(
+      name: '/service-types',
+      page: () => ServiceTypeManagementScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(ServiceTypeController());
+      }),
     ),
   ];
 

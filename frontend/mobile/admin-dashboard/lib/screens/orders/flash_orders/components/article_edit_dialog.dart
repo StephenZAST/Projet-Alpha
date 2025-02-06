@@ -1,3 +1,4 @@
+import 'package:admin/models/article.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../constants.dart';
@@ -28,6 +29,13 @@ class _ArticleEditDialogState extends State<ArticleEditDialog> {
     item = controller.selectedArticles[widget.itemIndex];
     quantity = item.quantity;
     isPremium = item.isPremium;
+  }
+
+  double getArticlePrice(Article article, bool isPremium) {
+    // Utiliser le prix de base comme fallback si le prix premium n'est pas disponible
+    return isPremium
+        ? (article.premiumPrice ?? article.basePrice)
+        : article.basePrice;
   }
 
   @override
@@ -74,10 +82,15 @@ class _ArticleEditDialogState extends State<ArticleEditDialog> {
             final article = controller.articles.firstWhere(
               (a) => a.id == item.articleId,
             );
+
+            // Utiliser la méthode getArticlePrice pour gérer le cas nullable
+            final price = getArticlePrice(article, isPremium);
+
             controller.selectedArticles[widget.itemIndex] = FlashOrderItem(
               articleId: item.articleId,
               quantity: quantity,
-              unitPrice: isPremium ? article.premiumPrice : article.basePrice,
+              unitPrice:
+                  price, // Maintenant on est sûr d'avoir une valeur non-null
               isPremium: isPremium,
             );
             Get.back();

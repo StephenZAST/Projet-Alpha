@@ -8,10 +8,14 @@ import 'article_form_screen.dart';
 
 class ArticleCard extends StatelessWidget {
   final Article article;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const ArticleCard({
     Key? key,
     required this.article,
+    this.onEdit,
+    this.onDelete,
   }) : super(key: key);
 
   @override
@@ -24,156 +28,114 @@ class ArticleCard extends StatelessWidget {
       decimalDigits: 0,
     );
 
-    return Container(
-      padding: EdgeInsets.all(defaultPadding),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
         borderRadius: AppRadius.radiusMD,
-        border: Border.all(
+        side: BorderSide(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          width: 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: InkWell(
+        borderRadius: AppRadius.radiusMD,
+        onTap: onEdit,
+        child: Padding(
+          padding: EdgeInsets.all(defaultPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
                       article.name,
-                      style: AppTextStyles.h3.copyWith(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
+                      style: AppTextStyles.h4,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (article.description != null &&
-                        article.description!.isNotEmpty) ...[
-                      SizedBox(height: AppSpacing.xs),
-                      Text(
-                        article.description!,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert,
-                  color: AppColors.textSecondary,
-                ),
-                onSelected: (String value) {
-                  switch (value) {
-                    case 'edit':
-                      Get.dialog(ArticleFormScreen(article: article));
-                      break;
-                    case 'delete':
-                      Get.dialog(
-                        AlertDialog(
-                          title: Text('Confirmation'),
-                          content: Text(
-                              'Voulez-vous vraiment supprimer cet article ?'),
-                          actions: [
-                            TextButton(
-                              child: Text('Annuler'),
-                              onPressed: () => Get.back(),
-                            ),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.error,
-                              ),
-                              child: Text('Supprimer'),
-                              onPressed: () {
-                                Get.back();
-                                controller.deleteArticle(article.id);
-                              },
-                            ),
+                  ),
+                  PopupMenuButton<String>(
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 20),
+                            SizedBox(width: AppSpacing.sm),
+                            Text('Modifier'),
                           ],
                         ),
-                      );
-                      break;
-                  }
-                },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit, size: 20),
-                        SizedBox(width: 8),
-                        Text('Modifier'),
-                      ],
-                    ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete,
+                                size: 20, color: AppColors.error),
+                            SizedBox(width: AppSpacing.sm),
+                            Text('Supprimer',
+                                style: TextStyle(color: AppColors.error)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      if (value == 'edit') onEdit?.call();
+                      if (value == 'delete') onDelete?.call();
+                    },
                   ),
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Row(
+                ],
+              ),
+              SizedBox(height: AppSpacing.md),
+              if (article.description != null) ...[
+                Text(
+                  article.description!,
+                  style: AppTextStyles.bodyMedium,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: AppSpacing.md),
+              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Prix de base',
+                        style: AppTextStyles.bodySmall,
+                      ),
+                      Text(
+                        '${article.basePrice} FCFA',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (article.premiumPrice != null)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Icon(Icons.delete, size: 20, color: AppColors.error),
-                        SizedBox(width: 8),
                         Text(
-                          'Supprimer',
-                          style: TextStyle(color: AppColors.error),
+                          'Prix premium',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                        Text(
+                          '${article.premiumPrice} FCFA',
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: AppColors.accent,
+                          ),
                         ),
                       ],
                     ),
-                  ),
                 ],
               ),
             ],
           ),
-          SizedBox(height: AppSpacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Prix de base',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    currencyFormat.format(article.basePrice),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Prix premium',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    currencyFormat.format(article.premiumPrice),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

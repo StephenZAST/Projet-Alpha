@@ -17,6 +17,12 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
   bool isPremium = false;
   double? unitPrice;
 
+  double getArticlePrice(Article article, bool isPremium) {
+    return isPremium
+        ? (article.premiumPrice ?? article.basePrice)
+        : article.basePrice;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -118,10 +124,8 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
                   onPressed: selectedArticle == null
                       ? null
                       : () {
-                          final price = isPremium
-                              ? selectedArticle!.premiumPrice
-                              : selectedArticle!.basePrice;
-
+                          final price =
+                              getArticlePrice(selectedArticle!, isPremium);
                           controller.selectedArticles.add(FlashOrderItem(
                             articleId: selectedArticle!.id,
                             quantity: quantity,

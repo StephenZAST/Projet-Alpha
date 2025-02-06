@@ -1,86 +1,70 @@
 class Service {
   final String id;
   final String name;
-  final double? price;
-  // Prix optionnel pour les services flash
   final String? description;
+  final double price;
+  final String? typeId;
   final DateTime createdAt;
-  final DateTime? updatedAt;
+  final DateTime updatedAt;
+  final List<ServiceType>? types;
 
   Service({
     required this.id,
     required this.name,
-    this.price,
     this.description,
+    required this.price,
+    this.typeId,
     required this.createdAt,
-    this.updatedAt,
+    required this.updatedAt,
+    this.types,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
-    try {
-      // Conversion des timestamps avec gestion des formats snake_case
-      DateTime parseTimestamp(String? value) {
-        if (value == null) return DateTime.now();
-        try {
-          return DateTime.parse(value);
-        } catch (e) {
-          print('Error parsing timestamp: $e');
-          return DateTime.now();
-        }
-      }
-
-      return Service(
-        id: json['id']?.toString() ?? '',
-        name: json['name']?.toString() ?? '',
-        price: json['price'] != null ? (json['price'] as num).toDouble() : null,
-        description: json['description']?.toString(),
-        createdAt: parseTimestamp(json['created_at'] ?? json['createdAt']),
-        updatedAt: json['updated_at'] != null
-            ? parseTimestamp(json['updated_at'])
-            : (json['updatedAt'] != null
-                ? parseTimestamp(json['updatedAt'])
-                : null),
-      );
-    } catch (e, stackTrace) {
-      print('Error parsing Service: $e');
-      print('Stack trace: $stackTrace');
-      print('Problematic JSON: $json');
-
-      // Retourner un service par défaut au lieu de propager l'erreur
-      return Service(
-        id: json['id']?.toString() ?? '',
-        name: json['name']?.toString() ?? 'Service inconnu',
-        createdAt: DateTime.now(),
-      );
-    }
+    return Service(
+      id: json['id'].toString(),
+      name: json['name'],
+      description: json['description'],
+      price: json['price'] is int
+          ? (json['price'] as int).toDouble()
+          : (json['price'] as num).toDouble(),
+      typeId: json['typeId']?.toString(),
+      createdAt: DateTime.parse(json['created_at'] ?? json['createdAt']),
+      updatedAt: DateTime.parse(json['updated_at'] ?? json['updatedAt']),
+      types: json['types'] != null
+          ? (json['types'] as List).map((t) => ServiceType.fromJson(t)).toList()
+          : null,
+    );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'name': name,
-      'price': price,
       'description': description,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'price': price,
+      'typeId': typeId,
     };
   }
+}
 
-  Service copyWith({
-    String? id,
-    String? name,
-    double? price,
-    String? description,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return Service(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      price: price ?? this.price,
-      description: description ?? this.description,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+class ServiceType {
+  final String id;
+  final String name;
+  final String? description;
+  final DateTime createdAt;
+
+  ServiceType({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.createdAt,
+  });
+
+  factory ServiceType.fromJson(Map<String, dynamic> json) {
+    return ServiceType(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      createdAt: DateTime.parse(json['created_at']),
     );
   }
 }

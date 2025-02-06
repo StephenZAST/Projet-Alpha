@@ -2,164 +2,106 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/article_controller.dart';
-import '../../models/article.dart';
-import 'components/article_card.dart';
-import 'components/article_form_screen.dart';
-import 'components/categories_sidebar.dart';
+import '../../responsive.dart';
 
-class ArticlesScreen extends StatelessWidget {
+class ArticlesScreen extends GetView<ArticleController> {
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ArticleController>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      body: SafeArea(
-        child: Container(
-          padding: EdgeInsets.all(defaultPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Articles',
-                    style: AppTextStyles.h1.copyWith(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.add),
-                    label: Text('Nouvel article'),
-                    onPressed: () => Get.dialog(ArticleFormScreen()),
-                  ),
-                ],
-              ),
-              SizedBox(height: AppSpacing.lg),
-              TextField(
-                onChanged: controller.searchArticles,
-                decoration: InputDecoration(
-                  hintText: 'Rechercher un article...',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(color: AppColors.primary),
-                  ),
-                ),
-              ),
-              SizedBox(height: AppSpacing.lg),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Sidebar avec les catégories
-                    CategoriesSidebar(),
-                    SizedBox(width: defaultPadding),
-                    // Liste des articles
-                    Expanded(
-                      child: Obx(() {
-                        if (controller.isLoading.value) {
-                          return Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.primary),
-                            ),
-                          );
-                        }
+      appBar: AppBar(
+        title: Text('Gestion des Articles'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: controller.fetchArticles,
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: defaultPadding),
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return Center(child: CircularProgressIndicator());
+                }
 
-                        if (controller.hasError.value) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  size: 48,
-                                  color: AppColors.error,
-                                ),
-                                SizedBox(height: AppSpacing.md),
-                                Text(
-                                  controller.errorMessage.value,
-                                  style: TextStyle(color: AppColors.error),
-                                ),
-                                SizedBox(height: AppSpacing.md),
-                                ElevatedButton(
-                                  onPressed: controller.fetchArticles,
-                                  child: Text('Réessayer'),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
+                if (controller.articles.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'Aucun article disponible',
+                      style: AppTextStyles.bodyLarge,
+                    ),
+                  );
+                }
 
-                        if (controller.articles.isEmpty) {
-                          return Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.inventory_2,
-                                  size: 48,
+                return GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: Responsive.isMobile(context)
+                        ? 1
+                        : Responsive.isTablet(context)
+                            ? 2
+                            : 3,
+                    childAspectRatio: 1.3,
+                    crossAxisSpacing: defaultPadding,
+                    mainAxisSpacing: defaultPadding,
+                  ),
+                  itemCount: controller.articles.length,
+                  itemBuilder: (context, index) {
+                    final article = controller.articles[index];
+                    return Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(defaultPadding),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              article.name,
+                              style: AppTextStyles.h4,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: AppSpacing.sm),
+                            Text(
+                              'Prix: ${article.basePrice} FCFA',
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                            if (article.category != null) ...[
+                              SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'Catégorie: ${article.category}',
+                                style: AppTextStyles.bodySmall.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
-                                SizedBox(height: AppSpacing.md),
-                                Text(
-                                  'Aucun article trouvé',
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        return GridView.builder(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: _getCrossAxisCount(context),
-                            crossAxisSpacing: defaultPadding,
-                            mainAxisSpacing: defaultPadding,
-                            childAspectRatio: 1.5,
-                          ),
-                          itemCount: controller.articles.length,
-                          itemBuilder: (context, index) {
-                            final article = controller.articles[index];
-                            return ArticleCard(article: article);
-                          },
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+          ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: Implémenter l'ajout d'article
+          Get.snackbar(
+            'Info',
+            'Fonctionnalité en cours de développement',
+            backgroundColor: AppColors.info,
+            colorText: AppColors.white,
+          );
+        },
+        child: Icon(Icons.add),
+        tooltip: 'Ajouter un article',
+      ),
     );
-  }
-
-  int _getCrossAxisCount(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width > 1800) return 4;
-    if (width > 1400) return 3;
-    if (width > 1000) return 2;
-    return 1;
   }
 }

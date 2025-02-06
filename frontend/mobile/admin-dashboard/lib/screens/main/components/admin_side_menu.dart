@@ -58,6 +58,16 @@ class AdminSideMenu extends StatelessWidget {
                 isSelected: menuController.selectedIndex == 3,
                 onPress: () => menuController.updateIndex(3),
               ),
+              DrawerListTile(
+                title: "Articles",
+                icon: Icons.inventory,
+                onPress: () => Get.toNamed('/articles'),
+              ),
+              DrawerListTile(
+                title: "Types de Services",
+                icon: Icons.category_outlined,
+                onPress: () => Get.toNamed('/service-types'),
+              ),
               Divider(color: theme.dividerColor),
               // GESTION DES UTILISATEURS
               Padding(
