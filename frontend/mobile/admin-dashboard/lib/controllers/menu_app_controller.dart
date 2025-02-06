@@ -1,5 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../constants.dart'; // Ajout de l'import pour MenuIndices
+import '../screens/articles/articles_screen.dart';
+import '../screens/categories/categories_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/notifications/notifications_screen.dart';
+import '../screens/orders/orders_screen.dart';
+import '../screens/service_types/service_types_screen.dart';
+import '../screens/services/services_screen.dart';
+import '../screens/users/users_screen.dart';
+import '../screens/profile/profile_screen.dart';
 import '../routes/admin_routes.dart';
 
 class MenuAppController extends GetxController {
@@ -37,13 +47,42 @@ class MenuAppController extends GetxController {
   }
 
   void updateIndex(int index) {
-    print('[MenuAppController] Updating index to: $index');
+    print('[MenuAppController] Current index: ${selectedIndex.value}');
+    print('[MenuAppController] Trying to update to index: $index');
+
     selectedIndex.value = index;
     currentRoute.value = AdminRoutes.getRouteByIndex(index);
 
-    // Fermer le drawer après la sélection sur mobile
+    print('[MenuAppController] New route: ${currentRoute.value}');
+    print('[MenuAppController] Screen to show: ${_getScreenName(index)}');
+
     if (isDrawerOpen.value) {
       closeDrawer();
+    }
+  }
+
+  String _getScreenName(int index) {
+    switch (index) {
+      case MenuIndices.dashboard:
+        return 'DashboardScreen';
+      case MenuIndices.orders:
+        return 'OrdersScreen';
+      case MenuIndices.services:
+        return 'ServicesScreen';
+      case MenuIndices.categories:
+        return 'CategoriesScreen';
+      case MenuIndices.articles:
+        return 'ArticlesScreen';
+      case MenuIndices.serviceTypes:
+        return 'ServiceTypesScreen';
+      case MenuIndices.users:
+        return 'UsersScreen';
+      case MenuIndices.profile:
+        return 'ProfileScreen';
+      case MenuIndices.notifications:
+        return 'NotificationsScreen';
+      default:
+        return 'Unknown';
     }
   }
 
@@ -56,26 +95,32 @@ class MenuAppController extends GetxController {
   void goToOrders() => updateIndex(1);
   void goToServices() => updateIndex(2);
   void goToCategories() => updateIndex(3);
-  void goToUsers() => updateIndex(4);
-  void goToProfile() => updateIndex(5);
-  void goToNotifications() => updateIndex(6);
+  void goToArticles() => updateIndex(4); // Nouvelle section
+  void goToServiceTypes() => updateIndex(5); // Nouvelle section
+  void goToUsers() => updateIndex(6);
+  void goToProfile() => updateIndex(7);
+  void goToNotifications() => updateIndex(8);
 
   // Obtenir le titre de la page actuelle
   String getCurrentPageTitle() {
     switch (selectedIndex.value) {
-      case 0:
+      case MenuIndices.dashboard:
         return 'Tableau de bord';
-      case 1:
+      case MenuIndices.orders:
         return 'Commandes';
-      case 2:
+      case MenuIndices.services:
         return 'Services';
-      case 3:
+      case MenuIndices.categories:
         return 'Catégories';
-      case 4:
+      case MenuIndices.articles:
+        return 'Articles';
+      case MenuIndices.serviceTypes:
+        return 'Types de services';
+      case MenuIndices.users:
         return 'Utilisateurs';
-      case 5:
+      case MenuIndices.profile:
         return 'Profil';
-      case 6:
+      case MenuIndices.notifications:
         return 'Notifications';
       default:
         return 'Tableau de bord';
@@ -90,6 +135,35 @@ class MenuAppController extends GetxController {
         selectedIndex.value = index;
         currentRoute.value = route;
       }
+    }
+  }
+
+  Widget getScreen() {
+    final index = selectedIndex.value;
+    print('[MenuAppController] getScreen called with index: $index');
+
+    // Correction du switch statement
+    switch (index) {
+      case MenuIndices.dashboard:
+        return DashboardScreen();
+      case MenuIndices.orders:
+        return OrdersScreen();
+      case MenuIndices.services:
+        return ServicesScreen();
+      case MenuIndices.categories:
+        return CategoriesScreen();
+      case MenuIndices.articles:
+        return ArticlesScreen();
+      case MenuIndices.serviceTypes:
+        return ServiceTypesScreen();
+      case MenuIndices.users:
+        return UsersScreen();
+      case MenuIndices.profile:
+        return const ProfileScreen();
+      case MenuIndices.notifications:
+        return NotificationsScreen();
+      default:
+        return DashboardScreen();
     }
   }
 

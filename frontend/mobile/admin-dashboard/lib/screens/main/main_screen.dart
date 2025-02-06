@@ -48,38 +48,15 @@ class MainScreen extends GetView<MenuAppController> {
             Expanded(
               flex: 5,
               child: Obx(() {
-                print(
-                    '[MainScreen] Rebuilding content with index: ${controller.selectedIndex}');
-                Widget content;
-                switch (controller.selectedIndex.value) {
-                  case 0:
-                    content = DashboardScreen();
-                    break;
-                  case 1:
-                    content = OrdersScreen();
-                    break;
-                  case 2:
-                    content = ServicesScreen();
-                    break;
-                  case 3:
-                    content = CategoriesScreen();
-                    break;
-                  case 4:
-                    content = UsersScreen();
-                    break;
-                  case 5:
-                    content = AdminProfileScreen();
-                    break;
-                  case 6:
-                    content = NotificationsScreen();
-                    break;
-                  default:
-                    content = DashboardScreen();
-                }
-                print('[MainScreen] Selected content: ${content.runtimeType}');
+                final index = controller.selectedIndex.value;
+                print('[MainScreen] Building content for index: $index');
+
+                final screen = controller.getScreen();
+                print('[MainScreen] Screen type: ${screen.runtimeType}');
+
                 return Material(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  child: content,
+                  child: screen,
                 );
               }),
             ),

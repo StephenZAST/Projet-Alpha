@@ -206,3 +206,16 @@ class AppTextStyles {
 // Default values
 const defaultPadding = AppSpacing.md;
 const defaultRadius = AppRadius.md;
+
+// Menu Indices
+class MenuIndices {
+  static const int dashboard = 0;
+  static const int orders = 1;
+  static const int services = 2;
+  static const int categories = 3;
+  static const int articles = 4;
+  static const int serviceTypes = 5;
+  static const int users = 6;
+  static const int profile = 7;
+  static const int notifications = 8;
+}

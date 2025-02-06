@@ -1,3 +1,5 @@
+import 'service_type.dart';
+
 class Service {
   final String id;
   final String name;
@@ -6,7 +8,7 @@ class Service {
   final String? typeId;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final List<ServiceType>? types;
+  final ServiceType? type;
 
   Service({
     required this.id,
@@ -16,7 +18,7 @@ class Service {
     this.typeId,
     required this.createdAt,
     required this.updatedAt,
-    this.types,
+    this.type,
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
@@ -30,9 +32,7 @@ class Service {
       typeId: json['typeId']?.toString(),
       createdAt: DateTime.parse(json['created_at'] ?? json['createdAt']),
       updatedAt: DateTime.parse(json['updated_at'] ?? json['updatedAt']),
-      types: json['types'] != null
-          ? (json['types'] as List).map((t) => ServiceType.fromJson(t)).toList()
-          : null,
+      type: json['type'] != null ? ServiceType.fromJson(json['type']) : null,
     );
   }
 
@@ -46,28 +46,8 @@ class Service {
   }
 }
 
-class ServiceType {
-  final String id;
-  final String name;
-  final String? description;
-  final DateTime createdAt;
-
-  ServiceType({
-    required this.id,
-    required this.name,
-    this.description,
-    required this.createdAt,
-  });
-
-  factory ServiceType.fromJson(Map<String, dynamic> json) {
-    return ServiceType(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      createdAt: DateTime.parse(json['created_at']),
-    );
-  }
-}
+// Supprimer la définition en double de ServiceType ici
+// et utiliser celle de service_type.dart
 
 class ServiceCreateDTO {
   final String name;

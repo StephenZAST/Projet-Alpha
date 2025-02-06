@@ -15,103 +15,125 @@ class AdminSideMenu extends StatelessWidget {
 
     return Drawer(
       backgroundColor: theme.drawerTheme.backgroundColor,
-      child: Obx(() => ListView(
-            children: [
-              DrawerHeader(
-                child: Image.asset("assets/images/logo.png"),
-              ),
-              // DASHBOARD
-              DrawerListTile(
-                title: "Tableau de bord",
-                icon: Icons.dashboard_outlined,
-                isSelected: menuController.selectedIndex == 0,
-                onPress: () => menuController.updateIndex(0),
-              ),
-              // COMMANDES
-              DrawerListTile(
-                title: "Commandes",
-                icon: Icons.shopping_cart_outlined,
-                isSelected: menuController.selectedIndex == 1,
-                onPress: () => menuController.updateIndex(1),
-              ),
-              Divider(color: theme.dividerColor),
-              // GESTION DES SERVICES
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "GESTION DES SERVICES",
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color,
-                    fontWeight: FontWeight.w500,
-                  ),
+      child: Obx(() {
+        final currentIndex = menuController.selectedIndex.value;
+        print('[AdminSideMenu] Current selected index: $currentIndex');
+
+        return ListView(
+          children: [
+            DrawerHeader(
+              child: Image.asset("assets/images/logo.png"),
+            ),
+            // DASHBOARD
+            DrawerListTile(
+              title: "Tableau de bord",
+              icon: Icons.dashboard_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.dashboard, // 0
+              onPress: () => menuController.updateIndex(MenuIndices.dashboard),
+            ),
+            // COMMANDES
+            DrawerListTile(
+              title: "Commandes",
+              icon: Icons.shopping_cart_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.orders, // 1
+              onPress: () => menuController.updateIndex(MenuIndices.orders),
+            ),
+            Divider(color: theme.dividerColor),
+            // GESTION DES SERVICES
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "GESTION DES SERVICES",
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.textTheme.bodySmall?.color,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              DrawerListTile(
-                title: "Services",
-                icon: Icons.cleaning_services_outlined,
-                isSelected: menuController.selectedIndex == 2,
-                onPress: () => menuController.updateIndex(2),
-              ),
-              DrawerListTile(
-                title: "Catégories",
-                icon: Icons.category_outlined,
-                isSelected: menuController.selectedIndex == 3,
-                onPress: () => menuController.updateIndex(3),
-              ),
-              DrawerListTile(
-                title: "Articles",
-                icon: Icons.inventory,
-                onPress: () => Get.toNamed('/articles'),
-              ),
-              DrawerListTile(
-                title: "Types de Services",
-                icon: Icons.category_outlined,
-                onPress: () => Get.toNamed('/service-types'),
-              ),
-              Divider(color: theme.dividerColor),
-              // GESTION DES UTILISATEURS
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "GESTION DES UTILISATEURS",
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color,
-                    fontWeight: FontWeight.w500,
-                  ),
+            ),
+            DrawerListTile(
+              title: "Services",
+              icon: Icons.cleaning_services_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.services, // 2
+              onPress: () {
+                print(
+                    '[AdminSideMenu] Pressing Services button (index ${MenuIndices.services})');
+                menuController.updateIndex(MenuIndices.services);
+              },
+            ),
+            DrawerListTile(
+              title: "Catégories",
+              icon: Icons.category_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.categories, // 3
+              onPress: () => menuController.updateIndex(MenuIndices.categories),
+            ),
+            DrawerListTile(
+              title: "Articles",
+              icon: Icons.inventory_2_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.articles, // 4
+              onPress: () => menuController.updateIndex(MenuIndices.articles),
+            ),
+            DrawerListTile(
+              title: "Types de Services",
+              icon: Icons.design_services_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.serviceTypes, // 5
+              onPress: () =>
+                  menuController.updateIndex(MenuIndices.serviceTypes),
+            ),
+            Divider(color: theme.dividerColor),
+            // GESTION DES UTILISATEURS
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "GESTION DES UTILISATEURS",
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.textTheme.bodySmall?.color,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              DrawerListTile(
-                title: "Utilisateurs",
-                icon: Icons.people_outline,
-                isSelected: menuController.selectedIndex == 4,
-                onPress: () => menuController.updateIndex(4),
-              ),
-              Divider(color: theme.dividerColor),
-              // NOTIFICATIONS ET PROFIL
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  "NOTIFICATIONS & PROFIL",
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color,
-                    fontWeight: FontWeight.w500,
-                  ),
+            ),
+            DrawerListTile(
+              title: "Utilisateurs",
+              icon: Icons.people_outline,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.users, // 6
+              onPress: () => menuController.updateIndex(MenuIndices.users),
+            ),
+            Divider(color: theme.dividerColor),
+            // NOTIFICATIONS ET PROFIL
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "NOTIFICATIONS & PROFIL",
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.textTheme.bodySmall?.color,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              DrawerListTile(
-                title: "Notifications",
-                icon: Icons.notifications_outlined,
-                isSelected: menuController.selectedIndex == 6,
-                onPress: () => menuController.updateIndex(6),
-              ),
-              DrawerListTile(
-                title: "Mon Profil",
-                icon: Icons.person_outline,
-                isSelected: menuController.selectedIndex == 5,
-                onPress: () => menuController.updateIndex(5),
-              ),
-            ],
-          )),
+            ),
+            DrawerListTile(
+              title: "Notifications",
+              icon: Icons.notifications_outlined,
+              isSelected: menuController.selectedIndex ==
+                  MenuIndices.notifications, // 8
+              onPress: () =>
+                  menuController.updateIndex(MenuIndices.notifications),
+            ),
+            DrawerListTile(
+              title: "Mon Profil",
+              icon: Icons.person_outline,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.profile, // 7
+              onPress: () => menuController.updateIndex(MenuIndices.profile),
+            ),
+          ],
+        );
+      }),
     );
   }
 }

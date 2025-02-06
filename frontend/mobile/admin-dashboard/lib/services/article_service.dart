@@ -3,15 +3,21 @@ import '../services/api_service.dart';
 import '../models/article.dart';
 
 class ArticleService {
-  static const String _baseUrl = '/articles'; // Ajout de l'URL de base
+  static const String _baseUrl = '/api/articles';
   static final ApiService _api = ApiService();
 
   static Future<List<Article>> getAllArticles() async {
     try {
       final response = await _api.get(_baseUrl);
-      return _parseArticleList(response.data);
+
+      if (response.data != null && response.data['data'] != null) {
+        return (response.data['data'] as List)
+            .map((item) => Article.fromJson(item))
+            .toList();
+      }
+      return [];
     } catch (e) {
-      print('Error in getAllArticles: $e');
+      print('[ArticleService] Error getting articles: $e');
       rethrow;
     }
   }

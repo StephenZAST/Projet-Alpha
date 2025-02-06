@@ -1,3 +1,4 @@
+import 'package:admin/constants.dart';
 import 'package:admin/controllers/article_controller.dart';
 import 'package:admin/controllers/service_type_controller.dart';
 import 'package:admin/screens/articles/articles_screen.dart';
@@ -40,6 +41,10 @@ class AdminBinding extends Bindings {
     Get.lazyPut(() => OrdersController(), fenix: true);
     Get.lazyPut(() => ServiceController(), fenix: true);
     Get.lazyPut(() => CategoryController(), fenix: true);
+    Get.lazyPut(() => ArticleController(),
+        fenix: true); // Ajout du ArticleController
+    Get.lazyPut(() => ServiceTypeController(),
+        fenix: true); // Ajout du ServiceTypeController
   }
 }
 
@@ -62,19 +67,23 @@ class AdminRoutes {
   // Mapping index -> route
   static String getRouteByIndex(int index) {
     switch (index) {
-      case 0:
+      case MenuIndices.dashboard:
         return dashboard;
-      case 1:
+      case MenuIndices.orders:
         return orders;
-      case 2:
+      case MenuIndices.services:
         return services;
-      case 3:
+      case MenuIndices.categories:
         return categories;
-      case 4:
+      case MenuIndices.articles:
+        return '/articles'; // Ajout de la route articles
+      case MenuIndices.serviceTypes:
+        return '/service-types'; // Ajout de la route service-types
+      case MenuIndices.users:
         return users;
-      case 5:
+      case MenuIndices.profile:
         return profile;
-      case 6:
+      case MenuIndices.notifications:
         return notifications;
       default:
         return dashboard;
@@ -85,21 +94,25 @@ class AdminRoutes {
   static int getIndexByRoute(String route) {
     switch (route) {
       case dashboard:
-        return 0;
+        return MenuIndices.dashboard;
       case orders:
-        return 1;
+        return MenuIndices.orders;
       case services:
-        return 2;
+        return MenuIndices.services;
       case categories:
-        return 3;
+        return MenuIndices.categories;
+      case '/articles':
+        return MenuIndices.articles;
+      case '/service-types':
+        return MenuIndices.serviceTypes;
       case users:
-        return 4;
+        return MenuIndices.users;
       case profile:
-        return 5;
+        return MenuIndices.profile;
       case notifications:
-        return 6;
+        return MenuIndices.notifications;
       default:
-        return 0;
+        return MenuIndices.dashboard;
     }
   }
 
@@ -142,14 +155,18 @@ class AdminRoutes {
       name: '/articles',
       page: () => ArticlesScreen(),
       binding: BindingsBuilder(() {
-        Get.put(ArticleController());
+        if (!Get.isRegistered<ArticleController>()) {
+          Get.put(ArticleController());
+        }
       }),
     ),
     GetPage(
       name: '/service-types',
       page: () => ServiceTypeManagementScreen(),
       binding: BindingsBuilder(() {
-        Get.put(ServiceTypeController());
+        if (!Get.isRegistered<ServiceTypeController>()) {
+          Get.put(ServiceTypeController());
+        }
       }),
     ),
   ];
