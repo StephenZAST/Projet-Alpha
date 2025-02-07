@@ -74,6 +74,10 @@ class OrdersController extends GetxController {
         deliveryDate.value != null;
   }
 
+  // Ajouter ces propriétés pour le tri
+  final sortColumnIndex = 0.obs;
+  final sortAscending = true.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -484,5 +488,62 @@ class OrdersController extends GetxController {
   // Ajouter cette méthode pour rafraîchir régulièrement
   Future<void> refreshDraftOrders() async {
     await loadDraftOrders();
+  }
+
+  void sortOrders({required String field, required bool ascending}) {
+    sortColumnIndex.value = _getSortColumnIndex(field);
+    sortAscending.value = ascending;
+
+    // Recharger les données avec le nouveau tri
+    loadOrdersPage(
+      page: currentPage.value,
+      limit: itemsPerPage.value,
+      status: selectedStatus.value?.name,
+      sortField: field,
+      sortOrder: ascending ? 'asc' : 'desc',
+    );
+  }
+
+  int _getSortColumnIndex(String field) {
+    switch (field) {
+      case 'id':
+        return 0;
+      case 'user.firstName':
+        return 1;
+      case 'created_at':
+        return 2;
+      // ...autres cas...
+      default:
+        return 0;
+    }
+  }
+
+  // Mettre à jour cette méthode
+  Future<void> loadOrdersPage({
+    int? page,
+    int? limit,
+    String? status,
+    String sortField = 'created_at',
+    String sortOrder = 'desc',
+  }) async {
+    try {
+      isLoading.value = true;
+      final result = await OrderService.loadOrdersPage(
+        page: page ?? currentPage.value,
+        limit: limit ?? itemsPerPage.value,
+        status: status,
+        sortField: sortField,
+        sortOrder: sortOrder,
+      );
+
+      orders.value = result.orders;
+      totalOrders.value = result.total;
+      totalPages.value = result.totalPages;
+    } catch (e) {
+      print('[OrdersController] Error loading orders page: $e');
+      hasError.value = true;
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AdminService } from '../services/admin.service';
 import { AdminCreateOrderDTO, OrderStatus } from '../models/types';
+import supabase from '../config/database';
 
 export class AdminController {
   static async configureCommissions(req: Request, res: Response) {
@@ -237,44 +238,77 @@ export class AdminController {
 
   static async getAllOrders(req: Request, res: Response) {
     try {
-      console.log('[Admin Controller] Getting all orders...');
       const userId = req.user?.id;
-      if (!userId) {
-        console.log('[Admin Controller] Unauthorized access attempt');
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
       const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const status = req.query.status as OrderStatus | undefined;
-      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
-      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      // Correction du typage pour status
+      const status: string | undefined = req.query.status as string | undefined;
+      
+      const sortQuery = (req.query.sort as string) || 'createdAt:desc';
+      const [sortField, sortOrder] = sortQuery.split(':');
 
       const result = await AdminService.getAllOrders({
         page,
         limit,
-        status,
-        startDate,
-        endDate
+        status: status || undefined, // Si status est une chaîne vide ou null, on renvoie undefined
+        sortField: sortField || 'createdAt',
+        sortOrder: sortOrder || 'desc'
       });
 
-      console.log('[Admin Controller] Orders retrieved successfully');
-      res.json({
+      return res.json({
         success: true,
         data: result.data,
         pagination: {
           total: result.total,
           page,
           limit,
-          totalPages: Math.ceil(result.total / limit)
+          totalPages: result.totalPages
         }
       });
-    } catch (error: any) {
-      console.error('[Admin Controller] Error getting all orders:', error);
+    } catch (error) {
+      console.error('[AdminController] Error fetching orders:', error);
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',
-        message: error.message || 'Failed to fetch orders'
+        message: 'Failed to fetch orders'
+      });
+    }
+  }
+
+  static async getOrdersByStatus(req: Request, res: Response) {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .then(result => {
+          if (result.error) throw result.error;
+          
+          const counts: { [key: string]: number } = {};
+          result.data?.forEach(order => {
+            const status = order.status;
+            counts[status] = (counts[status] || 0) + 1;
+          });
+          
+          return {
+            data: counts,
+            error: null
+          };
+        });
+
+      if (error) throw error;
+
+      return res.json({
+        success: true,
+        data: data
+      });
+    } catch (error) {
+      console.error('Error getting orders by status:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch orders by status'
       });
     }
   }

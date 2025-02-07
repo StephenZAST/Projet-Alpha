@@ -6,8 +6,9 @@ import 'api_service.dart';
 
 class OrderService {
   static final _api = ApiService();
-  static const String _basePath = '/orders';
-  static const String _baseUrl = '/api/orders'; // Ajouter /api au début
+  static const String _adminBasePath = '/api/admin/orders';
+  static const String _ordersBasePath =
+      '/api/orders'; // Pour les routes standard d'orders
 
   /// Récupère toutes les commandes (méthode existante pour compatibilité)
   static Future<List<Order>> getOrders() async {
@@ -31,50 +32,59 @@ class OrderService {
     int page = 1,
     int limit = 50,
     String? status,
-    DateTime? startDate,
-    DateTime? endDate,
+    String sortField = 'createdAt',
+    String sortOrder = 'desc',
   }) async {
     try {
       print('[OrderService] Loading orders page...');
-      final response = await _api.get('/admin/orders', queryParameters: {
+
+      // Construction des paramètres de requête
+      final Map<String, dynamic> queryParams = {
         'page': page,
         'limit': limit,
-        if (status != null) 'status': status,
-        if (startDate != null) 'startDate': startDate.toIso8601String(),
-        if (endDate != null) 'endDate': endDate.toIso8601String(),
-      });
+        'sort': '$sortField:$sortOrder',
+      };
+
+      // Ajouter le status seulement s'il est défini
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+
+      final response = await _api.get(
+        _adminBasePath,
+        queryParameters: queryParams,
+      );
 
       print('[OrderService] Raw API response: ${response.data}');
 
-      if (response.data == null || response.data['data'] == null) {
-        print('[OrderService] No data found in response');
+      // Vérification et normalisation de la réponse
+      if (!response.data['success'] || response.data['data'] == null) {
+        print('[OrderService] Invalid response format');
         return OrdersPageData.empty();
       }
 
       final List<Order> orders = [];
       final List rawOrders = response.data['data'] as List;
+      final pagination = response.data['pagination'];
 
+      // Traitement des commandes
       for (var item in rawOrders) {
         try {
-          // Normaliser les champs
           final normalizedData = _normalizeOrderData(item);
           final order = Order.fromJson(normalizedData);
           orders.add(order);
-          print('[OrderService] Successfully parsed order: ${order.id}');
         } catch (e) {
           print('[OrderService] Error parsing order: $e');
-          print('[OrderService] Problematic data: $item');
-          // Continue au lieu de throw pour ne pas bloquer toutes les commandes
           continue;
         }
       }
 
       return OrdersPageData(
         orders: orders,
-        total: response.data['pagination']?['total'] ?? 0,
-        currentPage: page,
-        limit: limit,
-        totalPages: response.data['pagination']?['totalPages'] ?? 1,
+        total: pagination['total'] ?? 0,
+        currentPage: pagination['page'] ?? page,
+        limit: pagination['limit'] ?? limit,
+        totalPages: pagination['totalPages'] ?? 1,
       );
     } catch (e) {
       print('[OrderService] Error loading orders: $e');
@@ -103,7 +113,7 @@ class OrderService {
       };
     }
 
-    // Normaliser les champs de base
+    // Normaliser les champs numériques pour gérer les null
     return {
       ...data,
       'serviceId': data['service_id'] ?? data['serviceId'],
@@ -111,16 +121,24 @@ class OrderService {
       'userId': data['user_id'] ?? data['userId'],
       'paymentMethod': data['paymentMethod'] ?? 'CASH',
       'paymentStatus': data['paymentStatus'] ?? 'PENDING',
-      'totalAmount': data['totalAmount'] ?? 0,
+      'totalAmount': data['totalAmount']?.toDouble() ?? 0.0,
+      'isRecurring': data['isRecurring'] ?? false,
+      'status': data['status'] ?? 'PENDING',
+      // Gérer les coordonnées GPS null
+      'gps_latitude': data['gps_latitude']?.toDouble() ?? 0.0,
+      'gps_longitude': data['gps_longitude']?.toDouble() ?? 0.0,
     };
   }
 
   static Future<Order> getOrderById(String id) async {
     try {
       print('[OrderService] Fetching order details for ID: $id');
-      final response = await _api.get('$_basePath/$id');
+      // Correction de l'endpoint
+      final response = await _api.get('$_ordersBasePath/$id');
+
       if (response.data != null && response.data['data'] != null) {
-        return Order.fromJson(response.data['data']);
+        final normalizedData = _normalizeOrderData(response.data['data']);
+        return Order.fromJson(normalizedData);
       }
       throw 'Commande non trouvée';
     } catch (e) {
@@ -129,50 +147,16 @@ class OrderService {
     }
   }
 
+  /// Méthode spécifique pour obtenir les commandes récentes
   static Future<List<Order>> getRecentOrders({int limit = 5}) async {
-    try {
-      final response =
-          await _api.get('$_baseUrl/recent', queryParameters: {'limit': limit});
-
-      print('[OrderService] Recent orders response: ${response.data}');
-
-      if (response.data != null && response.data['data'] != null) {
-        final List<Order> orders = [];
-        final List rawOrders = response.data['data'] as List;
-
-        for (var item in rawOrders) {
-          try {
-            // Conversion sécurisée des champs numériques
-            final normalizedData = Map<String, dynamic>.from({
-              ...item,
-              'totalAmount':
-                  double.tryParse(item['totalAmount']?.toString() ?? '0') ??
-                      0.0,
-              'id': item['id']?.toString() ?? '',
-              'userId': item['userId']?.toString() ?? '',
-              'status': item['status']?.toString() ?? 'PENDING',
-              'paymentStatus': item['paymentStatus']?.toString() ?? 'PENDING',
-              'paymentMethod': item['paymentMethod']?.toString() ?? 'CASH',
-            });
-
-            orders.add(Order.fromJson(normalizedData));
-          } catch (e) {
-            print('[OrderService] Error parsing order: $e');
-            print('[OrderService] Problematic data: $item');
-          }
-        }
-        return orders;
-      }
-      return [];
-    } catch (e) {
-      print('[OrderService] Error getting recent orders: $e');
-      return [];
-    }
+    return loadOrdersPage(
+            page: 1, limit: limit, sortField: 'createdAt', sortOrder: 'desc')
+        .then((result) => result.orders);
   }
 
   static Future<Map<String, int>> getOrdersByStatus() async {
     try {
-      final response = await _api.get('$_baseUrl/by-status');
+      final response = await _api.get('$_adminBasePath/by-status');
 
       if (response.data != null && response.data['data'] != null) {
         final Map<String, dynamic> raw = response.data['data'];
@@ -219,7 +203,7 @@ class OrderService {
       }
 
       final response = await _api.patch(
-        '$_basePath/$orderId/status',
+        '$_adminBasePath/$orderId/status',
         data: {'status': newStatus},
       );
 
@@ -255,7 +239,7 @@ class OrderService {
     try {
       print('[OrderService] Creating new order with data: $orderData');
       final response = await _api.post(
-        '$_basePath/create-order',
+        '$_adminBasePath/create-order',
         data: orderData,
       );
       print('[OrderService] Create order response: ${response.data}');
@@ -275,7 +259,7 @@ class OrderService {
     try {
       print('[OrderService] Updating order: $orderId with data: $orderData');
       final response = await _api.put(
-        '$_basePath/$orderId',
+        '$_adminBasePath/$orderId',
         data: orderData,
       );
 
@@ -307,7 +291,7 @@ class OrderService {
   static Future<void> deleteOrder(String orderId) async {
     try {
       print('[OrderService] Deleting order: $orderId');
-      await _api.delete('$_basePath/$orderId');
+      await _api.delete('$_adminBasePath/$orderId');
       print('[OrderService] Order deleted successfully');
     } catch (e) {
       print('[OrderService] Error deleting order: $e');
@@ -361,7 +345,8 @@ class OrderService {
   static Future<List<Order>> getDraftOrders() async {
     try {
       print('[OrderService] Fetching draft flash orders');
-      final response = await _api.get('$_basePath/flash/draft');
+      // Correction de l'URL pour utiliser _adminBasePath
+      final response = await _api.get('$_adminBasePath/flash/draft');
 
       // Corriger l'appel print en utilisant string interpolation
       print('[OrderService] Draft orders response: ${response.data}');
@@ -387,7 +372,7 @@ class OrderService {
     try {
       print('[OrderService] Creating flash order');
       final response = await _api.post(
-        '$_basePath/flash',
+        '$_adminBasePath/flash',
         data: {
           'addressId': addressId,
           'notes': notes,
@@ -411,7 +396,7 @@ class OrderService {
       print('[OrderService] Update data: ${updateData.toJson()}');
 
       final response = await _api.patch(
-        '$_basePath/flash/$orderId/complete',
+        '$_adminBasePath/flash/$orderId/complete',
         data: updateData.toJson(),
       );
 
@@ -429,7 +414,7 @@ class OrderService {
   static Future<List<Map<String, dynamic>>> getRevenueStatistics() async {
     try {
       print('[OrderService] Fetching revenue statistics');
-      final response = await _api.get('$_basePath/revenue/stats');
+      final response = await _api.get('$_adminBasePath/revenue/stats');
       // Corriger l'appel print en utilisant string interpolation
       print('[OrderService] Revenue stats response: ${response.data}');
 

@@ -6,7 +6,6 @@ import {
   SystemConfig,
   RewardConfig,
   DashboardOrder,
-  GetAllOrdersParams,
   PaginatedOrdersResponse,
   CreateOrderDTO,
   AdminCreateOrderDTO,
@@ -275,59 +274,50 @@ export class AdminService {
     }
   }
 
-  static async getAllOrders(params: GetAllOrdersParams): Promise<PaginatedOrdersResponse> {
+  static async getAllOrders({
+    page = 1,
+    limit = 50,
+    status,
+    sortField = 'createdAt', // Correction ici
+    sortOrder = 'desc'
+  }: GetAllOrdersParams) {
     try {
-      console.log('[AdminService] Getting all orders with params:', params);
-      const { page, limit, status, startDate, endDate } = params;
-      const offset = (page - 1) * limit;
-
-      // Construire la requête de base
       let query = supabase
         .from('orders')
         .select(`
           *,
+          user:users(*),
           service:services(*),
-          user:users(id, email, first_name, last_name),
-          address:addresses(*),
-          items:order_items(
-            *,
-            article:articles(
-              *,
-              category:article_categories(name)
-            )
-          )
-        `, { count: 'exact' })
-        .order('createdAt', { ascending: false })
-        .range(offset, offset + limit - 1);
+          address:addresses(*)
+        `, { count: 'exact' });
 
-      // Ajouter les filtres si présents
-      if (status) {
+      // Appliquer le filtre status seulement s'il est défini
+      if (status !== undefined) {
         query = query.eq('status', status);
       }
-      if (startDate) {
-        query = query.gte('createdAt', startDate.toISOString());
-      }
-      if (endDate) {
-        query = query.lte('createdAt', endDate.toISOString());
-      }
 
-      // Exécuter la requête
-      const { data, error, count } = await query;
+      // Corriger les noms des colonnes pour le tri
+      const orderByField = sortField === 'created_at' ? 'createdAt' : sortField;
+      query = query.order(orderByField, { ascending: sortOrder === 'asc' });
 
-      if (error) {
-        console.error('[AdminService] Error fetching orders:', error);
-        throw error;
-      }
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
 
-      console.log(`[AdminService] Retrieved ${data?.length} orders out of ${count} total`);
+      const { data, count, error } = await query;
+
+      if (error) throw error;
 
       return {
-        data: data || [],
-        total: count || 0
+        data,
+        total: count || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit)
       };
     } catch (error) {
-      console.error('[AdminService] Error in getAllOrders:', error);
-      throw new Error(`Failed to fetch orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error in getAllOrders:', error);
+      throw error;
     }
   }
 
@@ -598,4 +588,12 @@ export class AdminService {
       throw new Error(`Failed to fetch revenue chart data: ${error.message || 'Unknown error'}`);
     }
   }
+}
+
+interface GetAllOrdersParams {
+  page: number;
+  limit: number;
+  status?: string | undefined; // Modification ici pour accepter string | undefined
+  sortField: string;
+  sortOrder: string;
 }

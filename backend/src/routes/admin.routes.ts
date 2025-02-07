@@ -14,8 +14,47 @@ router.get(
   '/orders',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
-    await AdminController.getAllOrders(req, res);
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      // Correction du typage pour status
+      const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+      const sortField = req.query.sort_field as string || 'createdAt';
+      const sortOrder = req.query.sort_order as string || 'desc';
+
+      const result = await AdminService.getAllOrders({
+        page,
+        limit,
+        status, // Maintenant le type est correct (string | undefined)
+        sortField,
+        sortOrder
+      });
+
+      res.json({
+        success: true,
+        data: result.data,
+        pagination: {
+          total: result.total,
+          page: result.page,
+          limit: result.limit,
+          totalPages: result.totalPages
+        }
+      });
+    } catch (error) {
+      console.error('Error handling orders request:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: 'Failed to fetch orders'
+      });
+    }
   })
+);
+
+router.get(
+  '/orders/by-status',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(AdminController.getOrdersByStatus)
 );
 
 // Route pour créer une commande au nom d'un client

@@ -84,31 +84,20 @@ class Order {
 
   factory Order.fromJson(Map<String, dynamic> json) {
     try {
-      print('[Order] Parsing JSON data');
-      print('Raw data: $json');
-
-      // Ajout de méthodes de conversion sécurisées
-      double safeDouble(dynamic value) {
-        if (value == null) return 0.0;
-        if (value is int) return value.toDouble();
-        if (value is double) return value;
-        return double.tryParse(value.toString()) ?? 0.0;
-      }
-
       return Order(
-        id: json['id']?.toString() ?? '',
-        userId: json['userId']?.toString() ?? '',
+        id: json['id'] as String,
+        userId:
+            json['userId'] as String? ?? '', // Fournir une valeur par défaut
         serviceId: json['serviceId']?.toString(),
-        addressId: json['addressId']?.toString() ?? '',
+        addressId: json['addressId']?.toString() ??
+            '', // Fournir une valeur par défaut
         affiliateCode: json['affiliateCode']?.toString(),
-        status: json['status']?.toString() ?? 'PENDING',
-        isRecurring: json['isRecurring'] ?? false,
+        status: json['status'] as String? ?? 'PENDING',
+        isRecurring: json['isRecurring'] as bool? ?? false,
         recurrenceType: json['recurrenceType']?.toString(),
         nextRecurrenceDate: json['nextRecurrenceDate'] != null
             ? DateTime.parse(json['nextRecurrenceDate'].toString())
             : null,
-        totalAmount: safeDouble(
-            json['totalAmount']), // Utilisation de la méthode sécurisée
         collectionDate: json['collectionDate'] != null
             ? DateTime.parse(json['collectionDate'].toString())
             : null,
@@ -125,7 +114,7 @@ class Order {
             ? (json['items'] as List)
                 .map((item) => OrderItem.fromJson(item))
                 .toList()
-            : [],
+            : null,
         notes: json['notes']?.toString(),
         paymentStatus:
             (json['paymentStatus']?.toString() ?? 'PENDING').toPaymentStatus(),
@@ -140,9 +129,12 @@ class Order {
         metadata: json['metadata'] != null
             ? OrderMetadata.fromJson(json['metadata'])
             : null,
+        totalAmount: json['totalAmount'] != null
+            ? (json['totalAmount'] as num).toDouble()
+            : 0,
       );
     } catch (e) {
-      print('Error parsing order: $e');
+      print('Error creating Order from JSON: $e');
       print('Problematic JSON: $json');
       rethrow;
     }
@@ -197,6 +189,10 @@ class Order {
     PaymentMethod? paymentMethod,
     Service? service,
     Address? address,
+    User? user,
+    bool? isFlashOrder,
+    String? note,
+    OrderMetadata? metadata,
   }) {
     return Order(
       id: id ?? this.id,
@@ -219,6 +215,10 @@ class Order {
       paymentMethod: paymentMethod ?? this.paymentMethod,
       service: service ?? this.service,
       address: address ?? this.address,
+      user: user ?? this.user,
+      isFlashOrder: isFlashOrder ?? this.isFlashOrder,
+      note: note ?? this.note,
+      metadata: metadata ?? this.metadata,
     );
   }
 }

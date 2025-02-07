@@ -2,93 +2,43 @@ import 'package:flutter/material.dart';
 import '../constants.dart';
 
 enum OrderStatus {
-  DRAFT, // Ajouter en premier
-  PENDING,
-  COLLECTING,
-  COLLECTED,
-  PROCESSING,
-  READY,
-  DELIVERING,
-  DELIVERED,
-  CANCELLED
+  DRAFT('Brouillon', AppColors.gray400, Icons.edit_note),
+  PENDING('En attente', AppColors.warning, Icons.pending_actions),
+  COLLECTING('En collecte', AppColors.info, Icons.directions_run),
+  COLLECTED('Collecté', AppColors.accent, Icons.check_circle_outline),
+  PROCESSING('En traitement', AppColors.primary, Icons.local_laundry_service),
+  READY('Prêt', AppColors.violet, Icons.thumb_up_outlined),
+  DELIVERING('En livraison', AppColors.orange, Icons.local_shipping_outlined),
+  DELIVERED('Livré', AppColors.success, Icons.task_alt),
+  CANCELLED('Annulé', AppColors.error, Icons.cancel_outlined);
+
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  const OrderStatus(this.label, this.color, this.icon);
+
+  static Map<String, List<String>> validTransitions = {
+    'DRAFT': ['PENDING'],
+    'PENDING': ['COLLECTING', 'CANCELLED'],
+    'COLLECTING': ['COLLECTED', 'CANCELLED'],
+    'COLLECTED': ['PROCESSING', 'CANCELLED'],
+    'PROCESSING': ['READY', 'CANCELLED'],
+    'READY': ['DELIVERING', 'CANCELLED'],
+    'DELIVERING': ['DELIVERED', 'CANCELLED'],
+    'DELIVERED': [],
+    'CANCELLED': []
+  };
+
+  static bool isValidTransition(String from, String to) {
+    final validNext = validTransitions[from] ?? [];
+    return validNext.contains(to);
+  }
 }
 
 enum PaymentMethod { CASH, ORANGE_MONEY }
 
 enum AppButtonVariant { primary, secondary, error, success }
-
-extension OrderStatusExtension on OrderStatus {
-  String get label {
-    switch (this) {
-      case OrderStatus.DRAFT:
-        return 'Flash'; // Changé de 'Brouillon' à 'Flash'
-      case OrderStatus.PENDING:
-        return 'En attente';
-      case OrderStatus.COLLECTING:
-        return 'En collecte';
-      case OrderStatus.COLLECTED:
-        return 'Collecté';
-      case OrderStatus.PROCESSING:
-        return 'En traitement';
-      case OrderStatus.READY:
-        return 'Prêt';
-      case OrderStatus.DELIVERING:
-        return 'En livraison';
-      case OrderStatus.DELIVERED:
-        return 'Livré';
-      case OrderStatus.CANCELLED:
-        return 'Annulé';
-      default:
-        return '';
-    }
-  }
-
-  Color get color {
-    switch (this) {
-      case OrderStatus.DRAFT:
-        return AppColors.gray400; // Couleur pour les commandes en brouillon
-      case OrderStatus.PENDING:
-        return AppColors.pending;
-      case OrderStatus.COLLECTING:
-        return AppColors.processing;
-      case OrderStatus.COLLECTED:
-        return AppColors.completed;
-      case OrderStatus.PROCESSING:
-        return AppColors.processing;
-      case OrderStatus.READY:
-        return AppColors.completed;
-      case OrderStatus.DELIVERING:
-        return AppColors.processing;
-      case OrderStatus.DELIVERED:
-        return AppColors.delivered;
-      case OrderStatus.CANCELLED:
-        return AppColors.cancelled;
-    }
-  }
-
-  IconData get icon {
-    switch (this) {
-      case OrderStatus.DRAFT:
-        return Icons.edit_note; // Icône pour les commandes en brouillon
-      case OrderStatus.PENDING:
-        return Icons.hourglass_empty;
-      case OrderStatus.COLLECTING:
-        return Icons.directions_car;
-      case OrderStatus.COLLECTED:
-        return Icons.check_circle_outline;
-      case OrderStatus.PROCESSING:
-        return Icons.local_laundry_service;
-      case OrderStatus.READY:
-        return Icons.check_circle;
-      case OrderStatus.DELIVERING:
-        return Icons.local_shipping;
-      case OrderStatus.DELIVERED:
-        return Icons.done_all;
-      case OrderStatus.CANCELLED:
-        return Icons.cancel;
-    }
-  }
-}
 
 extension OrderStatusParser on String? {
   OrderStatus toOrderStatus() {
