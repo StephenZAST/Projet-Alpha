@@ -17,34 +17,28 @@ class OrdersPageData {
 
   factory OrdersPageData.fromJson(Map<String, dynamic> json) {
     try {
-      // Vérifier et convertir la liste des commandes
-      final List<Order> ordersList = [];
-      if (json['data'] != null && json['data'] is List) {
-        for (var orderJson in json['data']) {
+      final List<Order> orders = [];
+      if (json['data'] != null) {
+        for (var item in json['data']) {
           try {
-            ordersList.add(Order.fromJson(orderJson));
+            orders.add(Order.fromJson(item));
           } catch (e) {
-            print('Error parsing order: $e');
-            print('Problematic order JSON: $orderJson');
-            // Continue avec la prochaine commande
-            continue;
+            print('Error parsing order in page: $e');
           }
         }
       }
 
-      // Récupérer et valider les données de pagination
-      final pagination = json['pagination'] as Map<String, dynamic>? ?? {};
+      final pagination = json['pagination'] ?? {};
 
       return OrdersPageData(
-        orders: ordersList,
-        total: _parseIntSafely(pagination['total']) ?? 0,
-        currentPage: _parseIntSafely(pagination['page']) ?? 1,
-        limit: _parseIntSafely(pagination['limit']) ?? 10,
-        totalPages: _parseIntSafely(pagination['totalPages']) ?? 1,
+        orders: orders,
+        total: pagination['total'] ?? 0,
+        currentPage: pagination['page'] ?? 1,
+        limit: pagination['limit'] ?? 50,
+        totalPages: pagination['totalPages'] ?? 1,
       );
     } catch (e) {
-      print('Error parsing OrdersPageData: $e');
-      print('Problematic JSON: $json');
+      print('Error creating OrdersPageData: $e');
       return OrdersPageData.empty();
     }
   }

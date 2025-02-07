@@ -30,6 +30,25 @@ class _ArticleEditDialogState extends State<ArticleEditDialog> {
     isPremium = item.isPremium;
   }
 
+  void updateArticle() {
+    final article = controller.articles.firstWhere(
+      (a) => a.id == item.articleId,
+    );
+
+    // S'assurer que le prix n'est pas null
+    final price =
+        isPremium ? article.premiumPrice ?? 0.0 : article.basePrice ?? 0.0;
+
+    controller.selectedArticles[widget.itemIndex] = FlashOrderItem(
+      articleId: item.articleId,
+      quantity: quantity,
+      unitPrice: price, // Utiliser le prix avec valeur par défaut
+      isPremium: isPremium,
+    );
+
+    Get.back();
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -71,16 +90,7 @@ class _ArticleEditDialogState extends State<ArticleEditDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            final article = controller.articles.firstWhere(
-              (a) => a.id == item.articleId,
-            );
-            controller.selectedArticles[widget.itemIndex] = FlashOrderItem(
-              articleId: item.articleId,
-              quantity: quantity,
-              unitPrice: isPremium ? article.premiumPrice : article.basePrice,
-              isPremium: isPremium,
-            );
-            Get.back();
+            updateArticle();
           },
           child: Text('Enregistrer'),
         ),

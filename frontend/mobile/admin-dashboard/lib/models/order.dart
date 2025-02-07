@@ -19,6 +19,23 @@ class Order {
     }
   }
 
+  static double safeDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  static bool safeBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is String) return value.toLowerCase() == 'true';
+    if (value is num) return value != 0;
+    return false;
+  }
+
   final String id;
   final String userId;
   final String? serviceId;
@@ -85,58 +102,107 @@ class Order {
   factory Order.fromJson(Map<String, dynamic> json) {
     try {
       return Order(
-        id: json['id'] as String,
-        userId:
-            json['userId'] as String? ?? '', // Fournir une valeur par défaut
-        serviceId: json['serviceId']?.toString(),
+        id: json['id']?.toString() ?? '',
+        userId: json['userId']?.toString() ?? json['user_id']?.toString() ?? '',
+        serviceId:
+            json['serviceId']?.toString() ?? json['service_id']?.toString(),
         addressId: json['addressId']?.toString() ??
-            '', // Fournir une valeur par défaut
+            json['address_id']?.toString() ??
+            '',
         affiliateCode: json['affiliateCode']?.toString(),
-        status: json['status'] as String? ?? 'PENDING',
-        isRecurring: json['isRecurring'] as bool? ?? false,
+        status: (json['status'] as String?)?.toUpperCase() ?? 'PENDING',
+        isRecurring: safeBool(json['isRecurring']),
         recurrenceType: json['recurrenceType']?.toString(),
-        nextRecurrenceDate: json['nextRecurrenceDate'] != null
-            ? DateTime.parse(json['nextRecurrenceDate'].toString())
-            : null,
-        collectionDate: json['collectionDate'] != null
-            ? DateTime.parse(json['collectionDate'].toString())
-            : null,
-        deliveryDate: json['deliveryDate'] != null
-            ? DateTime.parse(json['deliveryDate'].toString())
-            : null,
-        createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'].toString())
-            : DateTime.now(),
-        updatedAt: json['updatedAt'] != null
-            ? DateTime.parse(json['updatedAt'].toString())
-            : null,
-        items: json['items'] != null
-            ? (json['items'] as List)
-                .map((item) => OrderItem.fromJson(item))
-                .toList()
-            : null,
+        totalAmount: safeDouble(json['totalAmount']),
+        nextRecurrenceDate: _parseDateTime(json['nextRecurrenceDate']),
+        collectionDate: _parseDateTime(json['collectionDate']),
+        deliveryDate: _parseDateTime(json['deliveryDate']),
+        createdAt: _parseDateTime(json['createdAt']) ?? DateTime.now(),
+        updatedAt: _parseDateTime(json['updatedAt']),
+        items: _parseOrderItems(json['items']),
         notes: json['notes']?.toString(),
-        paymentStatus:
-            (json['paymentStatus']?.toString() ?? 'PENDING').toPaymentStatus(),
-        paymentMethod: safePaymentMethod(json['paymentMethod']),
+        paymentStatus: _parsePaymentStatus(json['paymentStatus']),
+        paymentMethod: _parsePaymentMethod(json['paymentMethod']),
         service:
             json['service'] != null ? Service.fromJson(json['service']) : null,
         address:
             json['address'] != null ? Address.fromJson(json['address']) : null,
         user: json['user'] != null ? User.fromJson(json['user']) : null,
-        isFlashOrder: json['isFlashOrder'] ?? false,
+        isFlashOrder: safeBool(json['isFlashOrder']),
         note: json['note']?.toString(),
         metadata: json['metadata'] != null
             ? OrderMetadata.fromJson(json['metadata'])
             : null,
-        totalAmount: json['totalAmount'] != null
-            ? (json['totalAmount'] as num).toDouble()
-            : 0,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Error creating Order from JSON: $e');
+      print('Stack trace: $stackTrace');
       print('Problematic JSON: $json');
       rethrow;
+    }
+  }
+
+  // Méthodes helper pour le parsing sécurisé
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) {
+      try {
+        return DateTime.parse(value);
+      } catch (e) {
+        print('Error parsing datetime: $value');
+        return null;
+      }
+    }
+    return null;
+  }
+
+  static List<OrderItem>? _parseOrderItems(dynamic value) {
+    if (value == null) return null;
+    if (value is! List) return null;
+
+    final items = <OrderItem>[];
+    for (var item in value) {
+      try {
+        items.add(OrderItem.fromJson(item));
+      } catch (e) {
+        print('Error parsing OrderItem: $e');
+        continue;
+      }
+    }
+    return items;
+  }
+
+  static PaymentStatus _parsePaymentStatus(dynamic value) {
+    if (value == null) return PaymentStatus.PENDING;
+    final status = value.toString().toUpperCase();
+    try {
+      return PaymentStatus.values.firstWhere(
+        (s) => s.name == status,
+        orElse: () => PaymentStatus.PENDING,
+      );
+    } catch (e) {
+      return PaymentStatus.PENDING;
+    }
+  }
+
+  static PaymentMethod _parsePaymentMethod(dynamic value) {
+    if (value == null) return PaymentMethod.CASH;
+    final method = value.toString().toUpperCase();
+    try {
+      return PaymentMethod.values.firstWhere(
+        (m) => m.name == method,
+        orElse: () => PaymentMethod.CASH,
+      );
+    } catch (e) {
+      return PaymentMethod.CASH;
     }
   }
 

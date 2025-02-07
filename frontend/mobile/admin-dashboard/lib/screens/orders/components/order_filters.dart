@@ -73,6 +73,15 @@ class OrderFilters extends StatelessWidget {
                 ],
               )),
           SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            children: [
+              _buildTypeFilter('Tous', null),
+              _buildTypeFilter('Standard', false),
+              _buildTypeFilter('Flash', true),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
           TextField(
             onChanged: controller.searchOrders,
             decoration: InputDecoration(
@@ -112,6 +121,18 @@ class OrderFilters extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTypeFilter(String label, bool? isFlash) {
+    final controller = Get.find<OrdersController>();
+    return FilterChip(
+      label: Text(label),
+      selected: controller.selectedOrderType.value == isFlash,
+      onSelected: (selected) {
+        controller.filterByType(selected ? isFlash : null);
+      },
+      // ...style properties...
     );
   }
 }

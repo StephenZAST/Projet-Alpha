@@ -1,25 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../constants.dart';
-import '../../../controllers/orders_controller.dart';
-import '../../../models/order.dart';
+import '../../../controllers/flash_orders_controller.dart';
 import 'components/flash_order_card.dart';
 
-class FlashOrdersScreen extends StatefulWidget {
-  @override
-  State<FlashOrdersScreen> createState() => _FlashOrdersScreenState();
-}
-
-class _FlashOrdersScreenState extends State<FlashOrdersScreen> {
-  final controller = Get.find<OrdersController>();
-
-  @override
-  void initState() {
-    super.initState();
-    // Rafraîchir les données au montage
-    controller.loadDraftOrders();
-  }
-
+class FlashOrdersScreen extends GetView<FlashOrdersController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,55 +12,54 @@ class _FlashOrdersScreenState extends State<FlashOrdersScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: () => controller.loadDraftOrders(),
+            onPressed: controller.refreshOrders,
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: controller.refreshDraftOrders,
-        child: Obx(() {
-          if (controller.isLoading.value) {
-            return Center(child: CircularProgressIndicator());
-          }
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return Center(child: CircularProgressIndicator());
+        }
 
-          if (controller.draftOrders.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.inbox_outlined, size: 48),
-                  SizedBox(height: 16),
-                  Text('Aucune commande flash en attente'),
-                  SizedBox(height: 8),
-                  TextButton.icon(
-                    onPressed: controller.loadDraftOrders,
-                    icon: Icon(Icons.refresh),
-                    label: Text('Actualiser'),
-                  ),
-                ],
-              ),
-            );
-          }
+        if (controller.hasError.value) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(controller.errorMessage.value),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: controller.refreshOrders,
+                  child: Text('Réessayer'),
+                ),
+              ],
+            ),
+          );
+        }
 
-          // Affichage des commandes flash
-          return ListView.builder(
+        if (controller.draftOrders.isEmpty) {
+          return Center(
+            child: Text('Aucune commande flash en attente'),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: controller.refreshOrders,
+          child: ListView.builder(
             itemCount: controller.draftOrders.length,
             itemBuilder: (context, index) {
               final order = controller.draftOrders[index];
               return FlashOrderCard(
                 order: order,
-                onTap: () {
-                  // Naviguer vers l'écran de mise à jour
-                  Get.toNamed('/orders/flash/${order.id}/update');
-                  // Ou utiliser cette version si vous préférez
-                  // controller.initFlashOrderUpdate(order.id);
-                  // Get.toNamed('/orders/flash/update');
-                },
+                onTap: () => Get.toNamed(
+                  '/orders/flash/${order.id}',
+                  arguments: order,
+                ),
               );
             },
-          );
-        }),
-      ),
+          ),
+        );
+      }),
     );
   }
 }

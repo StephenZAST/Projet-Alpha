@@ -25,15 +25,11 @@ class FlashOrdersController extends GetxController {
     } catch (e) {
       hasError.value = true;
       errorMessage.value = 'Erreur lors du chargement des commandes flash';
-      print('Error loading draft orders: $e');
+      print('[FlashOrdersController] Error: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> refreshDraftOrders() => loadDraftOrders();
-
-  void openOrderDetails(String orderId) {
-    Get.toNamed('/orders/flash/$orderId');
-  }
+  Future<void> refreshOrders() => loadDraftOrders();
 }

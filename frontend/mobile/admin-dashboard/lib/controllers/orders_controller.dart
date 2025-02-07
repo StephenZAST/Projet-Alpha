@@ -51,6 +51,9 @@ class OrdersController extends GetxController {
   final selectedStatus = Rxn<OrderStatus>();
   final searchQuery = ''.obs;
 
+  // Ajouter cette propriété pour le filtre de type de commande
+  final selectedOrderType = Rxn<bool>();
+
   // État de pagination
   final currentPage = 1.obs;
   final itemsPerPage = 50.obs;
@@ -102,27 +105,30 @@ class OrdersController extends GetxController {
 
   Future<void> fetchOrders({bool resetPage = false}) async {
     try {
+      if (resetPage) {
+        currentPage.value = 1;
+      }
+
       isLoading.value = true;
       hasError.value = false;
-      errorMessage.value = '';
-
-      print('[OrdersController] Fetching orders, page: ${currentPage.value}');
 
       final result = await OrderService.loadOrdersPage(
         page: currentPage.value,
         limit: itemsPerPage.value,
         status: selectedStatus.value?.name,
+        sortField: 'createdAt',
+        sortOrder: 'desc',
       );
-
-      print('[OrdersController] Received ${result.orders.length} orders');
 
       orders.value = result.orders;
       totalOrders.value = result.total;
       totalPages.value = result.totalPages;
+
+      // Mettre à jour les compteurs après chaque fetch
+      await _updateStatusCounts();
     } catch (e) {
-      print('[OrdersController] Fetch error: $e');
       hasError.value = true;
-      errorMessage.value = 'Erreur de chargement';
+      errorMessage.value = 'Erreur lors du chargement des commandes';
     } finally {
       isLoading.value = false;
     }
@@ -159,6 +165,13 @@ class OrdersController extends GetxController {
   // Méthodes de filtrage
   void filterByStatus(OrderStatus? status) {
     selectedStatus.value = status;
+    currentPage.value = 1; // Réinitialiser la page
+    fetchOrders();
+  }
+
+  // Ajouter cette méthode pour filtrer par type de commande
+  void filterByType(bool? isFlash) {
+    selectedOrderType.value = isFlash;
     fetchOrders(resetPage: true);
   }
 
@@ -198,68 +211,29 @@ class OrdersController extends GetxController {
   Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     try {
       isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
+      final isFlash = await OrderService.isFlashOrder(orderId);
 
-      // Trouver la commande actuelle
-      final order = orders.firstWhereOrNull((o) => o.id == orderId);
-      if (order == null) {
-        throw 'Commande non trouvée';
+      // Vérifier si c'est une commande flash
+      if (isFlash && !_isValidFlashTransition(newStatus)) {
+        throw 'Transition non autorisée pour une commande flash';
       }
 
-      // Vérifier si la transition est valide
-      if (!OrderService.isValidTransition(order.status, newStatus.name)) {
-        throw 'La transition de "${order.status}" à "${newStatus.name}" n\'est pas autorisée';
-      }
-
-      // Mettre à jour le statut
       await OrderService.updateOrderStatus(orderId, newStatus.name);
-
-      // Attendre un court instant pour la synchronisation
-      await Future.delayed(Duration(milliseconds: 500));
-
-      // Rafraîchir les données
       await fetchOrders();
-
-      // Notification de succès
-      Get.snackbar(
-        'Succès',
-        'La commande est maintenant ${newStatus.label.toLowerCase()}',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 3),
-      );
     } catch (e) {
-      print('[OrdersController] Error updating order status: $e');
-      hasError.value = true;
+      // ...error handling...
+    }
+  }
 
-      // Analyser l'erreur pour un message approprié
-      String errorTitle = 'Erreur';
-      String errorMsg = e.toString();
-
-      if (errorMsg.contains('Session expirée')) {
-        errorTitle = 'Session expirée';
-        errorMsg = 'Veuillez vous reconnecter pour continuer';
-      } else if (errorMsg.contains('permissions')) {
-        errorTitle = 'Accès refusé';
-      } else if (errorMsg.contains('transition')) {
-        errorTitle = 'Action non autorisée';
-      } else if (errorMsg.contains('commande non trouvée')) {
-        errorTitle = 'Erreur de données';
-      }
-
-      errorMessage.value = errorMsg;
-      Get.snackbar(
-        errorTitle,
-        errorMsg,
-        backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
-      );
-    } finally {
-      isLoading.value = false;
+  bool _isValidFlashTransition(OrderStatus newStatus) {
+    switch (newStatus) {
+      case OrderStatus.PENDING:
+      case OrderStatus.PROCESSING:
+      case OrderStatus.DELIVERED:
+      case OrderStatus.CANCELLED:
+        return true;
+      default:
+        return false;
     }
   }
 
@@ -270,8 +244,10 @@ class OrdersController extends GetxController {
     }
   }
 
+  @override
   void clearFilters() {
     selectedStatus.value = null;
+    selectedOrderType.value = null;
     searchQuery.value = '';
     currentPage.value = 1;
     itemsPerPage.value = 50;

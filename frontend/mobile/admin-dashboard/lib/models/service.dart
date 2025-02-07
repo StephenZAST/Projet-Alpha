@@ -18,17 +18,43 @@ class Service {
   });
 
   factory Service.fromJson(Map<String, dynamic> json) {
-    return Service(
-      id: json['id'].toString(),
-      name: json['name'],
-      description: json['description'],
-      price: json['price'] is int
-          ? (json['price'] as int).toDouble()
-          : (json['price'] as num).toDouble(),
-      typeId: json['typeId']?.toString(),
-      createdAt: DateTime.parse(json['created_at'] ?? json['createdAt']),
-      updatedAt: DateTime.parse(json['updated_at'] ?? json['updatedAt']),
-    );
+    try {
+      return Service(
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        description: json['description']?.toString(),
+        price: _parsePrice(json['price']) ?? 0.0,
+        typeId: json['typeId']?.toString(),
+        createdAt: _parseDateTime(json['created_at'] ?? json['createdAt']) ??
+            DateTime.now(),
+        updatedAt: _parseDateTime(json['updated_at'] ?? json['updatedAt']) ??
+            DateTime.now(),
+      );
+    } catch (e) {
+      print('Error parsing Service: $e');
+      print('Problematic JSON: $json');
+      rethrow;
+    }
+  }
+
+  static double? _parsePrice(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) {
+      try {
+        return DateTime.parse(value);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() {

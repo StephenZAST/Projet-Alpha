@@ -33,7 +33,7 @@ router.route('/flash')
   // Corriger la méthode ici
   .get(
     authenticateToken,
-    authorizeRoles(['ADMIN', 'SUPER_ADMIN']),  // Explicitement autoriser SUPER_ADMIN
+    authorizeRoles(['ADMIN']),
     asyncHandler(FlashOrderController.getDraftFlashOrders)  // Utiliser getDraftFlashOrders au lieu de getAllFlashOrders
   );
 
@@ -94,7 +94,7 @@ router.get(
 router.patch(
   '/flash/:orderId/complete',
   authenticateToken,
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),  // Explicitement autoriser SUPER_ADMIN
+  authorizeRoles(['ADMIN', 'DELIVERY']),
   validateCompleteFlashOrder,
   asyncHandler(FlashOrderController.completeFlashOrder)
 );

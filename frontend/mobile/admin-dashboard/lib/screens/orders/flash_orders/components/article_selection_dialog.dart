@@ -115,21 +115,7 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
                 ),
                 SizedBox(width: AppSpacing.md),
                 ElevatedButton(
-                  onPressed: selectedArticle == null
-                      ? null
-                      : () {
-                          final price = isPremium
-                              ? selectedArticle!.premiumPrice
-                              : selectedArticle!.basePrice;
-
-                          controller.selectedArticles.add(FlashOrderItem(
-                            articleId: selectedArticle!.id,
-                            quantity: quantity,
-                            unitPrice: price,
-                            isPremium: isPremium,
-                          ));
-                          Get.back();
-                        },
+                  onPressed: selectedArticle == null ? null : addArticle,
                   child: Text('Ajouter'),
                 ),
               ],
@@ -138,5 +124,22 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
         ),
       ),
     );
+  }
+
+  void addArticle() {
+    if (selectedArticle == null) return;
+
+    // S'assurer que le prix n'est pas null
+    final price = isPremium
+        ? selectedArticle!.premiumPrice ?? 0.0
+        : selectedArticle!.basePrice ?? 0.0;
+
+    controller.selectedArticles.add(FlashOrderItem(
+      articleId: selectedArticle!.id,
+      quantity: quantity,
+      unitPrice: price, // Utiliser le prix avec valeur par défaut
+      isPremium: isPremium,
+    ));
+    Get.back();
   }
 }

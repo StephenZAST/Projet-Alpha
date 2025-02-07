@@ -36,49 +36,47 @@ class OrderService {
     String sortOrder = 'desc',
   }) async {
     try {
-      print('[OrderService] Loading orders page...');
-
-      // Construction des paramètres de requête
       final Map<String, dynamic> queryParams = {
         'page': page,
         'limit': limit,
         'sort': '$sortField:$sortOrder',
       };
 
-      // Ajouter le status seulement s'il est défini
+      // Normaliser le status avant l'envoi
       if (status != null && status.isNotEmpty) {
-        queryParams['status'] = status;
+        queryParams['status'] = status.toUpperCase();
       }
 
       final response = await _api.get(
-        _adminBasePath,
+        '$_adminBasePath',
         queryParameters: queryParams,
       );
 
-      print('[OrderService] Raw API response: ${response.data}');
+      print('[OrderService] Query params: $queryParams');
+      print('[OrderService] Response: ${response.data}');
 
-      // Vérification et normalisation de la réponse
-      if (!response.data['success'] || response.data['data'] == null) {
-        print('[OrderService] Invalid response format');
-        return OrdersPageData.empty();
+      if (!response.data['success']) {
+        throw 'Invalid response from server';
       }
 
       final List<Order> orders = [];
-      final List rawOrders = response.data['data'] as List;
-      final pagination = response.data['pagination'];
+      if (response.data['data'] != null) {
+        final List rawOrders = response.data['data'] as List;
 
-      // Traitement des commandes
-      for (var item in rawOrders) {
-        try {
-          final normalizedData = _normalizeOrderData(item);
-          final order = Order.fromJson(normalizedData);
-          orders.add(order);
-        } catch (e) {
-          print('[OrderService] Error parsing order: $e');
-          continue;
+        for (var item in rawOrders) {
+          try {
+            final normalizedData = _normalizeOrderData(item);
+            final order = Order.fromJson(normalizedData);
+            orders.add(order);
+          } catch (e) {
+            print('[OrderService] Error parsing order: $e');
+            // Continue avec la commande suivante
+            continue;
+          }
         }
       }
 
+      final pagination = response.data['pagination'] ?? {};
       return OrdersPageData(
         orders: orders,
         total: pagination['total'] ?? 0,
@@ -87,67 +85,139 @@ class OrderService {
         totalPages: pagination['totalPages'] ?? 1,
       );
     } catch (e) {
-      print('[OrderService] Error loading orders: $e');
+      print('[OrderService] Error loading orders page: $e');
       return OrdersPageData.empty();
     }
   }
 
   // Ajouter cette méthode helper
   static Map<String, dynamic> _normalizeOrderData(dynamic rawData) {
+    if (rawData == null) return {};
+
     final data = Map<String, dynamic>.from(rawData);
 
-    // Normaliser les données utilisateur
+    // Normaliser les données de base avec des valeurs par défaut
+    final normalizedData = {
+      ...data,
+      'id': data['id']?.toString(),
+      'userId': data['user_id'] ?? data['userId'] ?? '',
+      'serviceId': data['service_id'] ?? data['serviceId'],
+      'addressId': data['address_id'] ?? data['addressId'] ?? '',
+      'status': (data['status'] as String?)?.toUpperCase() ?? 'PENDING',
+      'totalAmount': _normalizeNumber(data['totalAmount']),
+      'isRecurring': data['isRecurring'] == true,
+      'paymentMethod':
+          (data['paymentMethod'] as String?)?.toUpperCase() ?? 'CASH',
+      'paymentStatus':
+          (data['paymentStatus'] as String?)?.toUpperCase() ?? 'PENDING',
+      'createdAt': data['created_at'] ??
+          data['createdAt'] ??
+          DateTime.now().toIso8601String(),
+      'service': data['service'] != null
+          ? _normalizeServiceData(data['service'])
+          : null,
+      'items': _normalizeItems(data['items']),
+    };
+
+    // Normaliser les relations
     if (data['user'] != null) {
-      final userData = Map<String, dynamic>.from(data['user']);
-      data['user'] = {
-        ...userData,
-        'firstName': userData['first_name'] ?? userData['firstName'] ?? '',
-        'lastName': userData['last_name'] ?? userData['lastName'] ?? '',
-        'email': userData['email'] ?? '',
-        'phone': userData['phone'] ?? '',
-        'role': userData['role'] ?? 'CLIENT',
-        'createdAt': userData['created_at'] ??
-            userData['createdAt'] ??
-            DateTime.now().toIso8601String(),
-        'updatedAt': userData['updated_at'] ?? userData['updatedAt'],
-      };
+      normalizedData['user'] = _normalizeUserData(data['user']);
     }
 
-    // Normaliser les champs numériques pour gérer les null
+    if (data['items'] != null) {
+      normalizedData['items'] = _normalizeItems(data['items']);
+    }
+
+    return normalizedData;
+  }
+
+  // Ajouter cette nouvelle méthode pour normaliser les items
+  static List<Map<String, dynamic>> _normalizeItems(dynamic items) {
+    if (items == null) return [];
+    if (items is! List) return [];
+
+    return items.map((item) {
+      if (item == null) return <String, dynamic>{};
+
+      final normalizedItem = Map<String, dynamic>.from(item);
+      return {
+        ...normalizedItem,
+        'id': normalizedItem['id']?.toString() ?? '',
+        'orderId': normalizedItem['orderId']?.toString() ??
+            normalizedItem['order_id']?.toString() ??
+            '',
+        'articleId': normalizedItem['articleId']?.toString() ??
+            normalizedItem['article_id']?.toString() ??
+            '',
+        'serviceId': normalizedItem['serviceId']?.toString() ??
+            normalizedItem['service_id']?.toString() ??
+            '',
+        'quantity': _normalizeNumber(normalizedItem['quantity']).toInt(),
+        'unitPrice': _normalizeNumber(normalizedItem['unitPrice']),
+        'createdAt': normalizedItem['createdAt'] ??
+            normalizedItem['created_at'] ??
+            DateTime.now().toIso8601String(),
+        'updatedAt':
+            normalizedItem['updatedAt'] ?? normalizedItem['updated_at'],
+        'article': normalizedItem['article'] != null
+            ? _normalizeArticleData(normalizedItem['article'])
+            : null,
+      };
+    }).toList();
+  }
+
+  // Ajouter cette méthode helper pour normaliser les données d'article
+  static Map<String, dynamic> _normalizeArticleData(dynamic articleData) {
+    if (articleData == null) return {};
+
+    final data = Map<String, dynamic>.from(articleData);
     return {
-      ...data,
-      'serviceId': data['service_id'] ?? data['serviceId'],
-      'addressId': data['address_id'] ?? data['addressId'],
-      'userId': data['user_id'] ?? data['userId'],
-      'paymentMethod': data['paymentMethod'] ?? 'CASH',
-      'paymentStatus': data['paymentStatus'] ?? 'PENDING',
-      'totalAmount': data['totalAmount']?.toDouble() ?? 0.0,
-      'isRecurring': data['isRecurring'] ?? false,
-      'status': data['status'] ?? 'PENDING',
-      // Gérer les coordonnées GPS null
-      'gps_latitude': data['gps_latitude']?.toDouble() ?? 0.0,
-      'gps_longitude': data['gps_longitude']?.toDouble() ?? 0.0,
+      'id': data['id']?.toString() ?? '',
+      'name': data['name']?.toString() ?? '',
+      'description': data['description']?.toString(),
+      'basePrice': _normalizeNumber(data['basePrice']),
+      'premiumPrice': _normalizeNumber(data['premiumPrice']),
+      'categoryId': data['categoryId']?.toString(),
+      'createdAt': data['createdAt'] ??
+          data['created_at'] ??
+          DateTime.now().toIso8601String(),
+      'updatedAt': data['updatedAt'] ?? data['updated_at'],
     };
+  }
+
+  static Map<String, dynamic> _normalizeUserData(
+      Map<String, dynamic> userData) {
+    return {
+      ...userData,
+      'firstName': userData['first_name'] ?? userData['firstName'] ?? '',
+      'lastName': userData['last_name'] ?? userData['lastName'] ?? '',
+      'email': userData['email'] ?? '',
+      'phone': userData['phone'] ?? '',
+      'role': userData['role']?.toString()?.toUpperCase() ?? 'CLIENT',
+      'createdAt': userData['created_at'] ?? userData['createdAt'],
+      'updatedAt': userData['updated_at'] ?? userData['updatedAt'],
+    };
+  }
+
+  static double _normalizeNumber(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 
   static Future<Order> getOrderById(String id) async {
     try {
+      // Correction de l'endpoint - Utiliser l'endpoint standard
       final response = await _api.get('$_ordersBasePath/$id');
 
-      if (!response.data['success']) {
-        throw 'Erreur serveur: ${response.data['message']}';
-      }
-
-      final data = response.data['data'];
-      if (data == null) {
+      if (response.data?['data'] == null) {
         throw 'Commande non trouvée';
       }
 
-      final normalizedData = _normalizeOrderData(data);
-      return Order.fromJson(normalizedData);
+      return Order.fromJson(_normalizeOrderData(response.data['data']));
     } catch (e) {
-      print('[OrderService] Error getting order by id: $e');
-      throw 'Erreur lors du chargement de la commande';
+      throw 'Erreur lors de la récupération de la commande: ${e.toString()}';
     }
   }
 
@@ -160,7 +230,7 @@ class OrderService {
 
   static Future<Map<String, int>> getOrdersByStatus() async {
     try {
-      final response = await _api.get('$_adminBasePath/by-status');
+      final response = await _api.get('$_ordersBasePath/by-status');
 
       if (response.data != null && response.data['data'] != null) {
         final Map<String, dynamic> raw = response.data['data'];
@@ -207,7 +277,7 @@ class OrderService {
       }
 
       final response = await _api.patch(
-        '$_adminBasePath/$orderId/status',
+        '$_ordersBasePath/$orderId/status',
         data: {'status': newStatus},
       );
 
@@ -243,7 +313,7 @@ class OrderService {
     try {
       print('[OrderService] Creating new order with data: $orderData');
       final response = await _api.post(
-        '$_adminBasePath/create-order',
+        '$_adminBasePath/create-for-customer',
         data: orderData,
       );
       print('[OrderService] Create order response: ${response.data}');
@@ -263,7 +333,7 @@ class OrderService {
     try {
       print('[OrderService] Updating order: $orderId with data: $orderData');
       final response = await _api.put(
-        '$_adminBasePath/$orderId',
+        '$_ordersBasePath/$orderId',
         data: orderData,
       );
 
@@ -295,7 +365,7 @@ class OrderService {
   static Future<void> deleteOrder(String orderId) async {
     try {
       print('[OrderService] Deleting order: $orderId');
-      await _api.delete('$_adminBasePath/$orderId');
+      await _api.delete('$_ordersBasePath/$orderId');
       print('[OrderService] Order deleted successfully');
     } catch (e) {
       print('[OrderService] Error deleting order: $e');
@@ -348,21 +418,27 @@ class OrderService {
 
   static Future<List<Order>> getDraftOrders() async {
     try {
-      print('[OrderService] Fetching draft flash orders');
-      // Correction de l'URL pour utiliser _adminBasePath
-      final response = await _api.get('$_adminBasePath/flash/draft');
-
-      // Corriger l'appel print en utilisant string interpolation
+      final response = await _api.get('$_ordersBasePath/flash/draft');
       print('[OrderService] Draft orders response: ${response.data}');
 
-      if (response.data != null && response.data['data'] != null) {
-        final orders = (response.data['data'] as List)
-            .map((json) => Order.fromJson(json))
-            .toList();
-        print('[OrderService] Parsed ${orders.length} draft orders');
-        return orders;
+      if (response.data == null || response.data['data'] == null) {
+        return [];
       }
-      return [];
+
+      final List<Order> orders = [];
+      for (var item in response.data['data'] as List) {
+        try {
+          final normalizedData = _normalizeOrderData(item);
+          final order = Order.fromJson(normalizedData);
+          orders.add(order);
+        } catch (e) {
+          print('[OrderService] Error parsing draft order: $e');
+          continue;
+        }
+      }
+
+      print('[OrderService] Parsed ${orders.length} draft orders');
+      return orders;
     } catch (e) {
       print('[OrderService] Error getting draft orders: $e');
       return [];
@@ -376,7 +452,7 @@ class OrderService {
     try {
       print('[OrderService] Creating flash order');
       final response = await _api.post(
-        '$_adminBasePath/flash',
+        '$_ordersBasePath/flash',
         data: {
           'addressId': addressId,
           'notes': notes,
@@ -400,7 +476,7 @@ class OrderService {
       print('[OrderService] Update data: ${updateData.toJson()}');
 
       final response = await _api.patch(
-        '$_adminBasePath/flash/$orderId/complete',
+        '$_ordersBasePath/flash/$orderId/complete',
         data: updateData.toJson(),
       );
 
@@ -437,5 +513,34 @@ class OrderService {
       print('[OrderService] Error getting revenue statistics: $e');
       return [];
     }
+  }
+
+  // Ajouter cette méthode pour supporter les commandes flash
+  static Future<bool> isFlashOrder(String orderId) async {
+    try {
+      final order = await getOrderById(orderId);
+      return order.isFlashOrder;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Map<String, dynamic>? _normalizeServiceData(dynamic serviceData) {
+    if (serviceData == null) return null;
+
+    if (serviceData is! Map) return null;
+
+    final data = Map<String, dynamic>.from(serviceData);
+    return {
+      'id': data['id']?.toString() ?? '',
+      'name': data['name']?.toString() ?? '',
+      'description': data['description']?.toString(),
+      'price': _normalizeNumber(data['price']),
+      'typeId': data['typeId']?.toString() ?? data['type_id']?.toString(),
+      'createdAt': data['createdAt'] ??
+          data['created_at'] ??
+          DateTime.now().toIso8601String(),
+      'updatedAt': data['updatedAt'] ?? data['updated_at']
+    };
   }
 }
