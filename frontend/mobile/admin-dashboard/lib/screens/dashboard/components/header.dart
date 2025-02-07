@@ -112,7 +112,7 @@ class Header extends GetView<MenuAppController> {
   }
 
   Widget _buildProfileMenu(AuthController authController, bool isDark) {
-    final userName = authController.user.value?.email?.split('@')[0] ?? 'Admin';
+    final userName = authController.user.value?.email.split('@')[0] ?? 'Admin';
 
     return PopupMenuButton<String>(
       offset: Offset(0, 40),

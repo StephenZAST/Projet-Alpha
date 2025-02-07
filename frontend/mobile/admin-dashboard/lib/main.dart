@@ -5,14 +5,29 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import './routes/admin_routes.dart';
 import './config/theme_config.dart';
-import './controllers/auth_controller.dart';
 import './controllers/menu_app_controller.dart';
 import './controllers/theme_controller.dart';
-import './controllers/notification_controller.dart';
+import 'services/error_tracking_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
+
+  ErrorTrackingService.initialize();
+
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.dumpErrorToConsole(details);
+    if (details.exception is FlutterError) {
+      final error = details.exception as FlutterError;
+      if (error.toString().contains('GlobalKey')) {
+        print('\n=== GlobalKey Error Details ===');
+        print('Location: ${details.stack}');
+        print('Context: ${details.context}');
+        print('Library: ${details.library}');
+        print('===========================\n');
+      }
+    }
+  };
 
   // Initialisation unique des contrôleurs permanents
   Get.put(MenuAppController(), permanent: true);

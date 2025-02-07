@@ -1,6 +1,3 @@
-import 'package:admin/models/article.dart';
-import 'package:admin/models/service.dart';
-
 class FlashOrderUpdate {
   final String serviceId;
   final List<FlashOrderItem> items;

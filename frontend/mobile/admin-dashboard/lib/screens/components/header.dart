@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../notifications/notifications_screen.dart';
 import '../dashboard/components/notification_badge.dart';
 
 class Header extends StatelessWidget {

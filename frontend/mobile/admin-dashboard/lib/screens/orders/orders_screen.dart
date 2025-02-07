@@ -9,7 +9,7 @@ import 'components/order_filters.dart';
 import 'components/orders_header.dart';
 import 'components/orders_table.dart';
 import 'components/order_details.dart';
-import '../../routes/admin_routes.dart'; // Ajouter cet import
+// Ajouter cet import
 
 class OrdersScreen extends StatefulWidget {
   @override

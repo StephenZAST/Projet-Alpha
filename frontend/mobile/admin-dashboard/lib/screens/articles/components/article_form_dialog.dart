@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/article_controller.dart';
 import '../../../models/article.dart';
-import 'category_dropdown.dart';
 
 class ArticleFormDialog extends StatelessWidget {
   final Article? article;

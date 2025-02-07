@@ -193,7 +193,7 @@ class OrderService {
       'lastName': userData['last_name'] ?? userData['lastName'] ?? '',
       'email': userData['email'] ?? '',
       'phone': userData['phone'] ?? '',
-      'role': userData['role']?.toString()?.toUpperCase() ?? 'CLIENT',
+      'role': userData['role']?.toString().toUpperCase() ?? 'CLIENT',
       'createdAt': userData['created_at'] ?? userData['createdAt'],
       'updatedAt': userData['updated_at'] ?? userData['updatedAt'],
     };

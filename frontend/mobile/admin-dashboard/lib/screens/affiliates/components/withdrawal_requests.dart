@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/affiliate_controller.dart';
-import '../../../models/affiliate.dart';
 
 class WithdrawalRequests extends StatelessWidget {
   const WithdrawalRequests({Key? key}) : super(key: key);

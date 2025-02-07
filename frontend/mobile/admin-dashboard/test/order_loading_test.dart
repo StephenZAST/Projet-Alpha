@@ -1,6 +1,5 @@
 import 'package:admin/services/auth_service.dart';
 import 'package:admin/services/order_service.dart';
-import 'package:admin/models/order.dart';
 
 // Données d'authentification admin
 const TEST_CREDENTIALS = {

@@ -1,5 +1,8 @@
+import 'dart:developer' as dev; // Correction de l'import pour debugger
+import 'package:admin/services/error_tracking_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart'; // Ajout de cet import pour kDebugMode
 import '../../responsive.dart';
 import '../../controllers/menu_app_controller.dart';
 import '../dashboard/dashboard_screen.dart';
@@ -12,11 +15,31 @@ import '../notifications/notifications_screen.dart';
 import 'components/admin_side_menu.dart';
 
 class MainScreen extends GetView<MenuAppController> {
-  static const _mobileDrawerKey = Key('mobile-drawer');
-  static const _desktopDrawerKey = Key('desktop-drawer');
+  // Définir les clés comme static final
+  static final GlobalKey<ScaffoldState> _scaffoldKey =
+      GlobalKey<ScaffoldState>(debugLabel: 'MainScaffold');
+  static final GlobalKey _mobileDrawerKey =
+      GlobalKey(debugLabel: 'MobileDrawer');
+  static final GlobalKey _desktopDrawerKey =
+      GlobalKey(debugLabel: 'DesktopDrawer');
 
   @override
   Widget build(BuildContext context) {
+    // Utiliser le debugger correctement
+    // dev.debugger(); // Décommenter si vous voulez un point d'arrêt
+
+    // Maintenant kDebugMode est disponible
+    if (kDebugMode) {
+      print('[MainScreen] Building with GlobalKeys:');
+      print('ScaffoldKey: $_scaffoldKey');
+      print('MobileDrawerKey: $_mobileDrawerKey');
+      print('DesktopDrawerKey: $_desktopDrawerKey');
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ErrorTrackingService.dumpKeyUsage();
+    });
+
     // Sync with current route
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final currentRoute = Get.currentRoute;
@@ -25,8 +48,13 @@ class MainScreen extends GetView<MenuAppController> {
       }
     });
 
+    // Traquer l'utilisation des clés
+    ErrorTrackingService.trackGlobalKey(_scaffoldKey, 'MainScreen');
+    ErrorTrackingService.trackGlobalKey(_mobileDrawerKey, 'MainScreen');
+    ErrorTrackingService.trackGlobalKey(_desktopDrawerKey, 'MainScreen');
+
     return Scaffold(
-      key: controller.scaffoldKey,
+      key: _scaffoldKey,
       drawer: AdminSideMenu(
         key: _mobileDrawerKey,
       ),

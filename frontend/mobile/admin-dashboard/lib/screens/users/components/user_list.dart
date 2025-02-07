@@ -20,12 +20,12 @@ class UserList extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: SingleChildScrollView(
         child: DataTable(
-          headingRowColor: MaterialStateProperty.all(
+          headingRowColor: WidgetStateProperty.all(
             isDark ? AppColors.gray800 : AppColors.gray100,
           ),
-          dataRowColor: MaterialStateProperty.resolveWith<Color>(
-            (Set<MaterialState> states) {
-              if (states.contains(MaterialState.selected)) {
+          dataRowColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              if (states.contains(WidgetState.selected)) {
                 return isDark ? AppColors.gray700 : AppColors.gray200;
               }
               return isDark ? AppColors.gray900 : AppColors.white;
@@ -121,7 +121,7 @@ class UserList extends StatelessWidget {
                 ),
                 DataCell(
                   Text(
-                    user.loyaltyPoints?.toString() ?? '0',
+                    user.loyaltyPoints.toString() ?? '0',
                     style: AppTextStyles.bodyMedium.copyWith(color: mutedColor),
                   ),
                 ),

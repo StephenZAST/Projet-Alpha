@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/theme_controller.dart';
-import '../constants.dart';
 
 class ThemeSwitch extends StatelessWidget {
   final bool showLabel;

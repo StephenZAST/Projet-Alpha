@@ -13,7 +13,6 @@ class ThemeConfig {
         primary: AppColors.primary,
         secondary: AppColors.accent,
         surface: AppColors.cardBg,
-        background: AppColors.bgColor,
         error: AppColors.error,
       ),
       textTheme: TextTheme(
@@ -124,7 +123,6 @@ class ThemeConfig {
         primary: AppColors.primary,
         secondary: AppColors.accent,
         surface: AppColors.gray800,
-        background: AppColors.darkBg,
         error: AppColors.error,
       ),
       textTheme: TextTheme(

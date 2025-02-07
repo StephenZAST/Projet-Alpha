@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:get/get.dart';
 import '../lib/controllers/orders_controller.dart';
-import '../lib/models/flash_order_update.dart';
 
 void main() {
   group('Flash Order Tests', () {

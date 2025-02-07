@@ -57,10 +57,10 @@ class ApiService {
             print('[ApiService] Unauthorized access, clearing session');
             _handleUnauthorized();
             return handler.reject(
-              dio.DioError(
+              dio.DioException(
                 requestOptions: response.requestOptions,
                 error: 'Session expirée. Veuillez vous reconnecter.',
-                type: dio.DioErrorType.badResponse,
+                type: dio.DioExceptionType.badResponse,
                 response: response,
               ),
             );
@@ -170,14 +170,14 @@ class ApiService {
   }
 
   String _handleError(dynamic error) {
-    if (error is dio.DioError) {
+    if (error is dio.DioException) {
       print('[ApiService] DioError: ${error.type} - ${error.message}');
       switch (error.type) {
-        case dio.DioErrorType.connectionTimeout:
-        case dio.DioErrorType.sendTimeout:
-        case dio.DioErrorType.receiveTimeout:
+        case dio.DioExceptionType.connectionTimeout:
+        case dio.DioExceptionType.sendTimeout:
+        case dio.DioExceptionType.receiveTimeout:
           return 'La connexion au serveur a échoué. Veuillez vérifier votre connexion internet.';
-        case dio.DioErrorType.badResponse:
+        case dio.DioExceptionType.badResponse:
           final statusCode = error.response?.statusCode;
           final message = error.response?.data['message'] ?? 'Erreur serveur';
 
@@ -187,7 +187,7 @@ class ApiService {
             return 'Accès refusé. Vous n\'avez pas les permissions nécessaires.';
           }
           return message;
-        case dio.DioErrorType.cancel:
+        case dio.DioExceptionType.cancel:
           return 'La requête a été annulée';
         default:
           return 'Une erreur est survenue lors de la communication avec le serveur';

@@ -3,7 +3,7 @@ import './api_service.dart';
 
 class CategoryService {
   static final _api = ApiService();
-  static const _baseUrl = '/article-categories';
+  static const _baseUrl = 'api/article-categories';
 
   static Future<List<Category>> getAllCategories() async {
     try {

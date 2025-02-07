@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/affiliate_controller.dart';
-import '../../models/affiliate.dart';
 import '../../widgets/shared/pagination_controls.dart';
 import 'components/affiliate_list.dart';
 import 'components/affiliate_filters.dart';

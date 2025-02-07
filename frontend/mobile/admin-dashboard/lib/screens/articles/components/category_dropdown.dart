@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../constants.dart';
 import '../../../controllers/category_controller.dart';
-import '../../../models/category.dart';
 
 class CategoryDropdown extends StatelessWidget {
   final String? selectedCategoryId;

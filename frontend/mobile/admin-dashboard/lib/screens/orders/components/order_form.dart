@@ -9,7 +9,6 @@ import '../../../models/order.dart';
 import '../../../models/enums.dart' hide AppButtonVariant;
 import '../../../widgets/shared/app_button.dart';
 import '../../../widgets/shared/app_dropdown.dart';
-import '../../../widgets/shared/app_text_field.dart';
 
 class OrderForm extends StatefulWidget {
   final Order? orderToEdit; // null pour une nouvelle commande
