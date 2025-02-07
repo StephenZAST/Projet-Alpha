@@ -34,25 +34,40 @@ class OrderFilters extends StatelessWidget {
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.sm,
                 children: [
-                  _buildFilterChip(
-                    label: 'Tous',
-                    count: controller.totalOrders.value,
-                    isSelected: controller.selectedStatus.value == null,
+                  FilterChip(
+                    label: Text('Tous'),
+                    selected: controller.selectedStatus.value == null,
                     onSelected: (_) => controller.filterByStatus(null),
-                    color: AppColors.primary,
+                    // ...style properties...
                   ),
                   ...OrderStatus.values.map((status) {
-                    final count = controller.getOrderCountByStatus(status);
                     final isSelected =
                         controller.selectedStatus.value == status;
-                    return _buildFilterChip(
-                      label: status.label,
-                      count: count,
-                      isSelected: isSelected,
+                    return FilterChip(
+                      label: Text(
+                        status.label,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isSelected
+                              ? AppColors.textLight
+                              : Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                      selected: isSelected,
                       onSelected: (selected) {
                         controller.filterByStatus(selected ? status : null);
                       },
-                      color: status.color,
+                      selectedColor: status.color,
+                      backgroundColor: status.color.withOpacity(0.1),
+                      checkmarkColor: AppColors.textLight,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.radiusSM,
+                        side: BorderSide(
+                          color: isSelected
+                              ? status.color
+                              : status.color.withOpacity(0.5),
+                          width: 1,
+                        ),
+                      ),
                     );
                   }).toList(),
                 ],
@@ -96,50 +111,6 @@ class OrderFilters extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip({
-    required String label,
-    required int count,
-    required bool isSelected,
-    required Function(bool) onSelected,
-    required Color color,
-  }) {
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label),
-          SizedBox(width: 4),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: AppColors.textLight,
-              borderRadius: AppRadius.radiusXS,
-            ),
-            child: Text(
-              count.toString(),
-              style: AppTextStyles.bodySmall.copyWith(
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-      selected: isSelected,
-      onSelected: onSelected,
-      selectedColor: color,
-      backgroundColor: color.withOpacity(0.1),
-      checkmarkColor: AppColors.textLight,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadius.radiusSM,
-        side: BorderSide(
-          color: isSelected ? color : color.withOpacity(0.5),
-          width: 1,
-        ),
       ),
     );
   }

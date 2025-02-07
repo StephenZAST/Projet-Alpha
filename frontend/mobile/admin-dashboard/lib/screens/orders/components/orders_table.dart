@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:intl/intl.dart';
-import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../models/order.dart';
 import '../../../models/enums.dart';
-import '../../../controllers/orders_controller.dart';
 
 class OrdersTable extends StatelessWidget {
   final List<Order> orders;
@@ -28,203 +26,162 @@ class OrdersTable extends StatelessWidget {
     );
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final controller = Get.find<OrdersController>();
 
-    return Column(
-      children: [
-        Expanded(
-          child: DataTable2(
-            columnSpacing: defaultPadding,
-            minWidth: 600,
-            sortColumnIndex: controller.sortColumnIndex.value,
-            sortAscending: controller.sortAscending.value,
-            columns: [
-              DataColumn2(
-                label: Text('ID'),
-                size: ColumnSize.S,
-                onSort: (index, ascending) => _onSort(index, ascending, 'id'),
-              ),
-              DataColumn2(
-                label: Text('Client'),
-                size: ColumnSize.L,
-                onSort: (index, ascending) =>
-                    _onSort(index, ascending, 'user.firstName'),
-              ),
-              DataColumn2(
-                label: Text('Date'),
-                size: ColumnSize.M,
-                onSort: (index, ascending) =>
-                    _onSort(index, ascending, 'created_at'),
-              ),
-              DataColumn2(
-                label: Text('Montant'),
-                size: ColumnSize.M,
-              ),
-              DataColumn2(
-                label: Text('Statut'),
-                size: ColumnSize.M,
-              ),
-              DataColumn2(
-                label: Text('Actions'),
-                size: ColumnSize.S,
-              ),
-            ],
-            rows:
-                orders.map((order) => _buildOrderRow(order, context)).toList(),
-          ),
+    return DataTable2(
+      columnSpacing: defaultPadding,
+      minWidth: 600,
+      columns: [
+        DataColumn2(
+          label: Text('ID'),
+          size: ColumnSize.S,
         ),
-        // Pagination est maintenant gérée par le widget PaginationControls
+        DataColumn2(
+          label: Text('Client'),
+          size: ColumnSize.L,
+        ),
+        DataColumn2(
+          label: Text('Date'),
+          size: ColumnSize.M,
+        ),
+        DataColumn2(
+          label: Text('Montant'),
+          size: ColumnSize.M,
+        ),
+        DataColumn2(
+          label: Text('Statut'),
+          size: ColumnSize.M,
+        ),
+        DataColumn2(
+          label: Text('Actions'),
+          size: ColumnSize.S,
+        ),
       ],
-    );
-  }
+      rows: orders.map((order) {
+        OrderStatus orderStatus;
+        try {
+          orderStatus = order.status.toOrderStatus();
+        } catch (e) {
+          print(
+              'Error parsing order status: ${order.status} - ${e.toString()}');
+          orderStatus = OrderStatus.PENDING;
+        }
 
-  void _onSort(int columnIndex, bool ascending, String field) {
-    final controller = Get.find<OrdersController>();
-    controller.sortOrders(
-      field: field,
-      ascending: ascending,
-    );
-  }
-
-  DataRow _buildOrderRow(Order order, BuildContext context) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'fr_FR',
-      symbol: 'fcfa',
-      decimalDigits: 0,
-    );
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    OrderStatus orderStatus;
-    try {
-      orderStatus = order.status.toOrderStatus();
-    } catch (e) {
-      print('Error parsing order status: ${order.status} - ${e.toString()}');
-      orderStatus = OrderStatus.PENDING;
-    }
-
-    return DataRow(
-      onSelectChanged: (_) => onOrderSelect(order.id),
-      cells: [
-        DataCell(Text(
-          '#${order.id}',
-          style: AppTextStyles.bodySmall.copyWith(
-            color: order.isFlashOrder ? AppColors.warning : AppColors.primary,
-            fontWeight: FontWeight.w600,
-          ),
-          overflow: TextOverflow.ellipsis,
-        )),
-        DataCell(Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (order.isFlashOrder)
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                margin: EdgeInsets.only(bottom: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
-                  borderRadius: AppRadius.radiusSM,
-                ),
-                child: Text(
-                  'FLASH',
+        return DataRow(
+          onSelectChanged: (_) => onOrderSelect(order.id),
+          cells: [
+            DataCell(Text(
+              '#${order.id}',
+              style: AppTextStyles.bodySmall.copyWith(
+                color:
+                    order.isFlashOrder ? AppColors.warning : AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+            )),
+            DataCell(Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (order.isFlashOrder)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    margin: EdgeInsets.only(bottom: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withOpacity(0.1),
+                      borderRadius: AppRadius.radiusSM,
+                    ),
+                    child: Text(
+                      'FLASH',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                Text(
+                  order.customerName ?? 'N/A',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.warning,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
                   ),
                 ),
-              ),
-            Text(
-              order.customerName ?? 'N/A',
+                if (order.customerEmail != null)
+                  Text(
+                    order.customerEmail!,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textLight.withOpacity(0.7)
+                          : AppColors.textSecondary,
+                      fontSize: 11,
+                    ),
+                  ),
+              ],
+            )),
+            DataCell(Text(
+              DateFormat('dd/MM/yyyy HH:mm').format(order.createdAt),
               style: AppTextStyles.bodySmall.copyWith(
-                fontWeight: FontWeight.w500,
                 color: isDark ? AppColors.textLight : AppColors.textPrimary,
               ),
-            ),
-            if (order.customerEmail != null)
-              Text(
-                order.customerEmail!,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: isDark
-                      ? AppColors.textLight.withOpacity(0.7)
-                      : AppColors.textSecondary,
-                  fontSize: 11,
+            )),
+            DataCell(Text(
+              currencyFormat.format(order.totalAmount),
+              style: AppTextStyles.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+                fontStyle: order.isFlashOrder && order.totalAmount == 0
+                    ? FontStyle.italic
+                    : FontStyle.normal,
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              ),
+            )),
+            DataCell(Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: _getStatusColor(order.status).withOpacity(0.1),
+                borderRadius: AppRadius.radiusSM,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getStatusIcon(order.status),
+                    size: 14,
+                    color: _getStatusColor(order.status),
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    _getStatusLabel(order.status),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: _getStatusColor(order.status),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            )),
+            DataCell(Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _StatusUpdateButton(
+                  order: order,
+                  currentStatus: orderStatus,
+                  onStatusUpdate: onStatusUpdate,
                 ),
-              ),
-          ],
-        )),
-        DataCell(Text(
-          DateFormat('dd/MM/yyyy HH:mm').format(order.createdAt),
-          style: AppTextStyles.bodySmall.copyWith(
-            color: isDark ? AppColors.textLight : AppColors.textPrimary,
-          ),
-        )),
-        DataCell(Text(
-          currencyFormat.format(order.totalAmount),
-          style: AppTextStyles.bodySmall.copyWith(
-            fontWeight: FontWeight.w600,
-            fontStyle: order.isFlashOrder && order.totalAmount == 0
-                ? FontStyle.italic
-                : FontStyle.normal,
-            color: isDark ? AppColors.textLight : AppColors.textPrimary,
-          ),
-        )),
-        DataCell(Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: 4,
-          ),
-          decoration: BoxDecoration(
-            color: _getStatusColor(order.status).withOpacity(0.1),
-            borderRadius: AppRadius.radiusSM,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                _getStatusIcon(order.status),
-                size: 14,
-                color: _getStatusColor(order.status),
-              ),
-              SizedBox(width: 4),
-              Text(
-                _getStatusLabel(order.status),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: _getStatusColor(order.status),
-                  fontWeight: FontWeight.w500,
+                IconButton(
+                  icon: Icon(Icons.visibility),
+                  onPressed: () => onOrderSelect(order.id),
+                  tooltip: 'Voir les détails',
+                  iconSize: 20,
+                  color: AppColors.primary,
                 ),
-              ),
-            ],
-          ),
-        )),
-        DataCell(Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_canUpdateStatus(order))
-              _StatusUpdateButton(
-                order: order,
-                currentStatus: orderStatus,
-                onStatusUpdate: onStatusUpdate,
-              ),
-            IconButton(
-              icon: Icon(Icons.visibility),
-              onPressed: () => onOrderSelect(order.id),
-              tooltip: 'Voir les détails',
-              iconSize: 20,
-              color: AppColors.primary,
-            ),
+              ],
+            )),
           ],
-        )),
-      ],
+        );
+      }).toList(),
     );
-  }
-
-  bool _canUpdateStatus(Order order) {
-    // Vérifier si la commande peut être mise à jour en fonction de son statut
-    if (order.status == 'CANCELLED' || order.status == 'DELIVERED') {
-      return false;
-    }
-    return true;
   }
 
   Color _getStatusColor(String status) {
@@ -334,40 +291,24 @@ class _StatusUpdateButton extends StatelessWidget {
   }
 
   OrderStatus? _getNextStatus(OrderStatus current) {
-    if (_isFlashOrder()) {
-      // Logique spécifique aux commandes flash
-      switch (current) {
-        case OrderStatus.DRAFT:
-          return OrderStatus.PENDING;
-        case OrderStatus.PENDING:
-          return OrderStatus.PROCESSING;
-        default:
-          return null;
-      }
-    } else {
-      // Logique pour les commandes normales (comme avant)
-      switch (current) {
-        case OrderStatus.PENDING:
-          return OrderStatus.COLLECTING;
-        case OrderStatus.COLLECTING:
-          return OrderStatus.COLLECTED;
-        case OrderStatus.COLLECTED:
-          return OrderStatus.PROCESSING;
-        case OrderStatus.PROCESSING:
-          return OrderStatus.READY;
-        case OrderStatus.READY:
-          return OrderStatus.DELIVERING;
-        case OrderStatus.DELIVERING:
-          return OrderStatus.DELIVERED;
-        case OrderStatus.DELIVERED:
-        case OrderStatus.CANCELLED:
-        case OrderStatus.DRAFT:
-          return null;
-      }
+    switch (current) {
+      case OrderStatus.PENDING:
+        return OrderStatus.COLLECTING;
+      case OrderStatus.DRAFT:
+        return OrderStatus.PENDING;
+      case OrderStatus.COLLECTING:
+        return OrderStatus.COLLECTED;
+      case OrderStatus.COLLECTED:
+        return OrderStatus.PROCESSING;
+      case OrderStatus.PROCESSING:
+        return OrderStatus.READY;
+      case OrderStatus.READY:
+        return OrderStatus.DELIVERING;
+      case OrderStatus.DELIVERING:
+        return OrderStatus.DELIVERED;
+      case OrderStatus.DELIVERED:
+      case OrderStatus.CANCELLED:
+        return null;
     }
-  }
-
-  bool _isFlashOrder() {
-    return order.isFlashOrder;
   }
 }
