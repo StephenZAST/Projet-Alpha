@@ -19,8 +19,8 @@ enum OrderStatus {
   const OrderStatus(this.label, this.color, this.icon);
 
   static Map<String, List<String>> validTransitions = {
-    'DRAFT': ['PENDING'],
-    'PENDING': ['COLLECTING', 'CANCELLED'],
+    'DRAFT': ['PENDING', 'CANCELLED'], // Ajout de CANCELLED
+    'PENDING': ['COLLECTING', 'CANCELLED'], // Cohérent avec l'ancien système
     'COLLECTING': ['COLLECTED', 'CANCELLED'],
     'COLLECTED': ['PROCESSING', 'CANCELLED'],
     'PROCESSING': ['READY', 'CANCELLED'],

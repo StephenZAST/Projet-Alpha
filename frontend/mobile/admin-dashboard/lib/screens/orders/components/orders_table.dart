@@ -334,8 +334,8 @@ class _StatusUpdateButton extends StatelessWidget {
   }
 
   OrderStatus? _getNextStatus(OrderStatus current) {
-    // Vérifier si c'est une commande flash
-    if (order.isFlashOrder) {
+    if (_isFlashOrder()) {
+      // Logique spécifique aux commandes flash
       switch (current) {
         case OrderStatus.DRAFT:
           return OrderStatus.PENDING;
@@ -344,26 +344,30 @@ class _StatusUpdateButton extends StatelessWidget {
         default:
           return null;
       }
+    } else {
+      // Logique pour les commandes normales (comme avant)
+      switch (current) {
+        case OrderStatus.PENDING:
+          return OrderStatus.COLLECTING;
+        case OrderStatus.COLLECTING:
+          return OrderStatus.COLLECTED;
+        case OrderStatus.COLLECTED:
+          return OrderStatus.PROCESSING;
+        case OrderStatus.PROCESSING:
+          return OrderStatus.READY;
+        case OrderStatus.READY:
+          return OrderStatus.DELIVERING;
+        case OrderStatus.DELIVERING:
+          return OrderStatus.DELIVERED;
+        case OrderStatus.DELIVERED:
+        case OrderStatus.CANCELLED:
+        case OrderStatus.DRAFT:
+          return null;
+      }
     }
+  }
 
-    // Pour les commandes normales
-    switch (current) {
-      case OrderStatus.PENDING:
-        return OrderStatus.COLLECTING;
-      case OrderStatus.COLLECTING:
-        return OrderStatus.COLLECTED;
-      case OrderStatus.COLLECTED:
-        return OrderStatus.PROCESSING;
-      case OrderStatus.PROCESSING:
-        return OrderStatus.READY;
-      case OrderStatus.READY:
-        return OrderStatus.DELIVERING;
-      case OrderStatus.DELIVERING:
-        return OrderStatus.DELIVERED;
-      case OrderStatus.DELIVERED:
-      case OrderStatus.CANCELLED:
-      case OrderStatus.DRAFT:
-        return null;
-    }
+  bool _isFlashOrder() {
+    return order.isFlashOrder;
   }
 }

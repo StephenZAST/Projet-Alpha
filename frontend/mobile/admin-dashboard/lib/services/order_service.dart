@@ -132,15 +132,19 @@ class OrderService {
 
   static Future<Order> getOrderById(String id) async {
     try {
-      print('[OrderService] Fetching order details for ID: $id');
-      // Correction de l'endpoint
       final response = await _api.get('$_ordersBasePath/$id');
 
-      if (response.data != null && response.data['data'] != null) {
-        final normalizedData = _normalizeOrderData(response.data['data']);
-        return Order.fromJson(normalizedData);
+      if (!response.data['success']) {
+        throw 'Erreur serveur: ${response.data['message']}';
       }
-      throw 'Commande non trouvée';
+
+      final data = response.data['data'];
+      if (data == null) {
+        throw 'Commande non trouvée';
+      }
+
+      final normalizedData = _normalizeOrderData(data);
+      return Order.fromJson(normalizedData);
     } catch (e) {
       print('[OrderService] Error getting order by id: $e');
       throw 'Erreur lors du chargement de la commande';
