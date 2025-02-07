@@ -101,6 +101,13 @@ class Order {
 
   factory Order.fromJson(Map<String, dynamic> json) {
     try {
+      print('[Order] Parsing order from JSON: $json');
+
+      // Vérifier d'abord si les données essentielles sont présentes
+      if (json['id'] == null) {
+        throw 'Order ID is required';
+      }
+
       return Order(
         id: json['id']?.toString() ?? '',
         userId: json['userId']?.toString() ?? json['user_id']?.toString() ?? '',
@@ -117,17 +124,22 @@ class Order {
         nextRecurrenceDate: _parseDateTime(json['nextRecurrenceDate']),
         collectionDate: _parseDateTime(json['collectionDate']),
         deliveryDate: _parseDateTime(json['deliveryDate']),
-        createdAt: _parseDateTime(json['createdAt']) ?? DateTime.now(),
-        updatedAt: _parseDateTime(json['updatedAt']),
+        createdAt: _parseDateTime(json['createdAt'] ?? json['created_at']) ??
+            DateTime.now(),
+        updatedAt: _parseDateTime(json['updatedAt'] ?? json['updated_at']),
         items: _parseOrderItems(json['items']),
         notes: json['notes']?.toString(),
         paymentStatus: _parsePaymentStatus(json['paymentStatus']),
         paymentMethod: _parsePaymentMethod(json['paymentMethod']),
-        service:
-            json['service'] != null ? Service.fromJson(json['service']) : null,
-        address:
-            json['address'] != null ? Address.fromJson(json['address']) : null,
-        user: json['user'] != null ? User.fromJson(json['user']) : null,
+        service: json['service'] != null
+            ? Service.fromJson(Map<String, dynamic>.from(json['service']))
+            : null,
+        address: json['address'] != null
+            ? Address.fromJson(Map<String, dynamic>.from(json['address']))
+            : null,
+        user: json['user'] != null
+            ? User.fromJson(Map<String, dynamic>.from(json['user']))
+            : null,
         isFlashOrder: safeBool(json['isFlashOrder']),
         note: json['note']?.toString(),
         metadata: json['metadata'] != null
@@ -135,9 +147,9 @@ class Order {
             : null,
       );
     } catch (e, stackTrace) {
-      print('Error creating Order from JSON: $e');
-      print('Stack trace: $stackTrace');
-      print('Problematic JSON: $json');
+      print('[Order] Error creating Order from JSON: $e');
+      print('[Order] Stack trace: $stackTrace');
+      print('[Order] Problematic JSON: $json');
       rethrow;
     }
   }
@@ -157,7 +169,7 @@ class Order {
       try {
         return DateTime.parse(value);
       } catch (e) {
-        print('Error parsing datetime: $value');
+        print('[Order] Error parsing datetime: $value');
         return null;
       }
     }

@@ -4,21 +4,23 @@ import '../../../controllers/flash_orders_controller.dart';
 import 'components/flash_order_card.dart';
 
 class FlashOrdersScreen extends GetView<FlashOrdersController> {
+  const FlashOrdersScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Commandes Flash'),
+        title: const Text('Commandes Flash'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: controller.refreshOrders,
           ),
         ],
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (controller.hasError.value) {
@@ -27,10 +29,10 @@ class FlashOrdersScreen extends GetView<FlashOrdersController> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(controller.errorMessage.value),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: controller.refreshOrders,
-                  child: Text('Réessayer'),
+                  child: const Text('Réessayer'),
                 ),
               ],
             ),
@@ -38,7 +40,7 @@ class FlashOrdersScreen extends GetView<FlashOrdersController> {
         }
 
         if (controller.draftOrders.isEmpty) {
-          return Center(
+          return const Center(
             child: Text('Aucune commande flash en attente'),
           );
         }

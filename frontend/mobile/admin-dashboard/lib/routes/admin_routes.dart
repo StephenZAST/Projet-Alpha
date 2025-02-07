@@ -143,8 +143,9 @@ class AdminRoutes {
     // Routes pour les commandes flash
     GetPage(
       name: flashOrders,
-      page: () => FlashOrdersScreen(),
+      page: () => const FlashOrdersScreen(),
       binding: AdminBinding(),
+      middlewares: [AuthMiddleware()],
       transition: Transition.fadeIn,
     ),
     GetPage(

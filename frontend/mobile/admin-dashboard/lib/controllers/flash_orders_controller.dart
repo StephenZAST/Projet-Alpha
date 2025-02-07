@@ -21,11 +21,18 @@ class FlashOrdersController extends GetxController {
       errorMessage.value = '';
 
       final orders = await OrderService.getDraftOrders();
-      draftOrders.assignAll(orders);
+      if (orders.isEmpty) {
+        print('[FlashOrdersController] No draft orders found');
+      } else {
+        print('[FlashOrdersController] Loaded ${orders.length} draft orders');
+      }
+
+      draftOrders.clear(); // Clear before adding new items
+      draftOrders.addAll(orders);
     } catch (e) {
+      print('[FlashOrdersController] Error loading draft orders: $e');
       hasError.value = true;
       errorMessage.value = 'Erreur lors du chargement des commandes flash';
-      print('[FlashOrdersController] Error: $e');
     } finally {
       isLoading.value = false;
     }

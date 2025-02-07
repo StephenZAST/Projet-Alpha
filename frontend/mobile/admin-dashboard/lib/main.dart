@@ -1,3 +1,5 @@
+import 'package:admin/bindings/app_bindings.dart';
+import 'package:admin/controllers/orders_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -9,21 +11,15 @@ import './controllers/theme_controller.dart';
 import './controllers/notification_controller.dart';
 
 void main() async {
-  print('[Main] Starting application initialization');
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
 
-  // Ajouter un mode test pour le débogage
-  Get.testMode = true;
-  print('[Main] GetX test mode enabled');
-
-  // Initialiser les contrôleurs essentiels
-  Get.put(AuthController(), permanent: true);
-  Get.put(ThemeController(), permanent: true);
+  // Initialisation unique des contrôleurs permanents
   Get.put(MenuAppController(), permanent: true);
-  Get.put(NotificationController(), permanent: true);
+  Get.put<OrdersController>(OrdersController(), permanent: true);
+  Get.put<ThemeController>(ThemeController(), permanent: true);
 
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -31,7 +27,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('[MyApp] Building GetMaterialApp');
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Admin Dashboard',
@@ -39,11 +34,7 @@ class MyApp extends StatelessWidget {
       darkTheme: ThemeConfig.darkTheme(context),
       themeMode: ThemeMode.dark,
       initialRoute: AdminRoutes.login,
-      initialBinding: BindingsBuilder(() {
-        print('[MyApp] Initializing bindings');
-        AdminBinding().dependencies();
-        print('[MyApp] Bindings initialized');
-      }),
+      initialBinding: AppBindings(),
       getPages: AdminRoutes.routes,
       defaultTransition: Transition.fade,
       onInit: () {

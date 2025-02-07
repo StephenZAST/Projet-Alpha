@@ -12,7 +12,15 @@ import '../screens/profile/profile_screen.dart';
 import '../routes/admin_routes.dart';
 
 class MenuAppController extends GetxController {
+  // Singleton pattern
+  static final MenuAppController _instance = MenuAppController._internal();
+  factory MenuAppController() => _instance;
+  MenuAppController._internal();
+
+  // GlobalKey unique
   final scaffoldKey = GlobalKey<ScaffoldState>(debugLabel: 'MainScaffold');
+
+  // Variables observables
   final selectedIndex = 0.obs;
   final isDrawerOpen = false.obs;
   final currentRoute = ''.obs;

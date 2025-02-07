@@ -1,3 +1,6 @@
+import 'package:admin/controllers/address_controller.dart';
+import 'package:admin/models/address.dart';
+import 'package:admin/screens/orders/components/address_selection_map.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
@@ -142,22 +145,50 @@ class _OrderFormState extends State<OrderForm> {
       children: [
         Text('Adresse de livraison', style: AppTextStyles.bodyBold),
         SizedBox(height: AppSpacing.sm),
-        Obx(() => AppDropdown<String>(
-              hint: 'Sélectionner une adresse',
-              value: controller.selectedAddressId.value,
-              items: controller.clientAddresses
-                  .map((address) => DropdownMenuItem(
-                        value: address.id,
-                        child: Text(address.name),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  controller.selectAddress(value);
-                }
-              },
-            )),
+        Obx(() {
+          final addresses = controller.clientAddresses;
+          if (addresses.isEmpty) {
+            return Text('Aucune adresse disponible');
+          }
+          return AppDropdown<String>(
+            hint: 'Sélectionner une adresse',
+            value: controller.selectedAddressId.value?.isNotEmpty == true
+                ? controller.selectedAddressId.value
+                : null,
+            items: addresses.map((address) {
+              return DropdownMenuItem<String>(
+                value: address.id,
+                child: Text(address.name ?? address.fullAddress),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                controller.selectAddress(value);
+              }
+            },
+          );
+        }),
+        // Bouton pour ajouter une nouvelle adresse
+        TextButton(
+          onPressed: _showAddressDialog,
+          child: Text('+ Ajouter une nouvelle adresse'),
+        ),
       ],
+    );
+  }
+
+  void _showAddressDialog() {
+    final addressController = Get.find<AddressController>();
+    Get.dialog(
+      Dialog(
+        child: AddressSelectionMap(
+          initialAddress: null,
+          onAddressSelected: (Address address) {
+            controller.selectAddress(address.id);
+            Get.back();
+          },
+        ),
+      ),
     );
   }
 
