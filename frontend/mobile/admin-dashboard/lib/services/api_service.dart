@@ -2,7 +2,6 @@ import 'package:dio/dio.dart' as dio;
 import 'package:get_storage/get_storage.dart';
 import 'package:get/get.dart';
 import '../routes/admin_routes.dart';
-import '../constants.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();

@@ -1,17 +1,10 @@
-import 'dart:developer' as dev; // Correction de l'import pour debugger
+// Correction de l'import pour debugger
 import 'package:admin/services/error_tracking_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart'; // Ajout de cet import pour kDebugMode
 import '../../responsive.dart';
 import '../../controllers/menu_app_controller.dart';
-import '../dashboard/dashboard_screen.dart';
-import '../orders/orders_screen.dart';
-import '../services/services_screen.dart';
-import '../categories/categories_screen.dart';
-import '../users/users_screen.dart';
-import '../profile/admin_profile_screen.dart';
-import '../notifications/notifications_screen.dart';
 import 'components/admin_side_menu.dart';
 
 class MainScreen extends GetView<MenuAppController> {
