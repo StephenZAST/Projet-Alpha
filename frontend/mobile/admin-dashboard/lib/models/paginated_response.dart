@@ -1,21 +1,15 @@
 class PaginatedResponse<T> {
   final List<T> items;
-  final PaginationData pagination;
-  final bool success;
+  final int total;
+  final int currentPage;
+  final int totalPages;
 
   PaginatedResponse({
     required this.items,
-    required this.pagination,
-    this.success = true,
+    required this.total,
+    required this.currentPage,
+    required this.totalPages,
   });
-
-  factory PaginatedResponse.empty() {
-    return PaginatedResponse(
-      items: [],
-      pagination: PaginationData.empty(),
-      success: false,
-    );
-  }
 }
 
 class PaginationData {

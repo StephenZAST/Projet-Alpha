@@ -1,42 +1,43 @@
 import 'package:admin/models/address.dart';
 
 import '../models/user.dart';
+import '../models/user_stats.dart';
+import '../models/paginated_response.dart';
 import './api_service.dart';
 
 class UserService {
   static final _api = ApiService();
-  static const _basePath = '/admin/users';
+  static const _baseUrl = '/api/users';
 
-  /// Récupère la liste des utilisateurs avec pagination et filtres
-  static Future<UserPageData> getUsers({
+  static Future<PaginatedResponse<User>> getUsers({
     int page = 1,
-    int limit = 50,
+    int limit = 10,
     String? role,
-    String? query,
+    String? searchQuery,
   }) async {
     try {
-      final queryParams = {
+      final response = await _api.get(_baseUrl, queryParameters: {
         'page': page.toString(),
         'limit': limit.toString(),
         if (role != null) 'role': role,
-        if (query != null && query.isNotEmpty) 'query': query,
-      };
+        if (searchQuery != null && searchQuery.isNotEmpty)
+          'search': searchQuery,
+      });
 
-      final response = await _api.get(_basePath, queryParameters: queryParams);
-
-      if (response.data != null && response.data['success'] == true) {
-        return UserPageData(
-          users: (response.data['data'] as List)
-              .map((json) => User.fromJson(json))
-              .toList(),
-          total: response.data['pagination']['total'] as int,
-          currentPage: page,
-          totalPages: response.data['pagination']['totalPages'] as int,
-        );
+      if (response.data == null) {
+        throw 'Réponse invalide du serveur';
       }
 
-      throw response.data?['message'] ??
-          'Erreur lors du chargement des utilisateurs';
+      final List<User> users = (response.data['data'] as List)
+          .map((json) => User.fromJson(json))
+          .toList();
+
+      return PaginatedResponse<User>(
+        items: users,
+        total: response.data['total'] ?? 0,
+        currentPage: response.data['currentPage'] ?? page,
+        totalPages: response.data['totalPages'] ?? 1,
+      );
     } catch (e) {
       print('[UserService] Error getting users: $e');
       throw 'Erreur lors du chargement des utilisateurs';
@@ -46,7 +47,7 @@ class UserService {
   /// Récupère les détails d'un utilisateur par son ID
   static Future<User> getUserById(String userId) async {
     try {
-      final response = await _api.get('$_basePath/$userId');
+      final response = await _api.get('$_baseUrl/$userId');
 
       if (response.data != null && response.data['success'] == true) {
         return User.fromJson(response.data['data']);
@@ -63,7 +64,7 @@ class UserService {
   static Future<void> updateUserRole(String userId, String newRole) async {
     try {
       final response = await _api.patch(
-        '$_basePath/$userId/role',
+        '$_baseUrl/$userId/role',
         data: {'role': newRole},
       );
 
@@ -81,7 +82,7 @@ class UserService {
   static Future<void> updateUserStatus(String userId, bool isActive) async {
     try {
       final response = await _api.patch(
-        '$_basePath/$userId/status',
+        '$_baseUrl/$userId/status',
         data: {'isActive': isActive},
       );
 
@@ -100,7 +101,7 @@ class UserService {
       String userId, Map<String, dynamic> userData) async {
     try {
       final response = await _api.put(
-        '$_basePath/$userId',
+        '$_baseUrl/$userId',
         data: userData,
       );
 
@@ -117,7 +118,7 @@ class UserService {
   /// Récupère uniquement les clients
   static Future<List<User>> getClients() async {
     try {
-      final response = await _api.get('$_basePath?role=CLIENT');
+      final response = await _api.get('$_baseUrl?role=CLIENT');
 
       if (response.data != null && response.data['success'] == true) {
         return (response.data['data'] as List)
@@ -155,7 +156,7 @@ class UserService {
   /// Récupère les statistiques des utilisateurs
   static Future<Map<String, dynamic>> getUserStats() async {
     try {
-      final response = await _api.get('$_basePath/stats');
+      final response = await _api.get('$_baseUrl/stats');
 
       if (response.data != null && response.data['success'] == true) {
         return response.data['data'] as Map<String, dynamic>;
@@ -170,14 +171,14 @@ class UserService {
   }
 }
 
-class UserPageData {
-  final List<User> users;
+class PaginatedResponse<T> {
+  final List<T> items;
   final int total;
   final int currentPage;
   final int totalPages;
 
-  UserPageData({
-    required this.users,
+  PaginatedResponse({
+    required this.items,
     required this.total,
     required this.currentPage,
     required this.totalPages,

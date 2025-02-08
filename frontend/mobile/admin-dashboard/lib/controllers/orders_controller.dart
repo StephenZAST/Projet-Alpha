@@ -234,9 +234,10 @@ class OrdersController extends GetxController {
   }
 
   void setItemsPerPage(int value) {
-    if (value > 0) {
+    if (value != itemsPerPage.value) {
       itemsPerPage.value = value;
-      fetchOrders(resetPage: true);
+      currentPage.value = 1;
+      fetchOrders();
     }
   }
 

@@ -10,6 +10,7 @@ import '../screens/services/services_screen.dart';
 import '../screens/users/users_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../routes/admin_routes.dart';
+import '../controllers/users_controller.dart';
 
 class MenuAppController extends GetxController {
   // Singleton pattern
@@ -65,6 +66,11 @@ class MenuAppController extends GetxController {
 
     if (isDrawerOpen.value) {
       closeDrawer();
+    }
+
+    // Si on navigue vers l'écran des utilisateurs, initialiser le contrôleur
+    if (index == MenuIndices.users && !Get.isRegistered<UsersController>()) {
+      Get.put(UsersController());
     }
   }
 
@@ -162,6 +168,10 @@ class MenuAppController extends GetxController {
       case MenuIndices.articles:
         return ArticlesScreen();
       case MenuIndices.users:
+        // Initialiser le UsersController avant de retourner l'écran
+        if (!Get.isRegistered<UsersController>()) {
+          Get.put(UsersController());
+        }
         return UsersScreen();
       case MenuIndices.profile:
         return const ProfileScreen();

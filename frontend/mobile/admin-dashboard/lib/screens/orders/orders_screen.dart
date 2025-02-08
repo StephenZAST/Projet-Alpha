@@ -146,11 +146,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           child: PaginationControls(
                             currentPage: controller.currentPage.value,
                             totalPages: controller.totalPages.value,
-                            itemsPerPage: controller.itemsPerPage.value,
+                            onPrevious: controller.previousPage,
+                            onNext: controller.nextPage,
+                            itemCount: controller.orders.length,
                             totalItems: controller.totalOrders.value,
-                            onNextPage: controller.nextPage,
-                            onPreviousPage: controller.previousPage,
-                            onItemsPerPageChanged: controller.setItemsPerPage,
+                            itemsPerPage: controller.itemsPerPage.value,
+                            onItemsPerPageChanged: (value) {
+                              if (value != null) {
+                                controller.setItemsPerPage(value);
+                              }
+                            },
                           ),
                         ),
                       ],

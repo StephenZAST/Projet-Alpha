@@ -2,128 +2,119 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/users_controller.dart';
-import '../../widgets/shared/pagination_controls.dart';
-import 'components/user_list.dart';
+import 'components/user_stats_grid.dart';
 import 'components/user_filters.dart';
-import 'components/user_details.dart';
+import 'components/user_list.dart';
+import 'components/users_pagination.dart';
 
-class UsersScreen extends StatefulWidget {
-  @override
-  _UsersScreenState createState() => _UsersScreenState();
-}
-
-class _UsersScreenState extends State<UsersScreen> {
-  late final UsersController controller;
-
-  @override
-  void initState() {
-    super.initState();
-    controller = Get.put(UsersController());
-    controller.loadUsers();
-  }
+class UsersScreen extends StatelessWidget {
+  const UsersScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<UsersController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Container(
-          padding: EdgeInsets.all(defaultPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Gestion des Utilisateurs',
-                style: AppTextStyles.h2.copyWith(
-                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      padding: EdgeInsets.all(defaultPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // En-tête et titre
+          Text(
+            'Gestion des utilisateurs',
+            style: AppTextStyles.h2.copyWith(
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+
+          // Stats des utilisateurs
+          UserStatsGrid(),
+          SizedBox(height: AppSpacing.lg),
+
+          // Filtres de recherche
+          UserFilters(),
+          SizedBox(height: AppSpacing.lg),
+
+          // Liste des utilisateurs
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: AppRadius.radiusMD,
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  width: 1,
                 ),
               ),
-              SizedBox(height: defaultPadding),
-              UserFilters(),
-              SizedBox(height: defaultPadding),
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.all(defaultPadding),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: AppRadius.radiusMD,
-                    border: Border.all(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                      width: 1,
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppColors.primary),
                     ),
-                  ),
-                  child: Obx(() {
-                    if (controller.isLoading.value) {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        ),
-                      );
-                    }
+                  );
+                }
 
-                    if (controller.hasError.value) {
-                      return Center(
-                        child: Text(
+                if (controller.hasError.value) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: AppColors.error,
+                          size: 48,
+                        ),
+                        SizedBox(height: AppSpacing.md),
+                        Text(
                           controller.errorMessage.value,
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.error,
                           ),
+                          textAlign: TextAlign.center,
                         ),
-                      );
-                    }
-
-                    if (controller.users.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'Aucun utilisateur trouvé',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: isDark
-                                ? AppColors.textLight
-                                : AppColors.textSecondary,
+                        SizedBox(height: AppSpacing.md),
+                        ElevatedButton.icon(
+                          onPressed: () => controller.fetchUsers(),
+                          icon: Icon(Icons.refresh),
+                          label: Text('Réessayer'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textLight,
                           ),
-                        ),
-                      );
-                    }
-
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: UserList(
-                            users: controller.users,
-                            onUserSelect: (userId) {
-                              controller.loadUserDetails(userId);
-                              Get.dialog(
-                                Dialog(
-                                  child: Container(
-                                    width: 800,
-                                    padding: EdgeInsets.all(defaultPadding),
-                                    child: UserDetails(),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        PaginationControls(
-                          currentPage: controller.currentPage.value,
-                          totalPages: controller.totalPages.value,
-                          itemsPerPage: controller.itemsPerPage.value,
-                          totalItems: controller.totalUsers.value,
-                          onNextPage: controller.nextPage,
-                          onPreviousPage: controller.previousPage,
-                          onItemsPerPageChanged: controller.setItemsPerPage,
                         ),
                       ],
-                    );
-                  }),
-                ),
-              ),
-            ],
+                    ),
+                  );
+                }
+
+                if (controller.users.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'Aucun utilisateur trouvé',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    Expanded(
+                      child: UserList(),
+                    ),
+                    UsersPagination(),
+                  ],
+                );
+              }),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
