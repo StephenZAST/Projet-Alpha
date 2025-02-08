@@ -6,16 +6,18 @@ class Category {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final bool isActive;
+  final int articlesCount;
 
   Category({
     required this.id,
     required this.name,
     this.description,
     this.iconName,
-    DateTime? createdAt,
+    required this.createdAt,
     this.updatedAt,
     this.isActive = true,
-  }) : createdAt = createdAt ?? DateTime.now();
+    this.articlesCount = 0,
+  });
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
@@ -23,10 +25,12 @@ class Category {
       name: json['name'],
       description: json['description'],
       iconName: json['iconName'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt:
-          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: DateTime.parse(json['createdAt'] ?? json['created_at']),
+      updatedAt: json['updatedAt'] != null || json['updated_at'] != null
+          ? DateTime.parse(json['updatedAt'] ?? json['updated_at'])
+          : null,
       isActive: json['isActive'] ?? true,
+      articlesCount: json['articlesCount'] ?? 0,
     );
   }
 
@@ -39,6 +43,7 @@ class Category {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'isActive': isActive,
+      'articlesCount': articlesCount,
     };
   }
 
@@ -50,6 +55,7 @@ class Category {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
+    int? articlesCount,
   }) {
     return Category(
       id: id ?? this.id,
@@ -59,6 +65,7 @@ class Category {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
+      articlesCount: articlesCount ?? this.articlesCount,
     );
   }
 }

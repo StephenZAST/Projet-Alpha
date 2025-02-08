@@ -1,5 +1,6 @@
 import '../models/category.dart';
 import './api_service.dart';
+import '../utils/error_handler.dart';
 
 class CategoryService {
   static final _api = ApiService();
@@ -80,23 +81,16 @@ class CategoryService {
     }
   }
 
-  static Future<Category> getCategoryById(String id) async {
+  static Future<Category?> getCategoryById(String id) async {
     try {
       final response = await _api.get('$_baseUrl/$id');
-      if (response.data != null && response.data['data'] != null) {
-        return Category.fromJson(response.data['data']);
+      if (response.data != null) {
+        return Category.fromJson(response.data);
       }
-      if (response.data?['error'] != null) {
-        throw response.data['error'];
-      }
-      throw 'Catégorie non trouvée';
+      return null;
     } catch (e) {
       print('[CategoryService] Error getting category by id: $e');
-      // Le backend envoie 404 si non trouvé
-      if (e.toString().contains('404')) {
-        throw 'Catégorie non trouvée';
-      }
-      throw 'Erreur lors du chargement de la catégorie';
+      rethrow;
     }
   }
 
@@ -117,5 +111,12 @@ class CategoryService {
       print('[CategoryService] Error searching categories: $e');
       throw 'Erreur lors de la recherche de catégories';
     }
+  }
+
+  static Future<bool> validateCategory(CategoryCreateDTO dto) async {
+    if (dto.name.isEmpty) {
+      throw 'Le nom de la catégorie est requis';
+    }
+    return true;
   }
 }

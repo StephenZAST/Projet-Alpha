@@ -196,7 +196,23 @@ class CategoryController extends GetxController {
     selectedCategory.value = category;
   }
 
-  Category? getCategoryById(String id) {
+  Future<Category?> getCategoryById(String id) async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+
+      final category = await CategoryService.getCategoryById(id);
+      return category;
+    } catch (e) {
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors du chargement de la catégorie';
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Category? getCategoryByIdSync(String id) {
     return categories.firstWhereOrNull((cat) => cat.id == id);
   }
 }

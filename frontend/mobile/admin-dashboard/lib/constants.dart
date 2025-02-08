@@ -201,6 +201,14 @@ class AppTextStyles {
     fontWeight: FontWeight.w600,
     letterSpacing: 0.25,
   );
+
+  // Ajouter le style caption manquant
+  static const TextStyle caption = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 11.0,
+    fontWeight: FontWeight.normal,
+    letterSpacing: 0.4,
+  );
 }
 
 // Default values
