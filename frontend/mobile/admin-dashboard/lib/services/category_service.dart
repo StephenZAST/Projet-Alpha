@@ -4,24 +4,43 @@ import '../utils/error_handler.dart';
 
 class CategoryService {
   static final _api = ApiService();
-  static const _baseUrl = 'api/article-categories';
+  static const _baseUrl = '/api/article-categories'; // Ajout du préfixe /api/
 
   static Future<List<Category>> getAllCategories() async {
     try {
+      print('[CategoryService] Fetching categories...');
       final response = await _api.get(_baseUrl);
-      // Le contrôleur backend renvoie {success, data, message} pour getAllCategories
-      if (response.data != null && response.data['success'] == true) {
-        return (response.data['data'] as List)
+
+      if (response.statusCode == 401) {
+        throw 'Session expirée. Veuillez vous reconnecter.';
+      }
+
+      if (response.statusCode != 200) {
+        throw 'Erreur serveur: ${response.statusCode}';
+      }
+
+      print('[CategoryService] Raw response: ${response.data}');
+
+      if (response.data is Map && response.data['data'] != null) {
+        if (response.data['data'] is List) {
+          return (response.data['data'] as List)
+              .map((json) => Category.fromJson(json))
+              .toList();
+        }
+      }
+
+      // Si la réponse est directement une liste
+      if (response.data is List) {
+        return (response.data as List)
             .map((json) => Category.fromJson(json))
             .toList();
       }
-      if (response.data?['error'] != null) {
-        throw response.data['error'];
-      }
+
       return [];
     } catch (e) {
       print('[CategoryService] Error getting categories: $e');
-      throw 'Erreur lors du chargement des catégories';
+      throw Exception(
+          'Une erreur est survenue lors du chargement des catégories');
     }
   }
 
@@ -32,16 +51,17 @@ class CategoryService {
         data: dto.toJson(),
       );
       // Les autres endpoints utilisent simplement {data}
-      if (response.data != null && response.data['data'] != null) {
+      if (response.data is Map && response.data['data'] != null) {
         return Category.fromJson(response.data['data']);
       }
       if (response.data?['error'] != null) {
         throw response.data['error'];
       }
-      throw 'Erreur lors de la création de la catégorie';
+      throw Exception('Erreur lors de la création de la catégorie');
     } catch (e) {
       print('[CategoryService] Error creating category: $e');
-      throw 'Erreur lors de la création de la catégorie';
+      throw Exception(
+          'Une erreur est survenue lors de la création de la catégorie');
     }
   }
 
@@ -84,13 +104,17 @@ class CategoryService {
   static Future<Category?> getCategoryById(String id) async {
     try {
       final response = await _api.get('$_baseUrl/$id');
-      if (response.data != null) {
+      if (response.data is Map) {
+        if (response.data['data'] != null) {
+          return Category.fromJson(response.data['data']);
+        }
         return Category.fromJson(response.data);
       }
       return null;
     } catch (e) {
       print('[CategoryService] Error getting category by id: $e');
-      rethrow;
+      throw Exception(
+          'Une erreur est survenue lors de la récupération de la catégorie');
     }
   }
 

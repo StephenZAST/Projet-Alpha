@@ -20,8 +20,10 @@ class AdminSideMenu extends StatelessWidget {
         print('[AdminSideMenu] Current selected index: $currentIndex');
 
         return ListView(
+          key: ValueKey('menu_list_${key.toString()}'),
           children: [
             DrawerHeader(
+              key: ValueKey('drawer_header_${key.toString()}'),
               child: Image.asset("assets/images/logo.png"),
             ),
             // DASHBOARD

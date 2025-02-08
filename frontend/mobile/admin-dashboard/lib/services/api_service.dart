@@ -19,14 +19,21 @@ class ApiService {
 
   ApiService._internal() {
     _dio = dio.Dio(dio.BaseOptions(
-      baseUrl: baseUrl, // Utiliser le getter ici
+      baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       contentType: 'application/json',
-      validateStatus: (status) {
-        // Accepter tous les statuts pour gérer les erreurs manuellement
-        return true;
-      },
+      validateStatus: (status) => true,
+    ));
+
+    // Ajouter l'intercepteur de logging
+    _dio.interceptors.add(dio.LogInterceptor(
+      request: true,
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
     ));
 
     _setupInterceptors();
@@ -101,14 +108,21 @@ class ApiService {
   Future<dio.Response> get(String path,
       {Map<String, dynamic>? queryParameters}) async {
     try {
+      final fullPath = path.startsWith('/') ? path : '/$path';
+      print('[ApiService] Making GET request to: $baseUrl$fullPath');
+
       final response = await _dio.get(
-        path,
+        fullPath,
         queryParameters: queryParameters,
       );
-      _handleResponse(response);
+
+      print('[ApiService] Response status: ${response.statusCode}');
+      print('[ApiService] Response data: ${response.data}');
+
       return response;
     } catch (e) {
-      throw _handleError(e);
+      print('[ApiService] Error making GET request: $e');
+      rethrow;
     }
   }
 

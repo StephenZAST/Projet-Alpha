@@ -13,21 +13,24 @@ class CategoryController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    print('[CategoryController] Initializing...');
     fetchCategories();
   }
 
   Future<void> fetchCategories() async {
     try {
+      print('[CategoryController] Starting fetchCategories...');
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
 
       final result = await CategoryService.getAllCategories();
+      print('[CategoryController] Categories fetched: ${result.length}');
       categories.value = result;
     } catch (e) {
       print('[CategoryController] Error fetching categories: $e');
       hasError.value = true;
-      errorMessage.value = 'Erreur lors du chargement des catégories';
+      errorMessage.value = e.toString();
 
       Get.snackbar(
         'Erreur',

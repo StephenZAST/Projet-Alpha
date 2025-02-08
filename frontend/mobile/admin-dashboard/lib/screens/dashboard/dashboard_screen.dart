@@ -10,25 +10,19 @@ import 'components/recent_orders.dart';
 import 'components/order_status_metrics.dart';
 import 'components/order_status_chart.dart';
 
-class DashboardScreen extends StatefulWidget {
-  @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
+class DashboardScreen extends StatelessWidget {
+  // Déclarer la clé comme variable statique non-finale
+  static GlobalKey<State<StatefulWidget>> dashboardKey =
+      GlobalKey(debugLabel: 'dashboard_screen');
 
-class _DashboardScreenState extends State<DashboardScreen> {
-  final DashboardController controller = Get.find<DashboardController>();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.fetchDashboardData();
-    });
-  }
+  DashboardScreen({Key? key}) : super(key: key ?? GlobalKey());
 
   @override
   Widget build(BuildContext context) {
+    final DashboardController controller = Get.find<DashboardController>();
+
     return Container(
+      key: Key('dashboard_container'),
       color: Theme.of(context).scaffoldBackgroundColor,
       child: RefreshIndicator(
         onRefresh: controller.refreshDashboard,
@@ -157,11 +151,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
         RecentOrders(),
       ],
     );
-  }
-
-  @override
-  void dispose() {
-    print('[DashboardScreen] Disposing');
-    super.dispose();
   }
 }
