@@ -87,3 +87,137 @@
 | points_spent | integer | |
 | used_at | timestamp with time zone | |
 | created_at | timestamp with time zone | |
+
+
+
+
+# Service Management Tables
+
+## Service Types
+| Column Name | Type | Constraints |
+|------------|------|-------------|
+| id | uuid | NOT NULL PRIMARY KEY |
+| name | varchar(50) | NOT NULL |
+| description | text | |
+| is_default | boolean | DEFAULT false |
+| created_at | timestamptz | DEFAULT now() |
+| updated_at | timestamptz | DEFAULT now() |
+
+## Article Service Prices
+| Column Name | Type | Constraints |
+|------------|------|-------------|
+| id | uuid | NOT NULL PRIMARY KEY |
+| article_id | uuid | REFERENCES articles(id) |
+| service_type_id | uuid | REFERENCES service_types(id) |
+| base_price | decimal(10,2) | NOT NULL |
+| premium_price | decimal(10,2) | |
+| is_available | boolean | DEFAULT true |
+| price_per_kg | decimal(10,2) | |
+| created_at | timestamptz | DEFAULT now() |
+| updated_at | timestamptz | DEFAULT now() |
+
+
+
+
+
+
+all tables in the database
+
+[
+  {
+    "table_name": "addresses"
+  },
+  {
+    "table_name": "affiliate_levels"
+  },
+  {
+    "table_name": "affiliate_profiles"
+  },
+  {
+    "table_name": "article_archives"
+  },
+  {
+    "table_name": "article_categories"
+  },
+  {
+    "table_name": "article_services"
+  },
+  {
+    "table_name": "articles"
+  },
+  {
+    "table_name": "blog_articles"
+  },
+  {
+    "table_name": "blog_categories"
+  },
+  {
+    "table_name": "commissionTransactions"
+  },
+  {
+    "table_name": "discount_rules"
+  },
+  {
+    "table_name": "loyalty_points"
+  },
+  {
+    "table_name": "notification_preferences"
+  },
+  {
+    "table_name": "notification_rules"
+  },
+  {
+    "table_name": "notifications"
+  },
+  {
+    "table_name": "offer_articles"
+  },
+  {
+    "table_name": "offers"
+  },
+  {
+    "table_name": "order_items"
+  },
+  {
+    "table_name": "order_metadata"
+  },
+  {
+    "table_name": "order_notes"
+  },
+  {
+    "table_name": "orders"
+  },
+  {
+    "table_name": "orders_archive"
+  },
+  {
+    "table_name": "point_transactions"
+  },
+  {
+    "table_name": "price_configurations"
+  },
+  {
+    "table_name": "price_history"
+  },
+  {
+    "table_name": "reset_codes"
+  },
+  {
+    "table_name": "reward_claims"
+  },
+  {
+    "table_name": "rewards"
+  },
+  {
+    "table_name": "service_types"
+  },
+  {
+    "table_name": "services"
+  },
+  {
+    "table_name": "user_offers"
+  },
+  {
+    "table_name": "users"
+  }
+]

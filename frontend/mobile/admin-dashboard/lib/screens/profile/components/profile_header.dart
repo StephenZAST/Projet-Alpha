@@ -1,98 +1,140 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../constants.dart';
-import '../../../controllers/admin_controller.dart';
+import '../../../controllers/admin_profile_controller.dart';
 
 class ProfileHeader extends StatelessWidget {
+  const ProfileHeader({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AdminController>();
+    final controller = Get.find<AdminProfileController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      padding: EdgeInsets.all(defaultPadding),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          width: 1,
-        ),
-      ),
-      child: Obx(() {
-        final admin = controller.admin.value;
-        if (admin == null) {
-          return Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+    return Obx(() => Card(
+          elevation: 0,
+          color: Theme.of(context).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.radiusMD,
+            side: BorderSide(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
             ),
-          );
-        }
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            child: Row(
+              children: [
+                _buildProfileImage(context, controller),
+                SizedBox(width: AppSpacing.lg),
+                Expanded(child: _buildUserInfo(context, controller)),
+              ],
+            ),
+          ),
+        ));
+  }
 
-        return Column(
-          children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: Text(
-                admin.fullName.substring(0, 1).toUpperCase(),
-                style: AppTextStyles.h1.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-            SizedBox(height: AppSpacing.md),
-            Text(
-              admin.fullName,
-              style: AppTextStyles.h2.copyWith(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-            SizedBox(height: AppSpacing.xs),
-            Text(
-              admin.email,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            SizedBox(height: AppSpacing.sm),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.xs,
-              ),
+  Widget _buildProfileImage(
+      BuildContext context, AdminProfileController controller) {
+    return GestureDetector(
+      onTap: () => _pickImage(controller),
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 50,
+            backgroundImage: controller.profile.value?.profileImage != null
+                ? NetworkImage(controller.profile.value!.profileImage!)
+                : null,
+            child: controller.profile.value?.profileImage == null
+                ? Icon(Icons.person_outline,
+                    size: 50, color: AppColors.textLight)
+                : null,
+            backgroundColor: AppColors.primary.withOpacity(0.1),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.all(AppSpacing.xs),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: AppRadius.radiusSM,
+                color: AppColors.primary,
+                shape: BoxShape.circle,
               ),
-              child: Text(
-                admin.role.toUpperCase(),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Icon(
+                Icons.camera_alt_outlined,
+                size: 16,
+                color: AppColors.white,
               ),
             ),
-            if (admin.lastLogin != null) ...[
-              SizedBox(height: AppSpacing.md),
-              Text(
-                'Dernière connexion: ${_formatDate(admin.lastLogin!)}',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ],
-        );
-      }),
+          ),
+        ],
+      ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year} '
-        '${date.hour.toString().padLeft(2, '0')}:'
-        '${date.minute.toString().padLeft(2, '0')}';
+  Widget _buildUserInfo(
+      BuildContext context, AdminProfileController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          controller.profile.value?.fullName ?? 'Chargement...',
+          style: AppTextStyles.h3,
+        ),
+        SizedBox(height: AppSpacing.xs),
+        Text(
+          controller.profile.value?.email ?? '',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        SizedBox(height: AppSpacing.xs),
+        _buildRoleBadge(controller.profile.value?.role ?? ''),
+      ],
+    );
+  }
+
+  Widget _buildRoleBadge(String role) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: AppRadius.radiusXS,
+      ),
+      child: Text(
+        role,
+        style: AppTextStyles.bodySmall.copyWith(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(AdminProfileController controller) async {
+    try {
+      final image = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 75,
+      );
+
+      if (image != null) {
+        await controller.uploadImage(File(image.path));
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Erreur',
+        'Impossible de charger l\'image',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.white,
+      );
+    }
   }
 }

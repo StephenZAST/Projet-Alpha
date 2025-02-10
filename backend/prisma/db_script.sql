@@ -1,35 +1,39 @@
 -- Cette requête liste toutes les fonctions et procédures du schéma public
-SELECT 
+SELECT
     p.proname as function_name,
-    CASE 
+    CASE
         WHEN p.prokind = 'f' THEN 'Function'
         WHEN p.prokind = 'p' THEN 'Procedure'
-        ELSE 'Other'
     END as type,
-    p.prokind as kind,  -- Ajouté pour permettre le tri
     pg_get_functiondef(p.oid) as source_code,
     COALESCE(d.description, '') as description
 FROM pg_proc p
 JOIN pg_namespace n ON p.pronamespace = n.oid
 LEFT JOIN pg_description d ON p.oid = d.objoid
-WHERE n.nspname = 'public'  -- Uniquement le schéma public
+WHERE n.nspname = 'public'
 AND p.proname NOT LIKE 'pg_%'
-AND p.prokind IN ('f', 'p')  -- Uniquement les fonctions et procédures
+AND p.prokind IN ('f', 'p')
 ORDER BY 
-    kind,  -- Tri d'abord par type (p pour procédures, f pour fonctions)
-    function_name;  -- Puis par nom de fonction
+    p.prokind,
+    p.proname;
 
-    SELECT 
-    trigger_schema,
+
+
+
+
+
+-- Liste les triggers du schéma public
+
+SELECT
     trigger_name,
     event_manipulation AS trigger_event,
-    event_object_schema AS table_schema,
     event_object_table AS table_name,
     action_statement AS trigger_definition,
     action_timing AS trigger_timing
 FROM information_schema.triggers
-WHERE trigger_schema NOT IN ('pg_catalog', 'information_schema')
-ORDER BY trigger_schema, trigger_name;
+WHERE trigger_schema = 'public'
+ORDER BY trigger_name;
+
 
 
 
@@ -49,63 +53,34 @@ ORDER BY schemaname, tablename, indexname;
 
 
 
--- Liste les triggers du schéma public
+
+
+
+-- lister les different relation entre les tables du schéma public
+
+SELECT
+    tc.table_schema, 
+    tc.table_name, 
+    kcu.column_name,
+    ccu.table_schema AS foreign_table_schema,
+    ccu.table_name AS foreign_table_name,
+    ccu.column_name AS foreign_column_name 
+FROM information_schema.table_constraints AS tc 
+JOIN information_schema.key_column_usage AS kcu
+    ON tc.constraint_name = kcu.constraint_name
+    AND tc.table_schema = kcu.table_schema
+JOIN information_schema.constraint_column_usage AS ccu
+    ON ccu.constraint_name = tc.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY' 
+    AND tc.table_schema = 'public';
 
 
 
 
-SELECT DISTINCT
-    n.nspname as schema_name,
-    p.proname as function_name,
-    CASE 
-        WHEN p.prokind = 'f' THEN 'Function'
-        WHEN p.prokind = 'p' THEN 'Procedure'
-        ELSE 'Other'
-    END as type,
-    p.prosrc as source_code
-FROM pg_proc p
-JOIN pg_namespace n ON p.pronamespace = n.oid
-WHERE n.nspname IN ('public', 'auth', 'storage')  -- Ajoutez ici vos schémas d'intérêt
-AND p.proname NOT LIKE 'pg_%'
-AND p.prokind IN ('f', 'p')  -- Uniquement les fonctions et procédures
-ORDER BY schema_name, function_name;
-
-
-
-
-
-
-
-
--- Cette requête liste toutes les fonctions et procédures du schéma public
-
-
-
-
-
-SELECT 
-    n.nspname as schema_name,
-    p.proname as function_name,
-    CASE 
-        WHEN p.prokind = 'f' THEN 'Function'
-        WHEN p.prokind = 'p' THEN 'Procedure'
-        ELSE 'Other'
-    END as type,
-    pg_get_functiondef(p.oid) as definition
-FROM pg_proc p
-LEFT JOIN pg_namespace n ON p.pronamespace = n.oid
-WHERE n.nspname NOT IN ('pg_catalog', 'information_schema')
-AND p.proname NOT LIKE 'pg_%'
-ORDER BY schema_name, function_name;
-
-
-
+-- __________________________________________________________________________________________________________________________________________________________________________________
 
 
 -- lister les different schema disponible 
-
-
-
 
 SELECT nspname FROM pg_namespace 
 WHERE nspname NOT LIKE 'pg_%' 
@@ -118,30 +93,6 @@ FROM information_schema.tables
 WHERE table_schema = 'public' 
 AND table_type = 'BASE TABLE'
 ORDER BY table_name;
-
--- Then list structure for each table without truncation
-SELECT 
-    c.table_schema,
-    c.table_name,
-    string_agg(
-        c.column_name || ' ' || 
-        c.data_type || 
-        CASE 
-            WHEN c.character_maximum_length IS NOT NULL 
-            THEN '(' || c.character_maximum_length || ')'
-            ELSE ''
-        END || 
-        CASE WHEN c.is_nullable = 'NO' THEN ' NOT NULL' ELSE '' END,
-        E'\n'
-    ) as columns
-FROM information_schema.columns c
-JOIN information_schema.tables t 
-    ON c.table_name = t.table_name 
-    AND c.table_schema = t.table_schema
-WHERE t.table_schema = 'public'  
-    AND t.table_type = 'BASE TABLE'
-GROUP BY c.table_schema, c.table_name
-ORDER BY c.table_name;
 
 -- List foreign key relationships
 SELECT
@@ -159,7 +110,7 @@ WHERE tc.table_schema = 'public'
 ORDER BY source_table, source_column;
 
 
-
+-- __________________________________________________________________________________________________________________________________________________________________________________
 
 
 -- requette pour verifier toutes les differente procedure et fonction liee a une table ou fesant reference a cette table 
@@ -258,3 +209,13 @@ ORDER BY e.enumsortorder;
 SELECT column_name, data_type, character_maximum_length, column_default, is_nullable
 FROM INFORMATION_SCHEMA.COLUMNS 
 WHERE table_name = 'articles';
+
+
+
+-- afficher toutes les tables de la base de données
+
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+AND table_type = 'BASE TABLE'
+ORDER BY table_name;
