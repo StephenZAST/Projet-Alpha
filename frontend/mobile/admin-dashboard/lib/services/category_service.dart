@@ -1,6 +1,5 @@
 import '../models/category.dart';
 import './api_service.dart';
-import '../utils/error_handler.dart';
 
 class CategoryService {
   static final _api = ApiService();

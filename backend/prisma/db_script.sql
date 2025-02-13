@@ -119,7 +119,7 @@ ORDER BY source_table, source_column;
 SELECT p.proname AS procedure_name,
        pg_get_functiondef(p.oid) AS procedure_definition
 FROM pg_proc p
-WHERE p.prosrc LIKE '%articles%';
+WHERE p.prosrc LIKE '%weight_based_pricing%';
 
 
 
@@ -208,7 +208,7 @@ ORDER BY e.enumsortorder;
 -- Afficher les colonnes de la table d'une table donnée
 SELECT column_name, data_type, character_maximum_length, column_default, is_nullable
 FROM INFORMATION_SCHEMA.COLUMNS 
-WHERE table_name = 'articles';
+WHERE table_name = 'article_service_prices';
 
 
 
@@ -219,3 +219,45 @@ FROM information_schema.tables
 WHERE table_schema = 'public'
 AND table_type = 'BASE TABLE'
 ORDER BY table_name;
+
+
+-- To list relationships for a specific table
+SELECT
+    tc.table_name AS source_table,
+    kcu.column_name AS source_column,
+    ccu.table_name AS target_table,
+    ccu.column_name AS target_column
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage ccu
+    ON ccu.constraint_name = tc.constraint_name
+WHERE tc.table_schema = 'public'
+    AND tc.constraint_type = 'FOREIGN KEY'
+    AND (tc.table_name = 'your_table_name' OR ccu.table_name = 'weight_based_pricing')
+ORDER BY source_table, source_column;
+
+
+
+-- To list triggers for a specific table
+
+SELECT 
+    trigger_name,
+    event_manipulation,
+    event_object_table,
+    action_statement,
+    action_timing
+FROM information_schema.triggers
+WHERE trigger_schema = 'public'
+    AND event_object_table = 'article_service_prices'
+ORDER BY trigger_name;
+
+
+
+-- requette pour verifier toutes les differente procedure et fonction liee a une table ou fesant reference a cette table 
+
+
+SELECT p.proname AS procedure_name,
+       pg_get_functiondef(p.oid) AS procedure_definition
+FROM pg_proc p
+WHERE p.prosrc LIKE '%article_service_prices%';

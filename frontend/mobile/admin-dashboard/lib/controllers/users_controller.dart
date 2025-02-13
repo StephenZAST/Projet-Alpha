@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import '../models/user.dart';
-import '../models/paginated_response.dart';
 import '../services/user_service.dart';
 import '../constants.dart';
 import './auth_controller.dart';

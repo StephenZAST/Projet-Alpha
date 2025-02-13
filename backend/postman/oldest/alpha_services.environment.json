@@ -1,0 +1,26 @@
+{
+  "id": "alpha-services-env",
+  "name": "Alpha Services Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "enabled": true
+    },
+    {
+      "key": "token",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "serviceTypeId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "articleId",
+      "value": "",
+      "enabled": true
+    }
+  ]
+}

@@ -88,7 +88,20 @@ export type NotificationType =
   | 'WITHDRAWAL_APPROVED'
   | 'WITHDRAWAL_REJECTED'
   | 'AFFILIATE_STATUS_UPDATED'
-  | 'COMMISSION_EARNED';
+  | 'COMMISSION_EARNED'
+  | 'PRICE_UPDATED'
+  | 'WEIGHT_RECORDED'
+  | 'SERVICE_CREATED'   
+  | 'SERVICE_UPDATED'    
+  | 'SERVICE_ADDED'      // Ajout du nouveau type
+  | 'SERVICE_TYPE_CREATED'  
+  | 'SERVICE_TYPE_UPDATED'  
+  | 'SERVICE_TYPE_DELETED'  
+  | 'SUBSCRIPTION_CREATED'  
+  | 'SUBSCRIPTION_CANCELLED'
+  | 'SUBSCRIPTION_RENEWED'  
+  | 'SUBSCRIPTION_EXPIRED'  
+  | 'SYSTEM_UPDATE';
 
 export interface Notification {
   id: string;
@@ -143,7 +156,12 @@ export interface ServiceType {
   id: string;
   name: string;
   description?: string;
-  createdAt: Date;
+  is_default: boolean;
+  requires_weight: boolean;
+  supports_premium: boolean;
+  is_active: boolean;  // Ajout de cette propriété
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface ArticleService {
@@ -175,6 +193,60 @@ export const ServiceFromJson = (json: Record<string, any>): Service => {
   };
 };
 
+export interface ArticleServicePrice {
+  id: string;
+  article_id: string;
+  service_type_id: string;
+  base_price: number;
+  premium_price?: number;
+  is_available: boolean;
+  price_per_kg?: number;
+  created_at: string;
+  updated_at: string;
+  service_type?: ServiceType;
+}
+
+export interface SetPricesDTO {
+  base_price: number;
+  premium_price?: number;
+  price_per_kg?: number;
+  is_available?: boolean;
+}
+
+export interface CreateServiceTypeDTO {
+  name: string;
+  description?: string;
+  isDefault?: boolean;
+  requiresWeight?: boolean;
+  supportsPremium?: boolean;
+}
+
+export interface UpdateServiceTypeDTO {
+  name?: string;
+  description?: string;
+  isDefault?: boolean;
+  isActive?: boolean;
+  requiresWeight?: boolean;
+  supportsPremium?: boolean;
+}
+
+export interface ArticleServiceUpdate {
+  service_type_id: string;
+  base_price?: number;
+  premium_price?: number;
+  price_per_kg?: number;
+  is_available: boolean;
+}
+
+export interface ServiceConfiguration {
+  serviceTypes: ServiceType[];
+  defaultService: ServiceType | null;
+  configuration: {
+    allowPricePerKg: boolean;
+    allowPremiumPrices: boolean;
+  };
+}
+
 // Blog related types
 export interface BlogCategory {
   id: string;
@@ -201,6 +273,7 @@ export interface OrderItem {
     serviceId: string;
     quantity: number;
     unitPrice: number;
+    isPremium?: boolean;  // Ajout du champ manquant
     article?: Article;
     createdAt: Date;
     updatedAt: Date;
@@ -522,4 +595,103 @@ export interface GetAllOrdersParams {
 export interface PaginatedOrdersResponse {
   data: Order[];
   total: number;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  durationDays: number;
+  maxWeightPerOrder?: number;
+  maxOrdersPerMonth?: number;
+  isPremium: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserSubscription {
+  id: string;
+  userId: string;
+  planId: string;
+  startDate: Date;
+  endDate: Date;
+  status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
+  remainingWeight: number;
+  remainingOrders: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AdditionalService {
+  id: string;
+  name: string;
+  description?: string;
+  basePrice: number;
+  premiumPrice?: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PriceHistoryEntry {
+  id: string;
+  article_id: string;
+  service_type_id: string;
+  old_price: {
+    base_price?: number;
+    premium_price?: number;
+    price_per_kg?: number;
+  };
+  new_price: {
+    base_price?: number;
+    premium_price?: number;
+    price_per_kg?: number;
+  };
+  modified_by: string;
+  created_at: Date;
+  modifier?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+}
+
+// Nouvelles interfaces pour les tables ajoutées
+export interface ArticleServiceCompatibility {
+  id: string;
+  article_id: string;
+  service_id: string;
+  is_compatible: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ServiceSpecificPrice {
+  id: string;
+  article_id: string;
+  service_id: string;
+  base_price: number;
+  premium_price?: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ServiceCompatibility {
+  id: string;
+  article_id: string;
+  service_id: string;
+  is_compatible: boolean;
+  restrictions?: string[];
+  article?: {
+    id: string;
+    name: string;
+  };
+  service?: {
+    id: string;
+    name: string;
+  };
+  created_at: Date;
+  updated_at: Date;
 }

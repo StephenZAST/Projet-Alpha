@@ -94,6 +94,13 @@
     "trigger_timing": "BEFORE"
   },
   {
+    "trigger_name": "update_article_service_compatibility_timestamp",
+    "trigger_event": "UPDATE",
+    "table_name": "article_service_compatibility",
+    "trigger_definition": "EXECUTE FUNCTION update_service_timestamps()",
+    "trigger_timing": "BEFORE"
+  },
+  {
     "trigger_name": "update_articles_timestamp",
     "trigger_event": "UPDATE",
     "table_name": "articles",
@@ -122,10 +129,52 @@
     "trigger_timing": "BEFORE"
   },
   {
+    "trigger_name": "update_order_weights_updated_at",
+    "trigger_event": "UPDATE",
+    "table_name": "order_weights",
+    "trigger_definition": "EXECUTE FUNCTION update_updated_at_column()",
+    "trigger_timing": "BEFORE"
+  },
+  {
     "trigger_name": "update_orders_updated_at",
     "trigger_event": "UPDATE",
     "table_name": "orders",
     "trigger_definition": "EXECUTE FUNCTION update_orders_timestamp()",
+    "trigger_timing": "BEFORE"
+  },
+  {
+    "trigger_name": "update_service_specific_prices_timestamp",
+    "trigger_event": "UPDATE",
+    "table_name": "service_specific_prices",
+    "trigger_definition": "EXECUTE FUNCTION update_service_timestamps()",
+    "trigger_timing": "BEFORE"
+  },
+  {
+    "trigger_name": "update_service_types_timestamp",
+    "trigger_event": "UPDATE",
+    "table_name": "service_types",
+    "trigger_definition": "EXECUTE FUNCTION update_timestamp_column()",
+    "trigger_timing": "BEFORE"
+  },
+  {
+    "trigger_name": "update_subscription_plans_updated_at",
+    "trigger_event": "UPDATE",
+    "table_name": "subscription_plans",
+    "trigger_definition": "EXECUTE FUNCTION update_updated_at_column()",
+    "trigger_timing": "BEFORE"
+  },
+  {
+    "trigger_name": "update_user_subscriptions_updated_at",
+    "trigger_event": "UPDATE",
+    "table_name": "user_subscriptions",
+    "trigger_definition": "EXECUTE FUNCTION update_updated_at_column()",
+    "trigger_timing": "BEFORE"
+  },
+  {
+    "trigger_name": "update_weight_based_pricing_timestamp",
+    "trigger_event": "UPDATE",
+    "table_name": "weight_based_pricing",
+    "trigger_definition": "EXECUTE FUNCTION update_timestamp_column()",
     "trigger_timing": "BEFORE"
   }
 ]

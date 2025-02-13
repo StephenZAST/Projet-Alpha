@@ -1,5 +1,6 @@
 import supabase from '../config/database';
 import { Article, Order, Offer } from '../models/types';
+import { PriceCalculationParams, PriceDetails, PricingType } from '../models/pricing.types';
 
 interface OrderItemInput {
   articleId: string;
@@ -177,6 +178,81 @@ export class PricingService {
     } catch (error) {
       console.error('[PricingService] Error updating article price:', error);
       throw error;
+    }
+  }
+
+  static async calculatePrice(params: PriceCalculationParams): Promise<PriceDetails> {
+    const { articleId, serviceTypeId, quantity = 1, weight, isPremium = false } = params;
+
+    // Récupérer la configuration de prix
+    const { data: servicePrice, error } = await supabase
+      .from('article_service_prices')
+      .select(`
+        *,
+        service_type:service_types(*)
+      `)
+      .eq('article_id', articleId)
+      .eq('service_type_id', serviceTypeId)
+      .eq('is_active', true)
+      .single();
+
+    if (error) throw error;
+    if (!servicePrice) throw new Error('Price configuration not found');
+
+    let basePrice = isPremium && servicePrice.premium_price 
+      ? servicePrice.premium_price 
+      : servicePrice.base_price;
+
+    switch (servicePrice.service_type.pricing_type as PricingType) {
+      case 'PER_WEIGHT':
+        if (!weight) {
+          throw new Error('Weight is required for this service type');
+        }
+        if (!servicePrice.price_per_kg) {
+          throw new Error('Price per kg not configured for this service');
+        }
+        basePrice = servicePrice.price_per_kg * weight;
+        break;
+      
+      case 'SUBSCRIPTION':
+        // Prix fixe pour les abonnements
+        break;
+      
+      default: // PER_ITEM
+        basePrice = basePrice * quantity;
+    }
+
+    return {
+      basePrice,
+      total: basePrice,
+      pricingType: servicePrice.service_type.pricing_type as PricingType,
+      isPremium
+    };
+  }
+
+  static async getPricingConfiguration(serviceTypeId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('article_service_prices')
+        .select(`
+          *,
+          service_type:service_types(*)
+        `)
+        .eq('service_type_id', serviceTypeId)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      return {
+        data: data || [],
+        error: null
+      };
+    } catch (error) {
+      console.error('[PricingService] Get pricing configuration error:', error);
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 }

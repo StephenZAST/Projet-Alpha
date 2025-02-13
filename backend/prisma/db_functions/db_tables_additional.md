@@ -120,6 +120,36 @@
 
 
 
+### Article Service Compatibility (Table: article_service_compatibility)
+| Column Name | Type | Constraints |
+|------------|------|-------------|
+| id | uuid | PRIMARY KEY, NOT NULL |
+| article_id | uuid | REFERENCES articles(id) |
+| service_id | uuid | REFERENCES services(id) |
+| is_compatible | boolean | DEFAULT true |
+| created_at | timestamp with time zone | |
+| updated_at | timestamp with time zone | |
+
+### Service Specific Prices (Table: service_specific_prices)
+| Column Name | Type | Constraints |
+|------------|------|-------------|
+| id | uuid | PRIMARY KEY, NOT NULL |
+| article_id | uuid | REFERENCES articles(id) |
+| service_id | uuid | REFERENCES services(id) |
+| base_price | decimal(10,2) | NOT NULL |
+| premium_price | decimal(10,2) | |
+| created_at | timestamp with time zone | |
+| updated_at | timestamp with time zone | |
+
+### Relations
+| Source Table | Source Column | Target Table | Target Column |
+|-------------|---------------|--------------|---------------|
+| services | service_type_id | service_types | id |
+| article_service_compatibility | article_id | articles | id |
+| article_service_compatibility | service_id | services | id |
+| service_specific_prices | article_id | articles | id |
+| service_specific_prices | service_id | services | id |
+
 
 all tables in the database
 
@@ -138,6 +168,12 @@ all tables in the database
   },
   {
     "table_name": "article_categories"
+  },
+  {
+    "table_name": "article_service_compatibility"
+  },
+  {
+    "table_name": "article_service_prices"
   },
   {
     "table_name": "article_services"
@@ -185,6 +221,9 @@ all tables in the database
     "table_name": "order_notes"
   },
   {
+    "table_name": "order_weights"
+  },
+  {
     "table_name": "orders"
   },
   {
@@ -209,15 +248,27 @@ all tables in the database
     "table_name": "rewards"
   },
   {
+    "table_name": "service_specific_prices"
+  },
+  {
     "table_name": "service_types"
   },
   {
     "table_name": "services"
   },
   {
+    "table_name": "subscription_plans"
+  },
+  {
     "table_name": "user_offers"
   },
   {
+    "table_name": "user_subscriptions"
+  },
+  {
     "table_name": "users"
+  },
+  {
+    "table_name": "weight_based_pricing"
   }
 ]

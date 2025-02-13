@@ -1,0 +1,29 @@
+{
+  "info": {
+    "name": "Service Types API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Service Type",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"WASHING\",\n  \"description\": \"Service de lavage standard\",\n  \"is_default\": false,\n  \"requires_weight\": true,\n  \"supports_premium\": true\n}"
+        },
+        "url": "{{baseUrl}}/api/service-types"
+      }
+    }
+  ]
+}

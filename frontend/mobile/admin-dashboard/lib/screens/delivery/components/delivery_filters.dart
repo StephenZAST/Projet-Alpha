@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/delivery_controller.dart';
-import '../../../models/delivery.dart';
 import '../../../constants.dart';
 
 class DeliveryFilters extends StatelessWidget {

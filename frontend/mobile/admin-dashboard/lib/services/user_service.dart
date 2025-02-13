@@ -1,8 +1,6 @@
 import 'package:admin/models/address.dart';
 
 import '../models/user.dart';
-import '../models/user_stats.dart';
-import '../models/paginated_response.dart';
 import './api_service.dart';
 
 class UserService {

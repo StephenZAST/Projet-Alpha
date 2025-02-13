@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../models/user.dart';
 import './user_edit_dialog.dart';

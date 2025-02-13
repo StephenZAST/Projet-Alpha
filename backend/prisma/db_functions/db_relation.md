@@ -146,6 +146,22 @@
   },
   {
     "table_schema": "public",
+    "table_name": "article_service_prices",
+    "column_name": "article_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "articles",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "article_service_prices",
+    "column_name": "service_type_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "service_types",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
     "table_name": "price_history",
     "column_name": "article_id",
     "foreign_table_schema": "public",
@@ -230,6 +246,38 @@
     "column_name": "order_id",
     "foreign_table_schema": "public",
     "foreign_table_name": "orders",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "user_subscriptions",
+    "column_name": "plan_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "subscription_plans",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "user_subscriptions",
+    "column_name": "user_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "users",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "order_weights",
+    "column_name": "order_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "orders",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "order_weights",
+    "column_name": "verified_by",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "users",
     "foreign_column_name": "id"
   },
   {
@@ -322,22 +370,6 @@
   },
   {
     "table_schema": "public",
-    "table_name": "article_services",
-    "column_name": "articleId",
-    "foreign_table_schema": "public",
-    "foreign_table_name": "articles",
-    "foreign_column_name": "id"
-  },
-  {
-    "table_schema": "public",
-    "table_name": "article_services",
-    "column_name": "serviceId",
-    "foreign_table_schema": "public",
-    "foreign_table_name": "services",
-    "foreign_column_name": "id"
-  },
-  {
-    "table_schema": "public",
     "table_name": "addresses",
     "column_name": "user_id",
     "foreign_table_schema": "public",
@@ -394,6 +426,22 @@
   },
   {
     "table_schema": "public",
+    "table_name": "article_services",
+    "column_name": "article_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "articles",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "article_services",
+    "column_name": "service_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "services",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
     "table_name": "orders",
     "column_name": "addressId",
     "foreign_table_schema": "public",
@@ -422,6 +470,54 @@
     "column_name": "userId",
     "foreign_table_schema": "public",
     "foreign_table_name": "users",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "services",
+    "column_name": "service_type_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "service_types",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "article_service_compatibility",
+    "column_name": "article_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "articles",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "article_service_compatibility",
+    "column_name": "service_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "services",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "service_specific_prices",
+    "column_name": "article_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "articles",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "service_specific_prices",
+    "column_name": "service_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "services",
+    "foreign_column_name": "id"
+  },
+  {
+    "table_schema": "public",
+    "table_name": "weight_based_pricing",
+    "column_name": "service_type_id",
+    "foreign_table_schema": "public",
+    "foreign_table_name": "service_types",
     "foreign_column_name": "id"
   }
 ]

@@ -1,0 +1,30 @@
+{
+  "name": "Article Service API Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "enabled": true
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "articleId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "serviceTypeId",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "priceId",
+      "value": "",
+      "enabled": true
+    }
+  ]
+}

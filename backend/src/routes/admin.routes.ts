@@ -3,6 +3,8 @@ import { AdminController } from '../controllers/admin.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 import { AdminService } from '../services/admin.service';
+import { ServiceManagementController } from '../controllers/admin/serviceManagement.controller';
+import { validatePriceData } from '../middleware/priceValidation.middleware';
 
 const router = express.Router();
 
@@ -194,6 +196,20 @@ router.delete(
   asyncHandler(async (req: Request, res: Response) => {
     await AdminController.deleteArticle(req, res);
   })
+);
+
+// Routes de gestion des services
+router.get(
+  '/services/configuration',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(ServiceManagementController.getServiceConfiguration)
+);
+
+router.put(
+  '/articles/:articleId/services',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  validatePriceData as express.RequestHandler,
+  asyncHandler(ServiceManagementController.updateArticleServices)
 );
 
 export default router;

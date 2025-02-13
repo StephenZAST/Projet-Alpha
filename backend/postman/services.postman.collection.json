@@ -1,0 +1,154 @@
+{
+    "info": {
+      "name": "Service Management Tests",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "1. Service Types",
+        "item": [
+          {
+            "name": "Create Service Type",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n \"name\": \"Lavage Simple\",\n \"description\": \"Service de lavage standard\",\n \"pricing_type\": \"PER_ITEM\",\n \"requires_weight\": false,\n \"supports_premium\": true,\n \"is_active\": true,\n \"is_default\": false\n}"
+              },
+              "url": "{{baseUrl}}/api/service-types"
+            }
+          },
+          {
+            "name": "Get All Service Types",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": "{{baseUrl}}/api/service-types"
+            }
+          }
+        ]
+      },
+      {
+        "name": "2. Article Service Prices",
+        "item": [
+          {
+            "name": "Set Article Service Price",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n \"article_id\": \"{{articleId}}\",\n \"service_type_id\": \"{{serviceTypeId}}\",\n \"base_price\": 1000,\n \"premium_price\": 1500,\n \"price_per_kg\": null,\n \"is_available\": true\n}"
+              },
+              "url": "{{baseUrl}}/api/article-services/prices"
+            }
+          },
+          {
+            "name": "Get Article Service Prices",
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": "{{baseUrl}}/api/article-services/prices?articleId={{articleId}}"
+            }
+          }
+        ]
+      },
+      {
+        "name": "3. Price Calculations",
+        "item": [
+          {
+            "name": "Calculate Service Price",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n \"article_id\": \"{{articleId}}\",\n \"service_type_id\": \"{{serviceTypeId}}\",\n \"quantity\": 2,\n \"is_premium\": false,\n \"weight\": null\n}"
+              },
+              "url": "{{baseUrl}}/api/services/calculate-price"
+            }
+          }
+        ]
+      },
+      {
+        "name": "4. Orders",
+        "item": [
+          {
+            "name": "Create Order",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n \"items\": [{\n   \"article_id\": \"{{articleId}}\",\n   \"service_type_id\": \"{{serviceTypeId}}\",\n   \"quantity\": 2,\n   \"is_premium\": false\n }],\n \"address_id\": \"{{addressId}}\",\n \"collection_date\": \"2024-02-15\"\n}"
+              },
+              "url": "{{baseUrl}}/api/orders"
+            }
+          }
+        ]
+      }
+    ],
+    "variable": [
+      {
+        "key": "baseUrl",
+        "value": "http://localhost:3001/api"
+      }
+    ],
+    "auth": {
+      "type": "bearer",
+      "bearer": [
+        {
+          "key": "token",
+          "value": "{{token}}",
+          "type": "string"
+        }
+      ]
+    }
+  }

@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { Article, CreateArticleDTO } from '../models/types';
+import { Article, ArticleServiceUpdate, CreateArticleDTO } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ArticleService {
@@ -107,6 +107,47 @@ export class ArticleService {
       console.error('[ArticleService] Error getting articles for order:', error);
       throw error;
     }
+  }
+
+  static async getArticleWithServices(articleId: string) {
+    const { data, error } = await supabase
+      .from('articles')
+      .select(`
+        *,
+        article_service_prices (
+          *,
+          service_types (
+            name,
+            description,
+            is_default
+          )
+        ),
+        article_categories (
+          name,
+          description
+        )
+      `)
+      .eq('id', articleId)
+      .single();
+
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+  static async updateArticleServices(
+    articleId: string, 
+    serviceUpdates: ArticleServiceUpdate[]
+  ) {
+    const { data, error } = await supabase.rpc(
+      'update_article_services',
+      {
+        p_article_id: articleId,
+        p_service_updates: serviceUpdates
+      }
+    );
+
+    if (error) throw new Error(error.message);
+    return data;
   }
 
   static async updateArticle(articleId: string, updateData: Partial<Article>) {

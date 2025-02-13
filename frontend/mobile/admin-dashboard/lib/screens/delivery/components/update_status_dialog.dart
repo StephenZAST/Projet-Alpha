@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../../models/delivery.dart';
-import '../../../controllers/delivery_controller.dart';
 import '../../../constants.dart';
 
 class UpdateStatusDialog extends StatefulWidget {

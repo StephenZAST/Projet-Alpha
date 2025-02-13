@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { ServiceService } from '../services/service.service';
+import { PricingService } from '../services/pricing.service';
 import { Service } from '../models/types';
 
 export class ServiceController {
@@ -49,6 +50,36 @@ export class ServiceController {
       res.json({ message: 'Service deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getServicePrice(req: Request, res: Response) {
+    try {
+      const { 
+        articleId, 
+        serviceTypeId, 
+        quantity = 1,
+        weight = null,
+        isPremium = false 
+      } = req.body;
+
+      const priceDetails = await PricingService.calculatePrice({
+        articleId,
+        serviceTypeId,
+        quantity,
+        weight,
+        isPremium
+      });
+
+      return res.json({
+        success: true,
+        data: priceDetails
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
 }

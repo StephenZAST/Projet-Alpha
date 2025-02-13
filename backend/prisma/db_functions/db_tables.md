@@ -254,10 +254,12 @@
 ### Service Types (Table: service_types)
 | Column Name | Type | Constraints |
 |------------|------|-------------|
-| id | uuid | NOT NULL |
-| name | varchar(100) | NOT NULL |
+| id | uuid | PRIMARY KEY, NOT NULL |
+| name | varchar(100) | NOT NULL, UNIQUE |
 | description | text | |
+| is_active | boolean | DEFAULT true |
 | created_at | timestamp with time zone | |
+| updated_at | timestamp with time zone | |
 
 ## Notifications
 ### Notification Rules (Table: notification_rules)

@@ -1,0 +1,123 @@
+{
+  "info": {
+    "name": "Alpha Laundry API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001/api"
+    }
+  ],
+  "item": [
+    {
+      "name": "Service Types",
+      "item": [
+        {
+          "name": "Create Service Type",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/service-types",
+            "header": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer {{admin_token}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "WASHING",
+                "description": "Service de lavage standard",
+                "is_active": true,
+                "is_default": false
+              }
+            }
+          }
+        },
+        {
+          "name": "Get All Service Types",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/service-types"
+          }
+        },
+        {
+          "name": "Update Service Type",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/service-types/{{service_type_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "WASHING PREMIUM",
+                "is_active": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Article Services",
+      "item": [
+        {
+          "name": "Set Price Configuration",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/article-services/prices",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "article_id": "{{article_id}}",
+                "service_type_id": "{{service_type_id}}",
+                "base_price": 1000,
+                "premium_price": 1500,
+                "price_per_kg": 200
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Article Prices",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/article-services/{{article_id}}/prices"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Additional Services",
+      "item": [
+        {
+          "name": "Create Additional Service",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/additional-services",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "Repassage Express",
+                "description": "Service de repassage en 2h",
+                "price": 2000
+              }
+            }
+          }
+        },
+        {
+          "name": "Add Service To Order",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/orders/{{order_id}}/additional-services",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "service_id": "{{service_id}}",
+                "notes": "Urgent"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
