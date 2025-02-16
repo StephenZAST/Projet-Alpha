@@ -25,7 +25,7 @@ export class ArticlePriceCacheService {
 
         if (error) throw error;
         if (data) {
-          prices = data;
+          prices = data; 
           this.cache.set(cacheKey, prices);
         }
       } catch (error) {

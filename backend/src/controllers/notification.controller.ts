@@ -27,7 +27,7 @@ export class NotificationController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  }
+  } 
 
   static async markAsRead(req: Request, res: Response) {
     try {

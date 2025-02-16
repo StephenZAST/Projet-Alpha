@@ -1,5 +1,6 @@
 import supabase from '../config/database';
 import { NotificationService } from './notification.service';
+import { NotificationType } from '../models/types';
 
 export class ServiceNotificationService {
   static async notifyServiceChange(
@@ -26,7 +27,7 @@ export class ServiceNotificationService {
           admins.map(admin => 
             NotificationService.sendNotification(
               admin.id,
-              'SERVICE_UPDATED',
+              NotificationType.SERVICE_UPDATED,
               {
                 title: 'Service mis à jour',
                 message: `Le service "${service?.name}" a été mis à jour`,
@@ -40,7 +41,7 @@ export class ServiceNotificationService {
           )
         );
       }
-
+ 
       // 2. Notifier les utilisateurs ayant des commandes actives avec ce service
       const { data: activeOrders } = await supabase
         .from('orders')
@@ -56,7 +57,7 @@ export class ServiceNotificationService {
           uniqueUserIds.map(userId =>
             NotificationService.sendNotification(
               userId,
-              'SERVICE_UPDATED',
+              NotificationType.SERVICE_UPDATED,
               {
                 title: 'Mise à jour de service',
                 message: `Le service "${service?.name}" que vous utilisez a été mis à jour`,

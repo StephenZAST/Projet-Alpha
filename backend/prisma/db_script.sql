@@ -200,7 +200,7 @@ SELECT
     e.enumlabel as "Status Values"
 FROM pg_type t 
 JOIN pg_enum e ON t.oid = e.enumtypid  
-WHERE t.typname = 'order_status'
+WHERE t.typname = 'notifications'
 ORDER BY e.enumsortorder;
 
 
@@ -208,7 +208,7 @@ ORDER BY e.enumsortorder;
 -- Afficher les colonnes de la table d'une table donnée
 SELECT column_name, data_type, character_maximum_length, column_default, is_nullable
 FROM INFORMATION_SCHEMA.COLUMNS 
-WHERE table_name = 'article_service_prices';
+WHERE table_name = 'notifications';
 
 
 
@@ -234,7 +234,7 @@ JOIN information_schema.constraint_column_usage ccu
     ON ccu.constraint_name = tc.constraint_name
 WHERE tc.table_schema = 'public'
     AND tc.constraint_type = 'FOREIGN KEY'
-    AND (tc.table_name = 'your_table_name' OR ccu.table_name = 'weight_based_pricing')
+    AND (tc.table_name = 'notifications' OR ccu.table_name = 'notifications')
 ORDER BY source_table, source_column;
 
 
@@ -249,7 +249,7 @@ SELECT
     action_timing
 FROM information_schema.triggers
 WHERE trigger_schema = 'public'
-    AND event_object_table = 'article_service_prices'
+    AND event_object_table = 'notifications'
 ORDER BY trigger_name;
 
 
@@ -260,4 +260,10 @@ ORDER BY trigger_name;
 SELECT p.proname AS procedure_name,
        pg_get_functiondef(p.oid) AS procedure_definition
 FROM pg_proc p
-WHERE p.prosrc LIKE '%article_service_prices%';
+WHERE p.prosrc LIKE '%notifications%';
+
+
+
+-- Afficher les contraintes d'une tables
+SELECT * FROM information_schema.table_constraints 
+WHERE table_name = 'notifications';

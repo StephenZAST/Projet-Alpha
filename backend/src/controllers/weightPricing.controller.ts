@@ -27,7 +27,7 @@ export class WeightPricingController {
           updated_at: new Date()
         }])
         .select()
-        .single();
+        .single(); 
 
       if (error) throw error;
       res.status(201).json({ success: true, data });

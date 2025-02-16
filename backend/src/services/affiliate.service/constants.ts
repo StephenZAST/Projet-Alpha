@@ -18,7 +18,7 @@ export const COMMISSION_LEVELS = {
     LEVEL1: {
         name: "Débutant",
         min: 0,
-        max: 9,
+        max: 9, 
         rate: 0.10, // 10%
         description: "10% de commission sur les ventes directes"
     },

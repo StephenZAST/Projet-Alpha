@@ -54,7 +54,7 @@ export class RewardsService {
           console.error('[RewardsService] Error updating loyalty points:', updateError);
           throw updateError;
         }
-        result = updatedLoyalty;
+        result = updatedLoyalty; 
       } else {
         // 2.3 Créer un nouveau profil
         console.log('[RewardsService] Creating new loyalty profile');

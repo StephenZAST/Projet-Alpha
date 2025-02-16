@@ -9,7 +9,8 @@ import {
   PaginatedOrdersResponse,
   CreateOrderDTO,
   AdminCreateOrderDTO,
-  Order
+  Order,
+  NotificationType
 } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from './notification.service';
@@ -26,7 +27,7 @@ export class AdminService {
 
     if (error) throw error;
     return data;
-  }
+  } 
 
   static async configureRewards(rewardPoints: number, rewardType: string): Promise<RewardConfig> {
     const { data, error } = await supabase
@@ -177,11 +178,11 @@ export class AdminService {
     // Notifier l'affilié
     await NotificationService.sendNotification(
       affiliate.user_id,
-      'AFFILIATE_STATUS_UPDATED',
+      NotificationType.AFFILIATE_STATUS_UPDATED,
       {
-        status,
-        isActive,
-        message: `Votre compte affilié est maintenant ${status.toLowerCase()}`
+      status,
+      isActive,
+      message: `Votre compte affilié est maintenant ${status.toLowerCase()}`
       }
     );
 

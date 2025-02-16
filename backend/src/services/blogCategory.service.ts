@@ -26,7 +26,7 @@ export class BlogCategoryService {
       .from('blog_categories')
       .select('*');
 
-    if (error) throw error;
+    if (error) throw error; 
     return data;
   }
 

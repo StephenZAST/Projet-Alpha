@@ -5,6 +5,7 @@ import {
   OrderAdditionalService, 
   CreateAdditionalServiceDTO 
 } from '../models/additionalService.types';
+import { NotificationType } from '../models/types';
 
 export class AdditionalServiceService {
   static async createService(data: CreateAdditionalServiceDTO): Promise<AdditionalService> {
@@ -17,7 +18,7 @@ export class AdditionalServiceService {
           created_at: new Date(),
           updated_at: new Date()
         }])
-        .select()
+        .select() 
         .single();
 
       if (error) throw error;
@@ -32,7 +33,7 @@ export class AdditionalServiceService {
       const notificationPromises = (admins || []).map(admin => 
         NotificationService.sendNotification(
           admin.id,
-          'SERVICE_CREATED',
+          NotificationType.SERVICE_CREATED,
           {
             title: 'Nouveau service créé',
             message: `Le service ${service.name} a été créé`,
@@ -98,7 +99,7 @@ export class AdditionalServiceService {
       const notificationPromises = (admins || []).map(admin => 
         NotificationService.sendNotification(
           admin.id,
-          'SERVICE_ADDED',
+          NotificationType.SERVICE_ADDED,
           {
             title: 'Service additionnel ajouté',
             message: `Le service ${service.name} a été ajouté à la commande ${orderId}`,

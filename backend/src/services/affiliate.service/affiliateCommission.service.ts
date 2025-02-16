@@ -13,7 +13,7 @@ export class AffiliateCommissionService {
 
     let query = supabase
       .from('commissionTransactions')
-      .select(`
+      .select(` 
         *,
         order:orders(
           id,

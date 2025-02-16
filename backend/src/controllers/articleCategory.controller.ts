@@ -20,7 +20,7 @@ export class ArticleCategoryController {
     } catch (error: any) {
       res.status(error.message === 'Article category not found' ? 404 : 500)
          .json({ error: error.message });
-    }
+    } 
   }
 
   static async getAllArticleCategories(req: Request, res: Response) {

@@ -1,5 +1,5 @@
 import supabase from '../../config/database';
-import { Order, OrderStatus } from '../../models/types';
+import { Order, OrderStatus, NotificationType } from '../../models/types';
 import { NotificationService } from '../notification.service';
 
 export class OrderStatusService {
@@ -26,7 +26,7 @@ export class OrderStatusService {
     orderId: string, 
     newStatus: OrderStatus, 
     userId: string, 
-    userRole: string
+    userRole: string 
   ): Promise<Order> {
     console.log(`Attempting to update order ${orderId} to status ${newStatus}`);
 
@@ -78,14 +78,11 @@ export class OrderStatusService {
 
     // 6. Notifier le client du changement de statut
     try {
-      await NotificationService.sendNotification(
+      await NotificationService.createOrderNotification(
         order.userId,
-        'ORDER_STATUS_UPDATED',
-        {
-          orderId: orderId,
-          newStatus: newStatus,
-          message: `Votre commande est maintenant ${newStatus.toLowerCase()}`
-        }
+        orderId,
+        NotificationType.ORDER_STATUS_UPDATED,
+        { newStatus }
       );
     } catch (notifError) {
       console.error('Error sending notification:', notifError);

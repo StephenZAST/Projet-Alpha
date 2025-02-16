@@ -25,7 +25,7 @@ export class AuthService {
       created_at: new Date(),
       updated_at: new Date()
     };
-
+ 
     const { data, error } = await supabase
       .from('users')
       .insert([dbUser])

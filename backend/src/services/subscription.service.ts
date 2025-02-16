@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { SubscriptionPlan, UserSubscription } from '../models/types';
+import { SubscriptionPlan, UserSubscription, NotificationType } from '../models/types';
 import { NotificationService } from './notification.service';
 
 export class SubscriptionService {
@@ -73,7 +73,7 @@ export class SubscriptionService {
       // 4. Notifier l'utilisateur
       await NotificationService.sendNotification(
         userId,
-        'SUBSCRIPTION_CREATED',
+        NotificationType.SUBSCRIPTION_CREATED,
         {
           title: 'Nouvel abonnement',
           message: `Votre abonnement ${plan.name} est maintenant actif`
@@ -121,7 +121,7 @@ export class SubscriptionService {
 
       await NotificationService.sendNotification(
         userId,
-        'SUBSCRIPTION_CANCELLED',
+        NotificationType.SUBSCRIPTION_CANCELLED,
         {
           title: 'Abonnement annulé',
           message: 'Votre abonnement a été annulé avec succès'

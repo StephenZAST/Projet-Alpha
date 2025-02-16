@@ -29,7 +29,7 @@ export const validateWeightPricing = (req: Request, res: Response, next: NextFun
       success: false,
       message: 'ID de type de service invalide'
     });
-  }
+  } 
 
   if (!min_weight || !max_weight || !price_per_kg) {
     return res.status(400).json({

@@ -22,7 +22,7 @@ export class ArticleServiceController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  }
+  } 
 
   static async updateArticleService(req: Request, res: Response) {
     try {

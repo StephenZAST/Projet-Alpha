@@ -26,7 +26,7 @@ export class PricingController {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
-  }
+  } 
 
   static async getPricingConfiguration(req: Request, res: Response) {
     try {

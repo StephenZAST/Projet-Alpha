@@ -10,7 +10,7 @@ export class BlogCategoryController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  }
+  } 
 
   static async getAllCategories(req: Request, res: Response) {
     try {

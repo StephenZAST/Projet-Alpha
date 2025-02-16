@@ -25,7 +25,7 @@ router.post('/admin/login', validateLogin, asyncHandler(async (req: Request, res
     // Vérifier si l'utilisateur est un admin
     if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
       return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-    }
+    } 
 
     // Envoyer la réponse avec le token
     res.json({

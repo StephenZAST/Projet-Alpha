@@ -13,7 +13,7 @@ const generateToken = (user: any) => {
     process.env.JWT_SECRET!,
     { expiresIn: '7d' }
   );
-};
+}; 
 
 export class AuthController {
   static async register(req: Request, res: Response) {

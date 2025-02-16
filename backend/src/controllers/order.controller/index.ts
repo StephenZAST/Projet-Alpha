@@ -13,7 +13,7 @@ export class OrderController {
 
   static async calculateTotal(req: Request, res: Response): Promise<void> {
     await OrderCreateController.calculateTotal(req, res);
-  }
+  } 
 
   // Méthodes de lecture
   static async getOrderDetails(req: Request, res: Response): Promise<void> {

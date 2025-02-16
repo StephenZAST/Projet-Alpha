@@ -37,7 +37,7 @@ export const validateRegistration = (req: Request, res: Response, next: NextFunc
   }
 
   next();
-};
+}; 
 
 export const validateLogin = (req: Request, res: Response, next: NextFunction): void => {
   const { email, password } = req.body;

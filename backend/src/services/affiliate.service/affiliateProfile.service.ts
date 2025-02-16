@@ -16,7 +16,7 @@ export class AffiliateProfileService {
           affiliate_code,
           parent_affiliate_id,
           commission_balance,
-          total_earned,
+          total_earned, 
           created_at,
           updated_at,
           commission_rate,

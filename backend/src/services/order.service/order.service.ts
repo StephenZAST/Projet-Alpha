@@ -18,7 +18,7 @@ export class OrderService {
   // Requêtes de commandes
   static async getUserOrders(userId: string): Promise<Order[]> {
     return OrderQueryService.getUserOrders(userId);
-  }
+  } 
 
   static async getOrderDetails(orderId: string): Promise<Order> {
     return OrderQueryService.getOrderDetails(orderId);

@@ -24,7 +24,7 @@ router.get(
     await DeliveryController.getAssignedOrders(req, res);
   })
 );
-
+ 
 router.patch(
   '/:orderId/status',
   authorizeRoles(['DELIVERY', 'SUPER_ADMIN', 'ADMIN']) as express.RequestHandler,

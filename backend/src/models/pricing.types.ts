@@ -14,3 +14,4 @@ export interface PriceDetails {
   pricingType: PricingType;
   isPremium: boolean;
 }
+ 

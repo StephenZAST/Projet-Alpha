@@ -4,10 +4,12 @@ import {
   PricingService, 
   RewardsService, 
   NotificationService,
+  LoyaltyService,  // Ajout de l'import
   SYSTEM_CONSTANTS
 } from '../../services';
-import { OrderStatus } from '../../models/types';
+import { NotificationType, OrderStatus } from '../../models/types';
 import { OrderSharedMethods } from './shared';
+import { orderNotificationTemplates, getCustomerName } from '../../utils/notificationTemplates';
 
 interface CreateOrderItemData {
   articleId: string;
@@ -19,7 +21,7 @@ interface OrderItem {
   orderId: string;
   articleId: string;
   serviceId: string;
-  quantity: number;
+  quantity: number; 
   unitPrice: number;
   createdAt: Date;
   updatedAt: Date;
@@ -46,7 +48,8 @@ export class OrderCreateController {
         items,
         paymentMethod,
         appliedOfferIds,
-        serviceTypeId
+        serviceTypeId,
+        usePoints  // Add this new field
       } = req.body;
       
       const userId = req.user?.id;
@@ -57,37 +60,50 @@ export class OrderCreateController {
       const pricing = await PricingService.calculateOrderTotal({
         items,
         userId,
-        appliedOfferIds
+        appliedOfferIds,
+        usePoints: usePoints || 0
       });
       console.log('[OrderController] Price calculation result:', pricing);
 
       // 2. Créer la commande avec le montant total
-      const orderData = {
-        userId,
-        serviceId,
-        addressId,
-        isRecurring,
-        recurrenceType,
-        nextRecurrenceDate: null,
-        totalAmount: pricing.total,
-        collectionDate,
-        deliveryDate,
-        affiliateCode,
-        paymentMethod,
-        status: 'PENDING' as OrderStatus,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        service_type_id: serviceTypeId  // Garde le snake_case car c'est le nom exact dans la DB
-      };
-
       const { data: order, error } = await supabase
         .from('orders')
-        .insert([orderData])
+        .insert([{
+          userId,
+          serviceId,
+          addressId,
+          isRecurring,
+          recurrenceType,
+          nextRecurrenceDate: null,
+          totalAmount: pricing.total,
+          collectionDate,
+          deliveryDate,
+          affiliateCode,
+          paymentMethod,
+          status: 'PENDING' as OrderStatus,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          service_type_id: serviceTypeId  // Garde le snake_case car c'est le nom exact dans la DB
+        }])
         .select()
         .single();
 
       if (error) throw error;
       console.log('[OrderController] Order created:', order.id);
+
+      // 3. Si des points sont utilisés, les déduire maintenant qu'on a l'ID de commande
+      if (usePoints > 0) {
+        try {
+          await LoyaltyService.deductPoints(userId, usePoints, order.id);
+        } catch (error) {
+          // Si la déduction échoue, annuler la commande
+          await supabase
+            .from('orders')
+            .delete()
+            .eq('id', order.id);
+          throw error;
+        }
+      }
 
       // 3. Créer les items de commande
       const orderItems: OrderItem[] = items.map((item: CreateOrderItemData) => ({
@@ -176,18 +192,71 @@ export class OrderCreateController {
         }
       }
 
-      // 7. Envoyer les notifications
-      await NotificationService.createOrderNotification(
-        userId,
-        order.id,
-        'ORDER_CREATED',
-        {
-          pricing,
-          earnedPoints,
-          affiliateCommission
-        }
+      // 7. Get user data and send notifications with proper type checking
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id, email, firstName, lastName')  // Changed first_name to firstName to match User type
+        .eq('id', userId)
+        .single();
+
+      // Convert supabase user data to User type
+      const userForNotification = userData ? {
+        id: userData.id,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        role: req.user?.role || 'CLIENT',  // Provide default role
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        password: ''  // This field is required by User type but not needed for notification
+      } : undefined;
+
+      const notificationTemplate = orderNotificationTemplates.orderCreated(
+        completeOrder,
+        userForNotification
       );
-      console.log('[OrderController] Notifications sent');
+
+      // Ensure userId is available for notification creation
+      await NotificationService.createNotification(
+        userId,  // Use validated userId instead of req.user?.id
+        NotificationType.ORDER_CREATED,
+        notificationTemplate.message,
+        notificationTemplate.data
+      );
+
+      // Envoyer les notifications en arrière-plan
+      NotificationService.sendOrderNotification(order)
+        .catch((error: Error) => console.error('[OrderController] Notification error:', error));
+
+      // Récupérer les données utilisateur avec la commande
+      const { data: orderWithUser } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          user:users(first_name, last_name),
+          address:addresses(city)
+        `)
+        .eq('id', order.id)
+        .single();
+
+      if (!orderWithUser) {
+        throw new Error('Order data not found');
+      }
+
+      // Préparer les données pour les notifications avec vérification null
+      const notificationData = {
+        orderId: orderWithUser.id,
+        clientName: orderWithUser.user 
+          ? `${orderWithUser.user.first_name || ''} ${orderWithUser.user.last_name || ''}`.trim() || 'Client'
+          : 'Client',
+        amount: orderWithUser.totalAmount,
+        deliveryZone: orderWithUser.address?.city || 'Zone non spécifiée',
+        itemCount: completeOrder.items?.length || 0
+      };
+
+      // Envoyer les notifications en arrière-plan
+      await NotificationService.sendRoleBasedNotifications(orderWithUser, notificationData)
+        .catch((error: Error) => console.error('[OrderController] Notification error:', error));
 
       // 8. Préparer la réponse
       const response = {

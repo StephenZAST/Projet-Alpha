@@ -28,7 +28,7 @@ export class ServiceSpecificPriceService {
       throw error;
     }
   }
-
+ 
   static async getPrice(
     articleId: string,
     serviceId: string

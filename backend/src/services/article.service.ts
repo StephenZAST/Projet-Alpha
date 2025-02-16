@@ -25,7 +25,7 @@ export class ArticleService {
 
     if (error) throw error;
 
-    return data;
+    return data; 
   }
 
   static async getArticleById(articleId: string): Promise<Article> {

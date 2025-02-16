@@ -1,6 +1,10 @@
 export * from './pricing.service';
 export * from './rewards.service';
 export * from './notification.service';
+export { LoyaltyService } from './loyalty.service';
+export { PricingService } from './pricing.service';
+export { RewardsService } from './rewards.service';
+export { NotificationService } from './notification.service';
 
 // Types utilitaires pour l'intégration des services
 export interface OrderCalculationResult {

@@ -23,3 +23,4 @@ export class OrderPricingService {
     return prices.reduce((total, price) => total + price, 0);
   }
 }
+ 

@@ -17,7 +17,7 @@ export class ArticleServicePriceController {
         error: error.message
       });
     }
-  }
+  } 
 
   static async update(req: Request, res: Response) {
     try {

@@ -1,0 +1,199 @@
+{
+  "info": {
+    "name": "Alpha Laundry Service Pricing Tests",
+    "description": "Tests for the new service pricing implementation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Service Pricing Tests",
+      "item": [
+        {
+          "name": "1. Create Order with Multiple Items",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('order');",
+                  "    pm.expect(jsonData.data).to.have.property('pricing');",
+                  "    pm.expect(jsonData.data).to.have.property('rewards');",
+                  "});",
+                  "",
+                  "pm.test(\"Pricing calculation is correct\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.pricing).to.have.property('subtotal');",
+                  "    pm.expect(jsonData.data.pricing).to.have.property('total');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"serviceId\": \"{{serviceId}}\",\"service_type_id\": \"{{serviceTypeId}}\",\"addressId\": \"{{addressId}}\",\"items\": [{\"articleId\": \"087518bd-d6bc-4ab6-a230-b23c7ad25c38\",\"quantity\": 2,\"isPremium\": true},{\"articleId\": \"b75ab8ac-58ef-4cdb-b57e-6c8722449cce\",\"quantity\": 1,\"isPremium\": false}],\"paymentMethod\": \"CASH\",\"affiliateCode\": \"{{affiliateCode}}\"}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "2. Create Order with Weight-Based Pricing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Weight-based order created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('order');",
+                  "    pm.expect(jsonData.data.order).to.have.property('weight');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"serviceId\": \"{{serviceId}}\",\"service_type_id\": \"{{weightServiceTypeId}}\",\"addressId\": \"{{addressId}}\",\"items\": [{\"articleId\": \"087518bd-d6bc-4ab6-a230-b23c7ad25c38\",\"quantity\": 1,\"weight\": 2.5,\"isPremium\": false}],\"paymentMethod\": \"ORANGE_MONEY\"}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "3. Calculate Price Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Price calculation returned correct structure\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('basePrice');",
+                  "    pm.expect(jsonData.data).to.have.property('total');",
+                  "    pm.expect(jsonData.data).to.have.property('pricingType');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"articleId\": \"087518bd-d6bc-4ab6-a230-b23c7ad25c38\",\"serviceTypeId\": \"{{serviceTypeId}}\",\"quantity\": 2,\"isPremium\": true}"
+            },
+            "url": "{{baseUrl}}/pricing/calculate"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Vous pouvez ajouter ici du code à exécuter avant chaque requête"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Vous pouvez ajouter ici du code à exécuter après chaque requête"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "votre_token_ici",
+      "type": "string"
+    },
+    {
+      "key": "serviceId",
+      "value": "235d24ef-836d-4e87-aef1-bf028d5d8e3d",
+      "type": "string"
+    },
+    {
+      "key": "serviceTypeId",
+      "value": "b8dbd27a-9915-48ad-a8e9-276a4c8aca91",
+      "type": "string"
+    },
+    {
+      "key": "weightServiceTypeId",
+      "value": "338f5b6c-682e-43c3-90da-96ec0e5a14b8",
+      "type": "string"
+    },
+    {
+      "key": "addressId",
+      "value": "03802428-7c13-4e06-b153-bb5a9dde176a",
+      "type": "string"
+    },
+    {
+      "key": "affiliateCode",
+      "value": "L12NHEQTD",
+      "type": "string"
+    }
+  ]
+}

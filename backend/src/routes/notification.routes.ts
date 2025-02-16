@@ -20,7 +20,7 @@ router.get(
     await NotificationController.getNotifications(req, res);
   })
 );
-
+ 
 router.get('/unread', asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   await NotificationController.getUnreadCount(req, res);
 }));

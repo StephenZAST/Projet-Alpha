@@ -1,38 +1,3 @@
-# Database Triggers
-
-## Automatic Timestamps
-### Update Timestamp Triggers
-| Trigger Name | Table | Event | Timing | Description |
-|-------------|--------|-------|---------|-------------|
-| update_addresses_updated_at | addresses | UPDATE | BEFORE | Met à jour le timestamp de modification |
-| update_articles_updated_at | articles | UPDATE | BEFORE | Met à jour le timestamp de modification |
-| update_blog_articles_updated_at | blog_articles | UPDATE | BEFORE | Met à jour le timestamp de modification |
-| update_blog_categories_updated_at | blog_categories | UPDATE | BEFORE | Met à jour le timestamp de modification |
-| update_notifications_updated_at | notifications | UPDATE | BEFORE | Met à jour le timestamp de modification |
-| update_services_updated_at | services | UPDATE | BEFORE | Met à jour le timestamp de modification |
-| update_users_updated_at | users | UPDATE | BEFORE | Met à jour le timestamp de modification |
-| set_timestamp | reset_codes | UPDATE | BEFORE | Met à jour le timestamp des codes de réinitialisation |
-
-## Order Management
-### Order Related Triggers
-| Trigger Name | Table | Event | Timing | Description |
-|-------------|--------|-------|---------|-------------|
-| archive_completed_orders_trigger | orders | UPDATE | AFTER | Archive automatiquement les commandes terminées |
-| update_orders_updated_at | orders | UPDATE | BEFORE | Met à jour le timestamp des commandes |
-| update_order_items_updated_at | order_items | UPDATE | BEFORE | Met à jour le timestamp des articles commandés |
-
-## User Management
-### User Related Triggers
-| Trigger Name | Table | Event | Timing | Description |
-|-------------|--------|-------|---------|-------------|
-| create_user_loyalty_points | users | INSERT | AFTER | Initialise les points de fidélité pour les nouveaux utilisateurs |
-| update_loyalty_points_timestamp | loyalty_points | UPDATE | BEFORE | Met à jour le timestamp des points de fidélité |
-
-## Affiliate System
-### Affiliate Related Triggers
-| Trigger Name | Table | Event | Timing | Description |
-|-------------|--------|-------|---------|-------------|
-| after_affiliate_earnings_update | affiliate_profiles | UPDATE | AFTER | Met à jour le niveau d'affilié basé sur les gains |
 
 
 
@@ -66,15 +31,36 @@
     "trigger_timing": "AFTER"
   },
   {
-    "trigger_name": "order_note_sync_trigger",
+    "trigger_name": "order_items_total_update",
     "trigger_event": "UPDATE",
+    "table_name": "order_items",
+    "trigger_definition": "EXECUTE FUNCTION update_order_total()",
+    "trigger_timing": "AFTER"
+  },
+  {
+    "trigger_name": "order_items_total_update",
+    "trigger_event": "DELETE",
+    "table_name": "order_items",
+    "trigger_definition": "EXECUTE FUNCTION update_order_total()",
+    "trigger_timing": "AFTER"
+  },
+  {
+    "trigger_name": "order_items_total_update",
+    "trigger_event": "INSERT",
+    "table_name": "order_items",
+    "trigger_definition": "EXECUTE FUNCTION update_order_total()",
+    "trigger_timing": "AFTER"
+  },
+  {
+    "trigger_name": "order_note_sync_trigger",
+    "trigger_event": "INSERT",
     "table_name": "order_notes",
     "trigger_definition": "EXECUTE FUNCTION sync_order_note()",
     "trigger_timing": "AFTER"
   },
   {
     "trigger_name": "order_note_sync_trigger",
-    "trigger_event": "INSERT",
+    "trigger_event": "UPDATE",
     "table_name": "order_notes",
     "trigger_definition": "EXECUTE FUNCTION sync_order_note()",
     "trigger_timing": "AFTER"
@@ -175,6 +161,20 @@
     "trigger_event": "UPDATE",
     "table_name": "weight_based_pricing",
     "trigger_definition": "EXECUTE FUNCTION update_timestamp_column()",
+    "trigger_timing": "BEFORE"
+  },
+  {
+    "trigger_name": "validate_article_service_price_trigger",
+    "trigger_event": "UPDATE",
+    "table_name": "article_service_prices",
+    "trigger_definition": "EXECUTE FUNCTION validate_article_service_price()",
+    "trigger_timing": "BEFORE"
+  },
+  {
+    "trigger_name": "validate_article_service_price_trigger",
+    "trigger_event": "INSERT",
+    "table_name": "article_service_prices",
+    "trigger_definition": "EXECUTE FUNCTION validate_article_service_price()",
     "trigger_timing": "BEFORE"
   }
 ]

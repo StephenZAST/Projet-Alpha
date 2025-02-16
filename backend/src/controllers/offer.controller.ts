@@ -25,7 +25,7 @@ export class OfferController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  }
+  } 
 
   static async getOfferById(req: Request, res: Response) {
     try {

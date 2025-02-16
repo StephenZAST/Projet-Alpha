@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { ServiceType } from '../models/types';
+import { ServiceType, NotificationType } from '../models/types';
 import { NotificationService } from './notification.service';
 
 export class ServiceTypeService {
@@ -26,7 +26,7 @@ export class ServiceTypeService {
       throw error;
     }
   }
-
+ 
   static async update(id: string, data: Partial<ServiceType>): Promise<ServiceType> {
     const { data: serviceType, error } = await supabase
       .from('service_types')
@@ -110,7 +110,7 @@ export class ServiceTypeService {
 
       // 3. Notifier les admins du changement
       if (data) {
-        await this.notifyAdmins('SERVICE_TYPE_UPDATED', data);
+        await this.notifyAdmins(NotificationType.SERVICE_TYPE_UPDATED, data);
       }
 
       return data;
@@ -120,7 +120,10 @@ export class ServiceTypeService {
     }
   }
 
-  private static async notifyAdmins(type: 'SERVICE_TYPE_CREATED' | 'SERVICE_TYPE_UPDATED', serviceType: ServiceType) {
+  private static async notifyAdmins(
+    type: NotificationType.SERVICE_TYPE_CREATED | NotificationType.SERVICE_TYPE_UPDATED,
+    serviceType: ServiceType
+  ) {
     const { data: admins } = await supabase
       .from('users')
       .select('id')
@@ -133,8 +136,8 @@ export class ServiceTypeService {
             admin.id,
             type,
             {
-              title: type === 'SERVICE_TYPE_CREATED' ? 'Nouveau type de service' : 'Type de service mis à jour',
-              message: `Le type de service "${serviceType.name}" a été ${type === 'SERVICE_TYPE_CREATED' ? 'créé' : 'mis à jour'}`,
+              title: type === NotificationType.SERVICE_TYPE_CREATED ? 'Nouveau type de service' : 'Type de service mis à jour',
+              message: `Le type de service "${serviceType.name}" a été ${type === NotificationType.SERVICE_TYPE_CREATED ? 'créé' : 'mis à jour'}`,
               data: serviceType
             }
           )

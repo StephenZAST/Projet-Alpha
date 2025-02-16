@@ -17,7 +17,7 @@ export const validatePhone = (phone: string): boolean => {
 export const validateUUID = (uuid: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
-};
+}; 
 
 export const validateRegistration = (req: Request, res: Response, next: NextFunction) => {
   const { email, password, firstName, lastName, phone } = req.body;

@@ -1,184 +1,19 @@
 [
   {
-    "column_name": "id",
-    "data_type": "uuid",
-    "character_maximum_length": null,
-    "column_default": "uuid_generate_v4()",
-    "is_nullable": "NO"
-  },
-  {
-    "column_name": "service_type_id",
-    "data_type": "uuid",
-    "character_maximum_length": null,
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "column_name": "min_weight",
-    "data_type": "numeric",
-    "character_maximum_length": null,
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "column_name": "max_weight",
-    "data_type": "numeric",
-    "character_maximum_length": null,
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "column_name": "price_per_kg",
-    "data_type": "numeric",
-    "character_maximum_length": null,
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "column_name": "is_active",
-    "data_type": "boolean",
-    "character_maximum_length": null,
-    "column_default": "true",
-    "is_nullable": "YES"
-  },
-  {
-    "column_name": "created_at",
-    "data_type": "timestamp with time zone",
-    "character_maximum_length": null,
-    "column_default": "CURRENT_TIMESTAMP",
-    "is_nullable": "YES"
-  },
-  {
-    "column_name": "updated_at",
-    "data_type": "timestamp with time zone",
-    "character_maximum_length": null,
-    "column_default": "CURRENT_TIMESTAMP",
-    "is_nullable": "YES"
-  }
-]
-
-
-Triggers 
-
-[
-  {
-    "trigger_name": "update_weight_based_pricing_timestamp",
-    "event_manipulation": "UPDATE",
-    "event_object_table": "weight_based_pricing",
-    "action_statement": "EXECUTE FUNCTION update_timestamp_column()",
-    "action_timing": "BEFORE"
-  }
-]
-
-
-
-
-
-function 
-
-
-[
-  {
-    "procedure_name": "calculate_weight_price",
-    "procedure_definition": "CREATE OR REPLACE FUNCTION public.calculate_weight_price(p_service_id uuid, p_weight numeric)\n RETURNS numeric\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_price DECIMAL;\r\nBEGIN\r\n    -- Log des paramètres pour le débogage\r\n    RAISE NOTICE 'Calculating price for service_id: % and weight: %', p_service_id, p_weight;\r\n\r\n    SELECT price_per_kg * p_weight INTO v_price\r\n    FROM weight_based_pricing\r\n    WHERE service_id = p_service_id\r\n    AND p_weight BETWEEN min_weight AND max_weight;\r\n\r\n    IF v_price IS NULL THEN\r\n        RAISE EXCEPTION 'No pricing found for service_id: % and weight: %', p_service_id, p_weight;\r\n    END IF;\r\n\r\n    RETURN v_price;\r\nEND;\r\n$function$\n"
-  },
-  {
-    "procedure_name": "initialize_default_pricing",
-    "procedure_definition": "CREATE OR REPLACE FUNCTION public.initialize_default_pricing(p_service_id uuid, p_base_price numeric DEFAULT 100)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    -- Supprimer les anciennes configurations si elles existent\r\n    DELETE FROM weight_based_pricing WHERE service_id = p_service_id;\r\n    \r\n    -- Insérer les nouvelles configurations par tranches de poids\r\n    INSERT INTO weight_based_pricing \r\n        (service_id, min_weight, max_weight, price_per_kg, created_at, updated_at)\r\n    VALUES\r\n        (p_service_id, 0, 5, p_base_price, NOW(), NOW()),\r\n        (p_service_id, 5.1, 10, p_base_price * 0.95, NOW(), NOW()),\r\n        (p_service_id, 10.1, 20, p_base_price * 0.90, NOW(), NOW()),\r\n        (p_service_id, 20.1, 999999, p_base_price * 0.85, NOW(), NOW());\r\nEND;\r\n$function$\n"
-  }
-]
-
-
-
-
-_______________
-
-
-
-[
-  {
-    "column_name": "id",
-    "data_type": "uuid",
-    "character_maximum_length": null,
-    "column_default": "uuid_generate_v4()",
-    "is_nullable": "NO"
-  },
-  {
-    "column_name": "article_id",
-    "data_type": "uuid",
-    "character_maximum_length": null,
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "column_name": "service_type_id",
-    "data_type": "uuid",
-    "character_maximum_length": null,
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "column_name": "base_price",
-    "data_type": "numeric",
-    "character_maximum_length": null,
-    "column_default": null,
-    "is_nullable": "NO"
-  },
-  {
-    "column_name": "premium_price",
-    "data_type": "numeric",
-    "character_maximum_length": null,
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "column_name": "is_available",
-    "data_type": "boolean",
-    "character_maximum_length": null,
-    "column_default": "true",
-    "is_nullable": "YES"
-  },
-  {
-    "column_name": "price_per_kg",
-    "data_type": "numeric",
-    "character_maximum_length": null,
-    "column_default": null,
-    "is_nullable": "YES"
-  },
-  {
-    "column_name": "created_at",
-    "data_type": "timestamp with time zone",
-    "character_maximum_length": null,
-    "column_default": "CURRENT_TIMESTAMP",
-    "is_nullable": "YES"
-  },
-  {
-    "column_name": "updated_at",
-    "data_type": "timestamp with time zone",
-    "character_maximum_length": null,
-    "column_default": "CURRENT_TIMESTAMP",
-    "is_nullable": "YES"
-  }
-]
-
-
-
-
-function / procedure
-
-
-[
-  {
     "procedure_name": "create_order_with_items",
-    "procedure_definition": "CREATE OR REPLACE FUNCTION public.create_order_with_items(p_order_data jsonb, p_items jsonb[])\n RETURNS jsonb\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_order_id UUID;\r\n    v_total DECIMAL := 0;\r\n    v_item JSONB;\r\n    v_price DECIMAL;\r\n    v_service_price DECIMAL;\r\n    v_article_service_price article_service_prices%ROWTYPE;\r\nBEGIN\r\n    -- 1. Créer la commande\r\n    INSERT INTO orders (\r\n        \"userId\",\r\n        \"serviceId\",\r\n        \"addressId\",\r\n        \"service_type_id\",\r\n        \"isRecurring\",\r\n        \"recurrenceType\",\r\n        \"collectionDate\",\r\n        \"deliveryDate\",\r\n        \"affiliateCode\",\r\n        \"paymentMethod\",\r\n        status,\r\n        \"totalAmount\",\r\n        \"createdAt\",\r\n        \"updatedAt\"\r\n    )\r\n    VALUES (\r\n        (p_order_data->>'userId')::uuid,\r\n        (p_order_data->>'serviceId')::uuid,\r\n        (p_order_data->>'addressId')::uuid,\r\n        (p_order_data->>'serviceTypeId')::uuid,\r\n        (p_order_data->>'isRecurring')::boolean,\r\n        (p_order_data->>'recurrenceType')::recurrence_type,\r\n        (p_order_data->>'collectionDate')::timestamptz,\r\n        (p_order_data->>'deliveryDate')::timestamptz,\r\n        p_order_data->>'affiliateCode',\r\n        (p_order_data->>'paymentMethod')::payment_method_enum,\r\n        'PENDING'::order_status,\r\n        0,\r\n        CURRENT_TIMESTAMP,\r\n        CURRENT_TIMESTAMP\r\n    )\r\n    RETURNING id INTO v_order_id;\r\n\r\n    -- 2. Insérer les items avec gestion des prix\r\n    FOREACH v_item IN ARRAY p_items\r\n    LOOP\r\n        -- Récupérer le prix depuis article_service_prices\r\n        SELECT *\r\n        INTO v_article_service_price\r\n        FROM article_service_prices\r\n        WHERE article_id = (v_item->>'articleId')::uuid\r\n        AND service_type_id = (p_order_data->>'serviceTypeId')::uuid;\r\n\r\n        -- Calculer le prix en fonction du type (basic/premium)\r\n        v_price := CASE \r\n            WHEN (v_item->>'isPremium')::boolean AND v_article_service_price.premium_price IS NOT NULL \r\n                THEN v_article_service_price.premium_price\r\n            ELSE v_article_service_price.base_price\r\n        END;\r\n\r\n        -- Vérifier si le prix au kilo est applicable\r\n        IF (v_item->>'weight')::decimal IS NOT NULL AND v_article_service_price.price_per_kg IS NOT NULL THEN\r\n            v_price := v_article_service_price.price_per_kg * (v_item->>'weight')::decimal;\r\n        END IF;\r\n\r\n        -- Insérer l'item de commande\r\n        INSERT INTO order_items (\r\n            \"orderId\",\r\n            \"articleId\",\r\n            \"serviceId\",\r\n            quantity,\r\n            \"unitPrice\",\r\n            \"isPremium\",\r\n            weight_kg,\r\n            \"createdAt\",\r\n            \"updatedAt\"\r\n        )\r\n        VALUES (\r\n            v_order_id,\r\n            (v_item->>'articleId')::uuid,\r\n            (p_order_data->>'serviceId')::uuid,\r\n            (v_item->>'quantity')::integer,\r\n            v_price,\r\n            (v_item->>'isPremium')::boolean,\r\n            (v_item->>'weight')::decimal,\r\n            CURRENT_TIMESTAMP,\r\n            CURRENT_TIMESTAMP\r\n        );\r\n\r\n        -- Calculer le total\r\n        v_total := v_total + (v_price * (v_item->>'quantity')::integer);\r\n    END LOOP;\r\n\r\n    -- 3. Mettre à jour le total de la commande\r\n    UPDATE orders \r\n    SET \"totalAmount\" = v_total,\r\n        \"updatedAt\" = CURRENT_TIMESTAMP\r\n    WHERE id = v_order_id;\r\n\r\n    -- 4. Retourner le résultat avec les détails complets\r\n    RETURN (\r\n        SELECT jsonb_build_object(\r\n            'order', jsonb_build_object(\r\n                'id', o.id,\r\n                'userId', o.\"userId\",\r\n                'serviceId', o.\"serviceId\",\r\n                'addressId', o.\"addressId\",\r\n                'serviceTypeId', o.service_type_id,\r\n                'status', o.status,\r\n                'totalAmount', o.\"totalAmount\",\r\n                'createdAt', o.\"createdAt\",\r\n                'items', (\r\n                    SELECT jsonb_agg(jsonb_build_object(\r\n                        'id', oi.id,\r\n                        'articleId', oi.\"articleId\",\r\n                        'quantity', oi.quantity,\r\n                        'unitPrice', oi.\"unitPrice\",\r\n                        'isPremium', oi.\"isPremium\",\r\n                        'weightKg', oi.weight_kg,\r\n                        'total', oi.quantity * oi.\"unitPrice\"\r\n                    ))\r\n                    FROM order_items oi\r\n                    WHERE oi.\"orderId\" = o.id\r\n                )\r\n            )\r\n        )\r\n        FROM orders o\r\n        WHERE o.id = v_order_id\r\n    );\r\n\r\nEXCEPTION WHEN OTHERS THEN\r\n    -- Gestion des erreurs\r\n    RAISE EXCEPTION 'Erreur lors de la création de la commande: %', SQLERRM;\r\nEND;\r\n$function$\n"
+    "procedure_definition": "CREATE OR REPLACE FUNCTION public.create_order_with_items(p_userid uuid, p_serviceid uuid, p_addressid uuid, p_isrecurring boolean, p_recurrencetype recurrence_type, p_collectiondate timestamp with time zone, p_deliverydate timestamp with time zone, p_affiliatecode text, p_service_type_id uuid, p_paymentmethod payment_method_enum, p_items order_item_input[])\n RETURNS TABLE(id uuid, \"userId\" uuid, \"serviceId\" uuid, \"addressId\" uuid, \"totalAmount\" numeric, status order_status, items json)\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n    v_order_id UUID;\r\n    v_total_amount NUMERIC := 0;\r\n    v_item order_item_input;\r\n    v_article_price NUMERIC;\r\n    v_items_json JSON := '[]'::JSON;\r\nBEGIN\r\n    -- 1. Créer la commande\r\n    INSERT INTO orders (\r\n        \"userId\",\r\n        \"serviceId\",\r\n        \"addressId\",\r\n        \"isRecurring\",\r\n        \"recurrenceType\",\r\n        \"collectionDate\",\r\n        \"deliveryDate\",\r\n        \"affiliateCode\",\r\n        service_type_id,\r\n        \"paymentMethod\",\r\n        status,\r\n        \"totalAmount\",\r\n        \"createdAt\",\r\n        \"updatedAt\"\r\n    )\r\n    VALUES (\r\n        p_userId,\r\n        p_serviceId,\r\n        p_addressId,\r\n        p_isRecurring,\r\n        p_recurrenceType,\r\n        p_collectionDate,\r\n        p_deliveryDate,\r\n        p_affiliateCode,\r\n        p_service_type_id,\r\n        p_paymentMethod,\r\n        'PENDING',\r\n        0,\r\n        CURRENT_TIMESTAMP,\r\n        CURRENT_TIMESTAMP\r\n    )\r\n    RETURNING id INTO v_order_id;\r\n\r\n    -- 2. Créer les items et calculer le total\r\n    FOREACH v_item IN ARRAY p_items\r\n    LOOP\r\n        -- Récupérer le prix de l'article\r\n        SELECT \r\n            CASE \r\n                WHEN v_item.\"isPremium\" THEN \"premiumPrice\" \r\n                ELSE \"basePrice\" \r\n            END INTO v_article_price\r\n        FROM articles\r\n        WHERE id = v_item.\"articleId\";\r\n\r\n        -- Insérer l'item\r\n        INSERT INTO order_items (\r\n            \"orderId\",\r\n            \"articleId\",\r\n            \"serviceId\",\r\n            quantity,\r\n            \"unitPrice\",\r\n            \"createdAt\",\r\n            \"updatedAt\"\r\n        )\r\n        VALUES (\r\n            v_order_id,\r\n            v_item.\"articleId\",\r\n            p_serviceId,\r\n            v_item.quantity,\r\n            v_article_price,\r\n            CURRENT_TIMESTAMP,\r\n            CURRENT_TIMESTAMP\r\n        );\r\n\r\n        -- Ajouter à la somme totale\r\n        v_total_amount := v_total_amount + (v_article_price * v_item.quantity);\r\n\r\n        -- Construire le JSON des items\r\n        SELECT json_agg(row_to_json(i))\r\n        FROM (\r\n            SELECT i.*, \r\n                   a.name as article_name, \r\n                   a.description as article_description,\r\n                   ac.name as category_name\r\n            FROM order_items i\r\n            JOIN articles a ON i.\"articleId\" = a.id\r\n            LEFT JOIN article_categories ac ON a.\"categoryId\" = ac.id\r\n            WHERE i.\"orderId\" = v_order_id\r\n        ) i INTO v_items_json;\r\n    END LOOP;\r\n\r\n    -- 3. Mettre à jour le montant total de la commande\r\n    UPDATE orders\r\n    SET \"totalAmount\" = v_total_amount\r\n    WHERE id = v_order_id;\r\n\r\n    -- 4. Retourner le résultat\r\n    RETURN QUERY\r\n    SELECT \r\n        o.id,\r\n        o.\"userId\",\r\n        o.\"serviceId\",\r\n        o.\"addressId\",\r\n        o.\"totalAmount\",\r\n        o.status,\r\n        v_items_json::JSON as items\r\n    FROM orders o\r\n    WHERE o.id = v_order_id;\r\n\r\nEND;\r\n$function$\n"
   },
   {
-    "procedure_name": "update_article_services",
-    "procedure_definition": "CREATE OR REPLACE FUNCTION public.update_article_services(p_article_id uuid, p_service_updates json[])\n RETURNS SETOF article_service_prices\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    -- Mise à jour des prix des services\r\n    RETURN QUERY\r\n    WITH updates AS (\r\n        SELECT \r\n            (json->>'service_type_id')::UUID as service_type_id,\r\n            (json->>'base_price')::DECIMAL as base_price,\r\n            (json->>'premium_price')::DECIMAL as premium_price,\r\n            (json->>'price_per_kg')::DECIMAL as price_per_kg,\r\n            (json->>'is_available')::BOOLEAN as is_available\r\n        FROM json_array_elements(p_service_updates::JSON) as json\r\n    )\r\n    INSERT INTO article_service_prices (\r\n        article_id,\r\n        service_type_id,\r\n        base_price,\r\n        premium_price,\r\n        price_per_kg,\r\n        is_available\r\n    )\r\n    SELECT \r\n        p_article_id,\r\n        u.service_type_id,\r\n        u.base_price,\r\n        u.premium_price,\r\n        u.price_per_kg,\r\n        u.is_available\r\n    FROM updates u\r\n    ON CONFLICT (article_id, service_type_id)\r\n    DO UPDATE SET\r\n        base_price = EXCLUDED.base_price,\r\n        premium_price = EXCLUDED.premium_price,\r\n        price_per_kg = EXCLUDED.price_per_kg,\r\n        is_available = EXCLUDED.is_available,\r\n        updated_at = CURRENT_TIMESTAMP\r\n    RETURNING *;\r\nEND;\r\n$function$\n"
+    "procedure_name": "complete_flash_order",
+    "procedure_definition": "CREATE OR REPLACE FUNCTION public.complete_flash_order(p_order_id uuid, p_service_id uuid, p_items json[], p_collection_date timestamp without time zone DEFAULT NULL::timestamp without time zone, p_delivery_date timestamp without time zone DEFAULT NULL::timestamp without time zone)\n RETURNS json\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n  v_order orders%ROWTYPE;\r\n  v_total DECIMAL := 0;\r\n  v_result JSON;\r\nBEGIN\r\n  -- 1. Récupérer et vérifier la commande\r\n  SELECT * INTO v_order\r\n  FROM orders \r\n  WHERE id = p_order_id AND status = 'DRAFT'\r\n  FOR UPDATE;\r\n\r\n  IF NOT FOUND THEN\r\n    RAISE EXCEPTION 'Commande flash non trouvée ou non modifiable';\r\n  END IF;\r\n\r\n  -- 2. Mettre à jour la commande\r\n  UPDATE orders SET\r\n    \"serviceId\" = p_service_id,\r\n    status = 'PENDING',\r\n    \"collectionDate\" = p_collection_date,\r\n    \"deliveryDate\" = p_delivery_date,\r\n    \"updatedAt\" = NOW()\r\n  WHERE id = p_order_id\r\n  RETURNING * INTO v_order;\r\n\r\n  -- 3. Insérer les articles et calculer le total\r\n  WITH inserted_items AS (\r\n    INSERT INTO order_items (\r\n      \"orderId\",\r\n      \"articleId\",\r\n      \"serviceId\",\r\n      quantity,\r\n      \"unitPrice\",\r\n      \"createdAt\",\r\n      \"updatedAt\"\r\n    )\r\n    SELECT \r\n      p_order_id,\r\n      (item->>'articleId')::UUID,\r\n      p_service_id,\r\n      (item->>'quantity')::INT,\r\n      (item->>'unitPrice')::DECIMAL,\r\n      NOW(),\r\n      NOW()\r\n    FROM json_array_elements(array_to_json(p_items)::JSON) AS item\r\n    RETURNING *\r\n  )\r\n  SELECT SUM(quantity * \"unitPrice\") INTO v_total FROM inserted_items;\r\n\r\n  -- 4. Mettre à jour le total\r\n  UPDATE orders \r\n  SET \"totalAmount\" = v_total\r\n  WHERE id = p_order_id;\r\n\r\n  -- 5. Construire le résultat JSON avec la structure exacte attendue\r\n  WITH order_details AS (\r\n    SELECT \r\n      o.*,\r\n      json_build_object(\r\n        'id', u.id,\r\n        'email', u.email,\r\n        'phone', u.phone,\r\n        'lastName', u.last_name,\r\n        'firstName', u.first_name\r\n      ) as user_info,\r\n      json_build_object(\r\n        'id', a.id,\r\n        'city', a.city,\r\n        'street', a.street,\r\n        'is_default', a.is_default,\r\n        'postal_code', a.postal_code,\r\n        'gps_latitude', a.gps_latitude,\r\n        'gps_longitude', a.gps_longitude\r\n      ) as address_info,\r\n      COALESCE(json_agg(\r\n        json_build_object(\r\n          'id', i.id,\r\n          'orderId', i.\"orderId\",\r\n          'articleId', i.\"articleId\",\r\n          'quantity', i.quantity,\r\n          'unitPrice', i.\"unitPrice\"\r\n        )\r\n      ) FILTER (WHERE i.id IS NOT NULL), '[]'::json) as items_info\r\n    FROM orders o\r\n    LEFT JOIN users u ON u.id = o.\"userId\"\r\n    LEFT JOIN addresses a ON a.id = o.\"addressId\"\r\n    LEFT JOIN order_items i ON i.\"orderId\" = o.id\r\n    WHERE o.id = p_order_id\r\n    GROUP BY o.id, u.id, a.id\r\n  )\r\n  SELECT json_build_object(\r\n    'data', json_build_object(\r\n      'order', json_build_object(\r\n        'id', od.id,\r\n        'status', od.status,\r\n        'userId', od.\"userId\",\r\n        'serviceId', od.\"serviceId\",\r\n        'addressId', od.\"addressId\",\r\n        'totalAmount', od.\"totalAmount\",\r\n        'createdAt', od.\"createdAt\",\r\n        'updatedAt', od.\"updatedAt\",\r\n        'user', od.user_info,\r\n        'address', od.address_info,\r\n        'items', od.items_info\r\n      )\r\n    )\r\n  ) INTO v_result\r\n  FROM order_details od;\r\n\r\n  RETURN v_result;\r\nEND;\r\n$function$\n"
   },
   {
     "procedure_name": "update_article_services",
     "procedure_definition": "CREATE OR REPLACE FUNCTION public.update_article_services(p_article_id uuid, p_service_updates jsonb[])\n RETURNS jsonb\n LANGUAGE plpgsql\nAS $function$\r\nDECLARE\r\n  v_result JSONB;\r\nBEGIN\r\n  -- Validate article exists\r\n  IF NOT EXISTS (SELECT 1 FROM articles WHERE id = p_article_id) THEN\r\n    RAISE EXCEPTION 'Article not found';\r\n  END IF;\r\n\r\n  -- Update or insert service prices\r\n  WITH updated_prices AS (\r\n    SELECT \r\n      (update_data->>'service_type_id')::UUID as service_type_id,\r\n      (update_data->>'base_price')::NUMERIC as base_price,\r\n      (update_data->>'premium_price')::NUMERIC as premium_price,\r\n      (update_data->>'price_per_kg')::NUMERIC as price_per_kg,\r\n      (update_data->>'is_available')::BOOLEAN as is_available\r\n    FROM jsonb_array_elements(p_service_updates::JSONB) AS update_data\r\n  )\r\n  INSERT INTO article_service_prices (\r\n    article_id,\r\n    service_type_id,\r\n    base_price,\r\n    premium_price,\r\n    price_per_kg,\r\n    is_available,\r\n    created_at,\r\n    updated_at\r\n  )\r\n  SELECT\r\n    p_article_id,\r\n    service_type_id,\r\n    base_price,\r\n    premium_price,\r\n    price_per_kg,\r\n    is_available,\r\n    NOW(),\r\n    NOW()\r\n  FROM updated_prices\r\n  ON CONFLICT (article_id, service_type_id) \r\n  DO UPDATE SET\r\n    base_price = EXCLUDED.base_price,\r\n    premium_price = EXCLUDED.premium_price,\r\n    price_per_kg = EXCLUDED.price_per_kg,\r\n    is_available = EXCLUDED.is_available,\r\n    updated_at = NOW();\r\n\r\n  -- Return updated data\r\n  SELECT jsonb_build_object(\r\n    'article_id', p_article_id,\r\n    'services', jsonb_agg(\r\n      jsonb_build_object(\r\n        'service_type_id', asp.service_type_id,\r\n        'base_price', asp.base_price,\r\n        'premium_price', asp.premium_price,\r\n        'price_per_kg', asp.price_per_kg,\r\n        'is_available', asp.is_available,\r\n        'updated_at', asp.updated_at\r\n      )\r\n    )\r\n  )\r\n  INTO v_result\r\n  FROM article_service_prices asp\r\n  WHERE asp.article_id = p_article_id;\r\n\r\n  RETURN v_result;\r\nEND;\r\n$function$\n"
+  },
+  {
+    "procedure_name": "archive_article",
+    "procedure_definition": "CREATE OR REPLACE FUNCTION public.archive_article(p_article_id uuid, p_reason text)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n  -- Copier l'article dans l'archive\r\n  INSERT INTO article_archives (\r\n    original_id, name, description, \"basePrice\", \"premiumPrice\", \r\n    \"categoryId\", \"createdAt\", \"updatedAt\", archived_reason\r\n  )\r\n  SELECT \r\n    id, name, description, \"basePrice\", \"premiumPrice\", \r\n    \"categoryId\", \"createdAt\", \"updatedAt\", p_reason\r\n  FROM articles \r\n  WHERE id = p_article_id;\r\n\r\n  -- Marquer l'article comme archivé\r\n  UPDATE articles \r\n  SET \"isDeleted\" = true, \r\n      \"deletedAt\" = CURRENT_TIMESTAMP\r\n  WHERE id = p_article_id;\r\nEND;\r\n$function$\n"
   }
 ]
 
@@ -188,18 +23,205 @@ function / procedure
 
 
 
-_____________
+[
+  {
+    "column_name": "id",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "column_default": "uuid_generate_v4()",
+    "is_nullable": "NO"
+  },
+  {
+    "column_name": "categoryId",
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "column_name": "name",
+    "data_type": "character varying",
+    "character_maximum_length": 255,
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "column_name": "description",
+    "data_type": "text",
+    "character_maximum_length": null,
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "column_name": "basePrice",
+    "data_type": "numeric",
+    "character_maximum_length": null,
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "column_name": "createdAt",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "column_default": "CURRENT_TIMESTAMP",
+    "is_nullable": "YES"
+  },
+  {
+    "column_name": "updatedAt",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "column_default": "CURRENT_TIMESTAMP",
+    "is_nullable": "YES"
+  },
+  {
+    "column_name": "premiumPrice",
+    "data_type": "numeric",
+    "character_maximum_length": null,
+    "column_default": "0",
+    "is_nullable": "YES"
+  },
+  {
+    "column_name": "isDeleted",
+    "data_type": "boolean",
+    "character_maximum_length": null,
+    "column_default": "false",
+    "is_nullable": "YES"
+  },
+  {
+    "column_name": "deletedAt",
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "column_default": null,
+    "is_nullable": "YES"
+  }
+]
+
+
 
 
 [
   {
-    "trigger_name": "update_service_types_timestamp",
+    "trigger_name": "update_articles_timestamp",
     "event_manipulation": "UPDATE",
-    "event_object_table": "service_types",
-    "action_statement": "EXECUTE FUNCTION update_timestamp_column()",
+    "event_object_table": "articles",
+    "action_statement": "EXECUTE FUNCTION update_timestamp_column('camelCase')",
     "action_timing": "BEFORE"
   }
 ]
 
 
+[
+  {
+    "source_table": "article_archives",
+    "source_column": "original_id",
+    "target_table": "articles",
+    "target_column": "id"
+  },
+  {
+    "source_table": "article_service_compatibility",
+    "source_column": "article_id",
+    "target_table": "articles",
+    "target_column": "id"
+  },
+  {
+    "source_table": "article_service_prices",
+    "source_column": "article_id",
+    "target_table": "articles",
+    "target_column": "id"
+  },
+  {
+    "source_table": "article_services",
+    "source_column": "article_id",
+    "target_table": "articles",
+    "target_column": "id"
+  },
+  {
+    "source_table": "articles",
+    "source_column": "categoryId",
+    "target_table": "article_categories",
+    "target_column": "id"
+  },
+  {
+    "source_table": "offer_articles",
+    "source_column": "article_id",
+    "target_table": "articles",
+    "target_column": "id"
+  },
+  {
+    "source_table": "order_items",
+    "source_column": "articleId",
+    "target_table": "articles",
+    "target_column": "id"
+  },
+  {
+    "source_table": "price_history",
+    "source_column": "article_id",
+    "target_table": "articles",
+    "target_column": "id"
+  },
+  {
+    "source_table": "service_specific_prices",
+    "source_column": "article_id",
+    "target_table": "articles",
+    "target_column": "id"
+  }
+]
 
+
+
+[
+  {
+    "article_id": "087518bd-d6bc-4ab6-a230-b23c7ad25c38",
+    "article_name": "Robe rond",
+    "original_base_price": "10.00",
+    "original_premium_price": "15.00",
+    "migrated_base_price": "10.00",
+    "migrated_premium_price": "15.00",
+    "migration_status": "Migration OK"
+  },
+  {
+    "article_id": "3c178e1a-40f3-4f7c-9fe7-6c8275e74447",
+    "article_name": "pantalon jean",
+    "original_base_price": "10.00",
+    "original_premium_price": "15.00",
+    "migrated_base_price": "10.00",
+    "migrated_premium_price": "15.00",
+    "migration_status": "Migration OK"
+  },
+  {
+    "article_id": "b75ab8ac-58ef-4cdb-b57e-6c8722449cce",
+    "article_name": "T-shirt col rond updated",
+    "original_base_price": "100.00",
+    "original_premium_price": "150.00",
+    "migrated_base_price": "100.00",
+    "migrated_premium_price": "150.00",
+    "migration_status": "Migration OK"
+  },
+  {
+    "article_id": "c86bc1c1-b212-4b3c-bdf6-a9ab5b0d9b4d",
+    "article_name": "test second article pantalon jean",
+    "original_base_price": "10.00",
+    "original_premium_price": "15.00",
+    "migrated_base_price": "10.00",
+    "migrated_premium_price": "15.00",
+    "migration_status": "Migration OK"
+  },
+  {
+    "article_id": "3a28ebbb-8bbf-4bd3-998e-fdae4613e4c7",
+    "article_name": "T-shirt col rondent",
+    "original_base_price": "50.00",
+    "original_premium_price": "75.00",
+    "migrated_base_price": "50.00",
+    "migrated_premium_price": "75.00",
+    "migration_status": "Migration OK"
+  },
+  {
+    "article_id": "9b91e9a0-fcc7-4f6a-90dc-47c89e4132cf",
+    "article_name": "Article Test",
+    "original_base_price": "1000.00",
+    "original_premium_price": "1500.00",
+    "migrated_base_price": "1200.00",
+    "migrated_premium_price": "1800.00",
+    "migration_status": "Prix différents"
+  }
+]

@@ -22,7 +22,7 @@ export class OrderQueryService {
     address:addresses(
       id,
       name,
-      street,
+      street, 
       city,
       postal_code,
       gps_latitude,

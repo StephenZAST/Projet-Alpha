@@ -29,7 +29,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
       console.log('No Bearer token found');
       return res.status(401).json({ error: 'No token provided' });
     }
-
+ 
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string };
       

@@ -21,7 +21,7 @@ router.post(
       next(error);
     }
   })
-);
+); 
 
 router.get(
   '/all',

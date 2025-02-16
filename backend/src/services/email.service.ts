@@ -39,4 +39,4 @@ export const sendEmail = async (to: string, code: string) => {
     console.error('Error sending email:', error);
     throw error;
   }
-};
+}; 

@@ -20,7 +20,7 @@
 | amount | numeric | NOT NULL |
 | status | USER-DEFINED | NOT NULL |
 | created_at | timestamp with time zone | |
-
+ 
 ## Point System
 ### Point Transactions (Table: point_transactions)
 | Column Name | Type | Constraints |
@@ -151,9 +151,7 @@
 | service_specific_prices | service_id | services | id |
 
 
-all tables in the database
-
-[
+a[
   {
     "table_name": "addresses"
   },
@@ -258,6 +256,9 @@ all tables in the database
   },
   {
     "table_name": "subscription_plans"
+  },
+  {
+    "table_name": "temp_notifications"
   },
   {
     "table_name": "user_offers"

@@ -29,7 +29,7 @@ export class DefaultServiceService {
       throw error;
     }
   }
-
+ 
   static async getDefaultServices(categoryId: string) {
     const { data, error } = await supabase
       .from('category_default_services')

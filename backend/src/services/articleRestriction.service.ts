@@ -1,5 +1,6 @@
 import supabase from '../config/database';
 import { NotificationService } from './notification.service';
+import { NotificationType } from '../models/types';
 
 export class ArticleRestrictionService {
   static async setRestrictions(
@@ -18,7 +19,7 @@ export class ArticleRestrictionService {
           updated_at: new Date()
         })
         .select()
-        .single();
+        .single(); 
 
       if (error) throw error;
 
@@ -33,7 +34,7 @@ export class ArticleRestrictionService {
           admins.map(admin => 
             NotificationService.sendNotification(
               admin.id,
-              'SERVICE_UPDATED',
+              NotificationType.SERVICE_UPDATED,
               {
                 title: 'Restrictions mises à jour',
                 message: `Les restrictions pour l'article ont été mises à jour`,

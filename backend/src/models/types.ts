@@ -32,7 +32,7 @@ export interface AffiliateProfile {
   levelId?: string;
   level?: AffiliateLevel;
 }
-
+ 
 export interface AffiliateLevel {
   id: string;
   name: string;
@@ -54,10 +54,11 @@ export interface CommissionTransaction {
 // Loyalty related types
 export interface LoyaltyPoints {
   id: string;
-  userId: string;
-  pointsBalance: number;
+  user_id: string;
+  pointsBalance: number;      // camelCase comme dans la BD
   totalEarned: number;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export type PointTransactionType = 'EARNED' | 'SPENT';
@@ -75,33 +76,24 @@ export interface PointTransaction {
 }
 
 // Notification related types
-export type NotificationType =
-  | 'ORDER_CREATED'
-  | 'ORDER_STATUS_UPDATED'
-  | 'ORDER_COLLECTED'
-  | 'ORDER_READY'
-  | 'ORDER_DELIVERED'
-  | 'PAYMENT_RECEIVED'
-  | 'POINTS_EARNED'
-  | 'SPECIAL_OFFER'
-  | 'WITHDRAWAL_REQUESTED'
-  | 'WITHDRAWAL_APPROVED'
-  | 'WITHDRAWAL_REJECTED'
-  | 'AFFILIATE_STATUS_UPDATED'
-  | 'COMMISSION_EARNED'
-  | 'PRICE_UPDATED'
-  | 'WEIGHT_RECORDED'
-  | 'SERVICE_CREATED'   
-  | 'SERVICE_UPDATED'    
-  | 'SERVICE_ADDED'      // Ajout du nouveau type
-  | 'SERVICE_TYPE_CREATED'  
-  | 'SERVICE_TYPE_UPDATED'  
-  | 'SERVICE_TYPE_DELETED'  
-  | 'SUBSCRIPTION_CREATED'  
-  | 'SUBSCRIPTION_CANCELLED'
-  | 'SUBSCRIPTION_RENEWED'  
-  | 'SUBSCRIPTION_EXPIRED'  
-  | 'SYSTEM_UPDATE';
+export enum NotificationType {
+  ORDER_STATUS = 'ORDER_STATUS',
+  ORDER_CREATED = 'ORDER_CREATED',
+  ORDER_STATUS_UPDATED = 'ORDER_STATUS_UPDATED',
+  SERVICE_ADDED = 'SERVICE_ADDED',  // Ajout du nouveau type
+  SERVICE_CREATED = 'SERVICE_CREATED',
+  SERVICE_UPDATED = 'SERVICE_UPDATED',
+  SERVICE_TYPE_CREATED = 'SERVICE_TYPE_CREATED',
+  SERVICE_TYPE_UPDATED = 'SERVICE_TYPE_UPDATED',
+  WEIGHT_RECORDED = 'WEIGHT_RECORDED',
+  SUBSCRIPTION_CREATED = 'SUBSCRIPTION_CREATED',
+  SUBSCRIPTION_CANCELLED = 'SUBSCRIPTION_CANCELLED',
+  AFFILIATE_STATUS_UPDATED = 'AFFILIATE_STATUS_UPDATED',
+  POINTS_EARNED = 'POINTS_EARNED',
+  REFERRAL_BONUS = 'REFERRAL_BONUS',
+  PROMOTIONS = 'PROMOTIONS',
+  PRICE_UPDATED = 'PRICE_UPDATED',
+}
 
 export interface Notification {
   id: string;
@@ -123,6 +115,61 @@ export interface NotificationPreferences {
   promotions: boolean;
   payments: boolean;
   loyalty: boolean;
+}
+
+export interface NotificationData {
+  orderId?: string;
+  message: string;
+  type: NotificationType;
+  data?: any;
+  title?: string;
+}
+
+export interface NotificationCreateDTO {
+  userId: string;
+  type: NotificationType;
+  title?: string;
+  message: string;
+  data?: any;
+}
+
+export interface NotificationPreference {
+  id: string;
+  user_id: string;
+  order_updates: boolean;
+  promotions: boolean;
+  system_updates: boolean;
+  email_notifications: boolean;
+  push_notifications: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface NotificationRule {
+  id: string;
+  event_type: NotificationType;
+  user_role: UserRole;
+  template: string;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface NotificationTemplate {
+  orderId: string;
+  clientName: string;
+  amount: number;
+  deliveryZone: string;
+  itemCount: number;
+  title?: string;
+  message?: string;
+}
+
+export interface RoleBasedNotificationData {
+  userId: string;
+  role: UserRole;
+  templateData: NotificationTemplate;
+  customData?: Record<string, any>;
 }
 
 // Article and Service related types
@@ -206,13 +253,6 @@ export interface ArticleServicePrice {
   service_type?: ServiceType;
 }
 
-export interface SetPricesDTO {
-  base_price: number;
-  premium_price?: number;
-  price_per_kg?: number;
-  is_available?: boolean;
-}
-
 export interface CreateServiceTypeDTO {
   name: string;
   description?: string;
@@ -279,8 +319,17 @@ export interface OrderItem {
     updatedAt: Date;
 }
 
-export type PaymentStatus = 'PENDING' | 'COMPLETED';
-export type PaymentMethod = 'CASH' | 'ORANGE_MONEY';
+export enum PaymentMethod {
+  CASH = 'CASH',
+  ORANGE_MONEY = 'ORANGE_MONEY'
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED'
+}
 
 export interface Order {
   id: string;
@@ -382,23 +431,28 @@ export interface LoginDTO {
   password: string;
 }
 
+export interface OrderItemInput {
+  articleId: string;
+  quantity: number;
+  isPremium?: boolean;
+  premiumPrice?: boolean;  // Support des deux formats pour la rétrocompatibilité
+}
+
 export interface CreateOrderDTO {
   userId: string;
   serviceId: string;
   addressId: string;
-  serviceTypeId?: string;
   isRecurring: boolean;
   recurrenceType: RecurrenceType;
   collectionDate?: Date;
   deliveryDate?: Date;
   affiliateCode?: string;
-  items: {
-    articleId: string;
-    quantity: number;
-    premiumPrice?: boolean;
-  }[];
+  items: OrderItemInput[];
   offerIds?: string[];
+  appliedOfferIds?: string[];  // Ajout du champ manquant
   paymentMethod: PaymentMethod;
+  service_type_id?: string;
+  serviceTypeId?: string;
 }
 
 export interface AdminCreateOrderDTO {
@@ -674,6 +728,7 @@ export interface ServiceSpecificPrice {
   service_id: string;
   base_price: number;
   premium_price?: number;
+  is_available: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -694,4 +749,139 @@ export interface ServiceCompatibility {
   };
   created_at: Date;
   updated_at: Date;
+}
+
+// Ajout des nouveaux types pour la gestion des services et des prix
+export interface ServicePricingBase {
+  base_price?: number;
+  premium_price?: number;
+  price_per_kg?: number;
+  is_available?: boolean;
+}
+
+export interface ServiceCompatibilityCreateDTO {
+  article_id: string;
+  service_id: string;
+  is_compatible: boolean;
+  restrictions?: string[];
+}
+
+export interface ArticleServiceUpdate extends ServicePricingBase {
+  service_type_id: string;
+  is_available: boolean;  // Override pour rendre obligatoire
+}
+
+export interface SetPricesDTO extends ServicePricingBase {
+  service_type_id?: string;
+}
+
+// Mise à jour du type ArticleServicePrice
+export interface ArticleServicePrice extends ServicePricingBase {
+  id: string;
+  article_id: string;
+  service_type_id: string;
+  base_price: number;     // Champs obligatoires pour la BD
+  premium_price?: number;
+  price_per_kg?: number;
+  is_available: boolean;  // Champ obligatoire pour la BD
+  created_at: string;
+  updated_at: string;
+  service_type?: ServiceType;
+}
+
+// Ajout des types pour la notification de service
+export interface ServiceNotification {
+  serviceId: string;
+  type: NotificationType;
+  changes: Record<string, any>;
+  affectedUsers?: string[];
+}
+
+// Ajout des types pour le calcul des prix
+export interface PriceCalculationResult {
+  total: number;
+  breakdown: PriceBreakdownItem[];
+}
+
+export interface PriceBreakdownItem {
+  type: 'WEIGHT' | 'ITEM';
+  cost: number;
+  details: any;
+}
+
+// Types pour les services spécifiques
+export interface ServiceSpecificPrice {
+  id: string;
+  article_id: string;
+  service_id: string;
+  base_price: number;
+  premium_price?: number;
+  is_available: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Types pour la validation du poids
+export interface WeightValidationResult {
+  isValid: boolean;
+  message?: string;
+  pricing?: {
+    price_per_kg: number;
+    total: number;
+  };
+}
+
+// Types pour le calcul de prix
+export interface PriceCalculationParams {
+  articleId: string;
+  serviceTypeId: string;
+  quantity?: number;
+  weight?: number;
+  isPremium?: boolean;
+}
+
+export interface PriceDetails {
+  basePrice: number;
+  total: number;
+  pricingType: PricingType;
+  isPremium: boolean;
+}
+
+export type PricingType = 'PER_ITEM' | 'PER_WEIGHT' | 'SUBSCRIPTION';
+
+export interface NotificationCreate {
+  user_id: string;
+  type: NotificationType;
+  message: string;
+  data?: Record<string, any>;
+  read?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Ajout de l'option pour utiliser des points
+export interface PricingOptions {
+  items: OrderItem[];
+  userId?: string;
+  appliedOfferIds?: string[];
+  usePoints?: number;  // Ajout de l'option pour utiliser des points
+}
+
+export interface LoyaltyDiscount {
+  type: 'LOYALTY';
+  amount: number;
+  pointsUsed: number;
+}
+
+// Ajout des interfaces manquantes
+export interface Discount {
+  type: 'LOYALTY' | 'OFFER';
+  amount: number;
+  offerId: string;
+}
+
+export interface PricingResult {
+  subtotal: number;
+  discounts: Discount[];
+  total: number;
 }

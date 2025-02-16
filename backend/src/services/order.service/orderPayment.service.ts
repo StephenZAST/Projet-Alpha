@@ -3,13 +3,23 @@ import { AppliedDiscount } from '../../models/types';
 
 export class OrderPaymentService {
   static async getCurrentLoyaltyPoints(userId: string): Promise<number> {
-    const { data: loyalty } = await supabase
-      .from('loyalty_points')
-      .select('points_balance')
-      .eq('user_id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('loyalty_points')
+        .select('pointsBalance')
+        .eq('user_id', userId)
+        .single();
 
-    return loyalty?.points_balance || 0;
+      if (error) {
+        console.error('[OrderPaymentService] Error fetching loyalty points:', error);
+        throw error;
+      }
+
+      return data?.pointsBalance || 0;
+    } catch (error) {
+      console.error('[OrderPaymentService] Error:', error);
+      throw error;
+    }
   }
 
   static async calculateDiscounts(
@@ -17,7 +27,7 @@ export class OrderPaymentService {
     totalAmount: number,
     articleIds: string[],
     appliedOfferIds: string[]
-  ): Promise<{
+  ): Promise<{ 
     finalAmount: number;
     appliedDiscounts: AppliedDiscount[];
   }> {

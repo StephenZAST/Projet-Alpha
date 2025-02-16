@@ -17,3 +17,4 @@ router.post('/prices', asyncHandler(ArticleServiceController.createPrice));
 router.put('/prices/:id', asyncHandler(ArticleServiceController.updatePrice));
 
 export default router;
+ 

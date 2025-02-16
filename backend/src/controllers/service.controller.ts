@@ -30,7 +30,7 @@ export class ServiceController {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
-  }
+  } 
 
   static async updateService(req: Request, res: Response) {
     try {

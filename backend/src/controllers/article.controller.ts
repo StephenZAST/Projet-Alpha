@@ -17,7 +17,7 @@ export class ArticleController {
         message: 'Failed to create article',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
-    }
+    } 
   }
 
   static async getArticleById(req: Request, res: Response) {

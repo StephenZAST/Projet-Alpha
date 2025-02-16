@@ -34,7 +34,7 @@ export class ServiceTypeController {
     res.json({
       success: true,
       data: serviceType
-    });
+    }); 
   }
 
   static async getAllServiceTypes(req: Request, res: Response): Promise<void> {

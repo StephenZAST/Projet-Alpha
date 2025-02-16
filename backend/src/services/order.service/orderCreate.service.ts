@@ -1,5 +1,5 @@
 import supabase from '../../config/database';
-import { CreateOrderDTO, CreateOrderResponse, AppliedDiscount } from '../../models/types';
+import { CreateOrderDTO, CreateOrderResponse, AppliedDiscount, NotificationType } from '../../models/types';
 import { NotificationService } from '../notification.service';
 import { LoyaltyService } from '../loyalty.service';
 import { OrderPaymentService } from './orderPayment.service';
@@ -20,7 +20,7 @@ export class OrderCreateService {
     address:addresses(*),
     items:order_items(
       *,
-      article:articles!inner(
+      article:articles!inner( 
         *,
         isDeleted:eq(false),
         category:article_categories(*)
@@ -29,7 +29,33 @@ export class OrderCreateService {
   `;
 
   static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
+    console.log('[OrderService] Starting order creation process');
     try {
+      // Log initial data
+      console.log('[OrderService] Input data:', {
+        userId: orderData.userId,
+        serviceId: orderData.serviceId,
+        serviceTypeId: orderData.serviceTypeId,
+        service_type_id: orderData.service_type_id,
+        itemsCount: orderData.items?.length
+      });
+
+      // Vérification explicite du service_type_id
+      if (!orderData.service_type_id && !orderData.serviceTypeId) {
+        console.error('[OrderService] Missing service_type_id');
+        throw new Error('service_type_id is required');
+      }
+
+      const dbOrderData = {
+        ...orderData,
+        service_type_id: orderData.service_type_id || orderData.serviceTypeId
+      };
+
+      console.log('[OrderService] Prepared DB data:', {
+        ...dbOrderData,
+        items: `${dbOrderData.items?.length} items`
+      });
+
       // Vérifier que tous les articles sont actifs
       const articleIds = orderData.items.map(item => item.articleId);
       const { data: articles, error: checkError } = await supabase
@@ -129,22 +155,28 @@ export class OrderCreateService {
       await LoyaltyService.earnPoints(userId, earnedPoints, 'ORDER', orderResult[0].id);
 
       // 6. Envoyer la notification
-      await NotificationService.sendNotification(
-        userId,
-        'ORDER_CREATED',
-        {
-          orderId: orderResult[0].id,
-          totalAmount: finalAmount,
-          items: completeOrder.items.map((item: { article: { name: string }, quantity: number }) => ({
-            name: item.article.name,
-            quantity: item.quantity
-          }))
-        }
-      );
+      try {
+        await NotificationService.sendNotification(
+          userId,
+          NotificationType.ORDER_CREATED,
+          {
+            orderId: orderResult[0].id,
+            totalAmount: finalAmount,
+            items: completeOrder.items.map((item: { article: { name: string }, quantity: number }) => ({
+              name: item.article.name,
+              quantity: item.quantity
+            }))
+          }
+        );
+      } catch (notifError) {
+        console.error('[OrderCreateService] Notification error:', notifError);
+        // Continue le processus même si la notification échoue
+      }
 
       // 7. Obtenir le solde actuel des points
       const currentPoints = await OrderPaymentService.getCurrentLoyaltyPoints(userId);
 
+      console.log('[OrderService] Order creation completed successfully');
       return {
         order: completeOrder,
         pricing: {
@@ -159,7 +191,7 @@ export class OrderCreateService {
       };
 
     } catch (error) {
-      console.error('[OrderCreateService] Error:', error);
+      console.error('[OrderService] Error creating order:', error);
       throw error;
     }
   }

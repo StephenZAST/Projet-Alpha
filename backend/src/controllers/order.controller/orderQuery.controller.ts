@@ -14,7 +14,7 @@ export class OrderQueryController {
       const { data: order, error } = await supabase
         .from('orders')
         .select(`
-          *,
+          *, 
           user:users(
             id,
             first_name,

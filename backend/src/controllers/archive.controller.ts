@@ -15,7 +15,7 @@ export class ArchiveController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  }
+  } 
 
   static async runArchiveCleanup(req: Request, res: Response) {
     try {

@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { NotificationType, User } from '../models/types';
+import { NotificationType, User, NotificationCreate, NotificationTemplate, Order } from '../models/types';
 
 export class NotificationService {
   /**
@@ -32,7 +32,7 @@ export class NotificationService {
       if (!rule) {
         console.log(`No notification rule found for type ${type} and role ${user.role}`);
         return;
-      }
+      } 
 
       // 3. Construire le message à partir du template
       const message = this.buildNotificationMessage(rule.template, {
@@ -110,7 +110,7 @@ export class NotificationService {
 
       // 5. Notifier les admins si nécessaire
       if (['READY', 'DELIVERED'].includes(order.status)) {
-        await this.notifyAdmins('ORDER_STATUS_UPDATED', {
+        await this.notifyAdmins(NotificationType.ORDER_STATUS_UPDATED, {
           orderId,
           status: order.status,
           totalAmount: order.totalAmount
@@ -142,7 +142,7 @@ export class NotificationService {
 
       const commissionAmount = orderAmount * (affiliate.commission_rate / 100);
 
-      await this.sendNotification(affiliateUserId, 'ORDER_CREATED', {
+      await this.sendNotification(affiliateUserId, NotificationType.ORDER_CREATED, {
         orderId,
         orderAmount,
         commissionAmount,
@@ -337,5 +337,162 @@ export class NotificationService {
     return template.replace(/\{(\w+)\}/g, (match, key) => {
       return data[key]?.toString() || match;
     });
+  }
+
+  static async createNotification(
+    userId: string,
+    type: NotificationType,
+    message: string,
+    data?: Record<string, any>
+  ): Promise<void>;
+  static async createNotification(notification: NotificationCreate): Promise<void>;
+  static async createNotification(
+    userIdOrNotification: string | NotificationCreate,
+    type?: NotificationType,
+    message?: string,
+    data: Record<string, any> = {}
+  ): Promise<void> {
+    try {
+      // Si le premier argument est un objet NotificationCreate
+      if (typeof userIdOrNotification === 'object') {
+        const notification = userIdOrNotification;
+        
+        // Validation du type
+        if (!Object.values(NotificationType).includes(notification.type)) {
+          throw new Error(`Invalid notification type: ${notification.type}`);
+        }
+
+        const notificationPayload = {
+          user_id: notification.user_id,
+          type: notification.type,
+          message: notification.message,
+          data: notification.data || {},
+          read: notification.read ?? false,
+          created_at: notification.created_at || new Date().toISOString(),
+          updated_at: notification.updated_at || new Date().toISOString()
+        };
+
+        const { error } = await supabase
+          .from('notifications')
+          .insert([notificationPayload]);
+
+        if (error) {
+          console.error('[NotificationService] Database error:', error);
+          throw new Error(`Failed to create notification: ${error.message}`);
+        }
+      } 
+      // Si les arguments sont séparés
+      else {
+        const notificationData = data || {};
+        // Vérifier si une notification similaire existe déjà
+        const { data: existing } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', userIdOrNotification)
+          .eq('type', type)
+          .eq('message', message)
+          .eq('read', false)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (existing?.length) {
+          console.log('[NotificationService] Similar notification exists, skipping');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('notifications')
+          .insert([{
+            user_id: userIdOrNotification,
+            type,
+            message,
+            data,
+            read: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
+
+        if (error) throw error;
+      }
+
+      console.log('[NotificationService] Notification created successfully');
+    } catch (error) {
+      console.error('[NotificationService] Unexpected error:', error);
+      throw error;
+    }
+  }
+
+  // Add these two methods
+  static async sendOrderNotification(order: Order): Promise<void> {
+    try {
+      const { data: rules } = await supabase
+        .from('notification_rules')
+        .select('*')
+        .eq('event_type', NotificationType.ORDER_CREATED)
+        .eq('is_active', true);
+
+      if (!rules?.length) {
+        console.log('[NotificationService] No active rules found');
+        return;
+      }
+
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, role')
+        .in('role', ['ADMIN', 'SUPER_ADMIN', 'DELIVERY']);
+
+      if (!users?.length) return;
+
+      await Promise.all(
+        users.map(user =>
+          this.sendNotification(
+            user.id,
+            NotificationType.ORDER_CREATED,
+            {
+              orderId: order.id,
+              total: order.totalAmount,
+              items: order.items?.length || 0,
+              address: order.address_id
+            }
+          )
+        )
+      );
+    } catch (error) {
+      console.error('[NotificationService] Error sending order notification:', error);
+    }
+  }
+
+  static async sendRoleBasedNotifications(
+    order: Order, 
+    templateData: NotificationTemplate
+  ): Promise<void> {
+    try {
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, role')
+        .in('role', ['SUPER_ADMIN', 'ADMIN', 'DELIVERY']);
+
+      if (!users) return;
+
+      await Promise.all(
+        users.map(user => 
+          this.sendNotification(
+        user.id,
+        NotificationType.ORDER_CREATED,
+        {
+          orderId: order.id,
+          title: templateData.title,
+          clientName: templateData.clientName,
+          message: templateData.message,
+          deliveryZone: templateData.deliveryZone,
+          itemCount: templateData.itemCount,
+          amount: user.role === 'DELIVERY' ? undefined : templateData.amount
+        }
+          )
+        )
+      );
+    } catch (error) {
+      console.error('[NotificationService] Error sending role-based notifications:', error);
+    }
   }
 }

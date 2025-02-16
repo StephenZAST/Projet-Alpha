@@ -14,7 +14,7 @@
 | referral_code | varchar(20) | |
 | created_at | timestamp with time zone | |
 | updated_at | timestamp with time zone | |
-
+ 
 ### Addresses (Table: addresses)
 | Column Name | Type | Constraints |
 |------------|------|-------------|

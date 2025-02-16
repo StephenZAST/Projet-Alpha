@@ -17,7 +17,7 @@ router.get(
   '/:offerId',
   asyncHandler((req, res, next) => OfferController.getOfferById(req, res))
 );
-
+ 
 // Routes admin
 router.use(authorizeRoles(['ADMIN', 'SUPER_ADMIN']));
 

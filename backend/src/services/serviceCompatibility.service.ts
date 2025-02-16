@@ -3,53 +3,43 @@ import { ServiceCompatibility } from '../models/types';
 
 export class ServiceCompatibilityService {
   static async setCompatibility(
-    articleId: string, 
-    serviceId: string, 
-    isCompatible: boolean,
-    restrictions: string[] = []
-  ): Promise<ServiceCompatibility> {
+articleId: string, serviceId: string, isCompatible: boolean, restrictions: any  ): Promise<ServiceCompatibility> {
     try {
       const { data, error } = await supabase
-        .from('article_service_compatibility')
+        .from('service_compatibilities')
         .upsert({
           article_id: articleId,
           service_id: serviceId,
           is_compatible: isCompatible,
-          restrictions,
           updated_at: new Date()
         })
         .select(`
           *,
-          article:articles(*),
-          service:services(*)
+          article:articles(id, name),
+          service:services(id, name)
         `)
         .single();
 
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('[ServiceCompatibilityService] Set compatibility error:', error);
+      console.error('Error setting compatibility:', error);
       throw error;
     }
   }
 
   static async getCompatibilities(articleId: string): Promise<ServiceCompatibility[]> {
-    try {
-      const { data, error } = await supabase
-        .from('article_service_compatibility')
-        .select(`
-          *,
-          article:articles(*),
-          service:services(*)
-        `)
-        .eq('article_id', articleId);
+    const { data, error } = await supabase
+      .from('service_compatibilities')
+      .select(`
+        *,
+        article:articles(id, name),
+        service:services(id, name)
+      `)
+      .eq('article_id', articleId);
 
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('[ServiceCompatibilityService] Get compatibilities error:', error);
-      throw error;
-    }
+    if (error) throw error;
+    return data || [];
   }
 
   static async checkCompatibility(

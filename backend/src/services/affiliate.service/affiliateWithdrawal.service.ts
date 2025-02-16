@@ -14,7 +14,7 @@ export class AffiliateWithdrawalService {
       if (profileError) throw profileError;
       if (!profile || profile.commission_balance < amount) {
         throw new Error('Insufficient balance');
-      }
+      } 
 
       // Create withdrawal transaction
       const { data: transaction, error: createError } = await supabase

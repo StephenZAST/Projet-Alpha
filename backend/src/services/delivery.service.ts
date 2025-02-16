@@ -35,7 +35,7 @@ export class DeliveryService {
     if (error) throw error;
 
     return data;
-  }
+  } 
   static async getPROCESSINGOrders(userId: string): Promise<Order[]> {
     const { data, error } = await supabase
       .from('orders')

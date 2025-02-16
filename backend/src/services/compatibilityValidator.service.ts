@@ -40,7 +40,7 @@ export class CompatibilityValidatorService {
           .eq('service_id', item.serviceId)
           .single();
 
-        if (error) throw error;
+        if (error) throw error; 
 
         const typedData = data as unknown as ArticleServiceData;
 

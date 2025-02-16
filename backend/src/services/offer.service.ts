@@ -34,7 +34,7 @@ export class OfferService {
 
     return offer;
   }
-
+ 
   static async getAvailableOffers(userId: string): Promise<Offer[]> {
     const { data, error } = await supabase
       .from('offers')

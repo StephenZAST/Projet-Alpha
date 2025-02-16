@@ -22,7 +22,7 @@ export class ArticleCategoryService {
     if (error) throw error;
 
     return data;
-  }
+  } 
 
   static async getArticleCategoryById(categoryId: string): Promise<ArticleCategory> {
     const { data, error } = await supabase

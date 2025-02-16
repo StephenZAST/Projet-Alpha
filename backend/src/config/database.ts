@@ -26,3 +26,4 @@ supabase
   });
 
 export default supabase;
+ 

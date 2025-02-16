@@ -1,6 +1,7 @@
 import supabase from '../config/database';
 import { WeightBasedPricing, OrderWeight, CreateWeightPricingDTO, WeightRecordDTO } from '../models/weightPricing.types';
 import { NotificationService } from './notification.service';
+import { NotificationType } from '../models/types';
 
 export class WeightPricingService {
   static async createPricing(data: CreateWeightPricingDTO): Promise<WeightBasedPricing> {
@@ -52,7 +53,7 @@ export class WeightPricingService {
       const notificationPromises = admins.map(admin => 
         NotificationService.sendNotification(
           admin.id,
-          'WEIGHT_RECORDED',
+          NotificationType.WEIGHT_RECORDED,
           {
             title: 'Nouveau poids enregistré',
             message: `Un poids de ${data.weight}kg a été enregistré pour la commande ${data.order_id}`,
@@ -80,7 +81,18 @@ export class WeightPricingService {
     max_weight: number;
     price_per_kg: number;
   }) {
-    // Vérifier si le type de service supporte le prix au poids
+    // Vérifier les chevauchements
+    const hasOverlap = await this.checkOverlappingRanges(
+      data.service_type_id,
+      data.min_weight,
+      data.max_weight
+    );
+
+    if (hasOverlap) {
+      throw new Error('Weight ranges cannot overlap with existing ranges');
+    }
+
+    // Vérifier le type de service
     const { data: serviceType, error: serviceError } = await supabase
       .from('service_types')
       .select('requires_weight')
@@ -92,7 +104,6 @@ export class WeightPricingService {
       throw new Error('This service type does not support weight-based pricing');
     }
 
-    // Insérer le nouveau prix
     const { data: pricing, error } = await supabase
       .from('weight_based_pricing')
       .insert([{
@@ -108,6 +119,22 @@ export class WeightPricingService {
 
     if (error) throw error;
     return pricing;
+  }
+
+  private static async checkOverlappingRanges(
+    serviceTypeId: string,
+    minWeight: number,
+    maxWeight: number
+  ): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('weight_based_pricing')
+      .select('*')
+      .eq('service_type_id', serviceTypeId)
+      .eq('is_active', true)
+      .or(`min_weight.lte.${maxWeight},max_weight.gte.${minWeight}`);
+
+    if (error) throw error;
+    return (data || []).length > 0;
   }
 
   static async calculatePrice(service_type_id: string, weight: number) {

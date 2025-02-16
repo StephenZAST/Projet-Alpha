@@ -22,7 +22,7 @@ export class OrderItemService {
     const { data: article, error: articleError } = await supabase
       .from('articles')
       .select('*')
-      .eq('id', articleId)
+      .eq('id', articleId) 
       .eq('isDeleted', false)
       .single();
 

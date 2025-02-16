@@ -13,7 +13,7 @@ export class BlogArticleController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  }
+  } 
 
   static async getAllArticles(req: Request, res: Response) {
     try {

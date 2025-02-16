@@ -1,6 +1,8 @@
 import supabase from '../config/database';
 import { Article, Order, Offer } from '../models/types';
 import { PriceCalculationParams, PriceDetails, PricingType } from '../models/pricing.types';
+import { LoyaltyService } from './loyalty.service';
+import { OrderItem, PricingOptions } from '../models/types';
 
 interface OrderItemInput {
   articleId: string;
@@ -8,14 +10,21 @@ interface OrderItemInput {
   isPremium?: boolean;
 }
 
+interface PricingDiscount {
+  offerId: string;
+  amount: number;
+  type?: 'LOYALTY' | 'OFFER';  // Définir les types possibles
+}
+
 export class PricingService {
   static async calculateOrderTotal(orderData: {
     items: OrderItemInput[];
     userId: string;
     appliedOfferIds?: string[];
+    usePoints?: number;
   }): Promise<{
     subtotal: number;
-    discounts: Array<{ offerId: string; amount: number }>;
+    discounts: Array<{ offerId: string; amount: number; type?: string }>;
     total: number;
   }> {
     try {
@@ -36,7 +45,7 @@ export class PricingService {
         console.error('[PricingService] Error fetching articles:', articlesError);
         throw articlesError;
       }
-
+ 
       // Créer un Map pour un accès rapide aux articles
       const articleMap = new Map(articles.map(article => [article.id, article]));
 
@@ -66,6 +75,22 @@ export class PricingService {
         orderData.userId
       );
 
+      // Ajouter la réduction des points de fidélité
+      if (orderData.usePoints && orderData.usePoints > 0) {
+        const loyaltyDiscount = await this.calculateLoyaltyDiscount(
+          orderData.usePoints,
+          subtotal
+        );
+
+        if (loyaltyDiscount > 0) {
+          discounts.push({
+            offerId: 'LOYALTY',
+            amount: loyaltyDiscount,
+            type: 'LOYALTY'
+          } as PricingDiscount);
+        }
+      }
+
       // 3. Calculer le total final
       const totalDiscount = discounts.reduce((sum, d) => sum + d.amount, 0);
       const total = Math.max(0, subtotal - totalDiscount);
@@ -85,6 +110,20 @@ export class PricingService {
       console.error('[PricingService] Error calculating order total:', error);
       throw error;
     }
+  }
+
+  private static async calculateLoyaltyDiscount(points: number, total: number): Promise<number> {
+    const conversionRate = Number(process.env.POINTS_TO_DISCOUNT_RATE || '0.1');
+    const maxDiscountPercentage = Number(process.env.MAX_POINTS_DISCOUNT_PERCENTAGE || '30');
+    
+    // Convert points to discount amount
+    let discountAmount = points * conversionRate;
+    
+    // Ensure discount doesn't exceed maximum percentage
+    const maxDiscount = (total * maxDiscountPercentage) / 100;
+    discountAmount = Math.min(discountAmount, maxDiscount);
+    
+    return Math.round(discountAmount * 100) / 100;
   }
 
   static async calculateDiscounts(
@@ -199,6 +238,19 @@ export class PricingService {
     if (error) throw error;
     if (!servicePrice) throw new Error('Price configuration not found');
 
+    // Vérifie d'abord la compatibilité
+    const { data: compatibility } = await supabase
+      .from('service_compatibilities')
+      .select('is_compatible')
+      .eq('article_id', articleId)
+      .eq('service_id', serviceTypeId)
+      .single();
+
+    if (!compatibility?.is_compatible) {
+      throw new Error('Service is not compatible with this article');
+    }
+
+    // Continue avec le calcul de prix existant...
     let basePrice = isPremium && servicePrice.premium_price 
       ? servicePrice.premium_price 
       : servicePrice.base_price;

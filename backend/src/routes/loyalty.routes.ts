@@ -22,7 +22,7 @@ router.post(
     await LoyaltyController.spendPoints(req, res);
   })
 );
-
+ 
 router.get(
   '/points-balance',
   asyncHandler(async (req: Request, res: Response) => {

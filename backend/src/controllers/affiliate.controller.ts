@@ -15,7 +15,7 @@ export class AffiliateController {
        data: profile,
        meta: {
          transactionsCount: profile.recentTransactions?.length || 0
-       }
+       } 
      });
    } catch (error: any) {
      console.error('[AffiliateController] GetProfile error:', error);

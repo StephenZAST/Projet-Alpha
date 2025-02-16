@@ -27,3 +27,4 @@ export const validateWeightPricing = {
       .withMessage('Max weight must be a positive number')
   ]
 };
+ 

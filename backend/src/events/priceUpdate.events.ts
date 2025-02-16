@@ -21,7 +21,7 @@ priceUpdateEmitter.on('price.updated', async (data) => {
       throw new Error('Failed to fetch admin users');
     }
 
-    const notificationType: NotificationType = 'PRICE_UPDATED';
+    const notificationType = NotificationType.PRICE_UPDATED;
 
     // 3. Notifier chaque administrateur
     const notificationPromises = admins.map(admin => 
@@ -39,7 +39,7 @@ priceUpdateEmitter.on('price.updated', async (data) => {
           }
         }
       )
-    );
+    ); 
 
     await Promise.all(notificationPromises);
 

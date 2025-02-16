@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import supabase from '../../config/database';
-import { OrderStatus } from '../../models/types';
+import { NotificationType, OrderStatus } from '../../models/types';
 import { RewardsService, NotificationService } from '../../services';
 import { OrderSharedMethods } from './shared';
 
@@ -14,7 +14,7 @@ export class OrderStatusController {
       if (!userRole) return res.status(401).json({ error: 'User role not found' });
 
       const orderId = req.params.orderId;
-      const { status } = req.body;
+      const { status } = req.body; 
 
       // 1. Mettre à jour le statut
       const order = await this.updateStatus(orderId, status, userId, userRole);
@@ -40,7 +40,7 @@ export class OrderStatusController {
       await NotificationService.createOrderNotification(
         order.userId,
         orderId,
-        'ORDER_STATUS_UPDATED',
+        NotificationType.ORDER_STATUS_UPDATED,
         { newStatus: status }
       );
 

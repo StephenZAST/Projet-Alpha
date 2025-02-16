@@ -25,7 +25,7 @@ export class ArticleServiceCompatibilityService {
       console.error('[ArticleServiceCompatibilityService] Set compatibility error:', error);
       throw error;
     }
-  }
+  } 
 
   static async checkCompatibility(
     articleId: string,

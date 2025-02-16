@@ -11,7 +11,7 @@ export class ServiceManagementController {
       const updatedServices = await ArticleService.updateArticleServices(
         articleId,
         serviceUpdates
-      );
+      ); 
 
       res.json({
         success: true,

@@ -28,7 +28,7 @@ router.get('/admin/list',
   adminCheck,
   AffiliateController.getAllAffiliates
 );
-
+ 
 // Gestion des demandes de retrait (admin)
 router.get('/admin/withdrawals/pending',
   authMiddleware,

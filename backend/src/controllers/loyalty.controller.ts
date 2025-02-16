@@ -14,7 +14,7 @@ export class LoyaltyController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  }
+  } 
 
   static async spendPoints(req: Request, res: Response) {
     try {

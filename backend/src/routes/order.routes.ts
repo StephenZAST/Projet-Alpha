@@ -18,7 +18,7 @@ router.use((req, res, next) => {
     user: req.user
   });
   next();
-});
+}); 
 
 // Protection des routes avec authentification
 router.use(authenticateToken);

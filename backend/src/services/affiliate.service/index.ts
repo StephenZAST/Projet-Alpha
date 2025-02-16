@@ -26,7 +26,7 @@ export class AffiliateService {
   static getWithdrawals = AffiliateWithdrawalService.getWithdrawals;
   static approveWithdrawal = AffiliateWithdrawalService.approveWithdrawal;
   static rejectWithdrawal = AffiliateWithdrawalService.rejectWithdrawal;
-
+ 
   // Administrative Functions
   static async getAllAffiliates(
     pagination: PaginationParams,

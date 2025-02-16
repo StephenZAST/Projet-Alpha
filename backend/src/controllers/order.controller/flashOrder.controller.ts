@@ -14,7 +14,7 @@ interface OrderItem {
   unitPrice: number;
   isPremium?: boolean;
 }
-
+ 
 export class FlashOrderController {
   static async createFlashOrder(req: Request, res: Response) {
     console.log('[FlashOrderController] Creating flash order with data:', req.body);

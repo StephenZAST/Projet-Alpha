@@ -123,7 +123,7 @@ app.use('/api/order-items', orderItemRoutes);
 app.use('/api/archives', archiveRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/weight-pricing', weightPricingRoutes);
-app.use('/api/service-types', serviceTypeRoutes);
+app.use('/api/service-types', serviceTypeRoutes); 
 
 // Ajouter la route health check
 app.get('/api/health', (req, res) => {

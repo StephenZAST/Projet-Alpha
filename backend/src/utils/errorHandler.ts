@@ -21,7 +21,7 @@ export const handleError = (res: Response, error: any): void => {
     });
     return;
   }
-
+ 
   // Pour les erreurs génériques
   res.status(500).json({
     success: false,
