@@ -4,7 +4,6 @@ import {
   PricingService, 
   RewardsService, 
   NotificationService,
-  LoyaltyService,  // Ajout de l'import
   SYSTEM_CONSTANTS
 } from '../../services';
 import { NotificationType, OrderStatus } from '../../models/types';
@@ -48,8 +47,7 @@ export class OrderCreateController {
         items,
         paymentMethod,
         appliedOfferIds,
-        serviceTypeId,
-        usePoints  // Add this new field
+        serviceTypeId
       } = req.body;
       
       const userId = req.user?.id;
@@ -60,50 +58,37 @@ export class OrderCreateController {
       const pricing = await PricingService.calculateOrderTotal({
         items,
         userId,
-        appliedOfferIds,
-        usePoints: usePoints || 0
+        appliedOfferIds
       });
       console.log('[OrderController] Price calculation result:', pricing);
 
       // 2. Créer la commande avec le montant total
+      const orderData = {
+        userId,
+        serviceId,
+        addressId,
+        isRecurring,
+        recurrenceType,
+        nextRecurrenceDate: null,
+        totalAmount: pricing.total,
+        collectionDate,
+        deliveryDate,
+        affiliateCode,
+        paymentMethod,
+        status: 'PENDING' as OrderStatus,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        service_type_id: serviceTypeId  // Garde le snake_case car c'est le nom exact dans la DB
+      };
+
       const { data: order, error } = await supabase
         .from('orders')
-        .insert([{
-          userId,
-          serviceId,
-          addressId,
-          isRecurring,
-          recurrenceType,
-          nextRecurrenceDate: null,
-          totalAmount: pricing.total,
-          collectionDate,
-          deliveryDate,
-          affiliateCode,
-          paymentMethod,
-          status: 'PENDING' as OrderStatus,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          service_type_id: serviceTypeId  // Garde le snake_case car c'est le nom exact dans la DB
-        }])
+        .insert([orderData])
         .select()
         .single();
 
       if (error) throw error;
       console.log('[OrderController] Order created:', order.id);
-
-      // 3. Si des points sont utilisés, les déduire maintenant qu'on a l'ID de commande
-      if (usePoints > 0) {
-        try {
-          await LoyaltyService.deductPoints(userId, usePoints, order.id);
-        } catch (error) {
-          // Si la déduction échoue, annuler la commande
-          await supabase
-            .from('orders')
-            .delete()
-            .eq('id', order.id);
-          throw error;
-        }
-      }
 
       // 3. Créer les items de commande
       const orderItems: OrderItem[] = items.map((item: CreateOrderItemData) => ({
@@ -158,6 +143,23 @@ export class OrderCreateController {
         throw itemsError;
       }
       console.log('[OrderController] Order items created');
+
+      // After creating the order, fetch it with all needed relations
+      const { data: orderWithRelations, error: relationsError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          user:users(id, firstName, lastName),
+          address:addresses(id, city),
+          items:order_items(*)
+        `)
+        .eq('id', order.id)
+        .single();
+
+      if (relationsError) {
+        console.error('[OrderController] Error fetching order relations:', relationsError);
+        throw relationsError;
+      }
 
       // 4. Récupérer la commande complète avec les items
       const completeOrder = {
@@ -228,35 +230,26 @@ export class OrderCreateController {
       NotificationService.sendOrderNotification(order)
         .catch((error: Error) => console.error('[OrderController] Notification error:', error));
 
-      // Récupérer les données utilisateur avec la commande
-      const { data: orderWithUser } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          user:users(first_name, last_name),
-          address:addresses(city)
-        `)
-        .eq('id', order.id)
-        .single();
-
-      if (!orderWithUser) {
-        throw new Error('Order data not found');
-      }
-
-      // Préparer les données pour les notifications avec vérification null
+      // Update notification data with proper null checks
       const notificationData = {
-        orderId: orderWithUser.id,
-        clientName: orderWithUser.user 
-          ? `${orderWithUser.user.first_name || ''} ${orderWithUser.user.last_name || ''}`.trim() || 'Client'
-          : 'Client',
-        amount: orderWithUser.totalAmount,
-        deliveryZone: orderWithUser.address?.city || 'Zone non spécifiée',
-        itemCount: completeOrder.items?.length || 0
+        orderId: orderWithRelations.id,
+        clientName: orderWithRelations.user 
+          ? `${orderWithRelations.user.firstName || ''} ${orderWithRelations.user.lastName || ''}`.trim() 
+          : 'Unknown Client',
+        amount: orderWithRelations.totalAmount,
+        deliveryZone: orderWithRelations.address?.city || 'Unknown Zone',
+        itemCount: orderWithRelations.items?.length || 0,
+        title: 'Nouvelle commande',
+        message: `Nouvelle commande #${orderWithRelations.id} créée`
       };
 
-      // Envoyer les notifications en arrière-plan
-      await NotificationService.sendRoleBasedNotifications(orderWithUser, notificationData)
-        .catch((error: Error) => console.error('[OrderController] Notification error:', error));
+      // Send role-based notifications with the updated order and notification data
+      await NotificationService.sendRoleBasedNotifications(
+        orderWithRelations,
+        notificationData
+      ).catch((error: Error) => {
+        console.error('[OrderController] Role-based notification error:', error);
+      });
 
       // 8. Préparer la réponse
       const response = {

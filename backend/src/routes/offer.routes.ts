@@ -1,44 +1,55 @@
 import express from 'express';
 import { OfferController } from '../controllers/offer.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
-import { asyncHandler } from '../utils/asyncHandler';
+import { createOfferValidation, updateOfferValidation } from '../middleware/offerValidation.middleware';
+import { validate } from '../middleware/validate.middleware';
 
 const router = express.Router();
 
 router.use(authenticateToken);
 
-// Routes publiques (clients)
-router.get(
-  '/available',
-  asyncHandler((req, res, next) => OfferController.getAvailableOffers(req, res))
-);
+// Routes without async handler wrapper since controller methods are already async
+router.get('/available', OfferController.getAvailableOffers);
+router.get('/my-subscriptions', OfferController.getUserSubscriptions);
 
-router.get(
-  '/:offerId',
-  asyncHandler((req, res, next) => OfferController.getOfferById(req, res))
-);
- 
-// Routes admin
-router.use(authorizeRoles(['ADMIN', 'SUPER_ADMIN']));
+// Protected routes (with offerId parameter)
+router.get('/:offerId', OfferController.getOfferById);
+router.post('/:offerId/subscribe', OfferController.subscribeToOffer);
+router.post('/:offerId/unsubscribe', OfferController.unsubscribeFromOffer);
 
+// Admin only routes
 router.post(
-  '/',
-  asyncHandler((req, res, next) => OfferController.createOffer(req, res))
+  '/', 
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  createOfferValidation,
+  validate,
+  OfferController.createOffer
 );
 
-router.put(
+router.patch(
   '/:offerId',
-  asyncHandler((req, res, next) => OfferController.updateOffer(req, res))
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  updateOfferValidation,
+  validate,
+  OfferController.updateOffer
+);
+
+router.get(
+  '/:offerId/subscribers',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  OfferController.getSubscribers
 );
 
 router.delete(
   '/:offerId',
-  asyncHandler((req, res, next) => OfferController.deleteOffer(req, res))
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  OfferController.deleteOffer
 );
 
 router.patch(
   '/:offerId/status',
-  asyncHandler((req, res, next) => OfferController.toggleOfferStatus(req, res))
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  OfferController.toggleOfferStatus
 );
 
 export default router;

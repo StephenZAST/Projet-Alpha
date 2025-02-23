@@ -28,7 +28,7 @@ export interface CreateAdditionalServiceDTO {
   type: AdditionalServiceType;
   price: number;
   description?: string;
-}
+} 
 
 export interface AddServiceToOrderDTO {
   service_id: string;

@@ -95,7 +95,7 @@ router.post('/verify-code', asyncHandler(async (req: Request, res: Response) => 
       success: false, 
       error: 'Code invalide ou expiré' 
     });
-  }
+  } 
 }));
 
 // Routes protégées par authentification

@@ -2,70 +2,72 @@ import { Request, Response } from 'express';
 import { OfferService } from '../services/offer.service';
 
 export class OfferController {
-  static async createOffer(req: Request, res: Response) {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-      const offerData = req.body;
-      const offer = await OfferService.createOffer(offerData);
-      res.json({ data: offer });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
+  // Client Endpoints
+  static async getAvailableOffers(req: Request, res: Response) {
+    const { userId } = req.user as { userId: string };
+    const offers = await OfferService.getAvailableOffers(userId);
+    return res.json({ success: true, data: offers });
   }
 
-  static async getAvailableOffers(req: Request, res: Response) {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  static async subscribeToOffer(req: Request, res: Response) {
+    const { userId } = req.user as { userId: string };
+    const { offerId } = req.params;
+    await OfferService.subscribeToOffer(userId, offerId);
+    return res.json({ success: true, message: 'Successfully subscribed to offer' });
+  }
 
-      const offers = await OfferService.getAvailableOffers(userId);
-      res.json({ data: offers });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  } 
+  static async unsubscribeFromOffer(req: Request, res: Response) {
+    const { userId } = req.user as { userId: string };
+    const { offerId } = req.params;
+    await OfferService.unsubscribeFromOffer(userId, offerId);
+    return res.json({ success: true, message: 'Successfully unsubscribed from offer' });
+  }
 
-  static async getOfferById(req: Request, res: Response) {
-    try {
-      const { offerId } = req.params;
-      const offer = await OfferService.getOfferById(offerId);
-      res.json({ data: offer });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
+  static async getUserSubscriptions(req: Request, res: Response) {
+    const { userId } = req.user as { userId: string };
+    const subscriptions = await OfferService.getUserSubscriptions(userId);
+    return res.json({ success: true, data: subscriptions });
+  }
+
+  // Admin Endpoints
+  static async createOffer(req: Request, res: Response) {
+    const offer = await OfferService.createOffer(req.body);
+    return res.status(201).json({ success: true, data: offer });
   }
 
   static async updateOffer(req: Request, res: Response) {
-    try {
-      const { offerId } = req.params;
-      const updateData = req.body;
-      const offer = await OfferService.updateOffer(offerId, updateData);
-      res.json({ data: offer });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
+    const { offerId } = req.params;
+    const offer = await OfferService.updateOffer(offerId, req.body);
+    return res.json({ success: true, data: offer });
+  }
+
+  static async getSubscribers(req: Request, res: Response) {
+    const { offerId } = req.params;
+    const subscribers = await OfferService.getSubscribers(offerId);
+    return res.json({ success: true, data: subscribers });
   }
 
   static async deleteOffer(req: Request, res: Response) {
-    try {
-      const { offerId } = req.params;
-      await OfferService.deleteOffer(offerId);
-      res.json({ success: true });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
+    const { offerId } = req.params;
+    await OfferService.deleteOffer(offerId);
+    return res.json({ success: true, message: 'Offer deleted successfully' });
+  }
+
+  static async getOfferById(req: Request, res: Response) {
+    const { offerId } = req.params;
+    const offer = await OfferService.getOfferById(offerId);
+    return res.json({ success: true, data: offer });
   }
 
   static async toggleOfferStatus(req: Request, res: Response) {
-    try {
-      const { offerId } = req.params;
-      const { isActive } = req.body;
-      const offer = await OfferService.toggleOfferStatus(offerId, isActive);
-      res.json({ data: offer });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+    const { offerId } = req.params;
+    const { isActive } = req.body;
+    
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({ error: 'isActive must be a boolean' });
     }
+
+    const offer = await OfferService.toggleOfferStatus(offerId, isActive);
+    return res.json({ success: true, data: offer });
   }
 }

@@ -17,4 +17,4 @@ export const validatePriceData = (req: Request, res: Response, next: NextFunctio
 
   next();
 };
- 
+  

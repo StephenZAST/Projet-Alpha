@@ -28,7 +28,7 @@ export class OrderItemService {
 
     if (articleError || !article) {
       throw new Error(`Article not found or inactive: ${articleId}`);
-    }
+    } 
 
     // 2. Créer l'item de commande
     const { data, error } = await supabase

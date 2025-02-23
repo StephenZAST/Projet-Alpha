@@ -24,7 +24,7 @@ export class DeliveryService {
     if (error) throw error;
 
     return data;
-  }
+  } 
   static async getCOLLECTEDOrders(userId: string): Promise<Order[]> {
     const { data, error } = await supabase
       .from('orders')

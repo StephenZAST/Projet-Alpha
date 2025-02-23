@@ -69,7 +69,7 @@ export class ServiceNotificationService {
               }
             )
           )
-        );
+        ); 
       }
     } catch (error) {
       console.error('[ServiceNotificationService] Notification error:', error);

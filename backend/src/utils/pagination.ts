@@ -33,7 +33,7 @@ export const validatePaginationParams = (query: any): PaginationParams => {
     page
   };
 };
-
+ 
 export function calculatePagination(total: number, page: number, limit: number) {
   const totalPages = Math.ceil(total / limit);
   

@@ -37,7 +37,7 @@ export class AffiliateCommissionService {
         limit,
         totalPages: Math.ceil((count || 0) / limit)
       }
-    };
+    }; 
   }
 
   static async calculateCommissionRate(totalReferrals: number): Promise<number> {

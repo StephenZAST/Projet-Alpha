@@ -10,7 +10,7 @@ export class AddressController {
 
       if (!req.user?.id) {
         return res.status(401).json({ error: 'User not authenticated' });
-      } 
+      }  
 
       const { 
         name,

@@ -18,7 +18,7 @@ router.use((req, res, next) => {
     user: req.user
   });
   next();
-}); 
+});  
 
 // Protection des routes avec authentification
 router.use(authenticateToken);
@@ -41,7 +41,7 @@ router.route('/flash')
 router.get(
   '/flash/draft',
   authenticateToken,
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN', 'MANAGER']), // Ajouter plus de rôles si nécessaire
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']), // Suppression de 'MANAGER' et utilisation des rôles existants
   asyncHandler(FlashOrderController.getDraftFlashOrders)
 );
 

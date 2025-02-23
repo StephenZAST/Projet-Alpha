@@ -93,6 +93,11 @@ export enum NotificationType {
   REFERRAL_BONUS = 'REFERRAL_BONUS',
   PROMOTIONS = 'PROMOTIONS',
   PRICE_UPDATED = 'PRICE_UPDATED',
+  OFFER_CREATED = 'OFFER_CREATED',
+  OFFER_UPDATED = 'OFFER_UPDATED', 
+  OFFER_DELETED = 'OFFER_DELETED',
+  OFFER_SUBSCRIBED = 'OFFER_SUBSCRIBED',
+  OFFER_UNSUBSCRIBED = 'OFFER_UNSUBSCRIBED',
 }
 
 export interface Notification {
@@ -105,7 +110,7 @@ export interface Notification {
   read: boolean;
   createdAt: Date;
   updatedAt: Date;
-}
+} 
 
 export interface NotificationPreferences {
   email: boolean;
@@ -538,6 +543,16 @@ export interface Offer {
   createdAt: Date;
   updatedAt: Date;
   articles?: Article[];
+  subscribers?: OfferSubscription[];
+}
+
+export interface OfferSubscription {
+  id: string;
+  user_id: string;
+  offer_id: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  subscribed_at: Date;
+  updated_at: Date;
 }
 
 export interface CreateOfferDTO {

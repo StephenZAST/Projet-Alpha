@@ -1,85 +1,73 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/types';
 import { AuthService } from '../services/auth.service';
+import { UserRole } from '../models/types';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: Partial<User>;
-    }
-  }
+// Type for decoded JWT token
+interface DecodedToken {
+  id: string;
+  role: UserRole;
 }
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET must be defined');
-}
-
-export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
+/**
+ * Middleware to authenticate JWT token
+ */
+export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log('Auth Middleware - Headers:', req.headers);
-    
-    let token = req.headers.authorization;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-    if (token && token.startsWith('Bearer ')) {
-      token = token.slice(7);
-      console.log('Extracted token:', token);
-    } else {
-      console.log('No Bearer token found');
-      return res.status(401).json({ error: 'No token provided' });
+    if (!token) {
+      return res.status(401).json({ error: 'Missing authentication token' });
     }
- 
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string };
-      
-      if (!decoded || !decoded.id || !decoded.role) {
-        console.error('Invalid token payload');
-        return res.status(401).json({ error: 'Invalid token payload' });
-      }
 
-      console.log('Decoded token:', decoded);
-      
-      // Only set the fields we know exist in the token
-      req.user = {
-        id: decoded.id,
-        role: decoded.role as User['role']
-      };
-
-      next();
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      return res.status(401).json({ error: 'Invalid token' });
+    if (AuthService.isTokenBlacklisted(token)) {
+      return res.status(401).json({ error: 'Token is no longer valid' });
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: string;
+      role: UserRole;
+    };
+
+    req.user = {
+      id: decoded.id,
+      userId: decoded.id,
+      role: decoded.role
+    };
+
+    next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
-    return res.status(401).json({ error: 'Authentication failed' });
+    return res.status(401).json({ error: 'Invalid token' });
   }
 };
 
-export const authorizeRoles = (allowedRoles: string[]) => {
+/**
+ * Middleware to check user roles
+ */
+export const authorizeRoles = (allowedRoles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      console.log('User role:', req.user?.role);
-      console.log('Allowed roles:', allowedRoles);
-      
-      if (!req.user || !req.user.role) {
-        console.log('No user or role found in request');
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      if (!allowedRoles.includes(req.user.role)) {
-        console.log(`User role ${req.user.role} not in allowed roles:`, allowedRoles);
-        return res.status(403).json({ error: 'Insufficient permissions' });
-      }
-
-      next();
-    } catch (error) {
-      console.error('Authorization error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+    if (!req.user?.role) {
+      return res.status(403).json({ error: 'No role specified' });
     }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        error: 'Access denied',
+        message: 'You do not have the required permissions'
+      });
+    }
+
+    next();
   };
 };
 
-// Export as alias for backward compatibility
-export const authMiddleware = authenticateToken;
+/**
+ * Authentication middleware for WebSocket connections
+ */
+export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  next();
+};

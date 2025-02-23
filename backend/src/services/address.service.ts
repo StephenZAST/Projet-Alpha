@@ -22,7 +22,7 @@ export class AddressService {
       console.error('Get address by ID error:', error);
       throw error;
     }
-  } 
+  }  
 
   static async createAddress(
     userId: string, 

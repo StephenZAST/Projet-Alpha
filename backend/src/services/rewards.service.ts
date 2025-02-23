@@ -30,7 +30,7 @@ export class RewardsService {
         .maybeSingle();
 
       console.log('[RewardsService] Existing loyalty profile:', loyalty);
-
+ 
       if (loyaltyError) {
         console.error('[RewardsService] Error checking loyalty profile:', loyaltyError);
         throw loyaltyError;

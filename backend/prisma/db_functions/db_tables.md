@@ -1,5 +1,5 @@
 # Database Structure
-
+ 
 ## User Management
 ### Users (Table: users)
 | Column Name | Type | Constraints |

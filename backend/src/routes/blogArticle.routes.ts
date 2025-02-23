@@ -37,4 +37,4 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => BlogArticleController.generateArticle(req, res))
 );
 
-export default router;
+export default router; 

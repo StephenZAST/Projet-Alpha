@@ -1,0 +1,243 @@
+{
+    "info": {
+        "name": "Alpha - Système d'Offres",
+        "description": "Collection pour tester le système d'offres",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000/api",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Admin Tests",
+            "item": [
+                {
+                    "name": "Créer une offre",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Offre Spéciale Weekend\",\n    \"description\": \"Réduction sur tous les articles\",\n    \"discountType\": \"PERCENTAGE\",\n    \"discountValue\": 20,\n    \"isCumulative\": true,\n    \"startDate\": \"2025-02-16T00:00:00Z\",\n    \"endDate\": \"2025-03-01T23:59:59Z\",\n    \"minPurchaseAmount\": 30,\n    \"maxDiscountAmount\": 50,\n    \"pointsRequired\": 100\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/offers",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["offers"]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 201\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response has offer ID\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.id).to.exist;",
+                                    "    pm.environment.set(\"offerId\", jsonData.id);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Liste des souscripteurs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{adminToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/offers/subscribers/{{offerId}}",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["offers", "subscribers", "{{offerId}}"]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response is an array\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(Array.isArray(jsonData)).to.be.true;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Client Tests",
+            "item": [
+                {
+                    "name": "Offres disponibles",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{userToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/offers/available",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["offers", "available"]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Souscrire à une offre",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{userToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/offers/{{offerId}}/subscribe",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["offers", "{{offerId}}", "subscribe"]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Mes souscriptions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{userToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/offers/my-subscriptions",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["offers", "my-subscriptions"]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Order Tests",
+            "item": [
+                {
+                    "name": "Créer une commande avec offre",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{userToken}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"userId\": \"0c532348-1aad-43e7-9483-3144c4297c46\",\n    \"serviceId\": \"f2a87b59-ebab-4f5c-9973-b9453e2e1757\",\n    \"serviceTypeId\": \"b8dbd27a-9915-48ad-a8e9-276a4c8aca91\",\n    \"addressId\": \"03802428-7c13-4e06-b153-bb5a9dde176a\",\n    \"paymentMethod\": \"CASH\",\n    \"items\": [\n        {\n            \"articleId\": \"087518bd-d6bc-4ab6-a230-b23c7ad25c38\",\n            \"quantity\": 2,\n            \"isPremium\": true\n        }\n    ],\n    \"usePoints\": 100\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/orders",
+                            "host": ["{{baseUrl}}"],
+                            "path": ["orders"]
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test(\"Status code is 201\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Order has discounts applied\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.appliedDiscounts).to.exist;",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -20,7 +20,7 @@ export class OrderStatusService {
   private static validateStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): boolean {
     const validNextStatuses = this.validStatusTransitions[currentStatus];
     return validNextStatuses.includes(newStatus);
-  }
+  } 
 
   static async updateOrderStatus(
     orderId: string, 

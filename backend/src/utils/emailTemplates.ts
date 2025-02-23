@@ -27,7 +27,7 @@ export const notificationEmailTemplate = (title: string, message: string, type: 
     <p>Pour gérer vos préférences de notifications, connectez-vous à votre compte.</p>
   </div>
 `;
-
+ 
 export const welcomeNotificationTemplate = (firstName: string) => `
   <h1>Bienvenue sur Alpha Laundry!</h1>
   <p>Bonjour ${firstName},</p>

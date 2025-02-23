@@ -32,7 +32,7 @@ router.get(
       next(error);
     }
   })
-);
+); 
 
 // Routes admin
 router.patch(

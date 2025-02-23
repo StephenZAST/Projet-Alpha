@@ -31,7 +31,7 @@ import './scheduler'; // Importer le scheduler pour démarrer les tâches cron
 dotenv.config();
 
 const app = express();
-
+ 
 // Middleware globaux
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

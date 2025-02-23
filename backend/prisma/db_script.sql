@@ -208,7 +208,7 @@ ORDER BY e.enumsortorder;
 -- Afficher les colonnes de la table d'une table donnée
 SELECT column_name, data_type, character_maximum_length, column_default, is_nullable
 FROM INFORMATION_SCHEMA.COLUMNS 
-WHERE table_name = 'notifications';
+WHERE table_name = 'offers';
 
 
 

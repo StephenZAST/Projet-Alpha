@@ -28,7 +28,7 @@ export class NotificationService {
         .eq('user_role', user.role)
         .eq('is_active', true)
         .single();
-
+ 
       if (!rule) {
         console.log(`No notification rule found for type ${type} and role ${user.role}`);
         return;

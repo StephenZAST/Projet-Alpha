@@ -39,7 +39,7 @@ export class ArticleService {
     if (!data) throw new Error('Article not found');
 
     return data;
-  }
+  } 
 
   static async getAllArticles(): Promise<Article[]> {
     try {

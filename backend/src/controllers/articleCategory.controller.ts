@@ -39,7 +39,7 @@ export class ArticleCategoryController {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
-  }
+  } 
 
   static async updateArticleCategory(req: Request, res: Response) {
     try {

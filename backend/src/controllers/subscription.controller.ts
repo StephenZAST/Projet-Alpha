@@ -35,7 +35,7 @@ export class SubscriptionController {
         error: error.message
       });
     }
-  } 
+  }  
 
   static async getActiveSubscription(req: Request, res: Response) {
     try {

@@ -16,7 +16,7 @@ export class AdminController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     } 
-  }
+  } 
 
   static async configureRewards(req: Request, res: Response) {
     try {

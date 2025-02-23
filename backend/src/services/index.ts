@@ -20,7 +20,7 @@ export interface OrderCalculationResult {
     affiliateId: string;
     amount: number;
   };
-}
+} 
 
 // Exemple d'utilisation des services ensemble :
 /*

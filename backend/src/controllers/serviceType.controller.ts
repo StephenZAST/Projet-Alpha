@@ -35,7 +35,7 @@ export class ServiceTypeController {
       success: true,
       data: serviceType
     }); 
-  }
+  } 
 
   static async getAllServiceTypes(req: Request, res: Response): Promise<void> {
     const includeInactive = req.query.includeInactive === 'true';

@@ -141,6 +141,36 @@ export class OrderCreateService {
           .eq('id', orderResult[0].id);
       }
 
+      // Apply offer discounts if any offer IDs are provided
+      if (orderData.offerIds?.length) {
+        // Apply offer discounts if any offer IDs are provided
+        if (orderData.offerIds?.length) {
+          // Update the order with applied discounts
+          await supabase
+            .from('orders')
+            .update({
+          totalAmount: finalAmount,
+          appliedOffers: appliedDiscounts
+            })
+            .eq('id', completeOrder.id);
+
+          completeOrder.totalAmount = finalAmount;
+          completeOrder.appliedOffers = appliedDiscounts;
+        }
+
+        // Update the order with applied discounts
+        await supabase
+          .from('orders')
+          .update({
+            totalAmount: finalAmount,
+            appliedOffers: appliedDiscounts
+          })
+          .eq('id', completeOrder.id);
+
+        completeOrder.totalAmount = finalAmount;
+        completeOrder.appliedOffers = appliedDiscounts;
+      }
+
       // 4. Traiter la commission d'affilié
       if (affiliateCode) {
         await OrderPaymentService.processAffiliateCommission(
@@ -188,7 +218,7 @@ export class OrderCreateService {
           pointsEarned: earnedPoints,
           currentBalance: currentPoints
         }
-      };
+      }; 
 
     } catch (error) {
       console.error('[OrderService] Error creating order:', error);

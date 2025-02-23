@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ArticleService } from '../../services/article.service';
-import { ServiceTypeService } from '../../services/serviceType.service';
+import { ServiceTypeService } from '../../services/serviceType.service'; 
 
 export class ServiceManagementController {
   static async updateArticleServices(req: Request, res: Response) {

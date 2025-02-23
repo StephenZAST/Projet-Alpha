@@ -60,7 +60,7 @@ export class OrderQueryService {
     if (error) {
       console.error('Error fetching user orders:', error);
       throw error;
-    }
+    } 
 
     return this.formatOrders(data || []);
   }

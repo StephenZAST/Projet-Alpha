@@ -22,7 +22,7 @@ export class SubscriptionService {
       throw error;
     }
   }
-
+ 
   static async subscribeToPlan(
     userId: string, 
     planId: string

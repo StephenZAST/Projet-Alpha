@@ -30,7 +30,7 @@ export class PricingCalculatorService {
       const itemCosts = await this.calculateItemBasedPrices(items);
       total += itemCosts.total;
       breakdown.push(...itemCosts.breakdown);
-
+ 
       return { total, breakdown };
     } catch (error) {
       console.error('[PricingCalculatorService] Calculate price error:', error);

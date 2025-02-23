@@ -32,7 +32,7 @@ cron.schedule('0 2 * * *', async () => {
     if (adminError || !adminUser) {
       console.error('Admin user not found for blog article creation');
       return;
-    }
+    } 
 
     const trendingTopics = await BlogArticleService.getTrendingTopics();
     const randomTopic = trendingTopics[Math.floor(Math.random() * trendingTopics.length)];

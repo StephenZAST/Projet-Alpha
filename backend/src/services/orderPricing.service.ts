@@ -22,5 +22,5 @@ export class OrderPricingService {
     const prices = await Promise.all(pricePromises);
     return prices.reduce((total, price) => total + price, 0);
   }
-}
+} 
  

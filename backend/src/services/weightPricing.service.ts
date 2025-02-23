@@ -179,3 +179,4 @@ export class WeightPricingService {
     return data;
   }
 }
+ 

@@ -184,7 +184,7 @@ export class AdminService {
       isActive,
       message: `Votre compte affilié est maintenant ${status.toLowerCase()}`
       }
-    );
+    ); 
 
     return data;
   }

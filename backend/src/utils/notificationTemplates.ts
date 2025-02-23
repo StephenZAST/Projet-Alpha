@@ -43,3 +43,4 @@ export const getCustomerName = (user?: User): string => {
   const lastName = user.lastName || '';
   return `${firstName} ${lastName}`.trim() || 'Client';
 };
+ 

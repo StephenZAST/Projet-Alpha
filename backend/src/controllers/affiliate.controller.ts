@@ -22,7 +22,7 @@ export class AffiliateController {
      const status = error.message === 'Affiliate profile not found' ? 404 : 500;
      res.status(status).json({ error: error.message });
    }
-  }
+  } 
 
   static async getLevels(req: Request, res: Response) {
     try {

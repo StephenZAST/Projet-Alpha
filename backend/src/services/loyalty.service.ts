@@ -88,7 +88,7 @@ export class LoyaltyService {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) throw error; 
 
     // Enregistrer la transaction
     await this.createPointTransaction(userId, points, 'SPENT', source, referenceId);

@@ -29,7 +29,7 @@ export class BlogCategoryService {
     if (error) throw error; 
     return data;
   }
-
+ 
   static async updateCategory(categoryId: string, name: string, description?: string): Promise<BlogCategory> {
     const { data, error } = await supabase
       .from('blog_categories')

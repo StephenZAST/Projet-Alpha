@@ -20,7 +20,7 @@ export class AffiliateService {
   static processNewCommission = AffiliateCommissionService.processNewCommission;
   static updateAffiliateLevels = AffiliateCommissionService.updateAffiliateLevels;
   static resetMonthlyEarnings = AffiliateCommissionService.resetMonthlyEarnings;
-
+ 
   // Withdrawal Management
   static requestWithdrawal = AffiliateWithdrawalService.requestWithdrawal;
   static getWithdrawals = AffiliateWithdrawalService.getWithdrawals;

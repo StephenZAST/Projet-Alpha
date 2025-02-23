@@ -24,7 +24,7 @@ export class AffiliateWithdrawalService {
           amount: -amount, // Negative amount for withdrawals
           status: 'PENDING',
           created_at: new Date().toISOString()
-        }])
+        }]) 
         .select()
         .single();
 

@@ -30,7 +30,7 @@ export class OrderItemController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  } 
+  }  
 
   static async getOrderItemsByOrderId(req: Request, res: Response) {
     try {

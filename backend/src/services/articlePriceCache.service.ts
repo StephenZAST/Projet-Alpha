@@ -32,7 +32,7 @@ export class ArticlePriceCacheService {
         console.error('[ArticlePriceCacheService] Cache error:', error);
         return null;
       }
-    }
+    } 
 
     return prices || null;
   }

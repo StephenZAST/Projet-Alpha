@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import supabase from '../../config/database';
 import PDFDocument from 'pdfkit';
-import { OrderSharedMethods, OrderItemWithArticle } from './shared';
+import { OrderSharedMethods, OrderItemWithArticle } from './shared'; 
 
 export class OrderQueryController {
   static getOrderItems = OrderSharedMethods.getOrderItems;

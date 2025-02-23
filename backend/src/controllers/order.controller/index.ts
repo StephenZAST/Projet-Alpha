@@ -3,7 +3,7 @@ import { OrderCreateController } from './orderCreate.controller';
 import { OrderQueryController } from './orderQuery.controller';
 import { OrderStatusController } from './orderStatus.controller';
 import { FlashOrderController } from './flashOrder.controller';
-import { OrderSharedMethods } from './shared';
+import { OrderSharedMethods } from './shared'; 
 
 export class OrderController {
   // Méthodes de création

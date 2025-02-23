@@ -26,7 +26,7 @@ export class OrderService {
 
   static async getRecentOrders(limit: number = 5): Promise<Order[]> {
     return OrderQueryService.getRecentOrders(limit);
-  }
+  } 
 
   static async getOrdersByStatus(): Promise<Record<string, number>> {
     return OrderQueryService.getOrdersByStatus();

@@ -13,7 +13,7 @@ interface ArticleServiceData {
     name: string;
   };
 }
-
+ 
 export class CompatibilityValidatorService {
   static async validateOrderCompatibility(
     items: Array<{articleId: string; serviceId: string}>

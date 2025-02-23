@@ -36,7 +36,7 @@ export class ArticleController {
         message: status === 404 ? 'Article not found' : 'Failed to retrieve article',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
-    }
+    } 
   }
 
   static async getAllArticles(req: Request, res: Response) {

@@ -39,7 +39,7 @@ priceUpdateEmitter.on('price.updated', async (data) => {
           }
         }
       )
-    ); 
+    );  
 
     await Promise.all(notificationPromises);
 

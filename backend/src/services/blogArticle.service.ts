@@ -2,6 +2,7 @@ import supabase from '../config/database';
 import axios from 'axios';
 import googleTrends from 'google-trends-api';
 import { v4 as uuidv4 } from 'uuid';
+import type { TrendsApiOptions, TrendsResult } from '../types';
 
 export class BlogArticleService {
   static async createArticle(title: string, content: string, categoryId: string, authorId: string) {
@@ -21,7 +22,7 @@ export class BlogArticleService {
 
     if (error) throw error;
     return data;
-  }
+  } 
 
   static async getAllArticles(includeUnpublished = false) {
     const query = supabase

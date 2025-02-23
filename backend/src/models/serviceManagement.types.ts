@@ -30,7 +30,7 @@ export interface CreateArticleServicePriceDTO {
   premium_price?: number;
   price_per_kg?: number;
   is_available?: boolean;
-} 
+}  
 
 export interface UpdateArticleServicePriceDTO {
   base_price?: number;

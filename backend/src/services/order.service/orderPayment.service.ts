@@ -20,7 +20,7 @@ export class OrderPaymentService {
       console.error('[OrderPaymentService] Error:', error);
       throw error;
     }
-  }
+  } 
 
   static async calculateDiscounts(
     userId: string,

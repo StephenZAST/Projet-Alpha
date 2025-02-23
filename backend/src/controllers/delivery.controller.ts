@@ -27,7 +27,7 @@ export class DeliveryController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  }
+  } 
 
   static async updateOrderStatus(req: Request, res: Response) {
     try {

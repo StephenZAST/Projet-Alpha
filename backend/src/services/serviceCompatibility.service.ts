@@ -26,7 +26,7 @@ articleId: string, serviceId: string, isCompatible: boolean, restrictions: any  
       console.error('Error setting compatibility:', error);
       throw error;
     }
-  }
+  } 
 
   static async getCompatibilities(articleId: string): Promise<ServiceCompatibility[]> {
     const { data, error } = await supabase

@@ -28,7 +28,7 @@ export class LoyaltyController {
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
-  }
+  } 
 
   static async getPointsBalance(req: Request, res: Response) {
     try {

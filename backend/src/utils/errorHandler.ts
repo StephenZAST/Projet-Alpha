@@ -29,7 +29,7 @@ export const handleError = (res: Response, error: any): void => {
       message: error.message || 'Une erreur interne est survenue',
       code: 'INTERNAL_ERROR'
     }
-  });
+  }); 
 };
 
 const getStatusCode = (errorCode: string): number => {

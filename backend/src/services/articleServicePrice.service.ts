@@ -141,7 +141,7 @@ export class ArticleServicePriceService {
       console.error('Error setting prices:', error);
       throw error;
     }
-  }
+  } 
 
   static async validatePricing(price: Partial<ArticleServicePrice>): Promise<boolean> {
     if (price.base_price !== undefined && price.base_price < 0) {

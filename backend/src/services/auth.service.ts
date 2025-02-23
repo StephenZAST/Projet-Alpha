@@ -24,7 +24,7 @@ export class AuthService {
       referral_code: affiliateCode,
       created_at: new Date(),
       updated_at: new Date()
-    };
+    }; 
  
     const { data, error } = await supabase
       .from('users')

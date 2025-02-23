@@ -22,7 +22,7 @@ export const sendEmail = async (to: string, code: string) => {
       <p>Votre code de vérification est : <strong>${code}</strong></p>
       <p>Ce code expirera dans 15 minutes.</p>
     `
-  };
+  }; 
 
   try {
     console.log('Email configuration:', {

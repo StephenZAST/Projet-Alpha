@@ -27,7 +27,7 @@ export class DefaultServiceService {
     } catch (error) {
       console.error('[DefaultServiceService] Set default service error:', error);
       throw error;
-    }
+    } 
   }
  
   static async getDefaultServices(categoryId: string) {

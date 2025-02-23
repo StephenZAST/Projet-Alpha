@@ -31,7 +31,7 @@ export class ArticleServiceService {
     if (error) throw error;
 
     return data;
-  } 
+  }  
 
   static async updateArticleService(articleServiceId: string, priceMultiplier: number): Promise<ArticleService> {
     const { data, error } = await supabase

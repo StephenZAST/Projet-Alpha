@@ -111,7 +111,7 @@ export class ServiceTypeService {
       // 3. Notifier les admins du changement
       if (data) {
         await this.notifyAdmins(NotificationType.SERVICE_TYPE_UPDATED, data);
-      }
+      } 
 
       return data;
     } catch (error) {

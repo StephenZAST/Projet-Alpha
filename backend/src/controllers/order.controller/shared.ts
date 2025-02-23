@@ -17,7 +17,7 @@ export interface OrderItemWithArticle extends OrderItem {
     updatedAt: Date;
     [key: string]: any;
   };
-} 
+}  
 
 export class OrderSharedMethods {
   static async getOrderItems(orderId: string): Promise<OrderItemWithArticle[]> {

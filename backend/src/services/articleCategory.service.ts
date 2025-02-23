@@ -35,7 +35,7 @@ export class ArticleCategoryService {
     if (!data) throw new Error('Article category not found');
 
     return data;
-  }
+  } 
 
   static async getAllArticleCategories(): Promise<ArticleCategory[]> {
     try {

@@ -111,7 +111,7 @@ export class AdditionalServiceService {
             }
           }
         )
-      );
+      ); 
 
       await Promise.all(notificationPromises);
 

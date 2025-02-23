@@ -34,7 +34,7 @@ export class WeightPricingController {
     } catch (error: any) {
       handleError(res, error);
     }
-  }
+  } 
 
   static async calculatePrice(req: Request, res: Response) {
     try {

@@ -28,4 +28,4 @@ export const validateSubscription = (req: Request, res: Response, next: NextFunc
     });
   }
 };
- 
+  

@@ -35,7 +35,7 @@ export class ArticleServicePriceController {
         error: error.message
       });
     }
-  }
+  } 
 
   static async getByArticleId(req: Request, res: Response) {
     try {

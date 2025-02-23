@@ -25,7 +25,7 @@ export const validateArticlePricing = (req: Request, res: Response, next: NextFu
       if (premium_price > base_price * pricingConfig.maxPremiumMultiplier) {
         throw new Error(`Le prix premium ne peut pas dépasser ${pricingConfig.maxPremiumMultiplier}x le prix de base`);
       }
-    }
+    } 
 
     // Validation du prix au kilo
     if (price_per_kg && !pricingConfig.allowPricePerKg) {

@@ -28,7 +28,7 @@ export const COMMISSION_LEVELS = {
         max: 19,
         rate: 0.15, // 15%
         description: "15% de commission sur les ventes directes"
-    },
+    }, 
     LEVEL3: {
         name: "Expert",
         min: 20,

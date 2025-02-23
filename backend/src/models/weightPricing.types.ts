@@ -31,4 +31,4 @@ export interface WeightRecordDTO {
   order_id: string;
   weight: number;
 }
- 
+  

@@ -48,4 +48,4 @@ router.put('/preferences', asyncHandler(async (req: Request, res: Response, next
   await NotificationController.updatePreferences(req, res);
 }));
 
-export default router;
+export default router; 

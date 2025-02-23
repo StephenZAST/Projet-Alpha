@@ -27,7 +27,7 @@ export class ServiceService {
       console.error('Error in getAllServices:', error);
       throw error;
     }
-  }
+  } 
 
   static async updateService(serviceId: string, name: string, price: number, description?: string): Promise<Service> {
     const { data, error } = await supabase

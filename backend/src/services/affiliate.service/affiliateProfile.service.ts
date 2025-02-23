@@ -72,7 +72,7 @@ export class AffiliateProfileService {
       if (transactionError) {
         console.error('[AffiliateProfileService] Error fetching transactions:', transactionError);
         // Don't throw here, just log the error and continue
-      }
+      } 
 
       return {
         ...profile,

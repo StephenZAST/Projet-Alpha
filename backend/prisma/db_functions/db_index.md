@@ -1,4 +1,4 @@
-[
+[ 
   {
     "schema_name": "auth",
     "table_name": "audit_log_entries",

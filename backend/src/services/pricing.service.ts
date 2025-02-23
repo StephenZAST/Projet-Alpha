@@ -26,7 +26,7 @@ export class PricingService {
     subtotal: number;
     discounts: Array<{ offerId: string; amount: number; type?: string }>;
     total: number;
-  }> {
+  }> { 
     try {
       console.log('[PricingService] Calculating order total for items:', orderData.items);
       

@@ -26,7 +26,7 @@ export class ArchiveService {
         limit
       }
     };
-  } 
+  }  
 
   static async archiveOldOrders(days: number = 30): Promise<number> {
     const cutoffDate = new Date();

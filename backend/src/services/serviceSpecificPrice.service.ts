@@ -26,7 +26,7 @@ export class ServiceSpecificPriceService {
     } catch (error) {
       console.error('[ServiceSpecificPriceService] Set price error:', error);
       throw error;
-    }
+    } 
   }
  
   static async getPrice(

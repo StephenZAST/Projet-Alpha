@@ -28,7 +28,7 @@ export class ArticlePriceHistoryService {
           new_price: newPrice,
           modified_by: userId,
           created_at: new Date() 
-        }])
+        }]) 
         .select(`
           *,
           modifier:users(id, email, firstName, lastName)
