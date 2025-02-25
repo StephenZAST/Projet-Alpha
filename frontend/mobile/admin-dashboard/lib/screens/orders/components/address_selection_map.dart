@@ -62,13 +62,13 @@ class _AddressSelectionMapState extends State<AddressSelectionMap> {
                 FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
-                    initialCenter: _selectedAddress?.gpsLatitude != null
+                    center: _selectedAddress?.gpsLatitude != null
                         ? LatLng(
                             _selectedAddress!.gpsLatitude!,
                             _selectedAddress!.gpsLongitude!,
                           )
                         : const LatLng(5.3484, -4.0305), // Abidjan
-                    initialZoom: 13,
+                    zoom: 13,
                   ),
                   children: [
                     TileLayer(
@@ -90,7 +90,7 @@ class _AddressSelectionMapState extends State<AddressSelectionMap> {
                               ),
                               width: 40,
                               height: 40,
-                              child: GestureDetector(
+                              builder: (context) => GestureDetector(
                                 onTap: () {
                                   setState(() {
                                     _selectedAddress = address;

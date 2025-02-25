@@ -1,5 +1,6 @@
 import 'package:admin/constants.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter/material.dart';
 
 enum DeliveryStatus {
   PENDING_PICKUP,
@@ -99,8 +100,10 @@ class Delivery {
     );
   }
 
-  LatLng get pickupLatLng => pickupLocation.latLng;
-  LatLng get deliveryLatLng => deliveryLocation.latLng;
+  LatLng get pickupLatLng =>
+      LatLng(pickupLocation.latitude, pickupLocation.longitude);
+  LatLng get deliveryLatLng =>
+      LatLng(deliveryLocation.latitude, deliveryLocation.longitude);
 }
 
 class DeliveryLocation {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../controllers/delivery_controller.dart';
 import '../../constants.dart';
+import '../../services/map_service.dart';
 import 'components/delivery_stats_card.dart';
 import 'components/delivery_filters.dart';
 import 'components/delivery_list.dart';
@@ -39,20 +41,22 @@ class DeliveryDashboardScreen extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: AppRadius.radiusMD,
-                      child: Obx(() => GoogleMap(
-                            initialCameraPosition: const CameraPosition(
-                              target: LatLng(48.8566, 2.3522),
-                              zoom: 12,
+                      child: Obx(() => FlutterMap(
+                            mapController: controller.mapController.value,
+                            options: MapOptions(
+                              center: MapService.defaultCenter,
+                              zoom: MapService.defaultZoom,
+                              interactiveFlags: InteractiveFlag.all,
                             ),
-                            markers: controller.markers,
-                            onMapCreated: (GoogleMapController mapController) {
-                              controller.mapController.value = mapController;
-                            },
-                            mapType: isDark ? MapType.normal : MapType.normal,
-                            myLocationEnabled: true,
-                            compassEnabled: true,
-                            zoomControlsEnabled: true,
-                            mapToolbarEnabled: false,
+                            children: [
+                              MapService.baseMapTile,
+                              MarkerLayer(
+                                markers: controller.markers.value,
+                              ),
+                              PolylineLayer(
+                                polylines: controller.routes.value,
+                              ),
+                            ],
                           )),
                     ),
                   ),

@@ -53,5 +53,60 @@ class _UpdateStatusDialogState extends State<UpdateStatusDialog> {
     );
   }
 
+  Widget _buildStatusDropdown(bool isDark) {
+    return DropdownButtonFormField<DeliveryStatus>(
+      value: selectedStatus,
+      decoration: InputDecoration(
+        labelText: 'Statut',
+        border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
+        filled: true,
+        fillColor: isDark ? AppColors.gray700 : AppColors.gray100,
+      ),
+      items: DeliveryStatus.values.map((DeliveryStatus status) {
+        return DropdownMenuItem<DeliveryStatus>(
+          value: status,
+          child: Text(status.label),
+        );
+      }).toList(),
+      onChanged: (DeliveryStatus? newValue) {
+        setState(() {
+          selectedStatus = newValue!;
+        });
+      },
+    );
+  }
+
+  Widget _buildNotesField(bool isDark) {
+    return TextField(
+      controller: notesController,
+      decoration: InputDecoration(
+        labelText: 'Notes',
+        border: OutlineInputBorder(borderRadius: AppRadius.radiusMD),
+        filled: true,
+        fillColor: isDark ? AppColors.gray700 : AppColors.gray100,
+      ),
+      maxLines: 3,
+    );
+  }
+
+  Widget _buildActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Annuler'),
+        ),
+        SizedBox(width: AppSpacing.md),
+        ElevatedButton(
+          onPressed: () {
+            // TODO: Implémenter la logique de mise à jour du statut
+            Navigator.of(context).pop();
+          },
+          child: Text('Mettre à jour'),
+        ),
+      ],
+    );
+  }
   // ... rest of the implementation with the helper methods ...
 }

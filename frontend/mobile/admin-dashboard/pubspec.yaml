@@ -1,7 +1,6 @@
 name: admin
 description: A new Flutter project.
 
-publish_to: 'none'
 
 version: 1.0.0+1
 
@@ -29,11 +28,16 @@ dependencies:
   pdf: ^3.11.1
   excel: ^4.0.6
   flutter_zoom_drawer: ^3.2.0
-  flutter_map: ^7.0.2
+  flutter_map: ^5.0.0
+  latlong2: ^0.9.0
+  cached_network_image: ^3.3.0
   logging: ^1.2.0
   flutter_error_handler: ^1.0.0
   stack_trace: ^1.11.0
   csv: ^6.0.0
+  image_picker: ^0.8.5+3
+  http: ^1.1.0  # Pour les appels API
+  url_launcher: ^6.1.14  # Pour ouvrir les liens externes
 
 dev_dependencies:
   flutter_test:

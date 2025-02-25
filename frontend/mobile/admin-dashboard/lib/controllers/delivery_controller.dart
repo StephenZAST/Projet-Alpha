@@ -1,9 +1,11 @@
+import 'package:admin/services/directions_service.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_maps_webservice/directions.dart';
 import '../models/delivery.dart';
-import '../services/delivery_service.dart';
 import '../constants.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import '../services/map_service.dart';
 
 class DeliveryController extends GetxController {
   // État observable
@@ -23,9 +25,10 @@ class DeliveryController extends GetxController {
   final totalDistance = 0.0.obs;
   final averageTime = 0.obs;
 
-  // Google Maps
-  final markers = <Marker>{}.obs;
-  final mapController = Rxn<GoogleMapController>();
+  // Remplacer les types Google Maps par Flutter Map
+  final mapController = MapController().obs;
+  final markers = <Marker>[].obs;
+  final routes = <Polyline>[].obs;
   final selectedDelivery = Rxn<Delivery>();
 
   // Route tracking
@@ -46,50 +49,105 @@ class DeliveryController extends GetxController {
     ]);
   }
 
-  // ... Ajoutez le reste des méthodes du contrôleur que vous avez fournies ...
+  Future<void> fetchDeliveries() async {
+    // TODO: Implémenter la logique pour récupérer les livraisons depuis une source de données
+    // Pour l'instant, nous allons simuler des données
+    deliveries.value = [
+      Delivery(
+        id: '1',
+        orderId: '123',
+        status: DeliveryStatus.PENDING_PICKUP,
+        createdAt: DateTime.now(),
+        pickupLocation: DeliveryLocation(
+            latitude: 48.8566, longitude: 2.3522, address: 'Paris'),
+        deliveryLocation: DeliveryLocation(
+            latitude: 48.8738, longitude: 2.2950, address: 'Paris'),
+      ),
+      Delivery(
+        id: '2',
+        orderId: '456',
+        status: DeliveryStatus.IN_TRANSIT,
+        createdAt: DateTime.now(),
+        pickupLocation: DeliveryLocation(
+            latitude: 48.8647, longitude: 2.3490, address: 'Paris'),
+        deliveryLocation: DeliveryLocation(
+            latitude: 48.8584, longitude: 2.2945, address: 'Paris'),
+      ),
+    ];
+  }
+
+  Future<void> fetchDailyStats() async {
+    // TODO: Implémenter la logique pour récupérer les statistiques journalières
+    // Pour l'instant, nous allons simuler des données
+    totalDeliveries.value = 100;
+    completedDeliveries.value = 75;
+    totalDistance.value = 150.5;
+    averageTime.value = 30;
+  }
 
   Future<void> centerMapOnDelivery(Delivery delivery) async {
-    final controller = mapController.value;
-    if (controller == null) return;
+    final bounds = LatLngBounds.fromPoints([
+      LatLng(
+          delivery.pickupLocation.latitude, delivery.pickupLocation.longitude),
+      LatLng(delivery.deliveryLocation.latitude,
+          delivery.deliveryLocation.longitude),
+    ]);
 
-    final bounds = LatLngBounds(
-      southwest: LatLng(
-        delivery.pickupLocation.latitude
-            .min(delivery.deliveryLocation.latitude),
-        delivery.pickupLocation.longitude
-            .min(delivery.deliveryLocation.longitude),
-      ),
-      northeast: LatLng(
-        delivery.pickupLocation.latitude
-            .max(delivery.deliveryLocation.latitude),
-        delivery.pickupLocation.longitude
-            .max(delivery.deliveryLocation.longitude),
-      ),
+    mapController.value.fitBounds(
+      bounds,
+      options: const FitBoundsOptions(padding: EdgeInsets.all(50.0)),
     );
+  }
 
-    await controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+  void updateMarkers(List<Delivery> deliveries) {
+    markers.value = deliveries
+        .map((delivery) {
+          return [
+            MapService.createMarker(
+              point: LatLng(delivery.pickupLocation.latitude,
+                  delivery.pickupLocation.longitude),
+              key: 'pickup_${delivery.id}',
+              onTap: () => _onMarkerTapped(delivery),
+            ),
+            MapService.createMarker(
+              point: LatLng(delivery.deliveryLocation.latitude,
+                  delivery.deliveryLocation.longitude),
+              key: 'delivery_${delivery.id}',
+              onTap: () => _onMarkerTapped(delivery),
+            ),
+          ];
+        })
+        .expand((markers) => markers)
+        .toList();
+  }
+
+  void _onMarkerTapped(Delivery delivery) {
+    // Logique de gestion du tap sur un marqueur
+    selectedDelivery.value = delivery;
   }
 
   Future<void> showRouteForDelivery(String deliveryId) async {
     try {
       final delivery = deliveries.firstWhere((d) => d.id == deliveryId);
 
-      final response = await _directionsService.getDirections(
-        origin: delivery.pickupLatLng,
-        destination: delivery.deliveryLatLng,
+      final points = await _directionsService.getDirections(
+        origin: LatLng(delivery.pickupLocation.latitude,
+            delivery.pickupLocation.longitude),
+        destination: LatLng(delivery.deliveryLocation.latitude,
+            delivery.deliveryLocation.longitude),
       );
 
-      if (response != null) {
-        final points = response.routes.first.overviewPolyline.points;
+      if (points.isNotEmpty) {
         final polyline = Polyline(
-          polylineId: PolylineId(deliveryId),
-          points: _decodePolyline(points),
+          points: points,
           color: AppColors.primary,
-          width: 3,
+          strokeWidth: 3,
         );
 
         deliveryRoutes[deliveryId] = {polyline};
-        _fitRouteInMap(response.routes.first.bounds);
+
+        // TODO: Ajuster la carte pour afficher l'itinéraire complet
+        // _fitRouteInMap(response.routes.first.bounds);
       }
     } catch (e) {
       print('[DeliveryController] Error showing route: $e');

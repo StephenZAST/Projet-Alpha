@@ -49,7 +49,7 @@ class PreferencesSection extends StatelessWidget {
           icon: Icons.dark_mode_outlined,
           title: 'Mode sombre',
           trailing: Obx(() => Switch(
-                value: themeController.isDarkMode.value,
+                value: themeController.isDarkMode,
                 onChanged: (value) => themeController.toggleTheme(),
               )),
           isDark: isDark,
@@ -59,8 +59,10 @@ class PreferencesSection extends StatelessWidget {
           title: 'Notifications',
           trailing: Obx(() => Switch(
                 value: profileController
-                        .profile.value?.preferences?['notifications'] ??
-                    true,
+                            .profile.value?.preferences?['notifications'] ==
+                        true
+                    ? true
+                    : false,
                 onChanged: (value) => profileController.updatePreferences({
                   'notifications': value,
                 }),

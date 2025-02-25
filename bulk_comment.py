@@ -38,7 +38,7 @@ def process_files(root_dir, file_extension, comment, operation):
 # Configuration
 folders = [
     ("frontend/mobile/admin-dashboard/lib", "dart"),
-    ("backend/src", "ts"),
+    # ("backend/src", "ts"),
     ("backend\prisma\db_functions", "md")
 ]
 comment_to_add = "// context comment"  # Remplacez par votre commentaire

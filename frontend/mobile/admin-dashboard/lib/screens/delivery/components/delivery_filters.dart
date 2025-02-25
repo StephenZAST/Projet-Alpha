@@ -47,5 +47,17 @@ class DeliveryFilters extends StatelessWidget {
     );
   }
 
+  Widget _buildStatusDropdown(DeliveryController controller, bool isDark) {
+    return Container(); // TODO: Implémenter le dropdown de statut
+  }
+
+  Widget _buildDatePicker(
+      BuildContext context, DeliveryController controller, bool isDark) {
+    return Container(); // TODO: Implémenter le sélecteur de date
+  }
+
+  Widget _buildTypeFilters(DeliveryController controller, bool isDark) {
+    return Container(); // TODO: Implémenter les filtres de type
+  }
   // ...autres méthodes de build spécifiques...
 }

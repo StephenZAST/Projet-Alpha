@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../constants.dart';
 import '../../../controllers/admin_profile_controller.dart';
 
@@ -37,39 +35,15 @@ class ProfileHeader extends StatelessWidget {
 
   Widget _buildProfileImage(
       BuildContext context, AdminProfileController controller) {
-    return GestureDetector(
-      onTap: () => _pickImage(controller),
-      child: Stack(
-        children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundImage: controller.profile.value?.profileImage != null
-                ? NetworkImage(controller.profile.value!.profileImage!)
-                : null,
-            child: controller.profile.value?.profileImage == null
-                ? Icon(Icons.person_outline,
-                    size: 50, color: AppColors.textLight)
-                : null,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.all(AppSpacing.xs),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.camera_alt_outlined,
-                size: 16,
-                color: AppColors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return CircleAvatar(
+      radius: 50,
+      backgroundImage: controller.profile.value?.profileImage != null
+          ? NetworkImage(controller.profile.value!.profileImage!)
+          : null,
+      child: controller.profile.value?.profileImage == null
+          ? Icon(Icons.person_outline, size: 50, color: AppColors.textLight)
+          : null,
+      backgroundColor: AppColors.primary.withOpacity(0.1),
     );
   }
 
@@ -114,27 +88,5 @@ class ProfileHeader extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _pickImage(AdminProfileController controller) async {
-    try {
-      final image = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 75,
-      );
-
-      if (image != null) {
-        await controller.uploadImage(File(image.path));
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger l\'image',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.white,
-      );
-    }
   }
 }

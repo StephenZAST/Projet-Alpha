@@ -57,15 +57,15 @@ class _MapViewState extends State<MapView> {
             FlutterMap(
               mapController: _controller,
               options: MapOptions(
-                initialCenter: widget.initialPosition ??
+                center: widget.initialPosition ??
                     const LatLng(5.3484, -4.0305), // Abidjan
-                initialZoom: widget.initialZoom,
+                zoom: widget.initialZoom,
                 onTap: widget.onTap != null
                     ? (_, point) => widget.onTap!(point)
                     : null,
-                interactionOptions: widget.interactive
-                    ? const InteractionOptions()
-                    : const InteractionOptions(flags: InteractiveFlag.none),
+                interactiveFlags: widget.interactive
+                    ? InteractiveFlag.all
+                    : InteractiveFlag.none,
               ),
               children: [
                 TileLayer(
@@ -73,7 +73,9 @@ class _MapViewState extends State<MapView> {
                   userAgentPackageName: 'com.alpha.admin',
                 ),
                 if (widget.markers != null)
-                  MarkerLayer(markers: widget.markers!),
+                  MarkerLayer(
+                    markers: widget.markers!,
+                  ),
               ],
             ),
             if (widget.overlayWidget != null)

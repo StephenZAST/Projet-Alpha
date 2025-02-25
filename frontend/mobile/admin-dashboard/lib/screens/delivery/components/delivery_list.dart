@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/delivery_controller.dart';
 import '../../../constants.dart';
-import './delivery_list_item.dart';
 
 class DeliveryList extends StatelessWidget {
   const DeliveryList({Key? key}) : super(key: key);
@@ -20,7 +19,7 @@ class DeliveryList extends StatelessWidget {
         );
       }
 
-      if (controller.hasError.value) {
+      if (controller.errorMessage.value.isNotEmpty) {
         return Center(
           child: Text(
             controller.errorMessage.value,
@@ -57,8 +56,7 @@ class DeliveryList extends StatelessWidget {
         itemCount: controller.deliveries.length,
         separatorBuilder: (_, __) => Divider(height: 1),
         itemBuilder: (context, index) {
-          final delivery = controller.deliveries[index];
-          return DeliveryListItem(delivery: delivery);
+          return Container(); // TODO: Implement DeliveryListItem
         },
       );
     });

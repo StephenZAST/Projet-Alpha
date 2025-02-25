@@ -36,5 +36,36 @@ class DailyPerformanceCard extends StatelessWidget {
     );
   }
 
+  Widget _buildHeader() {
+    return Text(
+      'Performance du jour',
+      style: AppTextStyles.h4,
+    );
+  }
+
+  Widget _buildProgressIndicators(DeliveryController controller, bool isDark) {
+    return Column(
+      children: [
+        // TODO: Implémenter les indicateurs de progression
+        // Exemple:
+        // LinearProgressIndicator(
+        //   value: controller.completedDeliveries.value / controller.totalDeliveries.value,
+        //   backgroundColor: AppColors.gray200,
+        //   color: AppColors.success,
+        // ),
+      ],
+    );
+  }
+
+  Widget _buildStats(DeliveryController controller, bool isDark) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        // TODO: Implémenter les statistiques
+        // Exemple:
+        // Text('${controller.completedDeliveries.value} / ${controller.totalDeliveries.value} Livraisons complétées'),
+      ],
+    );
+  }
   // ... rest of the implementation with the helper methods ...
 }
