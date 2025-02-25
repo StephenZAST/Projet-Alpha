@@ -1,5 +1,5 @@
 import supabase from '../../config/database';
-import { OrderItem, CreateOrderItemDTO } from '../../models/types';
+import { OrderItem, CreateOrderItemDTO } from '../../models/types'; 
 
 export class OrderItemService {
   private static readonly itemSelect = `

@@ -1,6 +1,6 @@
 import supabase from '../config/database';
 import { NotificationService } from './notification.service';
-import { NotificationType } from '../models/types';
+import { NotificationType } from '../models/types'; 
 
 export class ServiceNotificationService {
   static async notifyServiceChange(

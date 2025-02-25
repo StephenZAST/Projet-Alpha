@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import supabase from '../../config/database';
 import { NotificationType, OrderStatus } from '../../models/types';
 import { RewardsService, NotificationService } from '../../services';
-import { OrderSharedMethods } from './shared'; 
+import { OrderSharedMethods } from './shared';  
 
 export class OrderStatusController {
   static async updateOrderStatus(req: Request, res: Response) {

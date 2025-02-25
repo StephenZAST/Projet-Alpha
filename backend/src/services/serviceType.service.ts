@@ -1,6 +1,6 @@
 import supabase from '../config/database';
 import { ServiceType, NotificationType } from '../models/types';
-import { NotificationService } from './notification.service';
+import { NotificationService } from './notification.service'; 
 
 export class ServiceTypeService {
   static async create(data: Partial<ServiceType>): Promise<ServiceType> {

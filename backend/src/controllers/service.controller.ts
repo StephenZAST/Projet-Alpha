@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ServiceService } from '../services/service.service';
-import { PricingService } from '../services/pricing.service';
+import { PricingService } from '../services/pricing.service'; 
 import { Service } from '../models/types';
 
 export class ServiceController {

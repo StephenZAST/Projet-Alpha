@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { AffiliateService, AffiliateWithdrawalService } from '../services/affiliate.service/index';
-import { validatePaginationParams } from '../utils/pagination';
+import { validatePaginationParams } from '../utils/pagination'; 
 import supabase from '../config/database';
 import { INDIRECT_COMMISSION_RATE, PROFIT_MARGIN_RATE } from '../services/affiliate.service/constants';
 

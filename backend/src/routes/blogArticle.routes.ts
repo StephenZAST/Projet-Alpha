@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { BlogArticleController } from '../controllers/blogArticle.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
-import { asyncHandler } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler'; 
 
 const router = express.Router();
 

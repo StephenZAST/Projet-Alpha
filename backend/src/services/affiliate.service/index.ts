@@ -2,7 +2,7 @@ import { AffiliateProfileService } from './affiliateProfile.service';
 import { AffiliateCommissionService } from './affiliateCommission.service';
 import { AffiliateWithdrawalService } from './affiliateWithdrawal.service';
 import { PaginationParams } from '../../utils/pagination';
-import supabase from '../../config/database';
+import supabase from '../../config/database'; 
 
 export class AffiliateService {
   // Profile Management

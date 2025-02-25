@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { pricingConfig } from '../config/pricing.config';
+import { pricingConfig } from '../config/pricing.config'; 
 
 export const validateArticlePricing = (req: Request, res: Response, next: NextFunction) => {
   const { base_price, premium_price, price_per_kg, service_type_id } = req.body;

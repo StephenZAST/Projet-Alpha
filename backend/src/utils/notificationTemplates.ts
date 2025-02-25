@@ -36,7 +36,7 @@ export const userNotificationTemplates = {
     }
   })
 };
-
+ 
 export const getCustomerName = (user?: User): string => {
   if (!user) return 'Client';
   const firstName = user.firstName || '';

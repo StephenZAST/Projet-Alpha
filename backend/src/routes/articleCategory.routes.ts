@@ -2,7 +2,7 @@ import express from 'express';
 import { ArticleCategoryController } from '../controllers/articleCategory.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
-
+ 
 const router = express.Router();
 
 // Appliquer l'authentification à toutes les routes

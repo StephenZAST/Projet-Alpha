@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { Service } from '../models/types';
+import { Service } from '../models/types'; 
 
 export class ServiceService {
   static async createService(name: string, price: number, description?: string): Promise<Service> {

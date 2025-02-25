@@ -1,6 +1,6 @@
 import supabase from '../config/database';
 import { ArticleCategory, CreateArticleCategoryDTO } from '../models/types';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'; 
 
 export class ArticleCategoryService {
   static async createArticleCategory(categoryData: CreateArticleCategoryDTO): Promise<ArticleCategory> {

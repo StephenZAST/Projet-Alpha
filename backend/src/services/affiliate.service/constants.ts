@@ -37,7 +37,7 @@ export const COMMISSION_LEVELS = {
         description: "20% de commission sur les ventes directes"
     }
 };
-
+ 
 // Descriptions des niveaux de distinction (basés sur les gains totaux)
 export const DISTINCTION_LEVELS = {
     BRONZE: {

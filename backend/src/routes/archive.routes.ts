@@ -1,6 +1,6 @@
 import express from 'express';
 import { ArchiveController } from '../controllers/archive.controller';
-import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
+import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware'; 
 
 const router = express.Router();
 

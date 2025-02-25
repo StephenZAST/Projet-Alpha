@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { SubscriptionService } from '../services/subscription.service';
-import { asyncHandler } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler'; 
 
 export class SubscriptionController {
   static async createPlan(req: Request, res: Response) {

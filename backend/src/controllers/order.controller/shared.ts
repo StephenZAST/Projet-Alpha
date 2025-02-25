@@ -1,5 +1,5 @@
 import { OrderItem } from '../../models/types';
-import supabase from '../../config/database';
+import supabase from '../../config/database'; 
 
 export interface OrderItemWithArticle extends OrderItem {
   article: {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ServiceTypeService } from '../services/serviceType.service';
+import { ServiceTypeService } from '../services/serviceType.service'; 
 
 export class ServiceTypeController {
   static async createServiceType(req: Request, res: Response): Promise<void> {

@@ -1,5 +1,5 @@
 import supabase from '../../config/database';
-import { Order } from '../../models/types';
+import { Order } from '../../models/types'; 
 
 export class OrderQueryService {
   private static readonly baseOrderSelect = `

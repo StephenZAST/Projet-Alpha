@@ -1,5 +1,5 @@
 import supabase from '../../config/database';
-import { AppliedDiscount } from '../../models/types';
+import { AppliedDiscount } from '../../models/types'; 
 
 export class OrderPaymentService {
   static async getCurrentLoyaltyPoints(userId: string): Promise<number> {

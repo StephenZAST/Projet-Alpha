@@ -2,7 +2,7 @@ import supabase from '../../config/database';
 import { CreateOrderDTO, CreateOrderResponse, AppliedDiscount, NotificationType } from '../../models/types';
 import { NotificationService } from '../notification.service';
 import { LoyaltyService } from '../loyalty.service';
-import { OrderPaymentService } from './orderPayment.service';
+import { OrderPaymentService } from './orderPayment.service'; 
 
 export class OrderCreateService {
   // Important: Cette classe utilise la procédure stockée 'create_order_with_items'

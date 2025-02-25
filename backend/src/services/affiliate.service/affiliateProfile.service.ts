@@ -1,5 +1,5 @@
 import supabase from '../../config/database';
-import { COMMISSION_LEVELS } from './constants';
+import { COMMISSION_LEVELS } from './constants'; 
 import { AffiliateLevel } from '../../models/types';
 
 export class AffiliateProfileService {

@@ -39,4 +39,4 @@ export const welcomeNotificationTemplate = (firstName: string) => `
   </ul>
   <p>N'hésitez pas à personnaliser vos préférences selon vos besoins.</p>
 `;
- 
+  

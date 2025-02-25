@@ -2,7 +2,7 @@ import express from 'express';
 import { OfferController } from '../controllers/offer.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { createOfferValidation, updateOfferValidation } from '../middleware/offerValidation.middleware';
-import { validate } from '../middleware/validate.middleware';
+import { validate } from '../middleware/validate.middleware'; 
 
 const router = express.Router();
 

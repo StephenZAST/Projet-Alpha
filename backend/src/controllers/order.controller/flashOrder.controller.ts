@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import supabase from '../../config/database';
+import supabase from '../../config/database'; 
 import { OrderStatus } from '../../models/types'; 
 
 interface FlashOrderData {

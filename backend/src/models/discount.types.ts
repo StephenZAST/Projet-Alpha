@@ -2,7 +2,7 @@ export enum DiscountType {
   FIRST_ORDER = 'FIRST_ORDER',
   LOYALTY = 'LOYALTY',
   ADMIN_OFFER = 'ADMIN_OFFER'
-}
+} 
 
 export interface DiscountRule {
   id: string;

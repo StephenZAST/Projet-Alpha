@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { NotificationType, User, NotificationCreate, NotificationTemplate, Order } from '../models/types';
+import { NotificationType, User, NotificationCreate, NotificationTemplate, Order } from '../models/types'; 
 
 export class NotificationService {
   /**

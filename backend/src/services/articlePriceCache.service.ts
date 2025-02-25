@@ -1,6 +1,6 @@
 import NodeCache from 'node-cache';
 import { ArticleServicePrice } from '../models/types';
-import { pricingConfig } from '../config/pricing.config';
+import { pricingConfig } from '../config/pricing.config'; 
 import supabase from '../config/database';
 
 export class ArticlePriceCacheService {

@@ -11,3 +11,4 @@ export class AuthorizationError extends Error {
     this.name = 'AuthorizationError';
   }
 }
+ 

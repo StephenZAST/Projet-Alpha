@@ -1,5 +1,5 @@
 import supabase from '../../config/database';
-import { Order, OrderStatus, NotificationType } from '../../models/types';
+import { Order, OrderStatus, NotificationType } from '../../models/types'; 
 import { NotificationService } from '../notification.service';
 
 export class OrderStatusService {

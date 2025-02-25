@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ArticleCategoryService } from '../services/articleCategory.service';
+import { ArticleCategoryService } from '../services/articleCategory.service'; 
 
 export class ArticleCategoryController {
   static async createArticleCategory(req: Request, res: Response) {

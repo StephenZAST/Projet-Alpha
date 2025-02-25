@@ -1,4 +1,4 @@
-// User related types
+// User related types 
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'CLIENT' | 'AFFILIATE' | 'DELIVERY';
 
 export interface User {

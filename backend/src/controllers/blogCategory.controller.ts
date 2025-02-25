@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response } from 'express'; 
 import { BlogCategoryService } from '../services/blogCategory.service';
 
 export class BlogCategoryController {

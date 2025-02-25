@@ -1,4 +1,4 @@
-import supabase from '../config/database';
+import supabase from '../config/database'; 
 import { DiscountType, DiscountRule, Discount, DiscountResult } from '../models/discount.types';
 
 export class DiscountService {

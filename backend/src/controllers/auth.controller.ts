@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken'; 
 
 const generateToken = (user: any) => {
   return jwt.sign(

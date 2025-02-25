@@ -2,7 +2,7 @@ export enum OfferDiscountType {
   PERCENTAGE = 'PERCENTAGE',
   FIXED_AMOUNT = 'FIXED_AMOUNT',
   POINTS_EXCHANGE = 'POINTS_EXCHANGE'
-}
+} 
 
 export interface CreateOfferDTO {
   name: string;

@@ -1,5 +1,5 @@
 import supabase from '../../config/database';
-import { PaginationParams } from '../../utils/pagination';
+import { PaginationParams } from '../../utils/pagination'; 
 
 export class AffiliateWithdrawalService {
   static async requestWithdrawal(affiliateId: string, amount: number) {

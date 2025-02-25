@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { Address } from '../models/types';
+import { Address } from '../models/types'; 
 
 export class AddressService {
   static async getAddressById(addressId: string): Promise<Address | null> {

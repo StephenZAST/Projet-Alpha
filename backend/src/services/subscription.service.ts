@@ -1,6 +1,6 @@
 import supabase from '../config/database';
 import { SubscriptionPlan, UserSubscription, NotificationType } from '../models/types';
-import { NotificationService } from './notification.service';
+import { NotificationService } from './notification.service'; 
 
 export class SubscriptionService {
   static async createPlan(planData: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> {

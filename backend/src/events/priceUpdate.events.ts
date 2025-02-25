@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { ArticlePriceCacheService } from '../services/articlePriceCache.service';
 import { NotificationService } from '../services/notification.service';
 import { NotificationType } from '../models/types';
-import supabase from '../config/database';
+import supabase from '../config/database'; 
 
 export const priceUpdateEmitter = new EventEmitter();
 

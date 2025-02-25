@@ -2,7 +2,7 @@ import supabase from '../../config/database';
 import { NotificationService } from '../notification.service';
 import { COMMISSION_LEVELS, INDIRECT_COMMISSION_RATE, PROFIT_MARGIN_RATE, MIN_WITHDRAWAL_AMOUNT } from './constants';
 import { PaginationParams } from '../../utils/pagination';
-import { AffiliateLevel, NotificationType } from '../../models/types';
+import { AffiliateLevel, NotificationType } from '../../models/types'; 
 
 export class AffiliateCommissionService {
 

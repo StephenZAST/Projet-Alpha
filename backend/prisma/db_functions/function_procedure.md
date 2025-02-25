@@ -1,6 +1,6 @@
 # Database Functions and Procedures Documentation
 
-## Order Management Functions
+## Order Management Functions 
  
 ### 1. create_order_with_items
 | Property | Value |

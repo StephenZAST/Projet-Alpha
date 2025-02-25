@@ -1,5 +1,5 @@
 export * from './pricing.service';
-export * from './rewards.service';
+export * from './rewards.service'; 
 export * from './notification.service';
 export { LoyaltyService } from './loyalty.service';
 export { PricingService } from './pricing.service';

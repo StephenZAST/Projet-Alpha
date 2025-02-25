@@ -33,4 +33,4 @@ export const validateWeightPricing = (req: Request, res: Response, next: NextFun
     });
   }
 };
-  
+   

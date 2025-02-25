@@ -3,7 +3,7 @@ import { BlogArticleService } from './services/blogArticle.service';
 import { AffiliateCommissionService } from './services/affiliate.service/affiliateCommission.service';
 import supabase from './config/database';
 import dotenv from 'dotenv';
-
+ 
 dotenv.config();
 
 const apiKey = process.env.GOOGLE_AI_API_KEY;

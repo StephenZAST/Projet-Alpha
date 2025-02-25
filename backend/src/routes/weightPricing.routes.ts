@@ -1,7 +1,7 @@
 import express from 'express';
 import { WeightPricingController } from '../controllers/weightPricing.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
-import { asyncHandler } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler'; 
 import { validateWeightPricing } from '../middleware/validation/weightPricing.validation';
 
 const router = express.Router();

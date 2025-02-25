@@ -1,4 +1,4 @@
-import { Article } from './types';
+import { Article } from './types'; 
 
 export interface ServiceType {
   id: string;

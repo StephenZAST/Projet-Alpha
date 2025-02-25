@@ -9,7 +9,7 @@ export interface AdditionalService {
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
-}
+} 
 
 export interface OrderAdditionalService {
   id: string;

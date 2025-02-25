@@ -6,4 +6,4 @@ export const pricingConfig = {
   priceRoundingDecimal: Number(process.env.PRICE_ROUNDING_DECIMAL) || 2,
   cacheDuration: Number(process.env.PRICE_CACHE_DURATION) || 3600 // 1 heure
 };
-  
+   

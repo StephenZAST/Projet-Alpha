@@ -42,7 +42,7 @@ const getStatusCode = (errorCode: string): number => {
     '23503': 409,    // Foreign key violation
     'INTERNAL_ERROR': 500
   };
-
+ 
   return statusMap[errorCode] || 500;
 };
 

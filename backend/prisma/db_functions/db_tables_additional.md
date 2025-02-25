@@ -1,6 +1,6 @@
 # Tables Additionnelles
  
-## Affiliate System
+## Affiliate System 
 ### Affiliate Levels (Table: affiliate_levels)
 | Column Name | Type | Constraints |
 |------------|------|-------------|

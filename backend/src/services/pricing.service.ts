@@ -2,7 +2,7 @@ import supabase from '../config/database';
 import { Article, Order, Offer } from '../models/types';
 import { PriceCalculationParams, PriceDetails, PricingType } from '../models/pricing.types';
 import { LoyaltyService } from './loyalty.service';
-import { OrderItem, PricingOptions } from '../models/types';
+import { OrderItem, PricingOptions } from '../models/types'; 
 
 interface OrderItemInput {
   articleId: string;

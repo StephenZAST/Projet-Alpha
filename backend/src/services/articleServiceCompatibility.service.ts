@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { ArticleServiceCompatibility } from '../models/types';
+import { ArticleServiceCompatibility } from '../models/types'; 
 
 export class ArticleServiceCompatibilityService {
   static async setCompatibility(

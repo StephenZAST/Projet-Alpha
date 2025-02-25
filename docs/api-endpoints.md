@@ -1,4 +1,4 @@
-# API Endpoints Documentation
+# API Endpoints Documentation 
 
 ## 💫 Authentication
 | Method | Endpoint | Description |

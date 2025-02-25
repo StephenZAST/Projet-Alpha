@@ -1,5 +1,5 @@
 [ 
-  {
+  { 
     "schema_name": "auth",
     "table_name": "audit_log_entries",
     "index_name": "audit_log_entries_pkey",

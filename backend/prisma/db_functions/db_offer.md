@@ -1,5 +1,5 @@
 [
-  {
+  { 
     "column_name": "id",
     "data_type": "uuid",
     "character_maximum_length": null,

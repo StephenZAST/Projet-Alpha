@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { validateRegistration, validateLogin } from '../middleware/validators';
-import { asyncHandler } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler'; 
 import { AuthService } from '../services/auth.service';
 
 const router = express.Router();

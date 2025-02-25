@@ -4,7 +4,7 @@ import { FlashOrderController } from '../controllers/order.controller/flashOrder
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { validateOrder } from '../middleware/validators';
 import { validateCreateFlashOrder, validateCompleteFlashOrder } from '../middleware/flashOrderValidator';
-import { asyncHandler } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler'; 
 
 const router = express.Router();
 

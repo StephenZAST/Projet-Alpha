@@ -1,6 +1,6 @@
 import supabase from '../config/database';
 import { BlogCategory } from '../models/types';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'; 
 
 export class BlogCategoryService {
   static async createCategory(name: string, description?: string): Promise<BlogCategory> {

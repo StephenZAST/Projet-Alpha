@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { Order, OrderStatus } from '../models/types';
+import { Order, OrderStatus } from '../models/types'; 
 
 export class DeliveryService {
   static async getPendingOrders(userId: string): Promise<Order[]> {

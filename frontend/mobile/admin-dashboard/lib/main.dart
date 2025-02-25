@@ -7,7 +7,7 @@ import './routes/admin_routes.dart';
 import './config/theme_config.dart';
 import './controllers/menu_app_controller.dart';
 import './controllers/theme_controller.dart';
-import 'services/error_tracking_service.dart';
+import 'services/error_tracking_service.dart'; // change
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

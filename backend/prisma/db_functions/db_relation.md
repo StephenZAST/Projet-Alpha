@@ -1,4 +1,4 @@
-[ 
+[  
   {
     "table_schema": "public",
     "table_name": "order_items",

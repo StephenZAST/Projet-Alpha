@@ -1,7 +1,7 @@
 import express from 'express';
 import { ServiceTypeController } from '../controllers/serviceType.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
-import { asyncHandler } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler'; 
 
 const router = express.Router();
 

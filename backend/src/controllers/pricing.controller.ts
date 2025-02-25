@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { PricingService } from '../services/pricing.service';
-import { PriceCalculationParams } from '../models/pricing.types';
+import { PriceCalculationParams } from '../models/pricing.types'; 
 
 export class PricingController {
   static async calculatePrice(req: Request, res: Response) {

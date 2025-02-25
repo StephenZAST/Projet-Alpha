@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import supabase from '../config/database';
+import supabase from '../config/database'; 
 import { 
   LoyaltyPoints, 
   PointSource, 

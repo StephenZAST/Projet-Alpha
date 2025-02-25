@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { validateUUID } from '../../utils/validators';
+import { validateUUID } from '../../utils/validators'; 
 
 export const validateServiceTypeCreate = (req: Request, res: Response, next: NextFunction) => {
   const { name, description } = req.body;

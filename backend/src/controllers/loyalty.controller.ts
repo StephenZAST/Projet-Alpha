@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response } from 'express'; 
 import { LoyaltyService } from '../services/loyalty.service';
 
 export class LoyaltyController {

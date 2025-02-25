@@ -2,7 +2,7 @@ import express from 'express';
 import { SubscriptionController } from '../controllers/subscription.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
-import { validateSubscription } from '../middleware/subscription.middleware';
+import { validateSubscription } from '../middleware/subscription.middleware'; 
 
 const router = express.Router();
 

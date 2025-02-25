@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ServiceCompatibilityService } from '../services/serviceCompatibility.service';
+import { ServiceCompatibilityService } from '../services/serviceCompatibility.service'; 
 
 export class ServiceCompatibilityController {
   static async setCompatibility(req: Request, res: Response): Promise<void> {

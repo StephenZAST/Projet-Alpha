@@ -36,7 +36,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configure CORS
+// Configure CORS 
 const allowedOrigins = [
   'http://localhost:3000',   // React default
   'http://localhost:3001',   // Your API

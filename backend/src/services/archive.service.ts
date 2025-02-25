@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { OrderArchiveResponse, OrderArchive } from '../models/types';
+import { OrderArchiveResponse, OrderArchive } from '../models/types'; 
 
 export class ArchiveService {
   static async getArchivedOrders(

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import supabase from '../config/database';
-import { handleError } from '../utils/errorHandler';
+import { handleError } from '../utils/errorHandler'; 
 
 export class WeightPricingController {
   static async setWeightPrice(req: Request, res: Response) {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ArchiveService } from '../services/archive.service';
+import { ArchiveService } from '../services/archive.service'; 
 
 export class ArchiveController {
   static async getArchivedOrders(req: Request, res: Response) {

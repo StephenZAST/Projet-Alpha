@@ -1,5 +1,5 @@
 import { Article, OrderItem } from '../models/types';
-import supabase from '../config/database';
+import supabase from '../config/database'; 
 
 export class OrderPricingService {
   static async calculateItemPrice(item: OrderItem): Promise<number> {

@@ -27,7 +27,7 @@ export const validateRegistration = (req: Request, res: Response, next: NextFunc
     res.status(400).json({ error: 'Missing required fields' });
     return;
   }
- 
+  
   if (!validateEmail(email)) {
     res.status(400).json({ error: 'Invalid email format' });
     return;

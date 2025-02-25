@@ -1,4 +1,4 @@
-import supabase from '../config/database';
+import supabase from '../config/database'; 
 import { ArticleServicePrice, CreateArticleServicePriceDTO, UpdateArticleServicePriceDTO } from '../models/serviceManagement.types';
 import { ArticleServiceUpdate } from '../models/types';  // Ajout de l'import correct
 

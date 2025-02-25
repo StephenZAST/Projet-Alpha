@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { ArticleServiceService } from '../services/articleService.service';
 import { ArticleServicePriceService } from '../services/articleServicePrice.service';
 import { handleError } from '../utils/errorHandler';
-import { CreateArticleServicePriceDTO, UpdateArticleServicePriceDTO } from '../models/serviceManagement.types';
+import { CreateArticleServicePriceDTO, UpdateArticleServicePriceDTO } from '../models/serviceManagement.types'; 
 
 export class ArticleServiceController {
   static async createArticleService(req: Request, res: Response) {

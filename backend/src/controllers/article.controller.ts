@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ArticleService } from '../services/article.service';
+import { ArticleService } from '../services/article.service'; 
 
 export class ArticleController {
   static async createArticle(req: Request, res: Response) {

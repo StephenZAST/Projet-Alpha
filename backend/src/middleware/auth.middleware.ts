@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthService } from '../services/auth.service';
-import { UserRole } from '../models/types';
+import { UserRole } from '../models/types'; 
 
 // Type for decoded JWT token
 interface DecodedToken {

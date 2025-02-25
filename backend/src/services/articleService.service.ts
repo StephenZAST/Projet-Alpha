@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { ArticleService } from '../models/types';
+import { ArticleService } from '../models/types'; 
 import { v4 as uuidv4 } from 'uuid';
 
 export class ArticleServiceService {

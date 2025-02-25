@@ -31,3 +31,4 @@ declare module 'google-trends-api' {
     TrendsResult
   };
 }
+ 

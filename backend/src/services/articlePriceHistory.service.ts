@@ -1,6 +1,6 @@
 import supabase from '../config/database';
 import { PriceHistoryEntry } from '../models/types';
-import { priceUpdateEmitter } from '../events/priceUpdate.events';
+import { priceUpdateEmitter } from '../events/priceUpdate.events'; 
 
 export class ArticlePriceHistoryService {
   static async logPriceChange(

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { validateEmail, validatePassword, validatePhone } from '../utils/validators';
-import { z } from 'zod';
+import { z } from 'zod'; 
 
 // Schémas de validation
 const pointsRedemptionSchema = z.object({

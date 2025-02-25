@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { NotificationController } from '../controllers/notification.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { validatePaginationParams } from '../utils/pagination';
-import { asyncHandler } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler'; 
 
 const router = express.Router();
 

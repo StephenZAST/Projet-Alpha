@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express'; 
 
 export const validatePriceData = (req: Request, res: Response, next: NextFunction) => {
   const { base_price, premium_price, price_per_kg } = req.body;

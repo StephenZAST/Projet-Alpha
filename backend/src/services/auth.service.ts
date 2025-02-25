@@ -2,7 +2,7 @@ import supabase from '../config/database';
 import { AuthResponse, User, ResetCode } from '../models/types';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from './email.service';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'; 
 import * as jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;

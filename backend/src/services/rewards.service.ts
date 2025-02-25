@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { Order, PointSource, PointTransactionType } from '../models/types';
+import { Order, PointSource, PointTransactionType } from '../models/types'; 
 
 export class RewardsService {
   // Configuration par défaut

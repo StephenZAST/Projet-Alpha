@@ -1,4 +1,4 @@
-import supabase from '../config/database';
+import supabase from '../config/database'; 
 import { OrderItem } from '../models/types';
 import { ServiceCompatibilityService } from './serviceCompatibility.service';
 

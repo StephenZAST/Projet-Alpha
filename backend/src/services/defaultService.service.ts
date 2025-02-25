@@ -1,4 +1,4 @@
-import supabase from '../config/database';
+import supabase from '../config/database'; 
 
 export class DefaultServiceService {
   static async setDefaultService(

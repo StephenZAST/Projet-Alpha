@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { ServiceSpecificPrice } from '../models/types';
+import { ServiceSpecificPrice } from '../models/types'; 
 
 export class ServiceSpecificPriceService {
   static async setPrice(

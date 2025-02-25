@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { OrderItemService } from '../services/order.service/orderItem.service';
+import { OrderItemService } from '../services/order.service/orderItem.service'; 
 
 export class OrderItemController {
   static async createOrderItem(req: Request, res: Response) {

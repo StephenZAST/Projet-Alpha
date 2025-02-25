@@ -1,7 +1,7 @@
 import supabase from '../config/database';
 import { WeightBasedPricing, OrderWeight, CreateWeightPricingDTO, WeightRecordDTO } from '../models/weightPricing.types';
 import { NotificationService } from './notification.service';
-import { NotificationType } from '../models/types';
+import { NotificationType } from '../models/types'; 
 
 export class WeightPricingService {
   static async createPricing(data: CreateWeightPricingDTO): Promise<WeightBasedPricing> {
