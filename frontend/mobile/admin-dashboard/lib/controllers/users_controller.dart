@@ -1,7 +1,4 @@
-import 'dart:async';
-
 import 'package:admin/screens/users/components/delete_user_dialog.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
@@ -22,15 +19,11 @@ class UsersController extends GetxController {
   final adminCount = 0.obs;
   final totalUsers = 0.obs;
 
-  // Nouvelles variables pour les stats globales
-  final totalUserCount = 0.obs;
+  // Ajout des stats globales
   final totalClientCount = 0.obs;
   final totalAffiliateCount = 0.obs;
   final totalAdminCount = 0.obs;
-
-  // Ajout d'un debouncer pour éviter les rafraîchissements trop fréquents
-  final _statsDebouncer = Debouncer(delay: Duration(milliseconds: 500));
-  final _isLoadingStats = false.obs;
+  final totalUsersCount = 0.obs;
 
   // Pagination
   final currentPage = 1.obs;
@@ -47,6 +40,10 @@ class UsersController extends GetxController {
   final endDate = Rxn<DateTime>();
   final phoneFilter = ''.obs;
 
+  // Ajouter une nouvelle variable pour stocker tous les utilisateurs
+  final allUsers = <User>[].obs;
+  final filteredUsers = <User>[].obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -55,112 +52,65 @@ class UsersController extends GetxController {
   }
 
   Future<void> loadInitialData() async {
-    try {
-      isLoading.value = true;
-
-      // Charger les statistiques et les utilisateurs en parallèle
-      await Future.wait([
-        loadGlobalStats(),
-        fetchUsers(),
-      ]);
-    } catch (e) {
-      print('[UsersController] Error loading initial data: $e');
-      _showErrorSnackbar(
-          'Erreur', 'Impossible de charger les données initiales');
-    } finally {
-      isLoading.value = false;
-    }
+    await Future.wait([
+      loadGlobalStats(),
+      fetchUsers(),
+    ]);
   }
 
   Future<void> loadGlobalStats() async {
     try {
       print('[UsersController] Loading global stats...');
-      if (_isLoadingStats.value) return;
-
-      _isLoadingStats.value = true;
       final stats = await UserService.getUserStats();
 
-      print('[UsersController] Received stats: $stats'); // Debug log
+      print('[UsersController] Received stats: $stats'); // Debug
 
-      // Mise à jour atomique des statistiques
-      _updateGlobalStats({
-        'total': stats['total'],
-        'clientCount': stats['clientCount'],
-        'affiliateCount': stats['affiliateCount'],
-        'adminCount': stats['adminCount']
-      });
+      // Mise à jour des compteurs globaux
+      totalClientCount.value = stats['clientCount'] ?? 0;
+      totalAffiliateCount.value = stats['affiliateCount'] ?? 0;
+      totalAdminCount.value = stats['adminCount'] ?? 0;
+      totalUsersCount.value = stats['total'] ?? 0;
 
       print(
-          '[UsersController] Stats updated successfully: ${totalUserCount.value}, ${totalClientCount.value}, ${totalAffiliateCount.value}, ${totalAdminCount.value}');
+          '[UsersController] Updated stats - Total: ${totalUsersCount.value}'); // Debug
     } catch (e) {
       print('[UsersController] Error loading global stats: $e');
-      _handleStatsError(e);
-    } finally {
-      _isLoadingStats.value = false;
+      _showErrorSnackbar('Erreur', 'Impossible de charger les statistiques');
     }
-  }
-
-  void _updateGlobalStats(Map<String, dynamic> stats) {
-    try {
-      // Mise à jour atomique pour éviter les incohérences
-      Get.defaultDialog(
-        barrierDismissible: false,
-        title: 'Mise à jour des statistiques',
-        content: CircularProgressIndicator(),
-      );
-
-      totalUserCount.value = stats['total'] ?? totalUserCount.value;
-      totalClientCount.value = stats['clientCount'] ?? totalClientCount.value;
-      totalAffiliateCount.value =
-          stats['affiliateCount'] ?? totalAffiliateCount.value;
-      totalAdminCount.value = stats['adminCount'] ?? totalAdminCount.value;
-
-      Get.back();
-    } catch (e) {
-      print('[UsersController] Error updating global stats: $e');
-      Get.back();
-      _handleStatsError(e);
-    }
-  }
-
-  void _handleStatsError(dynamic error) {
-    errorMessage.value = 'Erreur lors du chargement des statistiques globales';
-    _showErrorSnackbar('Erreur de chargement',
-        'Impossible de charger les statistiques globales. Réessayez plus tard.');
-  }
-
-  // Méthode utilitaire pour rafraîchir les stats avec debounce
-  void refreshStats() {
-    _statsDebouncer.call(() => loadGlobalStats());
   }
 
   Future<void> fetchUsers({bool resetPage = false}) async {
     try {
-      print('[UsersController] Fetching users...');
+      print('[UsersController] Starting fetchUsers...'); // Ajout du log
       isLoading.value = true;
-      hasError.value = false;
-      errorMessage.value = '';
 
       if (resetPage) {
         currentPage.value = 1;
       }
 
+      // Correction du paramètre role pour le filtrage
+      final roleParam = selectedRole.value?.toString().split('.').last;
+      print('[UsersController] Fetching with role: $roleParam'); // Ajout du log
+
       final result = await UserService.getUsers(
         page: currentPage.value,
         limit: itemsPerPage.value,
-        role: selectedRole.value?.toString().split('.').last,
-        searchQuery: searchQuery.value, // Changé de query à searchQuery
+        role: roleParam,
+        searchQuery: searchQuery.value,
       );
 
-      users.value = result.items; // Utiliser items au lieu de users
-      totalPages.value = result.totalPages;
+      // Stocker tous les utilisateurs
+      allUsers.value = result.items;
+      // Appliquer le filtre actuel
+      _applyFilters();
 
-      // Mettre à jour uniquement les compteurs locaux
-      _updateLocalCounts();
+      totalPages.value = result.totalPages;
+      totalUsers.value = result.total;
+
+      print(
+          '[UsersController] Fetched ${allUsers.length} users'); // Ajout du log
     } catch (e) {
       print('[UsersController] Error fetching users: $e');
-      hasError.value = true;
-      errorMessage.value = 'Erreur lors du chargement des utilisateurs';
       _showErrorSnackbar(
           'Erreur de chargement', 'Impossible de charger les utilisateurs');
     } finally {
@@ -168,40 +118,17 @@ class UsersController extends GetxController {
     }
   }
 
-  void _updateLocalCounts() {
-    clientCount.value = users.where((u) => u.role == UserRole.CLIENT).length;
-    adminCount.value = users
-        .where(
-            (u) => u.role == UserRole.ADMIN || u.role == UserRole.SUPER_ADMIN)
-        .length;
-    affiliateCount.value =
-        users.where((u) => u.role == UserRole.AFFILIATE).length;
-  }
-
   Future<void> fetchUserStats() async {
     try {
       print('[UsersController] Fetching user stats...');
-      isLoading.value = true;
-      hasError.value = false;
-
       final stats = await UserService.getUserStats();
 
-      // Mise à jour sécurisée des statistiques
       clientCount.value = stats['clientCount'] ?? 0;
       affiliateCount.value = stats['affiliateCount'] ?? 0;
-      adminCount.value =
-          (stats['adminCount'] ?? 0) + (stats['superAdminCount'] ?? 0);
-      totalUsers.value = stats['total'] ?? 0;
-
-      print('[UsersController] Stats fetched successfully: $stats');
+      adminCount.value = stats['adminCount'] ?? 0;
     } catch (e) {
       print('[UsersController] Error fetching stats: $e');
-      hasError.value = true;
-      errorMessage.value = 'Erreur lors du chargement des statistiques';
-      _showErrorSnackbar('Erreur de chargement',
-          'Impossible de charger les statistiques des utilisateurs');
-    } finally {
-      isLoading.value = false;
+      _showErrorSnackbar('Erreur', 'Impossible de charger les statistiques');
     }
   }
 
@@ -220,10 +147,9 @@ class UsersController extends GetxController {
       };
 
       await UserService.updateUser(userId, updates);
-      refreshStats(); // Utilisation du debouncer
-      await fetchUsers();
+      await loadInitialData();
 
-      Get.back();
+      Get.back(); // Fermer le dialogue d'édition
       _showSuccessSnackbar('Succès', 'Utilisateur mis à jour avec succès');
     } catch (e) {
       print('[UsersController] Error updating user: $e');
@@ -289,9 +215,39 @@ class UsersController extends GetxController {
   }
 
   // Méthodes de filtrage
-  void filterByRole(UserRole? role) {
-    selectedRole.value = role;
-    fetchUsers(resetPage: true);
+  Future<void> filterByRole(UserRole? role) async {
+    try {
+      isLoading.value = true;
+      print('[UsersController] Filtering by role: ${role?.toString()}');
+
+      selectedRole.value = role;
+      currentPage.value = 1;
+
+      // Utiliser la méthode toApiString() pour le rôle
+      final roleString = role?.toApiString();
+      print('[UsersController] Formatted role for API: $roleString');
+
+      final result = await UserService.getUsers(
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        role: roleString,
+        searchQuery: searchQuery.value,
+      );
+
+      users.value = result.items;
+      totalPages.value = result.totalPages;
+      totalUsers.value = result.total;
+
+      // Appliquer le filtre localement
+      _applyFilters();
+
+      print('[UsersController] Filter applied successfully');
+    } catch (e) {
+      print('[UsersController] Error filtering by role: $e');
+      _showErrorSnackbar('Erreur', 'Impossible de filtrer les utilisateurs');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void searchUsers(String query) {
@@ -327,7 +283,7 @@ class UsersController extends GetxController {
   }
 
   // Méthodes utilitaires
-  void _updateRoleCounts() {
+  void _updateLocalCounts() {
     clientCount.value = users.where((u) => u.role == UserRole.CLIENT).length;
     adminCount.value = users
         .where(
@@ -335,6 +291,26 @@ class UsersController extends GetxController {
         .length;
     affiliateCount.value =
         users.where((u) => u.role == UserRole.AFFILIATE).length;
+  }
+
+  void _applyFilters() {
+    if (selectedRole.value == null) {
+      // Si aucun filtre n'est sélectionné, afficher tous les utilisateurs
+      filteredUsers.value = allUsers;
+      users.value = allUsers;
+    } else {
+      // Filtrer les utilisateurs selon le rôle sélectionné
+      filteredUsers.value = allUsers.where((user) {
+        return user.role == selectedRole.value;
+      }).toList();
+      users.value = filteredUsers;
+    }
+
+    // Mettre à jour les compteurs locaux
+    _updateLocalCounts();
+
+    print('[UsersController] Filtered users: ${filteredUsers.length}');
+    print('[UsersController] Selected role: ${selectedRole.value}');
   }
 
   // Permissions
@@ -390,8 +366,7 @@ class UsersController extends GetxController {
 
   Future<void> createUser(Map<String, dynamic> userData) async {
     await safeCall(() async {
-      final createdUser = await UserService.createUser(userData);
-      refreshStats(); // Utilisation du debouncer
+      await UserService.createUser(userData);
       await fetchUsers();
       Get.back();
       _showSuccessSnackbar('Succès', 'Utilisateur créé avec succès');
@@ -406,7 +381,6 @@ class UsersController extends GetxController {
     if (confirmed == true) {
       await safeCall(() async {
         await UserService.deleteUser(id);
-        refreshStats(); // Utilisation du debouncer
         await fetchUsers();
         _showSuccessSnackbar('Succès', 'Utilisateur supprimé avec succès');
       });
@@ -415,26 +389,7 @@ class UsersController extends GetxController {
 
   @override
   void onClose() {
-    _statsDebouncer.dispose(); // Nettoyage du debouncer
     print('[UsersController] Disposing');
     super.onClose();
-  }
-}
-
-// Classe utilitaire pour le debouncing
-class Debouncer {
-  final Duration delay;
-  Timer? _timer;
-
-  Debouncer({required this.delay});
-
-  void call(void Function() action) {
-    _timer?.cancel();
-    _timer = Timer(delay, action);
-  }
-
-  void dispose() {
-    _timer?.cancel();
-    _timer = null;
   }
 }

@@ -33,6 +33,22 @@ extension UserRoleExtension on UserRole {
         return AppColors.pending;
     }
   }
+
+  String toApiString() {
+    return toString().split('.').last;
+  }
+
+  static UserRole? fromString(String? value) {
+    if (value == null) return null;
+    try {
+      return UserRole.values.firstWhere(
+        (role) => role.toString().split('.').last == value.toUpperCase(),
+      );
+    } catch (e) {
+      print('[UserRole] Invalid role value: $value');
+      return null;
+    }
+  }
 }
 
 class User {

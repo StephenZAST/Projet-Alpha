@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/users_controller.dart';
-import '../../../widgets/stat_card.dart';
 
 class UserStatsGrid extends StatelessWidget {
   const UserStatsGrid({Key? key}) : super(key: key);
@@ -19,57 +18,77 @@ class UserStatsGrid extends StatelessWidget {
           mainAxisSpacing: AppSpacing.md,
           childAspectRatio: 1.5,
           children: [
-            _buildStatsCard(
+            _buildStatCard(
               title: 'Clients',
               count: controller.totalClientCount.value,
+              currentCount: controller.selectedRole.value == UserRole.CLIENT
+                  ? controller.users.length
+                  : controller.clientCount.value,
               icon: Icons.people_outline,
               color: AppColors.primary,
-              onTap: () => controller.filterByRole(UserRole.CLIENT),
               isSelected: controller.selectedRole.value == UserRole.CLIENT,
+              onTap: () => controller.filterByRole(
+                  controller.selectedRole.value == UserRole.CLIENT
+                      ? null
+                      : UserRole.CLIENT),
             ),
-            _buildStatsCard(
+            _buildStatCard(
               title: 'Affiliés',
               count: controller.totalAffiliateCount.value,
+              currentCount: controller.affiliateCount.value,
               icon: Icons.handshake_outlined,
               color: AppColors.accent,
-              onTap: () => controller.filterByRole(UserRole.AFFILIATE),
               isSelected: controller.selectedRole.value == UserRole.AFFILIATE,
+              onTap: () => controller.filterByRole(
+                  controller.selectedRole.value == UserRole.AFFILIATE
+                      ? null
+                      : UserRole.AFFILIATE),
             ),
-            _buildStatsCard(
+            _buildStatCard(
               title: 'Administrateurs',
               count: controller.totalAdminCount.value,
+              currentCount: controller.adminCount.value,
               icon: Icons.admin_panel_settings_outlined,
               color: AppColors.error,
-              onTap: () => controller.filterByRole(UserRole.ADMIN),
               isSelected: controller.selectedRole.value == UserRole.ADMIN,
+              onTap: () => controller.filterByRole(
+                  controller.selectedRole.value == UserRole.ADMIN
+                      ? null
+                      : UserRole.ADMIN),
             ),
-            _buildStatsCard(
+            _buildStatCard(
               title: 'Total',
-              count: controller.totalUserCount.value,
+              count: controller.totalUsersCount.value,
+              currentCount: controller.users.length,
               icon: Icons.groups_outlined,
               color: AppColors.success,
-              onTap: () => controller.filterByRole(null),
               isSelected: controller.selectedRole.value == null,
+              onTap: () => controller.filterByRole(null),
             ),
           ],
         ));
   }
 
-  Widget _buildStatsCard({
+  Widget _buildStatCard({
     required String title,
     required int count,
+    required int currentCount,
     required IconData icon,
     required Color color,
-    required VoidCallback onTap,
     required bool isSelected,
+    required VoidCallback onTap,
   }) {
     return Card(
       elevation: isSelected ? 4 : 1,
-      color: isSelected ? color.withOpacity(0.1) : null,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
+        child: Container(
           padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withOpacity(0.1) : null,
+            borderRadius: BorderRadius.circular(8),
+            border: isSelected ? Border.all(color: color, width: 2) : null,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -83,7 +102,7 @@ class UserStatsGrid extends StatelessWidget {
               ),
               Spacer(),
               Text(
-                count.toString(),
+                '$currentCount / $count',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,

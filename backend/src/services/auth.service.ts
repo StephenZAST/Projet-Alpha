@@ -548,51 +548,66 @@ export class AuthService {
     limit?: number;
     filters?: UserFilters;
   } = {}): Promise<UserListResponse> {
-    const offset = (page - 1) * limit;
-    let query = supabase
-      .from('users')
-      .select('*', { count: 'exact' });
+    try {
+      const offset = (page - 1) * limit;
+      let query = supabase
+        .from('users')
+        .select('*', { count: 'exact' });
 
-    // Appliquer les filtres
-    if (filters.role) {
-      query = query.eq('role', filters.role);
-    }
-    if (filters.searchQuery) {
-      query = query.or(`first_name.ilike.%${filters.searchQuery}%,last_name.ilike.%${filters.searchQuery}%,email.ilike.%${filters.searchQuery}%`);
-    }
-    if (filters.startDate) {
-      query = query.gte('created_at', filters.startDate.toISOString());
-    }
-    if (filters.endDate) {
-      query = query.lte('created_at', filters.endDate.toISOString());
-    }
+      // Log des paramètres reçus
+      console.log('Filters received:', filters);
 
-    // Exécuter la requête avec pagination
-    const { data, error, count } = await query
-      .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    return {
-      data: data.map(user => ({
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        phone: user.phone,
-        role: user.role,
-        password: user.password,
-        createdAt: new Date(user.created_at),
-        updatedAt: new Date(user.updated_at)
-      })) as User[],
-      pagination: {
-        total: count || 0,
-        page,
-        limit,
-        totalPages: Math.ceil((count || 0) / limit)
+      // Appliquer les filtres
+      if (filters.role) {
+        console.log('Applying role filter:', filters.role);
+        query = query.eq('role', filters.role.toUpperCase());
       }
-    };
+
+      if (filters.searchQuery) {
+        query = query.or(`first_name.ilike.%${filters.searchQuery}%,last_name.ilike.%${filters.searchQuery}%,email.ilike.%${filters.searchQuery}%`);
+      }
+      if (filters.startDate) {
+        query = query.gte('created_at', filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        query = query.lte('created_at', filters.endDate.toISOString());
+      }
+
+      // Exécuter la requête avec pagination
+      const { data, error, count } = await query
+        .range(offset, offset + limit - 1)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Query error:', error);
+        throw error;
+      }
+
+      console.log(`Found ${count} users matching filters`);
+
+      return {
+        data: data.map(user => ({
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          phone: user.phone,
+          role: user.role,
+          password: user.password,
+          createdAt: new Date(user.created_at),
+          updatedAt: new Date(user.updated_at)
+        })) as User[],
+        pagination: {
+          total: count || 0,
+          page,
+          limit,
+          totalPages: Math.ceil((count || 0) / limit)
+        }
+      };
+    } catch (error) {
+      console.error('Error in getAllUsers:', error);
+      throw error;
+    }
   }
 
   static async getUserStats(): Promise<UserStats> {

@@ -14,16 +14,26 @@ class UserService {
     String? searchQuery,
   }) async {
     try {
-      final response = await _api.get(_baseUrl, queryParameters: {
+      // Assurons-nous que le rôle est en majuscules
+      final String? formattedRole = role?.toUpperCase();
+
+      final queryParams = {
         'page': page.toString(),
         'limit': limit.toString(),
-        if (role != null) 'role': role,
-        if (searchQuery != null && searchQuery.isNotEmpty)
-          'search': searchQuery,
-      });
+        if (formattedRole != null) 'role': formattedRole,
+        if (searchQuery?.isNotEmpty ?? false) 'search': searchQuery,
+      };
+
+      print('[UserService] Making request with params: $queryParams');
+
+      final response = await _api.get(_baseUrl, queryParameters: queryParams);
+
+      print('[UserService] Response status: ${response.statusCode}');
+      print('[UserService] Response data: ${response.data}');
+      print('[UserService] Filtered role: $formattedRole');
 
       if (response.data == null) {
-        throw 'Réponse invalide du serveur';
+        throw 'Invalid response from server';
       }
 
       final List<User> users = (response.data['data'] as List)
@@ -37,8 +47,8 @@ class UserService {
         totalPages: response.data['totalPages'] ?? 1,
       );
     } catch (e) {
-      print('[UserService] Error getting users: $e');
-      throw 'Erreur lors du chargement des utilisateurs';
+      print('[UserService] Error in getUsers: $e');
+      rethrow;
     }
   }
 
