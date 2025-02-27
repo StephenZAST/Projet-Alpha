@@ -98,7 +98,7 @@ static async getCurrentUser(req: Request, res: Response) {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-      const result = await AuthService.getAllUsers();
+      const result = await AuthService.getAllUsers({});
       res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../models/user.dart';
 import '../../../controllers/users_controller.dart';
+import '../../../controllers/auth_controller.dart'; // Ajout de l'import manquant
 import '../../../constants.dart';
 
 class UserEditDialog extends StatefulWidget {
@@ -24,7 +25,7 @@ class _UserEditDialogState extends State<UserEditDialog> {
   @override
   void initState() {
     super.initState();
-    selectedRole = widget.user.role;
+    selectedRole = widget.user.role; // Initialiser avec le rôle actuel
     isActive = widget.user.isActive;
   }
 
@@ -74,22 +75,102 @@ class _UserEditDialogState extends State<UserEditDialog> {
   }
 
   Widget _buildRoleSelector(UsersController controller, bool isDark) {
-    return DropdownButtonFormField<UserRole>(
-      value: selectedRole,
-      decoration: InputDecoration(
-        labelText: 'Rôle',
-        border: OutlineInputBorder(borderRadius: AppRadius.radiusSM),
-      ),
-      items: UserRole.values
-          .map((role) => DropdownMenuItem(
-                value: role,
-                child: Text(role.label),
-              ))
-          .toList(),
-      onChanged: (role) {
-        if (role != null) setState(() => selectedRole = role);
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Rôle actuel : ${_getRoleLabel(widget.user.role)}',
+          style: AppTextStyles.bodyMedium.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        SizedBox(height: 8),
+        DropdownButtonFormField<UserRole>(
+          value: selectedRole,
+          decoration: InputDecoration(
+            labelText: 'Nouveau rôle',
+            border: OutlineInputBorder(borderRadius: AppRadius.radiusSM),
+            filled: true,
+            fillColor: isDark
+                ? Colors.grey[800]
+                : Colors.grey[100], // Remplacement des couleurs non définies
+          ),
+          items: _getAvailableRoles().map((role) {
+            // Suppression du paramètre controller
+            return DropdownMenuItem(
+              value: role,
+              child: Row(
+                children: [
+                  Icon(_getRoleIcon(role),
+                      color: _getRoleColor(role), size: 18),
+                  SizedBox(width: 8),
+                  Text(_getRoleLabel(role)),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (role) {
+            if (role != null) setState(() => selectedRole = role);
+          },
+        ),
+      ],
     );
+  }
+
+  List<UserRole> _getAvailableRoles() {
+    // Méthode modifiée
+    final currentUser = Get.find<AuthController>().user.value;
+    if (currentUser?.role == UserRole.SUPER_ADMIN) {
+      return UserRole.values.toList();
+    }
+    return UserRole.values
+        .where((role) => role != UserRole.SUPER_ADMIN && role != UserRole.ADMIN)
+        .toList();
+  }
+
+  IconData _getRoleIcon(UserRole role) {
+    switch (role) {
+      case UserRole.SUPER_ADMIN:
+        return Icons.security;
+      case UserRole.ADMIN:
+        return Icons.admin_panel_settings;
+      case UserRole.AFFILIATE:
+        return Icons.handshake;
+      case UserRole.CLIENT:
+        return Icons.person;
+      default:
+        return Icons.person_outline;
+    }
+  }
+
+  String _getRoleLabel(UserRole role) {
+    switch (role) {
+      case UserRole.SUPER_ADMIN:
+        return 'Super Admin';
+      case UserRole.ADMIN:
+        return 'Admin';
+      case UserRole.AFFILIATE:
+        return 'Affilié';
+      case UserRole.CLIENT:
+        return 'Client';
+      default:
+        return role.toString().split('.').last;
+    }
+  }
+
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.SUPER_ADMIN:
+        return Colors.purple;
+      case UserRole.ADMIN:
+        return AppColors.error;
+      case UserRole.AFFILIATE:
+        return AppColors.accent;
+      case UserRole.CLIENT:
+        return AppColors.success;
+      default:
+        return AppColors.textSecondary;
+    }
   }
 
   Widget _buildStatusToggle(bool isDark) {

@@ -167,6 +167,39 @@ class UserService {
       throw 'Erreur lors du chargement des statistiques';
     }
   }
+
+  static Future<User> createUser(Map<String, dynamic> userData) async {
+    try {
+      final response = await _api.post(_baseUrl, data: userData);
+
+      final validatedResponse = _validateResponse(
+          response, 'Erreur lors de la création de l\'utilisateur');
+
+      return User.fromJson(validatedResponse['data']);
+    } catch (e) {
+      print('[UserService] Error creating user: $e');
+      throw 'Erreur lors de la création de l\'utilisateur';
+    }
+  }
+
+  static Future<void> deleteUser(String id) async {
+    try {
+      final response = await _api.delete('$_baseUrl/$id');
+      _validateResponse(
+          response, 'Erreur lors de la suppression de l\'utilisateur');
+    } catch (e) {
+      print('[UserService] Error deleting user: $e');
+      throw 'Erreur lors de la suppression de l\'utilisateur';
+    }
+  }
+
+  static Map<String, dynamic> _validateResponse(
+      dynamic response, String errorMessage) {
+    if (response?.data == null || response.data['success'] != true) {
+      throw response?.data?['message'] ?? errorMessage;
+    }
+    return response.data;
+  }
 }
 
 class PaginatedResponse<T> {

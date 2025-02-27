@@ -1,0 +1,223 @@
+{
+  "info": {
+    "name": "Alpha - Gestion des Utilisateurs",
+    "description": "Collection pour tester les endpoints de gestion des utilisateurs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Utilisateurs",
+      "item": [
+        {
+          "name": "Liste des utilisateurs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "role",
+                  "value": "CLIENT",
+                  "disabled": true
+                },
+                {
+                  "key": "searchQuery",
+                  "value": "john",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Statistiques utilisateurs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Créer un admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"newadmin@example.com\",\n    \"password\": \"adminPass123!\",\n    \"firstName\": \"New\",\n    \"lastName\": \"Admin\",\n    \"phone\": \"+1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "admin"]
+            }
+          }
+        },
+        {
+          "name": "Mettre à jour un utilisateur",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"updated@example.com\",\n    \"firstName\": \"Updated\",\n    \"lastName\": \"User\",\n    \"phone\": \"+1234567890\",\n    \"role\": \"CLIENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Supprimer un utilisateur",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Recherche utilisateurs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?searchQuery=john&role=CLIENT&startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "searchQuery",
+                  "value": "john"
+                },
+                {
+                  "key": "role",
+                  "value": "CLIENT"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Variables d'environnement nécessaires",
+      "item": [
+        {
+          "name": "Informations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "",
+              "host": [""]
+            },
+            "description": "Assurez-vous d'avoir défini ces variables dans votre environnement Postman:\n\n- baseUrl: URL de base de l'API (ex: http://localhost:3001/api)\n- adminToken: Token JWT d'un administrateur\n- superAdminToken: Token JWT d'un super administrateur\n- userId: ID d'un utilisateur pour les tests"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Vous pouvez ajouter ici des scripts de pré-requête globaux"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Vous pouvez ajouter ici des scripts de test globaux",
+          "",
+          "pm.test(\"Status code est dans la plage 2xx\", function () {",
+          "    pm.response.to.be.success;",
+          "});",
+          "",
+          "pm.test(\"Response contient success\", function () {",
+          "    var jsonData = pm.response.json();",
+          "    pm.expect(jsonData.success).to.exist;",
+          "});"
+        ]
+      }
+    }
+  ]
+}

@@ -25,6 +25,7 @@ import archiveRoutes from './routes/archive.routes';
 import subscriptionRoutes from './routes/subscription.routes';
 import weightPricingRoutes from './routes/weightPricing.routes';
 import serviceTypeRoutes from './routes/serviceType.routes';
+import userRoutes from './routes/user.routes';
 import './scheduler'; // Importer le scheduler pour démarrer les tâches cron
 
 // Load environment variables
@@ -124,6 +125,7 @@ app.use('/api/archives', archiveRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/weight-pricing', weightPricingRoutes);
 app.use('/api/service-types', serviceTypeRoutes); 
+app.use('/api/users', userRoutes);
 
 // Ajouter la route health check
 app.get('/api/health', (req, res) => {

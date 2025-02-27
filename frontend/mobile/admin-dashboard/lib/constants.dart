@@ -93,6 +93,9 @@ class AppColors {
   // Border Colors
   static const Color borderLight = Color(0xFFE2E8F0);
   static const Color borderDark = Color(0xFF334155);
+
+  static final Color surfaceDark = Colors.grey[800]!;
+  static final Color surfaceLight = Colors.grey[100]!;
 }
 
 class AppSpacing {

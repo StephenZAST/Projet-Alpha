@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import '../../controllers/delivery_controller.dart';
 import '../../constants.dart';
 import '../../services/map_service.dart';

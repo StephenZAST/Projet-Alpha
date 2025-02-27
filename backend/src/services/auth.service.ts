@@ -1,5 +1,5 @@
 import supabase from '../config/database';
-import { AuthResponse, User, ResetCode } from '../models/types';
+import { AuthResponse, User, ResetCode, UserListResponse, UserStats, UserFilters, UserActivityLog } from '../models/types';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from './email.service';
 import { v4 as uuidv4 } from 'uuid'; 
@@ -154,19 +154,8 @@ export class AuthService {
     return user;
   }
 
-  static async getAllUsers(): Promise<User[]> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*');
-
-    if (error) throw error;
-
-    return data;
-  }
-
   static async createAdmin(email: string, password: string, firstName: string, lastName: string, phone?: string): Promise<User> {
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const dbUser = {
       id: uuidv4(),
       email,
@@ -187,7 +176,6 @@ export class AuthService {
 
     if (error) throw error;
 
-    // Transformer la réponse
     return {
       id: data.id,
       email: data.email,
@@ -234,7 +222,6 @@ export class AuthService {
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
     const { data, error: updateError } = await supabase
       .from('users')
       .update({ password: hashedNewPassword, updated_at: new Date() })  // Changed from updatedAt
@@ -421,12 +408,11 @@ export class AuthService {
             console.error('Email sending error:', emailError);
             throw new Error('Failed to send reset code email');
         }
-
     } catch (error) {
         console.error('Reset password process error:', error);
         throw error;
     }
-}
+  }
 
   static generateVerificationCode(): string {
     return Math.floor(100000 + Math.random() * 900000).toString(); // Code à 6 chiffres
@@ -461,7 +447,7 @@ export class AuthService {
   static async validateResetCode(email: string, code: string): Promise<boolean> {
     try {
         console.log('Validating reset code:', { email, code });
-        
+
         const { data, error } = await supabase
             .from('reset_codes')
             .select('*')
@@ -469,14 +455,14 @@ export class AuthService {
             .gt('expires_at', new Date().toISOString())
             .order('created_at', { ascending: false })
             .limit(1);
-        
+
         if (error) {
             console.error('Database error during validation:', error);
             return false;
         }
 
         console.log('Found reset codes:', data);
-        
+
         // Vérifier si nous avons trouvé un code valide
         if (!data || data.length === 0) {
             console.log('No valid reset code found');
@@ -488,7 +474,7 @@ export class AuthService {
         console.error('Reset code validation error:', error);
         return false;
     }
-}
+  }
 
   static async verifyCodeAndResetPassword(email: string, code: string, newPassword: string): Promise<void> {
     try {
@@ -546,11 +532,203 @@ export class AuthService {
 
         console.log('Reset code marked as used');
         console.log('Password reset completed successfully');
-
     } catch (error) {
         console.error('Password reset failed:', error);
         throw error;
     }
-}
+  }
 
+  // Ajout des nouvelles méthodes
+  static async getAllUsers({
+    page = 1,
+    limit = 10,
+    filters = {}
+  }: {
+    page?: number;
+    limit?: number;
+    filters?: UserFilters;
+  } = {}): Promise<UserListResponse> {
+    const offset = (page - 1) * limit;
+    let query = supabase
+      .from('users')
+      .select('*', { count: 'exact' });
+
+    // Appliquer les filtres
+    if (filters.role) {
+      query = query.eq('role', filters.role);
+    }
+    if (filters.searchQuery) {
+      query = query.or(`first_name.ilike.%${filters.searchQuery}%,last_name.ilike.%${filters.searchQuery}%,email.ilike.%${filters.searchQuery}%`);
+    }
+    if (filters.startDate) {
+      query = query.gte('created_at', filters.startDate.toISOString());
+    }
+    if (filters.endDate) {
+      query = query.lte('created_at', filters.endDate.toISOString());
+    }
+
+    // Exécuter la requête avec pagination
+    const { data, error, count } = await query
+      .range(offset, offset + limit - 1)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return {
+      data: data.map(user => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone,
+        role: user.role,
+        password: user.password,
+        createdAt: new Date(user.created_at),
+        updatedAt: new Date(user.updated_at)
+      })) as User[],
+      pagination: {
+        total: count || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit)
+      }
+    };
+  }
+
+  static async getUserStats(): Promise<UserStats> {
+    try {
+      // Version corrigée de la requête
+      const { data: rawStats, error } = await supabase
+        .from('users')
+        .select('role')
+        .throwOnError();
+
+      if (error) throw error;
+
+      // Initialisation des statistiques
+      const stats: UserStats = {
+        total: 0,
+        clientCount: 0,
+        affiliateCount: 0,
+        adminCount: 0,
+        activeToday: 0,
+        newThisWeek: 0,
+        byRole: {}
+      };
+
+      // Calcul des statistiques
+      rawStats.forEach((user: any) => {
+        stats.total++;
+        const role = user.role.toLowerCase();
+        stats.byRole[role] = (stats.byRole[role] || 0) + 1;
+
+        switch (user.role) {
+          case 'CLIENT':
+            stats.clientCount++;
+            break;
+          case 'AFFILIATE':
+            stats.affiliateCount++;
+            break;
+          case 'ADMIN':
+          case 'SUPER_ADMIN':
+            stats.adminCount++;
+            break;
+        }
+      });
+
+      // Obtenir les statistiques d'activité séparément
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+
+      // Compter les utilisateurs actifs aujourd'hui
+      const { count: activeCount } = await supabase
+        .from('users')
+        .select('*', { count: 'exact' })
+        .eq('is_active', true)
+        .gte('last_login', today.toISOString());
+
+      // Compter les nouveaux utilisateurs cette semaine
+      const { count: newUsersCount } = await supabase
+        .from('users')
+        .select('*', { count: 'exact' })
+        .gte('created_at', weekAgo.toISOString());
+
+      stats.activeToday = activeCount || 0;
+      stats.newThisWeek = newUsersCount || 0;
+
+      console.log('Stats calculated:', stats);
+      return stats;
+
+    } catch (error) {
+      console.error('Error in getUserStats:', error);
+      throw error;
+    }
+  }
+
+  // Ajout de la méthode pour gérer les notifications utilisateur
+  static async getUserNotifications(userId: string) {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Ajout de la méthode pour gérer les préférences de notification
+  static async updateNotificationPreferences(userId: string, preferences: any) {
+    const { error } = await supabase
+      .from('notification_preferences')
+      .upsert({
+        user_id: userId,
+        ...preferences,
+        updated_at: new Date()
+      });
+
+    if (error) throw error;
+    return true;
+  }
+
+  // Ajout de la méthode pour la gestion des adresses
+  static async getUserAddresses(userId: string) {
+    const { data, error } = await supabase
+      .from('addresses')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Ajout de la méthode pour la gestion des points de fidélité
+  static async getUserLoyaltyPoints(userId: string) {
+    const { data, error } = await supabase
+      .from('loyalty_points')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  static async logUserActivity(activity: Omit<UserActivityLog, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await supabase
+      .from('user_activity_logs')
+      .insert({
+        id: uuidv4(),
+        user_id: activity.userId,
+        action: activity.action,
+        details: activity.details,
+        ip_address: activity.ipAddress,
+        user_agent: activity.userAgent,
+        created_at: new Date()
+      });
+
+    if (error) throw error;
+  }
 }

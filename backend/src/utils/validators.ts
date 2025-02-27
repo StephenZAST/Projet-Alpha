@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { UserStats } from '../models/types';
 
 export const validateEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,6 +19,23 @@ export const validateUUID = (uuid: string): boolean => {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 }; 
+
+export const validateUserStats = (stats: Partial<UserStats>): UserStats => {
+  return {
+    total: Number(stats.total) || 0,
+    clientCount: Number(stats.clientCount) || 0,
+    affiliateCount: Number(stats.affiliateCount) || 0,
+    adminCount: Number(stats.adminCount) || 0,
+    activeToday: Number(stats.activeToday) || 0,
+    newThisWeek: Number(stats.newThisWeek) || 0,
+    byRole: stats.byRole || {}
+  };
+};
+
+export const ensureValidDate = (date: Date | string | null): Date => {
+  if (!date) return new Date();
+  return new Date(date);
+};
 
 export const validateRegistration = (req: Request, res: Response, next: NextFunction) => {
   const { email, password, firstName, lastName, phone } = req.body;

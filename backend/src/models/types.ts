@@ -14,6 +14,62 @@ export interface User {
   updatedAt: Date;
 }
 
+// Types pour la gestion des utilisateurs
+export interface UserListResponse {
+  data: User[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface UserStats {
+  total: number;
+  clientCount: number;     // Ajout des propriétés spécifiques
+  affiliateCount: number;
+  adminCount: number;
+  activeToday: number;
+  newThisWeek: number;
+  byRole: Record<string, number>;  // Gardons aussi cette propriété pour la rétrocompatibilité
+}
+
+export interface UserFilters {
+  role?: UserRole;
+  searchQuery?: string;
+  startDate?: Date;
+  endDate?: Date;
+  status?: 'active' | 'inactive';
+}
+
+export interface UserUpdateDTO {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  role?: UserRole;
+}
+
+export interface UserCreateDTO {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role: UserRole;
+}
+
+export interface UserActivityLog {
+  id: string;
+  userId: string;
+  action: string;
+  details?: any;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: Date;
+}
+
 // Affiliate related types
 export interface AffiliateProfile {
   id: string;

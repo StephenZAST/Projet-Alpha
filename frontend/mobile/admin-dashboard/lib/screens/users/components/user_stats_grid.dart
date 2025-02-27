@@ -19,39 +19,85 @@ class UserStatsGrid extends StatelessWidget {
           mainAxisSpacing: AppSpacing.md,
           childAspectRatio: 1.5,
           children: [
-            StatCard(
+            _buildStatsCard(
               title: 'Clients',
-              value: controller.clientCount.toString(),
+              count: controller.totalClientCount.value,
               icon: Icons.people_outline,
               color: AppColors.primary,
-              subtitle: 'Total des clients',
               onTap: () => controller.filterByRole(UserRole.CLIENT),
+              isSelected: controller.selectedRole.value == UserRole.CLIENT,
             ),
-            StatCard(
+            _buildStatsCard(
               title: 'Affiliés',
-              value: controller.affiliateCount.toString(),
+              count: controller.totalAffiliateCount.value,
               icon: Icons.handshake_outlined,
               color: AppColors.accent,
-              subtitle: 'Programme d\'affiliation',
               onTap: () => controller.filterByRole(UserRole.AFFILIATE),
+              isSelected: controller.selectedRole.value == UserRole.AFFILIATE,
             ),
-            StatCard(
+            _buildStatsCard(
               title: 'Administrateurs',
-              value: controller.adminCount.toString(),
+              count: controller.totalAdminCount.value,
               icon: Icons.admin_panel_settings_outlined,
               color: AppColors.error,
-              subtitle: 'Équipe de gestion',
               onTap: () => controller.filterByRole(UserRole.ADMIN),
+              isSelected: controller.selectedRole.value == UserRole.ADMIN,
             ),
-            StatCard(
+            _buildStatsCard(
               title: 'Total',
-              value: controller.totalUsers.toString(),
+              count: controller.totalUserCount.value,
               icon: Icons.groups_outlined,
               color: AppColors.success,
-              subtitle: 'Tous les utilisateurs',
               onTap: () => controller.filterByRole(null),
+              isSelected: controller.selectedRole.value == null,
             ),
           ],
         ));
+  }
+
+  Widget _buildStatsCard({
+    required String title,
+    required int count,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required bool isSelected,
+  }) {
+    return Card(
+      elevation: isSelected ? 4 : 1,
+      color: isSelected ? color.withOpacity(0.1) : null,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(icon, color: color),
+                  if (isSelected)
+                    Icon(Icons.check_circle, color: color, size: 16),
+                ],
+              ),
+              Spacer(),
+              Text(
+                count.toString(),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              Text(
+                title,
+                style: AppTextStyles.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

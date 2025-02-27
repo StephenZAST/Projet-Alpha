@@ -1,100 +1,108 @@
+import 'package:admin/screens/users/components/user_edit_dialog.dart';
 import 'package:flutter/material.dart';
-import '../../../constants.dart';
+import 'package:get/get.dart';
 import '../../../models/user.dart';
-import './user_edit_dialog.dart';
+import '../../../controllers/users_controller.dart';
+import '../../../constants.dart';
 
 class UserListItem extends StatelessWidget {
   final User user;
+  final UsersController controller = Get.find();
 
-  const UserListItem({
-    Key? key,
-    required this.user,
-  }) : super(key: key);
+  UserListItem({required this.user, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: ListTile(
-        contentPadding: EdgeInsets.all(AppSpacing.md),
-        leading: _buildAvatar(),
-        title: Text(user.fullName, style: AppTextStyles.bodyLarge),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(user.email),
-            SizedBox(height: AppSpacing.xs),
-            _buildRoleBadge(),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildStatusIndicator(),
-            SizedBox(width: AppSpacing.md),
-            IconButton(
-              icon: Icon(Icons.edit_outlined),
-              onPressed: () => _showEditDialog(context),
-              tooltip: 'Modifier',
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ListTile(
+      title: Row(
+        children: [
+          Text(
+            '${user.firstName} ${user.lastName}',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
             ),
-          ],
-        ),
+          ),
+          SizedBox(width: 8),
+          _buildRoleBadge(user.role),
+        ],
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(user.email),
+          if (user.phone != null) Text(user.phone!),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () => Get.dialog(
+              UserEditDialog(user: user),
+            ),
+          ),
+          if (controller.canManageUser(user))
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () => controller.deleteUser(
+                user.id,
+                '${user.firstName} ${user.lastName}',
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildAvatar() {
-    return CircleAvatar(
-      backgroundColor: user.role.color.withOpacity(0.2),
-      child: Text(
-        user.fullName[0].toUpperCase(),
-        style: TextStyle(color: user.role.color),
-      ),
-    );
-  }
-
-  Widget _buildRoleBadge() {
+  Widget _buildRoleBadge(UserRole role) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: user.role.color.withOpacity(0.1),
-        borderRadius: AppRadius.radiusXS,
+        color: _getRoleColor(role).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _getRoleColor(role)),
       ),
       child: Text(
-        user.role.label,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: user.role.color,
+        _getRoleLabel(role),
+        style: TextStyle(
+          color: _getRoleColor(role),
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 
-  Widget _buildStatusIndicator() {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: user.isActive ? AppColors.successLight : AppColors.errorLight,
-        borderRadius: AppRadius.radiusXS,
-      ),
-      child: Text(
-        user.isActive ? 'Actif' : 'Inactif',
-        style: AppTextStyles.bodySmall.copyWith(
-          color: user.isActive ? AppColors.successDark : AppColors.errorDark,
-        ),
-      ),
-    );
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.SUPER_ADMIN:
+        return Colors.purple;
+      case UserRole.ADMIN:
+        return AppColors.error;
+      case UserRole.AFFILIATE:
+        return AppColors.accent;
+      case UserRole.CLIENT:
+        return AppColors.success;
+      default:
+        return AppColors.textSecondary;
+    }
   }
 
-  void _showEditDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => UserEditDialog(user: user),
-    );
+  String _getRoleLabel(UserRole role) {
+    switch (role) {
+      case UserRole.SUPER_ADMIN:
+        return 'Super Admin';
+      case UserRole.ADMIN:
+        return 'Admin';
+      case UserRole.AFFILIATE:
+        return 'Affilié';
+      case UserRole.CLIENT:
+        return 'Client';
+      default:
+        return role.toString().split('.').last;
+    }
   }
 }
