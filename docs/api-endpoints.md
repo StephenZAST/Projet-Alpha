@@ -159,3 +159,127 @@ Certains endpoints supportent des paramètres de filtrage/tri:
 
 ### Réponses
 Format standard des réponses:
+
+________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+
+1. Authentication & User Management
+Endpoints:
+
+Register
+Login
+Admin Login
+Reset Password
+Change Password
+Update Profile
+Get Current User
+Delete Account
+Create Admin
+Logout
+
+2. Orders & Services
+Endpoints:
+
+Create Order
+Get Orders
+Get Order Details
+Update Order Status
+Calculate Price
+Get Service Configuration
+Create Service
+Update Service
+Delete Service
+Get Service Prices
+
+3. Blog Management
+Endpoints:
+
+Create Article
+Update Article
+Delete Article
+Generate Article
+Get All Articles
+Create Category
+Update Category
+Delete Category
+
+4. Affiliate System
+Endpoints:
+
+Get Profile
+Update Profile
+Get Commissions
+Request Withdrawal
+Get Referrals
+Generate Code
+Get Levels
+Get Current Level
+Approve/Reject Withdrawals
+Update Affiliate Status
+
+5. Loyalty Program
+Endpoints:
+
+Earn Points
+Spend Points
+Get Points Balance
+
+6. Delivery Management
+Endpoints:
+
+Get Pending Orders
+Get Assigned Orders
+Update Order Status
+Get Orders by Status (COLLECTED, PROCESSING, READY, DELIVERING, DELIVERED, CANCELLED)
+
+7. Address Management
+Endpoints:
+
+Create Address
+Get All Addresses
+Update Address
+Delete Address
+
+8. Admin Dashboard & Analytics
+Endpoints:
+
+Get Dashboard Statistics
+Get Revenue Chart
+Get Total Revenue
+Get Total Customers
+Configure Commissions
+Configure Rewards
+
+9. Subscription Management
+Endpoints:
+
+Get Active Subscription
+Subscribe to Plan
+Cancel Subscription
+Create Plan
+
+10. Notification System
+Endpoints:
+
+Get Notifications
+Get Unread Count
+Mark as Read
+Delete Notification
+Update Preferences
+Get Preferences
+
+11. Archive System
+Endpoints:
+
+Get Archived Orders
+Run Archive Cleanup
+
+12. Weight Pricing System
+Endpoints:
+
+Calculate Price
+Set Weight Price
+
+
+Cette structure montre les principaux domaines fonctionnels (cores) de votre application et leurs endpoints associés. Chaque core représente une partie distincte de votre logique métier, avec ses propres responsabilités et fonctionnalités.
+

@@ -1,9 +1,21 @@
-import 'package:admin/screens/users/components/delete_user_dialog.dart';
+import 'dart:io';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:universal_html/html.dart' as html; // Ajout de cet import
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
 import '../constants.dart';
 import './auth_controller.dart';
+import 'package:admin/screens/users/components/delete_user_dialog.dart';
+
+enum ViewMode { list, grid }
+
+enum SortField { name, email, role, createdAt }
+
+enum SortOrder { asc, desc }
 
 class UsersController extends GetxController {
   // État observable
@@ -44,11 +56,41 @@ class UsersController extends GetxController {
   final allUsers = <User>[].obs;
   final filteredUsers = <User>[].obs;
 
+  // Nouvelles propriétés
+  final viewMode = Rx<ViewMode>(ViewMode.list);
+  final sortField = Rx<SortField>(SortField.createdAt);
+  final sortOrder = Rx<SortOrder>(SortOrder.desc);
+
   @override
   void onInit() {
     super.onInit();
-    print('[UsersController] Initializing');
+    _loadSavedPreferences();
     loadInitialData();
+  }
+
+  Future<void> _loadSavedPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedViewMode = prefs.getString('user_view_mode');
+      if (savedViewMode != null) {
+        viewMode.value = ViewMode.values.firstWhere(
+          (v) => v.toString() == savedViewMode,
+          orElse: () => ViewMode.list,
+        );
+      }
+    } catch (e) {
+      print('[UsersController] Error loading preferences: $e');
+    }
+  }
+
+  Future<void> toggleView(ViewMode mode) async {
+    try {
+      viewMode.value = mode;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_view_mode', mode.toString());
+    } catch (e) {
+      print('[UsersController] Error saving view mode: $e');
+    }
   }
 
   Future<void> loadInitialData() async {
@@ -214,6 +256,13 @@ class UsersController extends GetxController {
     }
   }
 
+  void goToPage(int page) {
+    if (page >= 1 && page <= totalPages.value) {
+      currentPage.value = page;
+      fetchUsers();
+    }
+  }
+
   // Méthodes de filtrage
   Future<void> filterByRole(UserRole? role) async {
     try {
@@ -311,6 +360,113 @@ class UsersController extends GetxController {
 
     print('[UsersController] Filtered users: ${filteredUsers.length}');
     print('[UsersController] Selected role: ${selectedRole.value}');
+  }
+
+  void sortUsers(SortField field) {
+    if (sortField.value == field) {
+      sortOrder.value =
+          sortOrder.value == SortOrder.asc ? SortOrder.desc : SortOrder.asc;
+    } else {
+      sortField.value = field;
+      sortOrder.value = SortOrder.asc;
+    }
+
+    _applySorting();
+  }
+
+  void _applySorting() {
+    final multiplier = sortOrder.value == SortOrder.asc ? 1 : -1;
+
+    filteredUsers.sort((a, b) {
+      switch (sortField.value) {
+        case SortField.name:
+          return multiplier *
+              '${a.lastName} ${a.firstName}'
+                  .compareTo('${b.lastName} ${b.firstName}');
+        case SortField.email:
+          return multiplier * a.email.compareTo(b.email);
+        case SortField.role:
+          return multiplier * a.role.toString().compareTo(b.role.toString());
+        case SortField.createdAt:
+          return multiplier * a.createdAt.compareTo(b.createdAt);
+      }
+    });
+
+    // Mettre à jour la liste principale
+    users.value = filteredUsers;
+  }
+
+  Future<void> exportFilteredUsers() async {
+    try {
+      isLoading.value = true;
+
+      final data = filteredUsers
+          .map((user) => {
+                'ID': user.id,
+                'Nom': user.lastName,
+                'Prénom': user.firstName,
+                'Email': user.email,
+                'Rôle': user.role.toString().split('.').last,
+                'Statut': user.isActive ? 'Actif' : 'Inactif',
+                'Date création':
+                    DateFormat('dd/MM/yyyy').format(user.createdAt),
+              })
+          .toList();
+
+      // Laissez l'implémentation de l'export au platform-specific code
+      await exportToCSV(data);
+
+      _showSuccessSnackbar('Succès', 'Données exportées avec succès');
+    } catch (e) {
+      _showErrorSnackbar('Erreur', 'Impossible d\'exporter les données');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> exportToCSV(List<Map<String, dynamic>> data) async {
+    try {
+      // Créer l'en-tête CSV
+      final headers = data.first.keys.toList();
+      String csvContent = headers.join(',') + '\n';
+
+      // Ajouter les données
+      for (var row in data) {
+        csvContent +=
+            headers.map((header) => row[header].toString()).join(',') + '\n';
+      }
+
+      // Pour le web, créer un blob et télécharger
+      if (GetPlatform.isWeb) {
+        final blob = html.Blob([csvContent], 'text/csv');
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute(
+              'download', 'users_${DateTime.now().toIso8601String()}.csv')
+          ..click();
+        html.Url.revokeObjectUrl(url);
+      }
+      // Pour mobile/desktop, utiliser path_provider et file
+      else {
+        final directory = await getApplicationDocumentsDirectory();
+        final path =
+            '${directory.path}/users_${DateTime.now().toIso8601String()}.csv';
+        final file = File(path);
+        await file.writeAsString(csvContent);
+
+        // Ouvrir le fichier avec une application externe
+        if (await file.exists()) {
+          await OpenFile.open(path);
+        }
+      }
+
+      _showSuccessSnackbar(
+          'Export réussi', 'Le fichier CSV a été créé avec succès');
+    } catch (e) {
+      print('[UsersController] Error exporting to CSV: $e');
+      _showErrorSnackbar(
+          'Erreur d\'export', 'Impossible d\'exporter les données en CSV');
+    }
   }
 
   // Permissions

@@ -212,6 +212,18 @@ class AppTextStyles {
     fontWeight: FontWeight.normal,
     letterSpacing: 0.4,
   );
+
+  static const titleSmall = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
+
+  static const bodySmallSecondary = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textSecondary,
+  );
 }
 
 // Default values
