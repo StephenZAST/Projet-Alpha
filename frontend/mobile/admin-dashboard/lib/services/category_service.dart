@@ -69,20 +69,30 @@ class CategoryService {
     required CategoryUpdateDTO dto,
   }) async {
     try {
+      print('[CategoryService] Updating category with ID: $id');
+      print('[CategoryService] Update data: ${dto.toJson()}');
+
       final response = await _api.patch(
         '$_baseUrl/$id',
         data: dto.toJson(),
       );
-      if (response.data != null && response.data['data'] != null) {
-        return Category.fromJson(response.data['data']);
+
+      print('[CategoryService] Update response raw: ${response.data}');
+
+      // Vérification plus précise de la réponse
+      if (response.data != null && response.data['success'] == true) {
+        if (response.data['data'] != null) {
+          print('[CategoryService] Successfully parsed category data');
+          return Category.fromJson(response.data['data']);
+        }
       }
-      if (response.data?['error'] != null) {
-        throw response.data['error'];
-      }
-      throw 'Erreur lors de la mise à jour de la catégorie';
+
+      // Si nous arrivons ici, c'est qu'il y a un problème avec la réponse
+      throw response.data?['message'] ??
+          'Erreur lors de la mise à jour de la catégorie';
     } catch (e) {
       print('[CategoryService] Error updating category: $e');
-      throw 'Erreur lors de la mise à jour de la catégorie';
+      rethrow; // Propager l'erreur pour une meilleure gestion
     }
   }
 

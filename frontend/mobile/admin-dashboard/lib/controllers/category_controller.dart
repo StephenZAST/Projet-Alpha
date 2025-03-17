@@ -48,7 +48,6 @@ class CategoryController extends GetxController {
   Future<void> createCategory({
     required String name,
     String? description,
-    String? iconName,
   }) async {
     try {
       isLoading.value = true;
@@ -58,7 +57,6 @@ class CategoryController extends GetxController {
       final dto = CategoryCreateDTO(
         name: name,
         description: description,
-        iconName: iconName,
       );
 
       await CategoryService.createCategory(dto);
@@ -94,23 +92,36 @@ class CategoryController extends GetxController {
     required String id,
     String? name,
     String? description,
-    String? iconName,
-    bool? isActive,
   }) async {
     try {
+      print('[CategoryController] Starting category update...');
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
 
+      // Validation des données
+      if (name?.isEmpty ?? true) {
+        throw 'Le nom de la catégorie est requis';
+      }
+
       final dto = CategoryUpdateDTO(
         name: name,
         description: description,
-        iconName: iconName,
-        isActive: isActive,
       );
 
-      await CategoryService.updateCategory(id: id, dto: dto);
-      await fetchCategories();
+      print('[CategoryController] Update DTO: ${dto.toJson()}');
+
+      final updatedCategory =
+          await CategoryService.updateCategory(id: id, dto: dto);
+
+      // Mise à jour de la liste locale
+      final index = categories.indexWhere((cat) => cat.id == id);
+      if (index != -1) {
+        categories[index] = updatedCategory;
+        categories.refresh(); // Force la mise à jour de l'UI
+      }
+
+      Get.back(); // Ferme le dialogue de modification
 
       Get.snackbar(
         'Succès',
@@ -123,11 +134,11 @@ class CategoryController extends GetxController {
     } catch (e) {
       print('[CategoryController] Error updating category: $e');
       hasError.value = true;
-      errorMessage.value = 'Erreur lors de la mise à jour de la catégorie';
+      errorMessage.value = e.toString();
 
       Get.snackbar(
         'Erreur',
-        'Impossible de mettre à jour la catégorie',
+        'Impossible de mettre à jour la catégorie: ${e.toString()}',
         backgroundColor: AppColors.error,
         colorText: AppColors.textLight,
         snackPosition: SnackPosition.TOP,

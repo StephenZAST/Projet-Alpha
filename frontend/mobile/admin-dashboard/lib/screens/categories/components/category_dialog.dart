@@ -20,7 +20,6 @@ class _CategoryDialogState extends State<CategoryDialog> {
 
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
-  late TextEditingController _iconNameController;
 
   @override
   void initState() {
@@ -28,37 +27,29 @@ class _CategoryDialogState extends State<CategoryDialog> {
     _nameController = TextEditingController(text: widget.category?.name);
     _descriptionController =
         TextEditingController(text: widget.category?.description);
-    _iconNameController =
-        TextEditingController(text: widget.category?.iconName);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _iconNameController.dispose();
     super.dispose();
   }
 
   void _handleSubmit() {
     if (_formKey.currentState!.validate()) {
       if (widget.category != null) {
-        // Mise à jour
         controller.updateCategory(
           id: widget.category!.id,
           name: _nameController.text,
           description: _descriptionController.text,
-          iconName: _iconNameController.text,
         );
       } else {
-        // Création
         controller.createCategory(
           name: _nameController.text,
           description: _descriptionController.text,
-          iconName: _iconNameController.text,
         );
       }
-
       Get.back();
     }
   }
@@ -157,16 +148,6 @@ class _CategoryDialogState extends State<CategoryDialog> {
                 decoration: _buildInputDecoration(
                   'Description',
                   'Entrez une description',
-                  isDark,
-                ),
-              ),
-              SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _iconNameController,
-                style: textStyle,
-                decoration: _buildInputDecoration(
-                  'Icône',
-                  'Nom de l\'icône (ex: folder)',
                   isDark,
                 ),
               ),

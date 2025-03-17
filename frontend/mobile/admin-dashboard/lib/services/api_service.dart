@@ -154,14 +154,38 @@ class ApiService {
 
   Future<dio.Response> patch(String path, {dynamic data}) async {
     try {
+      print('[ApiService] Making PATCH request to: $path');
+      print('[ApiService] Request data: $data');
+
       final response = await _dio.patch(
         path,
         data: data,
       );
-      _handleResponse(response);
+
+      print('[ApiService] Response status code: ${response.statusCode}');
+      print('[ApiService] Response data: ${response.data}');
+
+      // Vérification du statut de la réponse
+      if (response.statusCode == 401) {
+        throw 'Session expirée. Veuillez vous reconnecter.';
+      }
+
+      if (response.statusCode == 500) {
+        throw response.data?['message'] ?? 'Erreur serveur interne';
+      }
+
+      if (response.statusCode != 200) {
+        throw 'Erreur serveur: ${response.statusCode}';
+      }
+
+      if (response.data == null) {
+        throw 'Réponse invalide du serveur';
+      }
+
       return response;
     } catch (e) {
-      throw _handleError(e);
+      print('[ApiService] PATCH request error: $e');
+      rethrow;
     }
   }
 
