@@ -5,7 +5,7 @@ import 'user_list.dart';
 import 'user_grid.dart';
 
 class AdaptiveUserView extends StatelessWidget {
-  const AdaptiveUserView({super.key});
+  const AdaptiveUserView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +15,8 @@ class AdaptiveUserView extends StatelessWidget {
       return AnimatedSwitcher(
         duration: Duration(milliseconds: 300),
         child: controller.viewMode.value == ViewMode.list
-            ? UserList(key: ValueKey<String>('list'))
-            : UserGrid(key: ValueKey<String>('grid')),
+            ? UserList()
+            : UserGrid(),
       );
     });
   }

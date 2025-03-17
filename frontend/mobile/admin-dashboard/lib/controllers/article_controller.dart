@@ -5,6 +5,9 @@ import '../services/article_service.dart';
 import '../models/article.dart';
 import '../constants.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+enum ArticleViewMode { grid, list }
 
 class ArticleController extends GetxController {
   final isLoading = false.obs;
@@ -12,11 +15,38 @@ class ArticleController extends GetxController {
   final errorMessage = ''.obs;
   final selectedCategoryId = RxnString();
   final selectedCategory = RxnString(); // Ajout de la propriété manquante
+  final viewMode = Rx<ArticleViewMode>(ArticleViewMode.grid);
 
   @override
   void onInit() {
     super.onInit();
+    _loadSavedViewMode();
     fetchArticles();
+  }
+
+  Future<void> _loadSavedViewMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedMode = prefs.getString('article_view_mode');
+      if (savedMode != null) {
+        viewMode.value = ArticleViewMode.values.firstWhere(
+          (mode) => mode.toString() == savedMode,
+          orElse: () => ArticleViewMode.grid,
+        );
+      }
+    } catch (e) {
+      print('Error loading view mode: $e');
+    }
+  }
+
+  Future<void> toggleViewMode(ArticleViewMode mode) async {
+    try {
+      viewMode.value = mode;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('article_view_mode', mode.toString());
+    } catch (e) {
+      print('Error saving view mode: $e');
+    }
   }
 
   Future<void> fetchArticles() async {

@@ -15,34 +15,39 @@ class UsersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<UsersController>();
 
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      padding: EdgeInsets.all(defaultPadding),
-      child: Column(
-        children: [
-          // En-tête avec les filtres
-          Row(
-            children: [
-              Expanded(child: UserSearchBar()),
-              SizedBox(width: 16),
-              ViewToggle(),
-            ],
-          ),
-          SizedBox(height: 16),
+    return Scaffold(
+      body: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        padding: EdgeInsets.all(defaultPadding),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(defaultPadding),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: UserSearchBar()),
+                  SizedBox(width: 16),
+                  ViewToggle(),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
 
-          // Indicateur de filtre actif
-          ActiveFilterIndicator(),
-          SizedBox(height: 16),
+            // Indicateur de filtre actif
+            ActiveFilterIndicator(),
+            SizedBox(height: 16),
 
-          // Stats cards
-          UserStatsGrid(),
-          SizedBox(height: 16),
+            // Stats cards
+            UserStatsGrid(),
+            SizedBox(height: 16),
 
-          // Liste/Grille adaptative des utilisateurs
-          Expanded(
-            child: AdaptiveUserView(),
-          ),
-        ],
+            // Liste/Grille adaptative des utilisateurs
+            Expanded(
+              child: AdaptiveUserView(),
+            ),
+          ],
+        ),
       ),
     );
   }

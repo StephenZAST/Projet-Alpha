@@ -1,4 +1,5 @@
 import 'package:admin/screens/users/components/user_edit_dialog.dart';
+import 'package:admin/widgets/shared/action_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../models/user.dart';
@@ -10,6 +11,18 @@ class UserListItem extends StatelessWidget {
   final UsersController controller = Get.find();
 
   UserListItem({required this.user, Key? key}) : super(key: key);
+
+  // Ajout des méthodes onEdit et onDelete
+  void onEdit() {
+    Get.dialog(
+      UserEditDialog(user: user),
+      barrierDismissible: false,
+    );
+  }
+
+  void onDelete() {
+    controller.deleteUser(user.id, user.fullName);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,20 +51,23 @@ class UserListItem extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            icon: Icon(Icons.edit),
-            onPressed: () => Get.dialog(
-              UserEditDialog(user: user),
-            ),
+          ActionButton(
+            icon: Icons.edit_rounded,
+            label: '', // Pas de label pour la vue liste
+            color: AppColors.primary, // Bleu pour modifier
+            onTap: onEdit, // Utilisation de la méthode onEdit
+            variant: ActionButtonVariant.ghost,
+            isCompact: true,
           ),
-          if (controller.canManageUser(user))
-            IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: () => controller.deleteUser(
-                user.id,
-                '${user.firstName} ${user.lastName}',
-              ),
-            ),
+          SizedBox(width: AppSpacing.xs),
+          ActionButton(
+            icon: Icons.delete_rounded,
+            label: '', // Pas de label pour la vue liste
+            color: AppColors.error, // Rouge pour supprimer
+            onTap: onDelete, // Utilisation de la méthode onDelete
+            variant: ActionButtonVariant.ghost,
+            isCompact: true,
+          ),
         ],
       ),
     );

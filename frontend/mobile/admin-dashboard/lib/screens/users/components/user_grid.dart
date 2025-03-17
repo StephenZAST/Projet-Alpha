@@ -1,3 +1,4 @@
+import 'package:admin/screens/users/components/user_edit_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/users_controller.dart';
@@ -6,9 +7,7 @@ import '../../../widgets/shared/pagination_controls.dart';
 import 'user_grid_item.dart';
 
 class UserGrid extends StatelessWidget {
-  final Key? key;
-
-  const UserGrid({this.key}) : super(key: key);
+  const UserGrid({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -44,9 +43,20 @@ class UserGrid extends StatelessWidget {
                 mainAxisSpacing: AppSpacing.sm,
               ),
               itemCount: controller.users.length,
-              itemBuilder: (context, index) => UserGridItem(
-                user: controller.users[index],
-              ),
+              itemBuilder: (context, index) {
+                final user = controller.users[index];
+                return UserGridItem(
+                  user: user,
+                  onEdit: (user) => Get.dialog(
+                    UserEditDialog(user: user),
+                    barrierDismissible: false,
+                  ),
+                  onDelete: (user) => controller.deleteUser(
+                    user.id,
+                    user.fullName,
+                  ),
+                );
+              },
             ),
           ),
           _buildPagination(context),

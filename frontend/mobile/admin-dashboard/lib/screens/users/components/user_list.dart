@@ -5,10 +5,6 @@ import '../../../controllers/users_controller.dart';
 import 'user_list_item.dart';
 
 class UserList extends StatelessWidget {
-  final Key? key;
-
-  UserList({this.key}) : super(key: key);
-
   final controller = Get.find<UsersController>();
 
   @override

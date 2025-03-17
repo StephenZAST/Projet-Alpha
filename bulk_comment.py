@@ -12,7 +12,7 @@ DIRECTORIES_TO_PROCESS = [
     #     "extension": ".ts"
     # },
     {
-        "path": "backend\prisma\db_functions",
+        "path": "backend\prisma-none\db_functions",
         "extension": ".md"
     }
 ]

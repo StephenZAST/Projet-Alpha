@@ -1,4 +1,6 @@
+import 'package:admin/widgets/shared/action_button.dart';
 import 'package:admin/widgets/shared/app_button.dart';
+import 'package:admin/widgets/shared/bouncy_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
@@ -24,8 +26,9 @@ class CategoriesScreen extends StatelessWidget {
               Header(
                 title: 'Catégories',
                 actions: [
-                  Expanded(
-                    child: CategoryHeaderActions(controller: controller),
+                  BouncyButton(
+                    onTap: () => Get.dialog(CategoryDialog()),
+                    label: 'Nouvelle Catégorie',
                   ),
                 ],
               ),
@@ -126,23 +129,28 @@ class CategoriesScreen extends StatelessWidget {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () => Get.dialog(
+                              ActionButton(
+                                icon: Icons.edit_rounded,
+                                label: '',
+                                color: AppColors.primary,
+                                onTap: () => Get.dialog(
                                   CategoryDialog(category: category),
                                 ),
-                                color: isDark
-                                    ? AppColors.textLight
-                                    : AppColors.textSecondary,
+                                variant: ActionButtonVariant.ghost,
+                                isCompact: true,
                               ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => _showDeleteDialog(
+                              SizedBox(width: AppSpacing.xs),
+                              ActionButton(
+                                icon: Icons.delete_rounded,
+                                label: '',
+                                color: AppColors.error,
+                                onTap: () => _showDeleteDialog(
                                   context,
                                   category,
                                   controller,
                                 ),
-                                color: AppColors.error,
+                                variant: ActionButtonVariant.ghost,
+                                isCompact: true,
                               ),
                             ],
                           ),

@@ -8,11 +8,15 @@
     "dev": "nodemon --exec ts-node src/app.ts",
     "build": "tsc",
     "test": "jest",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "test:db": "npm run prisma:generate && ts-node src/tests/testConnection.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
-    "@supabase/supabase-js": "^2.39.3",
+    "@prisma/client": "^6.5.0",
+    "@supabase/supabase-js": "^2.49.1",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^22.9.3",
     "@types/nodemailer": "^6.4.17",
@@ -25,6 +29,7 @@
     "compression": "^1.7.5",
     "cors": "^2.8.5",
     "cron": "^3.2.1",
+    "cross-fetch": "^4.1.0",
     "express": "^4.18.2",
     "express-rate-limit": "^7.4.1",
     "express-validator": "^7.2.1",
@@ -73,6 +78,7 @@
     "mocha": "^11.1.0",
     "node-fetch": "^2.7.0",
     "nodemon": "^3.0.3",
+    "prisma": "^6.5.0",
     "supabase": "^2.1.1",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",

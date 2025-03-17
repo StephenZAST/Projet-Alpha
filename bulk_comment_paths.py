@@ -86,7 +86,7 @@ def process_file(file_path: str, comment: str, operation: str = "ajouter") -> No
 def delayed_removal(paths: List[str], comment: str, delay_minutes: float) -> None:
     """Fonction qui s'exécute après un délai pour supprimer les commentaires."""
     print(f"\nProgrammation de la suppression des commentaires dans {delay_minutes} minutes...")
-    time.sleep(delay_minutes * 60)  # Convertir minutes en secondes
+    time.sleep(delay_minutes * 120)  # Convertir minutes en secondes
     print("\nSuppression des commentaires...")
     
     for path in paths:

@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/article_controller.dart';
 import '../../responsive.dart';
+import './components/article_list_item.dart';
+import 'package:admin/widgets/shared/bouncy_button.dart'; // Ajouter cet import
 
 class ArticlesScreen extends GetView<ArticleController> {
   @override
@@ -17,63 +19,147 @@ class ArticlesScreen extends GetView<ArticleController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Gestion des Articles',
-                    style: AppTextStyles.h1,
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddArticleDialog(context),
-                    icon: Icon(Icons.add),
-                    label: Text('Nouvel Article'),
-                  ),
-                ],
-              ),
+              _buildHeader(context),
               SizedBox(height: defaultPadding),
-
-              // Searchbar
-              TextField(
-                onChanged: controller.searchArticles,
-                decoration: InputDecoration(
-                  hintText: "Rechercher un article...",
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
+              _buildSearchAndViewToggle(context),
               SizedBox(height: defaultPadding),
-
-              // Articles Grid
               Expanded(
-                child: Obx(
-                  () => controller.isLoading.value
-                      ? Center(child: CircularProgressIndicator())
-                      : GridView.builder(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: _getCrossAxisCount(context),
-                            crossAxisSpacing: defaultPadding,
-                            mainAxisSpacing: defaultPadding,
-                            childAspectRatio: 1.3,
-                          ),
-                          itemCount: controller.articles.length,
-                          itemBuilder: (context, index) {
-                            final article = controller.articles[index];
-                            return ArticleCard(
-                              article: article, // Only pass the article
-                            );
-                          },
-                        ),
-                ),
+                child: Obx(() => _buildArticlesList(context)),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Gestion des Articles',
+          style: AppTextStyles.h1,
+        ),
+        BouncyButton(
+          // Utiliser BouncyButton au lieu de _BouncyButton
+          onTap: () => _showAddArticleDialog(context),
+          label: 'Nouvel Article',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchAndViewToggle(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            onChanged: controller.searchArticles,
+            decoration: InputDecoration(
+              hintText: "Rechercher un article...",
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: AppSpacing.md),
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: AppRadius.radiusMD,
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+            ),
+          ),
+          child: Row(
+            children: [
+              _buildViewModeButton(
+                icon: Icons.grid_view,
+                mode: ArticleViewMode.grid,
+              ),
+              _buildViewModeButton(
+                icon: Icons.list,
+                mode: ArticleViewMode.list,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildViewModeButton({
+    required IconData icon,
+    required ArticleViewMode mode,
+  }) {
+    return Obx(() {
+      final isSelected = controller.viewMode.value == mode;
+      return InkWell(
+        onTap: () => controller.toggleViewMode(mode),
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary.withOpacity(0.1) : null,
+            borderRadius: AppRadius.radiusSM,
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: isSelected ? AppColors.primary : AppColors.textSecondary,
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildArticlesList(BuildContext context) {
+    if (controller.isLoading.value) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (controller.articles.isEmpty) {
+      return Center(
+        child: Text('Aucun article trouvé'),
+      );
+    }
+
+    return Obx(() {
+      if (controller.viewMode.value == ArticleViewMode.grid) {
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: _getCrossAxisCount(context),
+            crossAxisSpacing: defaultPadding,
+            mainAxisSpacing: defaultPadding,
+            childAspectRatio: 1.3,
+          ),
+          itemCount: controller.articles.length,
+          itemBuilder: (context, index) {
+            final article = controller.articles[index];
+            return ArticleCard(
+              article: article, // Only pass the article
+            );
+          },
+        );
+      } else {
+        return ListView.builder(
+          itemCount: controller.articles.length,
+          itemBuilder: (context, index) {
+            final article = controller.articles[index];
+            return ArticleListItem(
+              article: article,
+              onEdit: () => Get.dialog(
+                ArticleFormDialog(article: article),
+                barrierDismissible: false,
+              ),
+              onDelete: () => controller.deleteArticle(article.id),
+            );
+          },
+        );
+      }
+    });
   }
 
   void _showAddArticleDialog(BuildContext context) {

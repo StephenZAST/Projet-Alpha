@@ -18,3 +18,4 @@ serviceAccountKey.json
 .env.test.local
 .env.production.local
 .env.exemple
+.qodo

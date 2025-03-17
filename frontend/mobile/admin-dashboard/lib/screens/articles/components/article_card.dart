@@ -1,7 +1,9 @@
 import 'package:admin/screens/articles/components/article_form_dialog.dart';
+import 'package:admin/widgets/shared/action_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:admin/theme/glass_style.dart';
 import '../../../constants.dart';
 import '../../../models/article.dart';
 import '../../../controllers/article_controller.dart';
@@ -25,93 +27,108 @@ class ArticleCard extends StatelessWidget {
     );
 
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: EdgeInsets.all(defaultPadding),
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      color: Colors.transparent,
+      child: Container(
+        decoration: GlassStyle.containerDecoration(
+          context: context,
+          opacity: isDark ? 0.2 : 0.1,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    article.name,
-                    style: Theme.of(context).textTheme.titleLarge,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        child: Icon(
+                          Icons.article_outlined,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          article.name,
+                          style: Theme.of(context).textTheme.titleMedium,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                // Menu d'actions
-                PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert),
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'edit':
-                        Get.dialog(
-                          ArticleFormDialog(
-                            article: article,
+                  if (article.description != null) ...[
+                    SizedBox(height: AppSpacing.sm),
+                    Text(
+                      article.description!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                isDark ? AppColors.gray400 : AppColors.gray600,
+                            fontSize: 13,
                           ),
-                          barrierDismissible: false,
-                        );
-                        break;
-                      case 'delete':
-                        _showDeleteDialog(context, controller);
-                        break;
-                    }
-                  },
-                  itemBuilder: (BuildContext context) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 20),
-                          SizedBox(width: 8),
-                          Text('Modifier'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, size: 20, color: AppColors.error),
-                          SizedBox(width: 8),
-                          Text('Supprimer',
-                              style: TextStyle(color: AppColors.error)),
-                        ],
-                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-              ],
-            ),
-            if (article.description != null) ...[
-              SizedBox(height: 8),
-              Text(
-                article.description!,
-                style: Theme.of(context).textTheme.bodyMedium,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                  SizedBox(height: AppSpacing.sm),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _PriceDisplay(
+                        label: 'Base',
+                        price: article.basePrice,
+                        currencyFormat: currencyFormat,
+                      ),
+                      _PriceDisplay(
+                        label: 'Premium',
+                        price: article.premiumPrice ?? 0.0,
+                        currencyFormat: currencyFormat,
+                        isPremium: true,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-            Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _PriceDisplay(
-                  label: 'Prix de base',
-                  price: article.basePrice,
-                  currencyFormat: currencyFormat,
-                ),
-                _PriceDisplay(
-                  label: 'Prix premium',
-                  price: article.premiumPrice ?? 0.0,
-                  currencyFormat: currencyFormat,
-                  isPremium: true,
-                ),
-              ],
+            ),
+            Divider(color: isDark ? AppColors.gray700 : AppColors.gray200),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: ActionButton(
+                      icon: Icons.edit_rounded,
+                      label: 'Modifier',
+                      color: AppColors.primary,
+                      onTap: () => Get.dialog(
+                        ArticleFormDialog(article: article),
+                        barrierDismissible: false,
+                      ),
+                      variant: ActionButtonVariant.ghost,
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: ActionButton(
+                      icon: Icons.delete_rounded,
+                      label: 'Supprimer',
+                      color: AppColors.error,
+                      onTap: () => _showDeleteDialog(context, controller),
+                      variant: ActionButtonVariant.outlined,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
