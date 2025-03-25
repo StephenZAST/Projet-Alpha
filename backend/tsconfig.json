@@ -15,7 +15,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@types/*": ["./src/types/*"]
+      "@types/*": ["./src/types/*"],
+      "@scripts/*": ["./src/scripts/*"]
     },
     "types": ["node", "express"]
   },

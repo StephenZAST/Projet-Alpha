@@ -9,9 +9,16 @@
     "build": "tsc",
     "test": "jest",
     "lint": "eslint . --ext .ts",
-    "test:db": "npm run prisma:generate && ts-node src/tests/testConnection.ts",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push"
+    "prisma:push": "prisma db push",
+    "prisma:pull": "prisma db pull",
+    "prisma:studio": "prisma studio",
+    "prisma:format": "prisma format",
+    "test:db": "npm run prisma:generate && ts-node src/tests/testConnection.ts",
+    "prisma:apply": "ts-node src/scripts/applyPrismaSchema.ts",
+    "migrate:functions": "ts-node src/scripts/migrateFunctions.ts",
+    "migrate:validate": "ts-node src/scripts/validateRelations.ts",
+    "migrate:all": "ts-node src/scripts/migrationRunner.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

@@ -1,0 +1,281 @@
+[{
+  "Table": "addresses",
+  "Colonne": "user_id",
+  "Nom Contrainte": "addresses_user_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "affiliate_profiles",
+  "Colonne": "level_id",
+  "Nom Contrainte": "affiliate_profiles_level_id_fkey",
+  "Table Référencée": "affiliate_levels",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "affiliate_profiles",
+  "Colonne": "parent_affiliate_id",
+  "Nom Contrainte": "affiliate_profiles_parent_affiliate_id_fkey",
+  "Table Référencée": "affiliate_profiles",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "affiliate_profiles",
+  "Colonne": "user_id",
+  "Nom Contrainte": "affiliate_profiles_user_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "article_archives",
+  "Colonne": "original_id",
+  "Nom Contrainte": "article_archives_original_id_fkey",
+  "Table Référencée": "articles",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "article_service_compatibility",
+  "Colonne": "article_id",
+  "Nom Contrainte": "article_service_compatibility_article_id_fkey",
+  "Table Référencée": "articles",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "article_service_compatibility",
+  "Colonne": "service_id",
+  "Nom Contrainte": "article_service_compatibility_service_id_fkey",
+  "Table Référencée": "services",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "article_service_prices",
+  "Colonne": "article_id",
+  "Nom Contrainte": "article_service_prices_article_id_fkey",
+  "Table Référencée": "articles",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "article_service_prices",
+  "Colonne": "service_type_id",
+  "Nom Contrainte": "article_service_prices_service_type_id_fkey",
+  "Table Référencée": "service_types",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "article_services",
+  "Colonne": "article_id",
+  "Nom Contrainte": "article_services_article_id_fkey",
+  "Table Référencée": "articles",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "article_services",
+  "Colonne": "service_id",
+  "Nom Contrainte": "article_services_service_id_fkey",
+  "Table Référencée": "services",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "articles",
+  "Colonne": "categoryId",
+  "Nom Contrainte": "articles_category_id_fkey",
+  "Table Référencée": "article_categories",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "blog_articles",
+  "Colonne": "author_id",
+  "Nom Contrainte": "blog_articles_author_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "commission_transactions",
+  "Colonne": "affiliate_id",
+  "Nom Contrainte": "commission_transactions_affiliate_id_fkey",
+  "Table Référencée": "affiliate_profiles",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "commission_transactions",
+  "Colonne": "order_id",
+  "Nom Contrainte": "commission_transactions_order_id_fkey",
+  "Table Référencée": "orders",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "loyalty_points",
+  "Colonne": "user_id",
+  "Nom Contrainte": "loyalty_points_user_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "notification_preferences",
+  "Colonne": "user_id",
+  "Nom Contrainte": "notification_preferences_user_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "notifications",
+  "Colonne": "user_id",
+  "Nom Contrainte": "notifications_user_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "offer_articles",
+  "Colonne": "article_id",
+  "Nom Contrainte": "offer_articles_article_id_fkey",
+  "Table Référencée": "articles",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "offer_articles",
+  "Colonne": "offer_id",
+  "Nom Contrainte": "offer_articles_offer_id_fkey",
+  "Table Référencée": "offers",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "offer_subscriptions",
+  "Colonne": "offer_id",
+  "Nom Contrainte": "offer_subscriptions_offer_id_fkey",
+  "Table Référencée": "offers",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "offer_subscriptions",
+  "Colonne": "user_id",
+  "Nom Contrainte": "offer_subscriptions_user_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "order_metadata",
+  "Colonne": "order_id",
+  "Nom Contrainte": "order_metadata_order_id_fkey",
+  "Table Référencée": "orders",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "order_notes",
+  "Colonne": "order_id",
+  "Nom Contrainte": "order_notes_order_id_fkey",
+  "Table Référencée": "orders",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "orders",
+  "Colonne": "service_type_id",
+  "Nom Contrainte": "orders_service_type_id_fkey",
+  "Table Référencée": "service_types",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "orders_archive",
+  "Colonne": "address_id",
+  "Nom Contrainte": "orders_archive_address_id_fkey",
+  "Table Référencée": "addresses",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "orders_archive",
+  "Colonne": "id",
+  "Nom Contrainte": "orders_archive_id_fkey",
+  "Table Référencée": "orders",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "orders_archive",
+  "Colonne": "service_id",
+  "Nom Contrainte": "orders_archive_service_id_fkey",
+  "Table Référencée": "services",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "orders_archive",
+  "Colonne": "service_type_id",
+  "Nom Contrainte": "orders_archive_service_type_id_fkey",
+  "Table Référencée": "service_types",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "point_transactions",
+  "Colonne": "userId",
+  "Nom Contrainte": "point_transactions_userid_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "reset_codes",
+  "Colonne": "user_id",
+  "Nom Contrainte": "reset_codes_user_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "services",
+  "Colonne": "service_type_id",
+  "Nom Contrainte": "services_service_type_id_fkey",
+  "Table Référencée": "service_types",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "user_offers",
+  "Colonne": "offer_id",
+  "Nom Contrainte": "user_offers_offer_id_fkey",
+  "Table Référencée": "offers",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "user_offers",
+  "Colonne": "order_id",
+  "Nom Contrainte": "user_offers_order_id_fkey",
+  "Table Référencée": "orders",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "user_offers",
+  "Colonne": "user_id",
+  "Nom Contrainte": "user_offers_user_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}]

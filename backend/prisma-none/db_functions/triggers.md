@@ -32,6 +32,13 @@
   },
   {
     "trigger_name": "order_items_total_update",
+    "trigger_event": "INSERT",
+    "table_name": "order_items",
+    "trigger_definition": "EXECUTE FUNCTION update_order_total()",
+    "trigger_timing": "AFTER"
+  },
+  {
+    "trigger_name": "order_items_total_update",
     "trigger_event": "UPDATE",
     "table_name": "order_items",
     "trigger_definition": "EXECUTE FUNCTION update_order_total()",
@@ -45,22 +52,15 @@
     "trigger_timing": "AFTER"
   },
   {
-    "trigger_name": "order_items_total_update",
-    "trigger_event": "INSERT",
-    "table_name": "order_items",
-    "trigger_definition": "EXECUTE FUNCTION update_order_total()",
-    "trigger_timing": "AFTER"
-  },
-  {
     "trigger_name": "order_note_sync_trigger",
-    "trigger_event": "INSERT",
+    "trigger_event": "UPDATE",
     "table_name": "order_notes",
     "trigger_definition": "EXECUTE FUNCTION sync_order_note()",
     "trigger_timing": "AFTER"
   },
   {
     "trigger_name": "order_note_sync_trigger",
-    "trigger_event": "UPDATE",
+    "trigger_event": "INSERT",
     "table_name": "order_notes",
     "trigger_definition": "EXECUTE FUNCTION sync_order_note()",
     "trigger_timing": "AFTER"
@@ -98,6 +98,20 @@
     "trigger_event": "UPDATE",
     "table_name": "loyalty_points",
     "trigger_definition": "EXECUTE FUNCTION update_loyalty_points_updated_at()",
+    "trigger_timing": "BEFORE"
+  },
+  {
+    "trigger_name": "update_offer_subscriptions_updated_at",
+    "trigger_event": "UPDATE",
+    "table_name": "offer_subscriptions",
+    "trigger_definition": "EXECUTE FUNCTION update_updated_at_column()",
+    "trigger_timing": "BEFORE"
+  },
+  {
+    "trigger_name": "update_offers_updated_at",
+    "trigger_event": "UPDATE",
+    "table_name": "offers",
+    "trigger_definition": "EXECUTE FUNCTION update_updated_at_column()",
     "trigger_timing": "BEFORE"
   },
   {
@@ -165,14 +179,14 @@
   },
   {
     "trigger_name": "validate_article_service_price_trigger",
-    "trigger_event": "UPDATE",
+    "trigger_event": "INSERT",
     "table_name": "article_service_prices",
     "trigger_definition": "EXECUTE FUNCTION validate_article_service_price()",
     "trigger_timing": "BEFORE"
   },
   {
     "trigger_name": "validate_article_service_price_trigger",
-    "trigger_event": "INSERT",
+    "trigger_event": "UPDATE",
     "table_name": "article_service_prices",
     "trigger_definition": "EXECUTE FUNCTION validate_article_service_price()",
     "trigger_timing": "BEFORE"
