@@ -1,162 +1,167 @@
-import supabase from '../../config/database';
-import { Order } from '../../models/types'; 
+import { PrismaClient } from '@prisma/client';
+import { Order } from '../../models/types';
+
+const prisma = new PrismaClient();
 
 export class OrderQueryService {
-  private static readonly baseOrderSelect = `
-    *,
-    user:users(
-      id,
-      email,
-      first_name,
-      last_name,
-      phone,
-      role,
-      referral_code
-    ),
-    service:services(
-      id,
-      name,
-      price,
-      description
-    ),
-    address:addresses(
-      id,
-      name,
-      street, 
-      city,
-      postal_code,
-      gps_latitude,
-      gps_longitude,
-      is_default
-    ),
-    items:order_items!inner(
-      id,
-      quantity,
-      unit_price,
-      created_at,
-      updated_at,
-      article:articles!inner(
-        id,
-        name,
-        description,
-        base_price,
-        premium_price,
-        category:article_categories!inner(
-          id,
-          name,
-          description
-        )
-      )
-    )
-  `;
+  private static readonly orderInclude = {
+    users: {
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        phone: true,
+        role: true,
+        referral_code: true
+      }
+    },
+    services: {
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        description: true
+      }
+    },
+    addresses: {
+      select: {
+        id: true,
+        name: true,
+        street: true,
+        city: true,
+        postal_code: true,
+        gps_latitude: true,
+        gps_longitude: true,
+        is_default: true
+      }
+    },
+    order_items: {
+      include: {
+        article: {
+          include: {
+            article_categories: true
+          }
+        }
+      }
+    }
+  };
 
   static async getUserOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select(this.baseOrderSelect)
-      .eq('userId', userId)
-      .order('createdAt', { ascending: false });
+    try {
+      const orders = await prisma.orders.findMany({
+        where: {
+          userId
+        },
+        include: this.orderInclude,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
 
-    if (error) {
+      return this.formatOrders(orders);
+    } catch (error) {
       console.error('Error fetching user orders:', error);
       throw error;
-    } 
-
-    return this.formatOrders(data || []);
+    }
   }
 
   static async getOrderDetails(orderId: string): Promise<Order> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select(this.baseOrderSelect)
-      .eq('id', orderId)
-      .single();
+    try {
+      const order = await prisma.orders.findUnique({
+        where: {
+          id: orderId
+        },
+        include: this.orderInclude
+      });
 
-    if (error) {
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      return this.formatOrder(order);
+    } catch (error) {
       console.error('Error fetching order details:', error);
       throw error;
     }
-
-    if (!data) {
-      throw new Error('Order not found');
-    }
-
-    return this.formatOrder(data);
   }
 
   static async getRecentOrders(limit: number = 5): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select(this.baseOrderSelect)
-      .order('createdAt', { ascending: false })
-      .limit(limit);
+    try {
+      const orders = await prisma.orders.findMany({
+        take: limit,
+        include: this.orderInclude,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
 
-    if (error) {
+      return this.formatOrders(orders);
+    } catch (error) {
       console.error('Error fetching recent orders:', error);
       throw error;
     }
-
-    return this.formatOrders(data || []);
   }
 
   static async getOrdersByStatus(): Promise<Record<string, number>> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('status');
+    try {
+      const orders = await prisma.orders.groupBy({
+        by: ['status'],
+        _count: {
+          status: true
+        }
+      });
 
-    if (error) throw error;
-
-    const statusCount: Record<string, number> = {};
-    data.forEach((order) => {
-      statusCount[order.status] = (statusCount[order.status] || 0) + 1;
-    });
-
-    return statusCount;
+      return orders.reduce((acc, curr) => {
+        if (curr.status) {
+          acc[curr.status] = curr._count.status;
+        }
+        return acc;
+      }, {} as Record<string, number>);
+    } catch (error) {
+      console.error('Error getting orders by status:', error);
+      throw error;
+    }
   }
 
   private static formatOrder(order: any): Order {
     return {
-      ...order,
-      items: order.items?.map((item: any) => ({
-        id: item.id,
-        orderId: item.orderId,
-        articleId: item.article.id,
-        serviceId: item.serviceId,
-        quantity: item.quantity,
-        unitPrice: item.unit_price,
-        article: {
-          id: item.article.id,
-          name: item.article.name,
-          description: item.article.description,
-          basePrice: item.article.base_price,
-          premiumPrice: item.article.premium_price,
-          category: item.article.category ? {
-            id: item.article.category.id,
-            name: item.article.category.name,
-            description: item.article.category.description
-          } : null
-        },
-        createdAt: new Date(item.created_at),
-        updatedAt: new Date(item.updated_at)
-      })) || [],
-      service: order.service,
-      address: order.address ? {
-        ...order.address,
-        postalCode: order.address.postal_code,
-        gpsLatitude: order.address.gps_latitude,
-        gpsLongitude: order.address.gps_longitude,
-        isDefault: order.address.is_default
-      } : null,
-      user: order.user ? {
-        ...order.user,
-        firstName: order.user.first_name,
-        lastName: order.user.last_name,
-        referralCode: order.user.referral_code
-      } : null,
+      id: order.id,
+      userId: order.userId,
+      service_id: order.serviceId || '',
+      address_id: order.addressId || '',
+      status: order.status || 'PENDING',
+      isRecurring: order.isRecurring || false,
+      recurrenceType: order.recurrenceType || 'NONE',
+      totalAmount: Number(order.totalAmount || 0),
       collectionDate: order.collectionDate ? new Date(order.collectionDate) : null,
       deliveryDate: order.deliveryDate ? new Date(order.deliveryDate) : null,
-      createdAt: new Date(order.createdAt),
-      updatedAt: new Date(order.updatedAt)
+      createdAt: order.createdAt || new Date(),
+      updatedAt: order.updatedAt || new Date(),
+      service_type_id: order.service_type_id,
+      paymentStatus: order.status,
+      paymentMethod: order.paymentMethod || 'CASH',
+      items: order.order_items?.map((item: any) => ({
+        id: item.id,
+        orderId: item.orderId,
+        articleId: item.articleId,
+        serviceId: item.serviceId,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        isPremium: item.isPremium || false,
+        article: item.article ? {
+          id: item.article.id,
+          categoryId: item.article.categoryId || '',
+          name: item.article.name,
+          description: item.article.description || undefined,
+          basePrice: Number(item.article.basePrice),
+          premiumPrice: Number(item.article.premiumPrice || 0),
+          createdAt: item.article.createdAt || new Date(),
+          updatedAt: item.article.updatedAt || new Date()
+        } : undefined,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      })) || []
     };
   }
 

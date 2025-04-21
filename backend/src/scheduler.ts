@@ -1,10 +1,12 @@
+import { PrismaClient } from '@prisma/client';
 import cron from 'node-cron';
 import { BlogArticleService } from './services/blogArticle.service';
 import { AffiliateCommissionService } from './services/affiliate.service/affiliateCommission.service';
 import supabase from './config/database';
 import dotenv from 'dotenv';
- 
+
 dotenv.config();
+const prisma = new PrismaClient();
 
 const apiKey = process.env.GOOGLE_AI_API_KEY;
 // Planifier une tâche cron pour générer un article de blog tous les jours à 2h du matin
@@ -23,13 +25,16 @@ cron.schedule('0 2 * * *', async () => {
     }
 
     // Récupérer un admin pour l'auteur (à adapter selon votre logique)
-    const { data: adminUser, error: adminError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('role', 'ADMIN')
-      .single();
+    const adminUser = await prisma.users.findFirst({
+      where: {
+        role: 'ADMIN'
+      },
+      select: {
+        id: true
+      }
+    });
 
-    if (adminError || !adminUser) {
+    if (!adminUser) {
       console.error('Admin user not found for blog article creation');
       return;
     } 

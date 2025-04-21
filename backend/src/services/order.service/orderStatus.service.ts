@@ -1,26 +1,26 @@
-import supabase from '../../config/database';
-import { Order, OrderStatus, NotificationType } from '../../models/types'; 
+import { PrismaClient, payment_method_enum } from '@prisma/client';
+import { Order, OrderStatus, NotificationType, PaymentMethod } from '../../models/types';
 import { NotificationService } from '../notification.service';
 
+const prisma = new PrismaClient();
+
 export class OrderStatusService {
-  // Définition des transitions de statut valides
   private static readonly validStatusTransitions: Record<OrderStatus, OrderStatus[]> = {
-    'DRAFT': ['PENDING'],      // Pour les commandes flash
+    'DRAFT': ['PENDING'],
     'PENDING': ['COLLECTING'],
     'COLLECTING': ['COLLECTED'],
     'COLLECTED': ['PROCESSING'],
     'PROCESSING': ['READY'],
     'READY': ['DELIVERING'],
     'DELIVERING': ['DELIVERED'],
-    'DELIVERED': [],  // Statut final
-    'CANCELLED': []   // Statut final
+    'DELIVERED': [],
+    'CANCELLED': []
   };
 
-  // Valider la transition de statut
   private static validateStatusTransition(currentStatus: OrderStatus, newStatus: OrderStatus): boolean {
     const validNextStatuses = this.validStatusTransitions[currentStatus];
     return validNextStatuses.includes(newStatus);
-  } 
+  }
 
   static async updateOrderStatus(
     orderId: string, 
@@ -30,136 +30,152 @@ export class OrderStatusService {
   ): Promise<Order> {
     console.log(`Attempting to update order ${orderId} to status ${newStatus}`);
 
-    // 1. Vérifier si la commande existe et obtenir son statut actuel
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .single();
-
-    if (orderError || !order) {
-      console.error('Order not found:', orderError);
-      throw new Error('Order not found');
-    }
-
-    // 2. Vérifier les autorisations
-    const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'DELIVERY'];
-    if (!allowedRoles.includes(userRole)) {
-      console.error(`Unauthorized role ${userRole} attempting to update order status`);
-      throw new Error('Unauthorized to update order status');
-    }
-
-    // 3. Valider la transition de statut
-    if (!this.validateStatusTransition(order.status, newStatus)) {
-      console.error(`Invalid status transition from ${order.status} to ${newStatus}`);
-      throw new Error(`Invalid status transition from ${order.status} to ${newStatus}`);
-    }
-
-    // 4. Mettre à jour le statut
-    const { data: updatedOrder, error: updateError } = await supabase
-      .from('orders')
-      .update({
-        status: newStatus,
-        updatedAt: new Date()
-      })
-      .eq('id', orderId)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error('Error updating order status:', updateError);
-      throw updateError;
-    }
-
-    // 5. Si le statut est "DELIVERED", mettre à jour les statistiques
-    if (newStatus === 'DELIVERED' && order.status !== 'DELIVERED') {
-      await this.handleDeliveredStatus(orderId, order.userId);
-    }
-
-    // 6. Notifier le client du changement de statut
     try {
+      // 1. Vérifier si la commande existe
+      const order = await prisma.orders.findUnique({
+        where: { id: orderId },
+        include: {
+          order_items: {
+            include: {
+              article: true
+            }
+          }
+        }
+      });
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      // 2. Vérifier les autorisations
+      const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'DELIVERY'];
+      if (!allowedRoles.includes(userRole)) {
+        throw new Error('Unauthorized to update order status');
+      }
+
+      // 3. Valider la transition de statut
+      if (!this.validateStatusTransition(order.status as OrderStatus, newStatus)) {
+        throw new Error(`Invalid status transition from ${order.status} to ${newStatus}`);
+      }
+
+      // Conversion du type payment_method_enum vers PaymentMethod
+      const convertPaymentMethod = (method: payment_method_enum | null): PaymentMethod => {
+        switch (method) {
+          case 'CASH':
+            return PaymentMethod.CASH;
+          case 'ORANGE_MONEY':
+            return PaymentMethod.ORANGE_MONEY;
+          default:
+            return PaymentMethod.CASH;
+        }
+      };
+
+      // 4. Mettre à jour le statut
+      const updatedOrder = await prisma.orders.update({
+        where: { id: orderId },
+        data: {
+          status: newStatus,
+          updatedAt: new Date()
+        },
+        include: {
+          order_items: {
+            include: {
+              article: true
+            }
+          },
+          service_types: true
+        }
+      });
+
+      // 5. Si le statut est "DELIVERED", mettre à jour les statistiques
+      if (newStatus === 'DELIVERED' && order.status !== 'DELIVERED') {
+        await this.handleDeliveredStatus(orderId, order.userId);
+      }
+
+      // 6. Notifier le client
       await NotificationService.createOrderNotification(
         order.userId,
         orderId,
         NotificationType.ORDER_STATUS_UPDATED,
         { newStatus }
       );
-    } catch (notifError) {
-      console.error('Error sending notification:', notifError);
-      // Ne pas bloquer la mise à jour du statut si la notification échoue
-    }
 
-    return updatedOrder;
+      // 7. Formater la réponse selon l'interface Order
+      return {
+        id: updatedOrder.id,
+        userId: updatedOrder.userId,
+        service_id: updatedOrder.serviceId || '',
+        address_id: updatedOrder.addressId || '',
+        status: updatedOrder.status as OrderStatus,
+        isRecurring: updatedOrder.isRecurring || false,
+        recurrenceType: updatedOrder.recurrenceType || 'NONE',
+        totalAmount: Number(updatedOrder.totalAmount || 0),
+        collectionDate: updatedOrder.collectionDate || undefined,
+        deliveryDate: updatedOrder.deliveryDate || undefined,
+        createdAt: updatedOrder.createdAt || new Date(),
+        updatedAt: updatedOrder.updatedAt || new Date(),
+        service_type_id: updatedOrder.service_type_id,
+        paymentStatus: updatedOrder.status as any,
+        paymentMethod: convertPaymentMethod(updatedOrder.paymentMethod),
+        affiliateCode: updatedOrder.affiliateCode || undefined,
+        items: updatedOrder.order_items.map(item => ({
+          id: item.id,
+          orderId: item.orderId,
+          articleId: item.articleId,
+          serviceId: item.serviceId,
+          quantity: item.quantity,
+          unitPrice: Number(item.unitPrice),
+          isPremium: item.isPremium || false,
+          article: item.article ? {
+            id: item.article.id,
+            categoryId: item.article.categoryId || '',
+            name: item.article.name,
+            description: item.article.description || undefined,
+            basePrice: Number(item.article.basePrice),
+            premiumPrice: Number(item.article.premiumPrice || 0),
+            createdAt: item.article.createdAt || new Date(),
+            updatedAt: item.article.updatedAt || new Date()
+          } : undefined,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        }))
+      };
+
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
   }
 
   private static async handleDeliveredStatus(orderId: string, userId: string): Promise<void> {
     try {
-      // Récupérer les détails de la commande pour les statistiques
-      const { data: orderDetails, error: orderError } = await supabase
-        .from('orders')
-        .select('totalAmount')
-        .eq('id', orderId)
-        .single();
+      await prisma.orders.update({
+        where: { id: orderId },
+        data: {
+          updatedAt: new Date()
+        }
+      });
 
-      if (orderError) {
-        console.error('Error fetching order details:', orderError);
-        return;
-      }
-
-      // Ajouter à l'historique des commandes livrées
-      const { error: historyError } = await supabase
-        .from('delivery_history')
-        .insert([{
-          order_id: orderId,
-          user_id: userId,
-          delivery_date: new Date(),
-          total_amount: orderDetails.totalAmount,
-          created_at: new Date()
-        }]);
-
-      if (historyError) {
-        console.error('Error adding to delivery history:', historyError);
-      }
-
-      // Log de la mise à jour dans les statistiques
-      const { error: logError } = await supabase
-        .from('order_status_logs')
-        .insert([{
-          order_id: orderId,
-          previous_status: 'DELIVERING',
-          new_status: 'DELIVERED',
-          updated_by: userId,
-          created_at: new Date()
-        }]);
-
-      if (logError) {
-        console.error('Error adding status log:', logError);
-      }
     } catch (error) {
       console.error('Error updating delivery statistics:', error);
     }
   }
 
   static async deleteOrder(orderId: string, userId: string, userRole: string): Promise<void> {
-    const { data: order } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .single();
+    const order = await prisma.orders.findUnique({
+      where: { id: orderId }
+    });
 
     if (!order) {
       throw new Error('Order not found');
     }
 
-    if (order.user_id !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
+    if (order.userId !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
       throw new Error('Unauthorized to delete order');
     }
 
-    const { error } = await supabase
-      .from('orders')
-      .delete()
-      .eq('id', orderId);
-
-    if (error) throw error;
+    await prisma.orders.delete({
+      where: { id: orderId }
+    });
   }
 }

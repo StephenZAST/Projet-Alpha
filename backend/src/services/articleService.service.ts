@@ -1,57 +1,54 @@
-import supabase from '../config/database';
-import { ArticleService } from '../models/types'; 
-import { v4 as uuidv4 } from 'uuid';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export class ArticleServiceService {
-  static async createArticleService(articleId: string, serviceId: string, priceMultiplier: number): Promise<ArticleService> {
-    const newArticleService: ArticleService = {
-      id: uuidv4(),
-      articleId: articleId,
-      serviceId: serviceId,
-      priceMultiplier: priceMultiplier,
-      createdAt: new Date()
-    };
-
-    const { data, error } = await supabase
-      .from('article_services')
-      .insert([newArticleService])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return data;
+  static async createArticleService(articleId: string, serviceId: string, priceMultiplier: number) {
+    return await prisma.article_services.create({
+      data: {
+        article_id: articleId,
+        service_id: serviceId,
+        price_multiplier: priceMultiplier
+      },
+      include: {
+        articles: true,
+        services: true
+      }
+    });
   }
 
-  static async getAllArticleServices(): Promise<ArticleService[]> {
-    const { data, error } = await supabase
-      .from('article_services')
-      .select('*');
-
-    if (error) throw error;
-
-    return data;
-  }  
-
-  static async updateArticleService(articleServiceId: string, priceMultiplier: number): Promise<ArticleService> {
-    const { data, error } = await supabase
-      .from('article_services')
-      .update({ priceMultiplier, updatedAt: new Date() })
-      .eq('id', articleServiceId)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return data;
+  static async getAllArticleServices() {
+    return await prisma.article_services.findMany({
+      include: {
+        articles: true,
+        services: true
+      }
+    });
   }
 
-  static async deleteArticleService(articleServiceId: string): Promise<void> {
-    const { error } = await supabase
-      .from('article_services')
-      .delete()
-      .eq('id', articleServiceId);
+  static async updateArticleService(id: string, priceMultiplier: number) {
+    return await prisma.article_services.update({
+      where: { id },
+      data: { price_multiplier: priceMultiplier },
+      include: {
+        articles: true,
+        services: true
+      }
+    });
+  }
 
-    if (error) throw error;
+  static async deleteArticleService(id: string) {
+    return await prisma.article_services.delete({
+      where: { id }
+    });
+  }
+
+  static async getByArticleId(articleId: string) {
+    return await prisma.article_services.findMany({
+      where: { article_id: articleId },
+      include: {
+        services: true
+      }
+    });
   }
 }

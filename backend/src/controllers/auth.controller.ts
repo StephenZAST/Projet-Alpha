@@ -48,7 +48,7 @@ export class AuthController {
 
         // Récupérer l'utilisateur avec ses adresses
         const userData = await AuthService.getCurrentUser(user.id);
-        const userAddresses = userData.addresses?.filter((addr: { user_id: string; }) => addr.user_id === user.id) || [];
+        const userAddresses = userData.addresses?.filter(addr => addr.user_id === userData.id) || [];
 
         // Envoyer la réponse
         res.json({

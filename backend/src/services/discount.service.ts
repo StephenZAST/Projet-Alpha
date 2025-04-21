@@ -1,5 +1,7 @@
-import supabase from '../config/database'; 
+import { PrismaClient } from '@prisma/client';
 import { DiscountType, DiscountRule, Discount, DiscountResult } from '../models/discount.types';
+
+const prisma = new PrismaClient();
 
 export class DiscountService {
   static async calculateOrderDiscounts(params: {
@@ -56,10 +58,11 @@ export class DiscountService {
   }
 
   private static async isFirstOrder(userId: string): Promise<boolean> {
-    const { count } = await supabase
-      .from('orders')
-      .select('id', { count: 'exact' })
-      .eq('user_id', userId);
+    const count = await prisma.orders.count({
+      where: {
+        userId: userId
+      }
+    });
     
     return count === 0;
   }
@@ -74,16 +77,43 @@ export class DiscountService {
   }
 
   private static async getActiveOffers(offerIds: string[]): Promise<DiscountRule[]> {
-    const { data: offers } = await supabase
-      .from('discount_rules')
-      .select('*')
-      .in('id', offerIds)
-      .eq('isActive', true)
-      .lte('startDate', new Date().toISOString())
-      .gte('endDate', new Date().toISOString())
-      .order('priority', { ascending: true });
+    const offers = await prisma.offers.findMany({
+      where: {
+      id: {
+        in: offerIds
+      },
+      is_active: true,
+      startDate: {
+        lte: new Date()
+      },
+      endDate: {
+        gte: new Date()
+      }
+      },
+      select: {
+      id: true,
+      name: true,
+      discountType: true,
+      discountValue: true,
+      maxDiscountAmount: true,
+      isCumulative: true,
+      minPurchaseAmount: true
+      }
+    });
 
-    return offers || [];
+    return offers.map(offer => ({
+      id: offer.id,
+      name: offer.name,
+      type: offer.discountType as DiscountType,
+      value: Number(offer.discountValue),
+      maxValue: offer.maxDiscountAmount ? Number(offer.maxDiscountAmount) : undefined,
+      priority: 1, // Default priority for admin offers
+      isCumulative: offer.isCumulative ?? false,
+      conditions: {
+      minOrderAmount: offer.minPurchaseAmount ? Number(offer.minPurchaseAmount) : undefined
+      },
+      isActive: true
+    }));
   }
 
   private static async calculateAdminOfferDiscounts(
@@ -117,13 +147,17 @@ export class DiscountService {
     points: number,
     remainingTotal: number
   ): Promise<Discount | null> {
-    const { data: loyalty } = await supabase
-      .from('loyalty_points')
-      .select('pointsBalance')
-      .eq('user_id', userId)
-      .single();
+    const loyalty = await prisma.loyalty_points.findUnique({
+      where: {
+        user_id: userId
+      },
+      select: {
+        pointsBalance: true
+      }
+    });
 
-    if (!loyalty || loyalty.pointsBalance < points) {
+    // Check if loyalty exists and has a valid points balance
+    if (!loyalty || !loyalty.pointsBalance || loyalty.pointsBalance < points) {
       return null;
     }
 

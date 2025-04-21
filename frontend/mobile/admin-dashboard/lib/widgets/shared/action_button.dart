@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../constants.dart';
-import '../../theme/glass_style.dart';
 
 enum ActionButtonVariant {
   filled, // Fond coloré plein

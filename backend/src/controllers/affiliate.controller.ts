@@ -1,44 +1,57 @@
 import { Request, Response } from 'express';
+import { PrismaClient, status } from '@prisma/client';
 import { AffiliateService, AffiliateWithdrawalService } from '../services/affiliate.service/index';
-import { validatePaginationParams } from '../utils/pagination'; 
+import { validatePaginationParams } from '../utils/pagination';
 import supabase from '../config/database';
 import { INDIRECT_COMMISSION_RATE, PROFIT_MARGIN_RATE } from '../services/affiliate.service/constants';
+import { NotificationSettings, AffiliateProfile } from '../models/types';
+
+const prisma = new PrismaClient();
 
 export class AffiliateController {
   static async getProfile(req: Request, res: Response) {
-   try {
-     const userId = req.user?.id;
-     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-     const profile = await AffiliateService.getProfile(userId);
-     res.json({
-       data: profile,
-       meta: {
-         transactionsCount: profile.recentTransactions?.length || 0
-       } 
-     });
-   } catch (error: any) {
-     console.error('[AffiliateController] GetProfile error:', error);
-     const status = error.message === 'Affiliate profile not found' ? 404 : 500;
-     res.status(status).json({ error: error.message });
-   }
-  } 
+      const profile = await AffiliateService.getProfile(userId);
+      if (!profile) {
+        return res.status(404).json({ error: 'Profile not found' });
+      }
+
+      const recentTransactions = await prisma.commission_transactions.findMany({
+        where: { affiliate_id: profile.id },
+        orderBy: { created_at: 'desc' },
+        take: 5
+      });
+
+      res.json({
+        success: true,
+        data: {
+          ...profile,
+          transactionsCount: recentTransactions?.length || 0,
+          recentTransactions
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 
   static async getLevels(req: Request, res: Response) {
     try {
-      const { data: levels, error } = await supabase
-        .from('affiliate_levels')
-        .select('*')
-        .order('min_earnings', { ascending: true });
-
-      if (error) throw error;
+      const levels = await prisma.affiliate_levels.findMany({
+        orderBy: {
+          minEarnings: 'asc'
+        }
+      });
 
       const formattedLevels = levels.map(level => ({
         id: level.id,
         name: level.name,
-        minEarnings: level.min_earnings,
-        commissionRate: level.commission_rate,
-        description: `${level.commission_rate}% de commission sur les ventes directes`
+        minEarnings: level.minEarnings,
+        commissionRate: level.commissionRate,
+        description: `${level.commissionRate}% de commission sur les ventes directes`
       }));
 
       const additionalInfo = {
@@ -69,8 +82,43 @@ export class AffiliateController {
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
       const { phone, notificationPreferences } = req.body;
-      const profile = await AffiliateService.updateProfile(userId, { phone, notificationPreferences });
-      res.json({ data: profile });
+
+      const preferences: NotificationSettings = {
+        email: notificationPreferences?.email ?? true,
+        push: notificationPreferences?.push ?? true,
+        sms: notificationPreferences?.sms ?? false,
+        order_updates: notificationPreferences?.order_updates ?? true,
+        promotions: notificationPreferences?.promotions ?? true,
+        payments: notificationPreferences?.payments ?? true,
+        loyalty: notificationPreferences?.loyalty ?? true
+      };
+                                              
+      // Mise à jour du profil affilié avec le type correct
+      const profile = await AffiliateService.updateProfile(userId, {
+        notificationPreferences: preferences as NotificationSettings
+      });
+
+      // Recherche des préférences existantes
+      const existingPrefs = await prisma.notification_preferences.findFirst({
+        where: { user_id: userId }
+      });
+
+      // Mise à jour ou création des préférences
+      if (existingPrefs) {
+        await prisma.notification_preferences.update({
+          where: { id: existingPrefs.id },
+          data: preferences
+        });
+      } else {
+        await prisma.notification_preferences.create({
+          data: {
+            ...preferences,
+            user_id: userId
+          }
+        });
+      }
+
+      res.json({ success: true, data: profile });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -81,9 +129,21 @@ export class AffiliateController {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-      const pagination = validatePaginationParams(req.query);
-      const commissions = await AffiliateService.getCommissions(userId, pagination);
-      res.json(commissions);
+      const { page = 1, limit = 10 } = req.query;
+      const commissions = await AffiliateService.getCommissions(
+        userId,
+        Number(page),
+        Number(limit)
+      );
+
+      res.json({
+        success: true,
+        data: commissions.data.map(c => ({
+          ...c,
+          amount: Number(c.amount)
+        })),
+        pagination: commissions.pagination
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -103,11 +163,14 @@ export class AffiliateController {
         return res.status(400).json({ error: 'Amount must be a number' });
       }
 
-      const { data: profile } = await supabase
-        .from('affiliate_profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
+      const profile = await prisma.affiliate_profiles.findUnique({
+        where: {
+          user_id: userId
+        },
+        select: {
+          id: true
+        }
+      });
 
       if (!profile) {
         return res.status(404).json({ error: 'Affiliate profile not found' });
@@ -117,7 +180,7 @@ export class AffiliateController {
       res.json({
         data: {
           id: result.id,
-          amount: Math.abs(result.amount),
+          amount: Math.abs(result.amount.toNumber()),
           status: result.status,
           createdAt: result.created_at
         }
@@ -131,19 +194,18 @@ export class AffiliateController {
 
   static async getWithdrawals(req: Request, res: Response) {
     try {
-      // Vérifier les droits admin
       if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
       const pagination = validatePaginationParams(req.query);
       const { status } = req.query;
-      
+
       const withdrawals = await AffiliateWithdrawalService.getWithdrawals(
         pagination,
         status as string | undefined
       );
-      
+
       res.json(withdrawals);
     } catch (error: any) {
       console.error('Get withdrawals error:', error);
@@ -153,7 +215,6 @@ export class AffiliateController {
 
   static async getPendingWithdrawals(req: Request, res: Response) {
     try {
-      // Vérifier les droits admin
       if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
         return res.status(403).json({ error: 'Forbidden' });
       }
@@ -169,7 +230,6 @@ export class AffiliateController {
 
   static async rejectWithdrawal(req: Request, res: Response) {
     try {
-      // Vérifier les droits admin
       if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
         return res.status(403).json({ error: 'Forbidden' });
       }
@@ -194,7 +254,6 @@ export class AffiliateController {
 
   static async approveWithdrawal(req: Request, res: Response) {
     try {
-      // Vérifier les droits admin
       if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
         return res.status(403).json({ error: 'Forbidden' });
       }
@@ -213,15 +272,15 @@ export class AffiliateController {
     try {
       const pagination = validatePaginationParams(req.query);
       const { status, query } = req.query;
-      
+
       const affiliates = await AffiliateService.getAllAffiliates(
         pagination,
         {
-          status: status as string | undefined,
+          status: status as status | undefined,
           query: query as string | undefined,
         }
       );
-      
+
       res.json({ data: affiliates });
     } catch (error: any) {
       console.error('Get all affiliates error:', error);
@@ -261,8 +320,8 @@ export class AffiliateController {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-      const result = await AffiliateService.generateAffiliateCode(userId);
-      res.json({ data: result });
+      const affiliateCode = await AffiliateService.generateCode(userId);
+      res.json({ success: true, data: { affiliateCode } });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -286,7 +345,7 @@ export class AffiliateController {
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
       const level = await AffiliateService.getCurrentLevel(userId);
-      res.json({ data: level });
+      res.json({ success: true, data: level });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import supabase from '../../config/database';
+import prisma from '../../config/prisma';
 import PDFDocument from 'pdfkit';
-import { OrderSharedMethods, OrderItemWithArticle } from './shared';  
+import { OrderSharedMethods, OrderItemWithArticle } from './shared';
 
 export class OrderQueryController {
   static getOrderItems = OrderSharedMethods.getOrderItems;
@@ -10,39 +10,33 @@ export class OrderQueryController {
     try {
       const { orderId } = req.params;
       
-      // 1. Récupérer la commande sans les items
-      const { data: order, error } = await supabase
-        .from('orders')
-        .select(`
-          *, 
-          user:users(
-            id,
-            first_name,
-            last_name,
-            email,
-            phone
-          ),
-          service:services(
-            id,
-            name,
-            description
-          ),
-          address:addresses(*)
-        `)
-        .eq('id', orderId)
-        .single();
+      const order = await prisma.orders.findUnique({
+        where: { id: orderId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          },
+          service_types: {  // Changé de service à service_types
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          },
+          address: true
+        }
+      });
 
-      if (error) throw error;
       if (!order) return res.status(404).json({ error: 'Order not found' });
 
-      // 2. Récupérer les items séparément
       const items = await OrderSharedMethods.getOrderItems(orderId);
-
-      // 3. Construire la réponse complète
-      const completeOrder = {
-        ...order,
-        items
-      };
+      const completeOrder = { ...order, items };
 
       res.json({ data: completeOrder });
     } catch (error: any) {
@@ -56,22 +50,20 @@ export class OrderQueryController {
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          service:services(
-            id,
-            name,
-            description
-          )
-        `)
-        .eq('userId', userId)
-        .order('createdAt', { ascending: false });
+      const orders = await prisma.orders.findMany({
+        where: { userId },
+        include: {
+          service_types: {  // Changé de service à service_types
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
 
-      if (error) throw error;
-
-      // Récupérer les items pour chaque commande
       const completeOrders = await Promise.all(
         orders.map(async (order) => ({
           ...order,
@@ -90,29 +82,30 @@ export class OrderQueryController {
     try {
       const limit = parseInt(req.query.limit?.toString() || '5');
 
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          user:users(
-            first_name,
-            last_name,
-            email
-          ),
-          service:services(
-            id,
-            name
-          ),
-          address:addresses(*)
-        `)
-        .order('createdAt', { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
+      const orders = await prisma.orders.findMany({
+        include: {
+          user: {
+            select: {
+              first_name: true,
+              last_name: true,
+              email: true
+            }
+          },
+          service_types: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          address: true
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit
+      });
 
       res.json({
         success: true,
-        data: data
+        data: orders
       });
     } catch (error) {
       console.error('Error fetching recent orders:', error);
@@ -125,16 +118,22 @@ export class OrderQueryController {
 
   static async getOrdersByStatus(req: Request, res: Response) {
     try {
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select('status');
-
-      if (error) throw error;
+      const orders = await prisma.orders.findMany({
+        select: { status: true },
+        where: {
+          status: {
+            not: null
+          }
+        }
+      });
 
       const statusCount = orders.reduce((acc: Record<string, number>, order) => {
-        acc[order.status] = (acc[order.status] || 0) + 1;
+        // Vérification que le status n'est pas null avant de l'utiliser comme index
+        if (order.status) {
+          acc[order.status] = (acc[order.status] || 0) + 1;
+        }
         return acc;
-      }, {});
+      }, {} as Record<string, number>);
 
       res.json({
         success: true,
@@ -151,42 +150,51 @@ export class OrderQueryController {
 
   static async getAllOrders(req: Request, res: Response) {
     try {
-      const { page = 1, limit = 20, status, startDate, endDate } = req.query;
+      const { 
+        page = 1, 
+        limit = 20, 
+        status, 
+        startDate, 
+        endDate 
+      } = req.query;
 
-      let query = supabase
-        .from('orders')
-        .select(`
-          *,
-          user:users(
-            id,
-            first_name,
-            last_name
-          ),
-          service:services(
-            id,
-            name,
-            description
-          )
-        `);
-
-      if (status) {
-        query = query.eq('status', status as string);
-      }
-
+      const skip = (Number(page) - 1) * Number(limit);
+      
+      const where: any = {};
+      if (status) where.status = status;
       if (startDate && endDate) {
-        query = query
-          .gte('createdAt', startDate as string)
-          .lte('createdAt', endDate as string);  
+        where.createdAt = {
+          gte: new Date(startDate as string),
+          lte: new Date(endDate as string)
+        };
       }
 
-      const offset = (Number(page) - 1) * Number(limit);
-      const { data: orders, error, count } = await query
-        .range(offset, offset + Number(limit) - 1)
-        .order('createdAt', { ascending: false });
+      const [orders, totalCount] = await prisma.$transaction([
+        prisma.orders.findMany({
+          where,
+          include: {
+            user: {
+              select: {
+                id: true,
+                first_name: true,
+                last_name: true
+              }
+            },
+            service_types: {
+              select: {
+                id: true,
+                name: true,
+                description: true
+              }
+            }
+          },
+          skip,
+          take: Number(limit),
+          orderBy: { createdAt: 'desc' }
+        }),
+        prisma.orders.count({ where })
+      ]);
 
-      if (error) throw error;
-
-      // Récupérer les items pour chaque commande
       const ordersWithItems = await Promise.all(
         orders.map(async (order) => ({
           ...order,
@@ -199,8 +207,8 @@ export class OrderQueryController {
         pagination: {
           page: Number(page),
           limit: Number(limit),
-          total: count || 0,
-          totalPages: Math.ceil((count || 0) / Number(limit))
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / Number(limit))
         }
       });
     } catch (error: any) {
@@ -213,26 +221,30 @@ export class OrderQueryController {
     try {
       const { orderId } = req.params;
       
-      // Récupérer la commande avec ses détails
-      const { data: order, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          user:users(first_name, last_name, email, phone),
-          service:services(name),
-          address:addresses(*)
-        `)
-        .eq('id', orderId)
-        .single();
+      const order = await prisma.orders.findUnique({
+        where: { id: orderId },
+        include: {
+          user: {
+            select: {
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          },
+          service_types: {
+            select: {
+              name: true
+            }
+          },
+          address: true
+        }
+      });
 
-      if (error) throw error;
       if (!order) return res.status(404).json({ error: 'Order not found' });
 
       const items = await OrderSharedMethods.getOrderItems(orderId);
-      const completeOrder = {
-        ...order,
-        items
-      };
+      const completeOrder = { ...order, items };
 
       const doc = new PDFDocument();
       res.setHeader('Content-Type', 'application/pdf');

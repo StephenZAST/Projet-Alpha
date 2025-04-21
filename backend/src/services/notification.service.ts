@@ -1,57 +1,58 @@
-import supabase from '../config/database';
-import { NotificationType, User, NotificationCreate, NotificationTemplate, Order } from '../models/types'; 
+import { PrismaClient, Prisma, orders, order_items } from '@prisma/client';
+import { NotificationType, User, NotificationCreate, NotificationTemplate, Order } from '../models/types';
+
+const prisma = new PrismaClient();
+
+interface OrderWithRelations extends orders {
+  order_items?: (order_items & {
+    article: {
+      name: string;
+    };
+  })[];
+  service_types?: {
+    name: string;
+  };
+}
 
 export class NotificationService {
-  /**
-   * Envoie une notification basée sur un événement et des règles
-   */
   static async sendNotification(
     userId: string,
     type: NotificationType,
     data: any = {}
   ): Promise<void> {
     try {
-      // 1. Récupérer l'utilisateur et ses préférences
-      const { data: user } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const user = await prisma.users.findUnique({
+        where: { id: userId }
+      });
 
       if (!user) throw new Error('User not found');
 
-      // 2. Récupérer la règle de notification appropriée
-      const { data: rule } = await supabase
-        .from('notification_rules')
-        .select('*')
-        .eq('event_type', type)
-        .eq('user_role', user.role)
-        .eq('is_active', true)
-        .single();
- 
-      if (!rule) {
-        console.log(`No notification rule found for type ${type} and role ${user.role}`);
-        return;
-      } 
+      const rule = await prisma.notification_rules.findFirst({
+        where: {
+          event_type: type,
+          user_role: user.role || 'CLIENT',
+          is_active: true
+        }
+      });
 
-      // 3. Construire le message à partir du template
-      const message = this.buildNotificationMessage(rule.template, {
+      if (!rule) {
+        console.log(`No notification rule found for type ${type} and role ${user.role || 'CLIENT'}`);
+        return;
+      }
+
+      const message = this.buildNotificationMessage(rule.template || '', {
         ...data,
         userName: `${user.first_name} ${user.last_name}`,
       });
 
-      // 4. Créer la notification en base
       await this.createDatabaseNotification(userId, type, message, data);
 
     } catch (error) {
       console.error('[NotificationService] Error sending notification:', error);
-      throw new Error('Failed to send notification');
+      throw error;
     }
   }
 
-  /**
-   * Envoie une notification concernant une commande
-   */
   static async createOrderNotification(
     userId: string,
     orderId: string,
@@ -59,57 +60,57 @@ export class NotificationService {
     additionalData: any = {}
   ): Promise<void> {
     try {
-      // 1. Récupérer les détails de la commande
-      const { data: order } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          service:services(name),
-          items:order_items(
-            quantity,
-            article:articles(name)
-          )
-        `)
-        .eq('id', orderId)
-        .single();
+      const order = await prisma.orders.findUnique({
+        where: { id: orderId },
+        include: {
+          service_types: {
+            select: {
+              name: true
+            }
+          },
+          order_items: {
+            include: {
+              article: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      }) as OrderWithRelations | null;
 
       if (!order) throw new Error('Order not found');
 
-      // 2. Préparer les données pour la notification
       const notificationData = {
         orderId,
         orderStatus: order.status,
-        serviceName: order.service?.name,
+        serviceName: order.service_types?.name,
         totalAmount: order.totalAmount,
-        items: order.items?.map((item: any) => ({
-          name: item.article?.name,
+        items: order.order_items?.map(item => ({
+          name: item.article?.name ?? 'Unknown Article',
           quantity: item.quantity
         })),
         ...additionalData
       };
 
-      // 3. Envoyer la notification au client
       await this.sendNotification(userId, type, notificationData);
 
-      // 4. Si la commande a un code affilié, notifier l'affilié
       if (order.affiliateCode) {
-        const { data: affiliate } = await supabase
-          .from('affiliate_profiles')
-          .select('user_id')
-          .eq('affiliate_code', order.affiliateCode)
-          .single();
+        const affiliate = await prisma.affiliate_profiles.findFirst({
+          where: { affiliate_code: order.affiliateCode }
+        });
 
         if (affiliate) {
           await this.sendAffiliateNotification(
             affiliate.user_id,
             orderId,
-            order.totalAmount
+            Number(order.totalAmount)
           );
         }
       }
 
-      // 5. Notifier les admins si nécessaire
-      if (['READY', 'DELIVERED'].includes(order.status)) {
+      if (['READY', 'DELIVERED'].includes(order.status || '')) {
         await this.notifyAdmins(NotificationType.ORDER_STATUS_UPDATED, {
           orderId,
           status: order.status,
@@ -119,72 +120,59 @@ export class NotificationService {
 
     } catch (error) {
       console.error('[NotificationService] Error creating order notification:', error);
-      throw new Error('Failed to create order notification');
+      throw error;
     }
   }
 
-  /**
-   * Envoie une notification à un affilié
-   */
   static async sendAffiliateNotification(
     affiliateUserId: string,
     orderId: string,
     orderAmount: number
   ): Promise<void> {
     try {
-      const { data: affiliate } = await supabase
-        .from('affiliate_profiles')
-        .select('*')
-        .eq('user_id', affiliateUserId)
-        .single();
+      const affiliate = await prisma.affiliate_profiles.findFirst({
+        where: { user_id: affiliateUserId }
+      });
 
       if (!affiliate) return;
 
-      const commissionAmount = orderAmount * (affiliate.commission_rate / 100);
+      const commissionAmount = orderAmount * (Number(affiliate.commission_rate) / 100);
 
       await this.sendNotification(affiliateUserId, NotificationType.ORDER_CREATED, {
         orderId,
         orderAmount,
         commissionAmount,
-        currentBalance: affiliate.commission_balance + commissionAmount
+        currentBalance: Number(affiliate.commission_balance) + commissionAmount
       });
 
     } catch (error) {
       console.error('[NotificationService] Error sending affiliate notification:', error);
-      throw new Error('Failed to send affiliate notification');
+      throw error;
     }
   }
 
-  /**
-   * Notifie tous les administrateurs
-   */
   private static async notifyAdmins(
     type: NotificationType,
     data: any
   ): Promise<void> {
     try {
-      // Récupérer tous les admins
-      const { data: admins } = await supabase
-        .from('users')
-        .select('id')
-        .in('role', ['ADMIN', 'SUPER_ADMIN']);
+      const admins = await prisma.users.findMany({
+        where: {
+          role: {
+            in: ['ADMIN', 'SUPER_ADMIN']
+          }
+        }
+      });
 
-      if (!admins) return;
-
-      // Envoyer la notification à chaque admin
-      for (const admin of admins) {
-        await this.sendNotification(admin.id, type, data);
-      }
-
+      await Promise.all(
+        admins.map(admin => this.sendNotification(admin.id, type, data))
+      );
     } catch (error) {
       console.error('[NotificationService] Error notifying admins:', error);
-      throw new Error('Failed to notify admins');
+      throw error;
     }
   }
 
-  /**
-   * Crée une notification en base de données
-   */
   private static async createDatabaseNotification(
     userId: string,
     type: NotificationType,
@@ -192,141 +180,151 @@ export class NotificationService {
     data: any = {}
   ): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .insert([{
+      await prisma.notifications.create({
+        data: {
           user_id: userId,
           type,
           message,
           data,
-          read: false
-        }]);
-
-      if (error) throw error;
-
+          read: false,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      });
     } catch (error) {
       console.error('[NotificationService] Error creating database notification:', error);
-      throw new Error('Failed to create database notification');
+      throw error;
     }
   }
 
-  /**
-   * Construit un message de notification à partir d'un template
-   */
   static async getUserNotifications(userId: string, page = 1, limit = 20) {
     try {
-      const { data, error, count } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .range((page - 1) * limit, page * limit - 1);
-
-      if (error) throw error;
+      const [notifications, total] = await prisma.$transaction([
+        prisma.notifications.findMany({
+          where: { user_id: userId },
+          orderBy: { created_at: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit
+        }),
+        prisma.notifications.count({
+          where: { user_id: userId }
+        })
+      ]);
 
       return {
-        notifications: data || [],
-        total: count || 0,
+        notifications,
+        total,
         page,
-        totalPages: Math.ceil((count || 0) / limit)
+        totalPages: Math.ceil(total / limit)
       };
     } catch (error) {
       console.error('[NotificationService] Error getting user notifications:', error);
-      throw new Error('Failed to get user notifications');
+      throw error;
     }
   }
 
   static async getUnreadCount(userId: string): Promise<number> {
     try {
-      const { count, error } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userId)
-        .eq('read', false);
-
-      if (error) throw error;
-      return count || 0;
+      return await prisma.notifications.count({
+        where: {
+          user_id: userId,
+          read: false
+        }
+      });
     } catch (error) {
       console.error('[NotificationService] Error getting unread count:', error);
-      throw new Error('Failed to get unread count');
+      throw error;
     }
   }
 
   static async markAsRead(userId: string, notificationId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId)
-        .eq('user_id', userId);
-
-      if (error) throw error;
+      await prisma.notifications.updateMany({
+        where: {
+          id: notificationId,
+          user_id: userId
+        },
+        data: {
+          read: true,
+          updated_at: new Date()
+        }
+      });
     } catch (error) {
       console.error('[NotificationService] Error marking notification as read:', error);
-      throw new Error('Failed to mark notification as read');
+      throw error;
     }
   }
 
   static async markAllAsRead(userId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', userId)
-        .eq('read', false);
-
-      if (error) throw error;
+      await prisma.notifications.updateMany({
+        where: {
+          user_id: userId,
+          read: false
+        },
+        data: {
+          read: true,
+          updated_at: new Date()
+        }
+      });
     } catch (error) {
       console.error('[NotificationService] Error marking all notifications as read:', error);
-      throw new Error('Failed to mark all notifications as read');
+      throw error;
     }
   }
 
   static async deleteNotification(userId: string, notificationId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId)
-        .eq('user_id', userId);
-
-      if (error) throw error;
+      await prisma.notifications.deleteMany({
+        where: {
+          id: notificationId,
+          user_id: userId
+        }
+      });
     } catch (error) {
       console.error('[NotificationService] Error deleting notification:', error);
-      throw new Error('Failed to delete notification');
+      throw error;
     }
   }
 
   static async getNotificationPreferences(userId: string): Promise<any> {
     try {
-      const { data, error } = await supabase
-        .from('notification_preferences')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) throw error;
-      return data;
+      return await prisma.notification_preferences.findFirst({
+        where: { user_id: userId }
+      });
     } catch (error) {
       console.error('[NotificationService] Error getting notification preferences:', error);
-      throw new Error('Failed to get notification preferences');
+      throw error;
     }
   }
 
   static async updateNotificationPreferences(userId: string, preferences: any): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('notification_preferences')
-        .upsert({
-          user_id: userId,
-          ...preferences,
-          updated_at: new Date().toISOString()
-        });
+      const existingPreferences = await prisma.notification_preferences.findFirst({
+        where: { user_id: userId }
+      });
 
-      if (error) throw error;
+      if (existingPreferences) {
+        await prisma.notification_preferences.update({
+          where: { id: existingPreferences.id },
+          data: {
+            ...preferences,
+            updated_at: new Date()
+          }
+        });
+      } else {
+        await prisma.notification_preferences.create({
+          data: {
+            user_id: userId,
+            ...preferences,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+      }
     } catch (error) {
       console.error('[NotificationService] Error updating notification preferences:', error);
-      throw new Error('Failed to update notification preferences');
+      throw error;
     }
   }
 
@@ -353,93 +351,81 @@ export class NotificationService {
     data: Record<string, any> = {}
   ): Promise<void> {
     try {
-      // Si le premier argument est un objet NotificationCreate
       if (typeof userIdOrNotification === 'object') {
         const notification = userIdOrNotification;
         
-        // Validation du type
         if (!Object.values(NotificationType).includes(notification.type)) {
           throw new Error(`Invalid notification type: ${notification.type}`);
         }
 
-        const notificationPayload = {
-          user_id: notification.user_id,
-          type: notification.type,
-          message: notification.message,
-          data: notification.data || {},
-          read: notification.read ?? false,
-          created_at: notification.created_at || new Date().toISOString(),
-          updated_at: notification.updated_at || new Date().toISOString()
-        };
+        await prisma.notifications.create({
+          data: {
+            user_id: notification.user_id,
+            type: notification.type,
+            message: notification.message,
+            data: notification.data || {},
+            read: notification.read ?? false,
+            created_at: notification.created_at ? new Date(notification.created_at) : new Date(),
+            updated_at: notification.updated_at ? new Date(notification.updated_at) : new Date()
+          }
+        });
+      } else {
+        const existing = await prisma.notifications.findFirst({
+          where: {
+            user_id: userIdOrNotification,
+            type: type as string,
+            message: message as string,
+            read: false
+          },
+          orderBy: {
+            created_at: 'desc'
+          }
+        });
 
-        const { error } = await supabase
-          .from('notifications')
-          .insert([notificationPayload]);
-
-        if (error) {
-          console.error('[NotificationService] Database error:', error);
-          throw new Error(`Failed to create notification: ${error.message}`);
-        }
-      } 
-      // Si les arguments sont séparés
-      else {
-        const notificationData = data || {};
-        // Vérifier si une notification similaire existe déjà
-        const { data: existing } = await supabase
-          .from('notifications')
-          .select('id')
-          .eq('user_id', userIdOrNotification)
-          .eq('type', type)
-          .eq('message', message)
-          .eq('read', false)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (existing?.length) {
+        if (existing) {
           console.log('[NotificationService] Similar notification exists, skipping');
           return;
         }
 
-        const { error } = await supabase
-          .from('notifications')
-          .insert([{
+        await prisma.notifications.create({
+          data: {
             user_id: userIdOrNotification,
-            type,
-            message,
+            type: type as string,
+            message: message as string,
             data,
             read: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]);
-
-        if (error) throw error;
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
       }
-
-      console.log('[NotificationService] Notification created successfully');
     } catch (error) {
       console.error('[NotificationService] Unexpected error:', error);
       throw error;
     }
   }
 
-  // Add these two methods
   static async sendOrderNotification(order: Order): Promise<void> {
     try {
-      const { data: rules } = await supabase
-        .from('notification_rules')
-        .select('*')
-        .eq('event_type', NotificationType.ORDER_CREATED)
-        .eq('is_active', true);
+      const rules = await prisma.notification_rules.findMany({
+        where: {
+          event_type: NotificationType.ORDER_CREATED,
+          is_active: true
+        }
+      });
 
       if (!rules?.length) {
         console.log('[NotificationService] No active rules found');
         return;
       }
 
-      const { data: users } = await supabase
-        .from('users')
-        .select('id, role')
-        .in('role', ['ADMIN', 'SUPER_ADMIN', 'DELIVERY']);
+      const users = await prisma.users.findMany({
+        where: {
+          role: {
+            in: ['ADMIN', 'SUPER_ADMIN', 'DELIVERY']
+          }
+        }
+      });
 
       if (!users?.length) return;
 
@@ -459,40 +445,45 @@ export class NotificationService {
       );
     } catch (error) {
       console.error('[NotificationService] Error sending order notification:', error);
+      throw error;
     }
   }
 
   static async sendRoleBasedNotifications(
-    order: Order, 
+    order: Order,
     templateData: NotificationTemplate
   ): Promise<void> {
     try {
-      const { data: users } = await supabase
-        .from('users')
-        .select('id, role')
-        .in('role', ['SUPER_ADMIN', 'ADMIN', 'DELIVERY']);
+      const users = await prisma.users.findMany({
+        where: {
+          role: {
+            in: ['SUPER_ADMIN', 'ADMIN', 'DELIVERY']
+          }
+        }
+      });
 
-      if (!users) return;
+      if (!users?.length) return;
 
       await Promise.all(
-        users.map(user => 
+        users.map(user =>
           this.sendNotification(
-        user.id,
-        NotificationType.ORDER_CREATED,
-        {
-          orderId: order.id,
-          title: templateData.title,
-          clientName: templateData.clientName,
-          message: templateData.message,
-          deliveryZone: templateData.deliveryZone,
-          itemCount: templateData.itemCount,
-          amount: user.role === 'DELIVERY' ? undefined : templateData.amount
-        }
+            user.id,
+            NotificationType.ORDER_CREATED,
+            {
+              orderId: order.id,
+              title: templateData.title,
+              clientName: templateData.clientName,
+              message: templateData.message,
+              deliveryZone: templateData.deliveryZone,
+              itemCount: templateData.itemCount,
+              amount: user.role === 'DELIVERY' ? undefined : templateData.amount
+            }
           )
         )
       );
     } catch (error) {
       console.error('[NotificationService] Error sending role-based notifications:', error);
+      throw error;
     }
   }
 }

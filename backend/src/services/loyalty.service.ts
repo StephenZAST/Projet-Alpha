@@ -1,21 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import supabase from '../config/database'; 
-import { 
-  LoyaltyPoints, 
-  PointSource, 
-  PointTransactionType 
-} from '../models/types';
+import { PrismaClient } from '@prisma/client';
+import { LoyaltyPoints, PointSource, PointTransactionType } from '../models/types';
 
-interface LoyaltyTransaction {
-  id: string;
-  user_id: string;
-  points: number;
-  type: 'EARNED' | 'SPENT';
-  source: PointSource;
-  reference_id: string;
-  created_at: Date;
-  updated_at: Date;
-}
+const prisma = new PrismaClient();
 
 export class LoyaltyService {
   static async earnPoints(
@@ -25,99 +12,134 @@ export class LoyaltyService {
     referenceId: string
   ): Promise<LoyaltyPoints> {
     try {
-      // 1. Récupérer les points actuels
-      const { data: loyaltyPoints, error: fetchError } = await supabase
-        .from('loyalty_points')
-        .select('pointsBalance, totalEarned')
-        .eq('user_id', userId)
-        .single();
+      const result = await prisma.$transaction(async (tx) => {
+        const loyaltyPoints = await tx.loyalty_points.findUnique({
+          where: { user_id: userId }
+        });
 
-      if (fetchError) throw fetchError;
+        const currentBalance = loyaltyPoints?.pointsBalance || 0;
+        const currentTotal = loyaltyPoints?.totalEarned || 0;
 
-      // 2. Mettre à jour les points
-      const { data: updatedPoints, error: updateError } = await supabase
-        .from('loyalty_points')
-        .update({ 
-          pointsBalance: (loyaltyPoints?.pointsBalance || 0) + points,
-          totalEarned: (loyaltyPoints?.totalEarned || 0) + points,
-          updated_at: new Date()
-        })
-        .eq('user_id', userId)
-        .select()
-        .single();
+        const updatedPoints = await tx.loyalty_points.update({
+          where: { user_id: userId },
+          data: {
+            pointsBalance: currentBalance + points,
+            totalEarned: currentTotal + points,
+            updatedAt: new Date()
+          }
+        });
 
-      if (updateError) throw updateError;
+        await tx.point_transactions.create({
+          data: {
+            id: uuidv4(),
+            userId,
+            points,
+            type: 'EARNED',
+            source,
+            referenceId,
+            createdAt: new Date()
+          }
+        });
 
-      // 3. Enregistrer la transaction
-      await this.createPointTransaction(
-        userId, 
-        points, 
-        'EARNED', 
-        source, 
-        referenceId
-      );
+        return {
+          id: updatedPoints.id,
+          user_id: updatedPoints.user_id || userId, // Assure une valeur non-null
+          pointsBalance: updatedPoints.pointsBalance || 0,
+          totalEarned: updatedPoints.totalEarned || 0,
+          createdAt: updatedPoints.createdAt || new Date(),
+          updatedAt: updatedPoints.updatedAt || new Date()
+        };
+      });
 
-      return updatedPoints;
+      return result;
     } catch (error) {
       console.error('[LoyaltyService] Error earning points:', error);
       throw error;
     }
   }
 
-  static async spendPoints(userId: string, points: number, source: PointSource, referenceId: string): Promise<LoyaltyPoints> {
-    const { data: loyaltyPoints } = await supabase
-      .from('loyalty_points')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+  static async spendPoints(
+    userId: string, 
+    points: number, 
+    source: PointSource, 
+    referenceId: string
+  ): Promise<LoyaltyPoints> {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const loyaltyPoints = await tx.loyalty_points.findUnique({
+          where: { user_id: userId }
+        });
 
-    if (!loyaltyPoints) {
-      throw new Error('Loyalty points profile not found');
+        const currentBalance = loyaltyPoints?.pointsBalance ?? 0;
+        if (!loyaltyPoints || currentBalance < points) {
+          throw new Error('Insufficient points balance');
+        }
+
+        const updatedPoints = await tx.loyalty_points.update({
+          where: { user_id: userId },
+          data: {
+            pointsBalance: currentBalance - points,
+            updatedAt: new Date()
+          }
+        });
+
+        await tx.point_transactions.create({
+          data: {
+            id: uuidv4(),
+            userId,
+            points: -points,
+            type: 'SPENT',
+            source,
+            referenceId,
+            createdAt: new Date()
+          }
+        });
+
+        // Transformer en type non-null
+        return {
+          id: updatedPoints.id,
+          user_id: updatedPoints.user_id ?? userId,
+          pointsBalance: updatedPoints.pointsBalance ?? 0,
+          totalEarned: updatedPoints.totalEarned ?? 0,
+          createdAt: updatedPoints.createdAt ?? new Date(),
+          updatedAt: updatedPoints.updatedAt ?? new Date()
+        };
+      });
+    } catch (error) {
+      console.error('[LoyaltyService] Error spending points:', error);
+      throw error;
     }
-
-    if (loyaltyPoints.pointsBalance < points) {
-      throw new Error('Insufficient points balance');
-    }
-
-    const newPointsBalance = loyaltyPoints.pointsBalance - points;
-
-    const { data, error } = await supabase
-      .from('loyalty_points')
-      .update({ pointsBalance: newPointsBalance })
-      .eq('user_id', userId)
-      .select()
-      .single();
-
-    if (error) throw error; 
-
-    // Enregistrer la transaction
-    await this.createPointTransaction(userId, points, 'SPENT', source, referenceId);
-
-    return data;
   }
 
-  static async getPointsBalance(userId: string): Promise<LoyaltyPoints> {
-    const { data, error } = await supabase
-      .from('loyalty_points')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+  static async getPointsBalance(userId: string): Promise<LoyaltyPoints | null> {
+    try {
+      const points = await prisma.loyalty_points.findUnique({
+        where: { user_id: userId }
+      });
 
-    if (error) throw error;
+      if (!points) return null;
 
-    return data;
+      return {
+        id: points.id,
+        user_id: points.user_id || userId,
+        pointsBalance: points.pointsBalance || 0,
+        totalEarned: points.totalEarned || 0,
+        createdAt: points.createdAt || new Date(),
+        updatedAt: points.updatedAt || new Date()
+      };
+    } catch (error) {
+      console.error('[LoyaltyService] Error getting points balance:', error);
+      throw error;
+    }
   }
 
   static async getCurrentPoints(userId: string): Promise<number> {
     try {
-      const { data, error } = await supabase
-        .from('loyalty_points')
-        .select('pointsBalance')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) throw error;
-      return data?.pointsBalance || 0;
+      const points = await prisma.loyalty_points.findUnique({
+        where: { user_id: userId },
+        select: { pointsBalance: true }
+      });
+      return points?.pointsBalance || 0;
     } catch (error) {
       console.error('[LoyaltyService] Error fetching points:', error);
       throw error;
@@ -127,70 +149,43 @@ export class LoyaltyService {
   static async deductPoints(
     userId: string, 
     points: number,
-    referenceId: string  // Ajout du paramètre obligatoire
+    referenceId: string
   ): Promise<void> {
     try {
-      const { data: loyalty, error: fetchError } = await supabase
-        .from('loyalty_points')
-        .select('pointsBalance')
-        .eq('user_id', userId)
-        .single();
-
-      if (fetchError) throw fetchError;
-      if (!loyalty) throw new Error('Loyalty record not found');
-      if (loyalty.pointsBalance < points) throw new Error('Insufficient points');
-
-      const { error: updateError } = await supabase
-        .from('loyalty_points')
-        .update({
-          pointsBalance: loyalty.pointsBalance - points,
-          updatedAt: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-
-      if (updateError) throw updateError;
-
-      // Créer la transaction avec le referenceId
-      const { error: transactionError } = await supabase
-        .from('point_transactions')
-        .insert({
-          userId,
-          points: -points,
-          type: 'SPENT',
-          source: 'ORDER',
-          referenceId,  // Utilisation du referenceId passé
-          createdAt: new Date().toISOString()
+      await prisma.$transaction(async (tx) => {
+        const loyalty = await tx.loyalty_points.findUnique({
+          where: { user_id: userId }
         });
 
-      if (transactionError) throw transactionError;
+        // Vérifier explicitement la valeur de pointsBalance
+        const currentBalance = loyalty?.pointsBalance ?? 0;
+        if (!loyalty || currentBalance < points) {
+          throw new Error('Insufficient points');
+        }
+
+        await tx.loyalty_points.update({
+          where: { user_id: userId },
+          data: {
+            pointsBalance: currentBalance - points,
+            updatedAt: new Date()
+          }
+        });
+
+        await tx.point_transactions.create({
+          data: {
+            id: uuidv4(),
+            userId,
+            points: -points,
+            type: 'SPENT',
+            source: 'ORDER',
+            referenceId,
+            createdAt: new Date()
+          }
+        });
+      });
     } catch (error) {
       console.error('[LoyaltyService] Error deducting points:', error);
       throw error;
     }
-  }
-
-  private static async createPointTransaction(
-    userId: string, 
-    points: number, 
-    type: 'EARNED' | 'SPENT',
-    source: PointSource, 
-    referenceId: string
-  ): Promise<void> {
-    const transaction: LoyaltyTransaction = {
-      id: uuidv4(),
-      user_id: userId,
-      points: points,
-      type: type,
-      source: source,
-      reference_id: referenceId,
-      created_at: new Date(),
-      updated_at: new Date()
-    };
-
-    const { error } = await supabase
-      .from('point_transactions')
-      .insert([transaction]);
-
-    if (error) throw error;
   }
 }

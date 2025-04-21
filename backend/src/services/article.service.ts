@@ -1,62 +1,75 @@
-import supabase from '../config/database';
+import { PrismaClient } from '@prisma/client';
 import { Article, ArticleServiceUpdate, CreateArticleDTO } from '../models/types';
-import { v4 as uuidv4 } from 'uuid'; 
+import { v4 as uuidv4 } from 'uuid';
+
+const prisma = new PrismaClient();
 
 export class ArticleService {
   static async createArticle(articleData: CreateArticleDTO): Promise<Article> {
     const { categoryId, name, description, basePrice, premiumPrice } = articleData;
 
-    const newArticle: Article = {
-      id: uuidv4(),
-      categoryId,
-      name,
-      description,
-      basePrice,
-      premiumPrice,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    const data = await prisma.articles.create({
+      data: {
+        id: uuidv4(),
+        categoryId,
+        name,
+        description,
+        basePrice,
+        premiumPrice,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+    });
+
+    return {
+      id: data.id,
+      name: data.name,
+      categoryId: data.categoryId || '',
+      description: data.description || '',
+      basePrice: Number(data.basePrice),
+      premiumPrice: data.premiumPrice ? Number(data.premiumPrice) : 0,
+      createdAt: data.createdAt || new Date(),
+      updatedAt: data.updatedAt || new Date()
     };
-
-    const { data, error } = await supabase
-      .from('articles')
-      .insert([newArticle])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return data; 
   }
 
   static async getArticleById(articleId: string): Promise<Article> {
-    const { data, error } = await supabase
-      .from('articles')
-      .select('*')
-      .eq('id', articleId)
-      .single();
+    const data = await prisma.articles.findUnique({
+      where: { id: articleId }
+    });
 
-    if (error) throw error;
     if (!data) throw new Error('Article not found');
-
-    return data;
-  } 
+    return {
+      id: data.id,
+      name: data.name,
+      categoryId: data.categoryId || '',
+      description: data.description || '',
+      basePrice: Number(data.basePrice),
+      premiumPrice: data.premiumPrice ? Number(data.premiumPrice) : 0,
+      createdAt: data.createdAt || new Date(),
+      updatedAt: data.updatedAt || new Date()
+    };
+  }
 
   static async getAllArticles(): Promise<Article[]> {
     try {
-      const { data, error } = await supabase
-        .from('articles')
-        .select(`
-          *,
-          category:article_categories(*)
-        `)
-        .eq('isDeleted', false);  // Ne retourner que les articles actifs
+      const data = await prisma.articles.findMany({
+        where: { isDeleted: false },
+        include: {
+          article_categories: true
+        }
+      });
 
-      if (error) {
-        console.error('Supabase error in getAllArticles:', error);
-        throw error;
-      }
-
-      return data || [];
+      return data.map(article => ({
+        id: article.id,
+        name: article.name,
+        categoryId: article.categoryId || '',
+        description: article.description || '',
+        basePrice: Number(article.basePrice),
+        premiumPrice: article.premiumPrice ? Number(article.premiumPrice) : 0,
+        createdAt: article.createdAt || new Date(),
+        updatedAt: article.updatedAt || new Date()
+      }));
     } catch (error) {
       console.error('Error in getAllArticles:', error);
       throw error;
@@ -65,25 +78,25 @@ export class ArticleService {
 
   static async getArticles(): Promise<Article[]> {
     try {
-      const { data, error } = await supabase
-        .from('articles')
-        .select(`
-          *,
-          category:article_categories(name)
-        `);
+      const data = await prisma.articles.findMany({
+        include: {
+          article_categories: {
+            select: { name: true }
+          }
+        }
+      });
 
-      if (error) {
-        console.error('Supabase error in getArticles:', error);
-        throw error;
-      }
-
-      // Transform the data to include category as a string
-      const articles = data?.map(article => ({
-        ...article,
-        category: article.category?.name || 'Uncategorized'
-      })) || [];
-
-      return articles;
+      return data.map(article => ({
+        id: article.id,
+        name: article.name,
+        categoryId: article.categoryId || '',
+        description: article.description || '',
+        basePrice: Number(article.basePrice),
+        premiumPrice: article.premiumPrice ? Number(article.premiumPrice) : 0,
+        createdAt: article.createdAt || new Date(),
+        updatedAt: article.updatedAt || new Date(),
+        category: article.article_categories?.name || 'Uncategorized'
+      }));
     } catch (error) {
       console.error('Error in getArticles:', error);
       throw error;
@@ -92,17 +105,26 @@ export class ArticleService {
 
   static async getArticlesForOrder(): Promise<Article[]> {
     try {
-      const { data, error } = await supabase
-        .from('articles')
-        .select(`
-          *,
-          category:article_categories(name)
-        `)
-        .eq('isDeleted', false)
-        .order('name');
+      const data = await prisma.articles.findMany({
+        where: { isDeleted: false },
+        include: {
+          article_categories: {
+            select: { name: true }
+          }
+        },
+        orderBy: { name: 'asc' }
+      });
 
-      if (error) throw error;
-      return data || [];
+      return data.map(article => ({
+        id: article.id,
+        name: article.name,
+        categoryId: article.categoryId || '',
+        description: article.description || '',
+        basePrice: Number(article.basePrice),
+        premiumPrice: article.premiumPrice ? Number(article.premiumPrice) : 0,
+        createdAt: article.createdAt || new Date(),
+        updatedAt: article.updatedAt || new Date()
+      }));
     } catch (error) {
       console.error('[ArticleService] Error getting articles for order:', error);
       throw error;
@@ -110,27 +132,30 @@ export class ArticleService {
   }
 
   static async getArticleWithServices(articleId: string) {
-    const { data, error } = await supabase
-      .from('articles')
-      .select(`
-        *,
-        article_service_prices (
-          *,
-          service_types (
-            name,
-            description,
-            is_default
-          )
-        ),
-        article_categories (
-          name,
-          description
-        )
-      `)
-      .eq('id', articleId)
-      .single();
+    const data = await prisma.articles.findUnique({
+      where: { id: articleId },
+      include: {
+        article_service_prices: {
+          include: {
+            service_types: {
+              select: {
+                name: true,
+                description: true,
+                is_default: true
+              }
+            }
+          }
+        },
+        article_categories: {
+          select: {
+            name: true,
+            description: true
+          }
+        }
+      }
+    });
 
-    if (error) throw new Error(error.message);
+    if (!data) throw new Error('Article not found');
     return data;
   }
 
@@ -138,55 +163,60 @@ export class ArticleService {
     articleId: string, 
     serviceUpdates: ArticleServiceUpdate[]
   ) {
-    const { data, error } = await supabase.rpc(
-      'update_article_services',
-      {
-        p_article_id: articleId,
-        p_service_updates: serviceUpdates
+    // Mise à jour en transaction pour assurer la cohérence
+    return await prisma.$transaction(async (tx) => {
+      for (const update of serviceUpdates) {
+        await tx.article_service_prices.upsert({
+          where: {
+            service_type_id_article_id: {
+              article_id: articleId,
+              service_type_id: update.service_type_id
+            }
+          },
+          update: {
+            base_price: update.base_price,
+            premium_price: update.premium_price,
+            price_per_kg: update.price_per_kg,
+            is_available: update.is_available
+          },
+          create: {
+            article_id: articleId,
+            service_type_id: update.service_type_id,
+            base_price: update.base_price || 0,
+            premium_price: update.premium_price,
+            price_per_kg: update.price_per_kg,
+            is_available: update.is_available
+          }
+        });
       }
-    );
-
-    if (error) throw new Error(error.message);
-    return data;
+      return await tx.articles.findUnique({
+        where: { id: articleId },
+        include: { article_service_prices: true }
+      });
+    });
   }
 
   static async updateArticle(articleId: string, updateData: Partial<Article>) {
     try {
-      console.log('[ArticleService] Starting update for article:', articleId);
+      const existingArticle = await prisma.articles.findUnique({
+        where: { id: articleId }
+      });
 
-      const { data: existingArticle, error: findError } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('id', articleId)
-        .single();
-
-      if (findError || !existingArticle) {
+      if (!existingArticle) {
         throw new Error('Article not found');
       }
 
-      // Mise à jour avec les champs exacts de la BD
-      const updatePayload = {
-        name: updateData.name,
-        description: updateData.description,
-        basePrice: updateData.basePrice,
-        premiumPrice: updateData.premiumPrice,
-        categoryId: updateData.categoryId,
-        // Ne pas inclure updatedAt car il est mis à jour automatiquement par Supabase
-      };
-
-      console.log('[ArticleService] Update payload:', updatePayload);
-
-      const { data: updatedArticle, error: updateError } = await supabase
-        .from('articles')
-        .update(updatePayload)
-        .eq('id', articleId)
-        .select('*')
-        .single();
-
-      if (updateError) {
-        console.error('[ArticleService] Update error:', updateError);
-        throw updateError;
-      }
+      const updatedArticle = await prisma.articles.update({
+        where: { id: articleId },
+        data: {
+          name: updateData.name,
+          description: updateData.description,
+          basePrice: updateData.basePrice,
+          premiumPrice: updateData.premiumPrice,
+          categoryId: updateData.categoryId,
+          updatedAt: new Date()
+        }
+      });
 
       return updatedArticle;
     } catch (error) {
@@ -197,31 +227,22 @@ export class ArticleService {
 
   static async deleteArticle(articleId: string): Promise<void> {
     try {
-      console.log('[ArticleService] Attempting to delete article:', articleId);
+      const existingArticle = await prisma.articles.findUnique({
+        where: { id: articleId }
+      });
 
-      // Vérifier si l'article existe
-      const { data: existingArticle, error: findError } = await supabase
-        .from('articles')
-        .select('*')
-        .eq('id', articleId)
-        .single();
-
-      if (findError || !existingArticle) {
+      if (!existingArticle) {
         throw new Error('Article not found');
       }
 
-      // Marquer comme supprimé au lieu de supprimer physiquement
-      const { error: updateError } = await supabase
-        .from('articles')
-        .update({
+      await prisma.articles.update({
+        where: { id: articleId },
+        data: {
           isDeleted: true,
-          deletedAt: new Date().toISOString()
-        })
-        .eq('id', articleId);
+          deletedAt: new Date()
+        }
+      });
 
-      if (updateError) throw updateError;
-
-      console.log('[ArticleService] Article marked as deleted:', articleId);
     } catch (error) {
       console.error('[ArticleService] Error deleting article:', error);
       throw error;
@@ -230,19 +251,12 @@ export class ArticleService {
 
   static async archiveArticle(articleId: string, reason: string): Promise<void> {
     try {
-      console.log('[ArticleService] Attempting to archive article:', articleId);
-
-      const { error } = await supabase.rpc('archive_article', {
-        p_article_id: articleId,
-        p_reason: reason
+      await prisma.article_archives.create({
+        data: {
+          id: uuidv4(),
+          original_id: articleId
+        }
       });
-
-      if (error) {
-        console.error('[ArticleService] Archive error:', error);
-        throw error;
-      }
-
-      console.log('[ArticleService] Article archived successfully:', articleId);
     } catch (error) {
       console.error('[ArticleService] Error archiving article:', error);
       throw error;

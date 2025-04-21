@@ -1,91 +1,98 @@
-import supabase from '../../config/database';
-import { AppliedDiscount } from '../../models/types'; 
+import { PrismaClient, Prisma, order_status } from '@prisma/client';
+import { AppliedDiscount } from '../../models/types';
+
+const prisma = new PrismaClient();
 
 export class OrderPaymentService {
   static async getCurrentLoyaltyPoints(userId: string): Promise<number> {
     try {
-      const { data, error } = await supabase
-        .from('loyalty_points')
-        .select('pointsBalance')
-        .eq('user_id', userId)
-        .single();
+      const loyaltyPoints = await prisma.loyalty_points.findUnique({
+        where: {
+          user_id: userId
+        },
+        select: {
+          pointsBalance: true
+        }
+      });
 
-      if (error) {
-        console.error('[OrderPaymentService] Error fetching loyalty points:', error);
-        throw error;
-      }
-
-      return data?.pointsBalance || 0;
+      return loyaltyPoints?.pointsBalance || 0;
     } catch (error) {
       console.error('[OrderPaymentService] Error:', error);
       throw error;
     }
-  } 
+  }
 
   static async calculateDiscounts(
     userId: string,
     totalAmount: number,
     articleIds: string[],
     appliedOfferIds: string[]
-  ): Promise<{ 
+  ): Promise<{
     finalAmount: number;
     appliedDiscounts: AppliedDiscount[];
   }> {
     let finalAmount = totalAmount;
     const appliedDiscounts: AppliedDiscount[] = [];
 
-    const { data: availableOffers } = await supabase
-      .from('offers')
-      .select('*, articles:offer_articles(article_id)')
-      .eq('is_active', true)
-      .lte('start_date', new Date().toISOString())
-      .gte('end_date', new Date().toISOString())
-      .in('id', appliedOfferIds);
+    const availableOffers = await prisma.offers.findMany({
+      where: {
+        id: { in: appliedOfferIds },
+        is_active: true,
+        startDate: { lte: new Date() },
+        endDate: { gte: new Date() }
+      },
+      include: {
+        offer_articles: {
+          select: {
+            article_id: true
+          }
+        }
+      }
+    });
 
-    if (!availableOffers) return { finalAmount, appliedDiscounts };
+    if (!availableOffers.length) return { finalAmount, appliedDiscounts };
 
     const sortedOffers = availableOffers.sort((a, b) =>
       (a.isCumulative === b.isCumulative) ? 0 : a.isCumulative ? 1 : -1
     );
 
     for (const offer of sortedOffers) {
-      const offerArticleIds = offer.articles.map((a: any) => a.article_id);
+      const offerArticleIds = offer.offer_articles.map(a => a.article_id);
       const hasValidArticles = articleIds.some(id => offerArticleIds.includes(id));
 
       if (!hasValidArticles) continue;
-      if (offer.minPurchaseAmount && totalAmount < offer.minPurchaseAmount) continue;
+      if (offer.minPurchaseAmount && totalAmount < Number(offer.minPurchaseAmount)) continue;
 
       let discountAmount = 0;
 
       switch (offer.discountType) {
         case 'PERCENTAGE':
-          discountAmount = (totalAmount * offer.discountValue) / 100;
+          discountAmount = (totalAmount * Number(offer.discountValue)) / 100;
           break;
         case 'FIXED_AMOUNT':
-          discountAmount = offer.discountValue;
+          discountAmount = Number(offer.discountValue);
           break;
         case 'POINTS_EXCHANGE':
-          const { data: loyalty } = await supabase
-            .from('loyalty_points')
-            .select('points_balance')
-            .eq('user_id', userId)
-            .single();
+          const loyalty = await prisma.loyalty_points.findUnique({
+            where: { user_id: userId },
+            select: { pointsBalance: true }
+          });
 
-          if (!loyalty || loyalty.points_balance < offer.pointsRequired!) continue;
+          if (!loyalty || loyalty.pointsBalance! < Number(offer.pointsRequired)) continue;
 
-          discountAmount = offer.discountValue;
+          discountAmount = Number(offer.discountValue);
 
-          await supabase
-            .from('loyalty_points')
-            .update({
-              points_balance: loyalty.points_balance - offer.pointsRequired!
-            })
-            .eq('user_id', userId);
+          await prisma.loyalty_points.update({
+            where: { user_id: userId },
+            data: {
+              pointsBalance: loyalty.pointsBalance! - Number(offer.pointsRequired)
+            }
+          });
           break;
       }
 
       if (offer.maxDiscountAmount) {
-        discountAmount = Math.min(discountAmount, offer.maxDiscountAmount);
+        discountAmount = Math.min(discountAmount, Number(offer.maxDiscountAmount));
       }
 
       finalAmount -= discountAmount;
@@ -105,84 +112,52 @@ export class OrderPaymentService {
     affiliateCode: string,
     totalAmount: number
   ): Promise<void> {
-    // 1. Vérifier si l'affilié existe
-    const { data: affiliate, error: affiliateError } = await supabase
-      .from('affiliate_profiles')
-      .select(`
-        *,
-        level:affiliate_levels!left(
-          id,
-          commissionRate
-        ),
-        user:users(
-          email,
-          first_name,
-          last_name
-        )
-      `)
-      .eq('affiliate_code', affiliateCode)
-      .single();
-
-    if (affiliateError) {
-      console.error('[OrderPaymentService] Error finding affiliate:', affiliateError);
-      throw new Error('Failed to find affiliate');
-    }
+    const affiliate = await prisma.affiliate_profiles.findFirst({
+      where: {
+        affiliate_code: affiliateCode
+      },
+      include: {
+        affiliate_levels: true,
+        users: {
+          select: {
+            email: true,
+            first_name: true,
+            last_name: true
+          }
+        }
+      }
+    });
 
     if (!affiliate) {
-      console.error('[OrderPaymentService] No affiliate found for code:', affiliateCode);
       throw new Error('Affiliate not found');
     }
 
-    // 2. Vérifier le statut et l'état actif
     if (!affiliate.is_active || affiliate.status !== 'ACTIVE') {
-      console.error('[OrderPaymentService] Affiliate is not active:', {
-        code: affiliateCode,
-        is_active: affiliate.is_active,
-        status: affiliate.status,
-        user: affiliate.user
-      });
       throw new Error(`Affiliate is not active. Status: ${affiliate.status}, IsActive: ${affiliate.is_active}`);
     }
 
-    console.log('[OrderPaymentService] Found active affiliate:', {
-      id: affiliate.id,
-      code: affiliate.affiliate_code,
-      level: affiliate.level,
-      user: affiliate.user
-    });
-
     try {
-      const commissionRate = affiliate.level?.commissionRate || affiliate.commission_rate || 10;
+      const commissionRate = Number(affiliate.affiliate_levels?.commissionRate || affiliate.commission_rate || 10);
       const commissionAmount = totalAmount * (commissionRate / 100);
 
-      const { error: updateError } = await supabase
-        .from('affiliate_profiles')
-        .update({
-          commission_balance: affiliate.commission_balance + commissionAmount,
-          total_earned: affiliate.total_earned + commissionAmount,
-          total_referrals: affiliate.total_referrals + 1
-        })
-        .eq('id', affiliate.id);
+      await prisma.affiliate_profiles.update({
+        where: { id: affiliate.id },
+        data: {
+          commission_balance: new Prisma.Decimal(Number(affiliate.commission_balance) + commissionAmount),
+          total_earned: new Prisma.Decimal(Number(affiliate.total_earned) + commissionAmount),
+          total_referrals: (affiliate.total_referrals || 0) + 1
+        }
+      });
 
-      if (updateError) {
-        console.error('[OrderPaymentService] Error updating affiliate balance:', updateError);
-        throw new Error(`Failed to update affiliate balance: ${updateError.message || 'Unknown error'}`);
-      }
-
-      const { error: transactionError } = await supabase
-        .from('commissionTransactions')
-        .insert([{
+      await prisma.commission_transactions.create({
+        data: {
           affiliate_id: affiliate.id,
           order_id: orderId,
-          amount: commissionAmount,
-          status: 'PENDING',
-          created_at: new Date()
-        }]);
-
-      if (transactionError) {
-        console.error('[OrderPaymentService] Error creating commission transaction:', transactionError);
-        throw new Error(`Failed to create commission transaction: ${transactionError.message || 'Unknown error'}`);
-      }
+          amount: new Prisma.Decimal(commissionAmount),
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      });
     } catch (error) {
       console.error('[OrderService] Error processing affiliate commission:', error);
       throw error;
@@ -190,25 +165,20 @@ export class OrderPaymentService {
   }
 
   static async calculateTotal(items: { articleId: string; quantity: number }[]): Promise<number> {
-    let totalAmount = 0;
-
-    const { data: articles } = await supabase
-      .from('articles')
-      .select('*')
-      .in('id', items.map(item => item.articleId));
+    const articles = await prisma.articles.findMany({
+      where: {
+        id: { in: items.map(item => item.articleId) }
+      }
+    });
 
     if (!articles || articles.length !== items.length) {
       throw new Error('One or more articles not found');
     }
 
-    items.forEach(item => {
+    return items.reduce((total, item) => {
       const article = articles.find(a => a.id === item.articleId);
-      if (article) {
-        totalAmount += article.basePrice * item.quantity;
-      }
-    });
-
-    return totalAmount;
+      return total + (article ? Number(article.basePrice) * item.quantity : 0);
+    }, 0);
   }
 
   static async updatePaymentStatus(
@@ -216,14 +186,14 @@ export class OrderPaymentService {
     paymentStatus: string,
     userId: string
   ): Promise<void> {
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        paymentStatus,
+    await prisma.orders.update({
+      where: { 
+        id: orderId 
+      },
+      data: {
+        status: paymentStatus as order_status, // Conversion vers le type enum
         updatedAt: new Date()
-      })
-      .eq('id', orderId);
-
-    if (error) throw error;
+      }
+    });
   }
 }

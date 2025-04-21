@@ -8,10 +8,22 @@ export class ArticleServiceController {
   static async createArticleService(req: Request, res: Response) {
     try {
       const { articleId, serviceId, priceMultiplier } = req.body;
+
+      // Validation
+      if (!articleId || !serviceId || typeof priceMultiplier !== 'number') {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing or invalid required fields'
+        });
+      }
+
       const articleService = await ArticleServiceService.createArticleService(articleId, serviceId, priceMultiplier);
-      res.json({ data: articleService });
+      res.status(201).json({
+        success: true,
+        data: articleService
+      });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      handleError(res, error);
     }
   }
 
@@ -28,10 +40,21 @@ export class ArticleServiceController {
     try {
       const { articleServiceId } = req.params;
       const { priceMultiplier } = req.body;
+
+      if (typeof priceMultiplier !== 'number') {
+        return res.status(400).json({
+          success: false,
+          error: 'Price multiplier must be a number'
+        });
+      }
+
       const articleService = await ArticleServiceService.updateArticleService(articleServiceId, priceMultiplier);
-      res.json({ data: articleService });
+      res.json({
+        success: true,
+        data: articleService
+      });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      handleError(res, error);
     }
   } 
 
@@ -47,6 +70,7 @@ export class ArticleServiceController {
 
   static async getAllPrices(req: Request, res: Response): Promise<void> {
     try {
+      
       const prices = await ArticleServicePriceService.getAllPrices();
       res.json({
         success: true,

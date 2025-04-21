@@ -71,24 +71,42 @@ export interface UserActivityLog {
 }
 
 // Affiliate related types
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  sms: boolean;
+  order_updates: boolean;
+  promotions: boolean;
+  payments: boolean;
+  loyalty: boolean;
+}
+
 export interface AffiliateProfile {
   id: string;
   userId: string;
   affiliateCode: string;
-  parentAffiliateId?: string;
+  parent_affiliate_id?: string;     
+  commission_rate: number;          
   commissionBalance: number;
   totalEarned: number;
+  monthlyEarnings: number;
+  isActive: boolean;
+  notificationPreferences?: NotificationSettings;  // Ajout de cette propriété
+  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED' | null;
+  levelId?: string;
+  level?: {              // Ajout de la propriété level
+    id: string;
+    name: string;
+    minEarnings: number;
+    commissionRate: number;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  totalReferrals?: number;
   createdAt: Date;
   updatedAt: Date;
-  commissionRate: number;
-  status: 'PENDING' | 'ACTIVE' | 'SUSPENDED';
-  isActive: boolean;
-  totalReferrals: number;
-  monthlyEarnings: number;
-  levelId?: string;
-  level?: AffiliateLevel;
 }
- 
+
 export interface AffiliateLevel {
   id: string;
   name: string;
@@ -154,6 +172,12 @@ export enum NotificationType {
   OFFER_DELETED = 'OFFER_DELETED',
   OFFER_SUBSCRIBED = 'OFFER_SUBSCRIBED',
   OFFER_UNSUBSCRIBED = 'OFFER_UNSUBSCRIBED',
+  ARTICLE_CREATED = 'ARTICLE_CREATED',
+  // Ajout des nouveaux types
+  WITHDRAWAL_REQUESTED = 'WITHDRAWAL_REQUESTED',
+  WITHDRAWAL_PROCESSED = 'WITHDRAWAL_PROCESSED',
+  WITHDRAWAL_REJECTED = 'WITHDRAWAL_REJECTED',
+  COMMISSION_EARNED = 'COMMISSION_EARNED'
 }
 
 export interface Notification {
@@ -382,7 +406,8 @@ export interface OrderItem {
 
 export enum PaymentMethod {
   CASH = 'CASH',
-  ORANGE_MONEY = 'ORANGE_MONEY'
+  ORANGE_MONEY = 'ORANGE_MONEY',
+  
 }
 
 export enum PaymentStatus {
@@ -955,4 +980,21 @@ export interface PricingResult {
   subtotal: number;
   discounts: Discount[];
   total: number;
+}
+
+// Ajout des interfaces manquantes
+export interface OrderAdditionalService {
+  id: string;
+  orderId: string;
+  serviceId: string;
+  price: number;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateAdditionalServiceDTO {
+  name: string;
+  description?: string;
+  basePrice: number;
 }

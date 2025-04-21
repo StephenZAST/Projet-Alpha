@@ -1,5 +1,8 @@
-import supabase from '../config/database';
+import { PrismaClient } from '@prisma/client';
 import { ArticleServiceCompatibility } from '../models/types'; 
+import { v4 as uuidv4 } from 'uuid';
+
+const prisma = new PrismaClient();
 
 export class ArticleServiceCompatibilityService {
   static async setCompatibility(
@@ -8,39 +11,54 @@ export class ArticleServiceCompatibilityService {
     isCompatible: boolean
   ): Promise<ArticleServiceCompatibility> {
     try {
-      const { data, error } = await supabase
-        .from('article_service_compatibility')
-        .upsert({
+      const data = await prisma.article_service_compatibility.upsert({
+        where: {
+          service_id_article_id: {
+            article_id: articleId,
+            service_id: serviceId
+          }
+        },
+        update: {
+          is_compatible: isCompatible // Corrected field name
+        },
+        create: {
+          id: uuidv4(),
           article_id: articleId,
           service_id: serviceId,
-          is_compatible: isCompatible,
-          updated_at: new Date()
-        })
-        .select()
-        .single();
+          is_compatible: isCompatible // Corrected field name
+        }
+      });
 
-      if (error) throw error;
-      return data;
+      // Transformation des données pour correspondre au type ArticleServiceCompatibility
+      return {
+        id: data.id,
+        article_id: data.article_id || '',
+        service_id: data.service_id || '',
+        is_compatible: data.is_compatible, // Corrected field name
+        created_at: new Date(),
+        updated_at: new Date()
+      };
     } catch (error) {
       console.error('[ArticleServiceCompatibilityService] Set compatibility error:', error);
       throw error;
     }
-  }  
+  }
 
   static async checkCompatibility(
     articleId: string,
     serviceId: string
   ): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .from('article_service_compatibility')
-        .select('is_compatible')
-        .eq('article_id', articleId)
-        .eq('service_id', serviceId)
-        .single();
+      const data = await prisma.article_service_compatibility.findUnique({
+        where: {
+          service_id_article_id: {
+            article_id: articleId,
+            service_id: serviceId
+          }
+        }
+      });
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return data?.is_compatible ?? false;
+      return data?.is_compatible ?? false; // Corrected field name
     } catch (error) {
       console.error('[ArticleServiceCompatibilityService] Check compatibility error:', error);
       throw error;
@@ -48,15 +66,25 @@ export class ArticleServiceCompatibilityService {
   }
 
   static async getArticleCompatibilities(articleId: string): Promise<ArticleServiceCompatibility[]> {
-    const { data, error } = await supabase
-      .from('article_service_compatibility')
-      .select(`
-        *,
-        service:services(*)
-      `)
-      .eq('article_id', articleId);
+    const data = await prisma.article_service_compatibility.findMany({
+      where: { article_id: articleId },
+      include: {
+        services: true
+      }
+    });
 
-    if (error) throw error;
-    return data || [];
+    return data.map(item => ({
+      id: item.id,
+      article_id: item.article_id || '',
+      service_id: item.service_id || '',
+      is_compatible: item.is_compatible, // Corrected field name
+      service: item.services ? {
+        id: item.services.id,
+        name: item.services.name,
+        description: item.services.description || undefined
+      } : undefined,
+      created_at: new Date(),
+      updated_at: new Date()
+    }));
   }
 }

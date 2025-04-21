@@ -1,30 +1,41 @@
 import { EventEmitter } from 'events';
 import { ArticlePriceCacheService } from '../services/articlePriceCache.service';
 import { NotificationService } from '../services/notification.service';
-import { NotificationType } from '../models/types';
-import supabase from '../config/database'; 
+import { NotificationType, User } from '../models/types';
+import prisma from '../config/prisma';
+import { user_role } from '@prisma/client';
+
+interface PriceUpdateData {
+  articleId: string;
+  serviceTypeId: string;
+  userId: string;
+  oldPrice: number;
+  newPrice: number;
+}
 
 export const priceUpdateEmitter = new EventEmitter();
 
-priceUpdateEmitter.on('price.updated', async (data) => {
+priceUpdateEmitter.on('price.updated', async (data: PriceUpdateData) => {
   try {
     // 1. Invalider le cache
     await ArticlePriceCacheService.invalidatePrice(data.articleId, data.serviceTypeId);
 
     // 2. Récupérer les administrateurs
-    const { data: admins, error } = await supabase
-      .from('users')
-      .select('id')
-      .in('role', ['ADMIN', 'SUPER_ADMIN']);
-
-    if (error) {
-      throw new Error('Failed to fetch admin users');
-    }
+    const admins = await prisma.users.findMany({
+      where: {
+        role: {
+          in: [user_role.ADMIN, user_role.SUPER_ADMIN]
+        }
+      },
+      select: {
+        id: true
+      }
+    });
 
     const notificationType = NotificationType.PRICE_UPDATED;
 
     // 3. Notifier chaque administrateur
-    const notificationPromises = admins.map(admin => 
+    const notificationPromises = admins.map((admin: { id: string }) => 
       NotificationService.sendNotification(
         admin.id,
         notificationType,
@@ -39,7 +50,7 @@ priceUpdateEmitter.on('price.updated', async (data) => {
           }
         }
       )
-    );  
+    );
 
     await Promise.all(notificationPromises);
 

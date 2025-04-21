@@ -1,83 +1,124 @@
-import supabase from '../config/database';
+import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
-import googleTrends from 'google-trends-api'; 
 import { v4 as uuidv4 } from 'uuid';
 import type { TrendsApiOptions, TrendsResult } from '../types';
+import googleTrends from 'google-trends-api';
+
+const prisma = new PrismaClient();
 
 export class BlogArticleService {
   static async createArticle(title: string, content: string, categoryId: string, authorId: string) {
-    const { data, error } = await supabase
-      .from('blog_articles')
-      .insert([{
-        id: uuidv4(),
-        title,
-        content,
-        category_id: categoryId,
-        author_id: authorId,
-        is_published: true,
-        published_at: new Date().toISOString()
-      }])
-      .select('*, blog_categories(*), users!inner(id, first_name, last_name)')
-      .single();
+    try {
+      const article = await prisma.blog_articles.create({
+        data: {
+          id: uuidv4(),
+          author_id: authorId,
+          published_at: new Date()
+        },
+        include: {
+          users: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true
+            }
+          }
+        }
+      });
 
-    if (error) throw error;
-    return data;
-  } 
+      return article;
+    } catch (error) {
+      console.error('[BlogArticleService] Create article error:', error);
+      throw error;
+    }
+  }
 
   static async getAllArticles(includeUnpublished = false) {
-    const query = supabase
-      .from('blog_articles')
-      .select(`
-        *,
-        blog_categories(*),
-        users!inner(id, first_name, last_name)
-      `)
-      .order('created_at', { ascending: false });
+    try {
+      const articles = await prisma.blog_articles.findMany({
+        where: includeUnpublished ? undefined : {
+          published_at: { not: null }
+        },
+        orderBy: {
+          published_at: 'desc'
+        },
+        include: {
+          users: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true
+            }
+          }
+        }
+      });
 
-    if (!includeUnpublished) {
-      query.eq('is_published', true);
+      return articles;
+    } catch (error) {
+      console.error('[BlogArticleService] Get all articles error:', error);
+      throw error;
     }
-
-    const { data, error } = await query;
-    if (error) throw error;
-    return data;
   }
 
   static async updateArticle(articleId: string, title: string, content: string, categoryId: string) {
-    const { data, error } = await supabase
-      .from('blog_articles')
-      .update({
-        title,
-        content,
-        category_id: categoryId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', articleId)
-      .select('*, blog_categories(*), users!inner(id, first_name, last_name)')
-      .single();
+    try {
+      const article = await prisma.blog_articles.update({
+        where: { id: articleId },
+        data: {
+          published_at: new Date()
+        },
+        include: {
+          users: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true
+            }
+          }
+        }
+      });
 
-    if (error) throw error;
-    return data;
+      return article;
+    } catch (error) {
+      console.error('[BlogArticleService] Update article error:', error);
+      throw error;
+    }
   }
 
   static async deleteArticle(articleId: string) {
-    const { error } = await supabase
-      .from('blog_articles')
-      .delete()
-      .eq('id', articleId);
-
-    if (error) throw error;
+    try {
+      await prisma.blog_articles.delete({
+        where: { id: articleId }
+      });
+    } catch (error) {
+      console.error('[BlogArticleService] Delete article error:', error);
+      throw error;
+    }
   }
 
   static async getDefaultCategory() {
-    const { data, error } = await supabase
-      .from('blog_categories')
-      .select('*')
-      .eq('name', 'Nettoyage à Sec')
-      .single();
+    try {
+      const category = await prisma.blog_categories.findFirst({
+        where: {
+          name: 'Nettoyage à Sec'
+        }
+      });
 
-    if (error) throw error;
-    return data;
+      if (!category) {
+        return await prisma.blog_categories.create({
+          data: {
+            id: uuidv4(),
+            name: 'Nettoyage à Sec',
+            description: 'Catégorie par défaut'
+          }
+        });
+      }
+
+      return category;
+    } catch (error) {
+      console.error('[BlogArticleService] Get default category error:', error);
+      throw error;
+    }
   }
 
   static async generateArticle(title: string, context: string, prompts: string[], apiKey: string): Promise<string> {
@@ -147,13 +188,18 @@ export class BlogArticleService {
   }
 
   static async getTrendingTopics(): Promise<string[]> {
-    const trends = await googleTrends.dailyTrends({
-      geo: 'US', // Change to your target region
-    });
+    try {
+      const trends = await googleTrends.dailyTrends({
+        geo: 'US'
+      });
 
-    const parsedTrends = JSON.parse(trends);
-    const trendingTopics = parsedTrends.default.trendingSearchesDays[0].trendingSearches.map((search: any) => search.title.query);
-
-    return trendingTopics;
+      const parsedTrends = JSON.parse(trends);
+      return parsedTrends.default.trendingSearchesDays[0].trendingSearches.map(
+        (search: any) => search.title.query
+      );
+    } catch (error) {
+      console.error('[BlogArticleService] Get trending topics error:', error);
+      throw error;
+    }
   }
 }

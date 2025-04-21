@@ -1,91 +1,124 @@
+import { PrismaClient, status } from '@prisma/client';
 import { AffiliateProfileService } from './affiliateProfile.service';
 import { AffiliateCommissionService } from './affiliateCommission.service';
 import { AffiliateWithdrawalService } from './affiliateWithdrawal.service';
 import { PaginationParams } from '../../utils/pagination';
-import supabase from '../../config/database'; 
+
+const prisma = new PrismaClient();
 
 export class AffiliateService {
   // Profile Management
-  static getProfile = AffiliateProfileService.getProfile;
-  static updateProfile = AffiliateProfileService.updateProfile;
-  static getReferrals = AffiliateProfileService.getReferrals;
-  static getCurrentLevel = AffiliateProfileService.getCurrentLevel;
-  static generateAffiliateCode = AffiliateProfileService.generateAffiliateCode;
+  static getProfile = AffiliateProfileService.getAffiliateProfile;
+  static updateProfile = AffiliateProfileService.updateAffiliateProfile;
+  static getReferrals = AffiliateProfileService.getReferralsByAffiliateId;
   static createAffiliate = AffiliateProfileService.createAffiliate;
 
   // Commission Management
   static getCommissions = AffiliateCommissionService.getCommissions;
-  static calculateCommission = AffiliateCommissionService.calculateCommission;
-  static calculateIndirectCommission = AffiliateCommissionService.calculateIndirectCommission;
+  static calculateCommissionRate = AffiliateCommissionService.calculateCommissionRate;
   static processNewCommission = AffiliateCommissionService.processNewCommission;
-  static updateAffiliateLevels = AffiliateCommissionService.updateAffiliateLevels;
-  static resetMonthlyEarnings = AffiliateCommissionService.resetMonthlyEarnings;
- 
+
   // Withdrawal Management
   static requestWithdrawal = AffiliateWithdrawalService.requestWithdrawal;
   static getWithdrawals = AffiliateWithdrawalService.getWithdrawals;
   static approveWithdrawal = AffiliateWithdrawalService.approveWithdrawal;
   static rejectWithdrawal = AffiliateWithdrawalService.rejectWithdrawal;
- 
-  // Administrative Functions
+
   static async getAllAffiliates(
     pagination: PaginationParams,
-    filters: { status?: string; query?: string; }
+    filters: { status?: status; query?: string; }
   ) {
     const { page = 1, limit = 10 } = pagination;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    const skip = (page - 1) * limit;
 
-    let query = supabase
-      .from('affiliate_profiles')
-      .select(`
-        *,
-        user:users(
-          id,
-          email,
-          first_name,
-          last_name,
-          phone
-        )
-      `, { count: 'exact' });
+    try {
+      // Construction du filtre
+      const whereConditions: any = {};
 
-    if (filters.status) {
-      query = query.eq('status', filters.status);
-    }
-
-    if (filters.query) {
-      query = query.or(`
-        user.email.ilike.%${filters.query}%,
-        user.first_name.ilike.%${filters.query}%,
-        user.last_name.ilike.%${filters.query}%,
-        affiliate_code.ilike.%${filters.query}%
-      `);
-    }
-
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    if (error) throw error;
-
-    const transformedData = data?.map(item => ({
-      ...item,
-      user: item.user ? {
-        ...item.user,
-        firstName: item.user.first_name,
-        lastName: item.user.last_name
-      } : null
-    }));
-
-    return {
-      data: transformedData,
-      pagination: {
-        total: count || 0,
-        currentPage: page,
-        limit,
-        totalPages: Math.ceil((count || 0) / limit)
+      if (filters.status) {
+        whereConditions.status = filters.status;
       }
-    };
+
+      if (filters.query) {
+        whereConditions.OR = [
+          {
+            users: {
+              email: {
+                contains: filters.query,
+                mode: 'insensitive'
+              }
+            }
+          },
+          {
+            users: {
+              first_name: {
+                contains: filters.query,
+                mode: 'insensitive'
+              }
+            }
+          },
+          {
+            users: {
+              last_name: {
+                contains: filters.query,
+                mode: 'insensitive'
+              }
+            }
+          },
+          {
+            affiliate_code: {
+              contains: filters.query,
+              mode: 'insensitive'
+            }
+          }
+        ];
+      }
+
+      const [affiliates, total] = await Promise.all([
+        prisma.affiliate_profiles.findMany({
+          skip,
+          take: limit,
+          where: whereConditions,
+          include: {
+            users: {
+              select: {
+                id: true,
+                email: true,
+                first_name: true,
+                last_name: true,
+                phone: true
+              }
+            }
+          },
+          orderBy: {
+            created_at: 'desc'
+          }
+        }),
+        prisma.affiliate_profiles.count({ where: whereConditions })
+      ]);
+
+      return {
+        data: affiliates.map(affiliate => ({
+          ...affiliate,
+          user: affiliate.users ? {
+            id: affiliate.users.id,
+            email: affiliate.users.email,
+            firstName: affiliate.users.first_name,
+            lastName: affiliate.users.last_name,
+            phone: affiliate.users.phone
+          } : null
+        })),
+        pagination: {
+          total,
+          currentPage: page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      console.error('[AffiliateService] Get all affiliates error:', error);
+      throw error;
+    }
   }
 
   static async updateAffiliateStatus(
@@ -93,44 +126,41 @@ export class AffiliateService {
     status: string,
     isActive: boolean
   ) {
-    const { data: affiliate, error: checkError } = await supabase
-      .from('affiliate_profiles')
-      .select('id, status')
-      .eq('id', affiliateId)
-      .single();
+    try {
+      const updatedAffiliate = await prisma.affiliate_profiles.update({
+        where: { id: affiliateId },
+        data: {
+          status: status as any,
+          is_active: isActive,
+          updated_at: new Date()
+        },
+        include: {
+          users: {
+            select: {
+              id: true,
+              email: true,
+              first_name: true,
+              last_name: true,
+              phone: true
+            }
+          }
+        }
+      });
 
-    if (checkError || !affiliate) {
-      throw new Error('Affiliate not found');
+      return {
+        ...updatedAffiliate,
+        user: updatedAffiliate.users ? {
+          id: updatedAffiliate.users.id,
+          email: updatedAffiliate.users.email,
+          firstName: updatedAffiliate.users.first_name,
+          lastName: updatedAffiliate.users.last_name,
+          phone: updatedAffiliate.users.phone
+        } : null
+      };
+    } catch (error) {
+      console.error('[AffiliateService] Update affiliate status error:', error);
+      throw error;
     }
-
-    const { data: updatedAffiliate, error } = await supabase
-      .from('affiliate_profiles')
-      .update({
-        status,
-        is_active: isActive,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', affiliateId)
-      .select(`
-        *,
-        user:users(
-          id,
-          email,
-          first_name,
-          last_name,
-          phone
-        )
-      `)
-      .single();
-
-    if (error) throw error;
-
-    if (updatedAffiliate?.user) {
-      updatedAffiliate.user.firstName = updatedAffiliate.user.first_name;
-      updatedAffiliate.user.lastName = updatedAffiliate.user.last_name;
-    }
-
-    return updatedAffiliate;
   }
 
   static async createCustomerWithAffiliateCode(
@@ -141,37 +171,53 @@ export class AffiliateService {
     affiliateCode: string,
     phone?: string
   ) {
-    const { data: affiliate } = await supabase
-      .from('affiliate_profiles')
-      .select('id')
-      .eq('affiliate_code', affiliateCode)
-      .single();
+    try {
+      const affiliate = await prisma.affiliate_profiles.findUnique({
+        where: { affiliate_code: affiliateCode }
+      });
 
-    if (!affiliate) {
-      throw new Error('Affiliate code not found');
+      if (!affiliate) {
+        throw new Error('Affiliate code not found');
+      }
+
+      const user = await prisma.users.create({
+        data: {
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          role: 'CLIENT',
+          referral_code: affiliateCode
+        }
+      });
+
+      return {
+        ...user,
+        firstName: user.first_name,
+        lastName: user.last_name
+      };
+    } catch (error) {
+      console.error('[AffiliateService] Create customer with affiliate code error:', error);
+      throw error;
     }
+  }
 
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .insert([{
-        email,
-        password,
-        first_name: firstName,
-        last_name: lastName,
-        phone,
-        role: 'CLIENT',
-        referral_code: affiliateCode
-      }])
-      .select()
-      .single();
+  static async generateCode(userId: string): Promise<string> {
+    const prefix = 'AFF';
+    const timestamp = Date.now().toString(36);
+    const randomStr = Math.random().toString(36).substring(2, 6);
+    return `${prefix}-${timestamp}-${randomStr}`.toUpperCase();
+  }
 
-    if (userError) throw userError;
+  static async getCurrentLevel(userId: string): Promise<any> {
+    // Implémentation de la récupération du niveau
+  }
 
-    return {
-      ...user,
-      firstName: user.first_name,
-      lastName: user.last_name
-    };
+  static async updateProfileSettings(userId: string, data: {
+    notificationSettings?: Record<string, boolean>;
+  }) {
+    // Implémentation de la mise à jour du profil
   }
 }
 

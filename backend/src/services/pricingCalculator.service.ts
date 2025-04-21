@@ -1,6 +1,8 @@
-import supabase from '../config/database'; 
+import { PrismaClient, Prisma } from '@prisma/client';
 import { OrderItem } from '../models/types';
 import { ServiceCompatibilityService } from './serviceCompatibility.service';
+
+const prisma = new PrismaClient();
 
 export class PricingCalculatorService {
   static async calculateOrderPrice(
@@ -8,29 +10,25 @@ export class PricingCalculatorService {
     weight?: number
   ): Promise<{ total: number; breakdown: any[] }> {
     try {
-      // Validation du poids
       if (weight && !await this.validateWeightRange(weight)) {
         throw new Error('Invalid weight range');
       }
 
-      // Vérification de la compatibilité des services
       await this.validateServiceCompatibility(items);
 
       let total = 0;
       const breakdown = [];
 
-      // Calcul basé sur le poids si disponible
       if (weight) {
         const weightCost = await this.calculateWeightBasedPrice(weight);
         total += weightCost.cost;
         breakdown.push(weightCost);
       }
 
-      // Calcul basé sur les articles
       const itemCosts = await this.calculateItemBasedPrices(items);
       total += itemCosts.total;
       breakdown.push(...itemCosts.breakdown);
- 
+
       return { total, breakdown };
     } catch (error) {
       console.error('[PricingCalculatorService] Calculate price error:', error);
@@ -39,15 +37,16 @@ export class PricingCalculatorService {
   }
 
   private static async validateWeightRange(weight: number): Promise<boolean> {
-    const { data } = await supabase
-      .from('weight_based_pricing')
-      .select('*')
-      .lte('min_weight', weight)
-      .gte('max_weight', weight)
-      .eq('is_active', true);
+    const pricing = await prisma.weight_based_pricing.findFirst({
+      where: {
+        AND: [
+          { min_weight: { lte: new Prisma.Decimal(weight) } },
+          { max_weight: { gte: new Prisma.Decimal(weight) } }
+        ]
+      }
+    });
 
-    // Correction : Assurer un retour booléen explicite
-    return Array.isArray(data) && data.length > 0;
+    return !!pricing;
   }
 
   private static async validateServiceCompatibility(
@@ -65,19 +64,20 @@ export class PricingCalculatorService {
   }
 
   private static async calculateWeightBasedPrice(weight: number) {
-    const { data: weightPrice } = await supabase
-      .from('weight_based_pricing')
-      .select('price_per_kg')
-      .lte('min_weight', weight)
-      .gte('max_weight', weight)
-      .eq('is_active', true)
-      .single();
+    const pricing = await prisma.weight_based_pricing.findFirst({
+      where: {
+        AND: [
+          { min_weight: { lte: new Prisma.Decimal(weight) } },
+          { max_weight: { gte: new Prisma.Decimal(weight) } }
+        ]
+      }
+    });
 
-    const cost = weight * (weightPrice?.price_per_kg || 0);
+    const cost = pricing ? Number(pricing.price_per_kg) * weight : 0;
     return {
       type: 'WEIGHT',
       weight,
-      pricePerKg: weightPrice?.price_per_kg,
+      pricePerKg: pricing ? Number(pricing.price_per_kg) : 0,
       cost
     };
   }
@@ -89,17 +89,21 @@ export class PricingCalculatorService {
     const breakdown = [];
 
     for (const item of items) {
-      const { data: price } = await supabase
-        .from('service_specific_prices')
-        .select('base_price, premium_price')
-        .eq('article_id', item.articleId)
-        .eq('service_id', item.serviceId)
-        .single();
+      const price = await prisma.service_specific_prices.findFirst({
+        where: {
+          article_id: item.articleId,
+          service_id: item.serviceId
+        }
+      });
 
       if (price) {
-        const basePrice = item.isPremium ? (price.premium_price || price.base_price) : price.base_price;
+        const basePrice = item.isPremium ? 
+          Number(price.premium_price || price.base_price) : 
+          Number(price.base_price);
+        
         const itemCost = basePrice * item.quantity;
         total += itemCost;
+        
         breakdown.push({
           type: 'ITEM',
           ...item,

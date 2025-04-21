@@ -1,148 +1,215 @@
-import supabase from '../config/database';
+import { PrismaClient } from '@prisma/client';
 import { ServiceType, NotificationType } from '../models/types';
-import { NotificationService } from './notification.service'; 
+import { NotificationService } from './notification.service';
+
+const prisma = new PrismaClient();
 
 export class ServiceTypeService {
   static async create(data: Partial<ServiceType>): Promise<ServiceType> {
     try {
-      const { data: serviceType, error } = await supabase
-        .from('service_types')
-        .insert([{
-          name: data.name,
-          description: data.description,
+      const serviceType = await prisma.service_types.create({
+        data: {
+          name: data.name!,
+          description: data.description || null,
           is_default: data.is_default || false,
           requires_weight: data.requires_weight || false,
           supports_premium: data.supports_premium || false,
           created_at: new Date(),
-          updated_at: new Date()
-        }])
-        .select()
-        .single();
+          updated_at: new Date(),
+          is_active: true
+        }
+      });
 
-      if (error) throw new Error(error.message);
-      return serviceType;
+      // Notify admins
+      await NotificationService.sendNotification(
+        'ADMIN',
+        NotificationType.SERVICE_TYPE_CREATED,
+        {
+          serviceTypeId: serviceType.id,
+          name: serviceType.name
+        }
+      );
+
+      return {
+        id: serviceType.id,
+        name: serviceType.name,
+        description: serviceType.description || undefined,
+        is_default: serviceType.is_default || false,
+        requires_weight: serviceType.requires_weight || false,
+        supports_premium: serviceType.supports_premium || false,
+        is_active: serviceType.is_active || false,
+        created_at: serviceType.created_at || new Date(),
+        updated_at: serviceType.updated_at || new Date()
+      };
     } catch (error) {
       console.error('Error creating service type:', error);
       throw error;
     }
   }
- 
-  static async update(id: string, data: Partial<ServiceType>): Promise<ServiceType> {
-    const { data: serviceType, error } = await supabase
-      .from('service_types')
-      .update({
-        ...data,
-        updated_at: new Date()
-      })
-      .eq('id', id)
-      .select()
-      .single();
 
-    if (error) throw error;
-    return serviceType;
+  static async update(id: string, data: Partial<ServiceType>): Promise<ServiceType> {
+    try {
+      const serviceType = await prisma.service_types.update({
+        where: { id },
+        data: {
+          ...data,
+          updated_at: new Date()
+        }
+      });
+
+      await NotificationService.sendNotification(
+        'ADMIN',
+        NotificationType.SERVICE_TYPE_UPDATED,
+        {
+          serviceTypeId: serviceType.id,
+          name: serviceType.name,
+          changes: data
+        }
+      );
+
+      return {
+        id: serviceType.id,
+        name: serviceType.name,
+        description: serviceType.description || undefined,
+        is_default: serviceType.is_default || false,
+        requires_weight: serviceType.requires_weight || false,
+        supports_premium: serviceType.supports_premium || false,
+        is_active: serviceType.is_active || false,
+        created_at: serviceType.created_at || new Date(),
+        updated_at: serviceType.updated_at || new Date()
+      };
+    } catch (error) {
+      console.error('Error updating service type:', error);
+      throw error;
+    }
+  }
+
+  static async updateServiceType(
+    id: string,
+    data: Partial<{
+      name?: string;
+      description?: string;
+      is_default?: boolean;
+      is_active?: boolean;
+      requires_weight?: boolean;
+      supports_premium?: boolean;
+    }>
+  ): Promise<ServiceType> {
+    try {
+      const updatedServiceType = await prisma.service_types.update({
+        where: { id },
+        data: {
+          ...data,
+          updated_at: new Date()
+        }
+      });
+
+      return {
+        id: updatedServiceType.id,
+        name: updatedServiceType.name,
+        description: updatedServiceType.description || undefined,
+        is_default: updatedServiceType.is_default || false,
+        requires_weight: updatedServiceType.requires_weight || false,
+        supports_premium: updatedServiceType.supports_premium || false,
+        is_active: updatedServiceType.is_active || false,
+        created_at: updatedServiceType.created_at || new Date(),
+        updated_at: updatedServiceType.updated_at || new Date()
+      };
+    } catch (error) {
+      console.error('Error updating service type:', error);
+      throw error;
+    }
   }
 
   static async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('service_types')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
+    try {
+      await prisma.service_types.delete({
+        where: { id }
+      });
+    } catch (error) {
+      console.error('Error deleting service type:', error);
+      throw error;
+    }
   }
 
-  static async getById(id: string): Promise<ServiceType> {
-    const { data, error } = await supabase
-      .from('service_types')
-      .select('*')
-      .eq('id', id)
-      .single();
+  static async getById(id: string): Promise<ServiceType | null> {
+    try {
+      const serviceType = await prisma.service_types.findUnique({
+        where: { id }
+      });
 
-    if (error) throw error;
-    if (!data) throw new Error('Service type not found');
-    return data;
+      if (!serviceType) return null;
+
+      return {
+        id: serviceType.id,
+        name: serviceType.name,
+        description: serviceType.description || undefined,
+        is_default: serviceType.is_default || false,
+        requires_weight: serviceType.requires_weight || false,
+        supports_premium: serviceType.supports_premium || false,
+        is_active: serviceType.is_active || false,
+        created_at: serviceType.created_at || new Date(),
+        updated_at: serviceType.updated_at || new Date()
+      };
+    } catch (error) {
+      console.error('Error getting service type:', error);
+      throw error;
+    }
   }
 
   static async getAll(includeInactive = false): Promise<ServiceType[]> {
-    const { data, error } = await supabase
-      .from('service_types')
-      .select('*')
-      .order('name', { ascending: true });
+    try {
+      const serviceTypes = await prisma.service_types.findMany({
+        where: includeInactive ? undefined : {
+          is_active: true
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      });
 
-    if (error) throw error;
-    return data || [];
+      return serviceTypes.map(st => ({
+        id: st.id,
+        name: st.name,
+        description: st.description || undefined,
+        is_default: st.is_default || false,
+        requires_weight: st.requires_weight || false,
+        supports_premium: st.supports_premium || false,
+        is_active: st.is_active || false,
+        created_at: st.created_at || new Date(),
+        updated_at: st.updated_at || new Date()
+      }));
+    } catch (error) {
+      console.error('Error getting service types:', error);
+      throw error;
+    }
   }
 
   static async getDefaultServiceType(): Promise<ServiceType | null> {
     try {
-      const { data, error } = await supabase
-        .from('service_types')
-        .select('*')
-        .eq('is_default', true)
-        .single();
+      const serviceType = await prisma.service_types.findFirst({
+        where: {
+          is_default: true,
+          is_active: true
+        }
+      });
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      if (!serviceType) return null;
+
+      return {
+        id: serviceType.id,
+        name: serviceType.name,
+        description: serviceType.description || undefined,
+        is_default: serviceType.is_default || false,
+        requires_weight: serviceType.requires_weight || false,
+        supports_premium: serviceType.supports_premium || false,
+        is_active: serviceType.is_active || false,
+        created_at: serviceType.created_at || new Date(),
+        updated_at: serviceType.updated_at || new Date()
+      };
     } catch (error) {
-      console.error('[ServiceTypeService] Get default service type error:', error);
+      console.error('Error getting default service type:', error);
       throw error;
-    }
-  }
-
-  static async setDefaultServiceType(serviceTypeId: string): Promise<ServiceType> {
-    try {
-      // 1. Réinitialiser tous les services types comme non par défaut
-      await supabase
-        .from('service_types')
-        .update({ is_default: false })
-        .neq('id', serviceTypeId);
-
-      // 2. Définir le nouveau service type par défaut
-      const { data, error } = await supabase
-        .from('service_types')
-        .update({ is_default: true })
-        .eq('id', serviceTypeId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      if (!data) throw new Error('Service type not found');
-
-      // 3. Notifier les admins du changement
-      if (data) {
-        await this.notifyAdmins(NotificationType.SERVICE_TYPE_UPDATED, data);
-      } 
-
-      return data;
-    } catch (error) {
-      console.error('[ServiceTypeService] Set default service type error:', error);
-      throw error;
-    }
-  }
-
-  private static async notifyAdmins(
-    type: NotificationType.SERVICE_TYPE_CREATED | NotificationType.SERVICE_TYPE_UPDATED,
-    serviceType: ServiceType
-  ) {
-    const { data: admins } = await supabase
-      .from('users')
-      .select('id')
-      .in('role', ['ADMIN', 'SUPER_ADMIN']);
-
-    if (admins) {
-      await Promise.all(
-        admins.map(admin => 
-          NotificationService.sendNotification(
-            admin.id,
-            type,
-            {
-              title: type === NotificationType.SERVICE_TYPE_CREATED ? 'Nouveau type de service' : 'Type de service mis à jour',
-              message: `Le type de service "${serviceType.name}" a été ${type === NotificationType.SERVICE_TYPE_CREATED ? 'créé' : 'mis à jour'}`,
-              data: serviceType
-            }
-          )
-        )
-      );
     }
   }
 }

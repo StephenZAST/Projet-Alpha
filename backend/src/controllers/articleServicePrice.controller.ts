@@ -1,18 +1,33 @@
 import { Request, Response } from 'express';
-import { ArticleServicePriceService } from '../services/articleServicePrice.service'; 
+import { ArticleServicePriceService } from '../services/articleServicePrice.service';
 
 export class ArticleServicePriceController {
   static async create(req: Request, res: Response) {
     try {
-      const priceData = req.body;
-      const newPrice = await ArticleServicePriceService.create(priceData);
+      const { article_id, service_type_id, base_price, premium_price, price_per_kg, is_available } = req.body;
+
+      if (!article_id || !service_type_id || !base_price) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields'
+        });
+      }
+
+      const newPrice = await ArticleServicePriceService.create({
+        article_id,
+        service_type_id,
+        base_price,
+        premium_price,
+        price_per_kg,
+        is_available: is_available ?? true
+      });
       
       res.status(201).json({
         success: true,
         data: newPrice
       });
     } catch (error: any) {
-      res.status(400).json({
+      res.status(error.code === 'P2002' ? 409 : 400).json({
         success: false,
         error: error.message
       });

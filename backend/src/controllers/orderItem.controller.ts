@@ -36,9 +36,16 @@ export class OrderItemController {
     try {
       const orderId = req.params.orderId;
       const result = await OrderItemService.getOrderItemsByOrderId(orderId);
-      res.json({ data: result });
+      res.json({ 
+        success: true,
+        data: result 
+      });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(error.message.includes('No order items found') ? 404 : 500)
+         .json({ 
+           success: false,
+           error: error.message 
+         });
     }
   }
 

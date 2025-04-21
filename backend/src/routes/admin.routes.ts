@@ -5,6 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { AdminService } from '../services/admin.service';
 import { ServiceManagementController } from '../controllers/admin/serviceManagement.controller';
 import { validatePriceData } from '../middleware/priceValidation.middleware';
+import { order_status } from '@prisma/client';  // Correction ici
 
 const router = express.Router();
 
@@ -19,27 +20,24 @@ router.get(
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
-      // Correction du typage pour status
-      const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+      const status = req.query.status as order_status | undefined;  // Correction ici
       const sortField = req.query.sort_field as string || 'createdAt';
-      const sortOrder = req.query.sort_order as string || 'desc';
+      const sortOrder = (req.query.sort_order as 'asc' | 'desc') || 'desc';
 
-      const result = await AdminService.getAllOrders({
-        page,
-        limit,
-        status, // Maintenant le type est correct (string | undefined)
+      const result = await AdminService.getAllOrders(page, limit, {
+        status,
         sortField,
         sortOrder
-      });  
+      });
 
       res.json({
         success: true,
-        data: result.data,
+        data: result.orders,
         pagination: {
           total: result.total,
-          page: result.page,
-          limit: result.limit,
-          totalPages: result.totalPages
+          currentPage: page,
+          limit,
+          totalPages: result.pages
         }
       });
     } catch (error) {
@@ -51,7 +49,7 @@ router.get(
       });
     }
   })
-); 
+);
 
 router.get(
   '/orders/by-status',
@@ -72,38 +70,35 @@ router.post(
 router.get(
   '/statistics',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await AdminController.getDashboardStatistics(req, res);
-  })
-);
-router.get(
-  '/revenue-chart',
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
-  asyncHandler(async (req: Request, res: Response) => {
-    await AdminController.getRevenueChartData(req, res);
-  })
+  asyncHandler(AdminController.getDashboardStatistics)
 );
 
 router.get(
-  '/total-revenue',
+  '/revenue-chart',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(AdminController.getRevenueChartData)
+);
+
+router.get(
+  '/revenue',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
-    const revenue = await AdminService.getTotalRevenue();
+    const stats = await AdminService.getStatistics();
     res.json({ 
       success: true, 
-      data: revenue 
+      data: stats.totalRevenue 
     });
   })
 );
 
 router.get(
-  '/total-customers',
+  '/customers',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
-    const customers = await AdminService.getTotalCustomers();
+    const stats = await AdminService.getStatistics();
     res.json({ 
       success: true, 
-      data: customers 
+      data: stats.totalCustomers 
     });
   })
 );

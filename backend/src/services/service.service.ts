@@ -1,54 +1,91 @@
-import supabase from '../config/database';
-import { Service } from '../models/types'; 
+import { PrismaClient } from '@prisma/client';
+import { Service } from '../models/types';
+
+const prisma = new PrismaClient();
 
 export class ServiceService {
   static async createService(name: string, price: number, description?: string): Promise<Service> {
-    const { data, error } = await supabase
-      .from('services')
-      .insert([{ name, price, description }])
-      .select()
-      .single();
+    try {
+      const service = await prisma.services.create({
+        data: {
+          name,
+          price,
+          description: description || null,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      });
 
-    if (error) throw error;
-
-    return data;
+      return {
+        id: service.id,
+        name: service.name,
+        price: service.price || 0,
+        description: service.description || undefined,
+        createdAt: service.created_at || new Date(),
+        updatedAt: service.updated_at || new Date()
+      };
+    } catch (error) {
+      console.error('Create service error:', error);
+      throw error;
+    }
   }
 
   static async getAllServices(): Promise<Service[]> {
     try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const services = await prisma.services.findMany({
+        orderBy: {
+          created_at: 'desc'
+        }
+      });
 
-      if (error) throw error;
-      return data || [];
+      return services.map(service => ({
+        id: service.id,
+        name: service.name,
+        price: service.price || 0,
+        description: service.description || undefined,
+        createdAt: service.created_at || new Date(),
+        updatedAt: service.updated_at || new Date()
+      }));
     } catch (error) {
-      console.error('Error in getAllServices:', error);
+      console.error('Get all services error:', error);
       throw error;
     }
-  } 
+  }
 
   static async updateService(serviceId: string, name: string, price: number, description?: string): Promise<Service> {
-    const { data, error } = await supabase
-      .from('services')
-      .update({ name, price, description, updated_at: new Date() })
-      .eq('id', serviceId)
-      .select()
-      .single();
+    try {
+      const service = await prisma.services.update({
+        where: { id: serviceId },
+        data: {
+          name,
+          price,
+          description: description || null,
+          updated_at: new Date()
+        }
+      });
 
-    if (error) throw error;
-
-    return data;
+      return {
+        id: service.id,
+        name: service.name,
+        price: service.price || 0,
+        description: service.description || undefined,
+        createdAt: service.created_at || new Date(),
+        updatedAt: service.updated_at || new Date()
+      };
+    } catch (error) {
+      console.error('Update service error:', error);
+      throw error;
+    }
   }
 
   static async deleteService(serviceId: string): Promise<void> {
-    const { error } = await supabase
-      .from('services')
-      .delete()
-      .eq('id', serviceId);
-
-    if (error) throw error;
+    try {
+      await prisma.services.delete({
+        where: { id: serviceId }
+      });
+    } catch (error) {
+      console.error('Delete service error:', error);
+      throw error;
+    }
   }
 }
- 

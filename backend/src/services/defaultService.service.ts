@@ -1,4 +1,6 @@
-import supabase from '../config/database'; 
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export class DefaultServiceService {
   static async setDefaultService(
@@ -7,49 +9,93 @@ export class DefaultServiceService {
     restrictions: string[] = []
   ) {
     try {
-      const { data, error } = await supabase
-        .from('category_default_services')
-        .upsert({
-          category_id: categoryId,
-          service_id: serviceId,
-          restrictions: restrictions,
+      // Mettre à jour ou créer le service par défaut
+      const data = await prisma.service_types.upsert({
+        where: {
+          id: serviceId
+        },
+        update: {
+          is_default: true,
           updated_at: new Date()
-        })
-        .select(`
-          *,
-          service:services(*),
-          category:categories(*)
-        `)
-        .single();
+        },
+        create: {
+          id: serviceId,
+          name: '',  // Requis par le schéma
+          is_default: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        include: {
+          services: true
+        }
+      });
 
-      if (error) throw error;
-      return data;
+      // Désactiver les autres services par défaut de la catégorie
+      await prisma.service_types.updateMany({
+        where: {
+          id: {
+            not: serviceId
+          }
+        },
+        data: {
+          is_default: false,
+          updated_at: new Date()
+        }
+      });
+
+      return {
+        id: data.id,
+        serviceId: data.id,
+        categoryId,
+        restrictions,
+        service: data.services?.[0],
+        updatedAt: data.updated_at
+      };
     } catch (error) {
       console.error('[DefaultServiceService] Set default service error:', error);
       throw error;
-    } 
+    }
   }
- 
-  static async getDefaultServices(categoryId: string) {
-    const { data, error } = await supabase
-      .from('category_default_services')
-      .select(`
-        *,
-        service:services(*),
-        category:categories(*)
-      `)
-      .eq('category_id', categoryId);
 
-    if (error) throw error;
-    return data || [];
+  static async getDefaultServices(categoryId: string) {
+    try {
+      const services = await prisma.service_types.findMany({
+        where: {
+          is_default: true
+        },
+        include: {
+          services: true
+        }
+      });
+
+      return services.map(service => ({
+        id: service.id,
+        serviceId: service.id,
+        categoryId,
+        service: service.services?.[0],
+        restrictions: [],
+        updatedAt: service.updated_at
+      }));
+    } catch (error) {
+      console.error('[DefaultServiceService] Get default services error:', error);
+      throw error;
+    }
   }
 
   static async removeDefaultService(categoryId: string, serviceId: string) {
-    const { error } = await supabase
-      .from('category_default_services')
-      .delete()
-      .match({ category_id: categoryId, service_id: serviceId });
-
-    if (error) throw error;
+    try {
+      await prisma.service_types.update({
+        where: {
+          id: serviceId
+        },
+        data: {
+          is_default: false,
+          updated_at: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('[DefaultServiceService] Remove default service error:', error);
+      throw error;
+    }
   }
 }

@@ -1,135 +1,111 @@
-import supabase from '../config/database';
-import { Order, OrderStatus } from '../models/types'; 
+import { PrismaClient } from '@prisma/client';
+import { Order, OrderStatus } from '../models/types';
+
+const prisma = new PrismaClient();
 
 export class DeliveryService {
   static async getPendingOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', 'PENDING')
-      .eq('userId', userId);
-
-    if (error) throw error;
-
-    return data;
+    try {
+      const orders = await prisma.orders.findMany({
+        where: {
+          userId,
+          status: 'PENDING'
+        },
+        include: {
+          service_types: true,
+          order_metadata: true
+        }
+      });
+      return orders as unknown as Order[];
+    } catch (error) {
+      console.error('Get pending orders error:', error);
+      throw error;
+    }
   }
 
   static async getAssignedOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', 'COLLECTING')
-      .eq('userId', userId);
-
-    if (error) throw error;
-
-    return data;
-  } 
-  static async getCOLLECTEDOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', 'COLLECTED')
-      .eq('userId', userId);
-
-    if (error) throw error;
-
-    return data;
-  } 
-  static async getPROCESSINGOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', 'PROCESSING')
-      .eq('userId', userId);
-
-    if (error) throw error;
-
-    return data;
+    try {
+      const orders = await prisma.orders.findMany({
+        where: {
+          userId,
+          status: 'COLLECTING'
+        },
+        include: {
+          service_types: true,
+          order_metadata: true
+        }
+      });
+      return orders as unknown as Order[];
+    } catch (error) {
+      console.error('Get assigned orders error:', error);
+      throw error;
+    }
   }
-  static async getREADYOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', 'READY')
-      .eq('userId', userId);
 
-    if (error) throw error;
-
-    return data;
-  }
-  static async getDELIVERINGOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', 'DELIVERING')
-      .eq('userId', userId);
-
-    if (error) throw error;
-
-    return data;
-  }
-  static async getDELIVEREDOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', 'DELIVERED')
-      .eq('userId', userId);
-
-    if (error) throw error;
-
-    return data;
-  }
-  static async getCANCELLEDOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('status', 'CANCELLED')
-      .eq('userId', userId);
-
-    if (error) throw error;
-
-    return data;
+  static async getOrdersByStatus(userId: string, status: OrderStatus): Promise<Order[]> {
+    try {
+      const orders = await prisma.orders.findMany({
+        where: {
+          userId,
+          status
+        },
+        include: {
+          service_types: true,
+          order_metadata: true
+        }
+      });
+      return orders as unknown as Order[];
+    } catch (error) {
+      console.error(`Get ${status} orders error:`, error);
+      throw error;
+    }
   }
 
   static async updateOrderStatus(orderId: string, status: OrderStatus, userId: string): Promise<Order> {
-    // Vérifier si la commande existe et obtenir les détails complets
-    const { data: order, error: fetchError } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        service:services(*),
-        address:addresses(*)
-      `)
-      .eq('id', orderId)
-      .single();
+    try {
+      // First check if order exists and user has access
+      const existingOrder = await prisma.orders.findFirst({
+        where: {
+          id: orderId,
+          userId
+        },
+        include: {
+          service_types: true,
+          order_metadata: true
+        }
+      });
 
-    if (fetchError || !order) {
-      console.error('Error fetching order:', fetchError);
-      throw new Error('Order not found');
-    }
+      if (!existingOrder) {
+        throw new Error('Order not found or unauthorized');
+      }
 
-    // Vérifier si l'utilisateur est autorisé à mettre à jour la commande
-    // Plus besoin de vérifier le rôle car c'est déjà fait par le middleware
-    const { data, error } = await supabase
-      .from('orders')
-      .update({ 
-        status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', orderId)
-      .select(`
-        *,
-        service:services(*),
-        address:addresses(*)
-      `)
-      .single();
+      // Update the order status
+      const updatedOrder = await prisma.orders.update({
+        where: {
+          id: orderId
+        },
+        data: {
+          status,
+          updatedAt: new Date()
+        },
+        include: {
+          service_types: true,
+          order_metadata: true
+        }
+      });
 
-    if (error) {
-      console.error('Error updating order status:', error);
+      return updatedOrder as unknown as Order;
+    } catch (error) {
+      console.error('Update order status error:', error);
       throw error;
     }
-
-    return data;
   }
+
+  // Helper method for getting orders by any status
+  static getCOLLECTEDOrders = (userId: string) => this.getOrdersByStatus(userId, 'COLLECTED');
+  static getPROCESSINGOrders = (userId: string) => this.getOrdersByStatus(userId, 'PROCESSING');
+  static getREADYOrders = (userId: string) => this.getOrdersByStatus(userId, 'READY');
+  static getDELIVERINGOrders = (userId: string) => this.getOrdersByStatus(userId, 'DELIVERING');
+  static getDELIVEREDOrders = (userId: string) => this.getOrdersByStatus(userId, 'DELIVERED');
+  static getCANCELLEDOrders = (userId: string) => this.getOrdersByStatus(userId, 'CANCELLED');
 }

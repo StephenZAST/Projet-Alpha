@@ -1,144 +1,159 @@
 import { OrderItem } from '../../models/types';
-import supabase from '../../config/database'; 
+import prisma from '../../config/prisma';
+import { order_status, payment_method_enum } from '@prisma/client';
 
-export interface OrderItemWithArticle extends OrderItem {
+// Mise à jour de l'interface pour gérer les valeurs nullables
+export interface OrderItemWithArticle extends Omit<OrderItem, 'article'> {
   article: {
     id: string;
     name: string;
     basePrice: number;
-    premiumPrice: number;
-    categoryId: string;
+    premiumPrice: number | null;
+    categoryId: string | null;  // Permettre null pour categoryId
     category?: {
       id: string;
       name: string;
-      description?: string;
-    };
+      description?: string | null;
+    } | null;
+    createdAt: Date | null;
+    updatedAt: Date | null;
+  };
+}
+
+interface OrderWithDetails {
+  id: string;
+  userId: string;
+  serviceId: string | null;
+  addressId: string | null;
+  affiliateCode?: string | null;
+  status: order_status | null;
+  isRecurring: boolean | null;
+  recurrenceType: string | null;
+  nextRecurrenceDate: Date | null;
+  totalAmount: number | null;
+  collectionDate: Date | null;
+  deliveryDate: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  paymentMethod: payment_method_enum | null;
+  service_type_id: string;
+  order_items: Array<{
+    id: string;
+    orderId: string;
+    articleId: string;
+    serviceId: string;
+    quantity: number;
+    unitPrice: number;
     createdAt: Date;
     updatedAt: Date;
-    [key: string]: any;
-  };
-}  
+  }>;
+}
 
 export class OrderSharedMethods {
   static async getOrderItems(orderId: string): Promise<OrderItemWithArticle[]> {
-    const { data: items, error } = await supabase
-      .from('order_items')
-      .select(`
-        *,
-        article:articles(
-          *,
-          category:article_categories(
-            id,
-            name,
-            description
-          )
-        )
-      `)
-      .eq('orderId', orderId);  // Correction : orderId -> order_id
-
-    if (error) {
-      console.error('Error fetching order items:', error);
-      throw error;
-    }
-
-    if (!items) return [];
+    const items = await prisma.order_items.findMany({
+      where: {
+        orderId: orderId
+      },
+      include: {
+        article: {
+          include: {
+            article_categories: true
+          }
+        }
+      }
+    });
 
     return items.map(item => ({
       id: item.id,
-      orderId: item.order_id,       // Conversion snake_case -> camelCase
-      articleId: item.article_id,    // pour la réponse API
-      serviceId: item.service_id,
+      orderId: item.orderId,
+      articleId: item.articleId,
+      serviceId: item.serviceId,
       quantity: item.quantity,
-      unitPrice: item.unit_price,
-      createdAt: item.created_at,
-      updatedAt: item.updated_at,
+      unitPrice: Number(item.unitPrice),
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
       article: {
-        ...item.article,
-        categoryId: item.article?.category_id,  // Conversion pour la réponse
-        createdAt: item.article?.created_at,
-        updatedAt: item.article?.updated_at,
-        category: item.article?.category ? {
-          ...item.article.category,
-          createdAt: item.article.category.created_at
+        id: item.article.id,
+        name: item.article.name,
+        basePrice: Number(item.article.basePrice),
+        premiumPrice: item.article.premiumPrice ? Number(item.article.premiumPrice) : null,
+        categoryId: item.article.categoryId || null,
+        createdAt: item.article.createdAt,
+        updatedAt: item.article.updatedAt,
+        category: item.article.article_categories ? {
+          id: item.article.article_categories.id,
+          name: item.article.article_categories.name,
+          description: item.article.article_categories.description || null
         } : null
       }
     }));
   }
 
   static async getUserPoints(userId: string): Promise<number> {
-    const { data, error } = await supabase
-      .from('loyalty_points')
-      .select('points_balance')  // Correction : pointsBalance -> points_balance
-      .eq('user_id', userId)
-      .single();
+    const points = await prisma.loyalty_points.findUnique({
+      where: {
+        user_id: userId
+      },
+      select: {
+        pointsBalance: true
+      }
+    });
 
-    if (error) {
-      console.error('Error fetching user points:', error);
-      // En cas d'erreur, retourner 0 points au lieu de faire échouer la requête
-      return 0;
-    }
-    
-    return data?.points_balance || 0;  // Utilisation du nom exact de la colonne
+    return points?.pointsBalance || 0;
   }
 
-  static async getOrderWithDetails(orderId: string) {
-    const { data: order, error } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        user:users(
-          id,
-          email,
-          first_name,
-          last_name,
-          phone
-        ),
-        service:services(*),
-        address:addresses(*),
-        items:order_items(
-          *,
-          article:articles(
-            *,
-            category:article_categories(*)
-          )
-        )
-      `)
-      .eq('id', orderId)
-      .single();
+  static async getOrderWithDetails(orderId: string): Promise<OrderWithDetails> {
+    const order = await prisma.orders.findUnique({
+      where: {
+        id: orderId
+      },
+      include: {
+        user: true,
+        service_types: true,
+        address: true,
+        order_items: {
+          include: {
+            article: {
+              include: {
+                article_categories: true
+              }
+            }
+          }
+        }
+      }
+    });
 
-    if (error) {
-      console.error('Error fetching order details:', error);
-      throw error;
+    if (!order) {
+      throw new Error('Order not found');
     }
 
-    // Conversion snake_case -> camelCase pour la réponse API
-    const formattedOrder = {
+    return {
       ...order,
-      userId: order.user_id,
-      serviceId: order.service_id,
-      addressId: order.address_id,
-      serviceTypeId: order.service_type_id,
-      totalAmount: order.total_amount,
-      isRecurring: order.is_recurring,
-      recurrenceType: order.recurrence_type,
-      nextRecurrenceDate: order.next_recurrence_date,
-      collectionDate: order.collection_date,
-      deliveryDate: order.delivery_date,
-      affiliateCode: order.affiliate_code,
-      paymentMethod: order.payment_method,
-      createdAt: order.created_at,
-      updatedAt: order.updated_at,
-      items: order.items?.map((item: any) => ({
-        ...item,
-        orderId: item.order_id,
-        articleId: item.article_id,
-        serviceId: item.service_id,
-        unitPrice: item.unit_price,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at
+      userId: order.userId,
+      serviceId: order.serviceId,
+      addressId: order.addressId,
+      service_type_id: order.service_type_id,
+      totalAmount: order.totalAmount ? Number(order.totalAmount) : null,
+      isRecurring: order.isRecurring,
+      recurrenceType: order.recurrenceType,
+      nextRecurrenceDate: order.nextRecurrenceDate,
+      collectionDate: order.collectionDate,
+      deliveryDate: order.deliveryDate,
+      affiliateCode: order.affiliateCode,
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      order_items: order.order_items.map(item => ({
+        id: item.id,
+        orderId: item.orderId,
+        articleId: item.articleId,
+        serviceId: item.serviceId,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
       }))
     };
-
-    return formattedOrder;
   }
 }

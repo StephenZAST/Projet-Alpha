@@ -1,19 +1,8 @@
-import supabase from '../config/database';
-import { ServiceCompatibility } from '../models/types'; 
+import { PrismaClient } from '@prisma/client';
+import { ServiceCompatibility } from '../models/types';
 
-interface ArticleServiceData {
-  is_compatible: boolean;
-  restrictions: string[];
-  article: {
-    id: string;
-    name: string;
-  };
-  service: {
-    id: string;
-    name: string;
-  };
-}
- 
+const prisma = new PrismaClient();
+
 export class CompatibilityValidatorService {
   static async validateOrderCompatibility(
     items: Array<{articleId: string; serviceId: string}>
@@ -22,35 +11,34 @@ export class CompatibilityValidatorService {
       const incompatibilities = [];
 
       for (const item of items) {
-        const { data, error } = await supabase
-          .from('article_service_compatibility')
-          .select(`
-            is_compatible,
-            restrictions,
-            article:articles!inner(
-              id,
-              name
-            ),
-            service:services!inner(
-              id,
-              name
-            )
-          `)
-          .eq('article_id', item.articleId)
-          .eq('service_id', item.serviceId)
-          .single();
+        const compatibility = await prisma.article_service_compatibility.findFirst({
+          where: {
+            article_id: item.articleId,
+            service_id: item.serviceId
+          },
+          include: {
+            articles: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            services: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        });
 
-        if (error) throw error; 
-
-        const typedData = data as unknown as ArticleServiceData;
-
-        if (!typedData?.is_compatible) {
+        if (!compatibility?.is_compatible) {
           incompatibilities.push({
             articleId: item.articleId,
-            articleName: typedData.article.name,
+            articleName: compatibility?.articles?.name || 'Unknown Article',
             serviceId: item.serviceId,
-            serviceName: typedData.service.name,
-            restrictions: typedData.restrictions || []
+            serviceName: compatibility?.services?.name || 'Unknown Service',
+            restrictions: []
           });
         }
       }

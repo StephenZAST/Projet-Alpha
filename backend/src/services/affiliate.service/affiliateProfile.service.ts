@@ -1,433 +1,408 @@
-import supabase from '../../config/database';
-import { COMMISSION_LEVELS } from './constants'; 
-import { AffiliateLevel } from '../../models/types';
+import { PrismaClient, Prisma, status } from '@prisma/client';
+import { 
+  AffiliateProfile, 
+  CreateAffiliateDTO, 
+  NotificationType 
+} from '../../models/types';
+import { NotificationService } from '../notification.service';
+import { generateAffiliateCode } from '../../utils/codeGenerator';
+import { 
+  COMMISSION_LEVELS,
+  DISTINCTION_LEVELS,
+  MIN_WITHDRAWAL_AMOUNT,
+  INDIRECT_COMMISSION_RATE 
+} from './constants';
+
+const prisma = new PrismaClient();
 
 export class AffiliateProfileService {
-  static async getProfile(userId: string) {
-    try {
-      console.log('[AffiliateProfileService] Getting profile for user:', userId);
-
-      // First check if user exists and is an affiliate
-      const { data: profile, error } = await supabase
-        .from('affiliate_profiles')
-        .select(`
-          id,
-          user_id,
-          affiliate_code,
-          parent_affiliate_id,
-          commission_balance,
-          total_earned, 
-          created_at,
-          updated_at,
-          commission_rate,
-          is_active,
-          total_referrals,
-          monthly_earnings,
-          level_id,
-          status,
-          user_details:users!inner(
-            id,
-            email,
-            first_name,
-            last_name,
-            phone,
-            notification_preferences(
-              id,
-              email,
-              sms,
-              push,
-              promotions,
-              order_updates,
-              payments,
-              loyalty
-            )
-          ),
-          level:affiliate_levels(
-            id,
-            name,
-            "commissionRate"
-          )
-        `)
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        console.error('[AffiliateProfileService] Error fetching profile:', error);
-        throw error;
+  static async createProfile(data: {
+    userId: string;
+    affiliateCode: string;
+    parent_affiliate_id?: string;
+  }): Promise<AffiliateProfile> {
+    const profile = await prisma.affiliate_profiles.create({
+      data: {
+        user_id: data.userId,
+        affiliate_code: data.affiliateCode,
+        parent_affiliate_id: data.parent_affiliate_id,
+        commission_rate: 10,
+        commission_balance: 0,
+        total_earned: 0,
+        monthly_earnings: 0,
+        is_active: true,
+        status: 'PENDING' as status,  // Typage explicite pour status
+        created_at: new Date(),
+        updated_at: new Date()
       }
-
-      if (!profile) {
-        console.error('[AffiliateProfileService] Profile not found for user:', userId);
-        throw new Error('Affiliate profile not found');
-      }
-
-      // Fetch recent transactions separately
-      const { data: transactions, error: transactionError } = await supabase
-        .from('commissionTransactions')
-        .select('id, amount, status, created_at')
-        .eq('affiliate_id', profile.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (transactionError) {
-        console.error('[AffiliateProfileService] Error fetching transactions:', transactionError);
-        // Don't throw here, just log the error and continue
-      } 
-
-      return {
-        ...profile,
-        recentTransactions: transactions || []
-      };
-
-    } catch (error: any) {
-      console.error('[AffiliateProfileService] GetProfile error:', error);
-      throw error;
-    }
-  }
-
-  static async updateProfile(userId: string, updates: {
-    phone?: string;
-    notificationPreferences?: {
-      email?: boolean;
-      sms?: boolean;
-      push?: boolean;
-      promotions?: boolean;
-      order_updates?: boolean;
-      payments?: boolean;
-      loyalty?: boolean;
-    }
-  }) {
-    try {
-      // 1. Update phone in users table if provided
-      if (updates.phone) {
-        const { error: userError } = await supabase
-          .from('users')
-          .update({ phone: updates.phone })
-          .eq('id', userId);
-
-        if (userError) throw userError;
-      }
-
-      // 2. Update notification preferences if provided
-      if (updates.notificationPreferences) {
-        // Validate preference fields
-        const validPrefs = {
-          user_id: userId,
-          email: !!updates.notificationPreferences.email,
-          sms: !!updates.notificationPreferences.sms,
-          push: !!updates.notificationPreferences.push,
-          promotions: !!updates.notificationPreferences.promotions,
-          order_updates: !!updates.notificationPreferences.order_updates,
-          payments: !!updates.notificationPreferences.payments,
-          loyalty: !!updates.notificationPreferences.loyalty,
-          updated_at: new Date().toISOString()
-        };
-
-        // Check if preferences already exist
-        const { data: existingPrefs } = await supabase
-          .from('notification_preferences')
-          .select('id, created_at')
-          .eq('user_id', userId)
-          .single();
-
-        const prefsData = {
-          ...validPrefs,
-          created_at: existingPrefs?.created_at || new Date().toISOString()
-        };
-
-        const { error: prefsError } = await supabase
-          .from('notification_preferences')
-          .upsert([prefsData], {
-            onConflict: 'user_id'
-          });
-
-        if (prefsError) {
-          console.error('[AffiliateProfileService] Error updating preferences:', prefsError);
-          throw new Error('Failed to update notification preferences');
-        }
-      }
-
-      // 3. Get updated profile data using the same structure as getProfile
-      const { data: profile, error: profileError } = await supabase
-        .from('affiliate_profiles')
-        .select(`
-          id,
-          user_id,
-          affiliate_code,
-          parent_affiliate_id,
-          commission_balance,
-          total_earned,
-          created_at,
-          updated_at,
-          commission_rate,
-          is_active,
-          total_referrals,
-          monthly_earnings,
-          level_id,
-          status,
-          user_details:users!inner(
-            id,
-            email,
-            first_name,
-            last_name,
-            phone,
-            notification_preferences(
-              id,
-              email,
-              sms,
-              push,
-              promotions,
-              order_updates,
-              payments,
-              loyalty
-            )
-          ),
-          level:affiliate_levels(
-            id,
-            name,
-            "commissionRate"
-          )
-        `)
-        .eq('user_id', userId)
-        .single();
-
-      if (profileError) throw profileError;
-      return profile;
-
-    } catch (error) {
-      console.error('[AffiliateProfileService] UpdateProfile error:', error);
-      throw error;
-    }
-  }
-
-  static async getReferrals(userId: string) {
-    const { data, error } = await supabase
-      .from('affiliate_profiles')
-      .select(`
-        id,
-        user_details:users(
-          id,
-          email,
-          first_name,
-          last_name,
-          phone,
-          notification_preferences(
-            id,
-            email,
-            sms,
-            push,
-            promotions,
-            order_updates,
-            payments,
-            loyalty
-          )
-        ),
-        total_earned,
-        total_referrals,
-        monthly_earnings,
-        created_at,
-        status
-      `)
-      .eq('parent_affiliate_id', userId);
-
-    if (error) throw error;
-    return data;
-  }
-
-  static async getCurrentLevel(userId: string) {
-    interface ProfileWithLevel {
-      id: string;
-      total_referrals: number;
-      total_earned: number;
-      level_id: string | null;
-      level: {
-        id: string;
-        name: string;
-        commissionRate: number;
-      }[] | null;
-    }
-
-    const { data: profiles, error: profileError } = await supabase
-      .from('affiliate_profiles')
-      .select(`
-        id,
-        total_referrals,
-        total_earned,
-        level_id,
-        level:affiliate_levels(
-          id,
-          name,
-          "commissionRate"
-        )
-      `)
-      .eq('user_id', userId)
-      .single();
-
-    if (profileError) throw profileError;
-    if (!profiles) throw new Error('Affiliate profile not found');
-
-    // Determine level based on database value or calculated level
-    const calculatedLevel = profiles.total_referrals < 10
-      ? COMMISSION_LEVELS.LEVEL1
-      : profiles.total_referrals < 20
-        ? COMMISSION_LEVELS.LEVEL2
-        : COMMISSION_LEVELS.LEVEL3;
-
-    // Use database level if available, otherwise use calculated level
-    const currentLevel = profiles.level?.[0] ? {
-      name: profiles.level[0].name,
-      rate: Number(profiles.level[0].commissionRate) / 100, // Convert to decimal and ensure it's a number
-      current: {
-        referrals: profiles.total_referrals,
-        earnings: profiles.total_earned
-      }
-    } : {
-      ...calculatedLevel,
-      current: {
-        referrals: profiles.total_referrals,
-        earnings: profiles.total_earned
-      }
-    };
+    });
 
     return {
-      currentLevel,
-      nextLevel: profiles.total_referrals >= 20 ? null : AffiliateProfileService.getNextLevel(profiles.total_referrals)
+      id: profile.id,
+      userId: profile.user_id,
+      affiliateCode: profile.affiliate_code,
+      parent_affiliate_id: profile.parent_affiliate_id || undefined,
+      commission_rate: Number(profile.commission_rate),
+      commissionBalance: Number(profile.commission_balance),
+      totalEarned: Number(profile.total_earned),
+      monthlyEarnings: Number(profile.monthly_earnings),
+      isActive: profile.is_active ?? false,
+      status: profile.status,  // Le type sera maintenant compatible
+      levelId: profile.level_id || undefined,
+      totalReferrals: profile.total_referrals || 0,
+      createdAt: profile.created_at || new Date(),
+      updatedAt: profile.updated_at || new Date()
     };
   }
 
-  static async generateAffiliateCode(userId: string) {
-    const { data: affiliate } = await supabase
-      .from('affiliate_profiles')
-      .select('id, affiliate_code')
-      .eq('user_id', userId)
-      .single();
+  static async updateProfile(id: string, data: Partial<AffiliateProfile>): Promise<AffiliateProfile> {
+    const profile = await prisma.affiliate_profiles.update({
+      where: { id },
+      data: {
+        commission_rate: data.commission_rate,
+        is_active: data.isActive,
+        status: data.status || 'PENDING',
+        updated_at: new Date()
+      }
+    });
 
-    if (!affiliate) {
-      throw new Error('Affiliate not found');
-    }
-
-    if (affiliate.affiliate_code) {
-      throw new Error('Affiliate already has a code');
-    }
-
-    const newCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-
-    const { data, error } = await supabase
-      .from('affiliate_profiles')
-      .update({ affiliate_code: newCode })
-      .eq('id', affiliate.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return data;
+    return this.formatProfile(profile);
   }
 
-  static async createAffiliate(userId: string, parentAffiliateCode?: string) {
-    let parentId: string | null = null;
-    let level_id: string | null = null;
+  private static formatProfile(profile: any): AffiliateProfile {
+    return {
+      id: profile.id,
+      userId: profile.user_id,
+      affiliateCode: profile.affiliate_code,
+      parent_affiliate_id: profile.parent_affiliate_id || undefined,
+      commission_rate: Number(profile.commission_rate),
+      commissionBalance: Number(profile.commission_balance),
+      totalEarned: Number(profile.total_earned),
+      monthlyEarnings: Number(profile.monthly_earnings),
+      isActive: profile.is_active,
+      status: profile.status || 'PENDING',
+      levelId: profile.level_id || undefined,
+      totalReferrals: profile.total_referrals || 0,
+      createdAt: profile.created_at,
+      updatedAt: profile.updated_at
+    };
+  }
 
+  static async createAffiliate(data: CreateAffiliateDTO): Promise<AffiliateProfile> {
     try {
-      // 1. Vérifier si l'utilisateur existe et n'est pas déjà affilié
-      const { data: existingProfile } = await supabase
-        .from('affiliate_profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .single();
+      // Vérifier si l'utilisateur existe déjà comme affilié
+      const existingProfile = await prisma.affiliate_profiles.findUnique({
+        where: { user_id: data.userId }
+      });
 
       if (existingProfile) {
-        throw new Error('User is already an affiliate');
+        throw new Error('User already has an affiliate profile');
       }
 
-      // 2. Si un code parent est fourni, valider et récupérer le parent
-      if (parentAffiliateCode) {
-        const { data: parent } = await supabase
-          .from('affiliate_profiles')
-          .select('id, user_id')
-          .eq('affiliate_code', parentAffiliateCode)
-          .eq('is_active', true)
-          .single();
+      // Vérifier le code du parrain si fourni
+      let parentId: string | undefined;
+      if (data.parentAffiliateCode) {
+        const parentProfile = await prisma.affiliate_profiles.findFirst({
+          where: { 
+            affiliate_code: data.parentAffiliateCode,
+            is_active: true,
+            status: 'ACTIVE'
+          }
+        });
 
-        if (!parent) {
-          throw new Error('Parent affiliate code not found or inactive');
+        if (!parentProfile) {
+          throw new Error('Invalid parent affiliate code');
         }
-
-        if (parent.user_id === userId) {
-          throw new Error('Cannot use your own affiliate code');
-        }
-
-        parentId = parent.id;
+        parentId = parentProfile.id;
       }
 
-      // 3. Récupérer le niveau de départ
-      const { data: startingLevel } = await supabase
-        .from('affiliate_levels')
-        .select('id')
-        .order('min_earnings', { ascending: true })
-        .limit(1)
-        .single();
+      // Générer un code unique
+      const affiliateCode = await generateAffiliateCode();
 
-      if (startingLevel) {
-        level_id = startingLevel.id;
-      }
-
-      // 4. Créer le profil d'affilié
-      const newCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      const { data, error } = await supabase
-        .from('affiliate_profiles')
-        .insert([{
-          user_id: userId,
-          affiliate_code: newCode,
+      // Créer le profil affilié
+      const profile = await prisma.affiliate_profiles.create({
+        data: {
+          user_id: data.userId,
+          affiliate_code: affiliateCode,
           parent_affiliate_id: parentId,
-          commission_balance: 0,
-          total_earned: 0,
-          level_id: level_id,
-          status: 'PENDING',
+          commission_balance: new Prisma.Decimal(0),
+          total_earned: new Prisma.Decimal(0),
+          commission_rate: new Prisma.Decimal(10),
           is_active: true,
           total_referrals: 0,
-          monthly_earnings: 0,
-          commission_rate: 10.00,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
+          monthly_earnings: new Prisma.Decimal(0),
+          status: 'PENDING',
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        include: {
+          users: true,
+          affiliate_levels: true
+        }
+      });
 
-      if (error) throw error;
+      // Notification aux administrateurs
+      const admins = await prisma.users.findMany({
+        where: {
+          role: {
+            in: ['ADMIN', 'SUPER_ADMIN']
+          }
+        }
+      });
 
-      // 5. Incrémenter le compteur de filleuls du parent
-      if (parentId) {
-        const { error: updateError } = await supabase.rpc(
-          'increment_referral_count',
-          { p_affiliate_id: parentId }
-        );
+      await Promise.all(
+        admins.map(admin =>
+          NotificationService.sendNotification(
+            admin.id,
+            NotificationType.AFFILIATE_STATUS_UPDATED,
+            {
+              title: 'Nouvelle demande d\'affiliation',
+              message: `Un nouvel affilié attend votre validation`,
+              data: { affiliateId: profile.id }
+            }
+          )
+        )
+      );
 
-        if (updateError) throw updateError;
-      }
-
-      return data;
+      return {
+        id: profile.id,
+        userId: profile.user_id,
+        affiliateCode: profile.affiliate_code,
+        parent_affiliate_id: profile.parent_affiliate_id || undefined,
+        commissionBalance: Number(profile.commission_balance),
+        totalEarned: Number(profile.total_earned),
+        createdAt: profile.created_at || new Date(),
+        updatedAt: profile.updated_at || new Date(),
+        commission_rate: Number(profile.commission_rate),
+        status: profile.status || 'PENDING',
+        isActive: profile.is_active || false,
+        totalReferrals: profile.total_referrals || 0,
+        monthlyEarnings: Number(profile.monthly_earnings),
+        levelId: profile.level_id || undefined,
+        level: profile.affiliate_levels ? {
+          id: profile.affiliate_levels.id,
+          name: profile.affiliate_levels.name,
+          minEarnings: Number(profile.affiliate_levels.minEarnings),
+          commissionRate: Number(profile.affiliate_levels.commissionRate),
+          createdAt: profile.affiliate_levels.created_at || new Date(),
+          updatedAt: profile.affiliate_levels.updated_at || new Date()
+        } : undefined
+      };
     } catch (error) {
       console.error('[AffiliateProfileService] Create affiliate error:', error);
       throw error;
     }
   }
 
-  private static getNextLevel(currentReferrals: number) {
-    if (currentReferrals < 10) {
+  static async getAffiliateProfile(userId: string): Promise<AffiliateProfile | null>;
+  static async getAffiliateProfile(profileId: string, byId: boolean): Promise<AffiliateProfile | null>;
+  static async getAffiliateProfile(
+    identifier: string,
+    byId: boolean = false
+  ): Promise<AffiliateProfile | null> {
+    try {
+      const where = byId 
+        ? { id: identifier }
+        : { user_id: identifier };
+
+      const profile = await prisma.affiliate_profiles.findUnique({
+        where,
+        include: {
+          affiliate_levels: true,
+          users: true
+        }
+      });
+
+      if (!profile) return null;
+
       return {
-        ...COMMISSION_LEVELS.LEVEL2,
-        requiredReferrals: 10,
-        remaining: 10 - currentReferrals
+        id: profile.id,
+        userId: profile.user_id,
+        affiliateCode: profile.affiliate_code,
+        parent_affiliate_id: profile.parent_affiliate_id || undefined, // Utiliser le nom exact
+        commissionBalance: Number(profile.commission_balance),
+        totalEarned: Number(profile.total_earned),
+        createdAt: profile.created_at || new Date(),
+        updatedAt: profile.updated_at || new Date(),
+        commission_rate: Number(profile.commission_rate),
+        status: profile.status || 'PENDING',
+        isActive: profile.is_active || false,
+        totalReferrals: profile.total_referrals || 0,
+        monthlyEarnings: Number(profile.monthly_earnings),
+        levelId: profile.level_id || undefined
       };
-    } else if (currentReferrals < 20) {
-      return {
-        ...COMMISSION_LEVELS.LEVEL3,
-        requiredReferrals: 20,
-        remaining: 20 - currentReferrals
-      };
+    } catch (error) {
+      console.error('[AffiliateProfileService] Get affiliate profile error:', error);
+      throw error;
     }
-    return null; // Maximum level reached
+  }
+
+  static async updateAffiliateProfile(
+    affiliateId: string,
+    data: Partial<AffiliateProfile>
+  ): Promise<AffiliateProfile> {
+    try {
+      const affiliate = await prisma.affiliate_profiles.update({
+        where: { id: affiliateId },
+        data: {
+          commission_rate: data.commission_rate ? new Prisma.Decimal(data.commission_rate) : undefined,
+          is_active: data.isActive,
+          status: data.status,
+          level_id: data.levelId,
+          updated_at: new Date()
+        },
+        include: {
+          affiliate_levels: true,
+          users: true
+        }
+      });
+
+      if (data.status) {
+        await NotificationService.sendNotification(
+          affiliate.user_id,
+          NotificationType.AFFILIATE_STATUS_UPDATED,
+          {
+            title: 'Statut d\'affiliation mis à jour',
+            message: `Votre statut d'affiliation est maintenant: ${data.status}`,
+            data: { newStatus: data.status }
+          }
+        );
+      }
+
+      return {
+        id: affiliate.id,
+        userId: affiliate.user_id,
+        affiliateCode: affiliate.affiliate_code,
+        parent_affiliate_id: affiliate.parent_affiliate_id || undefined,
+        commissionBalance: Number(affiliate.commission_balance),
+        totalEarned: Number(affiliate.total_earned),
+        createdAt: affiliate.created_at || new Date(),
+        updatedAt: affiliate.updated_at || new Date(),
+        commission_rate: Number(affiliate.commission_rate),
+        status: affiliate.status || 'PENDING',
+        isActive: affiliate.is_active || false,
+        totalReferrals: affiliate.total_referrals || 0,
+        monthlyEarnings: Number(affiliate.monthly_earnings),
+        levelId: affiliate.level_id || undefined,
+        level: affiliate.affiliate_levels ? {
+          id: affiliate.affiliate_levels.id,
+          name: affiliate.affiliate_levels.name,
+          minEarnings: Number(affiliate.affiliate_levels.minEarnings),
+          commissionRate: Number(affiliate.affiliate_levels.commissionRate),
+          createdAt: affiliate.affiliate_levels.created_at || new Date(),
+          updatedAt: affiliate.affiliate_levels.updated_at || new Date()
+        } : undefined
+      };
+    } catch (error) {
+      console.error('[AffiliateProfileService] Update profile error:', error);
+      throw error;
+    }
+  }
+
+  static async getAllAffiliates(
+    page: number = 1,
+    limit: number = 10,
+    statusFilter?: status
+  ): Promise<{
+    affiliates: AffiliateProfile[];
+    total: number;
+    pages: number;
+  }> {
+    try {
+      const where = statusFilter ? { status: statusFilter } : {};
+      const skip = (page - 1) * limit;
+
+      const [affiliates, total] = await Promise.all([
+        prisma.affiliate_profiles.findMany({
+          skip,
+          take: limit,
+          where,
+          orderBy: {
+            created_at: 'desc'
+          },
+          include: {
+            affiliate_levels: true,
+            users: true
+          }
+        }),
+        prisma.affiliate_profiles.count({ where })
+      ]);
+
+      return {
+        affiliates: affiliates.map(affiliate => ({
+          id: affiliate.id,
+          userId: affiliate.user_id,
+          affiliateCode: affiliate.affiliate_code,
+          parentAffiliateId: affiliate.parent_affiliate_id || undefined,
+          commissionBalance: Number(affiliate.commission_balance),
+          totalEarned: Number(affiliate.total_earned),
+          createdAt: affiliate.created_at || new Date(),
+          updatedAt: affiliate.updated_at || new Date(),
+          commission_rate: Number(affiliate.commission_rate),
+          status: affiliate.status || 'PENDING',
+          isActive: affiliate.is_active || false,
+          totalReferrals: affiliate.total_referrals || 0,
+          monthlyEarnings: Number(affiliate.monthly_earnings),
+          levelId: affiliate.level_id || undefined,
+          level: affiliate.affiliate_levels ? {
+            id: affiliate.affiliate_levels.id,
+            name: affiliate.affiliate_levels.name,
+            minEarnings: Number(affiliate.affiliate_levels.minEarnings),
+            commissionRate: Number(affiliate.affiliate_levels.commissionRate),
+            createdAt: affiliate.affiliate_levels.created_at || new Date(),
+            updatedAt: affiliate.affiliate_levels.updated_at || new Date()
+          } : undefined
+        })),
+        total,
+        pages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      console.error('[AffiliateProfileService] Get all affiliates error:', error);
+      throw error;
+    }
+  }
+
+  static async getReferralsByAffiliateId(
+    affiliateId: string
+  ): Promise<AffiliateProfile[]> {
+    try {
+      const referrals = await prisma.affiliate_profiles.findMany({
+        where: {
+          parent_affiliate_id: affiliateId
+        },
+        include: {
+          users: true,
+          affiliate_levels: true
+        }
+      });
+
+      return referrals.map(referral => ({
+        id: referral.id,
+        userId: referral.user_id,
+        affiliateCode: referral.affiliate_code,
+        parentAffiliateId: referral.parent_affiliate_id || undefined,
+        commissionBalance: Number(referral.commission_balance),
+        totalEarned: Number(referral.total_earned),
+        createdAt: referral.created_at || new Date(),
+        updatedAt: referral.updated_at || new Date(),
+        commission_rate: Number(referral.commission_rate),
+        status: referral.status || 'PENDING',
+        isActive: referral.is_active || false,
+        totalReferrals: referral.total_referrals || 0,
+        monthlyEarnings: Number(referral.monthly_earnings),
+        levelId: referral.level_id || undefined,
+        level: referral.affiliate_levels ? {
+          id: referral.affiliate_levels.id,
+          name: referral.affiliate_levels.name,
+          minEarnings: Number(referral.affiliate_levels.minEarnings),
+          commissionRate: Number(referral.affiliate_levels.commissionRate),
+          createdAt: referral.affiliate_levels.created_at || new Date(),
+          updatedAt: referral.affiliate_levels.updated_at || new Date()
+        } : undefined
+      }));
+    } catch (error) {
+      console.error('[AffiliateProfileService] Get referrals error:', error);
+      throw error;
+    }
   }
 }

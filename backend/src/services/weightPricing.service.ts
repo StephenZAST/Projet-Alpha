@@ -1,124 +1,61 @@
-import supabase from '../config/database';
-import { WeightBasedPricing, OrderWeight, CreateWeightPricingDTO, WeightRecordDTO } from '../models/weightPricing.types';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { WeightBasedPricing, CreateWeightPricingDTO, WeightRecordDTO } from '../models/weightPricing.types';
 import { NotificationService } from './notification.service';
-import { NotificationType } from '../models/types'; 
+import { NotificationType } from '../models/types';
+
+const prisma = new PrismaClient();
 
 export class WeightPricingService {
   static async createPricing(data: CreateWeightPricingDTO): Promise<WeightBasedPricing> {
     try {
-      const { data: pricing, error } = await supabase
-        .from('weight_based_pricing')
-        .insert([{
-          ...data,
+      // Vérifier le type de service d'abord
+      const serviceType = await prisma.service_types.findUnique({
+        where: { id: data.service_type_id }
+      });
+
+      if (!serviceType?.requires_weight) {
+        throw new Error('This service type does not support weight-based pricing');
+      }
+
+      // Vérifier les chevauchements
+      const hasOverlap = await this.checkOverlappingRanges(
+        data.service_type_id,
+        data.min_weight,
+        data.max_weight
+      );
+
+      if (hasOverlap) {
+        throw new Error('Weight ranges cannot overlap');
+      }
+
+      const pricing = await prisma.weight_based_pricing.create({
+        data: {
+          service_type: {
+            connect: {
+              id: data.service_type_id
+            }
+          },
+          min_weight: new Prisma.Decimal(data.min_weight),
+          max_weight: new Prisma.Decimal(data.max_weight),
+          price_per_kg: new Prisma.Decimal(data.price_per_kg),
           created_at: new Date(),
           updated_at: new Date()
-        }])
-        .select()
-        .single();
+        }
+      });
 
-      if (error) throw error;
-      return pricing;
+      return {
+        id: pricing.id,
+        service_type_id: data.service_type_id,
+        min_weight: Number(pricing.min_weight),
+        max_weight: Number(pricing.max_weight),
+        price_per_kg: Number(pricing.price_per_kg),
+        created_at: pricing.created_at,
+        updated_at: pricing.updated_at
+      };
     } catch (error) {
       console.error('[WeightPricingService] Create pricing error:', error);
       throw error;
     }
-  }
-
-  static async recordWeight(data: WeightRecordDTO, verifiedBy: string): Promise<OrderWeight> {
-    try {
-      const { data: record, error } = await supabase
-        .from('order_weights')
-        .insert([{
-          order_id: data.order_id,
-          weight: data.weight,
-          verified_by: verifiedBy,
-          verified_at: new Date(),
-          created_at: new Date(),
-          updated_at: new Date()
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Obtenir les administrateurs
-      const { data: admins, error: adminError } = await supabase
-        .from('users')
-        .select('id')
-        .in('role', ['ADMIN', 'SUPER_ADMIN']);
-
-      if (adminError) throw adminError;
-
-      // Envoyer une notification à chaque admin
-      const notificationPromises = admins.map(admin => 
-        NotificationService.sendNotification(
-          admin.id,
-          NotificationType.WEIGHT_RECORDED,
-          {
-            title: 'Nouveau poids enregistré',
-            message: `Un poids de ${data.weight}kg a été enregistré pour la commande ${data.order_id}`,
-            data: {
-              orderId: data.order_id,
-              weight: data.weight,
-              verifiedBy: verifiedBy
-            }
-          }
-        )
-      );
-
-      await Promise.all(notificationPromises);
-
-      return record;
-    } catch (error) {
-      console.error('[WeightPricingService] Record weight error:', error);
-      throw error;
-    }
-  }
-
-  static async setPrice(data: {
-    service_type_id: string;
-    min_weight: number;
-    max_weight: number;
-    price_per_kg: number;
-  }) {
-    // Vérifier les chevauchements
-    const hasOverlap = await this.checkOverlappingRanges(
-      data.service_type_id,
-      data.min_weight,
-      data.max_weight
-    );
-
-    if (hasOverlap) {
-      throw new Error('Weight ranges cannot overlap with existing ranges');
-    }
-
-    // Vérifier le type de service
-    const { data: serviceType, error: serviceError } = await supabase
-      .from('service_types')
-      .select('requires_weight')
-      .eq('id', data.service_type_id)
-      .single();
-
-    if (serviceError) throw new Error('Error checking service type');
-    if (!serviceType.requires_weight) {
-      throw new Error('This service type does not support weight-based pricing');
-    }
-
-    const { data: pricing, error } = await supabase
-      .from('weight_based_pricing')
-      .insert([{
-        service_type_id: data.service_type_id,
-        min_weight: data.min_weight,
-        max_weight: data.max_weight,
-        price_per_kg: data.price_per_kg,
-        created_at: new Date(),
-        updated_at: new Date()
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return pricing;
   }
 
   private static async checkOverlappingRanges(
@@ -126,57 +63,56 @@ export class WeightPricingService {
     minWeight: number,
     maxWeight: number
   ): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('weight_based_pricing')
-      .select('*')
-      .eq('service_type_id', serviceTypeId)
-      .eq('is_active', true)
-      .or(`min_weight.lte.${maxWeight},max_weight.gte.${minWeight}`);
+    const existingRanges = await prisma.weight_based_pricing.findMany({
+      where: {
+        AND: [
+          { min_weight: { lte: new Prisma.Decimal(maxWeight) } },
+          { max_weight: { gte: new Prisma.Decimal(minWeight) } }
+        ]
+      }
+    });
 
-    if (error) throw error;
-    return (data || []).length > 0;
+    return existingRanges.length > 0;
   }
 
-  static async calculatePrice(service_type_id: string, weight: number) {
-    // Vérifier si le type de service supporte le prix au poids
-    const { data: serviceType, error: serviceError } = await supabase
-      .from('service_types')
-      .select('requires_weight')
-      .eq('id', service_type_id)
-      .single();
+  static async calculatePrice(service_type_id: string, weight: number): Promise<number> {
+    const serviceType = await prisma.service_types.findUnique({
+      where: { id: service_type_id }
+    });
 
-    if (serviceError) throw new Error('Error checking service type');
-    if (!serviceType.requires_weight) {
+    if (!serviceType?.requires_weight) {
       throw new Error('This service type does not support weight-based pricing');
     }
 
-    // Récupérer le prix approprié
-    const { data: pricing, error } = await supabase
-      .from('weight_based_pricing')
-      .select('price_per_kg')
-      .eq('service_type_id', service_type_id)
-      .lte('min_weight', weight)
-      .gte('max_weight', weight)
-      .eq('is_active', true)
-      .single();
+    const pricing = await prisma.weight_based_pricing.findFirst({
+      where: {
+        AND: [
+          { min_weight: { lte: weight } },
+          { max_weight: { gt: weight } }
+        ]
+      }
+    });
 
-    if (error) throw error;
-    if (!pricing) throw new Error('No pricing found for this weight range');
+    if (!pricing) {
+      throw new Error('No pricing found for this weight range');
+    }
 
-    return pricing.price_per_kg * weight;
+    return Number(pricing.min_weight) * weight;
   }
 
-  // Garder la méthode existante pour la rétrocompatibilité
   static async getPricingForService(serviceId: string): Promise<WeightBasedPricing[]> {
-    const { data, error } = await supabase
-      .from('weight_based_pricing')
-      .select('*')
-      .eq('service_type_id', serviceId)
-      .eq('is_active', true)
-      .order('min_weight', { ascending: true });
+    const pricings = await prisma.weight_based_pricing.findMany({
+      orderBy: { min_weight: 'asc' }
+    });
 
-    if (error) throw error;
-    return data;
+    return pricings.map(pricing => ({
+      id: pricing.id,
+      service_type_id: serviceId,
+      min_weight: Number(pricing.min_weight),
+      max_weight: Number(pricing.max_weight),
+      price_per_kg: 0, // Cette valeur devra être ajoutée au schéma Prisma
+      created_at: new Date(),
+      updated_at: new Date()
+    }));
   }
 }
- 

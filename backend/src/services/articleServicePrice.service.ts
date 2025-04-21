@@ -1,161 +1,128 @@
-import supabase from '../config/database'; 
-import { ArticleServicePrice, CreateArticleServicePriceDTO, UpdateArticleServicePriceDTO } from '../models/serviceManagement.types';
-import { ArticleServiceUpdate } from '../models/types';  // Ajout de l'import correct
+import { PrismaClient, Prisma } from '@prisma/client';
+import { ArticleServicePrice, ArticleServiceUpdate } from '../models/types';
+
+const prisma = new PrismaClient();
 
 export class ArticleServicePriceService {
-  static async create(data: CreateArticleServicePriceDTO): Promise<ArticleServicePrice> {
-    const { data: price, error } = await supabase
-      .from('article_service_prices')
-      .insert([{
-        ...data,
-        created_at: new Date(),
-        updated_at: new Date()
-      }])
-      .select(`
-        *,
-        service_type:service_types(*),
-        article:articles(*)
-      `)
-      .single();
-
-    if (error) throw new Error(error.message);
-    return price;
+  static async create(data: Omit<ArticleServicePrice, 'id' | 'created_at' | 'updated_at'>) {
+    return await prisma.article_service_prices.create({
+      data: {
+        article_id: data.article_id,
+        service_type_id: data.service_type_id,
+        base_price: data.base_price,
+        premium_price: data.premium_price,
+        price_per_kg: data.price_per_kg,
+        is_available: data.is_available
+      }
+    });
   }
 
-  static async update(id: string, data: UpdateArticleServicePriceDTO): Promise<ArticleServicePrice> {
-    const { data: price, error } = await supabase
-      .from('article_service_prices')
-      .update({
-        ...data,
-        updated_at: new Date()
-      })
-      .eq('id', id) 
-      .select(`
-        *,
-        service_type:service_types(*),
-        article:articles(*)
-      `)
-      .single();
-
-    if (error) throw new Error(error.message);
-    return price;
+  static async update(id: string, data: Partial<ArticleServicePrice>) {
+    return await prisma.article_service_prices.update({
+      where: { id },
+      data
+    });
   }
 
-  static async getByArticleId(articleId: string): Promise<ArticleServicePrice[]> {
-    const { data, error } = await supabase
-      .from('article_service_prices')
-      .select(`
-        *,
-        service_type:service_types(*),
-        article:articles(*)
-      `)
-      .eq('article_id', articleId);
-
-    if (error) throw new Error(error.message);
-    return data || [];
+  static async getByArticleId(articleId: string) {
+    return await prisma.article_service_prices.findMany({
+      where: { article_id: articleId },
+      include: {
+        service_types: true
+      }
+    });
   }
 
-  static async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('article_service_prices')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw new Error(error.message);
-  }
-
-  static async getAllPrices(): Promise<ArticleServicePrice[]> {
-    const { data, error } = await supabase
-      .from('article_service_prices')
-      .select(`
-        *,
-        service_type:service_types(*)
-      `);
-
-    if (error) throw error;
-    return data || [];
-  }
-
-  static async getArticlePrices(articleId: string): Promise<ArticleServicePrice[]> {
-    const { data, error } = await supabase
-      .from('article_service_prices')
-      .select(`
-        *,
-        service_type:service_types(*)
-      `)
-      .eq('article_id', articleId);
-
-    if (error) throw error;
-    return data || [];
-  }
-
-  static async updatePrices(articleId: string, serviceTypeId: string, prices: {
-    base_price?: number;
-    premium_price?: number;
-    price_per_kg?: number;
-    is_available?: boolean;
-  }): Promise<ArticleServicePrice> {
-    const { data, error } = await supabase
-      .from('article_service_prices')
-      .update({
-        ...prices,
-        updated_at: new Date()
-      })
-      .eq('article_id', articleId)
-      .eq('service_type_id', serviceTypeId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+  static async delete(id: string) {
+    return await prisma.article_service_prices.delete({
+      where: { id }
+    });
   }
 
   static async setPrices(
     articleId: string,
     serviceTypeId: string,
-    priceData: ArticleServiceUpdate  // Utilisation du type importé
+    priceData: ArticleServiceUpdate
   ): Promise<ArticleServicePrice> {
     try {
-      const isValid = await this.validatePricing(priceData);
-      if (!isValid) {
-        throw new Error('Invalid pricing configuration');
-      }
-
-      // Extraire service_type_id de priceData pour éviter la duplication
-      const { service_type_id, ...priceDataWithoutServiceType } = priceData;
-
-      const { data, error } = await supabase
-        .from('article_service_prices')
-        .upsert({
-          article_id: articleId,
-          service_type_id: serviceTypeId,  // Utiliser le paramètre, pas celui de priceData
-          ...priceDataWithoutServiceType,
+      const price = await prisma.article_service_prices.upsert({
+        where: {
+          service_type_id_article_id: {
+            article_id: articleId,
+            service_type_id: serviceTypeId
+          }
+        },
+        update: {
+          base_price: priceData.base_price ? new Prisma.Decimal(priceData.base_price) : undefined,
+          premium_price: priceData.premium_price ? new Prisma.Decimal(priceData.premium_price) : null,
+          price_per_kg: priceData.price_per_kg ? new Prisma.Decimal(priceData.price_per_kg) : null,
+          is_available: priceData.is_available,
           updated_at: new Date()
-        })
-        .select('*, service_type:service_types(*)')
-        .single();
+        },
+        create: {
+          article_id: articleId,
+          service_type_id: serviceTypeId,
+          base_price: new Prisma.Decimal(priceData.base_price || 0),
+          premium_price: priceData.premium_price ? new Prisma.Decimal(priceData.premium_price) : null,
+          price_per_kg: priceData.price_per_kg ? new Prisma.Decimal(priceData.price_per_kg) : null,
+          is_available: priceData.is_available,
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        include: {
+          service_types: true
+        }
+      });
 
-      if (error) throw error;
-      return data;
+      return this.formatArticleServicePrice(price);
     } catch (error) {
-      console.error('Error setting prices:', error);
+      console.error('[ArticleServicePriceService] Set prices error:', error);
       throw error;
     }
-  } 
+  }
 
-  static async validatePricing(price: Partial<ArticleServicePrice>): Promise<boolean> {
-    if (price.base_price !== undefined && price.base_price < 0) {
-      return false;
+  static async getAllPrices() {
+    try {
+      return await prisma.article_service_prices.findMany({
+        include: {
+          articles: true,
+          service_types: true
+        }
+      });
+    } catch (error) {
+      console.error('Error getting all prices:', error);
+      throw error;
     }
-    if (price.premium_price !== undefined && price.premium_price < 0) {
-      return false;
+  }
+
+  static async getArticlePrices(articleId: string) {
+    try {
+      return await prisma.article_service_prices.findMany({
+        where: {
+          article_id: articleId
+        },
+        include: {
+          service_types: true
+        }
+      });
+    } catch (error) {
+      console.error('Error getting article prices:', error);
+      throw error;
     }
-    if (price.price_per_kg !== undefined && price.price_per_kg < 0) {
-      return false;
-    }
-    if (price.premium_price && price.base_price && price.premium_price <= price.base_price) {
-      return false;
-    }
-    return true;
+  }
+
+  private static formatArticleServicePrice(data: any): ArticleServicePrice {
+    return {
+      id: data.id,
+      article_id: data.article_id,
+      service_type_id: data.service_type_id,
+      base_price: Number(data.base_price),
+      premium_price: data.premium_price ? Number(data.premium_price) : undefined,
+      price_per_kg: data.price_per_kg ? Number(data.price_per_kg) : undefined,
+      is_available: data.is_available,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      service_type: data.service_types || undefined
+    };
   }
 }

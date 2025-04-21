@@ -21,8 +21,8 @@ export interface CreateOfferDTO {
 export interface Offer {
   id: string;
   name: string;
-  description?: string;
-  discountType: OfferDiscountType; 
+  description?: string | null;
+  discountType: string;
   discountValue: number;
   minPurchaseAmount?: number;
   maxDiscountAmount?: number;
@@ -33,6 +33,11 @@ export interface Offer {
   pointsRequired?: number;
   createdAt: Date;
   updatedAt: Date;
+  articles?: Array<{
+    id: string;
+    name: string;
+    description?: string;
+  }>;
 }
 
 export interface OfferSubscription {

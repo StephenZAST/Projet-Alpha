@@ -8,7 +8,6 @@ import '../../controllers/category_controller.dart';
 import '../../models/category.dart';
 import '../../widgets/shared/header.dart';
 import 'components/category_dialog.dart';
-import 'components/header_actions.dart';
 
 class CategoriesScreen extends StatelessWidget {
   @override

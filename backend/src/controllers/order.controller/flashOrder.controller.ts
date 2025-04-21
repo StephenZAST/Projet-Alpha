@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import supabase from '../../config/database'; 
-import { OrderStatus } from '../../models/types'; 
+import prisma from '../../config/prisma';
+import { OrderStatus } from '../../models/types';
 
 interface FlashOrderData {
   addressId: string;
@@ -14,7 +14,7 @@ interface OrderItem {
   unitPrice: number;
   isPremium?: boolean;
 }
- 
+
 export class FlashOrderController {
   static async createFlashOrder(req: Request, res: Response) {
     console.log('[FlashOrderController] Creating flash order with data:', req.body);
@@ -27,40 +27,47 @@ export class FlashOrderController {
         return res.status(401).json({ error: 'Unauthorized - User ID required' });
       }
 
-      const noteText = notes || note; // Accepter les deux formats
-      console.log('[FlashOrderController] Using note:', noteText);
-
-      console.log('[FlashOrderController] Creating order for user:', userId);
+      const noteText = notes || note;
 
       // Créer la commande avec les métadonnées
-      const { data, error } = await supabase.rpc('create_flash_order_with_metadata', {
-        order_data: {
-          userId: userId,
-          addressId: addressId,
+      const defaultServiceTypeId = await prisma.service_types.findFirst({
+        where: {
+          is_default: true
+        },
+        select: {
+          id: true
+        }
+      });
+
+      if (!defaultServiceTypeId) {
+        throw new Error('No default service type found');
+      }
+
+      const order = await prisma.orders.create({
+        data: {
+          userId,
+          addressId,
           status: 'DRAFT',
           totalAmount: 0,
           createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        metadata: {
-          is_flash_order: true,
-          note: noteText // Ajouter la note dans les métadonnées aussi
-        },
-        note_text: noteText
+          updatedAt: new Date(),
+          service_type_id: defaultServiceTypeId.id, // Utiliser l'ID du service type par défaut
+          order_metadata: {
+            create: {
+              is_flash_order: true,
+              metadata: { note: noteText }
+            }
+          },
+          order_notes: {
+            create: {
+              note: noteText
+            }
+          }
+        }
       });
 
-      if (error) {
-        console.error('[FlashOrderController] Error:', error);
-        return res.status(500).json({ error: error.message });
-      }
-
-      if (!data) {
-        console.error('[FlashOrderController] No data returned');
-        return res.status(500).json({ error: 'Failed to create order' });
-      }
-
-      console.log('[FlashOrderController] Order created successfully:', data);
-      res.json({ data: data });
+      console.log('[FlashOrderController] Order created successfully:', order);
+      res.json({ data: order });
 
     } catch (error: any) {
       console.error('[FlashOrderController] Unexpected error:', error);
@@ -73,21 +80,24 @@ export class FlashOrderController {
 
   static async getAllPendingOrders(req: Request, res: Response) {
     try {
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          user:users(
-            first_name,
-            last_name,
-            phone
-          ),
-          address:addresses(*)
-        `)
-        .eq('status', 'PENDING')
-        .order('createdAt', { ascending: false });
-
-      if (error) throw error;
+      const orders = await prisma.orders.findMany({
+        where: {
+          status: 'PENDING'
+        },
+        include: {
+          user: {
+            select: {
+              first_name: true,
+              last_name: true,
+              phone: true
+            }
+          },
+          address: true
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
 
       res.json({ data: orders });
     } catch (error: any) {
@@ -99,30 +109,6 @@ export class FlashOrderController {
   static async completeFlashOrder(req: Request, res: Response) {
     try {
       const { orderId } = req.params;
-      console.log('[FlashOrderController] Completing order:', orderId);
-
-      // 1. Vérifier d'abord que la commande existe et est une commande flash
-      const { data: flashOrder, error: checkError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          metadata:order_metadata!inner(*)
-        `)
-        .eq('id', orderId)
-        .eq('order_metadata.is_flash_order', true)
-        .single();
-
-      if (checkError || !flashOrder) {
-        console.error('[FlashOrderController] Order not found or not a flash order:', checkError);
-        return res.status(404).json({ error: 'Flash order not found' });
-      }
-
-      if (flashOrder.status !== 'DRAFT') {
-        return res.status(400).json({ 
-          error: `Cannot complete order in status: ${flashOrder.status}. Order must be in DRAFT status.`
-        });
-      }
-
       const {
         serviceId,
         items,
@@ -131,120 +117,112 @@ export class FlashOrderController {
         deliveryDate
       } = req.body;
 
-      // 2. Mettre à jour la commande
-      const { data: updatedOrder, error: updateError } = await supabase
-        .from('orders')
-        .update({
-          serviceId,
-          service_type_id: serviceTypeId,
-          collectionDate,
-          deliveryDate,
-          status: 'COLLECTING',
-          updatedAt: new Date()
-        })
-        .eq('id', orderId)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('[FlashOrderController] Error updating order:', updateError);
-        throw updateError;
-      }
-
-      // 3. Ajouter les items
-      if (items && items.length > 0) {
-        const orderItems = items.map((item: OrderItem) => ({
-          orderId,
-          articleId: item.articleId,
-          serviceId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }));
-
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(orderItems);
-
-        if (itemsError) {
-          console.error('[FlashOrderController] Error inserting items:', itemsError);
-          throw itemsError;
+      // Vérifier que la commande existe et est une commande flash
+      const flashOrder = await prisma.orders.findFirst({
+        where: {
+          id: orderId,
+          order_metadata: {
+            is_flash_order: true
+          }
+        },
+        include: {
+          order_metadata: true
         }
+      });
+
+      if (!flashOrder) {
+        return res.status(404).json({ error: 'Flash order not found' });
       }
 
-      // 4. Calculer le total avec typage explicite
-      const total = items.reduce((sum: number, item: OrderItem) => 
-        sum + (item.quantity * item.unitPrice), 
-        0
-      );
-      
-      // 5. Mettre à jour le total
-      const { error: totalError } = await supabase
-        .from('orders')
-        .update({ totalAmount: total })
-        .eq('id', orderId);
-
-      if (totalError) {
-        console.error('[FlashOrderController] Error updating total:', totalError);
-        throw totalError;
+      if (flashOrder.status !== 'DRAFT') {
+        return res.status(400).json({
+          error: `Cannot complete order in status: ${flashOrder.status}. Order must be in DRAFT status.`
+        });
       }
 
-      // 6. Récupérer la commande finale avec toutes ses relations
-      const { data: completedOrder, error: fetchError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          user:users(first_name, last_name, phone, email),
-          address:addresses(*),
-          items:order_items(*),
-          metadata:order_metadata(*)
-        `)
-        .eq('id', orderId)
-        .single();
+      // Mise à jour de la commande avec transaction
+      const updatedOrder = await prisma.$transaction(async (tx) => {
+        // 1. Mise à jour de la commande
+        const order = await tx.orders.update({
+          where: { id: orderId },
+          data: {
+            serviceId,
+            service_type_id: serviceTypeId,
+            collectionDate,
+            deliveryDate,
+            status: 'COLLECTING',
+            updatedAt: new Date()
+          }
+        });
 
-      if (fetchError) throw fetchError;
+        // 2. Création des items
+        if (items?.length > 0) {
+            interface OrderItemCreate {
+            orderId: string;
+            articleId: string;
+            serviceId: string;
+            quantity: number;
+            unitPrice: number;
+            isPremium?: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            }
 
-      res.json({ 
-        data: completedOrder,
+            await tx.order_items.createMany({
+            data: items.map((item: OrderItem): OrderItemCreate => ({
+              orderId,
+              articleId: item.articleId,
+              serviceId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              isPremium: item.isPremium,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }))
+            });
+        }
+
+        // 3. Calcul et mise à jour du total
+        interface SummableItem {
+          quantity: number;
+          unitPrice: number;
+        }
+
+        const total: number = items.reduce((sum: number, item: SummableItem): number => 
+          sum + (item.quantity * item.unitPrice), 
+          0
+        );
+
+        return await tx.orders.update({
+          where: { id: orderId },
+          data: { totalAmount: total },
+          include: {
+            user: {
+              select: {
+                first_name: true,
+                last_name: true,
+                phone: true,
+                email: true
+              }
+            },
+            address: true,
+            order_items: {
+              include: {
+                article: true
+              }
+            },
+            order_metadata: true
+          }
+        });
+      });
+
+      res.json({
+        data: updatedOrder,
         message: 'Flash order completed successfully'
       });
 
     } catch (error: any) {
       console.error('[FlashOrderController] Error completing flash order:', error);
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async getDraftFlashOrders(req: Request, res: Response) {
-    try {
-      console.log('[FlashOrderController] Fetching draft flash orders');
-      
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          metadata:order_metadata!inner(*),
-          user:users(
-            first_name,
-            last_name,
-            phone
-          ),
-          address:addresses(*)
-        `)
-        .eq('status', 'DRAFT')
-        .eq('order_metadata.is_flash_order', true)
-        .order('createdAt', { ascending: false }); // Changé de created_at à createdAt
-
-      if (error) {
-        console.error('[FlashOrderController] Database error:', error);
-        throw error;
-      }
-
-      console.log('[FlashOrderController] Found draft orders:', orders?.length);
-      res.json({ data: orders });
-    } catch (error: any) {
-      console.error('[FlashOrderController] Error:', error);
       res.status(500).json({ error: error.message });
     }
   }

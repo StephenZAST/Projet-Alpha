@@ -1,29 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv'; 
+import { PrismaClient } from '@prisma/client';
 
-dotenv.config();
-
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const prisma = new PrismaClient();
 
 // Test de connexion
-supabase
-  .from('users')
-  .select('*')
-  .limit(1)
-  .then(({ data, error }) => {
-    if (error) {
-      console.error('Supabase connection error:', error);
-    } else {
-      console.log('Supabase connection successful');
-    }
+prisma.$connect()
+  .then(() => {
+    console.log('Database connection successful');
+  })
+  .catch((error) => {
+    console.error('Database connection error:', error);
   });
 
-export default supabase;
-  
+export default prisma;

@@ -1,4 +1,4 @@
-import supabase from '../config/database';
+import { PrismaClient, user_role } from '@prisma/client';
 import { AuthResponse, User, ResetCode, UserListResponse, UserStats, UserFilters, UserActivityLog } from '../models/types';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from './email.service';
@@ -7,12 +7,12 @@ import * as jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const blacklistedTokens = new Set<string>();
+const prisma = new PrismaClient();
 
 export class AuthService {
   static async register(email: string, password: string, firstName: string, lastName: string, phone?: string, affiliateCode?: string, role: string = 'CLIENT'): Promise<User> {
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Créer l'objet pour Supabase (snake_case)
     const dbUser = {
       id: uuidv4(),
       email,
@@ -24,55 +24,61 @@ export class AuthService {
       referral_code: affiliateCode,
       created_at: new Date(),
       updated_at: new Date()
-    }; 
- 
-    const { data, error } = await supabase
-      .from('users')
-      .insert([dbUser])
-      .select()
-      .single();
+    };
 
-    if (error) {
+    try {
+      const data = await prisma.users.create({
+        data: {
+          id: dbUser.id,
+          email: dbUser.email,
+          password: dbUser.password,
+          first_name: dbUser.first_name,
+          last_name: dbUser.last_name, 
+          phone: dbUser.phone,
+          role: dbUser.role as any,
+          referral_code: dbUser.referral_code,
+          created_at: dbUser.created_at,
+          updated_at: dbUser.updated_at
+        }
+      });
+
+      const user: User = {
+        id: data.id,
+        email: data.email,
+        password: data.password,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        phone: data.phone || undefined,
+        role: data.role || 'CLIENT',
+        referralCode: data.referral_code || undefined,
+        createdAt: data.created_at || new Date(),
+        updatedAt: data.updated_at || new Date()
+      };
+
+      // Create loyalty points profile for new user
+      await prisma.loyalty_points.create({
+        data: {
+          id: uuidv4(),
+          user_id: user.id,
+          pointsBalance: 0,
+          totalEarned: 0,
+          createdAt: new Date()
+        }
+      });
+
+      return user;
+    } catch (error) {
       console.error('Register error:', error);
       throw error;
     }
-
-    // Transformer la réponse en format User (camelCase)
-    const user: User = {
-      id: data.id,
-      email: data.email,
-      password: data.password,
-      firstName: data.first_name,
-      lastName: data.last_name,
-      phone: data.phone,
-      role: data.role,
-      referralCode: data.referral_code,
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at)
-    };
-
-    // Créer un profil de points de fidélité pour le nouvel utilisateur
-    await supabase
-      .from('loyalty_points')
-      .insert({
-        id: uuidv4(),
-        user_id: user.id,
-        points_balance: 0,
-        total_earned: 0,
-        created_at: new Date()
-      });
-
-    return user;
   }
 
   static async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
+    const user = await prisma.users.findFirst({
+      where: { email }
+    });
 
-    if (error || !user) {
+    if (!user) {
       throw new Error('Invalid email or password');
     }
 
@@ -82,10 +88,24 @@ export class AuthService {
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET!, {
-      expiresIn: '168h', // 7 jours
+      expiresIn: '168h',
     });
 
-    return { user, token };
+    return { 
+      user: {
+      id: user.id,
+      email: user.email,
+      password: user.password,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phone: user.phone || undefined,
+      role: user.role || 'CLIENT', 
+      referralCode: user.referral_code || undefined,
+      createdAt: user.created_at || new Date(),
+      updatedAt: user.updated_at || new Date()
+      }, 
+      token 
+    };
   }
 
   static async invalidateToken(token: string): Promise<void> {
@@ -97,61 +117,62 @@ export class AuthService {
   }
 
   static async getCurrentUser(userId: string) {
-    // Ajout de la jointure avec la table addresses
-    const { data: user, error } = await supabase
-      .from('users')
-      .select(`
-        *,
-        addresses:addresses(*)
-      `)
-      .eq('id', userId)
-      .single();
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      include: {
+        addresses: true
+      }
+    });
 
-    if (error) throw error;
+    if (!user) throw new Error('User not found');
     return user;
   }
 
   static async createAffiliate(userId: string): Promise<User> {
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .update({ role: 'AFFILIATE' })
-      .eq('id', userId)
-      .select()
-      .single();
+    const user = await prisma.users.update({
+      where: { id: userId },
+      data: { role: 'AFFILIATE' }
+    });
 
-    if (userError) throw userError;
-
-    // Generate a unique affiliate code
     const affiliateCode = Math.random().toString(36).substr(2, 9).toUpperCase();
 
-    // Create the affiliate profile
-    const { error: profileError } = await supabase
-      .from('affiliate_profiles')
-      .insert([{
-        user_id: userId,
-        affiliate_code: affiliateCode,
-        parent_affiliate_id: null,
-        commission_balance: 0,
-        total_earned: 0,
-        monthly_earnings: 0,
-        total_referrals: 0,
-        commission_rate: 10.00,
-        status: 'PENDING',
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }]);
-
-    if (profileError) {
-      // If profile creation fails, revert user role
-      await supabase
-        .from('users')
-        .update({ role: 'CLIENT' })
-        .eq('id', userId);
-      throw profileError;
+    try {
+      await prisma.affiliate_profiles.create({
+        data: {
+          user_id: userId,
+          affiliate_code: affiliateCode,
+          parent_affiliate_id: null,
+          commission_balance: 0,
+          total_earned: 0,
+          monthly_earnings: 0,
+          total_referrals: 0,
+          commission_rate: 10.00,
+          status: 'PENDING',
+          is_active: true,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      });
+    } catch (error) {
+      await prisma.users.update({
+        where: { id: userId },
+        data: { role: 'CLIENT' }
+      });
+      throw error;
     }
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      password: user.password,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phone: user.phone || undefined,
+      role: user.role || 'CLIENT',
+      referralCode: user.referral_code || undefined,
+      createdAt: user.created_at || new Date(),
+      updatedAt: user.updated_at || new Date()
+    };
   }
 
   static async createAdmin(email: string, password: string, firstName: string, lastName: string, phone?: string): Promise<User> {
@@ -168,13 +189,19 @@ export class AuthService {
       updated_at: new Date()
     };
 
-    const { data, error } = await supabase
-      .from('users')
-      .insert([dbUser])
-      .select()
-      .single();
-
-    if (error) throw error;
+    const data = await prisma.users.create({
+      data: {
+      id: dbUser.id,
+      email: dbUser.email,
+      password: dbUser.password,
+      first_name: dbUser.first_name,
+      last_name: dbUser.last_name,
+      phone: dbUser.phone,
+      role: dbUser.role as any,
+      created_at: dbUser.created_at,
+      updated_at: dbUser.updated_at
+      }
+    });
 
     return {
       id: data.id,
@@ -184,37 +211,37 @@ export class AuthService {
       lastName: data.last_name,
       phone: data.phone,
       role: data.role,
-      createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at)
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
     } as User;
   }
 
   static async updateProfile(userId: string, email: string, firstName: string, lastName: string, phone?: string): Promise<User> {
-    const { data, error } = await supabase
-      .from('users')
-      .update({ email, first_name: firstName, last_name: lastName, phone, updated_at: new Date() })  // Changed from firstName, lastName, updatedAt
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const data = await prisma.users.update({
+      where: { id: userId },
+      data: { email, first_name: firstName, last_name: lastName, phone, updated_at: new Date() }
+    });
 
     return {
-      ...data,
+      id: data.id,
+      email: data.email,
+      password: data.password,
       firstName: data.first_name,
       lastName: data.last_name,
-      updatedAt: new Date(data.updated_at)
+      phone: data.phone || undefined,
+      role: data.role || 'CLIENT',
+      referralCode: data.referral_code || undefined,
+      createdAt: data.created_at || new Date(),
+      updatedAt: data.updated_at || new Date()
     } as User;
   }
 
   static async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<User> {
-    const { data: user, error: selectError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    const user = await prisma.users.findUnique({
+      where: { id: userId }
+    });
 
-    if (selectError) throw selectError;
+    if (!user) throw new Error('User not found');
 
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isPasswordValid) {
@@ -222,83 +249,77 @@ export class AuthService {
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-    const { data, error: updateError } = await supabase
-      .from('users')
-      .update({ password: hashedNewPassword, updated_at: new Date() })  // Changed from updatedAt
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (updateError) throw updateError;
+    const data = await prisma.users.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword, updated_at: new Date() }
+    });
 
     return {
-      ...data,
-      updatedAt: new Date(data.updated_at)
-    } as User;
+      id: data.id,
+      email: data.email,
+      password: data.password,
+      firstName: data.first_name,
+      lastName: data.last_name,
+      phone: data.phone || undefined,
+      role: data.role || 'CLIENT',
+      referralCode: data.referral_code || undefined,
+      createdAt: data.created_at || new Date(),
+      updatedAt: data.updated_at || new Date()
+    };
   }
 
   static async deleteAccount(userId: string): Promise<void> {
-    const { error } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', userId);
-
-    if (error) throw error;
+    await prisma.users.delete({
+      where: { id: userId }
+    });
   }
 
   static async deleteUser(targetUserId: string, userId: string): Promise<void> {
-    const { data: user, error: selectError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', targetUserId)
-      .single();
+    const user = await prisma.users.findUnique({
+      where: { id: targetUserId }
+    });
 
-    if (selectError) throw selectError;
+    if (!user) throw new Error('User not found');
 
     if (user.role === 'SUPER_ADMIN' && userId !== targetUserId) {
       throw new Error('Super Admin can only delete their own account');
     }
 
-    const { error: deleteError } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', targetUserId);
-
-    if (deleteError) throw deleteError;
+    await prisma.users.delete({
+      where: { id: targetUserId }
+    });
   }
 
   static async updateUser(targetUserId: string, email: string, firstName: string, lastName: string, phone?: string, role?: string): Promise<User> {
-    const { data: user, error: selectError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', targetUserId)
-      .single();
+    const user = await prisma.users.findUnique({
+      where: { id: targetUserId }
+    });
 
-    if (selectError) throw selectError;
+    if (!user) throw new Error('User not found');
 
-    const { data, error: updateError } = await supabase
-      .from('users')
-      .update({ email, first_name: firstName, last_name: lastName, phone, role, updated_at: new Date() })  // Changed from firstName, lastName, updatedAt
-      .eq('id', targetUserId)
-      .select()
-      .single();
-
-    if (updateError) throw updateError;
+    const data = await prisma.users.update({
+      where: { id: targetUserId },
+      data: { email, first_name: firstName, last_name: lastName, phone, role: role as user_role, updated_at: new Date() }
+    });
 
     return {
-      ...data,
+      id: data.id,
+      email: data.email,
+      password: data.password,
       firstName: data.first_name,
       lastName: data.last_name,
-      updatedAt: new Date(data.updated_at)
+      phone: data.phone || undefined,
+      role: data.role || 'CLIENT',
+      referralCode: data.referral_code || undefined,
+      createdAt: data.created_at || new Date(),
+      updatedAt: data.updated_at || new Date()
     } as User;
   }
 
   static async registerAffiliate(email: string, password: string, firstName: string, lastName: string, phone?: string, parentAffiliateCode?: string): Promise<AuthResponse> {
     try {
-      // Démarrer une transaction
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .insert([{
+      const user = await prisma.users.create({
+        data: {
           id: uuidv4(),
           email,
           password: await bcrypt.hash(password, 10),
@@ -308,56 +329,56 @@ export class AuthService {
           role: 'AFFILIATE',
           created_at: new Date(),
           updated_at: new Date()
-        }])
-        .select()
-        .single();
-
-      if (userError) {
-        if (userError.message.includes('duplicate key')) {
-          throw new Error('Email already exists');
         }
-        throw userError;
-      }
+      });
 
-      // Générer un code affilié unique
       const affiliateCode = Math.random().toString(36).substr(2, 9).toUpperCase();
 
-      // Créer le profil affilié
-      const { data: affiliateProfile, error: affiliateError } = await supabase
-        .from('affiliate_profiles')
-        .insert([{
+      const affiliateProfile = await prisma.affiliate_profiles.create({
+        data: {
           user_id: user.id,
           affiliate_code: affiliateCode,
-          parent_affiliate_id: null, // On gèrera le parent plus tard si nécessaire
+          parent_affiliate_id: null,
           commission_balance: 0,
           total_earned: 0
-        }])
-        .select()
-        .single();
+        }
+      });
 
-      if (affiliateError) {
-        // Si erreur lors de la création du profil, supprimer l'utilisateur
-        await supabase.from('users').delete().eq('id', user.id);
-        throw affiliateError;
-      }
-
-      // Générer le token
       const token = jwt.sign(
         { id: user.id, role: user.role },
         JWT_SECRET!,
-        { expiresIn: '168h' } // 7 jours (comme pour le login)
+        { expiresIn: '168h' }
       );
 
       return {
         user: {
-          ...user,
+          id: user.id,
+          email: user.email,
+          password: user.password,
           firstName: user.first_name,
           lastName: user.last_name,
-          createdAt: new Date(user.created_at),
-          updatedAt: new Date(user.updated_at)
+          phone: user.phone || undefined,
+          role: user.role || 'CLIENT', 
+          referralCode: user.referral_code || undefined,
+          createdAt: user.created_at || new Date(),
+          updatedAt: user.updated_at || new Date()
         },
         token,
-        affiliateProfile
+        affiliateProfile: {
+          id: affiliateProfile.id,
+          userId: affiliateProfile.user_id,
+          affiliateCode: affiliateProfile.affiliate_code,
+          commission_rate: Number(affiliateProfile.commission_rate || 10),
+          commissionBalance: Number(affiliateProfile.commission_balance || 0),
+          totalEarned: Number(affiliateProfile.total_earned || 0),
+          status: affiliateProfile.status || 'PENDING',
+          isActive: affiliateProfile.is_active || true,
+          totalReferrals: affiliateProfile.total_referrals || 0,
+          monthlyEarnings: Number(affiliateProfile.monthly_earnings || 0),
+          levelId: affiliateProfile.level_id ?? undefined,
+          createdAt: affiliateProfile.created_at || new Date(),
+          updatedAt: affiliateProfile.updated_at || new Date()
+        }
       };
     } catch (error: any) {
       throw error;
@@ -366,72 +387,69 @@ export class AuthService {
 
   static async resetPassword(email: string): Promise<void> {
     try {
-        // 1. Vérifier si l'utilisateur existe et obtenir son ID
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('id, email')
-            .eq('email', email)
-            .single();
+      const user = await prisma.users.findFirst({
+        where: { email }
+      });
 
-        if (userError || !user) {
-            console.error('User check error:', userError);
-            throw new Error('User not found');
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const code = this.generateVerificationCode();
+      const expirationTime = new Date(Date.now() + 15 * 60 * 1000);
+
+      await prisma.reset_codes.create({
+        data: {
+          user_id: user.id,
+          email: email,
+          code: code,
+          expires_at: expirationTime,
+          used: false,
+          created_at: new Date(),
+          updated_at: new Date()
         }
+      });
 
-        // 2. Générer un nouveau code
-        const code = this.generateVerificationCode();
-        const expirationTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-        // 3. Insérer le code dans la base de données avec user_id
-        const { error: resetCodeError } = await supabase
-            .from('reset_codes')
-            .insert([{
-                user_id: user.id,
-                email: email,
-                code: code,
-                expires_at: expirationTime,
-                used: false,
-                created_at: new Date(),
-                updated_at: new Date()
-            }]);
-
-        if (resetCodeError) {
-            console.error('Reset code storage error:', resetCodeError);
-            throw new Error('Failed to store reset code');
-        }
-
-        // 4. Envoyer l'email
-        try {
-            await sendEmail(email, code);
-            console.log('Reset code email sent successfully to:', email);
-        } catch (emailError) {
-            console.error('Email sending error:', emailError);
-            throw new Error('Failed to send reset code email');
-        }
+      try {
+        await sendEmail(email, code);
+        console.log('Reset code email sent successfully to:', email);
+      } catch (emailError) {
+        console.error('Email sending error:', emailError);
+        throw new Error('Failed to send reset code email');
+      }
     } catch (error) {
-        console.error('Reset password process error:', error);
-        throw error;
+      console.error('Reset password process error:', error);
+      throw error;
     }
   }
 
   static generateVerificationCode(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString(); // Code à 6 chiffres
+    return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
   static async storeVerificationCode(email: string, code: string) {
     const expirationTime = new Date();
-    expirationTime.setMinutes(expirationTime.getMinutes() + 15); // Code valide 15 minutes
+    expirationTime.setMinutes(expirationTime.getMinutes() + 15);
 
-    const { data, error } = await supabase
-      .from('reset_codes')
-      .insert({
-        email,
-        code,
-        expires_at: expirationTime,
-        used: false
-      });
+    const user = await prisma.users.findFirst({
+      where: { email }
+    });
 
-    return { data, error };
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const data = await prisma.reset_codes.create({
+      data: {
+      user_id: user.id,
+      email,
+      code,
+      expires_at: expirationTime,
+      used: false
+      }
+    });
+
+    return { data };
   }
 
   static async sendVerificationEmail(email: string, code: string) {
@@ -446,99 +464,84 @@ export class AuthService {
 
   static async validateResetCode(email: string, code: string): Promise<boolean> {
     try {
-        console.log('Validating reset code:', { email, code });
-
-        const { data, error } = await supabase
-            .from('reset_codes')
-            .select('*')
-            .match({ email, code, used: false })
-            .gt('expires_at', new Date().toISOString())
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-        if (error) {
-            console.error('Database error during validation:', error);
-            return false;
+      const resetCode = await prisma.reset_codes.findFirst({
+        where: {
+          email,
+          code,
+          used: false,
+          expires_at: {
+            gt: new Date()
+          }
+        },
+        orderBy: {
+          created_at: 'desc'
         }
+      });
 
-        console.log('Found reset codes:', data);
-
-        // Vérifier si nous avons trouvé un code valide
-        if (!data || data.length === 0) {
-            console.log('No valid reset code found');
-            return false;
-        }
-
-        return true;
-    } catch (error) {
-        console.error('Reset code validation error:', error);
+      if (!resetCode) {
         return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Reset code validation error:', error);
+      return false;
     }
   }
 
   static async verifyCodeAndResetPassword(email: string, code: string, newPassword: string): Promise<void> {
     try {
-        console.log('Starting password reset for:', email);
-
-        // 1. Vérifier le code de réinitialisation
-        const { data: resetCodes, error: codeError } = await supabase
-            .from('reset_codes')
-            .select('*')
-            .eq('email', email)
-            .eq('code', code)
-            .eq('used', false)
-            .gt('expires_at', new Date().toISOString())
-            .single();
-
-        if (codeError || !resetCodes) {
-            console.error('Reset code validation failed:', codeError);
-            throw new Error('Invalid or expired reset code');
+      const resetCode = await prisma.reset_codes.findFirst({
+        where: {
+          email,
+          code,
+          used: false,
+          expires_at: {
+            gt: new Date()
+          }
         }
+      });
 
-        // 2. Hasher le nouveau mot de passe
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        console.log('New password hash:', hashedPassword);
+      if (!resetCode) {
+        throw new Error('Invalid or expired reset code');
+      }
 
-        // 3. Mettre à jour le mot de passe dans la base de données
-        const { error: updateError } = await supabase
-            .from('users')
-            .update({
-                password: hashedPassword,
-                updated_at: new Date().toISOString()
-            })
-            .eq('email', email);
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        if (updateError) {
-            console.error('Password update failed:', updateError);
-            throw new Error('Failed to update password');
+      await prisma.users.findFirst({
+        where: { email }
+      }).then(user => {
+        if (!user) throw new Error('User not found');
+        return prisma.users.update({
+          where: { id: user.id },
+          data: {
+        password: hashedPassword,
+        updated_at: new Date()
+          }
+        });
+      });
+
+      const testVerification = await bcrypt.compare(newPassword, hashedPassword);
+
+      if (!testVerification) {
+        throw new Error('Password verification failed');
+      }
+
+      await prisma.reset_codes.update({
+        where: { id: resetCode.id },
+        data: {
+          used: true,
+          updated_at: new Date()
         }
+      });
 
-        // 4. Vérifier immédiatement que le nouveau mot de passe fonctionne
-        const testVerification = await bcrypt.compare(newPassword, hashedPassword);
-        console.log('Password verification test:', testVerification);
-
-        if (!testVerification) {
-            throw new Error('Password verification failed');
-        }
-
-        // 5. Marquer le code comme utilisé
-        await supabase
-            .from('reset_codes')
-            .update({
-                used: true,
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', resetCodes.id);
-
-        console.log('Reset code marked as used');
-        console.log('Password reset completed successfully');
+      console.log('Password reset completed successfully');
     } catch (error) {
-        console.error('Password reset failed:', error);
-        throw error;
+      console.error('Password reset failed:', error);
+      throw error;
     }
   }
 
-  // Ajout des nouvelles méthodes
   static async getAllUsers({
     page = 1,
     limit = 10,
@@ -550,40 +553,56 @@ export class AuthService {
   } = {}): Promise<UserListResponse> {
     try {
       const offset = (page - 1) * limit;
-      let query = supabase
-        .from('users')
-        .select('*', { count: 'exact' });
+      let query = prisma.users.findMany({
+        skip: offset,
+        take: limit,
+        orderBy: {
+          created_at: 'desc'
+        }
+      });
 
-      // Log des paramètres reçus
-      console.log('Filters received:', filters);
-
-      // Appliquer les filtres
       if (filters.role) {
-        console.log('Applying role filter:', filters.role);
-        query = query.eq('role', filters.role.toUpperCase());
+        query = prisma.users.findMany({
+          where: {
+            role: filters.role.toUpperCase() as user_role
+          }
+        });
       }
 
       if (filters.searchQuery) {
-        query = query.or(`first_name.ilike.%${filters.searchQuery}%,last_name.ilike.%${filters.searchQuery}%,email.ilike.%${filters.searchQuery}%`);
+        query = prisma.users.findMany({
+          where: {
+            OR: [
+              { first_name: { contains: filters.searchQuery, mode: 'insensitive' } },
+              { last_name: { contains: filters.searchQuery, mode: 'insensitive' } },
+              { email: { contains: filters.searchQuery, mode: 'insensitive' } }
+            ]
+          }
+        });
       }
+
       if (filters.startDate) {
-        query = query.gte('created_at', filters.startDate.toISOString());
+        query = prisma.users.findMany({
+          where: {
+            created_at: {
+              gte: filters.startDate
+            }
+          }
+        });
       }
+
       if (filters.endDate) {
-        query = query.lte('created_at', filters.endDate.toISOString());
+        query = prisma.users.findMany({
+          where: {
+            created_at: {
+              lte: filters.endDate
+            }
+          }
+        });
       }
 
-      // Exécuter la requête avec pagination
-      const { data, error, count } = await query
-        .range(offset, offset + limit - 1)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Query error:', error);
-        throw error;
-      }
-
-      console.log(`Found ${count} users matching filters`);
+      const data = await query;
+      const count = await prisma.users.count();
 
       return {
         data: data.map(user => ({
@@ -594,14 +613,14 @@ export class AuthService {
           phone: user.phone,
           role: user.role,
           password: user.password,
-          createdAt: new Date(user.created_at),
-          updatedAt: new Date(user.updated_at)
+          createdAt: user.created_at,
+          updatedAt: user.updated_at
         })) as User[],
         pagination: {
-          total: count || 0,
+          total: count,
           page,
           limit,
-          totalPages: Math.ceil((count || 0) / limit)
+          totalPages: Math.ceil(count / limit)
         }
       };
     } catch (error) {
@@ -612,15 +631,12 @@ export class AuthService {
 
   static async getUserStats(): Promise<UserStats> {
     try {
-      // Version corrigée de la requête
-      const { data: rawStats, error } = await supabase
-        .from('users')
-        .select('role')
-        .throwOnError();
+      const rawStats = await prisma.users.findMany({
+        select: {
+          role: true
+        }
+      });
 
-      if (error) throw error;
-
-      // Initialisation des statistiques
       const stats: UserStats = {
         total: 0,
         clientCount: 0,
@@ -631,7 +647,6 @@ export class AuthService {
         byRole: {}
       };
 
-      // Calcul des statistiques
       rawStats.forEach((user: any) => {
         stats.total++;
         const role = user.role.toLowerCase();
@@ -651,99 +666,124 @@ export class AuthService {
         }
       });
 
-      // Obtenir les statistiques d'activité séparément
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const weekAgo = new Date(today);
       weekAgo.setDate(weekAgo.getDate() - 7);
 
-      // Compter les utilisateurs actifs aujourd'hui
-      const { count: activeCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact' })
-        .eq('is_active', true)
-        .gte('last_login', today.toISOString());
+      const activeCount = await prisma.users.count({
+        where: {
+          created_at: {
+        gte: today
+          }
+        }
+      });
 
-      // Compter les nouveaux utilisateurs cette semaine
-      const { count: newUsersCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact' })
-        .gte('created_at', weekAgo.toISOString());
+      const newUsersCount = await prisma.users.count({
+        where: {
+          created_at: {
+            gte: weekAgo
+          }
+        }
+      });
 
-      stats.activeToday = activeCount || 0;
-      stats.newThisWeek = newUsersCount || 0;
+      stats.activeToday = activeCount;
+      stats.newThisWeek = newUsersCount;
 
-      console.log('Stats calculated:', stats);
       return stats;
-
     } catch (error) {
       console.error('Error in getUserStats:', error);
       throw error;
     }
   }
 
-  // Ajout de la méthode pour gérer les notifications utilisateur
   static async getUserNotifications(userId: string) {
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    const data = await prisma.notifications.findMany({
+      where: { user_id: userId },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
 
-    if (error) throw error;
     return data;
   }
 
-  // Ajout de la méthode pour gérer les préférences de notification
   static async updateNotificationPreferences(userId: string, preferences: any) {
-    const { error } = await supabase
-      .from('notification_preferences')
-      .upsert({
-        user_id: userId,
-        ...preferences,
-        updated_at: new Date()
-      });
+    const existingPrefs = await prisma.notification_preferences.findFirst({
+      where: { user_id: userId }
+    });
 
-    if (error) throw error;
+    await prisma.notification_preferences.upsert({
+      where: { id: existingPrefs?.id ?? uuidv4() },
+      update: {
+      email: preferences.email,
+      push: preferences.push,
+      sms: preferences.sms,
+      order_updates: preferences.orderUpdates,
+      promotions: preferences.promotions, 
+      payments: preferences.payments,
+      loyalty: preferences.loyalty,
+      updated_at: new Date()
+      },
+      create: {
+      id: uuidv4(),
+      user_id: userId,
+      email: preferences.email ?? true,
+      push: preferences.push ?? true,
+      sms: preferences.sms ?? false,
+      order_updates: preferences.orderUpdates ?? true,
+      promotions: preferences.promotions ?? true,
+      payments: preferences.payments ?? true,  
+      loyalty: preferences.loyalty ?? true,
+      updated_at: new Date()
+      }
+    });
+
     return true;
   }
 
-  // Ajout de la méthode pour la gestion des adresses
   static async getUserAddresses(userId: string) {
-    const { data, error } = await supabase
-      .from('addresses')
-      .select('*')
-      .eq('user_id', userId);
+    const data = await prisma.addresses.findMany({
+      where: { user_id: userId }
+    });
 
-    if (error) throw error;
     return data;
   }
 
-  // Ajout de la méthode pour la gestion des points de fidélité
   static async getUserLoyaltyPoints(userId: string) {
-    const { data, error } = await supabase
-      .from('loyalty_points')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    const data = await prisma.loyalty_points.findUnique({
+      where: { user_id: userId }
+    });
 
-    if (error) throw error;
     return data;
   }
 
   static async logUserActivity(activity: Omit<UserActivityLog, 'id' | 'createdAt'>): Promise<void> {
-    const { error } = await supabase
-      .from('user_activity_logs')
-      .insert({
-        id: uuidv4(),
-        user_id: activity.userId,
-        action: activity.action,
-        details: activity.details,
-        ip_address: activity.ipAddress,
-        user_agent: activity.userAgent,
-        created_at: new Date()
-      });
-
-    if (error) throw error;
+    try {
+        // Utilisation de $executeRaw pour une insertion directe
+        await prisma.$executeRaw`
+            INSERT INTO user_activity_logs (
+                id, 
+                user_id, 
+                action, 
+                details, 
+                ip_address, 
+                user_agent, 
+                created_at
+            ) VALUES (
+                ${uuidv4()}, 
+                ${activity.userId}, 
+                ${activity.action}, 
+                ${activity.details || {}}, 
+                ${activity.ipAddress}, 
+                ${activity.userAgent}, 
+                ${new Date()}
+            )
+        `;
+    } catch (error) {
+        console.error('Error logging user activity:', error);
+        // Log l'erreur mais ne la propage pas pour ne pas interrompre le flux principal
+        console.log('Activity details:', activity);
+    }
   }
 }

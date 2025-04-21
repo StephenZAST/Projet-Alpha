@@ -1,231 +1,311 @@
-import supabase from '../../config/database';
-import { PaginationParams } from '../../utils/pagination'; 
+import { PrismaClient, Prisma } from '@prisma/client';
+import { PaginationParams } from '../../utils/pagination';
+import { NotificationService } from '../notification.service';
+import { NotificationType } from '../../models/types';
+
+// Définition d'un type pour la transaction
+interface WithdrawalTransaction {
+  id: string;
+  amount: number;
+  created_at?: Date | null;
+  updated_at?: Date | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  affiliate_profile?: {
+    id: string;
+    user?: {
+      id: string;
+      email: string;
+      first_name: string;
+      last_name: string;
+      phone?: string;
+    };
+  };
+}
+
+const prisma = new PrismaClient();
 
 export class AffiliateWithdrawalService {
   static async requestWithdrawal(affiliateId: string, amount: number) {
     try {
-      // Vérifier le solde disponible
-      const { data: profile, error: profileError } = await supabase
-        .from('affiliate_profiles')
-        .select('commission_balance')
-        .eq('id', affiliateId)
-        .single();
+      return await prisma.$transaction(async (tx) => {
+        // Vérifier le solde
+        const affiliate = await tx.affiliate_profiles.findUnique({
+          where: { id: affiliateId },
+          select: {
+            commission_balance: true,
+            user_id: true
+          }
+        });
 
-      if (profileError) throw profileError;
-      if (!profile || profile.commission_balance < amount) {
-        throw new Error('Insufficient balance');
-      } 
+        if (!affiliate || Number(affiliate.commission_balance) < amount) {
+          throw new Error('Insufficient balance');
+        }
 
-      // Create withdrawal transaction
-      const { data: transaction, error: createError } = await supabase
-        .from('commissionTransactions')
-        .insert([{
-          affiliate_id: affiliateId,
-          amount: -amount, // Negative amount for withdrawals
-          status: 'PENDING',
-          created_at: new Date().toISOString()
-        }]) 
-        .select()
-        .single();
+        // Créer la transaction
+        const withdrawal = await tx.commission_transactions.create({
+          data: {
+            affiliate_id: affiliateId,
+            amount: new Prisma.Decimal(amount),
+            order_id: null,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
 
-      if (createError) throw createError;
+        // Mettre à jour le solde
+        await tx.affiliate_profiles.update({
+          where: { id: affiliateId },
+          data: {
+            commission_balance: {
+              decrement: new Prisma.Decimal(amount)
+            },
+            updated_at: new Date()
+          }
+        });
 
-      // Update affiliate balance
-      const { error: updateError } = await supabase
-        .from('affiliate_profiles')
-        .update({
-          commission_balance: profile.commission_balance - amount,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', affiliateId);
-
-      if (updateError) {
-        // Rollback the transaction creation if balance update fails
-        await supabase
-          .from('commissionTransactions')
-          .delete()
-          .eq('id', transaction.id);
-        throw updateError;
-      }
-
-      return transaction;
-    } catch (error: any) {
-      throw new Error(error.message);
+        return withdrawal;
+      });
+    } catch (error) {
+      console.error('[AffiliateWithdrawalService] Request withdrawal error:', error);
+      throw error;
     }
   }
 
-  static async getWithdrawals(pagination: PaginationParams, status?: string) {
+  static async getWithdrawals(pagination: PaginationParams, withdrawalStatus?: string) {
     const { page = 1, limit = 10 } = pagination;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    const skip = (page - 1) * limit;
 
-    const { data, error, count } = await supabase
-        .from('commissionTransactions')
-        .select(`
-          *,
-          affiliate:affiliate_profiles(
-            id,
-            user:users(
-              id,
-              email,
-              first_name,
-              last_name,
-              phone
-            )
-          )
-        `, { count: 'exact' })
-        .is('order_id', null) // Les retraits n'ont pas d'order_id
-        .eq('status', status || 'PENDING')
-      .range(from, to);
+    try {
+      const [withdrawals, total] = await Promise.all([
+        prisma.commission_transactions.findMany({
+          skip,
+          take: limit,
+          where: {
+            order_id: null, // transactions de retrait uniquement
+          },
+          include: {
+            affiliate_profiles: {
+              include: {
+                users: {
+                  select: {
+                    id: true,
+                    email: true,
+                    first_name: true,
+                    last_name: true,
+                    phone: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: {
+            created_at: 'desc'
+          }
+        }),
+        prisma.commission_transactions.count({
+          where: {
+            order_id: null
+          }
+        })
+      ]);
 
-    if (error) throw error;
+      return {
+        data: withdrawals.map(w => this.formatWithdrawalResponse(w)),
+        pagination: {
+          total,
+          currentPage: page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      console.error('[AffiliateWithdrawalService] Get withdrawals error:', error);
+      throw error;
+    }
+  }
 
-    // Transform response to match API format
-    const transformedData = data?.map(item => ({
-      ...item,
-      affiliate: item.affiliate ? {
-        ...item.affiliate,
-        user: item.affiliate.user ? {
-          ...item.affiliate.user,
-          firstName: item.affiliate.user.first_name,
-          lastName: item.affiliate.user.last_name
-        } : null
-      } : null
-    }));
-
+  private static formatWithdrawalResponse(withdrawal: any): WithdrawalTransaction {
     return {
-      data: transformedData,
-      pagination: {
-        total: count || 0,
-        currentPage: page,
-        limit,
-        totalPages: Math.ceil((count || 0) / limit)
-      }
+      id: withdrawal.id,
+      amount: Number(withdrawal.amount || 0),
+      created_at: withdrawal.created_at,
+      updated_at: withdrawal.updated_at,
+      status: withdrawal.status || 'PENDING',
+      affiliate_profile: withdrawal.affiliate_profiles ? {
+        id: withdrawal.affiliate_profiles.id,
+        user: withdrawal.affiliate_profiles.users ? {
+          id: withdrawal.affiliate_profiles.users.id,
+          email: withdrawal.affiliate_profiles.users.email,
+          first_name: withdrawal.affiliate_profiles.users.first_name,
+          last_name: withdrawal.affiliate_profiles.users.last_name,
+          phone: withdrawal.affiliate_profiles.users.phone
+        } : undefined
+      } : undefined
     };
   }
 
   static async rejectWithdrawal(withdrawalId: string, reason: string) {
-    const { data: withdrawal, error: findError } = await supabase
-      .from('commissionTransactions')
-      .select('*, affiliate:affiliate_profiles(commission_balance)')
-      .eq('id', withdrawalId)
-      .is('order_id', null)
-      .eq('status', 'PENDING')
-      .single();
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const withdrawal = await tx.commission_transactions.findFirst({
+          where: {
+            id: withdrawalId,
+            order_id: null,
+            status: 'PENDING'
+          },
+          include: {
+            affiliate_profiles: true
+          }
+        });
 
-    if (findError) throw findError;
-    if (!withdrawal) {
-      throw new Error('Withdrawal not found or not in pending status');
+        if (!withdrawal) {
+          throw new Error('Withdrawal not found or not in pending status');
+        }
+
+        const refundAmount = Math.abs(Number(withdrawal.amount || 0));
+
+        // Mettre à jour le statut
+        await tx.commission_transactions.update({
+          where: { id: withdrawalId },
+          data: {
+            status: 'REJECTED',
+            updated_at: new Date()
+          }
+        });
+
+        // Rembourser le montant
+        if (!withdrawal.affiliate_id) {
+          throw new Error('Invalid affiliate ID');
+        }
+
+        await tx.affiliate_profiles.update({
+          where: { id: withdrawal.affiliate_id },
+          data: {
+            commission_balance: {
+              increment: refundAmount
+            },
+            updated_at: new Date()
+          }
+        });
+
+        // Notification
+        if (withdrawal.affiliate_profiles?.user_id) {
+          await NotificationService.sendNotification(
+            withdrawal.affiliate_profiles.user_id,
+            NotificationType.WITHDRAWAL_REJECTED,
+            {
+              amount: refundAmount,
+              reason
+            }
+          );
+        }
+
+        return { message: 'Withdrawal rejected successfully' };
+      });
+    } catch (error) {
+      console.error('[AffiliateWithdrawalService] Reject withdrawal error:', error);
+      throw error;
     }
-
-    const refundAmount = Math.abs(withdrawal.amount);
-    const newBalance = Number(withdrawal.affiliate.commission_balance) + refundAmount;
-
-    // Start transaction
-    const { error: updateError } = await supabase
-      .from('commissionTransactions')
-      .update({
-        status: 'REJECTED',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', withdrawalId);
-
-    if (updateError) throw updateError;
-
-    // Refund the amount
-    const { error: refundError } = await supabase
-      .from('affiliate_profiles')
-      .update({
-        commission_balance: newBalance,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', withdrawal.affiliate_id);
-
-    if (refundError) throw refundError;
-
-    return { message: 'Withdrawal rejected successfully' };
   }
 
   static async approveWithdrawal(withdrawalId: string) {
-    const { data: withdrawal, error: findError } = await supabase
-      .from('commissionTransactions')
-      .select('*')
-      .eq('id', withdrawalId)
-      .is('order_id', null)
-      .eq('status', 'PENDING')
-      .single();
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const withdrawal = await tx.commission_transactions.findFirst({
+          where: {
+            id: withdrawalId,
+            order_id: null,
+            status: 'PENDING'
+          },
+          include: {
+            affiliate_profiles: true
+          }
+        });
 
-    if (findError || !withdrawal) {
-      throw new Error('Withdrawal not found or not in pending status');
+        if (!withdrawal) {
+          throw new Error('Withdrawal not found or not in pending status');
+        }
+
+        await tx.commission_transactions.update({
+          where: { id: withdrawalId },
+          data: {
+            status: 'APPROVED',
+            updated_at: new Date()
+          }
+        });
+
+        // Notification
+        if (withdrawal.affiliate_profiles?.user_id) {
+          await NotificationService.sendNotification(
+            withdrawal.affiliate_profiles.user_id,
+            NotificationType.WITHDRAWAL_PROCESSED,
+            {
+              amount: Math.abs(Number(withdrawal.amount || 0)),
+              transactionId: withdrawal.id
+            }
+          );
+        }
+
+        return { message: 'Withdrawal approved successfully' };
+      });
+    } catch (error) {
+      console.error('[AffiliateWithdrawalService] Approve withdrawal error:', error);
+      throw error;
     }
-
-    const { error: updateError } = await supabase
-      .from('commissionTransactions')
-      .update({
-        status: 'APPROVED',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', withdrawalId);
-
-    if (updateError) throw updateError;
-
-    return { message: 'Withdrawal approved successfully' };
   }
 
   static async getPendingWithdrawals(pagination: PaginationParams) {
     const { page = 1, limit = 10 } = pagination;
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    const skip = (page - 1) * limit;
 
-    const { data, error, count } = await supabase
-      .from('commissionTransactions')
-      .select(`
-        *,
-        affiliate:affiliate_profiles(
-          id,
-          commission_balance,
-          user:users(
-            id,
-            email,
-            first_name,
-            last_name,
-            phone
-          )
-        )
-      `, { count: 'exact' })
-      .is('order_id', null)
-      .eq('status', 'PENDING')
-      .order('created_at', { ascending: false })
-      .range(from, to);
+    try {
+      const [withdrawals, total] = await Promise.all([
+        prisma.commission_transactions.findMany({
+          skip,
+          take: limit,
+          where: {
+            order_id: null,
+            status: 'PENDING'
+          },
+          include: {
+            affiliate_profiles: {
+              include: {
+                users: {
+                  select: {
+                    id: true,
+                    email: true,
+                    first_name: true,
+                    last_name: true,
+                    phone: true
+                  }
+                }
+              }
+            }
+          },
+          orderBy: {
+            created_at: 'desc'
+          }
+        }),
+        prisma.commission_transactions.count({
+          where: {
+            order_id: null,
+            status: 'PENDING'
+          }
+        })
+      ]);
 
-    if (error) throw error;
-
-    const transformedData = data?.map(item => ({
-      id: item.id,
-      amount: Math.abs(item.amount),
-      status: item.status,
-      createdAt: item.created_at,
-      affiliate: item.affiliate ? {
-        id: item.affiliate.id,
-        currentBalance: item.affiliate.commission_balance,
-        user: item.affiliate.user ? {
-          id: item.affiliate.user.id,
-          email: item.affiliate.user.email,
-          firstName: item.affiliate.user.first_name,
-          lastName: item.affiliate.user.last_name,
-          phone: item.affiliate.user.phone
-        } : null
-      } : null
-    }));
-
-    return {
-      data: transformedData,
-      pagination: {
-        total: count || 0,
-        currentPage: page,
-        limit,
-        totalPages: Math.ceil((count || 0) / limit)
-      }
-    };
+      return {
+        data: withdrawals.map(w => this.formatWithdrawalResponse(w)),
+        pagination: {
+          total,
+          currentPage: page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      console.error('[AffiliateWithdrawalService] Get pending withdrawals error:', error);
+      throw error;
+    }
   }
 }

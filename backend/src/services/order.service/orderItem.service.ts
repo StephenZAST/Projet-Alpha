@@ -1,124 +1,218 @@
-import supabase from '../../config/database';
-import { OrderItem, CreateOrderItemDTO } from '../../models/types'; 
+import { PrismaClient, Prisma } from '@prisma/client';
+import { OrderItem, CreateOrderItemDTO } from '../../models/types';
+
+const prisma = new PrismaClient();
 
 export class OrderItemService {
-  private static readonly itemSelect = `
-    *,
-    article:articles!inner(
-      *,
-      category:article_categories!inner(
-        id,
-        name,
-        description
-      )
-    ),
-    service:services!inner(*)
-  `;
+  // Définition de l'include avec les bonnes relations
+  private static readonly itemInclude = {
+    article: {
+      include: {
+        article_categories: true
+      }
+    }
+  };
 
   static async createOrderItem(orderItemData: CreateOrderItemDTO): Promise<OrderItem> {
     const { orderId, articleId, serviceId, quantity, unitPrice } = orderItemData;
 
-    // 1. Vérifier que l'article existe et n'est pas supprimé
-    const { data: article, error: articleError } = await supabase
-      .from('articles')
-      .select('*')
-      .eq('id', articleId) 
-      .eq('isDeleted', false)
-      .single();
+    // Vérification de l'article
+    const article = await prisma.articles.findFirst({
+      where: {
+        id: articleId,
+        isDeleted: false
+      }
+    });
 
-    if (articleError || !article) {
+    if (!article) {
       throw new Error(`Article not found or inactive: ${articleId}`);
-    } 
+    }
 
-    // 2. Créer l'item de commande
-    const { data, error } = await supabase
-      .from('order_items')
-      .insert({
+    // Création de l'item avec le bon nom de table
+    const orderItem = await prisma.order_items.create({
+      data: {
         orderId,
         articleId,
         serviceId,
         quantity,
-        unitPrice,
+        unitPrice: new Prisma.Decimal(unitPrice),
         createdAt: new Date(),
         updatedAt: new Date()
-      })
-      .select(this.itemSelect)
-      .single();
+      },
+      include: this.itemInclude
+    });
 
-    if (error) {
-      console.error('Error creating order item:', error);
-      throw error;
-    }
-
-    return data;
+    // Conversion en OrderItem
+    return {
+      id: orderItem.id,
+      orderId: orderItem.orderId,
+      articleId: orderItem.articleId,
+      serviceId: orderItem.serviceId,
+      quantity: orderItem.quantity,
+      unitPrice: Number(orderItem.unitPrice),
+      isPremium: orderItem.isPremium || false,
+      createdAt: orderItem.createdAt,
+      updatedAt: orderItem.updatedAt,
+      article: orderItem.article ? {
+        id: orderItem.article.id,
+        categoryId: orderItem.article.categoryId || '',
+        name: orderItem.article.name,
+        description: orderItem.article.description || undefined,
+        basePrice: Number(orderItem.article.basePrice),
+        premiumPrice: Number(orderItem.article.premiumPrice || 0),
+        createdAt: orderItem.article.createdAt || new Date(),
+        updatedAt: orderItem.article.updatedAt || new Date()
+      } : undefined
+    };
   }
 
   static async getOrderItemById(orderItemId: string): Promise<OrderItem> {
-    const { data, error } = await supabase
-      .from('order_items')
-      .select(this.itemSelect)
-      .eq('id', orderItemId)
-      .single();
+    const orderItem = await prisma.order_items.findUnique({
+      where: { id: orderItemId },
+      include: this.itemInclude
+    });
 
-    if (error) throw error;
-    if (!data) throw new Error('Order item not found');
+    if (!orderItem) throw new Error('Order item not found');
 
-    return data;
+    return {
+      id: orderItem.id,
+      orderId: orderItem.orderId,
+      articleId: orderItem.articleId,
+      serviceId: orderItem.serviceId,
+      quantity: orderItem.quantity,
+      unitPrice: Number(orderItem.unitPrice),
+      isPremium: orderItem.isPremium || false,
+      createdAt: orderItem.createdAt,
+      updatedAt: orderItem.updatedAt,
+      article: orderItem.article ? {
+        id: orderItem.article.id,
+        categoryId: orderItem.article.categoryId || '',
+        name: orderItem.article.name,
+        description: orderItem.article.description || undefined,
+        basePrice: Number(orderItem.article.basePrice),
+        premiumPrice: Number(orderItem.article.premiumPrice || 0),
+        createdAt: orderItem.article.createdAt || new Date(),
+        updatedAt: orderItem.article.updatedAt || new Date()
+      } : undefined
+    };
   }
 
   static async getAllOrderItems(): Promise<OrderItem[]> {
-    const { data, error } = await supabase
-      .from('order_items')
-      .select(this.itemSelect);
+    const items = await prisma.order_items.findMany({
+      include: this.itemInclude
+    });
 
-    if (error) throw error;
-
-    return data || [];
-  }
-
-  static async getOrderItemsByOrderId(orderId: string): Promise<OrderItem[]> {
-    const { data, error } = await supabase
-      .from('order_items')
-      .select(this.itemSelect)
-      .eq('orderId', orderId)
-      .eq('articles.isDeleted', false);
-
-    if (error) throw error;
-    if (!data) return [];
-
-    return data;
+    return items.map(item => ({
+      id: item.id,
+      orderId: item.orderId,
+      articleId: item.articleId,
+      serviceId: item.serviceId,
+      quantity: item.quantity,
+      unitPrice: Number(item.unitPrice),
+      isPremium: item.isPremium || false,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      article: item.article ? {
+        id: item.article.id,
+        categoryId: item.article.categoryId || '',
+        name: item.article.name,
+        description: item.article.description || undefined,
+        basePrice: Number(item.article.basePrice),
+        premiumPrice: Number(item.article.premiumPrice || 0),
+        createdAt: item.article.createdAt || new Date(),
+        updatedAt: item.article.updatedAt || new Date()
+      } : undefined
+    }));
   }
 
   static async updateOrderItem(
-    orderItemId: string, 
+    orderItemId: string,
     orderItemData: Partial<OrderItem>
   ): Promise<OrderItem> {
-    const { data, error } = await supabase
-      .from('order_items')
-      .update({
-        ...orderItemData,
+    const orderItem = await prisma.order_items.update({
+      where: { id: orderItemId },
+      data: {
+        quantity: orderItemData.quantity,
+        unitPrice: orderItemData.unitPrice ? new Prisma.Decimal(orderItemData.unitPrice) : undefined,
+        isPremium: orderItemData.isPremium,
         updatedAt: new Date()
-      })
-      .eq('id', orderItemId)
-      .select(this.itemSelect)
-      .single();
+      },
+      include: this.itemInclude
+    });
 
-    if (error) throw error;
-    if (!data) throw new Error('Order item not found');
-
-    return data;
+    return {
+      id: orderItem.id,
+      orderId: orderItem.orderId,
+      articleId: orderItem.articleId,
+      serviceId: orderItem.serviceId,
+      quantity: orderItem.quantity,
+      unitPrice: Number(orderItem.unitPrice),
+      isPremium: orderItem.isPremium || false,
+      createdAt: orderItem.createdAt,
+      updatedAt: orderItem.updatedAt,
+      article: orderItem.article ? {
+        id: orderItem.article.id,
+        categoryId: orderItem.article.categoryId || '',
+        name: orderItem.article.name,
+        description: orderItem.article.description || undefined,
+        basePrice: Number(orderItem.article.basePrice),
+        premiumPrice: Number(orderItem.article.premiumPrice || 0),
+        createdAt: orderItem.article.createdAt || new Date(),
+        updatedAt: orderItem.article.updatedAt || new Date()
+      } : undefined
+    };
   }
 
   static async deleteOrderItem(orderItemId: string): Promise<void> {
-    const { error } = await supabase
-      .from('order_items')
-      .delete()
-      .eq('id', orderItemId);
-
-    if (error) throw error;
+    await prisma.order_items.delete({
+      where: { id: orderItemId }
+    });
   }
 
-  static async calculateItemsTotal(items: OrderItem[]): Promise<number> {
-    return items.reduce((total, item) => total + (item.unitPrice * item.quantity), 0);
+  static async calculateTotal(orderItems: Array<{ articleId: string; quantity: number }>): Promise<number> {
+    const articleIds = orderItems.map(item => item.articleId);
+    
+    const articles = await prisma.articles.findMany({
+      where: {
+        id: { in: articleIds }
+      },
+      select: {
+        id: true,
+        basePrice: true
+      }
+    });
+
+    const priceMap = new Map(
+      articles.map(article => [article.id, Number(article.basePrice)])
+    );
+
+    return orderItems.reduce((total, item) => {
+      const price = priceMap.get(item.articleId);
+      if (!price) throw new Error(`Article not found: ${item.articleId}`);
+      return total + (price * item.quantity);
+    }, 0);
+  }
+
+  static async getOrderItemsByOrderId(orderId: string) {
+    try {
+      const orderItems = await prisma.order_items.findMany({
+        where: {
+          orderId: orderId
+        },
+        include: {
+          article: true,
+          order: true
+        }
+      });
+
+      if (!orderItems.length) {
+        throw new Error('No order items found for this order');
+      }
+
+      return orderItems;
+    } catch (error) {
+      console.error('Error getting order items:', error);
+      throw error;
+    }
   }
 }

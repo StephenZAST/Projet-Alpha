@@ -65,33 +65,32 @@ export class OrderStatusController {
     }
 
     // Vérifier si la commande existe et obtenir son statut actuel
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', orderId)
-      .single();
+    const order = await supabase.orders.findUnique({
+      where: {
+        id: orderId
+      }
+    });
 
-    if (orderError || !order) {
+    if (!order) {
       throw new Error('Order not found');
     }
 
     // Valider la transition de statut
-    if (!this.isValidStatusTransition(order.status, newStatus)) {
-      throw new Error(`Invalid status transition from ${order.status} to ${newStatus}`);
+    const currentStatus = order.status ?? 'DRAFT';
+    if (!this.isValidStatusTransition(currentStatus, newStatus)) {
+      throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
     }
 
     // Mettre à jour le statut
-    const { data: updatedOrder, error } = await supabase
-      .from('orders')
-      .update({ 
+    const updatedOrder = await supabase.orders.update({
+      where: {
+        id: orderId
+      },
+      data: {
         status: newStatus,
         updatedAt: new Date()
-      })
-      .eq('id', orderId)
-      .select()
-      .single();
-
-    if (error) throw error;
+      }
+    });
     return updatedOrder;
   }
 
@@ -120,16 +119,16 @@ export class OrderStatusController {
         return res.status(403).json({ error: 'Unauthorized' });
       }
 
-      const { error } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', orderId);
-
-      if (error) throw error;
-      res.json({ message: 'Order deleted successfully' });
-    } catch (error: any) {
-      console.error('[OrderController] Error deleting order:', error);
-      res.status(500).json({ error: error.message });
+        await supabase.orders.delete({
+          where: {
+            id: orderId
+          }
+        });
+        
+        res.json({ message: 'Order deleted successfully' });
+      } catch (error: any) {
+        console.error('[OrderController] Error deleting order:', error);
+        res.status(500).json({ error: error.message });
     }
   }
 }

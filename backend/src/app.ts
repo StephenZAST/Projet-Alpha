@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
+import { PrismaClient } from '@prisma/client';
 import rateLimit from 'express-rate-limit';
 
 // Import all routes
@@ -30,6 +30,19 @@ import './scheduler'; // Importer le scheduler pour démarrer les tâches cron
 
 // Load environment variables
 dotenv.config();
+
+// Initialize Prisma
+const prisma = new PrismaClient();
+
+// Test database connection
+prisma.$connect()
+  .then(() => {
+    console.log('Successfully connected to the database');
+  })
+  .catch((error) => {
+    console.error('Failed to connect to the database:', error);
+    process.exit(1);
+  });
 
 const app = express();
  
@@ -147,11 +160,10 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// Initialize Supabase client
-export const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-);
+// Add Prisma cleanup on app shutdown
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+});
 
 // Basic route
 app.get('/', (req, res) => {

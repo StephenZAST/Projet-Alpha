@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AdminService } from '../services/admin.service';
 import { AdminCreateOrderDTO, OrderStatus } from '../models/types'; 
 import supabase from '../config/database';
+import prisma from '../config/prisma';
 
 export class AdminController {
   static async configureCommissions(req: Request, res: Response) {
@@ -48,12 +49,13 @@ export class AdminController {
 
   static async createArticle(req: Request, res: Response) {
     try {
-      const { name, basePrice, premiumPrice, categoryId, description } = req.body;
-      const userId = req.user?.id;
-
-      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-      const result = await AdminService.createArticle(name, basePrice, premiumPrice, categoryId, description);
+      const { name, basePrice, categoryId, description } = req.body;
+      const result = await AdminService.createArticle(
+        name,
+        basePrice,
+        categoryId,
+        description
+      );
       res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -103,13 +105,8 @@ export class AdminController {
 
   static async updateArticle(req: Request, res: Response) {
     try {
-      const { name, basePrice, premiumPrice, categoryId, description } = req.body;
       const articleId = req.params.articleId;
-      const userId = req.user?.id;
-
-      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-      const result = await AdminService.updateArticle(articleId, name, basePrice, premiumPrice, categoryId, description);
+      const result = await AdminService.updateArticle(articleId, req.body);
       res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -153,7 +150,7 @@ export class AdminController {
         return res.status(400).json({ error: 'Invalid status' });
       }
 
-      const result = await AdminService.updateAffiliateStatus(affiliateId, status, isActive);
+      const result = await AdminService.updateAffiliateStatus(affiliateId, status);
       res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -210,14 +207,25 @@ export class AdminController {
         });
       }
 
-      const orderData: AdminCreateOrderDTO = {
-        ...req.body,
-        createdBy: adminId
+      const inputData = req.body;
+      if (!inputData.serviceTypeId || !inputData.addressId) {
+        return res.status(400).json({
+          success: false,
+          message: 'serviceTypeId and addressId are required'
+        });
+      }
+
+      const orderData = {
+        items: inputData.items,
+        serviceTypeId: inputData.serviceTypeId,
+        addressId: inputData.addressId,
+        collectionDate: inputData.collectionDate ? new Date(inputData.collectionDate) : undefined,
+        deliveryDate: inputData.deliveryDate ? new Date(inputData.deliveryDate) : undefined
       };
 
-      console.log('[AdminController] Creating order for customer:', orderData.customerId);
+      console.log('[AdminController] Creating order for customer:', inputData.customerId);
 
-      const order = await AdminService.createOrderForCustomer(orderData);
+      const order = await AdminService.createOrderForCustomer(inputData.customerId, orderData);
 
       return res.status(201).json({
         success: true,
@@ -238,67 +246,42 @@ export class AdminController {
 
   static async getAllOrders(req: Request, res: Response) {
     try {
-      const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
-      
-      // Correction du typage pour status
-      const status: string | undefined = req.query.status as string | undefined;
-      
-      const sortQuery = (req.query.sort as string) || 'createdAt:desc';
-      const [sortField, sortOrder] = sortQuery.split(':');
+      const status = req.query.status as OrderStatus | undefined;
+      const sortField = req.query.sort_field as string;
+      const sortOrder = (req.query.sort_order as 'asc' | 'desc');
 
-      const result = await AdminService.getAllOrders({
-        page,
-        limit,
-        status: status || undefined, // Si status est une chaîne vide ou null, on renvoie undefined
-        sortField: sortField || 'createdAt',
-        sortOrder: sortOrder || 'desc'
+      const result = await AdminService.getAllOrders(page, limit, {
+        status,
+        sortField,
+        sortOrder
       });
 
-      return res.json({
+      res.json({
         success: true,
-        data: result.data,
+        data: result.orders,
         pagination: {
           total: result.total,
-          page,
+          currentPage: page,
           limit,
-          totalPages: result.totalPages
+          totalPages: Math.ceil(result.total / limit)
         }
       });
     } catch (error) {
-      console.error('[AdminController] Error fetching orders:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Internal Server Error',
-        message: 'Failed to fetch orders'
-      });
+      res.status(500).json({ error: 'Failed to fetch orders' });
     }
   }
 
   static async getOrdersByStatus(req: Request, res: Response) {
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .then(result => {
-          if (result.error) throw result.error;
-          
-          const counts: { [key: string]: number } = {};
-          result.data?.forEach(order => {
-            const status = order.status;
-            counts[status] = (counts[status] || 0) + 1;
-          });
-          
-          return {
-            data: counts,
-            error: null
-          };
-        });
-
-      if (error) throw error;
+      const orders = await prisma.orders.findMany();
+      const counts: { [key: string]: number } = {};
+      orders.forEach(order => {
+        const status = order.status || 'UNKNOWN';
+        counts[status] = (counts[status] || 0) + 1;
+      });
+      const data = counts;
 
       return res.json({
         success: true,

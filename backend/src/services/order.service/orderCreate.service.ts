@@ -1,214 +1,169 @@
-import supabase from '../../config/database';
-import { CreateOrderDTO, CreateOrderResponse, AppliedDiscount, NotificationType } from '../../models/types';
+import { PrismaClient, order_status, payment_method_enum, orders } from '@prisma/client';
+import { 
+  CreateOrderDTO, 
+  CreateOrderResponse, 
+  AppliedDiscount, 
+  NotificationType, 
+  Order,
+  PaymentMethod,
+  PaymentStatus,
+  OrderItem
+} from '../../models/types';
 import { NotificationService } from '../notification.service';
 import { LoyaltyService } from '../loyalty.service';
-import { OrderPaymentService } from './orderPayment.service'; 
+import { OrderPaymentService } from './orderPayment.service';
+
+const prisma = new PrismaClient();
 
 export class OrderCreateService {
-  // Important: Cette classe utilise la procédure stockée 'create_order_with_items'
-  // Pour plus de détails sur la procédure, voir: backend/prisma/migrations/[timestamp]_stored_procedures.sql
-  // La procédure gère de manière atomique :
-  // - La création de la commande
-  // - L'ajout des articles
-  // - Le calcul des prix
-  // - La gestion des transactions
-
-  private static readonly ORDER_SELECT = `
-    *,
-    user:users(*),
-    service:services(*),
-    address:addresses(*),
-    items:order_items(
-      *,
-      article:articles!inner( 
-        *,
-        isDeleted:eq(false),
-        category:article_categories(*)
-      )
-    )
-  `;
-
   static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
-    console.log('[OrderService] Starting order creation process');
     try {
-      // Log initial data
-      console.log('[OrderService] Input data:', {
-        userId: orderData.userId,
-        serviceId: orderData.serviceId,
-        serviceTypeId: orderData.serviceTypeId,
-        service_type_id: orderData.service_type_id,
-        itemsCount: orderData.items?.length
-      });
-
-      // Vérification explicite du service_type_id
-      if (!orderData.service_type_id && !orderData.serviceTypeId) {
-        console.error('[OrderService] Missing service_type_id');
+      const service_type_id = orderData.service_type_id || orderData.serviceTypeId;
+      if (!service_type_id) {
         throw new Error('service_type_id is required');
       }
 
-      const dbOrderData = {
-        ...orderData,
-        service_type_id: orderData.service_type_id || orderData.serviceTypeId
-      };
-
-      console.log('[OrderService] Prepared DB data:', {
-        ...dbOrderData,
-        items: `${dbOrderData.items?.length} items`
+      // Vérification des articles
+      const articles = await prisma.articles.findMany({
+        where: {
+          id: { in: orderData.items.map(item => item.articleId) },
+          isDeleted: false
+        }
       });
 
-      // Vérifier que tous les articles sont actifs
-      const articleIds = orderData.items.map(item => item.articleId);
-      const { data: articles, error: checkError } = await supabase
-        .from('articles')
-        .select('id')
-        .in('id', articleIds)
-        .eq('isDeleted', false);
-
-      if (checkError) throw checkError;
-      
-      if (articles.length !== articleIds.length) {
+      if (articles.length !== orderData.items.length) {
         throw new Error('One or more articles are not available');
       }
 
-      const { 
-        userId, 
-        serviceId, 
-        addressId, 
-        isRecurring, 
-        recurrenceType, 
-        collectionDate, 
-        deliveryDate, 
-        affiliateCode, 
-        serviceTypeId, 
-        paymentMethod,
-        items 
-      } = orderData;
-
-      // 1. Utiliser la procédure stockée pour créer la commande avec ses items
-      const { data: orderResult, error: procedureError } = await supabase.rpc(
-        'create_order_with_items',
-        {
-          p_userid: userId,
-          p_serviceid: serviceId,
-          p_addressid: addressId,
-          p_isrecurring: isRecurring,
-          p_recurrencetype: recurrenceType,
-          p_collectiondate: collectionDate,
-          p_deliverydate: deliveryDate,
-          p_affiliatecode: affiliateCode,
-          p_service_type_id: serviceTypeId,
-          p_paymentmethod: paymentMethod,
-          p_items: items.map(item => ({
-            articleId: item.articleId,
-            quantity: item.quantity,
-            isPremium: item.premiumPrice || false
-          }))
+      // Création de la commande
+      const createdOrder = await prisma.orders.create({
+        data: {
+          userId: orderData.userId,
+          serviceId: orderData.serviceId,
+          addressId: orderData.addressId,
+          status: 'PENDING',
+          isRecurring: orderData.isRecurring || false,
+          recurrenceType: orderData.recurrenceType,
+          collectionDate: orderData.collectionDate,
+          deliveryDate: orderData.deliveryDate,
+          affiliateCode: orderData.affiliateCode,
+          service_type_id: service_type_id,
+          paymentMethod: orderData.paymentMethod as payment_method_enum,
+          order_items: {
+            create: orderData.items.map(item => ({
+              articleId: item.articleId,
+              serviceId: orderData.serviceId,
+              quantity: item.quantity,
+              isPremium: item.premiumPrice || false,
+              unitPrice: 0
+            }))
+          }
+        },
+        include: {
+          order_items: {
+            include: {
+              article: {
+                include: {
+                  article_categories: true
+                }
+              }
+            }
+          },
+          service_types: true
         }
-      );
+      });
 
-      if (procedureError) throw procedureError;
-
-      // 2. Récupérer la commande complète avec toutes les relations
-      const { data: completeOrder, error: fetchError } = await supabase
-        .from('orders')
-        .select(this.ORDER_SELECT)
-        .eq('id', orderResult[0].id)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      const totalAmount = orderResult[0].totalAmount;
-
-      // 3. Appliquer les réductions si nécessaire
+      // Calcul du montant total
+      const totalAmount = await OrderPaymentService.calculateTotal(orderData.items);
       let finalAmount = totalAmount;
       let appliedDiscounts: AppliedDiscount[] = [];
 
       if (orderData.offerIds?.length) {
-        const articleIds = items.map(item => item.articleId);
         const discountResult = await OrderPaymentService.calculateDiscounts(
-          userId,
+          orderData.userId,
           finalAmount,
-          articleIds,
+          orderData.items.map(item => item.articleId),
           orderData.offerIds
         );
+        
         finalAmount = discountResult.finalAmount;
         appliedDiscounts = discountResult.appliedDiscounts;
 
-        // Mettre à jour le montant total après réductions
-        await supabase
-          .from('orders')
-          .update({ totalAmount: finalAmount })
-          .eq('id', orderResult[0].id);
+        await prisma.orders.update({
+          where: { id: createdOrder.id },
+          data: { totalAmount: finalAmount }
+        });
       }
 
-      // Apply offer discounts if any offer IDs are provided
-      if (orderData.offerIds?.length) {
-        // Apply offer discounts if any offer IDs are provided
-        if (orderData.offerIds?.length) {
-          // Update the order with applied discounts
-          await supabase
-            .from('orders')
-            .update({
-          totalAmount: finalAmount,
-          appliedOffers: appliedDiscounts
-            })
-            .eq('id', completeOrder.id);
-
-          completeOrder.totalAmount = finalAmount;
-          completeOrder.appliedOffers = appliedDiscounts;
-        }
-
-        // Update the order with applied discounts
-        await supabase
-          .from('orders')
-          .update({
-            totalAmount: finalAmount,
-            appliedOffers: appliedDiscounts
-          })
-          .eq('id', completeOrder.id);
-
-        completeOrder.totalAmount = finalAmount;
-        completeOrder.appliedOffers = appliedDiscounts;
-      }
-
-      // 4. Traiter la commission d'affilié
-      if (affiliateCode) {
+      // Traitement affilié et points
+      if (orderData.affiliateCode) {
         await OrderPaymentService.processAffiliateCommission(
-          orderResult[0].id,
-          affiliateCode,
+          createdOrder.id,
+          orderData.affiliateCode,
           finalAmount
         );
       }
 
-      // 5. Traiter les points de fidélité
       const earnedPoints = Math.floor(finalAmount);
-      await LoyaltyService.earnPoints(userId, earnedPoints, 'ORDER', orderResult[0].id);
+      await LoyaltyService.earnPoints(
+        orderData.userId,
+        earnedPoints,
+        'ORDER',
+        createdOrder.id
+      );
 
-      // 6. Envoyer la notification
-      try {
-        await NotificationService.sendNotification(
-          userId,
-          NotificationType.ORDER_CREATED,
-          {
-            orderId: orderResult[0].id,
-            totalAmount: finalAmount,
-            items: completeOrder.items.map((item: { article: { name: string }, quantity: number }) => ({
-              name: item.article.name,
-              quantity: item.quantity
-            }))
-          }
-        );
-      } catch (notifError) {
-        console.error('[OrderCreateService] Notification error:', notifError);
-        // Continue le processus même si la notification échoue
-      }
+      // Notification
+      const orderItems = await prisma.order_items.findMany({
+        where: { orderId: createdOrder.id },
+        include: { article: true }
+      });
 
-      // 7. Obtenir le solde actuel des points
-      const currentPoints = await OrderPaymentService.getCurrentLoyaltyPoints(userId);
+      await NotificationService.createOrderNotification(
+        orderData.userId,
+        createdOrder.id,
+        NotificationType.ORDER_CREATED,
+        {
+          totalAmount: finalAmount,
+          items: orderItems.map(item => ({
+            name: item.article?.name || 'Unknown Article',
+            quantity: item.quantity
+          }))
+        }
+      );
 
-      console.log('[OrderService] Order creation completed successfully');
+      // Construction de la réponse
+      const orderResponse: Order = {
+        id: createdOrder.id,
+        userId: createdOrder.userId,
+        service_id: createdOrder.serviceId || '',
+        address_id: createdOrder.addressId || '',
+        status: createdOrder.status || 'PENDING',
+        isRecurring: createdOrder.isRecurring || false,
+        recurrenceType: createdOrder.recurrenceType || 'NONE',
+        totalAmount: Number(finalAmount),
+        createdAt: createdOrder.createdAt || new Date(),
+        updatedAt: createdOrder.updatedAt || new Date(),
+        service_type_id: service_type_id,
+        paymentStatus: PaymentStatus.PENDING,
+        paymentMethod: orderData.paymentMethod,
+        affiliateCode: createdOrder.affiliateCode || undefined,
+        items: orderItems.map(item => ({
+          id: item.id,
+          orderId: item.orderId,
+          articleId: item.articleId,
+          serviceId: item.serviceId,
+          quantity: item.quantity,
+          unitPrice: Number(item.unitPrice),
+          isPremium: item.isPremium || false,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        }))
+      };
+
+      const currentPoints = await OrderPaymentService.getCurrentLoyaltyPoints(orderData.userId);
+
       return {
-        order: completeOrder,
+        order: orderResponse,
         pricing: {
           subtotal: totalAmount,
           discounts: appliedDiscounts,
@@ -218,7 +173,7 @@ export class OrderCreateService {
           pointsEarned: earnedPoints,
           currentBalance: currentPoints
         }
-      }; 
+      };
 
     } catch (error) {
       console.error('[OrderService] Error creating order:', error);

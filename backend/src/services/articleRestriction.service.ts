@@ -1,49 +1,62 @@
-import supabase from '../config/database';
+import { PrismaClient } from '@prisma/client';
 import { NotificationService } from './notification.service';
-import { NotificationType } from '../models/types';  
+import { NotificationType } from '../models/types';
+
+const prisma = new PrismaClient();
 
 export class ArticleRestrictionService {
   static async setRestrictions(
     articleId: string, 
-    serviceId: string, 
-    restrictions: string[]
+    serviceId: string
   ) {
     try {
-      const { data, error } = await supabase
-        .from('article_service_compatibility')
-        .upsert({
+      const data = await prisma.article_service_compatibility.upsert({
+        where: {
+          service_id_article_id: {
+            article_id: articleId,
+            service_id: serviceId
+          }
+        },
+        update: {
+          is_compatible: true
+          // Suppression du champ updated_at qui n'existe pas dans le modèle
+        },
+        create: {
           article_id: articleId,
           service_id: serviceId,
-          restrictions,
-          is_compatible: restrictions.length === 0,
-          updated_at: new Date()
-        })
-        .select()
-        .single(); 
-
-      if (error) throw error;
+          is_compatible: true
+        },
+        include: {
+          articles: true,
+          services: true
+        }
+      });
 
       // Notifier les administrateurs des changements
-      const { data: admins } = await supabase
-        .from('users')
-        .select('id')
-        .in('role', ['ADMIN', 'SUPER_ADMIN']);
+      const admins = await prisma.users.findMany({
+        where: {
+          role: {
+            in: ['ADMIN', 'SUPER_ADMIN']
+          }
+        },
+        select: {
+          id: true
+        }
+      });
 
-      if (admins) {
-        await Promise.all(
-          admins.map(admin => 
-            NotificationService.sendNotification(
-              admin.id,
-              NotificationType.SERVICE_UPDATED,
-              {
-                title: 'Restrictions mises à jour',
-                message: `Les restrictions pour l'article ont été mises à jour`,
-                data: { articleId, serviceId, restrictions }
-              }
-            )
+      await Promise.all(
+        admins.map(admin => 
+          NotificationService.sendNotification(
+            admin.id,
+            NotificationType.SERVICE_UPDATED,
+            {
+              title: 'Restrictions mises à jour',
+              message: `Les restrictions pour l'article ont été mises à jour`,
+              data: { articleId, serviceId }
+            }
           )
-        );
-      }
+        )
+      );
 
       return data;
     } catch (error) {

@@ -1,14 +1,23 @@
 import { Request, Response } from 'express'; 
-import supabase from '../../config/database';
+import prisma from '../../config/prisma';
 import { 
   PricingService, 
   RewardsService, 
   NotificationService,
   SYSTEM_CONSTANTS
 } from '../../services';
-import { NotificationType, OrderStatus } from '../../models/types';
+import { 
+  NotificationType, 
+  OrderStatus, 
+  Order, 
+  User,
+  PaymentStatus,
+  PaymentMethod,
+  OrderItem as OrderItemType 
+} from '../../models/types';
 import { OrderSharedMethods } from './shared';
 import { orderNotificationTemplates, getCustomerName } from '../../utils/notificationTemplates';
+import { Prisma, order_status, recurrence_type, payment_method_enum } from '@prisma/client';
 
 interface CreateOrderItemData {
   articleId: string;
@@ -54,215 +63,198 @@ export class OrderCreateController {
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
       // 1. Calculer le prix total avec les réductions
-      console.log('[OrderController] Calculating total price for items:', items);
       const pricing = await PricingService.calculateOrderTotal({
         items,
         userId,
         appliedOfferIds
       });
-      console.log('[OrderController] Price calculation result:', pricing);
 
       // 2. Créer la commande avec le montant total
-      const orderData = {
-        userId,
-        serviceId,
-        addressId,
-        isRecurring,
-        recurrenceType,
-        nextRecurrenceDate: null,
-        totalAmount: pricing.total,
-        collectionDate,
-        deliveryDate,
-        affiliateCode,
-        paymentMethod,
-        status: 'PENDING' as OrderStatus,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        service_type_id: serviceTypeId  // Garde le snake_case car c'est le nom exact dans la DB
-      };
-
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert([orderData])
-        .select()
-        .single();
-
-      if (error) throw error;
-      console.log('[OrderController] Order created:', order.id);
-
-      // 3. Créer les items de commande
-      const orderItems: OrderItem[] = items.map((item: CreateOrderItemData) => ({
-        orderId: order.id,
-        articleId: item.articleId,
-        serviceId,
-        quantity: item.quantity,
-        unitPrice: 0, // Sera mis à jour après la récupération des articles
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }));
-
-      // Récupérer les articles pour obtenir les prix
-      const { data: articles, error: articlesError } = await supabase
-        .from('articles')
-        .select('id, basePrice, premiumPrice')
-        .in('id', items.map((item: CreateOrderItemData) => item.articleId));
-
-      if (articlesError || !articles) {
-        throw new Error('Failed to fetch articles');
-      }
-
-      const articleMap = new Map<string, Article>(
-        articles.map(article => [article.id, article])
-      );
-
-      // Mettre à jour les prix des items
-      orderItems.forEach((item: OrderItem, index: number) => {
-        const article = articleMap.get(item.articleId);
-        if (article) {
-          item.unitPrice = items[index].isPremium ? article.premiumPrice : article.basePrice;
-        } else {
-          throw new Error(`Article not found: ${item.articleId}`);
+      const order = await prisma.orders.create({
+        data: {
+          userId,
+          serviceId,
+          addressId,
+          isRecurring,
+          recurrenceType,
+          nextRecurrenceDate: null,
+          totalAmount: pricing.total,
+          collectionDate,
+          deliveryDate,
+          affiliateCode,
+          paymentMethod,
+          status: 'PENDING',
+          service_type_id: serviceTypeId,
+          createdAt: new Date(),
+          updatedAt: new Date()
         }
       });
 
-      // Insérer les items
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems.map(item => ({
+      // 3. Récupérer les articles pour leurs prix
+      const articles = await prisma.articles.findMany({
+        where: {
+          id: {
+            in: items.map((item: CreateOrderItemData) => item.articleId)
+          }
+        }
+      }).then(articles => articles.map(article => ({
+        id: article.id,
+        categoryId: article.categoryId || '',
+        name: article.name,
+        description: article.description || '',
+        basePrice: Number(article.basePrice),
+        premiumPrice: Number(article.premiumPrice || 0),
+        createdAt: article.createdAt || new Date(),
+        updatedAt: article.updatedAt || new Date()
+      })));
+
+      const articleMap = new Map(
+        articles.map(article => [article.id, article])
+      );
+
+      // 4. Créer les items de commande
+      interface OrderItemCreate {
+        orderId: string;
+        articleId: string;
+        serviceId: string;
+        quantity: number;
+        unitPrice: number;
+        createdAt: Date;
+        updatedAt: Date;
+        isPremium?: boolean;
+      }
+
+      await prisma.order_items.createMany({
+        data: items.map((item: CreateOrderItemData): OrderItemCreate => ({
+          orderId: order.id,
+          articleId: item.articleId,
+          serviceId,
+          quantity: item.quantity,
+          unitPrice: item.isPremium 
+        ? Number(articleMap.get(item.articleId)?.premiumPrice)
+        : Number(articleMap.get(item.articleId)?.basePrice),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          isPremium: item.isPremium
+        }))
+      });
+
+      // 5. Si code affilié, créer transaction de commission
+      if (affiliateCode) {
+        const affiliate = await prisma.affiliate_profiles.findUnique({
+          where: { affiliate_code: affiliateCode }
+        });
+
+        if (affiliate) {
+          await prisma.commission_transactions.create({
+            data: {
+              affiliate_id: affiliate.id,
+              order_id: order.id,
+              amount: pricing.total * Number(affiliate.commission_rate || 0) / 100,
+              status: 'PENDING'
+            }
+          });
+        }
+      }
+
+      // 6. Récupérer la commande complète avec relations
+      const orderData = await prisma.orders.findUnique({
+        where: { id: order.id },
+        include: {
+          user: true,
+          address: true,
+          order_items: {
+            include: {
+              article: true
+            }
+          }
+        }
+      });
+
+      if (!orderData) {
+        throw new Error('Failed to retrieve complete order');
+      }
+
+      const formattedOrder: Order = {
+        id: orderData.id,
+        userId: orderData.userId,
+        service_id: orderData.serviceId || '',
+        address_id: orderData.addressId || '',
+        affiliateCode: orderData.affiliateCode || undefined,
+        status: orderData.status || 'PENDING',
+        isRecurring: orderData.isRecurring || false,
+        recurrenceType: orderData.recurrenceType || null,
+        nextRecurrenceDate: orderData.nextRecurrenceDate || undefined,
+        totalAmount: Number(orderData.totalAmount || 0),
+        collectionDate: orderData.collectionDate || undefined,
+        deliveryDate: orderData.deliveryDate || undefined,
+        createdAt: orderData.createdAt || new Date(),
+        updatedAt: orderData.updatedAt || new Date(),
+        service_type_id: orderData.service_type_id,
+        paymentStatus: PaymentStatus.PENDING,
+        paymentMethod: orderData.paymentMethod as PaymentMethod || PaymentMethod.CASH,
+        items: orderData.order_items.map(item => ({
+          id: item.id,
           orderId: item.orderId,
           articleId: item.articleId,
           serviceId: item.serviceId,
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
+          unitPrice: Number(item.unitPrice),
+          isPremium: item.isPremium ?? undefined,
           createdAt: item.createdAt,
-          updatedAt: item.updatedAt
-        })));
-
-      if (itemsError) {
-        console.error('Error creating order items:', itemsError);
-        throw itemsError;
-      }
-      console.log('[OrderController] Order items created');
-
-      // After creating the order, fetch it with all needed relations
-      const { data: orderWithRelations, error: relationsError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          user:users(id, firstName, lastName),
-          address:addresses(id, city),
-          items:order_items(*)
-        `)
-        .eq('id', order.id)
-        .single();
-
-      if (relationsError) {
-        console.error('[OrderController] Error fetching order relations:', relationsError);
-        throw relationsError;
-      }
-
-      // 4. Récupérer la commande complète avec les items
-      const completeOrder = {
-        ...order,
-        totalAmount: pricing.total,
-        items: await OrderSharedMethods.getOrderItems(order.id)
+          updatedAt: item.updatedAt,
+          article: item.article ? {
+            id: item.article.id,
+            categoryId: item.article.categoryId || '',
+            name: item.article.name,
+            description: item.article.description || '',
+            basePrice: Number(item.article.basePrice),
+            premiumPrice: Number(item.article.premiumPrice || 0),
+            createdAt: item.article.createdAt || new Date(),
+            updatedAt: item.article.updatedAt || new Date()
+          } : undefined
+        }))
       };
 
-      // 5. Traiter les points de fidélité
+      // 7. Traiter les points et notifications
       const earnedPoints = Math.floor(pricing.total * SYSTEM_CONSTANTS.POINTS.ORDER_MULTIPLIER);
-      await RewardsService.processOrderPoints(userId, completeOrder, 'ORDER');
-      console.log('[OrderController] Loyalty points processed:', earnedPoints);
+      await RewardsService.processOrderPoints(userId, formattedOrder, 'ORDER');
 
-      // 6. Traiter la commission d'affilié
-      let affiliateCommission = null;
-      if (affiliateCode) {
-        await RewardsService.processAffiliateCommission(completeOrder);
-        console.log('[OrderController] Affiliate commission processed');
-
-        // Récupérer les détails de la commission pour la réponse
-        const { data: commissionTx } = await supabase
-          .from('commissionTransactions')
-          .select('amount, affiliate_id')
-          .eq('order_id', order.id)
-          .single();
-
-        if (commissionTx) {
-          affiliateCommission = {
-            amount: commissionTx.amount,
-            affiliate_id: commissionTx.affiliate_id
-          };
-        }
-      }
-
-      // 7. Get user data and send notifications with proper type checking
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id, email, firstName, lastName')  // Changed first_name to firstName to match User type
-        .eq('id', userId)
-        .single();
-
-      // Convert supabase user data to User type
-      const userForNotification = userData ? {
-        id: userData.id,
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        role: req.user?.role || 'CLIENT',  // Provide default role
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        password: ''  // This field is required by User type but not needed for notification
-      } : undefined;
+      const user: User = {
+        id: orderData.user.id,
+        email: orderData.user.email,
+        firstName: orderData.user.first_name,
+        lastName: orderData.user.last_name,
+        phone: orderData.user.phone || undefined,
+        role: orderData.user.role || 'CLIENT',
+        password: '',
+        createdAt: orderData.user.created_at || new Date(),
+        updatedAt: orderData.user.updated_at || new Date()
+      };
 
       const notificationTemplate = orderNotificationTemplates.orderCreated(
-        completeOrder,
-        userForNotification
+        formattedOrder,
+        user
       );
 
-      // Ensure userId is available for notification creation
       await NotificationService.createNotification(
-        userId,  // Use validated userId instead of req.user?.id
+        userId,
         NotificationType.ORDER_CREATED,
         notificationTemplate.message,
         notificationTemplate.data
       );
 
-      // Envoyer les notifications en arrière-plan
-      NotificationService.sendOrderNotification(order)
-        .catch((error: Error) => console.error('[OrderController] Notification error:', error));
-
-      // Update notification data with proper null checks
-      const notificationData = {
-        orderId: orderWithRelations.id,
-        clientName: orderWithRelations.user 
-          ? `${orderWithRelations.user.firstName || ''} ${orderWithRelations.user.lastName || ''}`.trim() 
-          : 'Unknown Client',
-        amount: orderWithRelations.totalAmount,
-        deliveryZone: orderWithRelations.address?.city || 'Unknown Zone',
-        itemCount: orderWithRelations.items?.length || 0,
-        title: 'Nouvelle commande',
-        message: `Nouvelle commande #${orderWithRelations.id} créée`
-      };
-
-      // Send role-based notifications with the updated order and notification data
-      await NotificationService.sendRoleBasedNotifications(
-        orderWithRelations,
-        notificationData
-      ).catch((error: Error) => {
-        console.error('[OrderController] Role-based notification error:', error);
-      });
-
-      // 8. Préparer la réponse
+      // 8. Préparer et envoyer la réponse
       const response = {
-        order: completeOrder,
+        order: formattedOrder,
         pricing,
         rewards: {
           pointsEarned: earnedPoints,
           currentBalance: await OrderSharedMethods.getUserPoints(userId)
-        },
-        affiliateCommission
+        }
       };
 
-      res.json({ data: response });
+      res.status(201).json({ data: response });
 
     } catch (error: any) {
       console.error('[OrderController] Error creating order:', error);

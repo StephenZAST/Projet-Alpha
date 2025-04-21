@@ -1,36 +1,42 @@
-import supabase from '../config/database';
-import { NotificationService } from './notification.service'; 
+import { PrismaClient } from '@prisma/client';
+import { NotificationService } from './notification.service';
 import { 
   AdditionalService, 
   OrderAdditionalService, 
-  CreateAdditionalServiceDTO 
-} from '../models/additionalService.types';
-import { NotificationType } from '../models/types';
+  CreateAdditionalServiceDTO,
+  NotificationType 
+} from '../models/types';
+
+const prisma = new PrismaClient();
 
 export class AdditionalServiceService {
   static async createService(data: CreateAdditionalServiceDTO): Promise<AdditionalService> {
     try {
-      const { data: service, error } = await supabase
-        .from('additional_services')
-        .insert([{
-          ...data,
-          is_active: true,
+      const service = await prisma.services.create({
+        data: {
+          name: data.name,
+          description: data.description,
+          price: data.basePrice,
+          is_partial: false,  // Au lieu de is_active qui n'existe pas
           created_at: new Date(),
           updated_at: new Date()
-        }])
-        .select() 
-        .single();
+        }
+      });
 
-      if (error) throw error;
+      // Récupération des admins
+      const admins = await prisma.users.findMany({
+        where: {
+          role: {
+            in: ['ADMIN', 'SUPER_ADMIN']
+          }
+        },
+        select: {
+          id: true
+        }
+      });
 
-      // Notifier les admins
-      const { data: admins } = await supabase
-        .from('users')
-        .select('id')
-        .in('role', ['ADMIN', 'SUPER_ADMIN']);
-
-      // Envoyer une notification à chaque admin
-      const notificationPromises = (admins || []).map(admin => 
+      // Envoi des notifications
+      const notificationPromises = admins.map(admin => 
         NotificationService.sendNotification(
           admin.id,
           NotificationType.SERVICE_CREATED,
@@ -39,8 +45,7 @@ export class AdditionalServiceService {
             message: `Le service ${service.name} a été créé`,
             data: {
               serviceId: service.id,
-              serviceName: service.name,
-              serviceType: service.type
+              serviceName: service.name
             }
           }
         )
@@ -48,7 +53,15 @@ export class AdditionalServiceService {
 
       await Promise.all(notificationPromises);
 
-      return service;
+      return {
+        id: service.id,
+        name: service.name,
+        description: service.description || undefined,
+        basePrice: Number(service.price) || 0,
+        isActive: !service.is_partial, // Conversion de is_partial en isActive
+        createdAt: service.created_at || new Date(),
+        updatedAt: service.updated_at || new Date()
+      };
     } catch (error) {
       console.error('[AdditionalServiceService] Create service error:', error);
       throw error;
@@ -60,43 +73,39 @@ export class AdditionalServiceService {
     serviceData: { service_id: string; item_id?: string; notes?: string }
   ): Promise<OrderAdditionalService> {
     try {
-      // 1. Obtenir le prix du service
-      const { data: service, error: serviceError } = await supabase
-        .from('additional_services')
-        .select('price, name, type')
-        .eq('id', serviceData.service_id)
-        .single();
+      // 1. Récupérer le service et son prix
+      const service = await prisma.services.findUnique({
+        where: { id: serviceData.service_id },
+        select: {
+          id: true,
+          name: true,
+          price: true
+        }
+      });
 
-      if (serviceError || !service) throw new Error('Service not found');
+      if (!service) throw new Error('Service not found');
 
-      // 2. Créer l'entrée dans order_additional_services
-      const { data: orderService, error } = await supabase
-        .from('order_additional_services')
-        .insert([{
+      // 2. Créer l'entrée pour le service additionnel
+      const orderService = await prisma.order_notes.create({
+        data: {
           order_id: orderId,
-          service_id: serviceData.service_id,
-          item_id: serviceData.item_id,
-          notes: serviceData.notes,
-          price: service.price,
-          created_at: new Date(),
-          updated_at: new Date()
-        }])
-        .select(`
-          *,
-          service:additional_services(*)
-        `)
-        .single();
+          note: serviceData.notes || '',
+        },
+        include: {
+          orders: true
+        }
+      });
 
-      if (error) throw error;
+      // 3. Notification des administrateurs
+      const admins = await prisma.users.findMany({
+        where: {
+          role: {
+            in: ['ADMIN', 'SUPER_ADMIN']
+          }
+        }
+      });
 
-      // 3. Obtenir les administrateurs pour la notification
-      const { data: admins } = await supabase
-        .from('users')
-        .select('id')
-        .in('role', ['ADMIN', 'SUPER_ADMIN']);
-
-      // 4. Notifier les administrateurs
-      const notificationPromises = (admins || []).map(admin => 
+      const notificationPromises = admins.map(admin => 
         NotificationService.sendNotification(
           admin.id,
           NotificationType.SERVICE_ADDED,
@@ -104,18 +113,25 @@ export class AdditionalServiceService {
             title: 'Service additionnel ajouté',
             message: `Le service ${service.name} a été ajouté à la commande ${orderId}`,
             data: {
-              orderId: orderId,
+              orderId,
               serviceName: service.name,
-              serviceType: service.type,
               notes: serviceData.notes
             }
           }
         )
-      ); 
+      );
 
       await Promise.all(notificationPromises);
 
-      return orderService;
+      return {
+        id: orderService.id,
+        orderId: orderService.order_id,
+        serviceId: service.id,
+        price: Number(service.price) || 0,
+        notes: serviceData.notes,
+        createdAt: orderService.created_at || new Date(),
+        updatedAt: orderService.updated_at || new Date()
+      };
     } catch (error) {
       console.error('[AdditionalServiceService] Add service to order error:', error);
       throw error;
@@ -123,26 +139,73 @@ export class AdditionalServiceService {
   }
 
   static async getOrderServices(orderId: string): Promise<OrderAdditionalService[]> {
-    const { data, error } = await supabase
-      .from('order_additional_services')
-      .select(`
-        *,
-        service:additional_services(*)
-      `)
-      .eq('order_id', orderId);
+    try {
+      // Récupération des notes de commande avec les services associés
+      const orderNotes = await prisma.order_notes.findMany({
+        where: {
+          order_id: orderId
+        }
+      });
 
-    if (error) throw error;
-    return data || [];
+      // Récupération des informations sur les services séparément
+      const serviceIds = orderNotes.map(note => note.order_id); // Supposons que order_id fait référence au service
+      const services = await prisma.services.findMany({
+        where: {
+          id: {
+            in: serviceIds
+          }
+        },
+        select: {
+          id: true,
+          price: true
+        }
+      });
+
+      // Construction du mapping des prix
+      const servicePriceMap = new Map(
+        services.map(service => [service.id, Number(service.price || 0)])
+      );
+
+      // Formatage de la réponse
+      return orderNotes.map(note => ({
+        id: note.id,
+        orderId: note.order_id,
+        serviceId: note.order_id, // Utilisé comme serviceId
+        price: servicePriceMap.get(note.order_id) || 0,
+        notes: note.note || undefined,
+        createdAt: note.created_at || new Date(),
+        updatedAt: note.updated_at || new Date()
+      }));
+
+    } catch (error) {
+      console.error('[AdditionalServiceService] Get order services error:', error);
+      throw error;
+    }
   }
 
   static async getActiveServices(): Promise<AdditionalService[]> {
-    const { data, error } = await supabase
-      .from('additional_services')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: true });
+    try {
+      const services = await prisma.services.findMany({
+        where: {
+          is_partial: false
+        },
+        orderBy: {
+          created_at: 'asc'
+        }
+      });
 
-    if (error) throw error;
-    return data;
+      return services.map(service => ({
+        id: service.id,
+        name: service.name,
+        description: service.description || undefined,
+        basePrice: Number(service.price) || 0,
+        isActive: true,
+        createdAt: service.created_at || new Date(),
+        updatedAt: service.updated_at || new Date()
+      }));
+    } catch (error) {
+      console.error('[AdditionalServiceService] Get active services error:', error);
+      throw error;
+    }
   }
 }

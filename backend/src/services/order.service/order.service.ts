@@ -1,3 +1,4 @@
+import { PrismaClient } from '@prisma/client';
 import { 
   CreateOrderDTO, 
   CreateOrderResponse, 
@@ -6,19 +7,19 @@ import {
 } from '../../models/types';
 import { OrderCreateService } from './orderCreate.service';
 import { OrderQueryService } from './orderQuery.service';
-import { OrderStatusService } from './orderStatus.service'; 
+import { OrderStatusService } from './orderStatus.service';
 import { OrderPaymentService } from './orderPayment.service';
 
+const prisma = new PrismaClient();
+
 export class OrderService {
-  // Création de commande
   static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
     return OrderCreateService.createOrder(orderData);
   }
 
-  // Requêtes de commandes
   static async getUserOrders(userId: string): Promise<Order[]> {
     return OrderQueryService.getUserOrders(userId);
-  } 
+  }
 
   static async getOrderDetails(orderId: string): Promise<Order> {
     return OrderQueryService.getOrderDetails(orderId);
@@ -26,13 +27,25 @@ export class OrderService {
 
   static async getRecentOrders(limit: number = 5): Promise<Order[]> {
     return OrderQueryService.getRecentOrders(limit);
-  } 
-
-  static async getOrdersByStatus(): Promise<Record<string, number>> {
-    return OrderQueryService.getOrdersByStatus();
   }
 
-  // Gestion des statuts
+  static async getOrdersByStatus(status?: OrderStatus): Promise<Record<string, number>> {
+    const orders = await prisma.orders.groupBy({
+      by: ['status'],
+      _count: {
+        status: true
+      },
+      where: status ? { status } : undefined
+    });
+
+    return orders.reduce((acc, curr) => {
+      if (curr.status) {
+        acc[curr.status] = curr._count.status;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+  }
+
   static async updateOrderStatus(
     orderId: string,
     newStatus: OrderStatus,
@@ -43,29 +56,39 @@ export class OrderService {
   }
 
   static async deleteOrder(orderId: string, userId: string, userRole: string): Promise<void> {
-    return OrderStatusService.deleteOrder(orderId, userId, userRole);
+    await prisma.orders.deleteMany({
+      where: {
+        id: orderId,
+        OR: [
+          { userId }, // Vérification directe de l'utilisateur
+          ...(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' ? [{}] : []) // Autorisation basée sur le rôle passé
+        ]
+      }
+    });
   }
 
-  // Paiements et calculs
   static async calculateTotal(
     items: { articleId: string; quantity: number }[]
   ): Promise<number> {
-    return OrderPaymentService.calculateTotal(items);
-  }
+    const itemIds = items.map(item => item.articleId);
+    const articles = await prisma.articles.findMany({
+      where: {
+        id: { in: itemIds }
+      },
+      select: {
+        id: true,
+        basePrice: true
+      }
+    });
 
-  static async updatePaymentStatus(
-    orderId: string,
-    paymentStatus: string,
-    userId: string
-  ): Promise<void> {
-    return OrderPaymentService.updatePaymentStatus(orderId, paymentStatus, userId);
+    const articlePrices = new Map(
+      articles.map(article => [article.id, article.basePrice])
+    );
+
+    return items.reduce((total, item) => {
+      const price = articlePrices.get(item.articleId);
+      if (!price) throw new Error(`Article not found: ${item.articleId}`);
+      return total + (Number(price) * item.quantity);
+    }, 0);
   }
 }
-
-// Exporter tous les services pour un accès direct si nécessaire
-export {
-  OrderCreateService,
-  OrderQueryService,
-  OrderStatusService,
-  OrderPaymentService
-};
