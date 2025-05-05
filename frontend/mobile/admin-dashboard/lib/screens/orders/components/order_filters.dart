@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/orders_controller.dart';
 import '../../../models/enums.dart';
+import 'dart:ui';
 
 class OrderFilters extends StatelessWidget {
   @override
@@ -38,7 +39,6 @@ class OrderFilters extends StatelessWidget {
                     label: Text('Tous'),
                     selected: controller.selectedStatus.value == null,
                     onSelected: (_) => controller.filterByStatus(null),
-                    // ...style properties...
                   ),
                   ...OrderStatus.values.map((status) {
                     final isSelected =
@@ -73,66 +73,69 @@ class OrderFilters extends StatelessWidget {
                 ],
               )),
           SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: AppSpacing.sm,
-            children: [
-              _buildTypeFilter('Tous', null),
-              _buildTypeFilter('Standard', false),
-              _buildTypeFilter('Flash', true),
-            ],
-          ),
-          SizedBox(height: AppSpacing.md),
-          TextField(
-            onChanged: controller.searchOrders,
-            decoration: InputDecoration(
-              hintText: 'Rechercher une commande...',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(
+          Center(
+            child: Container(
+              decoration: BoxDecoration(
                 borderRadius: AppRadius.radiusSM,
-                borderSide: BorderSide(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.error.withOpacity(0.15),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
-              enabledBorder: OutlineInputBorder(
+              child: ClipRRect(
                 borderRadius: AppRadius.radiusSM,
-                borderSide: BorderSide(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: controller.clearFilters,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                          vertical: AppSpacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.error.withOpacity(0.1)
+                              : AppColors.error.withOpacity(0.05),
+                          border: Border.all(
+                            color: AppColors.error.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          borderRadius: AppRadius.radiusSM,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.delete_sweep_rounded,
+                              color: AppColors.error.withOpacity(0.8),
+                              size: 20,
+                            ),
+                            SizedBox(width: AppSpacing.sm),
+                            Text(
+                              'Effacer les filtres',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.error.withOpacity(0.9),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: AppRadius.radiusSM,
-                borderSide: BorderSide(color: AppColors.primary),
               ),
             ),
           ),
-          SizedBox(height: AppSpacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                onPressed: controller.clearFilters,
-                icon: Icon(Icons.clear),
-                label: Text('Effacer les filtres'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTypeFilter(String label, bool? isFlash) {
-    final controller = Get.find<OrdersController>();
-    return FilterChip(
-      label: Text(label),
-      selected: controller.selectedOrderType.value == isFlash,
-      onSelected: (selected) {
-        controller.filterByType(selected ? isFlash : null);
-      },
-      // ...style properties...
     );
   }
 }

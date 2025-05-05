@@ -9,23 +9,15 @@ class DashboardService {
       print('[DashboardService] Fetching statistics...');
       final response = await _api.get('$_baseUrl/statistics');
 
-      if (response.statusCode == 404) {
-        print('[DashboardService] Statistics endpoint not found');
-        return _getFallbackStatistics();
-      }
-
       if (response.data != null && response.data['data'] != null) {
         final data = response.data['data'];
-        print('[DashboardService] Raw statistics data: $data');
-
         return {
           'totalRevenue': double.parse((data['totalRevenue'] ?? 0).toString()),
-          'totalOrders':
-              int.tryParse(data['totalOrders']?.toString() ?? '0') ?? 0,
+          'totalOrders': int.parse(data['totalOrders']?.toString() ?? '0'),
           'totalCustomers':
-              int.tryParse(data['totalCustomers']?.toString() ?? '0') ?? 0,
+              int.parse(data['totalCustomers']?.toString() ?? '0'),
           'recentOrders': data['recentOrders'] ?? [],
-          'ordersByStatus': data['ordersByStatus'] ?? {},
+          'ordersByStatus': Map<String, int>.from(data['ordersByStatus'] ?? {}),
         };
       }
       return _getFallbackStatistics();
@@ -53,10 +45,21 @@ class DashboardService {
   static Future<Map<String, dynamic>> getRevenueChartData() async {
     try {
       final response = await _api.get('$_baseUrl/revenue-chart');
-      return response.data['data'];
+      print('[DashboardService] Revenue chart response: ${response.data}');
+
+      if (response.data != null && response.data['data'] != null) {
+        // Vérifier que la réponse a le bon format
+        return {
+          'labels': List<String>.from(response.data['data']['labels'] ?? []),
+          'data': List<double>.from(response.data['data']['data']
+                  ?.map((e) => (e as num).toDouble()) ??
+              []),
+        };
+      }
+      return {'labels': [], 'data': []};
     } catch (e) {
       print('[DashboardService] Error getting revenue chart: $e');
-      rethrow;
+      return {'labels': [], 'data': []};
     }
   }
 

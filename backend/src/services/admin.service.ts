@@ -12,6 +12,11 @@ import { NotificationService } from './notification.service';
 
 const prisma = new PrismaClient();
 
+interface RevenueChartData {
+  labels: string[];
+  data: number[];
+}
+
 export class AdminService {
   static async createService(name: string, price: number, description?: string): Promise<Service> {
     try {
@@ -385,53 +390,46 @@ export class AdminService {
     }
   }
 
-  static async getRevenueChartData(
-    period: 'day' | 'week' | 'month' | 'year' = 'month'
-  ): Promise<Array<{ date: string; amount: number }>> {
+  static async getRevenueChartData(): Promise<RevenueChartData> {
     try {
-      const now = new Date();
-      let startDate: Date;
-
-      switch (period) {
-        case 'day':
-          startDate = new Date(now.setHours(0, 0, 0, 0));
-          break;
-        case 'week':
-          startDate = new Date(now.setDate(now.getDate() - 7));
-          break;
-        case 'month':
-          startDate = new Date(now.setMonth(now.getMonth() - 1));
-          break;
-        case 'year':
-          startDate = new Date(now.setFullYear(now.getFullYear() - 1));
-          break;
-      }
-
-      const revenueData = await prisma.orders.groupBy({
-        by: ['createdAt'],
+      const revenue = await prisma.orders.findMany({
         where: {
-          status: 'DELIVERED',
-          createdAt: {
-            gte: startDate
-          }
+          status: 'DELIVERED'
         },
-        _sum: {
+        select: {
+          createdAt: true,
           totalAmount: true
+        },
+        orderBy: {
+          createdAt: 'asc'
         }
       });
 
-      return revenueData.map(data => ({
-        date: data.createdAt?.toISOString().split('T')[0] || '', 
-        amount: Number(data._sum.totalAmount || 0)
-      }));
+      const chartData = revenue.reduce((acc, order) => {
+        const date = order.createdAt?.toISOString().split('T')[0] || '';
+        const amount = Number(order.totalAmount || 0);
+        
+        const dateIndex = acc.labels.indexOf(date);
+        if (dateIndex === -1) {
+          acc.labels.push(date);
+          acc.data.push(amount);
+        } else {
+          acc.data[dateIndex] += amount;
+        }
+        
+        return acc;
+      }, { labels: [] as string[], data: [] as number[] });
+
+      return chartData;
     } catch (error) {
       console.error('[AdminService] Get revenue chart data error:', error);
-      throw error;
+      return { labels: [], data: [] };
     }
   }
 
   static async getStatistics() {
-    const [totalRevenue, totalCustomers] = await Promise.all([
+    const [orders, totalRevenue, totalCustomers, recentOrders, orderStatusCounts] = await Promise.all([
+      prisma.orders.count(),
       prisma.orders.aggregate({
         _sum: {
           totalAmount: true
@@ -444,12 +442,36 @@ export class AdminService {
         where: {
           role: 'CLIENT'
         }
+      }),
+      prisma.orders.findMany({
+        take: 5,
+        orderBy: {
+          createdAt: 'desc'
+        },
+        include: {
+          user: true,
+          service_types: true
+        }
+      }),
+      prisma.orders.groupBy({
+        by: ['status'],
+        _count: true
       })
     ]);
 
+    const statusCounts = orderStatusCounts.reduce((acc, curr) => {
+      if (curr.status) {
+        acc[curr.status] = curr._count;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
     return {
+      totalOrders: orders,
       totalRevenue: Number(totalRevenue._sum.totalAmount || 0),
-      totalCustomers
+      totalCustomers,
+      recentOrders,
+      ordersByStatus: statusCounts
     };
   }
 }

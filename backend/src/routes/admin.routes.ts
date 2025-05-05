@@ -70,13 +70,36 @@ router.post(
 router.get(
   '/statistics',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
-  asyncHandler(AdminController.getDashboardStatistics)
+  asyncHandler(async (req: Request, res: Response) => {
+    const stats = await AdminService.getStatistics();
+    // S'assurer que les données sont dans le bon format
+    res.json({
+      success: true,
+      data: {
+        totalRevenue: Number(stats.totalRevenue || 0),
+        totalOrders: Number(stats.totalOrders || 0),
+        totalCustomers: Number(stats.totalCustomers || 0),
+        recentOrders: stats.recentOrders || [],
+        ordersByStatus: stats.ordersByStatus || {}
+      }
+    });
+  })
 );
 
 router.get(
   '/revenue-chart',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
-  asyncHandler(AdminController.getRevenueChartData)
+  asyncHandler(async (req: Request, res: Response) => {
+    const data = await AdminService.getRevenueChartData();
+    // Utiliser la structure correcte du type RevenueChartData
+    res.json({
+      success: true,
+      data: {
+        labels: data.labels,
+        data: data.data
+      }
+    });
+  })
 );
 
 router.get(

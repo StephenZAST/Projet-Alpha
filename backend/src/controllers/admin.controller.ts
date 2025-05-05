@@ -180,17 +180,18 @@ export class AdminController {
       }
 
       const chartData = await AdminService.getRevenueChartData();
-      console.log('[Admin Controller] Revenue chart data retrieved successfully');
+      console.log('[Admin Controller] Revenue chart data:', chartData);
+      
       res.json({
         success: true,
-        data: chartData
+        data: chartData // Maintenant correctement typé avec {labels: string[], data: number[]}
       });
     } catch (error: any) {
       console.error('[Admin Controller] Error getting revenue chart data:', error);
       res.status(500).json({
         success: false,
         error: 'Internal Server Error',
-        message: error.message || 'Failed to fetch revenue chart data'
+        message: error.message
       });
     }
   }
