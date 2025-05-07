@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import prisma from '../../config/prisma';
 import PDFDocument from 'pdfkit';
 import { OrderSharedMethods, OrderItemWithArticle } from './shared';
+import { OrderQueryService } from '../../services/order.service/orderQuery.service';
+import { OrderStatus } from '@prisma/client';
 
 export class OrderQueryController {
   static getOrderItems = OrderSharedMethods.getOrderItems;
@@ -257,6 +259,59 @@ export class OrderQueryController {
     } catch (error: any) {
       console.error('[OrderController] Error generating invoice:', error);
       res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async searchOrders(req: Request, res: Response) {
+    try {
+      const {
+        query,          // terme de recherche global
+        status,         // statut de la commande
+        startDate,      // date de début
+        endDate,        // date de fin
+        minAmount,      // montant minimum
+        maxAmount,      // montant maximum
+        isFlashOrder,   // type de commande
+        page = 1,
+        limit = 10,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = req.query;
+
+      // Convertir et valider les paramètres
+      const searchParams = {
+        searchTerm: query as string,
+        status: status as OrderStatus,
+        dateRange: startDate || endDate ? {
+          start: startDate ? new Date(startDate as string) : undefined,
+          end: endDate ? new Date(endDate as string) : undefined
+        } : undefined,
+        price: {
+          min: minAmount ? Number(minAmount) : undefined,
+          max: maxAmount ? Number(maxAmount) : undefined
+        },
+        isFlashOrder: isFlashOrder === 'true',
+        pagination: {
+          page: Number(page),
+          limit: Number(limit)
+        }
+      };
+
+      const result = await OrderQueryService.searchOrders(searchParams);
+
+      res.json({
+        success: true,
+        data: result.orders,
+        pagination: result.pagination
+      });
+
+    } catch (error: any) {
+      console.error('[OrderQueryController] Search error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Erreur lors de la recherche des commandes',
+        message: error.message
+      });
     }
   }
 }

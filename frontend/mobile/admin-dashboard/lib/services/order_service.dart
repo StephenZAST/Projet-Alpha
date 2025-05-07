@@ -6,19 +6,24 @@ import 'api_service.dart';
 
 class OrderService {
   static final _api = ApiService();
-  static const String _adminBasePath = '/api/admin/orders';
-  static const String _ordersBasePath =
-      '/api/orders'; // Pour les routes standard d'orders
+  // Modifier cette constante
+  static const String _baseUrl =
+      '/orders'; // Enlever le préfixe /api car il est déjà dans l'ApiService
 
   /// Récupère toutes les commandes (méthode existante pour compatibilité)
   static Future<List<Order>> getOrders() async {
     try {
-      final result =
-          await loadOrdersPage(limit: 1000); // Charge toutes les commandes
-      return result.orders;
+      final response = await _api.get('/orders'); // Enlever le préfixe /api
+
+      if (response.data != null && response.data['data'] != null) {
+        return (response.data['data'] as List)
+            .map((json) => Order.fromJson(json))
+            .toList();
+      }
+      return [];
     } catch (e) {
-      print('[OrderService] Error getting all orders: $e');
-      throw 'Erreur lors du chargement des commandes';
+      print('[OrderService] Error getting orders: $e');
+      return [];
     }
   }
 
@@ -36,21 +41,14 @@ class OrderService {
     String sortOrder = 'desc',
   }) async {
     try {
-      final Map<String, dynamic> queryParams = {
-        'page': page,
-        'limit': limit,
+      final queryParams = {
+        'page': page.toString(),
+        'limit': limit.toString(),
         'sort': '$sortField:$sortOrder',
+        if (status != null && status.isNotEmpty) 'status': status.toUpperCase(),
       };
 
-      // Normaliser le status avant l'envoi
-      if (status != null && status.isNotEmpty) {
-        queryParams['status'] = status.toUpperCase();
-      }
-
-      final response = await _api.get(
-        '$_adminBasePath',
-        queryParameters: queryParams,
-      );
+      final response = await _api.get(_baseUrl, queryParameters: queryParams);
 
       print('[OrderService] Query params: $queryParams');
       print('[OrderService] Response: ${response.data}');
@@ -209,7 +207,7 @@ class OrderService {
   static Future<Order> getOrderById(String id) async {
     try {
       // Correction de l'endpoint - Utiliser l'endpoint standard
-      final response = await _api.get('$_ordersBasePath/$id');
+      final response = await _api.get('$_baseUrl/$id');
 
       if (response.data?['data'] == null) {
         throw 'Commande non trouvée';
@@ -230,7 +228,7 @@ class OrderService {
 
   static Future<Map<String, int>> getOrdersByStatus() async {
     try {
-      final response = await _api.get('$_ordersBasePath/by-status');
+      final response = await _api.get('$_baseUrl/by-status');
 
       if (response.data != null && response.data['data'] != null) {
         final Map<String, dynamic> raw = response.data['data'];
@@ -277,7 +275,7 @@ class OrderService {
       }
 
       final response = await _api.patch(
-        '$_ordersBasePath/$orderId/status',
+        '$_baseUrl/$orderId/status',
         data: {'status': newStatus},
       );
 
@@ -313,7 +311,7 @@ class OrderService {
     try {
       print('[OrderService] Creating new order with data: $orderData');
       final response = await _api.post(
-        '$_adminBasePath/create-for-customer',
+        '$_baseUrl/create-for-customer',
         data: orderData,
       );
       print('[OrderService] Create order response: ${response.data}');
@@ -333,7 +331,7 @@ class OrderService {
     try {
       print('[OrderService] Updating order: $orderId with data: $orderData');
       final response = await _api.put(
-        '$_ordersBasePath/$orderId',
+        '$_baseUrl/$orderId',
         data: orderData,
       );
 
@@ -365,7 +363,7 @@ class OrderService {
   static Future<void> deleteOrder(String orderId) async {
     try {
       print('[OrderService] Deleting order: $orderId');
-      await _api.delete('$_ordersBasePath/$orderId');
+      await _api.delete('$_baseUrl/$orderId');
       print('[OrderService] Order deleted successfully');
     } catch (e) {
       print('[OrderService] Error deleting order: $e');
@@ -418,7 +416,7 @@ class OrderService {
 
   static Future<List<Order>> getDraftOrders() async {
     try {
-      final response = await _api.get('$_ordersBasePath/flash/draft');
+      final response = await _api.get('$_baseUrl/flash/draft');
       print('[OrderService] Draft orders response: ${response.data}');
 
       if (response.data == null || response.data['data'] == null) {
@@ -452,7 +450,7 @@ class OrderService {
     try {
       print('[OrderService] Creating flash order');
       final response = await _api.post(
-        '$_ordersBasePath/flash',
+        '$_baseUrl/flash',
         data: {
           'addressId': addressId,
           'notes': notes,
@@ -476,7 +474,7 @@ class OrderService {
       print('[OrderService] Update data: ${updateData.toJson()}');
 
       final response = await _api.patch(
-        '$_ordersBasePath/flash/$orderId/complete',
+        '$_baseUrl/flash/$orderId/complete',
         data: updateData.toJson(),
       );
 
@@ -494,7 +492,7 @@ class OrderService {
   static Future<List<Map<String, dynamic>>> getRevenueStatistics() async {
     try {
       print('[OrderService] Fetching revenue statistics');
-      final response = await _api.get('$_adminBasePath/revenue/stats');
+      final response = await _api.get('$_baseUrl/revenue/stats');
       // Corriger l'appel print en utilisant string interpolation
       print('[OrderService] Revenue stats response: ${response.data}');
 

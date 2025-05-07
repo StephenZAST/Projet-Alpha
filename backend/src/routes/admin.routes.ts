@@ -4,6 +4,7 @@ import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware
 import { asyncHandler } from '../utils/asyncHandler';
 import { AdminService } from '../services/admin.service';
 import { ServiceManagementController } from '../controllers/admin/serviceManagement.controller';
+import { OrderQueryController } from '../controllers/order.controller/orderQuery.controller';
 import { validatePriceData } from '../middleware/priceValidation.middleware';
 import { order_status } from '@prisma/client';  // Correction ici
 
@@ -55,6 +56,14 @@ router.get(
   '/orders/by-status',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(AdminController.getOrdersByStatus)
+);
+
+router.get(
+  '/orders/search',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await OrderQueryController.searchOrders(req, res);
+  })
 );
 
 // Route pour créer une commande au nom d'un client

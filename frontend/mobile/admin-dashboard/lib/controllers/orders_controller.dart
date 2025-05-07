@@ -10,9 +10,16 @@ import '../services/order_service.dart';
 import '../services/user_service.dart';
 import '../services/pricing_service.dart';
 import '../services/service_service.dart';
+import '../services/api_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  late final ApiService _apiService;
+
+  OrdersController() {
+    _apiService = Get.find<ApiService>();
+  }
+
   // État de chargement et erreurs
   final isLoading = false.obs;
   final hasError = false.obs;
@@ -50,6 +57,11 @@ class OrdersController extends GetxController {
   // Ajouter cette propriété pour le filtre de type de commande
   final selectedOrderType = Rxn<bool>();
 
+  // Ajouter les propriétés pour les filtres avancés
+  final filterStatus = ''.obs;
+  final filterStartDate = Rx<DateTime?>(null);
+  final filterEndDate = Rx<DateTime?>(null);
+
   // État de pagination
   final currentPage = 1.obs;
   final itemsPerPage = 50.obs;
@@ -84,45 +96,24 @@ class OrdersController extends GetxController {
     fetchOrders();
   }
 
-  Future<void> _initData() async {
+  Future<void> fetchOrders() async {
     try {
-      isLoading.value = true;
-      await Future.wait([
-        fetchOrders(),
-        loadDraftOrders(),
-        _updateStatusCounts(),
-      ]);
-    } catch (e) {
-      print('[OrdersController] Error initializing data: $e');
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> fetchOrders({bool resetPage = false}) async {
-    try {
-      if (resetPage) {
-        currentPage.value = 1;
-      }
-
       isLoading.value = true;
       hasError.value = false;
 
-      final result = await OrderService.loadOrdersPage(
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-        status: selectedStatus.value?.name,
-        sortField: 'createdAt',
-        sortOrder: 'desc',
-      );
+      final response = await _apiService.get('/orders');
 
-      orders.value = result.orders;
-      totalOrders.value = result.total;
-      totalPages.value = result.totalPages;
+      if (response.statusCode == 200 && response.data != null) {
+        final ordersData = response.data['data'] as List;
+        orders.value = ordersData.map((json) => Order.fromJson(json)).toList();
 
-      // Mettre à jour les compteurs après chaque fetch
-      await _updateStatusCounts();
+        // S'assurer que ces valeurs sont correctement parsées
+        totalOrders.value = response.data['total'] ?? 0;
+        currentPage.value = response.data['currentPage'] ?? 1;
+        totalPages.value = response.data['totalPages'] ?? 1;
+      }
     } catch (e) {
+      print('[OrdersController] Error fetching orders: $e');
       hasError.value = true;
       errorMessage.value = 'Erreur lors du chargement des commandes';
     } finally {
@@ -159,16 +150,41 @@ class OrdersController extends GetxController {
   }
 
   // Méthodes de filtrage
-  void filterByStatus(OrderStatus? status) {
-    selectedStatus.value = status;
-    currentPage.value = 1; // Réinitialiser la page
-    fetchOrders();
+  Future<void> filterByStatus(OrderStatus? status) async {
+    try {
+      isLoading.value = true;
+      selectedStatus.value = status;
+
+      // Réinitialiser la pagination
+      currentPage.value = 1;
+
+      final response = await _apiService.get('/orders', queryParameters: {
+        'page': currentPage.value.toString(),
+        'limit': itemsPerPage.value.toString(),
+        'status': status?.name,
+        'sortField': 'createdAt',
+        'sortOrder': 'desc'
+      });
+
+      if (response.statusCode == 200 && response.data != null) {
+        final ordersData = response.data['data'] as List;
+        orders.value = ordersData.map((json) => Order.fromJson(json)).toList();
+        totalOrders.value = response.data['total'] ?? 0;
+        totalPages.value = response.data['totalPages'] ?? 1;
+      }
+    } catch (e) {
+      print('Error filtering orders: $e');
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors du filtrage des commandes';
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   // Ajouter cette méthode pour filtrer par type de commande
   void filterByType(bool? isFlash) {
     selectedOrderType.value = isFlash;
-    fetchOrders(resetPage: true);
+    fetchOrders();
   }
 
   Future<void> _updateStatusCounts() async {
@@ -201,7 +217,7 @@ class OrdersController extends GetxController {
 
   void searchOrders(String query) {
     searchQuery.value = query;
-    fetchOrders(resetPage: true);
+    fetchOrders();
   }
 
   Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
@@ -248,7 +264,7 @@ class OrdersController extends GetxController {
     searchQuery.value = '';
     currentPage.value = 1;
     itemsPerPage.value = 50;
-    fetchOrders(resetPage: true);
+    fetchOrders();
   }
 
   // Méthodes pour la création/édition de commande
@@ -518,5 +534,21 @@ class OrdersController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Ajout des nouvelles méthodes
+  Future<void> refreshOrders() async {
+    await fetchOrders();
+  }
+
+  void resetFilters() {
+    filterStatus.value = '';
+    filterStartDate.value = null;
+    filterEndDate.value = null;
+    fetchOrders();
+  }
+
+  Future<void> applyFilters() async {
+    await fetchOrders();
   }
 }

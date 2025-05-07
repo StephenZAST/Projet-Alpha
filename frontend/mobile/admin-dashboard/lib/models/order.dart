@@ -1,4 +1,5 @@
 import 'package:admin/models/user.dart';
+import 'package:intl/intl.dart';
 
 import 'article.dart';
 import 'address.dart';
@@ -71,6 +72,16 @@ class Order {
   String? get customerPhone => user?.phone;
   String? get deliveryAddress => address?.fullAddress;
   bool get isPaid => paymentStatus == PaymentStatus.PAID;
+
+  // Ajout des nouveaux getters nécessaires
+  String get formattedDate => DateFormat('dd/MM/yyyy HH:mm').format(createdAt);
+
+  int get itemCount => items?.length ?? 0;
+
+  String get formattedTotal =>
+      NumberFormat.currency(locale: 'fr_FR', symbol: 'FCFA')
+          .format(totalAmount);
+
   Order({
     required this.id,
     required this.userId,

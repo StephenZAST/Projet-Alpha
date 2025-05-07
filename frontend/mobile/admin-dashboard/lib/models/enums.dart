@@ -154,3 +154,47 @@ extension PaymentStatusParser on String {
     );
   }
 }
+
+extension OrderStatusX on OrderStatus {
+  String toDisplayString() {
+    switch (this) {
+      case OrderStatus.PENDING:
+        return 'En attente';
+      case OrderStatus.PROCESSING:
+        return 'En traitement';
+      case OrderStatus.COLLECTING:
+        return 'En collecte';
+      case OrderStatus.COLLECTED:
+        return 'Collecté';
+      case OrderStatus.DELIVERING:
+        return 'En livraison';
+      case OrderStatus.DELIVERED:
+        return 'Livré';
+      case OrderStatus.CANCELLED:
+        return 'Annulé';
+      default:
+        return name;
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case OrderStatus.PENDING:
+        return AppColors.warning;
+      case OrderStatus.PROCESSING:
+        return AppColors.info;
+      case OrderStatus.COLLECTING:
+        return AppColors.violet;
+      case OrderStatus.COLLECTED:
+        return AppColors.teal;
+      case OrderStatus.DELIVERING:
+        return AppColors.indigo;
+      case OrderStatus.DELIVERED:
+        return AppColors.success;
+      case OrderStatus.CANCELLED:
+        return AppColors.error;
+      default:
+        return AppColors.gray400;
+    }
+  }
+}

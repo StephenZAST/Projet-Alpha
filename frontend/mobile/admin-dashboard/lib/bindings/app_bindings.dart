@@ -1,6 +1,7 @@
 import 'package:admin/controllers/address_controller.dart';
 import 'package:admin/controllers/flash_orders_controller.dart';
 import 'package:get/get.dart';
+import '../services/api_service.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/menu_app_controller.dart';
 import '../controllers/theme_controller.dart';
@@ -12,7 +13,10 @@ import '../controllers/orders_controller.dart';
 class AppBindings extends Bindings {
   @override
   void dependencies() {
-    // Controllers permanents déjà initialisés dans main()
+    // Ne réinitialisez pas l'ApiService s'il existe déjà
+    if (!Get.isRegistered<ApiService>()) {
+      Get.put(ApiService(), permanent: true);
+    }
 
     // Initialiser uniquement si non déjà initialisé
     if (!Get.isRegistered<AuthController>()) {
@@ -23,6 +27,11 @@ class AppBindings extends Bindings {
     }
     if (!Get.isRegistered<ThemeController>()) {
       Get.put(ThemeController(), permanent: true);
+    }
+
+    // Initialiser les autres contrôleurs seulement s'ils n'existent pas déjà
+    if (!Get.isRegistered<OrdersController>()) {
+      Get.put(OrdersController(), permanent: true);
     }
 
     // Controllers avec une durée de vie limitée

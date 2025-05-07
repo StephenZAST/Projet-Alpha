@@ -1,7 +1,26 @@
-import { PrismaClient } from '@prisma/client';
-import { Order } from '../../models/types';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { Order, OrderStatus } from '../../models/types';
 
 const prisma = new PrismaClient();
+
+interface OrderSearchParams {
+  searchTerm?: string;
+  serviceTypeId?: string;
+  paymentMethod?: string;
+  status?: OrderStatus;
+  startDate?: Date;
+  endDate?: Date;
+  userId?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  isFlashOrder?: boolean;
+  pagination: {
+    page: number;
+    limit: number;
+  };
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
 
 export class OrderQueryService {
   private static readonly orderInclude = {
@@ -120,6 +139,132 @@ export class OrderQueryService {
       }, {} as Record<string, number>);
     } catch (error) {
       console.error('Error getting orders by status:', error);
+      throw error;
+    }
+  }
+
+  static async searchOrders(params: OrderSearchParams) {
+    try {
+      const where: any = {};
+
+      // Recherche textuelle globale
+      if (params.searchTerm) {
+        where.OR = [
+          { id: { contains: params.searchTerm, mode: 'insensitive' } },
+          { 'user.first_name': { contains: params.searchTerm, mode: 'insensitive' } },
+          { 'user.last_name': { contains: params.searchTerm, mode: 'insensitive' } },
+          { 'user.email': { contains: params.searchTerm, mode: 'insensitive' } },
+          { 'user.phone': { contains: params.searchTerm, mode: 'insensitive' } },
+          { 
+            order_items: {
+              some: {
+                article: {
+                  name: { contains: params.searchTerm, mode: 'insensitive' }
+                }
+              }
+            }
+          }
+        ];
+      }
+
+      // Ajout de nouveaux filtres
+      where.AND = [];
+
+      // Filtre par type de service
+      if (params.serviceTypeId) {
+        where.AND.push({ service_type_id: params.serviceTypeId });
+      }
+
+      // Filtre par méthode de paiement
+      if (params.paymentMethod) {
+        where.AND.push({ paymentMethod: params.paymentMethod });
+      }
+
+      // Filtre par montant
+      if (params.minAmount || params.maxAmount) {
+        where.AND.push({
+          totalAmount: {
+            ...(params.minAmount && { gte: new Prisma.Decimal(params.minAmount) }),
+            ...(params.maxAmount && { lte: new Prisma.Decimal(params.maxAmount) })
+          }
+        });
+      }
+
+      // Filtre par date
+      if (params.startDate || params.endDate) {
+        where.AND.push({
+          createdAt: {
+            ...(params.startDate && { gte: params.startDate }),
+            ...(params.endDate && { lte: params.endDate })
+          }
+        });
+      }
+
+      // Filtre par statut
+      if (params.status) {
+        where.AND.push({ status: params.status });
+      }
+
+      // Filtre par type de commande (flash/standard)
+      if (params.isFlashOrder !== undefined) {
+        where.AND.push({
+          order_metadata: {
+            is_flash_order: params.isFlashOrder
+          }
+        });
+      }
+
+      // Ajouter les nouveaux includes pour plus de détails
+      const include = {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            first_name: true,
+            last_name: true,
+            phone: true
+          }
+        },
+        address: true,
+        service_types: true,
+        order_items: {
+          include: {
+            article: {
+              include: {
+                article_categories: true
+              }
+            }
+          }
+        },
+        order_metadata: true
+      };
+
+      // Exécuter la requête avec pagination
+      const [orders, total] = await Promise.all([
+        prisma.orders.findMany({
+          where,
+          include,
+          skip: (params.pagination.page - 1) * params.pagination.limit,
+          take: params.pagination.limit,
+          orderBy: {
+            [params.sortBy || 'createdAt']: params.sortOrder || 'desc'
+          }
+        }),
+        prisma.orders.count({ where })
+      ]);
+
+      return {
+        orders: orders.map(this.formatOrder),
+        pagination: {
+          total,
+          page: params.pagination.page,
+          limit: params.pagination.limit,
+          totalPages: Math.ceil(total / params.pagination.limit)
+        }
+      };
+
+    } catch (error) {
+      console.error('[OrderQueryService] Search error:', error);
       throw error;
     }
   }

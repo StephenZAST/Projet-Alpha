@@ -3,7 +3,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:get/get.dart';
 import '../routes/admin_routes.dart';
 
-class ApiService {
+class ApiService extends GetxService {
   static final ApiService _instance = ApiService._internal();
   late final dio.Dio _dio;
   final _storage = GetStorage();
@@ -14,8 +14,7 @@ class ApiService {
     return _instance;
   }
 
-  // Modifier le baseUrl pour ne pas inclure /api
-  static String get baseUrl => 'http://localhost:3001';
+  static String get baseUrl => 'http://localhost:3001'; // Enlever le /api ici
 
   ApiService._internal() {
     _dio = dio.Dio(dio.BaseOptions(
@@ -108,11 +107,12 @@ class ApiService {
   Future<dio.Response> get(String path,
       {Map<String, dynamic>? queryParameters}) async {
     try {
-      final fullPath = path.startsWith('/') ? path : '/$path';
-      print('[ApiService] Making GET request to: $baseUrl$fullPath');
+      // Ajouter /api au début du path s'il n'est pas présent
+      final endpoint = path.startsWith('/api/') ? path : '/api$path';
+      print('[ApiService] Making GET request to: $baseUrl$endpoint');
 
       final response = await _dio.get(
-        fullPath,
+        endpoint,
         queryParameters: queryParameters,
       );
 
@@ -128,8 +128,10 @@ class ApiService {
 
   Future<dio.Response> post(String path, {dynamic data}) async {
     try {
+      // Ajouter /api au début du path s'il n'est pas présent
+      final endpoint = path.startsWith('/api/') ? path : '/api$path';
       final response = await _dio.post(
-        path,
+        endpoint,
         data: data,
       );
       _handleResponse(response);
@@ -141,8 +143,10 @@ class ApiService {
 
   Future<dio.Response> put(String path, {dynamic data}) async {
     try {
+      // Ajouter /api au début du path s'il n'est pas présent
+      final endpoint = path.startsWith('/api/') ? path : '/api$path';
       final response = await _dio.put(
-        path,
+        endpoint,
         data: data,
       );
       _handleResponse(response);
@@ -154,11 +158,13 @@ class ApiService {
 
   Future<dio.Response> patch(String path, {dynamic data}) async {
     try {
-      print('[ApiService] Making PATCH request to: $path');
+      // Ajouter /api au début du path s'il n'est pas présent
+      final endpoint = path.startsWith('/api/') ? path : '/api$path';
+      print('[ApiService] Making PATCH request to: $endpoint');
       print('[ApiService] Request data: $data');
 
       final response = await _dio.patch(
-        path,
+        endpoint,
         data: data,
       );
 
@@ -191,7 +197,9 @@ class ApiService {
 
   Future<dio.Response> delete(String path) async {
     try {
-      final response = await _dio.delete(path);
+      // Ajouter /api au début du path s'il n'est pas présent
+      final endpoint = path.startsWith('/api/') ? path : '/api$path';
+      final response = await _dio.delete(endpoint);
       _handleResponse(response);
       return response;
     } catch (e) {
@@ -231,5 +239,10 @@ class ApiService {
       }
     }
     return error.toString();
+  }
+
+  // Ajoutez cette méthode pour l'initialisation des services GetX
+  Future<ApiService> init() async {
+    return this;
   }
 }

@@ -5,6 +5,8 @@ import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware
 import { validateOrder } from '../middleware/validators';
 import { validateCreateFlashOrder, validateCompleteFlashOrder } from '../middleware/flashOrderValidator';
 import { asyncHandler } from '../utils/asyncHandler';
+import { AdminService } from '../services/admin.service';
+import { order_status } from '@prisma/client'; // Ajout de l'import
 
 const router = express.Router();
 
@@ -22,6 +24,45 @@ router.use((req, res, next) => {
 
 // Protection des routes avec authentification
 router.use(authenticateToken);
+
+// Ajouter cette route AVANT les autres routes
+router.get(
+  '/', // Correction ici
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      // Convertir le status en order_status
+      const status = req.query.status ? (req.query.status as string).toUpperCase() as order_status : undefined;
+      const sortField = req.query.sort_field as string || 'createdAt';
+      const sortOrder = (req.query.sort_order as 'asc' | 'desc') || 'desc';
+
+      const result = await AdminService.getAllOrders(page, limit, {
+        status,
+        sortField,
+        sortOrder
+      });
+
+      res.json({
+        success: true,
+        data: result.orders,
+        pagination: {
+          total: result.total,
+          currentPage: page,
+          limit,
+          totalPages: result.pages
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch orders'
+      });
+    }
+  })
+);
 
 // Regrouper les routes flash en premier pour éviter les conflits
 router.route('/flash')
