@@ -542,13 +542,47 @@ class OrdersController extends GetxController {
   }
 
   void resetFilters() {
-    filterStatus.value = '';
     filterStartDate.value = null;
     filterEndDate.value = null;
+    searchQuery.value = '';
+    selectedStatus.value = null;
+    selectedOrderType.value = null;
+    currentPage.value = 1;
     fetchOrders();
   }
 
   Future<void> applyFilters() async {
-    await fetchOrders();
+    try {
+      isLoading.value = true;
+
+      final queryParams = {
+        'page': currentPage.value.toString(),
+        'limit': itemsPerPage.value.toString(),
+        'status': selectedStatus.value?.name,
+        'search': searchQuery.value,
+        if (filterStartDate.value != null)
+          'startDate': filterStartDate.value!.toIso8601String(),
+        if (filterEndDate.value != null)
+          'endDate': filterEndDate.value!.toIso8601String(),
+        'sortField': 'createdAt',
+        'sortOrder': 'desc',
+      };
+
+      final response =
+          await _apiService.get('/orders', queryParameters: queryParams);
+
+      if (response.statusCode == 200 && response.data != null) {
+        final ordersData = response.data['data'] as List;
+        orders.value = ordersData.map((json) => Order.fromJson(json)).toList();
+        totalOrders.value = response.data['total'] ?? 0;
+        totalPages.value = response.data['totalPages'] ?? 1;
+      }
+    } catch (e) {
+      print('Error applying filters: $e');
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors de l\'application des filtres';
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

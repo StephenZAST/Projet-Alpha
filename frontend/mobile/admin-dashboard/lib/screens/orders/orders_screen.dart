@@ -1,3 +1,4 @@
+import 'package:admin/screens/orders/components/advanced_search_filter.dart';
 import 'package:admin/widgets/pagination_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -35,17 +36,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: Container(
-          padding: EdgeInsets.all(defaultPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              OrdersHeader(),
-              SizedBox(height: defaultPadding),
-              OrderFilters(),
-              SizedBox(height: defaultPadding),
-              Expanded(
-                child: Container(
+        child: SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.all(defaultPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                OrdersHeader(),
+                SizedBox(height: defaultPadding),
+                AdvancedSearchFilter(),
+                OrderFilters(),
+                SizedBox(height: defaultPadding),
+                Container(
+                  height: MediaQuery.of(context).size.height - 300,
                   padding: EdgeInsets.all(defaultPadding),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
@@ -162,8 +165,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     );
                   }),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

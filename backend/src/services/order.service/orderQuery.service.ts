@@ -20,6 +20,16 @@ interface OrderSearchParams {
   };
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+
+  // Ajout des nouveaux paramètres de recherche
+  orderId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  articleName?: string;
+  addressSearch?: string;
+  serviceTypeName?: string;
+  affiliateCode?: string;
 }
 
 export class OrderQueryService {
@@ -147,14 +157,20 @@ export class OrderQueryService {
     try {
       const where: any = {};
 
-      // Recherche textuelle globale
+      // Recherche textuelle globale améliorée
       if (params.searchTerm) {
         where.OR = [
           { id: { contains: params.searchTerm, mode: 'insensitive' } },
-          { 'user.first_name': { contains: params.searchTerm, mode: 'insensitive' } },
-          { 'user.last_name': { contains: params.searchTerm, mode: 'insensitive' } },
-          { 'user.email': { contains: params.searchTerm, mode: 'insensitive' } },
-          { 'user.phone': { contains: params.searchTerm, mode: 'insensitive' } },
+          { 
+            user: {
+              OR: [
+                { first_name: { contains: params.searchTerm, mode: 'insensitive' } },
+                { last_name: { contains: params.searchTerm, mode: 'insensitive' } },
+                { email: { contains: params.searchTerm, mode: 'insensitive' } },
+                { phone: { contains: params.searchTerm, mode: 'insensitive' } }
+              ]
+            }
+          },
           { 
             order_items: {
               some: {
@@ -163,12 +179,103 @@ export class OrderQueryService {
                 }
               }
             }
+          },
+          { 
+            address: {
+              OR: [
+                { street: { contains: params.searchTerm, mode: 'insensitive' } },
+                { city: { contains: params.searchTerm, mode: 'insensitive' } },
+                { name: { contains: params.searchTerm, mode: 'insensitive' } }
+              ]
+            }
+          },
+          { affiliateCode: { contains: params.searchTerm, mode: 'insensitive' } },
+          {
+            service_types: {
+              name: { contains: params.searchTerm, mode: 'insensitive' }
+            }
           }
         ];
       }
 
-      // Ajout de nouveaux filtres
       where.AND = [];
+
+      // Recherche spécifique par ID de commande
+      if (params.orderId) {
+        where.AND.push({ id: params.orderId });
+      }
+
+      // Recherche par nom du client
+      if (params.customerName) {
+        where.AND.push({
+          user: {
+            OR: [
+              { first_name: { contains: params.customerName, mode: 'insensitive' } },
+              { last_name: { contains: params.customerName, mode: 'insensitive' } }
+            ]
+          }
+        });
+      }
+
+      // Recherche par téléphone du client
+      if (params.customerPhone) {
+        where.AND.push({
+          user: {
+            phone: { contains: params.customerPhone, mode: 'insensitive' }
+          }
+        });
+      }
+
+      // Recherche par email du client
+      if (params.customerEmail) {
+        where.AND.push({
+          user: {
+            email: { contains: params.customerEmail, mode: 'insensitive' }
+          }
+        });
+      }
+
+      // Recherche par nom d'article
+      if (params.articleName) {
+        where.AND.push({
+          order_items: {
+            some: {
+              article: {
+                name: { contains: params.articleName, mode: 'insensitive' }
+              }
+            }
+          }
+        });
+      }
+
+      // Recherche par adresse
+      if (params.addressSearch) {
+        where.AND.push({
+          address: {
+            OR: [
+              { street: { contains: params.addressSearch, mode: 'insensitive' } },
+              { city: { contains: params.addressSearch, mode: 'insensitive' } },
+              { name: { contains: params.addressSearch, mode: 'insensitive' } }
+            ]
+          }
+        });
+      }
+
+      // Recherche par type de service
+      if (params.serviceTypeName) {
+        where.AND.push({
+          service_types: {
+            name: { contains: params.serviceTypeName, mode: 'insensitive' }
+          }
+        });
+      }
+
+      // Recherche par code affilié
+      if (params.affiliateCode) {
+        where.AND.push({
+          affiliateCode: { contains: params.affiliateCode, mode: 'insensitive' }
+        });
+      }
 
       // Filtre par type de service
       if (params.serviceTypeId) {
@@ -214,7 +321,7 @@ export class OrderQueryService {
         });
       }
 
-      // Ajouter les nouveaux includes pour plus de détails
+      // Amélioration de l'include pour avoir toutes les relations nécessaires
       const include = {
         user: {
           select: {
@@ -236,7 +343,8 @@ export class OrderQueryService {
             }
           }
         },
-        order_metadata: true
+        order_metadata: true,
+        order_notes: true // Ajout des notes de commande
       };
 
       // Exécuter la requête avec pagination
