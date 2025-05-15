@@ -29,7 +29,6 @@ class OrdersController extends GetxController {
   final orders = <Order>[].obs;
   final selectedOrder = Rxn<Order>();
   final totalOrders = 0.obs;
-  final totalAmount = 0.0.obs;
   final orderStatusCount = <String, int>{}.obs;
 
   // Ajouter cette propriété pour les commandes en brouillon
@@ -64,8 +63,8 @@ class OrdersController extends GetxController {
 
   // État de pagination
   final currentPage = 1.obs;
-  final itemsPerPage = 50.obs;
-  final totalPages = 0.obs;
+  final itemsPerPage = 10.obs;
+  final totalPages = 1.obs;
 
   // État spécifique aux commandes flash
   final selectedFlashOrder = Rxn<Order>();
@@ -89,6 +88,14 @@ class OrdersController extends GetxController {
   final sortColumnIndex = 0.obs;
   final sortAscending = true.obs;
 
+  // Ajout des variables pour la recherche avancée
+  final advancedSearchEnabled = false.obs;
+  final dateRange = Rx<DateTimeRange?>(null);
+  final selectedPaymentMethod = Rx<PaymentMethod?>(null);
+  final selectedPrice = RxDouble(0.0);
+  final priceRange = RxList<double>([0, 1000]);
+  final selectedDateFilter = RxString('all'); // today, week, month, custom
+
   @override
   void onInit() {
     super.onInit();
@@ -96,21 +103,47 @@ class OrdersController extends GetxController {
     fetchOrders();
   }
 
-  Future<void> fetchOrders() async {
+  Future<void> fetchOrders({bool resetPage = false}) async {
     try {
       isLoading.value = true;
       hasError.value = false;
 
-      final response = await _apiService.get('/orders');
+      if (resetPage) {
+        currentPage.value = 1;
+      }
+
+      final params = {
+        'page': currentPage.value.toString(),
+        'limit': itemsPerPage.value.toString(),
+        'status': selectedStatus.value?.name,
+        'search': searchQuery.value,
+        'orderType': selectedOrderType.value?.toString(),
+      };
+
+      print('[OrdersController] Fetching orders with params: $params');
+
+      final response =
+          await _apiService.get('/orders', queryParameters: params);
 
       if (response.statusCode == 200 && response.data != null) {
-        final ordersData = response.data['data'] as List;
+        final data = response.data;
+
+        // Extraire les données de pagination
+        final pagination = data['pagination'] as Map<String, dynamic>;
+        totalOrders.value = pagination['total'] ?? 0;
+        totalPages.value = pagination['totalPages'] ?? 1;
+        currentPage.value = pagination['currentPage'] ?? 1;
+
+        // Mettre à jour la liste des commandes
+        final List ordersData = data['data'] as List;
         orders.value = ordersData.map((json) => Order.fromJson(json)).toList();
 
-        // S'assurer que ces valeurs sont correctement parsées
-        totalOrders.value = response.data['total'] ?? 0;
-        currentPage.value = response.data['currentPage'] ?? 1;
-        totalPages.value = response.data['totalPages'] ?? 1;
+        print('[OrdersController] Pagination info:');
+        print('- Total orders: ${totalOrders.value}');
+        print('- Current page: ${currentPage.value}');
+        print('- Items per page: ${itemsPerPage.value}');
+        print('- Total pages: ${totalPages.value}');
+        print('- Orders in current page: ${orders.length}');
       }
     } catch (e) {
       print('[OrdersController] Error fetching orders: $e');
@@ -118,6 +151,28 @@ class OrdersController extends GetxController {
       errorMessage.value = 'Erreur lors du chargement des commandes';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void nextPage() {
+    if (currentPage.value < totalPages.value) {
+      print('[OrdersController] Moving to next page: ${currentPage.value + 1}');
+      currentPage.value++;
+      fetchOrders();
+    } else {
+      print(
+          '[OrdersController] Already at last page (${currentPage.value}/${totalPages.value})');
+    }
+  }
+
+  void previousPage() {
+    if (currentPage.value > 1) {
+      print(
+          '[OrdersController] Moving to previous page: ${currentPage.value - 1}');
+      currentPage.value--;
+      fetchOrders();
+    } else {
+      print('[OrdersController] Already at first page');
     }
   }
 
@@ -152,32 +207,13 @@ class OrdersController extends GetxController {
   // Méthodes de filtrage
   Future<void> filterByStatus(OrderStatus? status) async {
     try {
-      isLoading.value = true;
       selectedStatus.value = status;
-
-      // Réinitialiser la pagination
-      currentPage.value = 1;
-
-      final response = await _apiService.get('/orders', queryParameters: {
-        'page': currentPage.value.toString(),
-        'limit': itemsPerPage.value.toString(),
-        'status': status?.name,
-        'sortField': 'createdAt',
-        'sortOrder': 'desc'
-      });
-
-      if (response.statusCode == 200 && response.data != null) {
-        final ordersData = response.data['data'] as List;
-        orders.value = ordersData.map((json) => Order.fromJson(json)).toList();
-        totalOrders.value = response.data['total'] ?? 0;
-        totalPages.value = response.data['totalPages'] ?? 1;
-      }
+      currentPage.value = 1; // Reset to first page when filtering
+      await fetchOrders();
     } catch (e) {
-      print('Error filtering orders: $e');
+      print('[OrdersController] Error filtering by status: $e');
       hasError.value = true;
       errorMessage.value = 'Erreur lors du filtrage des commandes';
-    } finally {
-      isLoading.value = false;
     }
   }
 
@@ -201,17 +237,11 @@ class OrdersController extends GetxController {
     }
   }
 
-  void nextPage() {
-    if (currentPage.value < totalPages.value) {
-      currentPage.value++;
-      fetchOrders();
-    }
-  }
-
-  void previousPage() {
-    if (currentPage.value > 1) {
-      currentPage.value--;
-      fetchOrders();
+  void goToPage(int page) async {
+    if (page >= 1 && page <= totalPages.value && page != currentPage.value) {
+      print('[OrdersController] Going to page: $page');
+      currentPage.value = page;
+      await fetchOrders();
     }
   }
 
@@ -246,14 +276,6 @@ class OrdersController extends GetxController {
         return true;
       default:
         return false;
-    }
-  }
-
-  void setItemsPerPage(int value) {
-    if (value != itemsPerPage.value) {
-      itemsPerPage.value = value;
-      currentPage.value = 1;
-      fetchOrders();
     }
   }
 
@@ -572,10 +594,15 @@ class OrdersController extends GetxController {
           await _apiService.get('/orders', queryParameters: queryParams);
 
       if (response.statusCode == 200 && response.data != null) {
-        final ordersData = response.data['data'] as List;
+        final data = response.data;
+        final ordersData = data['data'] as List;
         orders.value = ordersData.map((json) => Order.fromJson(json)).toList();
-        totalOrders.value = response.data['total'] ?? 0;
-        totalPages.value = response.data['totalPages'] ?? 1;
+
+        // Mise à jour de la pagination
+        final pagination = data['pagination'] as Map<String, dynamic>;
+        totalOrders.value = pagination['total'] ?? 0;
+        totalPages.value = pagination['totalPages'] ?? 1;
+        currentPage.value = pagination['currentPage'] ?? 1;
       }
     } catch (e) {
       print('Error applying filters: $e');
@@ -584,5 +611,105 @@ class OrdersController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void updateItemsPerPage(int value) {
+    if (value != itemsPerPage.value) {
+      print(
+          '[OrdersController] Updating items per page from ${itemsPerPage.value} to $value');
+      itemsPerPage.value = value;
+      currentPage.value = 1; // Reset to first page
+      fetchOrders();
+    }
+  }
+
+  void setItemsPerPage(int value) {
+    updateItemsPerPage(value);
+  }
+
+  Future<void> applyAdvancedSearch() async {
+    try {
+      isLoading.value = true;
+      currentPage.value = 1; // Réinitialiser à la première page
+
+      final queryParams = {
+        'page': currentPage.value.toString(),
+        'limit': itemsPerPage.value.toString(),
+        'status': selectedStatus.value?.name,
+        'search': searchQuery.value,
+        'paymentMethod': selectedPaymentMethod.value?.name,
+        'minPrice': priceRange[0].toString(),
+        'maxPrice': priceRange[1].toString(),
+        if (dateRange.value != null) ...{
+          'startDate': dateRange.value!.start.toIso8601String(),
+          'endDate': dateRange.value!.end.toIso8601String(),
+        },
+      };
+
+      final response =
+          await _apiService.get('/orders/search', queryParameters: queryParams);
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        final pagination = data['pagination'] as Map<String, dynamic>;
+
+        orders.value =
+            (data['data'] as List).map((json) => Order.fromJson(json)).toList();
+        totalOrders.value = pagination['total'] ?? 0;
+        totalPages.value = pagination['totalPages'] ?? 1;
+        currentPage.value = pagination['currentPage'] ?? 1;
+      }
+    } catch (e) {
+      print('[OrdersController] Error applying advanced search: $e');
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors de la recherche avancée';
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void setDateFilter(String filter) {
+    selectedDateFilter.value = filter;
+    final now = DateTime.now();
+
+    switch (filter) {
+      case 'today':
+        dateRange.value = DateTimeRange(
+          start: DateTime(now.year, now.month, now.day),
+          end: now,
+        );
+        break;
+      case 'week':
+        dateRange.value = DateTimeRange(
+          start: now.subtract(Duration(days: 7)),
+          end: now,
+        );
+        break;
+      case 'month':
+        dateRange.value = DateTimeRange(
+          start: now.subtract(Duration(days: 30)),
+          end: now,
+        );
+        break;
+      case 'all':
+        dateRange.value = null;
+        break;
+    }
+
+    if (filter != 'custom') {
+      applyAdvancedSearch();
+    }
+  }
+
+  void resetAdvancedSearch() {
+    selectedStatus.value = null;
+    dateRange.value = null;
+    selectedPaymentMethod.value = null;
+    selectedPrice.value = 0.0;
+    priceRange.value = [0, 1000];
+    selectedDateFilter.value = 'all';
+    searchQuery.value = '';
+    currentPage.value = 1;
+    fetchOrders();
   }
 }

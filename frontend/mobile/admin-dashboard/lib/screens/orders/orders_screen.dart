@@ -10,7 +10,6 @@ import 'components/order_filters.dart';
 import 'components/orders_header.dart';
 import 'components/orders_table.dart';
 import 'components/order_details.dart';
-// Ajouter cet import
 
 class OrdersScreen extends StatefulWidget {
   @override
@@ -30,14 +29,46 @@ class _OrdersScreenState extends State<OrdersScreen> {
     controller.updateOrderStatus(orderId, newStatus);
   }
 
+  void _handleOrderSelect(String orderId) {
+    controller.fetchOrderDetails(orderId);
+    Get.dialog(
+      Dialog(
+        child: Container(
+          width: 800,
+          padding: EdgeInsets.all(defaultPadding),
+          child: OrderDetails(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaginationControls() {
+    return Padding(
+      padding: EdgeInsets.all(defaultPadding),
+      child: PaginationControls(
+        currentPage: controller.currentPage.value,
+        totalPages: controller.totalPages.value,
+        onPrevious: controller.previousPage,
+        onNext: controller.nextPage,
+        itemCount: controller.orders.length,
+        totalItems: controller.totalOrders.value,
+        itemsPerPage: controller.itemsPerPage.value,
+        onItemsPerPageChanged: (value) {
+          if (value != null) {
+            controller.setItemsPerPage(value);
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           child: Container(
+            width: double.infinity,
             padding: EdgeInsets.all(defaultPadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,125 +76,93 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 OrdersHeader(),
                 SizedBox(height: defaultPadding),
                 AdvancedSearchFilter(),
+                SizedBox(height: defaultPadding),
                 OrderFilters(),
                 SizedBox(height: defaultPadding),
                 Container(
-                  height: MediaQuery.of(context).size.height - 300,
-                  padding: EdgeInsets.all(defaultPadding),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: AppRadius.radiusMD,
-                    border: Border.all(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                      width: 1,
-                    ),
-                  ),
-                  child: Obx(() {
-                    if (controller.isLoading.value) {
-                      return Center(
-                        child: CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        ),
-                      );
-                    }
+                  height: MediaQuery.of(context).size.height * 0.6,
+                  child: Card(
+                    child: Obx(() {
+                      if (controller.isLoading.value) {
+                        return Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary),
+                          ),
+                        );
+                      }
 
-                    if (controller.hasError.value) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 48,
-                              color: AppColors.error,
-                            ),
-                            SizedBox(height: AppSpacing.md),
-                            Text(
-                              controller.errorMessage.value,
-                              style: AppTextStyles.bodyMedium.copyWith(
+                      if (controller.hasError.value) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48,
                                 color: AppColors.error,
                               ),
-                            ),
-                            SizedBox(height: AppSpacing.md),
-                            AppButton(
-                              label: 'Réessayer',
-                              icon: Icons.refresh_outlined,
-                              onPressed: controller.fetchOrders,
-                              variant: AppButtonVariant.primary,
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+                              SizedBox(height: AppSpacing.md),
+                              Text(
+                                controller.errorMessage.value,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.error,
+                                ),
+                              ),
+                              SizedBox(height: AppSpacing.md),
+                              AppButton(
+                                label: 'Réessayer',
+                                icon: Icons.refresh_outlined,
+                                onPressed: controller.fetchOrders,
+                                variant: AppButtonVariant.primary,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
 
-                    if (controller.orders.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.inbox,
-                              size: 48,
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textSecondary,
-                            ),
-                            SizedBox(height: AppSpacing.md),
-                            Text(
-                              'Aucune commande trouvée',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: isDark
+                      if (controller.orders.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.inbox,
+                                size: 48,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
                                     ? AppColors.textLight
                                     : AppColors.textSecondary,
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: OrdersTable(
-                            orders: controller.orders,
-                            onStatusUpdate: _updateStatus,
-                            onOrderSelect: (orderId) {
-                              controller.fetchOrderDetails(orderId);
-                              Get.dialog(
-                                Dialog(
-                                  child: Container(
-                                    width: 800,
-                                    padding: EdgeInsets.all(defaultPadding),
-                                    child: OrderDetails(),
-                                  ),
+                              SizedBox(height: AppSpacing.md),
+                              Text(
+                                'Aucune commande trouvée',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.textLight
+                                      : AppColors.textSecondary,
                                 ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.all(defaultPadding),
-                          child: PaginationControls(
-                            currentPage: controller.currentPage.value,
-                            totalPages: controller.totalPages.value,
-                            onPrevious: controller.previousPage,
-                            onNext: controller.nextPage,
-                            itemCount: controller.orders.length,
-                            totalItems: controller.totalOrders.value,
-                            itemsPerPage: controller.itemsPerPage.value,
-                            onItemsPerPageChanged: (value) {
-                              if (value != null) {
-                                controller.setItemsPerPage(value);
-                              }
-                            },
+                        );
+                      }
+
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: OrdersTable(
+                              orders: controller.orders,
+                              onStatusUpdate: _updateStatus,
+                              onOrderSelect: _handleOrderSelect,
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  }),
+                          _buildPaginationControls(),
+                        ],
+                      );
+                    }),
+                  ),
                 ),
               ],
             ),
