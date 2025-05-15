@@ -1,6 +1,7 @@
 import 'package:admin/models/article.dart';
 import 'package:admin/models/flash_order_update.dart' as flash_update;
 import 'package:admin/models/user.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/order.dart';
 import '../models/enums.dart';
@@ -95,6 +96,25 @@ class OrdersController extends GetxController {
   final selectedPrice = RxDouble(0.0);
   final priceRange = RxList<double>([0, 1000]);
   final selectedDateFilter = RxString('all'); // today, week, month, custom
+
+  // Nouveaux filtres de recherche
+  final orderId = RxString('');
+  final customerName = RxString('');
+  final customerContact = RxString('');
+  final serviceType = RxString('');
+  final minAmount = RxDouble(0.0);
+  final maxAmount = RxDouble(0.0);
+  final address = RxString('');
+  final paymentStatus = Rx<bool?>(null);
+
+  void setOrderId(String value) => orderId.value = value;
+  void setCustomerName(String value) => customerName.value = value;
+  void setCustomerContact(String value) => customerContact.value = value;
+  void setServiceType(String value) => serviceType.value = value;
+  void setMinAmount(double value) => minAmount.value = value;
+  void setMaxAmount(double value) => maxAmount.value = value;
+  void setAddress(String value) => address.value = value;
+  void setPaymentStatus(bool? value) => paymentStatus.value = value;
 
   @override
   void onInit() {
@@ -630,20 +650,22 @@ class OrdersController extends GetxController {
   Future<void> applyAdvancedSearch() async {
     try {
       isLoading.value = true;
-      currentPage.value = 1; // Réinitialiser à la première page
+      currentPage.value = 1;
 
       final queryParams = {
         'page': currentPage.value.toString(),
         'limit': itemsPerPage.value.toString(),
+        if (orderId.value.isNotEmpty) 'orderId': orderId.value,
+        if (customerName.value.isNotEmpty) 'customerName': customerName.value,
+        if (customerContact.value.isNotEmpty)
+          'customerContact': customerContact.value,
+        if (serviceType.value.isNotEmpty) 'serviceType': serviceType.value,
+        if (minAmount.value > 0) 'minAmount': minAmount.value.toString(),
+        if (maxAmount.value > 0) 'maxAmount': maxAmount.value.toString(),
+        if (address.value.isNotEmpty) 'address': address.value,
+        if (paymentStatus.value != null)
+          'isPaid': paymentStatus.value.toString(),
         'status': selectedStatus.value?.name,
-        'search': searchQuery.value,
-        'paymentMethod': selectedPaymentMethod.value?.name,
-        'minPrice': priceRange[0].toString(),
-        'maxPrice': priceRange[1].toString(),
-        if (dateRange.value != null) ...{
-          'startDate': dateRange.value!.start.toIso8601String(),
-          'endDate': dateRange.value!.end.toIso8601String(),
-        },
       };
 
       final response =
@@ -657,12 +679,11 @@ class OrdersController extends GetxController {
             (data['data'] as List).map((json) => Order.fromJson(json)).toList();
         totalOrders.value = pagination['total'] ?? 0;
         totalPages.value = pagination['totalPages'] ?? 1;
-        currentPage.value = pagination['currentPage'] ?? 1;
       }
     } catch (e) {
-      print('[OrdersController] Error applying advanced search: $e');
+      print('[OrdersController] Error in advanced search: $e');
       hasError.value = true;
-      errorMessage.value = 'Erreur lors de la recherche avancée';
+      errorMessage.value = 'Erreur lors de la recherche';
     } finally {
       isLoading.value = false;
     }
@@ -702,14 +723,15 @@ class OrdersController extends GetxController {
   }
 
   void resetAdvancedSearch() {
+    orderId.value = '';
+    customerName.value = '';
+    customerContact.value = '';
+    serviceType.value = '';
+    minAmount.value = 0.0;
+    maxAmount.value = 0.0;
+    address.value = '';
+    paymentStatus.value = null;
     selectedStatus.value = null;
-    dateRange.value = null;
-    selectedPaymentMethod.value = null;
-    selectedPrice.value = 0.0;
-    priceRange.value = [0, 1000];
-    selectedDateFilter.value = 'all';
-    searchQuery.value = '';
-    currentPage.value = 1;
-    fetchOrders();
+    fetchOrders(resetPage: true);
   }
 }
