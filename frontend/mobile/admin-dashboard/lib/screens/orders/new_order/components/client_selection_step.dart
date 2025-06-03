@@ -83,7 +83,7 @@ class _ClientSearchState extends State<ClientSearch> {
         ),
         onChanged: (query) {
           print('[ClientSelectionStep] Searching: $query');
-          controller.searchClients(query);
+          controller.searchClients(query, controller.clientSearchFilter.value);
         },
       ),
     );

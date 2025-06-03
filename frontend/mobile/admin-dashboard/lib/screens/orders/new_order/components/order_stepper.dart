@@ -6,6 +6,7 @@ import 'steps/client_selection_step.dart';
 import 'steps/service_selection_step.dart';
 import 'steps/articles_selection_step.dart';
 import 'steps/order_summary_step.dart';
+import '../../../../widgets/shared/glass_button.dart';
 
 class OrderStepper extends StatelessWidget {
   final controller = Get.find<OrdersController>();
@@ -56,7 +57,10 @@ class OrderStepper extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          TextButton(
+          GlassButton(
+            label: 'Retour',
+            icon: Icons.arrow_back,
+            variant: GlassButtonVariant.secondary,
             onPressed: () {
               if (currentStep.value > 0) {
                 currentStep.value--;
@@ -64,24 +68,48 @@ class OrderStepper extends StatelessWidget {
                 Get.back();
               }
             },
-            child: Text('Retour'),
           ),
-          ElevatedButton(
+          GlassButton(
+            label: currentStep.value < steps.length - 1
+                ? 'Suivant'
+                : 'Créer la commande',
+            icon: currentStep.value < steps.length - 1
+                ? Icons.arrow_forward
+                : Icons.check,
+            variant: GlassButtonVariant.primary,
             onPressed: () {
-              if (currentStep.value < steps.length - 1) {
-                currentStep.value++;
+              if (_canProceedToNextStep()) {
+                if (currentStep.value < steps.length - 1) {
+                  currentStep.value++;
+                } else {
+                  _submitOrder();
+                }
               } else {
-                // Soumettre la commande
-                _submitOrder();
+                Get.snackbar(
+                  'Attention',
+                  'Veuillez compléter cette étape avant de continuer',
+                  backgroundColor: AppColors.warning.withOpacity(0.1),
+                  colorText: AppColors.warning,
+                );
               }
             },
-            child: Text(currentStep.value < steps.length - 1
-                ? 'Suivant'
-                : 'Créer la commande'),
           ),
         ],
       ),
     );
+  }
+
+  bool _canProceedToNextStep() {
+    switch (currentStep.value) {
+      case 0:
+        return controller.selectedClientId.value != null;
+      case 1:
+        return controller.selectedServiceId.value != null;
+      case 2:
+        return controller.selectedItems.isNotEmpty;
+      default:
+        return true;
+    }
   }
 
   void _submitOrder() {

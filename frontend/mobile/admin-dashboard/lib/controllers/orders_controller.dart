@@ -538,9 +538,11 @@ class OrdersController extends GetxController {
   }
 
   // Méthode pour rechercher des clients
-  void searchClients(String query) {
+  void searchClients(String query, String filter) {
     try {
       isLoadingClients.value = true;
+      clientSearchFilter.value = filter;
+
       if (query.isEmpty) {
         filteredClients.clear();
         return;
@@ -548,7 +550,7 @@ class OrdersController extends GetxController {
 
       final normalizedQuery = query.toLowerCase();
       filteredClients.value = clients.where((client) {
-        switch (clientSearchFilter.value) {
+        switch (filter) {
           case 'name':
             return '${client.firstName} ${client.lastName}'
                 .toLowerCase()
@@ -572,26 +574,26 @@ class OrdersController extends GetxController {
   void setClientSearchFilter(String filter) {
     clientSearchFilter.value = filter;
     if (searchQuery.value.isNotEmpty) {
-      searchClients(searchQuery.value);
+      searchClients(searchQuery.value, clientSearchFilter.value);
     }
   }
 
   Future<void> createClient(Map<String, dynamic> clientData) async {
     try {
       isLoadingClients.value = true;
-      
+
       // Créer le client via UserService
       final user = await UserService.createUser({
         ...clientData,
         'role': 'CLIENT', // Définir le rôle comme CLIENT
       });
-      
+
       // Ajouter le nouveau client à la liste
       clients.add(user);
-      
+
       // Fermer le dialogue
       Get.back();
-      
+
       // Afficher un message de succès
       Get.snackbar(
         'Succès',
@@ -599,10 +601,9 @@ class OrdersController extends GetxController {
         backgroundColor: AppColors.success,
         colorText: AppColors.textLight,
       );
-      
+
       // Sélectionner automatiquement le nouveau client
       selectClient(user.id);
-      
     } catch (e) {
       print('[OrdersController] Error creating client: $e');
       Get.snackbar(
