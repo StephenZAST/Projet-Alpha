@@ -74,3 +74,12 @@ cron.schedule('0 0 1 * *', async () => {
     console.error('Erreur lors de la réinitialisation mensuelle des gains d\'affiliés:', error);
   }
 });
+
+export const initializeCronJobs = () => {
+  // Ne pas démarrer les tâches cron en mode test
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
+
+  // Démarrer les tâches cron ici si nécessaire
+};

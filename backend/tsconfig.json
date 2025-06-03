@@ -3,26 +3,26 @@
     "target": "es2016",
     "module": "commonjs",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
+    "baseUrl": ".",
     "typeRoots": [
       "./node_modules/@types",
       "./src/types"
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@types/*": ["./src/types/*"],
-      "@scripts/*": ["./src/scripts/*"]
+      "@/*": ["src/*"]
     },
-    "types": ["node", "express"]
+    "types": ["node", "jest"]
   },
   "include": [
     "src/**/*",
-    "src/types/*.d.ts"
+    "tests/**/*",
+    "jest.config.ts"
   ],
   "exclude": ["node_modules"]
 }

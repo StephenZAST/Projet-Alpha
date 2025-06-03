@@ -73,7 +73,7 @@ class Order {
   String? get deliveryAddress => address?.fullAddress;
   bool get isPaid => paymentStatus == PaymentStatus.PAID;
 
-  // Ajout des nouveaux getters nécessaires
+  // Ajout des nouveaux getters
   String get formattedDate => DateFormat('dd/MM/yyyy HH:mm').format(createdAt);
 
   int get itemCount => items?.length ?? 0;

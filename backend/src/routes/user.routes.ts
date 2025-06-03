@@ -2,6 +2,7 @@ import express from 'express';
 import { AuthService } from '../services/auth.service';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
+import { UserController } from '../controllers/user.controller'; // Changed from @/controllers/user.controller
 
 const router = express.Router();
 
@@ -79,6 +80,15 @@ router.get(
       success: true,
       data: stats 
     });
+  })
+);
+
+// Ajouter cette route avant les autres routes
+router.get(
+  '/search',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(async (req, res) => {
+    await UserController.searchUsers(req, res);
   })
 );
 

@@ -24,24 +24,11 @@ class OrderFilters extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Filtres',
-                style: AppTextStyles.h3.copyWith(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  controller.clearFilters();
-                  controller.fetchOrders();
-                },
-                icon: Icon(Icons.refresh_outlined),
-                label: Text('Réinitialiser'),
-              ),
-            ],
+          Text(
+            'Filtres',
+            style: AppTextStyles.h3.copyWith(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
           ),
           SizedBox(height: AppSpacing.md),
           Obx(() => Wrap(
@@ -51,16 +38,14 @@ class OrderFilters extends StatelessWidget {
                   FilterChip(
                     label: Text('Tous'),
                     selected: controller.selectedStatus.value == null,
-                    onSelected: (_) async {
-                      await controller.filterByStatus(null);
-                    },
+                    onSelected: (_) => controller.filterByStatus(null),
                   ),
                   ...OrderStatus.values.map((status) {
                     final isSelected =
                         controller.selectedStatus.value == status;
                     return FilterChip(
                       label: Text(
-                        status.toDisplayString(),
+                        status.label,
                         style: AppTextStyles.bodySmall.copyWith(
                           color: isSelected
                               ? AppColors.textLight
@@ -68,9 +53,8 @@ class OrderFilters extends StatelessWidget {
                         ),
                       ),
                       selected: isSelected,
-                      onSelected: (selected) async {
-                        await controller
-                            .filterByStatus(selected ? status : null);
+                      onSelected: (selected) {
+                        controller.filterByStatus(selected ? status : null);
                       },
                       selectedColor: status.color,
                       backgroundColor: status.color.withOpacity(0.1),

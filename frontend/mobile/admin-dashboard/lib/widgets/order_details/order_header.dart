@@ -33,7 +33,6 @@ Widget buildOrderHeader(Order order) {
 Widget _buildStatusChip(String status) {
   return Chip(
     label: Text(status),
-    backgroundColor: Colors.blue.shade100,
-    labelStyle: TextStyle(color: Colors.blue.shade900),
+    backgroundColor: Colors.grey[200],
   );
 }

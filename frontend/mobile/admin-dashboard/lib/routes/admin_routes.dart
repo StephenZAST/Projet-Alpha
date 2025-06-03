@@ -3,6 +3,7 @@ import 'package:admin/controllers/article_controller.dart';
 import 'package:admin/screens/articles/articles_screen.dart';
 import 'package:admin/screens/orders/flash_orders/flash_order_update_screen.dart';
 import 'package:admin/screens/orders/flash_orders/flash_orders_screen.dart';
+import 'package:admin/screens/orders/new_order/new_order_screen.dart';
 import 'package:get/get.dart';
 import '../screens/main/main_screen.dart';
 import '../screens/auth/admin_login_screen.dart';
@@ -166,6 +167,17 @@ class AdminRoutes {
           Get.put(CategoryController());
         }
       }),
+    ),
+    GetPage(
+      name: '/orders/create',
+      page: () => NewOrderScreen(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<OrdersController>()) {
+          Get.put(OrdersController());
+        }
+      }),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.fadeIn,
     ),
   ];
 

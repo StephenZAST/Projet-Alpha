@@ -32,17 +32,7 @@ import './scheduler'; // Importer le scheduler pour démarrer les tâches cron
 dotenv.config();
 
 // Initialize Prisma
-const prisma = new PrismaClient();
-
-// Test database connection
-prisma.$connect()
-  .then(() => {
-    console.log('Successfully connected to the database');
-  })
-  .catch((error) => {
-    console.error('Failed to connect to the database:', error);
-    process.exit(1);
-  });
+export const prisma = new PrismaClient();
 
 const app = express();
  
@@ -159,6 +149,16 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
+
+// Add Prisma error handling
+prisma.$connect()
+  .then(() => {
+    console.log('Successfully connected to the database');
+  })
+  .catch((error) => {
+    console.error('Failed to connect to the database:', error);
+    process.exit(1);
+  });
 
 // Add Prisma cleanup on app shutdown
 process.on('beforeExit', async () => {
