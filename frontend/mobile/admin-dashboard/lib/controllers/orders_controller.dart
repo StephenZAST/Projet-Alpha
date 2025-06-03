@@ -85,6 +85,11 @@ class OrdersController extends GetxController {
   final sortColumnIndex = 0.obs;
   final sortAscending = true.obs;
 
+  // Nouvelles propriétés pour la recherche de clients
+  final isLoadingClients = false.obs;
+  final filteredClients = <User>[].obs;
+  final clientSearchFilter = 'name'.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -530,5 +535,84 @@ class OrdersController extends GetxController {
 
   Future<void> applyFilters() async {
     await fetchOrders();
+  }
+
+  // Méthode pour rechercher des clients
+  void searchClients(String query) {
+    try {
+      isLoadingClients.value = true;
+      if (query.isEmpty) {
+        filteredClients.clear();
+        return;
+      }
+
+      final normalizedQuery = query.toLowerCase();
+      filteredClients.value = clients.where((client) {
+        switch (clientSearchFilter.value) {
+          case 'name':
+            return '${client.firstName} ${client.lastName}'
+                .toLowerCase()
+                .contains(normalizedQuery);
+          case 'email':
+            return client.email.toLowerCase().contains(normalizedQuery);
+          case 'phone':
+            return (client.phone ?? '').toLowerCase().contains(normalizedQuery);
+          default:
+            return false;
+        }
+      }).toList();
+    } catch (e) {
+      print('[OrdersController] Error searching clients: $e');
+    } finally {
+      isLoadingClients.value = false;
+    }
+  }
+
+  // Méthode pour définir le filtre de recherche
+  void setClientSearchFilter(String filter) {
+    clientSearchFilter.value = filter;
+    if (searchQuery.value.isNotEmpty) {
+      searchClients(searchQuery.value);
+    }
+  }
+
+  Future<void> createClient(Map<String, dynamic> clientData) async {
+    try {
+      isLoadingClients.value = true;
+      
+      // Créer le client via UserService
+      final user = await UserService.createUser({
+        ...clientData,
+        'role': 'CLIENT', // Définir le rôle comme CLIENT
+      });
+      
+      // Ajouter le nouveau client à la liste
+      clients.add(user);
+      
+      // Fermer le dialogue
+      Get.back();
+      
+      // Afficher un message de succès
+      Get.snackbar(
+        'Succès',
+        'Client créé avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.textLight,
+      );
+      
+      // Sélectionner automatiquement le nouveau client
+      selectClient(user.id);
+      
+    } catch (e) {
+      print('[OrdersController] Error creating client: $e');
+      Get.snackbar(
+        'Erreur',
+        'Impossible de créer le client',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
+    } finally {
+      isLoadingClients.value = false;
+    }
   }
 }
