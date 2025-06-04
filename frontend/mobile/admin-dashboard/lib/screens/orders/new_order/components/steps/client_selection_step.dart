@@ -13,8 +13,22 @@ class ClientSelectionStep extends StatefulWidget {
 
 class _ClientSelectionStepState extends State<ClientSelectionStep> {
   final searchController = TextEditingController();
-  String selectedFilter = 'name'; // Ajout du filtre sélectionné
-  final controller = Get.find<OrdersController>();
+  String selectedFilter = 'all'; // Modification ici pour avoir 'all' par défaut
+  late final OrdersController controller; // Déclaration du controller
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<OrdersController>(); // Initialisation du controller
+    // Charger tous les clients au démarrage
+    controller.loadClients();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose(); // Cleanup du TextEditingController
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,27 +112,61 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
         border: Border.all(color: AppColors.borderLight),
         borderRadius: AppRadius.radiusSM,
       ),
-      child: DropdownButton<String>(
-        value: selectedFilter,
-        underline: SizedBox(),
-        items: [
-          DropdownMenuItem(value: 'name', child: Text('Nom')),
-          DropdownMenuItem(value: 'email', child: Text('Email')),
-          DropdownMenuItem(value: 'phone', child: Text('Téléphone')),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (selectedFilter != 'all') ...[
+            Text(
+              'Type de recherche :',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: 4),
+          ],
+          DropdownButton<String>(
+            value: selectedFilter,
+            underline: SizedBox(),
+            hint: Text('Type de recherche'),
+            items: [
+              DropdownMenuItem(value: 'all', child: Text('Tous les clients')),
+              DropdownMenuItem(value: 'name', child: Text('Recherche par nom')),
+              DropdownMenuItem(
+                  value: 'email', child: Text('Recherche par email')),
+              DropdownMenuItem(
+                  value: 'phone', child: Text('Recherche par téléphone')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  selectedFilter = value;
+                  searchController
+                      .clear(); // Vider la recherche lors du changement de filtre
+                  if (value == 'all') {
+                    controller.loadClients();
+                  }
+                });
+              }
+            },
+          ),
         ],
-        onChanged: (value) {
-          if (value != null) {
-            setState(() => selectedFilter = value);
-          }
-        },
       ),
     );
   }
 
   void _performSearch() {
     final query = searchController.text.trim();
-    if (query.isNotEmpty) {
+    if (selectedFilter == 'all') {
+      controller.loadClients();
+    } else if (query.isNotEmpty) {
       controller.searchClients(query, selectedFilter);
+    } else {
+      Get.snackbar(
+        'Attention',
+        'Veuillez entrer un terme de recherche',
+        backgroundColor: AppColors.warning.withOpacity(0.1),
+        colorText: AppColors.warning,
+      );
     }
   }
 

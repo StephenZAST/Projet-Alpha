@@ -547,6 +547,11 @@ class OrdersController extends GetxController {
     try {
       isLoadingClients.value = true;
 
+      if (filter == 'all') {
+        await loadClients();
+        return;
+      }
+
       // Si la requête est vide, afficher tous les clients
       if (query.isEmpty) {
         filteredClients.value = clients;
