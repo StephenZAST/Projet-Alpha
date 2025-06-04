@@ -203,6 +203,44 @@ class UserService {
     }
   }
 
+  /// Recherche des utilisateurs avec filtres
+  static Future<ApiResponse<List<User>>> searchUsers({
+    required String query,
+    required String filter,
+  }) async {
+    try {
+      final response = await _api.get('/api/users/search', queryParameters: {
+        'query': query,
+        'filter': filter,
+      });
+
+      if (response.statusCode == 200) {
+        final List<User> users = (response.data['data'] as List)
+            .map((json) => User.fromJson(json))
+            .toList();
+
+        return ApiResponse(
+          success: true,
+          data: users,
+          message: 'Recherche effectuée avec succès',
+        );
+      }
+
+      return ApiResponse(
+        success: false,
+        data: [],
+        message: response.data['message'] ?? 'Erreur lors de la recherche',
+      );
+    } catch (e) {
+      print('[UserService] Search error: $e');
+      return ApiResponse(
+        success: false,
+        data: [],
+        message: 'Erreur lors de la recherche des utilisateurs',
+      );
+    }
+  }
+
   static Map<String, dynamic> _validateResponse(
       dynamic response, String errorMessage) {
     if (response?.data == null || response.data['success'] != true) {
@@ -223,5 +261,17 @@ class PaginatedResponse<T> {
     required this.total,
     required this.currentPage,
     required this.totalPages,
+  });
+}
+
+class ApiResponse<T> {
+  final bool success;
+  final T data;
+  final String message;
+
+  ApiResponse({
+    required this.success,
+    required this.data,
+    required this.message,
   });
 }

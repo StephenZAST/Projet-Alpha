@@ -93,7 +93,9 @@ class OrdersController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadDraftOrders(); // Ajout de cet appel explicite
+    // Ajouter le chargement initial des clients
+    loadClients();
+    loadDraftOrders();
     fetchOrders();
   }
 
@@ -255,11 +257,14 @@ class OrdersController extends GetxController {
   // Méthodes pour la création/édition de commande
   Future<void> loadClients() async {
     try {
+      isLoadingClients.value = true;
       final result = await UserService.getClients();
       clients.value = result;
+      print('[OrdersController] Loaded ${result.length} clients');
     } catch (e) {
       print('[OrdersController] Error loading clients: $e');
-      throw 'Erreur lors du chargement des clients';
+    } finally {
+      isLoadingClients.value = false;
     }
   }
 
@@ -538,33 +543,40 @@ class OrdersController extends GetxController {
   }
 
   // Méthode pour rechercher des clients
-  void searchClients(String query, String filter) {
+  void searchClients(String query, String filter) async {
     try {
       isLoadingClients.value = true;
-      clientSearchFilter.value = filter;
 
+      // Si la requête est vide, afficher tous les clients
       if (query.isEmpty) {
-        filteredClients.clear();
+        filteredClients.value = clients;
         return;
       }
 
-      final normalizedQuery = query.toLowerCase();
-      filteredClients.value = clients.where((client) {
-        switch (filter) {
-          case 'name':
-            return '${client.firstName} ${client.lastName}'
-                .toLowerCase()
-                .contains(normalizedQuery);
-          case 'email':
-            return client.email.toLowerCase().contains(normalizedQuery);
-          case 'phone':
-            return (client.phone ?? '').toLowerCase().contains(normalizedQuery);
-          default:
-            return false;
-        }
-      }).toList();
+      // Appeler le backend pour la recherche
+      final response = await UserService.searchUsers(
+        query: query,
+        filter: filter,
+      );
+
+      if (response.success) {
+        filteredClients.value = response.data;
+      } else {
+        Get.snackbar(
+          'Erreur',
+          'Impossible de rechercher les clients',
+          backgroundColor: AppColors.error,
+          colorText: AppColors.textLight,
+        );
+      }
     } catch (e) {
       print('[OrdersController] Error searching clients: $e');
+      Get.snackbar(
+        'Erreur',
+        'Erreur lors de la recherche des clients',
+        backgroundColor: AppColors.error,
+        colorText: AppColors.textLight,
+      );
     } finally {
       isLoadingClients.value = false;
     }
