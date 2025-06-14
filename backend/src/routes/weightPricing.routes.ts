@@ -1,26 +1,33 @@
 import express from 'express';
 import { WeightPricingController } from '../controllers/weightPricing.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
-import { asyncHandler } from '../utils/asyncHandler'; 
-import { validateWeightPricing } from '../middleware/validation/weightPricing.validation';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
+// Routes protégées nécessitant une authentification
 router.use(authenticateToken);
 
-// Routes publiques (requiert authentification)
-router.post('/calculate', 
-  validateWeightPricing.calculatePrice,
+// Routes publiques avec protection admin
+router.get('/', authorizeRoles(['ADMIN', 'SUPER_ADMIN']), 
+  asyncHandler(WeightPricingController.getAll)
+);
+
+router.post('/', authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(WeightPricingController.create)
+);
+
+// Routes de calcul de prix
+router.get('/calculate', 
   asyncHandler(WeightPricingController.calculatePrice)
 );
 
-// Routes admin
-router.use(authorizeRoles(['ADMIN', 'SUPER_ADMIN']));
+router.patch('/:id', authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(WeightPricingController.update)
+);
 
-router.post('/',
-  validateWeightPricing.createPricing,
-  asyncHandler(WeightPricingController.setWeightPrice)
+router.delete('/:id', authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(WeightPricingController.delete)
 );
 
 export default router;
-  

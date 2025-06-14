@@ -343,6 +343,7 @@ model service_types {
   orders                 orders[]
   orders_archive         orders_archive[]
   services               services[]
+  weight_based_pricing   weight_based_pricing[]
 }
 
 model services {
@@ -504,12 +505,16 @@ model user_subscriptions {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model weight_based_pricing {
-  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  min_weight   Decimal  @default(0) @db.Decimal
-  max_weight   Decimal  @default(999999) @db.Decimal
-  price_per_kg Decimal  @db.Decimal
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  min_weight      Decimal       @default(0) @db.Decimal
+  max_weight      Decimal       @default(999999) @db.Decimal
+  price_per_kg    Decimal       @db.Decimal
+  service_type_id String        @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  service_type    service_types @relation(fields: [service_type_id], references: [id])
+
+  @@index([service_type_id])
 }
 
 /// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.

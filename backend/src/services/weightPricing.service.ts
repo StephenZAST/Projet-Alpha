@@ -115,4 +115,99 @@ export class WeightPricingService {
       updated_at: new Date()
     }));
   }
+
+  static async getAll(serviceTypeId?: string) {
+    try {
+      return await prisma.weight_based_pricing.findMany({
+        where: serviceTypeId ? {
+          service_type_id: serviceTypeId
+        } : undefined,
+        include: {
+          service_type: true
+        },
+        orderBy: {
+          min_weight: 'asc'
+        }
+      });
+    } catch (error) {
+      console.error('Get all weight pricing error:', error);
+      throw error;
+    }
+  }
+
+  static async create(data: {
+    minWeight: number;
+    maxWeight: number;
+    pricePerKg: number;
+    serviceTypeId: string;
+  }) {
+    try {
+      return await prisma.weight_based_pricing.create({
+        data: {
+          min_weight: data.minWeight,
+          max_weight: data.maxWeight,
+          price_per_kg: data.pricePerKg,
+          service_type: {
+            connect: {
+              id: data.serviceTypeId
+            }
+          }
+        },
+        include: {
+          service_type: true
+        }
+      });
+    } catch (error) {
+      console.error('Create weight pricing error:', error);
+      throw error;
+    }
+  }
+
+  static async update(id: string, data: {
+    minWeight?: number;
+    maxWeight?: number;
+    pricePerKg?: number;
+  }) {
+    try {
+      return await prisma.weight_based_pricing.update({
+        where: { id },
+        data: {
+          min_weight: data.minWeight,
+          max_weight: data.maxWeight,
+          price_per_kg: data.pricePerKg,
+          updated_at: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Update weight pricing error:', error);
+      throw error;
+    }
+  }
+
+  static async delete(id: string) {
+    try {
+      return await prisma.weight_based_pricing.delete({
+        where: { id }
+      });
+    } catch (error) {
+      console.error('Delete weight pricing error:', error);
+      throw error;
+    }
+  }
+
+  static async findByWeight(weight: number) {
+    try {
+      return await prisma.weight_based_pricing.findFirst({
+        where: {
+          AND: [
+            { min_weight: { lte: weight } },
+            { max_weight: { gte: weight } }
+          ]
+        }
+      });
+    } catch (error) {
+      console.error('Find by weight error:', error);
+      throw error;
+    }
+  }
 }

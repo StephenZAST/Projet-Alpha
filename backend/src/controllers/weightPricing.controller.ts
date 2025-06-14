@@ -1,95 +1,42 @@
 import { Request, Response } from 'express';
-import prisma from '../config/prisma';
-import { handleError } from '../utils/errorHandler';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export class WeightPricingController {
-  static async setWeightPrice(req: Request, res: Response) {
+  static async create(req: Request, res: Response) {
     try {
-      const { service_type_id, min_weight, max_weight, price_per_kg } = req.body;
+      const { minWeight, maxWeight, pricePerKg, serviceTypeId } = req.body;
 
-      if (!service_type_id || !min_weight || !max_weight || !price_per_kg) {
-        return res.status(400).json({
-          success: false,
-          error: { message: 'All fields are required' }
-        });
-      }
-
-      const data = await prisma.weight_based_pricing.create({
+      const weightPricing = await prisma.weight_based_pricing.create({
         data: {
-          service_type_id, 
-          min_weight: Number(min_weight),
-          max_weight: Number(max_weight),
-          price_per_kg: Number(price_per_kg),
-          is_active: true,
+          min_weight: minWeight,
+          max_weight: maxWeight,
+          price_per_kg: pricePerKg,
+          service_type: {
+            connect: { id: serviceTypeId }
+          },
           created_at: new Date(),
           updated_at: new Date()
         }
       });
 
-      res.status(201).json({ success: true, data });
-    } catch (error: any) {
-      handleError(res, error);
-    }
-  }
-
-  static async calculatePrice(req: Request, res: Response) {
-    try {
-      const { service_type_id, weight } = req.body;
-
-      if (!service_type_id || !weight) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            message: 'service_type_id and weight are required',
-            code: 'VALIDATION_ERROR'
-          }
-        });
-      }
-
-      // Trouver la règle de prix applicable
-      const pricing = await prisma.weight_based_pricing.findFirst({
-        where: {
-          service_type_id,
-          min_weight: {
-            lte: weight
-          },
-          max_weight: {
-            gte: weight
-          },
-          is_active: true
-        }
-      });
-
-      if (!pricing) {
-        return res.status(404).json({
-          success: false,
-          error: {
-            message: 'No pricing rule found for this weight range',
-            code: 'PRICING_NOT_FOUND'
-          }
-        });
-      }
-
-      const price = Number(pricing.price_per_kg) * Number(weight);
-
       res.json({
         success: true,
-        data: { price }
+        data: weightPricing
       });
-    } catch (error: any) {
-      handleError(res, error);
+    } catch (error) {
+      console.error('Create weight pricing error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create weight pricing'
+      });
     }
   }
 
-  static async getPricingForService(req: Request, res: Response) {
+  static async getAll(req: Request, res: Response) {
     try {
-      const { service_type_id } = req.params;
-
-      const data = await prisma.weight_based_pricing.findMany({
-        where: {
-          service_type_id,
-          is_active: true
-        },
+      const weightPricings = await prisma.weight_based_pricing.findMany({
         orderBy: {
           min_weight: 'asc'
         }
@@ -97,10 +44,112 @@ export class WeightPricingController {
 
       res.json({
         success: true,
-        data
+        data: weightPricings
       });
-    } catch (error: any) {
-      handleError(res, error);
+    } catch (error) {
+      console.error('Get weight pricings error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get weight pricings'
+      });
+    }
+  }
+
+  static async update(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { minWeight, maxWeight, pricePerKg } = req.body;
+
+      const weightPricing = await prisma.weight_based_pricing.update({
+        where: { id },
+        data: {
+          min_weight: minWeight,
+          max_weight: maxWeight,
+          price_per_kg: pricePerKg,
+          updated_at: new Date()
+        }
+      });
+
+      res.json({
+        success: true,
+        data: weightPricing
+      });
+    } catch (error) {
+      console.error('Update weight pricing error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update weight pricing'
+      });
+    }
+  }
+
+  static async delete(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      await prisma.weight_based_pricing.delete({
+        where: { id }
+      });
+
+      res.json({
+        success: true,
+        message: 'Weight pricing deleted successfully'
+      });
+    } catch (error) {
+      console.error('Delete weight pricing error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to delete weight pricing'
+      });
+    }
+  }
+
+  static async calculatePrice(req: Request, res: Response) {
+    try {
+      const { weight, serviceTypeId } = req.query;
+
+      if (!weight || isNaN(Number(weight))) {
+        return res.status(400).json({
+          success: false,
+          error: 'Valid weight is required'
+        });
+      }
+
+      const weightNum = Number(weight);
+      const pricing = await prisma.weight_based_pricing.findFirst({
+        where: {
+          min_weight: {
+            lte: weightNum
+          },
+          max_weight: {
+            gte: weightNum
+          }
+        }
+      });
+
+      if (!pricing) {
+        return res.status(404).json({
+          success: false,
+          error: 'No pricing found for this weight range'
+        });
+      }
+
+      const totalPrice = weightNum * Number(pricing.price_per_kg);
+
+      res.json({
+        success: true,
+        data: {
+          basePrice: totalPrice,
+          weight: weightNum,
+          pricePerKg: pricing.price_per_kg
+        }
+      });
+    } catch (error) {
+      console.error('Calculate price error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to calculate price'
+      });
     }
   }
 }
