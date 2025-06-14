@@ -1,4 +1,4 @@
-import { PrismaClient, user_role } from '@prisma/client';
+import { PrismaClient, user_role, Prisma } from '@prisma/client'; // Ajout de l'import Prisma
 import { AuthResponse, User, ResetCode, UserListResponse, UserStats, UserFilters, UserActivityLog } from '../models/types';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from './email.service';
@@ -10,66 +10,88 @@ const blacklistedTokens = new Set<string>();
 const prisma = new PrismaClient();
 
 export class AuthService {
-  static async register(email: string, password: string, firstName: string, lastName: string, phone?: string, affiliateCode?: string, role: string = 'CLIENT'): Promise<User> {
-    const hashedPassword = await bcrypt.hash(password, 10);
+  static async register(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    phone?: string,
+    affiliateCode?: string,
+    role: string = 'CLIENT'
+  ): Promise<User> {
+    const existingUser = await prisma.users.findFirst({
+        where: { email }
+    });
 
-    const dbUser = {
-      id: uuidv4(),
-      email,
-      password: hashedPassword,
-      first_name: firstName,
-      last_name: lastName,
-      phone,
-      role,
-      referral_code: affiliateCode,
-      created_at: new Date(),
-      updated_at: new Date()
-    };
+    if (existingUser) {
+        throw new Error('Email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUserId = uuidv4();
 
     try {
-      const data = await prisma.users.create({
-        data: {
-          id: dbUser.id,
-          email: dbUser.email,
-          password: dbUser.password,
-          first_name: dbUser.first_name,
-          last_name: dbUser.last_name, 
-          phone: dbUser.phone,
-          role: dbUser.role as any,
-          referral_code: dbUser.referral_code,
-          created_at: dbUser.created_at,
-          updated_at: dbUser.updated_at
-        }
-      });
+        const user = await prisma.users.create({
+            data: {
+                id: newUserId,
+                email,
+                password: hashedPassword,
+                first_name: firstName,
+                last_name: lastName,
+                phone,
+                role: role as user_role,
+                referral_code: affiliateCode,
+                created_at: new Date(),
+                updated_at: new Date(),
+                loyalty_points: {
+                    create: {
+                        id: uuidv4(),
+                        pointsBalance: 0,
+                        totalEarned: 0,
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                },
+                notification_preferences: {
+                    create: {
+                        id: uuidv4(),
+                        email: true,
+                        push: true,
+                        sms: false,
+                        order_updates: true,
+                        promotions: true,
+                        payments: true,
+                        loyalty: true,
+                        created_at: new Date(),
+                        updated_at: new Date()
+                    }
+                }
+            }
+        });
 
-      const user: User = {
-        id: data.id,
-        email: data.email,
-        password: data.password,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        phone: data.phone || undefined,
-        role: data.role || 'CLIENT',
-        referralCode: data.referral_code || undefined,
-        createdAt: data.created_at || new Date(),
-        updatedAt: data.updated_at || new Date()
-      };
-
-      // Create loyalty points profile for new user
-      await prisma.loyalty_points.create({
-        data: {
-          id: uuidv4(),
-          user_id: user.id,
-          pointsBalance: 0,
-          totalEarned: 0,
-          createdAt: new Date()
-        }
-      });
-
-      return user;
+        // Mapper le résultat
+        return {
+            id: user.id,
+            email: user.email,
+            password: user.password,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            phone: user.phone || undefined,
+            role: user.role || 'CLIENT',
+            referralCode: user.referral_code || undefined,
+            createdAt: user.created_at || new Date(),
+            updatedAt: user.updated_at || new Date()
+        };
     } catch (error) {
-      console.error('Register error:', error);
-      throw error;
+        console.error('Register error:', error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            console.error('Prisma error details:', {
+                code: error.code,
+                meta: error.meta,
+                message: error.message
+            });
+        }
+        throw error;
     }
   }
 
@@ -784,6 +806,94 @@ export class AuthService {
         console.error('Error logging user activity:', error);
         // Log l'erreur mais ne la propage pas pour ne pas interrompre le flux principal
         console.log('Activity details:', activity);
+    }
+  }
+
+  // Nouvelle méthode spécifique pour la création d'utilisateur par l'admin
+  static async createUserByAdmin(
+    adminId: string,
+    userData: {
+      email: string;
+      password: string;
+      first_name: string;
+      last_name: string;
+      phone?: string;
+      role?: string;
+    }
+  ): Promise<any> {
+    try {
+      // Vérifier que l'admin existe
+      const admin = await prisma.users.findUnique({
+        where: { id: adminId }
+      });
+
+      if (!admin || (admin.role !== 'ADMIN' && admin.role !== 'SUPER_ADMIN')) {
+        throw new Error('Unauthorized admin access');
+      }
+
+      // Vérifier si l'email existe déjà
+      const existingUser = await prisma.users.findFirst({
+        where: { email: userData.email }
+      });
+
+      if (existingUser) {
+        throw new Error('Email already exists');
+      }
+
+      // Hasher le mot de passe
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+
+      // Créer l'utilisateur avec transaction
+      return await prisma.$transaction(async (tx) => {
+        // 1. Créer l'utilisateur
+        const user = await tx.users.create({
+          data: {
+            id: uuidv4(),
+            email: userData.email,
+            password: hashedPassword,
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+            phone: userData.phone,
+            role: 'CLIENT', // Forcer le rôle CLIENT pour cette méthode
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+
+        // 2. Initialiser les points de fidélité
+        await tx.loyalty_points.create({
+          data: {
+            id: uuidv4(),
+            user_id: user.id,
+            pointsBalance: 0,
+            totalEarned: 0,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+        });
+
+        // 3. Créer les préférences de notification
+        await tx.notification_preferences.create({
+          data: {
+            id: uuidv4(),
+            user_id: user.id,
+            email: true,
+            push: true,
+            sms: false,
+            order_updates: true,
+            promotions: true,
+            payments: true,
+            loyalty: true,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+
+        return user;
+      });
+    } catch (error) {
+      console.error('[AuthService] Create user by admin error:', error);
+      throw error;
     }
   }
 }

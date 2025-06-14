@@ -9,6 +9,8 @@ class CreateClientDialog extends StatelessWidget {
   final lastNameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
+  final passwordController =
+      TextEditingController(); // Ajout du controller pour le mot de passe
   final controller = Get.find<OrdersController>();
 
   @override
@@ -54,6 +56,14 @@ class CreateClientDialog extends StatelessWidget {
                 label: 'Téléphone',
                 keyboardType: TextInputType.phone,
               ),
+              SizedBox(height: AppSpacing.md),
+              _buildTextField(
+                controller: passwordController,
+                label: 'Mot de passe temporaire',
+                isPassword: true,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Ce champ est requis' : null,
+              ),
               SizedBox(height: AppSpacing.xl),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -65,7 +75,7 @@ class CreateClientDialog extends StatelessWidget {
                   SizedBox(width: AppSpacing.md),
                   ElevatedButton(
                     onPressed: _submitForm,
-                    child: Text('Créer et envoyer les identifiants'),
+                    child: Text('Créer le client'),
                   ),
                 ],
               ),
@@ -80,6 +90,7 @@ class CreateClientDialog extends StatelessWidget {
     required TextEditingController controller,
     required String label,
     TextInputType? keyboardType,
+    bool isPassword = false,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -88,6 +99,7 @@ class CreateClientDialog extends StatelessWidget {
         labelText: label,
         border: OutlineInputBorder(),
       ),
+      obscureText: isPassword,
       keyboardType: keyboardType,
       validator: validator,
     );
@@ -100,6 +112,7 @@ class CreateClientDialog extends StatelessWidget {
         'lastName': lastNameController.text,
         'email': emailController.text,
         'phone': phoneController.text,
+        'password': passwordController.text, // Ajout du mot de passe
       });
     }
   }

@@ -599,24 +599,30 @@ class OrdersController extends GetxController {
     try {
       isLoadingClients.value = true;
 
-      // Créer le client via UserService
-      final user = await UserService.createUser({
+      // Générer un mot de passe aléatoire temporaire
+      final tempPassword =
+          '${DateTime.now().millisecondsSinceEpoch}'.substring(0, 8);
+
+      // Ajouter le mot de passe aux données client
+      final userData = {
         ...clientData,
-        'role': 'CLIENT', // Définir le rôle comme CLIENT
-      });
+        'password': tempPassword, // Ajouter le mot de passe
+        'role': 'CLIENT',
+      };
+
+      // Créer le client via UserService
+      final user = await UserService.createUser(userData);
 
       // Ajouter le nouveau client à la liste
       clients.add(user);
-
-      // Fermer le dialogue
       Get.back();
 
-      // Afficher un message de succès
       Get.snackbar(
         'Succès',
-        'Client créé avec succès',
+        'Client créé avec succès\nMot de passe temporaire: $tempPassword',
         backgroundColor: AppColors.success,
         colorText: AppColors.textLight,
+        duration: Duration(seconds: 10),
       );
 
       // Sélectionner automatiquement le nouveau client
