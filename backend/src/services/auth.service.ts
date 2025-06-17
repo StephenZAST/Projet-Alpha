@@ -19,79 +19,60 @@ export class AuthService {
     affiliateCode?: string,
     role: string = 'CLIENT'
   ): Promise<User> {
-    const existingUser = await prisma.users.findFirst({
-        where: { email }
-    });
-
-    if (existingUser) {
-        throw new Error('Email already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUserId = uuidv4();
-
     try {
-        const user = await prisma.users.create({
-            data: {
-                id: newUserId,
-                email,
-                password: hashedPassword,
-                first_name: firstName,
-                last_name: lastName,
-                phone,
-                role: role as user_role,
-                referral_code: affiliateCode,
-                created_at: new Date(),
-                updated_at: new Date(),
-                loyalty_points: {
-                    create: {
-                        id: uuidv4(),
-                        pointsBalance: 0,
-                        totalEarned: 0,
-                        createdAt: new Date(),
-                        updatedAt: new Date()
-                    }
-                },
-                notification_preferences: {
-                    create: {
-                        id: uuidv4(),
-                        email: true,
-                        push: true,
-                        sms: false,
-                        order_updates: true,
-                        promotions: true,
-                        payments: true,
-                        loyalty: true,
-                        created_at: new Date(),
-                        updated_at: new Date()
-                    }
-                }
+      // Création simple de l'utilisateur, le trigger s'occupera des loyalty_points
+      const user = await prisma.users.create({
+        data: {
+          id: uuidv4(),
+          email,
+          password: await bcrypt.hash(password, 10),
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          role: role as user_role,
+          referral_code: affiliateCode,
+          created_at: new Date(),
+          updated_at: new Date(),
+          // Créer uniquement les préférences de notification
+          notification_preferences: {
+            create: {
+              id: uuidv4(),
+              email: true,
+              push: true,
+              sms: false,
+              order_updates: true,
+              promotions: true,
+              payments: true,
+              loyalty: true,
+              created_at: new Date(),
+              updated_at: new Date()
             }
-        });
-
-        // Mapper le résultat
-        return {
-            id: user.id,
-            email: user.email,
-            password: user.password,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            phone: user.phone || undefined,
-            role: user.role || 'CLIENT',
-            referralCode: user.referral_code || undefined,
-            createdAt: user.created_at || new Date(),
-            updatedAt: user.updated_at || new Date()
-        };
-    } catch (error) {
-        console.error('Register error:', error);
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            console.error('Prisma error details:', {
-                code: error.code,
-                meta: error.meta,
-                message: error.message
-            });
+          }
         }
-        throw error;
+      });
+
+      return {
+        id: user.id,
+        email: user.email,
+        password: user.password,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone || undefined,
+        role: user.role || 'CLIENT',
+        referralCode: user.referral_code || undefined,
+        createdAt: user.created_at || new Date(),
+        updatedAt: user.updated_at || new Date()
+      };
+    } catch (error) {
+      console.error('Register error:', error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        console.error('Prisma error details:', {
+          code: error.code,
+          meta: error.meta,
+          message: error.message
+        });
+      }
+      throw error;
     }
   }
 
@@ -845,7 +826,6 @@ export class AuthService {
 
       // Créer l'utilisateur avec transaction
       return await prisma.$transaction(async (tx) => {
-        // 1. Créer l'utilisateur
         const user = await tx.users.create({
           data: {
             id: uuidv4(),
@@ -854,29 +834,30 @@ export class AuthService {
             first_name: userData.first_name,
             last_name: userData.last_name,
             phone: userData.phone,
-            role: 'CLIENT', // Forcer le rôle CLIENT pour cette méthode
+            role: 'CLIENT',
             created_at: new Date(),
             updated_at: new Date()
           }
         });
 
-        // 2. Initialiser les points de fidélité
         await tx.loyalty_points.create({
           data: {
             id: uuidv4(),
-            user_id: user.id,
             pointsBalance: 0,
             totalEarned: 0,
             createdAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            users: {
+              connect: {
+                id: user.id
+              }
+            }
           }
         });
 
-        // 3. Créer les préférences de notification
         await tx.notification_preferences.create({
           data: {
             id: uuidv4(),
-            user_id: user.id,
             email: true,
             push: true,
             sms: false,
@@ -885,13 +866,18 @@ export class AuthService {
             payments: true,
             loyalty: true,
             created_at: new Date(),
-            updated_at: new Date()
+            updated_at: new Date(),
+            users: {
+              connect: {
+                id: user.id
+              }
+            }
           }
-        });
+      });
 
         return user;
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('[AuthService] Create user by admin error:', error);
       throw error;
     }

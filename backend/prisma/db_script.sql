@@ -18,6 +18,16 @@ ORDER BY
     p.proname;
 
 
+-- Liste les fonction du schéma public de l'utilisateur du db
+SELECT 
+    '=== ' || p.proname || ' ===' as "Info",
+    pg_catalog.pg_get_functiondef(p.oid) as "Définition"
+FROM pg_catalog.pg_proc p
+LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+LEFT JOIN pg_catalog.pg_roles r ON r.oid = p.proowner
+WHERE n.nspname = 'public'
+  AND r.rolname = current_user
+ORDER BY p.proname;
 
 
 
