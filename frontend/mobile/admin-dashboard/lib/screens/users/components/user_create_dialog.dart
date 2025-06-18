@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
-import '../../../controllers/users_controller.dart';
+
 import '../../../models/user.dart';
+import '../../../widgets/shared/app_button.dart';
+import '../../../services/user_service.dart';
 
 class UserCreateDialog extends StatelessWidget {
   final _formKey = GlobalKey<FormState>();
@@ -12,16 +14,66 @@ class UserCreateDialog extends StatelessWidget {
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _selectedRole = UserRole.CLIENT.obs;
+  final _isSubmitting = false.obs;
+
+  Future<void> _handleCreateUser() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    _isSubmitting.value = true;
+    try {
+      final userData = {
+        'email': _emailController.text,
+        'password': _passwordController.text,
+        'firstName': _firstNameController.text,
+        'lastName': _lastNameController.text,
+        'phone': _phoneController.text,
+        'role': _selectedRole.value.toString().split('.').last,
+      };
+
+      await UserService.createUser(userData);
+      Get.back();
+      Get.snackbar(
+        'Succès',
+        'Utilisateur créé avec succès',
+        backgroundColor: AppColors.success,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Erreur',
+        'Erreur lors de la création: ${e.toString()}',
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+      );
+    } finally {
+      _isSubmitting.value = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusMD),
+      backgroundColor: isDark ? AppColors.gray900 : Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusLG),
       child: Container(
         width: 500,
-        padding: EdgeInsets.all(AppSpacing.lg),
+        padding: EdgeInsets.all(AppSpacing.xl),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.gray900.withOpacity(0.95)
+              : Colors.white.withOpacity(0.95),
+          borderRadius: AppRadius.radiusLG,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.1),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
         child: Form(
           key: _formKey,
           child: Column(
@@ -30,45 +82,195 @@ class UserCreateDialog extends StatelessWidget {
             children: [
               Text(
                 'Créer un utilisateur',
-                style: AppTextStyles.h3,
+                style: AppTextStyles.h3.copyWith(
+                  color: isDark ? Colors.white : AppColors.gray900,
+                ),
               ),
-              SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.xl),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _firstNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Prénom',
+                        border: OutlineInputBorder(
+                          borderRadius: AppRadius.radiusSM,
+                          borderSide: BorderSide(color: AppColors.gray300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: AppRadius.radiusSM,
+                          borderSide: BorderSide(color: AppColors.gray300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: AppRadius.radiusSM,
+                          borderSide: BorderSide(color: AppColors.primary),
+                        ),
+                      ),
+                      validator: (value) =>
+                          value?.isEmpty ?? true ? 'Prénom requis' : null,
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _lastNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Nom',
+                        border: OutlineInputBorder(
+                          borderRadius: AppRadius.radiusSM,
+                          borderSide: BorderSide(color: AppColors.gray300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: AppRadius.radiusSM,
+                          borderSide: BorderSide(color: AppColors.gray300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: AppRadius.radiusSM,
+                          borderSide: BorderSide(color: AppColors.primary),
+                        ),
+                      ),
+                      validator: (value) =>
+                          value?.isEmpty ?? true ? 'Nom requis' : null,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSpacing.md),
 
               TextFormField(
                 controller: _emailController,
-                decoration: InputDecoration(labelText: 'Email'),
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Email requis' : null,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.gray300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.gray300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'Email requis';
+                  if (!GetUtils.isEmail(value!)) return 'Email invalide';
+                  return null;
+                },
+              ),
+              SizedBox(height: AppSpacing.md),
+
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(
+                  labelText: 'Téléphone',
+                  border: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.gray300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.gray300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                ),
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'Téléphone requis';
+                  if (!GetUtils.isPhoneNumber(value!))
+                    return 'Téléphone invalide';
+                  return null;
+                },
               ),
               SizedBox(height: AppSpacing.md),
 
               TextFormField(
                 controller: _passwordController,
-                decoration: InputDecoration(labelText: 'Mot de passe'),
+                decoration: InputDecoration(
+                  labelText: 'Mot de passe',
+                  border: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.gray300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.gray300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                ),
                 obscureText: true,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Mot de passe requis' : null,
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'Mot de passe requis';
+                  if (value!.length < 8) return 'Minimum 8 caractères';
+                  return null;
+                },
               ),
+              SizedBox(height: AppSpacing.md),
 
-              // Autres champs...
+              // Role selector
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.gray300),
+                  borderRadius: AppRadius.radiusSM,
+                ),
+                child: Obx(() => DropdownButton<UserRole>(
+                      value: _selectedRole.value,
+                      onChanged: (UserRole? newValue) {
+                        if (newValue != null) {
+                          _selectedRole.value = newValue;
+                        }
+                      },
+                      items: UserRole.values.map((UserRole role) {
+                        String displayRole = role.toString().split('.').last;
+                        // Convert to title case and handle special cases
+                        displayRole = displayRole[0].toUpperCase() +
+                            displayRole.substring(1).toLowerCase();
 
+                        return DropdownMenuItem<UserRole>(
+                          value: role,
+                          child: Text(
+                            displayRole,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: isDark ? Colors.white : AppColors.gray900,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      isExpanded: true,
+                      underline: SizedBox(),
+                      icon:
+                          Icon(Icons.arrow_drop_down, color: AppColors.primary),
+                      dropdownColor: isDark ? AppColors.gray800 : Colors.white,
+                    )),
+              ),
               SizedBox(height: AppSpacing.lg),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
+                  AppButton(
+                    label: 'Annuler',
+                    variant: AppButtonVariant.secondary,
                     onPressed: () => Get.back(),
-                    child: Text('Annuler'),
                   ),
                   SizedBox(width: AppSpacing.md),
-                  ElevatedButton(
-                    onPressed: _handleSubmit,
-                    child: Text('Créer'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.textLight,
-                    ),
-                  ),
+                  Obx(() => AppButton(
+                        label: 'Créer',
+                        variant: AppButtonVariant.primary,
+                        isLoading: _isSubmitting.value,
+                        onPressed: _handleCreateUser,
+                      )),
                 ],
               ),
             ],
@@ -76,19 +278,5 @@ class UserCreateDialog extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _handleSubmit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      final controller = Get.find<UsersController>();
-      controller.createUser({
-        'email': _emailController.text,
-        'password': _passwordController.text,
-        'firstName': _firstNameController.text,
-        'lastName': _lastNameController.text,
-        'phone': _phoneController.text,
-        'role': _selectedRole.value.toString().split('.').last,
-      });
-    }
   }
 }
