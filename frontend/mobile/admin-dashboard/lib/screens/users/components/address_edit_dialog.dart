@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:latlong2/latlong.dart';
 import '../../../constants.dart';
 import '../../../models/address.dart';
 import '../../../controllers/address_controller.dart';
-import '../../../widgets/shared/app_button.dart';
+import '../../../widgets/shared/glass_button.dart';
 import '../../orders/components/address_selection_map.dart';
 
 class AddressEditDialog extends StatefulWidget {
@@ -47,14 +46,6 @@ class _AddressEditDialogState extends State<AddressEditDialog> {
         _gpsController.text = '$_latitude,$_longitude';
       }
     }
-  }
-
-  void _onMapSelect(LatLng latLng) {
-    setState(() {
-      _latitude = latLng.latitude;
-      _longitude = latLng.longitude;
-      _gpsController.text = '${latLng.latitude},${latLng.longitude}';
-    });
   }
 
   void _onPasteGps() {
@@ -111,7 +102,6 @@ class _AddressEditDialogState extends State<AddressEditDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusLG),
       child: Container(
@@ -163,10 +153,11 @@ class _AddressEditDialogState extends State<AddressEditDialog> {
                       ),
                     ),
                     SizedBox(width: AppSpacing.sm),
-                    AppButton(
+                    GlassButton(
                       label: 'Utiliser',
-                      variant: AppButtonVariant.info,
+                      variant: GlassButtonVariant.info,
                       onPressed: _onPasteGps,
+                      size: GlassButtonSize.small,
                     ),
                   ],
                 ),
@@ -206,15 +197,15 @@ class _AddressEditDialogState extends State<AddressEditDialog> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    AppButton(
+                    GlassButton(
                       label: 'Annuler',
-                      variant: AppButtonVariant.secondary,
+                      variant: GlassButtonVariant.secondary,
                       onPressed: () => Get.back(),
                     ),
                     SizedBox(width: AppSpacing.md),
-                    AppButton(
+                    GlassButton(
                       label: 'Enregistrer',
-                      variant: AppButtonVariant.primary,
+                      variant: GlassButtonVariant.primary,
                       onPressed: _onSave,
                     ),
                   ],

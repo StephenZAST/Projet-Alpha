@@ -4,6 +4,7 @@ import '../../../../constants.dart';
 import '../../../../controllers/orders_controller.dart';
 import '../../../users/components/address_edit_dialog.dart';
 import '../../../../services/address_service.dart';
+import '../../../../widgets/shared/glass_button.dart';
 
 class CreateClientDialog extends StatelessWidget {
   final formKey = GlobalKey<FormState>();
@@ -61,13 +62,10 @@ class CreateClientDialog extends StatelessWidget {
               // Bouton pour ajouter une adresse
               Align(
                 alignment: Alignment.centerLeft,
-                child: ElevatedButton.icon(
-                  icon: Icon(Icons.location_on_outlined),
-                  label: Text("Ajouter une adresse (optionnel)"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.info,
-                    foregroundColor: AppColors.white,
-                  ),
+                child: GlassButton(
+                  label: "Ajouter une adresse (optionnel)",
+                  icon: Icons.location_on_outlined,
+                  variant: GlassButtonVariant.info,
                   onPressed: () async {
                     final result = await showDialog<Map<String, dynamic>>(
                       context: context,
@@ -91,14 +89,16 @@ class CreateClientDialog extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
+                  GlassButton(
+                    label: 'Annuler',
+                    variant: GlassButtonVariant.secondary,
                     onPressed: () => Get.back(),
-                    child: Text('Annuler'),
                   ),
                   SizedBox(width: AppSpacing.md),
-                  ElevatedButton(
+                  GlassButton(
+                    label: 'Créer le client',
+                    variant: GlassButtonVariant.primary,
                     onPressed: _submitForm,
-                    child: Text('Créer le client'),
                   ),
                 ],
               ),

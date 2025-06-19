@@ -3,6 +3,7 @@ import 'package:admin/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
+import 'package:admin/widgets/shared/glass_button.dart';
 import '../../../../../models/user.dart';
 import '../../../../../controllers/users_controller.dart';
 import '../../../../../models/address.dart';
@@ -124,11 +125,11 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
           decoration: InputDecoration(labelText: 'Téléphone'),
         ),
         const SizedBox(height: 12),
-        ElevatedButton(
+        GlassButton(
+          label: 'Enregistrer les modifications',
+          variant: GlassButtonVariant.primary,
+          isLoading: isSaving,
           onPressed: isSaving ? null : _saveClientInfo,
-          child: isSaving
-              ? CircularProgressIndicator()
-              : Text('Enregistrer les modifications'),
         ),
       ],
     );
@@ -150,9 +151,11 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Adresses', style: Theme.of(context).textTheme.titleMedium),
-            TextButton.icon(
-              icon: Icon(Icons.add_location_alt),
-              label: Text('Ajouter'),
+            GlassButton(
+              label: 'Ajouter',
+              icon: Icons.add_location_alt,
+              variant: GlassButtonVariant.info,
+              size: GlassButtonSize.small,
               onPressed: () async {
                 await Get.dialog(AddressEditDialog(
                   userId: widget.client.id,
@@ -204,9 +207,10 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
   Widget _buildActionsSection() {
     return Row(
       children: [
-        ElevatedButton.icon(
-          icon: Icon(Icons.lock_reset),
-          label: Text('Réinitialiser le mot de passe'),
+        GlassButton(
+          label: 'Réinitialiser le mot de passe',
+          icon: Icons.lock_reset,
+          variant: GlassButtonVariant.warning,
           onPressed: _resetUserPassword,
         ),
         // ...autres actions rapides à venir...
@@ -246,22 +250,29 @@ class _PasswordResetResultDialog extends StatelessWidget {
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                icon: Icon(Icons.copy),
-                label: Text('Copier'),
+              child: GlassButton(
+                label: 'Copier',
+                icon: Icons.copy,
+                variant: GlassButtonVariant.info,
                 onPressed: () {
-                  Clipboard.setData(ClipboardData(text: tempPassword));
-                  Get.snackbar(
-                      'Copié', 'Mot de passe copié dans le presse-papier');
+                  final info =
+                      '''Client : ${user['firstName']} ${user['lastName']}
+Email : ${user['email']}
+Téléphone : ${user['phone'] ?? '-'}
+Nouveau mot de passe : $tempPassword''';
+                  Clipboard.setData(ClipboardData(text: info));
+                  Get.snackbar('Copié',
+                      'Infos client et mot de passe copiés dans le presse-papier');
                 },
               ),
             ),
             const SizedBox(height: 16),
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(
+              child: GlassButton(
+                label: 'Fermer',
+                variant: GlassButtonVariant.secondary,
                 onPressed: () => Get.back(),
-                child: const Text('Fermer'),
               ),
             ),
           ],

@@ -7,6 +7,7 @@ import '../../../constants.dart';
 import 'address_edit_dialog.dart';
 import '../../../models/address.dart';
 import '../../../services/user_service.dart';
+import '../../../widgets/shared/glass_button.dart';
 
 class UserEditDialog extends StatefulWidget {
   final User user;
@@ -240,12 +241,15 @@ class _UserEditDialogState extends State<UserEditDialog> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        TextButton(
+        GlassButton(
+          label: 'Annuler',
+          variant: GlassButtonVariant.secondary,
           onPressed: () => Get.back(),
-          child: Text('Annuler'),
         ),
         SizedBox(width: AppSpacing.md),
-        ElevatedButton(
+        GlassButton(
+          label: 'Enregistrer',
+          variant: GlassButtonVariant.primary,
           onPressed: () async {
             if (_formKey.currentState!.validate()) {
               await controller.updateUser(
@@ -256,11 +260,6 @@ class _UserEditDialogState extends State<UserEditDialog> {
               Get.back();
             }
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.white,
-          ),
-          child: Text('Enregistrer'),
         ),
       ],
     );

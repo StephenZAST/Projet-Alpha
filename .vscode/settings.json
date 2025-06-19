@@ -1,4 +1,5 @@
 {
     "files.autoSave": "onWindowChange",
-    "editor.fontSize": 11
+    "editor.fontSize": 11,
+    "cmake.sourceDirectory": "C:/Users/HP OMEN/Desktop/Codes/Important/Alpha/frontend/Admin_Panel/windows"
 }

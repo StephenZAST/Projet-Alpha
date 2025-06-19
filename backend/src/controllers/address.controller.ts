@@ -137,4 +137,17 @@ export class AddressController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async getAddressesByUserId(req: Request, res: Response) {
+    try {
+      const { userId } = req.params;
+      if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+      }
+      const addresses = await AddressService.getAllAddresses(userId);
+      res.json({ data: addresses });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch addresses' });
+    }
+  }
 }

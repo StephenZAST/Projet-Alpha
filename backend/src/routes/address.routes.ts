@@ -34,6 +34,12 @@ router.get(
   })
 ); 
 
+// Endpoint pour récupérer les adresses d'un utilisateur par son id
+router.get(
+  '/user/:userId',
+  asyncHandler(AddressController.getAddressesByUserId)
+);
+
 // Routes admin
 router.patch(
   '/update/:addressId',

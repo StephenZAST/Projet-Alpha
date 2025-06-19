@@ -146,18 +146,18 @@ class UserService {
   static Future<List<Address>> getUserAddresses(String userId) async {
     try {
       final response = await _api.get('/addresses/user/$userId');
-
-      if (response.data != null && response.data['success'] == true) {
+      // On ne teste plus 'success', on accepte data: []
+      if (response.data != null && response.data['data'] is List) {
         return (response.data['data'] as List)
             .map((json) => Address.fromJson(json))
             .toList();
       }
-
-      throw response.data?['message'] ??
-          'Erreur lors du chargement des adresses';
+      // Si data n'est pas une liste, on retourne une liste vide
+      return [];
     } catch (e) {
       print('[UserService] Error getting user addresses: $e');
-      throw 'Erreur lors du chargement des adresses';
+      // On ne lève plus d'erreur si c'est juste vide
+      return [];
     }
   }
 

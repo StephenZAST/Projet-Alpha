@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../../constants.dart';
 
 import '../../../models/user.dart';
-import '../../../widgets/shared/app_button.dart';
+import '../../../widgets/shared/glass_button.dart';
 import '../../../services/user_service.dart';
 
 class UserCreateDialog extends StatelessWidget {
@@ -261,15 +261,15 @@ class UserCreateDialog extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  AppButton(
+                  GlassButton(
                     label: 'Annuler',
-                    variant: AppButtonVariant.secondary,
+                    variant: GlassButtonVariant.secondary,
                     onPressed: () => Get.back(),
                   ),
                   SizedBox(width: AppSpacing.md),
-                  Obx(() => AppButton(
+                  Obx(() => GlassButton(
                         label: 'Créer',
-                        variant: AppButtonVariant.primary,
+                        variant: GlassButtonVariant.primary,
                         isLoading: _isSubmitting.value,
                         onPressed: _handleCreateUser,
                       )),
