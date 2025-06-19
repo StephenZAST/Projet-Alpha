@@ -595,7 +595,7 @@ class OrdersController extends GetxController {
     }
   }
 
-  Future<void> createClient(Map<String, dynamic> clientData) async {
+  Future<User?> createClient(Map<String, dynamic> clientData) async {
     try {
       isLoadingClients.value = true;
 
@@ -627,6 +627,7 @@ class OrdersController extends GetxController {
 
       // Sélectionner automatiquement le nouveau client
       selectClient(user.id);
+      return user;
     } catch (e) {
       print('[OrdersController] Error creating client: $e');
       Get.snackbar(
@@ -635,6 +636,7 @@ class OrdersController extends GetxController {
         backgroundColor: AppColors.error,
         colorText: AppColors.textLight,
       );
+      return null;
     } finally {
       isLoadingClients.value = false;
     }

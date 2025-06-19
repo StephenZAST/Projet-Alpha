@@ -4,6 +4,9 @@ import '../../../models/user.dart';
 import '../../../controllers/users_controller.dart';
 import '../../../controllers/auth_controller.dart'; // Ajout de l'import manquant
 import '../../../constants.dart';
+import 'address_edit_dialog.dart';
+import '../../../models/address.dart';
+import '../../../services/user_service.dart';
 
 class UserEditDialog extends StatefulWidget {
   final User user;
@@ -64,7 +67,30 @@ class _UserEditDialogState extends State<UserEditDialog> {
                     foregroundColor: AppColors.white,
                   ),
                   onPressed: () async {
-                    // TODO: Ouvrir le dialog de formulaire d'adresse
+                    // Charger l'adresse principale existante du client
+                    Address? initialAddress;
+                    try {
+                      final addresses =
+                          await UserService.getUserAddresses(widget.user.id);
+                      if (addresses.isNotEmpty) {
+                        initialAddress = addresses.firstWhere(
+                          (a) => a.isDefault,
+                          orElse: () => addresses.first,
+                        );
+                      }
+                    } catch (e) {
+                      print('[UserEditDialog] Erreur chargement adresse: $e');
+                    }
+                    await showDialog(
+                      context: context,
+                      builder: (context) => AddressEditDialog(
+                        userId: widget.user.id,
+                        initialAddress: initialAddress,
+                        onAddressSaved: (address) async {
+                          // Optionnel: recharger l'utilisateur ou afficher un message
+                        },
+                      ),
+                    );
                   },
                 ),
               ),

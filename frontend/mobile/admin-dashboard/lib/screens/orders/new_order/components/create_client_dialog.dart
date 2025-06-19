@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../constants.dart';
 import '../../../../controllers/orders_controller.dart';
+import '../../../users/components/address_edit_dialog.dart';
+import '../../../../services/address_service.dart';
 
 class CreateClientDialog extends StatelessWidget {
   final formKey = GlobalKey<FormState>();
@@ -9,9 +11,8 @@ class CreateClientDialog extends StatelessWidget {
   final lastNameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
-  final passwordController =
-      TextEditingController(); // Ajout du controller pour le mot de passe
   final controller = Get.find<OrdersController>();
+  final addressData = Rxn<Map<String, dynamic>>();
 
   @override
   Widget build(BuildContext context) {
@@ -57,12 +58,34 @@ class CreateClientDialog extends StatelessWidget {
                 keyboardType: TextInputType.phone,
               ),
               SizedBox(height: AppSpacing.md),
-              _buildTextField(
-                controller: passwordController,
-                label: 'Mot de passe temporaire',
-                isPassword: true,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Ce champ est requis' : null,
+              // Bouton pour ajouter une adresse
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.location_on_outlined),
+                  label: Text("Ajouter une adresse (optionnel)"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.info,
+                    foregroundColor: AppColors.white,
+                  ),
+                  onPressed: () async {
+                    final result = await showDialog<Map<String, dynamic>>(
+                      context: context,
+                      builder: (context) => AddressEditDialog(
+                        userId:
+                            '', // L'utilisateur n'est pas encore créé, on stocke l'adresse temporairement
+                        initialAddress: null,
+                        onAddressSaved: (address) {
+                          addressData.value = address.toJson();
+                          Get.back(result: address.toJson());
+                        },
+                      ),
+                    );
+                    if (result != null) {
+                      addressData.value = result;
+                    }
+                  },
+                ),
               ),
               SizedBox(height: AppSpacing.xl),
               Row(
@@ -105,15 +128,23 @@ class CreateClientDialog extends StatelessWidget {
     );
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (formKey.currentState?.validate() ?? false) {
-      controller.createClient({
+      final clientData = {
         'firstName': firstNameController.text,
         'lastName': lastNameController.text,
         'email': emailController.text,
         'phone': phoneController.text,
-        'password': passwordController.text, // Ajout du mot de passe
-      });
+      };
+      // Création du client sans l'adresse
+      final user = await controller.createClient(clientData);
+      // Si une adresse a été saisie, on la crée avec le user_id retourné
+      if (user != null && addressData.value != null) {
+        final address = Map<String, dynamic>.from(addressData.value!);
+        address['userId'] = user.id;
+        await AddressService.createAddress(address);
+      }
+      Get.back(result: user);
     }
   }
 }
