@@ -241,6 +241,22 @@ class UserService {
     }
   }
 
+  static Future<Map<String, dynamic>> adminResetUserPassword(
+      String userId) async {
+    try {
+      final response =
+          await ApiService().post('/api/auth/users/$userId/reset-password');
+      if (response.data['success'] == true) {
+        return response.data['data'];
+      } else {
+        throw response.data['error'] ?? 'Erreur inconnue';
+      }
+    } catch (e) {
+      print('[UserService] Error adminResetUserPassword: $e');
+      rethrow;
+    }
+  }
+
   static Map<String, dynamic> _validateResponse(
       dynamic response, String errorMessage) {
     if (response?.data == null || response.data['success'] != true) {

@@ -882,4 +882,26 @@ export class AuthService {
       throw error;
     }
   }
+
+  static async adminResetUserPassword(userId: string, newPassword: string): Promise<User> {
+    const user = await prisma.users.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updated = await prisma.users.update({
+      where: { id: userId },
+      data: { password: hashedPassword, updated_at: new Date() }
+    });
+    return {
+      id: updated.id,
+      email: updated.email,
+      password: updated.password,
+      firstName: updated.first_name,
+      lastName: updated.last_name,
+      phone: updated.phone || undefined,
+      role: updated.role || 'CLIENT',
+      referralCode: updated.referral_code || undefined,
+      createdAt: updated.created_at || new Date(),
+      updatedAt: updated.updated_at || new Date()
+    };
+  }
 }

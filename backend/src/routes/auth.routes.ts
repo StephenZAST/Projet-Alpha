@@ -129,6 +129,8 @@ router.delete('/delete-account', asyncHandler(AuthController.deleteAccount));
 router.get('/users', authorizeRoles(['SUPER_ADMIN', 'ADMIN']), asyncHandler(AuthController.getAllUsers));
 router.delete('/users/:userId', authorizeRoles(['SUPER_ADMIN', 'ADMIN']), asyncHandler(AuthController.deleteUser));
 router.patch('/users/:userId', authorizeRoles(['SUPER_ADMIN', 'ADMIN']), asyncHandler(AuthController.updateUser));
+// Réinitialisation du mot de passe d'un utilisateur par un admin
+router.post('/users/:userId/reset-password', authorizeRoles(['SUPER_ADMIN', 'ADMIN']), asyncHandler(AuthController.adminResetUserPassword));
 
 // Routes super admin uniquement
 router.post('/create-admin', authorizeRoles(['SUPER_ADMIN']), asyncHandler(AuthController.createAdmin));

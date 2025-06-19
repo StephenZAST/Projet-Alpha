@@ -5,6 +5,7 @@ import '../../../../../constants.dart';
 import '../../../../../controllers/orders_controller.dart';
 import '../../../../../models/user.dart';
 import '../create_client_dialog.dart';
+import '../client_details_dialog.dart';
 
 class ClientSelectionStep extends StatefulWidget {
   @override
@@ -235,6 +236,7 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
           color: AppColors.primary,
           onPressed: () => controller.selectClient(client.id),
         ),
+        onTap: () => Get.dialog(ClientDetailsDialog(client: client)),
       ),
     );
   }

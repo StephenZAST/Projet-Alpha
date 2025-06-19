@@ -247,4 +247,30 @@ static async getCurrentUser(req: Request, res: Response) {
         });
     }
 }
+
+static async adminResetUserPassword(req: Request, res: Response) {
+    try {
+      const { userId } = req.params;
+      // Générer un mot de passe temporaire sécurisé
+      const tempPassword = Math.random().toString(36).slice(-10) + Math.floor(1000 + Math.random() * 9000);
+      // Mettre à jour le mot de passe de l'utilisateur
+      const user = await AuthService.adminResetUserPassword(userId, tempPassword);
+      res.json({
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            phone: user.phone,
+            role: user.role
+          },
+          tempPassword
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
 }
