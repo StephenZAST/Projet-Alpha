@@ -191,31 +191,33 @@ class UserCreateDialog extends StatelessWidget {
               ),
               SizedBox(height: AppSpacing.md),
 
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Mot de passe',
-                  border: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(color: AppColors.gray300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(color: AppColors.gray300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: AppRadius.radiusSM,
-                    borderSide: BorderSide(color: AppColors.primary),
-                  ),
+              // Note d'information sur l'adresse
+              Container(
+                margin: EdgeInsets.only(bottom: AppSpacing.md),
+                padding: EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.gray800.withOpacity(0.7)
+                      : AppColors.gray100,
+                  borderRadius: AppRadius.radiusSM,
                 ),
-                obscureText: true,
-                validator: (value) {
-                  if (value?.isEmpty ?? true) return 'Mot de passe requis';
-                  if (value!.length < 8) return 'Minimum 8 caractères';
-                  return null;
-                },
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: AppColors.info, size: 20),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        "L'adresse pourra être complétée plus tard par le client ou par l'admin. Elle est nécessaire pour la livraison, mais pas obligatoire à la création du compte.",
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(height: AppSpacing.md),
 
               // Role selector
               Container(

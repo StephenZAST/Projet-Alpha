@@ -52,6 +52,22 @@ class _UserEditDialogState extends State<UserEditDialog> {
               _buildRoleSelector(controller, isDark),
               SizedBox(height: AppSpacing.md),
               _buildStatusToggle(isDark),
+              SizedBox(height: AppSpacing.md),
+              // Bouton pour ajouter/modifier l'adresse
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.location_on_outlined),
+                  label: Text('Ajouter / Modifier l\'adresse'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.info,
+                    foregroundColor: AppColors.white,
+                  ),
+                  onPressed: () async {
+                    // TODO: Ouvrir le dialog de formulaire d'adresse
+                  },
+                ),
+              ),
               SizedBox(height: AppSpacing.xl),
               _buildActionButtons(controller),
             ],
