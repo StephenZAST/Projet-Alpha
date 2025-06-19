@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../constants.dart';
 import '../../../models/address.dart';
 import '../../../controllers/address_controller.dart';
 import '../../../widgets/shared/glass_button.dart';
-import '../../orders/components/address_selection_map.dart';
+import 'map_selection_dialog.dart';
 
 class AddressEditDialog extends StatefulWidget {
   final Address? initialAddress;
@@ -159,39 +160,29 @@ class _AddressEditDialogState extends State<AddressEditDialog> {
                       onPressed: _onPasteGps,
                       size: GlassButtonSize.small,
                     ),
+                    SizedBox(width: AppSpacing.sm),
+                    GlassButton(
+                      label: 'Choisir sur la carte',
+                      variant: GlassButtonVariant.primary,
+                      size: GlassButtonSize.small,
+                      onPressed: () async {
+                        final result = await Get.dialog(
+                          MapSelectionDialog(
+                            initialLatitude: _latitude,
+                            initialLongitude: _longitude,
+                          ),
+                        );
+                        if (result != null && result is LatLng) {
+                          setState(() {
+                            _latitude = result.latitude;
+                            _longitude = result.longitude;
+                            _gpsController.text =
+                                '${result.latitude},${result.longitude}';
+                          });
+                        }
+                      },
+                    ),
                   ],
-                ),
-                SizedBox(height: AppSpacing.md),
-                Text('Sélectionner l\'emplacement sur la carte :',
-                    style: AppTextStyles.bodyMedium),
-                SizedBox(height: AppSpacing.sm),
-                SizedBox(
-                  height: 220,
-                  child: AddressSelectionMap(
-                    initialAddress: _latitude != null && _longitude != null
-                        ? Address(
-                            id: '',
-                            name: _nameController.text,
-                            city: _cityController.text,
-                            street: _streetController.text,
-                            userId: widget.userId,
-                            isDefault: true,
-                            postalCode: _postalCodeController.text,
-                            gpsLatitude: _latitude,
-                            gpsLongitude: _longitude,
-                            createdAt: DateTime.now(),
-                            updatedAt: DateTime.now(),
-                          )
-                        : null,
-                    onAddressSelected: (address) {
-                      setState(() {
-                        _latitude = address.gpsLatitude;
-                        _longitude = address.gpsLongitude;
-                        _gpsController.text =
-                            '${address.gpsLatitude},${address.gpsLongitude}';
-                      });
-                    },
-                  ),
                 ),
                 SizedBox(height: AppSpacing.lg),
                 Row(

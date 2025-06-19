@@ -29,8 +29,18 @@ export class AddressController {
         });
       }
 
+      // Détermination du userId cible
+      let targetUserId = req.user.id;
+      // Si admin/superadmin ET user_id fourni dans le body, on utilise ce user_id
+      if (
+        (req.user.role === 'ADMIN' || req.user.role === 'SUPER_ADMIN') &&
+        req.body.user_id
+      ) {
+        targetUserId = req.body.user_id;
+      }
+
       const address = await AddressService.createAddress(
-        req.user.id,
+        targetUserId,
         name,
         street,
         city,

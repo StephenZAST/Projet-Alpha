@@ -7,10 +7,10 @@ class AddressService {
 
   static Future<List<Address>> getAddresses() async {
     try {
-      final response = await _api.get(_basePath);
-      print('[AddressService] Raw response: ${response.data}');
+      final response = await _api.get('$_basePath/all');
+      print('[AddressService] Raw response: [33m${response.data}\u001b[0m');
 
-      if (!response.data['success']) {
+      if (response.data == null || response.data['data'] == null) {
         throw 'Failed to fetch addresses';
       }
 
@@ -35,7 +35,7 @@ class AddressService {
     try {
       final response = await _api.get('$_basePath/$id');
 
-      if (response.data == null || !response.data['success']) {
+      if (response.data == null || response.data['data'] == null) {
         throw 'Address not found';
       }
 
@@ -48,9 +48,9 @@ class AddressService {
 
   static Future<Address> createAddress(Map<String, dynamic> addressData) async {
     try {
-      final response = await _api.post(_basePath, data: addressData);
+      final response = await _api.post('$_basePath/create', data: addressData);
 
-      if (!response.data['success']) {
+      if (response.data == null || response.data['data'] == null) {
         throw response.data['message'] ?? 'Failed to create address';
       }
 
