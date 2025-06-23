@@ -26,7 +26,9 @@ class Header extends GetView<MenuAppController> {
       child: Container(
         padding: AppSpacing.paddingMD,
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: isDark
+              ? Colors.white.withOpacity(0.13)
+              : Colors.white.withOpacity(0.72),
           borderRadius: AppRadius.radiusMD,
           border: Border.all(
             color: isDark ? AppColors.borderDark : AppColors.borderLight,

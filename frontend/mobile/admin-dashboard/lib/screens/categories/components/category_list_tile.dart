@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../models/category.dart';
 import '../../../constants.dart';
 import '../../../widgets/shared/action_button.dart';
+import '../../../controllers/category_controller.dart';
 
 class CategoryListTile extends StatelessWidget {
   final Category category;
@@ -22,6 +24,7 @@ class CategoryListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final controller = Get.find<CategoryController>();
     return Container(
       margin: EdgeInsets.only(bottom: AppSpacing.sm),
       decoration: BoxDecoration(
@@ -45,11 +48,12 @@ class CategoryListTile extends StatelessWidget {
         leading: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Checkbox(
-              value: selected,
-              onChanged: (v) => onSelect?.call(),
-              activeColor: AppColors.primary,
-            ),
+            Obx(() => Checkbox(
+                  value: controller.selectedCategoryIds.contains(category.id),
+                  onChanged: (v) =>
+                      controller.toggleCategorySelection(category.id),
+                  activeColor: AppColors.primary,
+                )),
             Icon(
               Icons.folder_outlined,
               color: AppColors.primary,

@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../services/category_service.dart';
 import '../constants.dart';
@@ -9,6 +10,9 @@ class CategoryController extends GetxController {
   final errorMessage = ''.obs;
   final categories = <Category>[].obs;
   final selectedCategory = Rxn<Category>();
+
+  // Ajout pour la sélection multiple
+  final selectedCategoryIds = <String>{}.obs;
 
   @override
   void onInit() {
@@ -65,10 +69,20 @@ class CategoryController extends GetxController {
       Get.snackbar(
         'Succès',
         'Catégorie créée avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
+        backgroundColor: Colors.white.withOpacity(0.7),
+        colorText: AppColors.primary,
+        icon: Icon(Icons.check_circle, color: AppColors.success),
         snackPosition: SnackPosition.TOP,
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        borderRadius: 18,
         duration: Duration(seconds: 3),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
       );
     } catch (e) {
       print('[CategoryController] Error creating category: $e');
@@ -110,7 +124,6 @@ class CategoryController extends GetxController {
       );
 
       print('[CategoryController] Update DTO: ${dto.toJson()}');
-
       final updatedCategory =
           await CategoryService.updateCategory(id: id, dto: dto);
 
@@ -228,5 +241,17 @@ class CategoryController extends GetxController {
 
   Category? getCategoryByIdSync(String id) {
     return categories.firstWhereOrNull((cat) => cat.id == id);
+  }
+
+  void toggleCategorySelection(String id) {
+    if (selectedCategoryIds.contains(id)) {
+      selectedCategoryIds.remove(id);
+    } else {
+      selectedCategoryIds.add(id);
+    }
+  }
+
+  void clearCategorySelection() {
+    selectedCategoryIds.clear();
   }
 }

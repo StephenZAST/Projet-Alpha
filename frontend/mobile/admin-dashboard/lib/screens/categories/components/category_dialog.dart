@@ -1,9 +1,11 @@
-import 'package:admin/widgets/shared/app_button.dart';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/category_controller.dart';
 import '../../../models/category.dart';
+import '../../../widgets/shared/glass_button.dart';
 
 class CategoryDialog extends StatefulWidget {
   final Category? category;
@@ -77,108 +79,101 @@ class _CategoryDialogState extends State<CategoryDialog> {
     });
   }
 
-  InputDecoration _buildInputDecoration(
-      String label, String hint, bool isDark) {
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      filled: true,
-      fillColor: isDark
-          ? Colors.white.withOpacity(0.08)
-          : Colors.white.withOpacity(0.5),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide.none,
-      ),
-      labelStyle: TextStyle(
-        color: isDark ? AppColors.textLight : AppColors.textPrimary,
-      ),
-    );
-  }
-
-  void _onPressed() {
-    _handleSubmit();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withOpacity(0.08)
-              : Colors.white.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 24,
-              offset: Offset(0, 8),
-            ),
-          ],
-          border: Border.all(
-            color: isDark ? Colors.white24 : Colors.white70,
-            width: 1.5,
-          ),
-        ),
-        padding: EdgeInsets.all(28),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                widget.category != null
-                    ? 'Modifier la catégorie'
-                    : 'Nouvelle catégorie',
-                style: AppTextStyles.h3.copyWith(
-                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+      child: ClipRRect(
+        borderRadius: AppRadius.radiusLG,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            width: 480,
+            padding: EdgeInsets.all(defaultPadding * 1.5),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor.withOpacity(0.85),
+              borderRadius: AppRadius.radiusLG,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 24,
+                  offset: Offset(0, 8),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 24),
-              TextFormField(
-                controller: _nameController,
-                decoration:
-                    _buildInputDecoration('Nom', 'Nom de la catégorie', isDark),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Le nom est requis';
-                  }
-                  // TODO: Unicité côté backend ou via controller.categories
-                  return null;
-                },
-                enabled: !_isSubmitting,
-              ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: _buildInputDecoration(
-                    'Description', 'Description (optionnelle)', isDark),
-                enabled: !_isSubmitting,
-                maxLines: 2,
-              ),
-              if (_errorText != null) ...[
-                SizedBox(height: 12),
-                Text(_errorText!, style: TextStyle(color: AppColors.error)),
               ],
-              SizedBox(height: 28),
-              AppButton(
-                label: _isSubmitting
-                    ? 'Enregistrement...'
-                    : (widget.category != null ? 'Enregistrer' : 'Créer'),
-                onPressed: _isSubmitting
-                    ? () {}
-                    : () {
-                        _handleSubmit();
-                      },
-                variant: AppButtonVariant.primary,
-                isLoading: _isSubmitting,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.category != null
+                        ? 'Modifier la catégorie'
+                        : 'Nouvelle catégorie',
+                    style:
+                        AppTextStyles.h2.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: AppSpacing.lg),
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nom',
+                      border:
+                          OutlineInputBorder(borderRadius: AppRadius.radiusSM),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.12),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Le nom est requis';
+                      }
+                      return null;
+                    },
+                    enabled: !_isSubmitting,
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      border:
+                          OutlineInputBorder(borderRadius: AppRadius.radiusSM),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.12),
+                    ),
+                    enabled: !_isSubmitting,
+                    maxLines: 2,
+                  ),
+                  if (_errorText != null) ...[
+                    SizedBox(height: 12),
+                    Text(_errorText!, style: TextStyle(color: AppColors.error)),
+                  ],
+                  SizedBox(height: AppSpacing.xl),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GlassButton(
+                        label: 'Annuler',
+                        variant: GlassButtonVariant.secondary,
+                        onPressed: () => Get.back(),
+                      ),
+                      SizedBox(width: AppSpacing.md),
+                      GlassButton(
+                        label: _isSubmitting
+                            ? 'Enregistrement...'
+                            : (widget.category != null
+                                ? 'Enregistrer'
+                                : 'Créer'),
+                        onPressed: _isSubmitting ? null : _handleSubmit,
+                        variant: GlassButtonVariant.primary,
+                        isLoading: _isSubmitting,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

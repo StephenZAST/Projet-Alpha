@@ -1,6 +1,7 @@
 import 'package:admin/widgets/shared/action_button.dart';
 import 'package:admin/widgets/shared/app_button.dart';
 import 'package:admin/widgets/shared/bouncy_button.dart';
+import 'package:admin/widgets/shared/glass_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
@@ -28,9 +29,14 @@ class CategoriesScreen extends StatelessWidget {
               Header(
                 title: 'Catégories',
                 actions: [
-                  BouncyButton(
-                    onTap: () => Get.dialog(CategoryDialog()),
-                    label: 'Nouvelle Catégorie',
+                  GlassButton(
+                    label: 'Nouvelle catégorie',
+                    icon: Icons.add,
+                    onPressed: () => showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (context) => CategoryDialog(),
+                    ),
                   ),
                 ],
               ),
