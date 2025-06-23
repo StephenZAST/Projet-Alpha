@@ -20,6 +20,8 @@ class _CategoryDialogState extends State<CategoryDialog> {
 
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
+  bool _isSubmitting = false;
+  String? _errorText;
 
   @override
   void initState() {
@@ -36,22 +38,43 @@ class _CategoryDialogState extends State<CategoryDialog> {
     super.dispose();
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
+    setState(() {
+      _isSubmitting = true;
+      _errorText = null;
+    });
     if (_formKey.currentState!.validate()) {
-      if (widget.category != null) {
-        controller.updateCategory(
-          id: widget.category!.id,
-          name: _nameController.text,
-          description: _descriptionController.text,
-        );
-      } else {
-        controller.createCategory(
-          name: _nameController.text,
-          description: _descriptionController.text,
-        );
+      try {
+        if (widget.category != null) {
+          await controller.updateCategory(
+            id: widget.category!.id,
+            name: _nameController.text.trim(),
+            description: _descriptionController.text.trim(),
+          );
+          Get.snackbar('Succès', 'Catégorie modifiée',
+              backgroundColor: Colors.white.withOpacity(0.7),
+              colorText: AppColors.primary,
+              icon: Icon(Icons.check_circle, color: AppColors.success));
+        } else {
+          await controller.createCategory(
+            name: _nameController.text.trim(),
+            description: _descriptionController.text.trim(),
+          );
+          Get.snackbar('Succès', 'Catégorie créée',
+              backgroundColor: Colors.white.withOpacity(0.7),
+              colorText: AppColors.primary,
+              icon: Icon(Icons.check_circle, color: AppColors.success));
+        }
+        Get.back();
+      } catch (e) {
+        setState(() {
+          _errorText = e.toString();
+        });
       }
-      Get.back();
     }
+    setState(() {
+      _isSubmitting = false;
+    });
   }
 
   InputDecoration _buildInputDecoration(
@@ -59,115 +82,101 @@ class _CategoryDialogState extends State<CategoryDialog> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: TextStyle(
-        color: isDark ? AppColors.textLight : AppColors.textSecondary,
-      ),
-      hintStyle: TextStyle(
-        color: isDark ? AppColors.gray600 : AppColors.gray400,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: AppRadius.radiusSM,
-        borderSide: BorderSide(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: AppRadius.radiusSM,
-        borderSide: BorderSide(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: AppRadius.radiusSM,
-        borderSide: BorderSide(color: AppColors.primary),
-      ),
       filled: true,
-      fillColor: isDark ? AppColors.gray800.withOpacity(0.5) : Colors.white,
+      fillColor: isDark
+          ? Colors.white.withOpacity(0.08)
+          : Colors.white.withOpacity(0.5),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      labelStyle: TextStyle(
+        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+      ),
     );
+  }
+
+  void _onPressed() {
+    _handleSubmit();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textStyle = TextStyle(
-      color: isDark ? AppColors.textLight : AppColors.textPrimary,
-    );
-
     return Dialog(
-      backgroundColor: Theme.of(context).dialogBackgroundColor,
+      backgroundColor: Colors.transparent,
       child: Container(
-        width: 500,
-        padding: EdgeInsets.all(defaultPadding),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : Colors.white.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 24,
+              offset: Offset(0, 8),
+            ),
+          ],
+          border: Border.all(
+            color: isDark ? Colors.white24 : Colors.white70,
+            width: 1.5,
+          ),
+        ),
+        padding: EdgeInsets.all(28),
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.category != null
-                        ? 'Modifier la catégorie'
-                        : 'Nouvelle catégorie',
-                    style: AppTextStyles.h2.copyWith(
-                      color:
-                          isDark ? AppColors.textLight : AppColors.textPrimary,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => Get.back(),
-                    color:
-                        isDark ? AppColors.textLight : AppColors.textSecondary,
-                  ),
-                ],
+              Text(
+                widget.category != null
+                    ? 'Modifier la catégorie'
+                    : 'Nouvelle catégorie',
+                style: AppTextStyles.h3.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
               ),
-              SizedBox(height: AppSpacing.lg),
+              SizedBox(height: 24),
               TextFormField(
                 controller: _nameController,
-                style: textStyle,
-                decoration: _buildInputDecoration(
-                  'Nom',
-                  'Entrez le nom de la catégorie',
-                  isDark,
-                ),
+                decoration:
+                    _buildInputDecoration('Nom', 'Nom de la catégorie', isDark),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Le nom est requis';
                   }
+                  // TODO: Unicité côté backend ou via controller.categories
                   return null;
                 },
+                enabled: !_isSubmitting,
               ),
-              SizedBox(height: AppSpacing.md),
+              SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
-                style: textStyle,
-                maxLines: 3,
                 decoration: _buildInputDecoration(
-                  'Description',
-                  'Entrez une description',
-                  isDark,
-                ),
+                    'Description', 'Description (optionnelle)', isDark),
+                enabled: !_isSubmitting,
+                maxLines: 2,
               ),
-              SizedBox(height: AppSpacing.xl),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  AppButton(
-                    label: 'Annuler',
-                    variant: AppButtonVariant.secondary,
-                    onPressed: () => Get.back(),
-                  ),
-                  SizedBox(width: AppSpacing.md),
-                  Obx(() => AppButton(
-                        label: 'Enregistrer',
-                        onPressed:
-                            controller.isLoading.value ? () {} : _handleSubmit,
-                        isLoading: controller.isLoading.value,
-                      )),
-                ],
+              if (_errorText != null) ...[
+                SizedBox(height: 12),
+                Text(_errorText!, style: TextStyle(color: AppColors.error)),
+              ],
+              SizedBox(height: 28),
+              AppButton(
+                label: _isSubmitting
+                    ? 'Enregistrement...'
+                    : (widget.category != null ? 'Enregistrer' : 'Créer'),
+                onPressed: _isSubmitting
+                    ? () {}
+                    : () {
+                        _handleSubmit();
+                      },
+                variant: AppButtonVariant.primary,
+                isLoading: _isSubmitting,
               ),
             ],
           ),

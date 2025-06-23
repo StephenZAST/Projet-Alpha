@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/service_controller.dart';
+import '../../widgets/shared/glass_button.dart';
 
 class ServicesScreen extends GetView<ServiceController> {
   @override
@@ -15,35 +16,69 @@ class ServicesScreen extends GetView<ServiceController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // En-tête avec recherche
+              // Header moderne avec titre, bouton glassy et refresh
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
                     'Services',
                     style: AppTextStyles.h1.copyWith(
                       color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
                     ),
                   ),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.add),
-                    label: Text('Nouveau service'),
-                    onPressed: () => Get.dialog(ServiceFormScreen()),
+                  Row(
+                    children: [
+                      GlassButton(
+                        label: 'Nouveau service',
+                        icon: Icons.add,
+                        variant: GlassButtonVariant.primary,
+                        onPressed: () => Get.dialog(ServiceFormScreen()),
+                      ),
+                      const SizedBox(width: 8),
+                      GlassButton(
+                        icon: Icons.refresh,
+                        label: '',
+                        variant: GlassButtonVariant.secondary,
+                        size: GlassButtonSize.small,
+                        onPressed: controller.fetchServices,
+                      ),
+                    ],
                   ),
                 ],
               ),
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 24),
 
-              // Champ de recherche
-              TextField(
-                onChanged: controller.searchServices,
-                decoration: InputDecoration(
-                  hintText: 'Rechercher un service...',
-                  prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(borderRadius: AppRadius.radiusSM),
+              // Barre de recherche modernisée
+              Center(
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: 400),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor.withOpacity(0.7),
+                    borderRadius: AppRadius.radiusSM,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    onChanged: controller.searchServices,
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher un service...',
+                      prefixIcon: Icon(Icons.search),
+                      border: InputBorder.none,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
                 ),
               ),
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 24),
 
               // Liste des services
               Expanded(

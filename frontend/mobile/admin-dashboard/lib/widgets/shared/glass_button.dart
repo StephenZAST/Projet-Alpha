@@ -72,67 +72,78 @@ class GlassButton extends StatelessWidget {
     final baseColor = _getBaseColor();
     final padding = _getPadding();
     final fontSize = _getFontSize();
+    final isDisabled = onPressed == null || isLoading;
+    final textColor = isDisabled ? AppColors.gray400 : baseColor;
+    final borderColor =
+        isDisabled ? AppColors.gray200 : baseColor.withOpacity(0.5);
+    final gradient = !isOutlined && !isDisabled
+        ? LinearGradient(
+            colors: [
+              baseColor.withOpacity(0.2),
+              baseColor.withOpacity(0.3),
+            ],
+          )
+        : null;
+    final backgroundColor = isDisabled ? AppColors.gray100 : Colors.transparent;
 
-    return Container(
-      width: fullWidth ? double.infinity : null,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: !isOutlined
-            ? LinearGradient(
-                colors: [
-                  baseColor.withOpacity(0.2),
-                  baseColor.withOpacity(0.3),
-                ],
-              )
-            : null,
-        border: Border.all(
-          color: baseColor.withOpacity(0.5),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: baseColor.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return Opacity(
+      opacity: isDisabled ? 0.6 : 1.0,
+      child: Container(
+        width: fullWidth ? double.infinity : null,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: gradient,
+          color: backgroundColor,
+          border: Border.all(
+            color: borderColor,
+            width: 1,
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: isLoading ? null : onPressed,
-              child: Padding(
-                padding: padding,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isLoading) ...[
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(baseColor),
+          boxShadow: [
+            BoxShadow(
+              color: baseColor.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: isDisabled ? null : onPressed,
+                child: Padding(
+                  padding: padding,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isLoading) ...[
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(baseColor),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ] else if (icon != null) ...[
+                        Icon(icon, color: textColor, size: fontSize + 6),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        isLoading ? 'Chargement...' : label,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                    ] else if (icon != null) ...[
-                      Icon(icon, color: baseColor, size: fontSize + 6),
-                      const SizedBox(width: 8),
                     ],
-                    Text(
-                      isLoading ? 'Chargement...' : label,
-                      style: TextStyle(
-                        color: baseColor,
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

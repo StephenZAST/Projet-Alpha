@@ -214,31 +214,43 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
   }
 
   Widget _buildClientCard(BuildContext context, User client) {
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Text(
-            '${client.firstName[0]}${client.lastName[0]}'.toUpperCase(),
-            style: TextStyle(color: Colors.white),
+    return Obx(() {
+      final isSelected = controller.selectedClientId.value == client.id;
+      return Card(
+        color: isSelected ? AppColors.primary.withOpacity(0.08) : null,
+        shape: RoundedRectangleBorder(
+          side: isSelected
+              ? BorderSide(color: AppColors.primary, width: 2)
+              : BorderSide(color: Colors.transparent),
+          borderRadius: AppRadius.radiusMD,
+        ),
+        child: ListTile(
+          leading: CircleAvatar(
+            child: Text(
+              '${client.firstName[0]}${client.lastName[0]}'.toUpperCase(),
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: AppColors.primary,
           ),
-          backgroundColor: AppColors.primary,
+          title: Text('${client.firstName} ${client.lastName}'),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(client.email),
+              Text(client.phone ?? 'Pas de téléphone'),
+            ],
+          ),
+          trailing: IconButton(
+            icon: Icon(
+              isSelected ? Icons.check_circle : Icons.check_circle_outline,
+              color: isSelected ? AppColors.primary : AppColors.gray400,
+            ),
+            onPressed: () => controller.selectClient(client.id),
+          ),
+          onTap: () => Get.dialog(ClientDetailsDialog(client: client)),
         ),
-        title: Text('${client.firstName} ${client.lastName}'),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(client.email),
-            Text(client.phone ?? 'Pas de téléphone'),
-          ],
-        ),
-        trailing: IconButton(
-          icon: Icon(Icons.check_circle_outline),
-          color: AppColors.primary,
-          onPressed: () => controller.selectClient(client.id),
-        ),
-        onTap: () => Get.dialog(ClientDetailsDialog(client: client)),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildEmptyState() {

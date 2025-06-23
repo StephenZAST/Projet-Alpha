@@ -8,12 +8,15 @@ import '../../controllers/category_controller.dart';
 import '../../models/category.dart';
 import '../../widgets/shared/header.dart';
 import 'components/category_dialog.dart';
+import 'components/category_list_tile.dart';
 
 class CategoriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<CategoryController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final searchController = TextEditingController();
+    final RxString searchQuery = ''.obs;
 
     return Scaffold(
       body: SafeArea(
@@ -32,6 +35,45 @@ class CategoriesScreen extends StatelessWidget {
                 ],
               ),
               SizedBox(height: AppSpacing.lg),
+              // Barre de recherche
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.08)
+                      : Colors.white.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isDark ? Colors.white24 : Colors.white70,
+                    width: 1.2,
+                  ),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.search, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: searchController,
+                        onChanged: (value) => searchQuery.value = value,
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher une catégorie...',
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    if (searchQuery.value.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          searchController.clear();
+                          searchQuery.value = '';
+                        },
+                        child: Icon(Icons.close, color: AppColors.gray400),
+                      ),
+                  ],
+                ),
+              ),
+              SizedBox(height: AppSpacing.md),
               Expanded(
                 child: Obx(() {
                   if (controller.isLoading.value) {
@@ -71,7 +113,15 @@ class CategoriesScreen extends StatelessWidget {
                     );
                   }
 
-                  if (controller.categories.isEmpty) {
+                  // Filtrage par recherche
+                  final filteredCategories = controller.categories.where((cat) {
+                    final query = searchQuery.value.toLowerCase();
+                    return cat.name.toLowerCase().contains(query) ||
+                        (cat.description?.toLowerCase().contains(query) ??
+                            false);
+                  }).toList();
+
+                  if (filteredCategories.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -97,63 +147,16 @@ class CategoriesScreen extends StatelessWidget {
                   }
 
                   return ListView.builder(
-                    itemCount: controller.categories.length,
+                    itemCount: filteredCategories.length,
                     itemBuilder: (context, index) {
-                      final category = controller.categories[index];
-                      return Card(
-                        margin: EdgeInsets.only(bottom: AppSpacing.md),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.folder,
-                            color: AppColors.primary,
-                          ),
-                          title: Text(
-                            category.name,
-                            style: AppTextStyles.h4.copyWith(
-                              fontSize: 16.0,
-                              color:
-                                  Theme.of(context).textTheme.bodyLarge?.color,
-                            ),
-                          ),
-                          subtitle: category.description != null
-                              ? Text(
-                                  category.description!,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: isDark
-                                        ? AppColors.textLight
-                                        : AppColors.textSecondary,
-                                  ),
-                                )
-                              : null,
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ActionButton(
-                                icon: Icons.edit_rounded,
-                                label: '',
-                                color: AppColors.primary,
-                                onTap: () => Get.dialog(
-                                  CategoryDialog(category: category),
-                                ),
-                                variant: ActionButtonVariant.ghost,
-                                isCompact: true,
-                              ),
-                              SizedBox(width: AppSpacing.xs),
-                              ActionButton(
-                                icon: Icons.delete_rounded,
-                                label: '',
-                                color: AppColors.error,
-                                onTap: () => _showDeleteDialog(
-                                  context,
-                                  category,
-                                  controller,
-                                ),
-                                variant: ActionButtonVariant.ghost,
-                                isCompact: true,
-                              ),
-                            ],
-                          ),
-                        ),
+                      final category = filteredCategories[index];
+                      return CategoryListTile(
+                        category: category,
+                        onEdit: (cat) =>
+                            Get.dialog(CategoryDialog(category: cat)),
+                        onDelete: (cat) =>
+                            _showDeleteDialog(context, cat, controller),
+                        // Ajout d'options pour badge, nombre d'articles, etc. dans le widget
                       );
                     },
                   );

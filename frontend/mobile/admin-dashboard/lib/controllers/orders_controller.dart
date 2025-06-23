@@ -90,6 +90,9 @@ class OrdersController extends GetxController {
   final filteredClients = <User>[].obs;
   final clientSearchFilter = 'name'.obs;
 
+  // Ajouter cette propriété pour l'étape courante
+  final currentStep = 0.obs;
+
   @override
   void onInit() {
     super.onInit();

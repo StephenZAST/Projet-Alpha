@@ -10,7 +10,6 @@ import '../../../../widgets/shared/glass_button.dart';
 
 class OrderStepper extends StatelessWidget {
   final controller = Get.find<OrdersController>();
-  final currentStep = 0.obs;
 
   final steps = [
     'Sélection du client',
@@ -39,7 +38,7 @@ class OrderStepper extends StatelessWidget {
     return Column(
       children: [
         Expanded(
-          child: Obx(() => _buildStep(currentStep.value)),
+          child: Obx(() => _buildStep(controller.currentStep.value)),
         ),
         _buildStepperControls(context),
       ],
@@ -62,45 +61,38 @@ class OrderStepper extends StatelessWidget {
             icon: Icons.arrow_back,
             variant: GlassButtonVariant.secondary,
             onPressed: () {
-              if (currentStep.value > 0) {
-                currentStep.value--;
+              if (controller.currentStep.value > 0) {
+                controller.currentStep.value--;
               } else {
                 Get.back();
               }
             },
           ),
-          GlassButton(
-            label: currentStep.value < steps.length - 1
-                ? 'Suivant'
-                : 'Créer la commande',
-            icon: currentStep.value < steps.length - 1
-                ? Icons.arrow_forward
-                : Icons.check,
-            variant: GlassButtonVariant.primary,
-            onPressed: () {
-              if (_canProceedToNextStep()) {
-                if (currentStep.value < steps.length - 1) {
-                  currentStep.value++;
-                } else {
-                  _submitOrder();
-                }
-              } else {
-                Get.snackbar(
-                  'Attention',
-                  'Veuillez compléter cette étape avant de continuer',
-                  backgroundColor: AppColors.warning.withOpacity(0.1),
-                  colorText: AppColors.warning,
-                );
-              }
-            },
-          ),
+          Obx(() => GlassButton(
+                label: controller.currentStep.value < steps.length - 1
+                    ? 'Suivant'
+                    : 'Créer la commande',
+                icon: controller.currentStep.value < steps.length - 1
+                    ? Icons.arrow_forward
+                    : Icons.check,
+                variant: GlassButtonVariant.primary,
+                onPressed: _canProceedToNextStep()
+                    ? () {
+                        if (controller.currentStep.value < steps.length - 1) {
+                          controller.currentStep.value++;
+                        } else {
+                          _submitOrder();
+                        }
+                      }
+                    : null,
+              )),
         ],
       ),
     );
   }
 
   bool _canProceedToNextStep() {
-    switch (currentStep.value) {
+    switch (controller.currentStep.value) {
       case 0:
         return controller.selectedClientId.value != null;
       case 1:
