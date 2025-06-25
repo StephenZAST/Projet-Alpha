@@ -8,6 +8,7 @@ import '../../controllers/article_controller.dart';
 import '../../responsive.dart';
 import './components/article_list_item.dart';
 import 'package:admin/widgets/shared/bouncy_button.dart'; // Ajouter cet import
+import 'package:admin/widgets/shared/glass_button.dart';
 
 class ArticlesScreen extends GetView<ArticleController> {
   @override
@@ -36,15 +37,33 @@ class ArticlesScreen extends GetView<ArticleController> {
   Widget _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           'Gestion des Articles',
-          style: AppTextStyles.h1,
+          style: AppTextStyles.h1.copyWith(
+            color: Theme.of(context).textTheme.bodyLarge?.color,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
         ),
-        BouncyButton(
-          // Utiliser BouncyButton au lieu de _BouncyButton
-          onTap: () => _showAddArticleDialog(context),
-          label: 'Nouvel Article',
+        Row(
+          children: [
+            GlassButton(
+              label: 'Nouvel Article',
+              icon: Icons.add,
+              variant: GlassButtonVariant.primary,
+              onPressed: () => _showAddArticleDialog(context),
+            ),
+            const SizedBox(width: 8),
+            GlassButton(
+              icon: Icons.refresh,
+              label: '',
+              variant: GlassButtonVariant.secondary,
+              size: GlassButtonSize.small,
+              onPressed: controller.fetchArticles,
+            ),
+          ],
         ),
       ],
     );

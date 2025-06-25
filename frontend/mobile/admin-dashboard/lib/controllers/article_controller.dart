@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart' as dio
     show Response; // Ajouter l'import explicite pour Response avec prefix
@@ -146,24 +147,77 @@ class ArticleController extends GetxController {
         premiumPrice: premiumPrice,
       );
 
-      // Utiliser le service article au lieu d'appeler directement l'API
       await ArticleService.addNewArticle(dto);
       await fetchArticles();
 
       Get.back();
-      Get.snackbar(
-        'Succès',
-        'Article créé avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.white,
+      Get.closeAllSnackbars();
+      Get.rawSnackbar(
+        messageText: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Article créé avec succès',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.success.withOpacity(0.85),
+        borderRadius: 16,
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 3),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+        isDismissible: true,
+        overlayBlur: 2.5,
       );
     } catch (e) {
       errorMessage.value = 'Erreur lors de la création de l\'article';
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer l\'article',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.white,
+      Get.closeAllSnackbars();
+      Get.rawSnackbar(
+        messageText: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.white, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Impossible de créer l\'article',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.error.withOpacity(0.90),
+        borderRadius: 16,
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 4),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+        isDismissible: true,
+        overlayBlur: 2.5,
       );
     } finally {
       isLoading.value = false;
@@ -191,24 +245,77 @@ class ArticleController extends GetxController {
         isActive: isActive,
       );
 
-      // Utiliser le service article
       await ArticleService.updateArticle(id: id, dto: dto);
       await fetchArticles();
 
       Get.back();
-      Get.snackbar(
-        'Succès',
-        'Article mis à jour avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.white,
+      Get.closeAllSnackbars();
+      Get.rawSnackbar(
+        messageText: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Article mis à jour avec succès',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.success.withOpacity(0.85),
+        borderRadius: 16,
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 3),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+        isDismissible: true,
+        overlayBlur: 2.5,
       );
     } catch (e) {
       errorMessage.value = 'Erreur lors de la mise à jour de l\'article';
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour l\'article',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.white,
+      Get.closeAllSnackbars();
+      Get.rawSnackbar(
+        messageText: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.white, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Impossible de mettre à jour l\'article',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.error.withOpacity(0.90),
+        borderRadius: 16,
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 4),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+        isDismissible: true,
+        overlayBlur: 2.5,
       );
     } finally {
       isLoading.value = false;
@@ -247,11 +354,38 @@ class ArticleController extends GetxController {
       await ArticleService.deleteArticle(id);
       await fetchArticles();
 
-      Get.snackbar(
-        'Succès',
-        'Article supprimé avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.white,
+      Get.closeAllSnackbars();
+      Get.rawSnackbar(
+        messageText: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Article supprimé avec succès',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.success.withOpacity(0.85),
+        borderRadius: 16,
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 3),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+        isDismissible: true,
+        overlayBlur: 2.5,
       );
     } catch (e) {
       final isReferenced = e.toString().contains('referenced');
@@ -259,11 +393,38 @@ class ArticleController extends GetxController {
           ? 'Cet article est utilisé dans des commandes existantes'
           : 'Erreur lors de la suppression';
 
-      Get.snackbar(
-        'Erreur',
-        errorMessage.value,
-        backgroundColor: AppColors.error,
-        colorText: AppColors.white,
+      Get.closeAllSnackbars();
+      Get.rawSnackbar(
+        messageText: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.white, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                errorMessage.value,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.error.withOpacity(0.90),
+        borderRadius: 16,
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 4),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+        isDismissible: true,
+        overlayBlur: 2.5,
       );
     } finally {
       isLoading.value = false;
