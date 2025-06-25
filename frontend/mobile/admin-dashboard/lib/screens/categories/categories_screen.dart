@@ -7,7 +7,6 @@ import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/category_controller.dart';
 import '../../models/category.dart';
-import '../../widgets/shared/header.dart';
 import 'components/category_dialog.dart';
 import 'components/category_list_tile.dart';
 
@@ -26,21 +25,44 @@ class CategoriesScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Header(
-                title: 'Catégories',
-                actions: [
-                  GlassButton(
-                    label: 'Nouvelle catégorie',
-                    icon: Icons.add,
-                    onPressed: () => showDialog(
-                      context: context,
-                      barrierDismissible: true,
-                      builder: (context) => CategoryDialog(),
+              // Header moderne avec titre, bouton glassy et refresh
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Catégories',
+                    style: AppTextStyles.h1.copyWith(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
                     ),
+                  ),
+                  Row(
+                    children: [
+                      GlassButton(
+                        label: 'Nouvelle catégorie',
+                        icon: Icons.add,
+                        variant: GlassButtonVariant.primary,
+                        onPressed: () => showDialog(
+                          context: context,
+                          barrierDismissible: true,
+                          builder: (context) => CategoryDialog(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GlassButton(
+                        icon: Icons.refresh,
+                        label: '',
+                        variant: GlassButtonVariant.secondary,
+                        size: GlassButtonSize.small,
+                        onPressed: controller.fetchCategories,
+                      ),
+                    ],
                   ),
                 ],
               ),
-              SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: 24),
               // Barre de recherche
               Container(
                 decoration: BoxDecoration(

@@ -66,23 +66,38 @@ class CategoryController extends GetxController {
       await CategoryService.createCategory(dto);
       await fetchCategories();
 
-      Get.snackbar(
-        'Succès',
-        'Catégorie créée avec succès',
-        backgroundColor: Colors.white.withOpacity(0.7),
-        colorText: AppColors.primary,
-        icon: Icon(Icons.check_circle, color: AppColors.success),
-        snackPosition: SnackPosition.TOP,
+      Get.closeAllSnackbars();
+      Get.rawSnackbar(
+        messageText: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Catégorie créée avec succès',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.success.withOpacity(0.85),
+        borderRadius: 16,
         margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        borderRadius: 18,
+        snackPosition: SnackPosition.TOP,
         duration: Duration(seconds: 3),
         boxShadows: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black26,
             blurRadius: 16,
             offset: Offset(0, 4),
           ),
         ],
+        isDismissible: true,
+        overlayBlur: 2.5,
       );
     } catch (e) {
       print('[CategoryController] Error creating category: $e');
@@ -136,13 +151,38 @@ class CategoryController extends GetxController {
 
       Get.back(); // Ferme le dialogue de modification
 
-      Get.snackbar(
-        'Succès',
-        'Catégorie mise à jour avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
+      Get.closeAllSnackbars();
+      Get.rawSnackbar(
+        messageText: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 22),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Catégorie mise à jour avec succès',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.success.withOpacity(0.85),
+        borderRadius: 16,
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         snackPosition: SnackPosition.TOP,
         duration: Duration(seconds: 3),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+        isDismissible: true,
+        overlayBlur: 2.5,
       );
     } catch (e) {
       print('[CategoryController] Error updating category: $e');

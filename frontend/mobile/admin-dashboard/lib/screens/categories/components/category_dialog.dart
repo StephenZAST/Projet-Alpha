@@ -53,21 +53,13 @@ class _CategoryDialogState extends State<CategoryDialog> {
             name: _nameController.text.trim(),
             description: _descriptionController.text.trim(),
           );
-          Get.snackbar('Succès', 'Catégorie modifiée',
-              backgroundColor: Colors.white.withOpacity(0.7),
-              colorText: AppColors.primary,
-              icon: Icon(Icons.check_circle, color: AppColors.success));
         } else {
           await controller.createCategory(
             name: _nameController.text.trim(),
             description: _descriptionController.text.trim(),
           );
-          Get.snackbar('Succès', 'Catégorie créée',
-              backgroundColor: Colors.white.withOpacity(0.7),
-              colorText: AppColors.primary,
-              icon: Icon(Icons.check_circle, color: AppColors.success));
         }
-        Get.back();
+        // Le controller ferme déjà le dialog et affiche la notif
       } catch (e) {
         setState(() {
           _errorText = e.toString();
