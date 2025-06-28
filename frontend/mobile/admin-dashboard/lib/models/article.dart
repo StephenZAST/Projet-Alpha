@@ -26,20 +26,30 @@ class Article {
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
     return Article(
       id: json['id'],
       name: json['name'],
       description: json['description'],
-      basePrice: (json['basePrice'] ?? 0).toDouble(),
-      premiumPrice: json['premiumPrice']?.toDouble(),
+      basePrice: parseDouble(json['basePrice']),
+      premiumPrice: json['premiumPrice'] != null
+          ? parseDouble(json['premiumPrice'])
+          : null,
       categoryId: json['categoryId'],
-      category:
-          json['category'] is Map ? json['category']['name'] : json['category'],
+      category: json['category'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       isDeleted: json['isDeleted'] ?? false,
-      deletedAt:
-          json['deletedAt'] != null ? DateTime.parse(json['deletedAt']) : null,
+      deletedAt: json['deletedAt'] != null
+          ? DateTime.tryParse(json['deletedAt'])
+          : null,
     );
   }
 
