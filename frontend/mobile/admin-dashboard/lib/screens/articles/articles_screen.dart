@@ -182,19 +182,9 @@ class ArticlesScreen extends GetView<ArticleController> {
   }
 
   void _showAddArticleDialog(BuildContext context) {
-    // TODO: Implement dialog to add new article
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Nouvel Article'),
-        content: Text('Formulaire à implémenter'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Fermer'),
-          ),
-        ],
-      ),
+    Get.dialog(
+      ArticleFormDialog(),
+      barrierDismissible: false,
     );
   }
 
