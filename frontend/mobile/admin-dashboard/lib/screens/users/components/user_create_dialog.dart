@@ -4,7 +4,7 @@ import '../../../constants.dart';
 
 import '../../../models/user.dart';
 import '../../../widgets/shared/glass_button.dart';
-import '../../../services/user_service.dart';
+import '../../../controllers/users_controller.dart';
 
 class UserCreateDialog extends StatelessWidget {
   final _formKey = GlobalKey<FormState>();
@@ -16,43 +16,28 @@ class UserCreateDialog extends StatelessWidget {
   final _selectedRole = UserRole.CLIENT.obs;
   final _isSubmitting = false.obs;
 
-  Future<void> _handleCreateUser() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    _isSubmitting.value = true;
-    try {
-      final userData = {
-        'email': _emailController.text,
-        'password': _passwordController.text,
-        'firstName': _firstNameController.text,
-        'lastName': _lastNameController.text,
-        'phone': _phoneController.text,
-        'role': _selectedRole.value.toString().split('.').last,
-      };
-
-      await UserService.createUser(userData);
-      Get.back();
-      Get.snackbar(
-        'Succès',
-        'Utilisateur créé avec succès',
-        backgroundColor: AppColors.success,
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Erreur lors de la création: ${e.toString()}',
-        backgroundColor: AppColors.error,
-        colorText: Colors.white,
-      );
-    } finally {
-      _isSubmitting.value = false;
+  // Helper for role icon
+  IconData _getRoleIcon(UserRole role) {
+    switch (role) {
+      case UserRole.SUPER_ADMIN:
+        return Icons.security;
+      case UserRole.ADMIN:
+        return Icons.admin_panel_settings;
+      case UserRole.AFFILIATE:
+        return Icons.handshake;
+      case UserRole.CLIENT:
+        return Icons.person;
+      case UserRole.DELIVERY:
+        return Icons.delivery_dining;
+      default:
+        return Icons.person_outline;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final controller = Get.find<UsersController>();
 
     return Dialog(
       backgroundColor: isDark ? AppColors.gray900 : Colors.white,
@@ -66,13 +51,6 @@ class UserCreateDialog extends StatelessWidget {
               ? AppColors.gray900.withOpacity(0.95)
               : Colors.white.withOpacity(0.95),
           borderRadius: AppRadius.radiusLG,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.1),
-              blurRadius: 20,
-              spreadRadius: 5,
-            ),
-          ],
         ),
         child: Form(
           key: _formKey,
@@ -137,7 +115,6 @@ class UserCreateDialog extends StatelessWidget {
                 ],
               ),
               SizedBox(height: AppSpacing.md),
-
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -163,7 +140,6 @@ class UserCreateDialog extends StatelessWidget {
                 },
               ),
               SizedBox(height: AppSpacing.md),
-
               TextFormField(
                 controller: _phoneController,
                 decoration: InputDecoration(
@@ -190,8 +166,33 @@ class UserCreateDialog extends StatelessWidget {
                 },
               ),
               SizedBox(height: AppSpacing.md),
-
-              // Note d'information sur l'adresse
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Mot de passe',
+                  border: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.gray300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.gray300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusSM,
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty)
+                    return 'Mot de passe requis';
+                  if (value.length < 8)
+                    return 'Le mot de passe doit contenir au moins 8 caractères';
+                  return null;
+                },
+              ),
+              SizedBox(height: AppSpacing.md),
               Container(
                 margin: EdgeInsets.only(bottom: AppSpacing.md),
                 padding: EdgeInsets.all(AppSpacing.sm),
@@ -218,8 +219,7 @@ class UserCreateDialog extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Role selector
+              // Role selector with icon
               Container(
                 padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                 decoration: BoxDecoration(
@@ -234,18 +234,20 @@ class UserCreateDialog extends StatelessWidget {
                         }
                       },
                       items: UserRole.values.map((UserRole role) {
-                        String displayRole = role.toString().split('.').last;
-                        // Convert to title case and handle special cases
-                        displayRole = displayRole[0].toUpperCase() +
-                            displayRole.substring(1).toLowerCase();
-
                         return DropdownMenuItem<UserRole>(
                           value: role,
-                          child: Text(
-                            displayRole,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isDark ? Colors.white : AppColors.gray900,
-                            ),
+                          child: Row(
+                            children: [
+                              Icon(_getRoleIcon(role),
+                                  color: role.color, size: 18),
+                              SizedBox(width: 8),
+                              Text(role.label,
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: isDark
+                                        ? Colors.white
+                                        : AppColors.gray900,
+                                  )),
+                            ],
                           ),
                         );
                       }).toList(),
@@ -257,7 +259,6 @@ class UserCreateDialog extends StatelessWidget {
                     )),
               ),
               SizedBox(height: AppSpacing.lg),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -271,7 +272,28 @@ class UserCreateDialog extends StatelessWidget {
                         label: 'Créer',
                         variant: GlassButtonVariant.primary,
                         isLoading: _isSubmitting.value,
-                        onPressed: _handleCreateUser,
+                        onPressed: () async {
+                          if (!_formKey.currentState!.validate()) return;
+                          _isSubmitting.value = true;
+                          try {
+                            final userData = {
+                              'email': _emailController.text,
+                              'password': _passwordController.text,
+                              'firstName': _firstNameController.text,
+                              'lastName': _lastNameController.text,
+                              'phone': _phoneController.text,
+                              'role': _selectedRole.value
+                                  .toString()
+                                  .split('.')
+                                  .last,
+                            };
+                            await controller.createUser(userData);
+                          } catch (e) {
+                            // Error snackbar is handled by controller.safeCall
+                          } finally {
+                            _isSubmitting.value = false;
+                          }
+                        },
                       )),
                 ],
               ),

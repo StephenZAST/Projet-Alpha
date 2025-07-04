@@ -7,7 +7,6 @@ import '../../constants.dart';
 import '../../controllers/article_controller.dart';
 import '../../responsive.dart';
 import './components/article_list_item.dart';
-import 'package:admin/widgets/shared/bouncy_button.dart'; // Ajouter cet import
 import 'package:admin/widgets/shared/glass_button.dart';
 
 class ArticlesScreen extends GetView<ArticleController> {

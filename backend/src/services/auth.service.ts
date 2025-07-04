@@ -283,10 +283,16 @@ export class AuthService {
     });
 
     if (!user) throw new Error('User not found');
-
     if (user.role === 'SUPER_ADMIN' && userId !== targetUserId) {
       throw new Error('Super Admin can only delete their own account');
     }
+
+    // Supprimer les préférences de notification liées à l'utilisateur
+    await prisma.notification_preferences.deleteMany({
+      where: { user_id: targetUserId }
+    });
+
+    // Ajouter ici d'autres suppressions de dépendances si besoin (adresses, commandes, etc.)
 
     await prisma.users.delete({
       where: { id: targetUserId }

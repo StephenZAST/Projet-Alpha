@@ -7,6 +7,8 @@ import 'components/user_search_bar.dart';
 import 'components/view_toggle.dart';
 import 'components/active_filter_indicator.dart';
 import 'components/adaptive_user_view.dart';
+import '../../widgets/shared/glass_button.dart';
+import 'components/user_create_dialog.dart';
 
 class UsersScreen extends StatelessWidget {
   const UsersScreen({Key? key}) : super(key: key);
@@ -23,12 +25,57 @@ class UsersScreen extends StatelessWidget {
           children: [
             Padding(
               padding: EdgeInsets.all(defaultPadding),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: UserSearchBar()),
-                  SizedBox(width: 16),
-                  ViewToggle(),
+                  // Header uniformisé
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Utilisateurs',
+                        style: AppTextStyles.h1.copyWith(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          // Bouton Nouvel utilisateur (glassy)
+                          GlassButton(
+                            label: 'Nouvel utilisateur',
+                            icon: Icons.person_add_alt_1,
+                            variant: GlassButtonVariant.primary,
+                            onPressed: () {
+                              Get.dialog(UserCreateDialog(),
+                                  barrierDismissible: false);
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          // Bouton refresh (glassy)
+                          GlassButton(
+                            icon: Icons.refresh,
+                            label: '',
+                            variant: GlassButtonVariant.secondary,
+                            size: GlassButtonSize.small,
+                            onPressed: controller
+                                .fetchUsers, // À adapter selon ton controller
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 24),
+                  // Barre de recherche et toggle view
+                  Row(
+                    children: [
+                      Expanded(child: UserSearchBar()),
+                      SizedBox(width: 16),
+                      ViewToggle(),
+                    ],
+                  ),
                 ],
               ),
             ),

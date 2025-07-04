@@ -42,7 +42,7 @@ class CategoryController extends GetxController {
         backgroundColor: AppColors.error,
         colorText: AppColors.textLight,
         snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
+        duration: Duration(seconds: 3),
       );
     } finally {
       isLoading.value = false;
@@ -88,7 +88,7 @@ class CategoryController extends GetxController {
         borderRadius: 16,
         margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 3),
+        duration: Duration(seconds: 2),
         boxShadows: [
           BoxShadow(
             color: Colors.black26,
@@ -110,7 +110,7 @@ class CategoryController extends GetxController {
         backgroundColor: AppColors.error,
         colorText: AppColors.textLight,
         snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
+        duration: Duration(seconds: 3),
       );
     } finally {
       isLoading.value = false;
@@ -173,7 +173,7 @@ class CategoryController extends GetxController {
         borderRadius: 16,
         margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 3),
+        duration: Duration(seconds: 2),
         boxShadows: [
           BoxShadow(
             color: Colors.black26,
@@ -195,7 +195,7 @@ class CategoryController extends GetxController {
         backgroundColor: AppColors.error,
         colorText: AppColors.textLight,
         snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
+        duration: Duration(seconds: 3),
       );
     } finally {
       isLoading.value = false;
@@ -217,7 +217,7 @@ class CategoryController extends GetxController {
         backgroundColor: AppColors.success,
         colorText: AppColors.textLight,
         snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 3),
+        duration: Duration(seconds: 2),
       );
     } catch (e) {
       print('[CategoryController] Error deleting category: $e');
@@ -230,7 +230,7 @@ class CategoryController extends GetxController {
         backgroundColor: AppColors.error,
         colorText: AppColors.textLight,
         snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 4),
+        duration: Duration(seconds: 3),
       );
     } finally {
       isLoading.value = false;

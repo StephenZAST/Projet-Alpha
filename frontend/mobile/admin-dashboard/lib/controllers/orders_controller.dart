@@ -1,6 +1,7 @@
 import 'package:admin/models/article.dart';
 import 'package:admin/models/flash_order_update.dart' as flash_update;
 import 'package:admin/models/user.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/order.dart';
 import '../models/enums.dart';
@@ -353,20 +354,10 @@ class OrdersController extends GetxController {
       final result = await OrderService.createOrder(orderData);
       Get.back();
       fetchOrders();
-      Get.snackbar(
-        'Succès',
-        'Commande créée avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
-      );
+      _showSuccessSnackbar('Commande créée avec succès');
     } catch (e) {
       print('[OrdersController] Error creating order: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer la commande',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-      );
+      _showErrorSnackbar('Impossible de créer la commande');
     } finally {
       isLoading.value = false;
     }
@@ -379,20 +370,10 @@ class OrdersController extends GetxController {
       await OrderService.updateOrder(orderId, orderData);
       Get.back();
       fetchOrders();
-      Get.snackbar(
-        'Succès',
-        'Commande mise à jour avec succès',
-        backgroundColor: AppColors.success,
-        colorText: AppColors.textLight,
-      );
+      _showSuccessSnackbar('Commande mise à jour avec succès');
     } catch (e) {
       print('[OrdersController] Error updating order: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour la commande',
-        backgroundColor: AppColors.error,
-        colorText: AppColors.textLight,
-      );
+      _showErrorSnackbar('Impossible de mettre à jour la commande');
     } finally {
       isLoading.value = false;
     }
@@ -643,5 +624,75 @@ class OrdersController extends GetxController {
     } finally {
       isLoadingClients.value = false;
     }
+  }
+
+  void _showSuccessSnackbar(String message) {
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Icon(Icons.check_circle, color: AppColors.success, size: 24),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: AppColors.textLight,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: AppColors.success.withOpacity(0.85),
+      borderRadius: 16,
+      margin: AppSpacing.marginMD,
+      snackPosition: SnackPosition.TOP,
+      duration: Duration(seconds: 2),
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+      isDismissible: true,
+      overlayBlur: 2.5,
+    );
+  }
+
+  void _showErrorSnackbar(String message) {
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Icon(Icons.error_outline, color: AppColors.error, size: 24),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: AppColors.textLight,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: AppColors.error.withOpacity(0.90),
+      borderRadius: 16,
+      margin: AppSpacing.marginMD,
+      snackPosition: SnackPosition.TOP,
+      duration: Duration(seconds: 3),
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+      isDismissible: true,
+      overlayBlur: 2.5,
+    );
   }
 }

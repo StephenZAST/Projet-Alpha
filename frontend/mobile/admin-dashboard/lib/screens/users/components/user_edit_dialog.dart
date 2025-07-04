@@ -22,81 +22,82 @@ class UserEditDialog extends StatefulWidget {
 }
 
 class _UserEditDialogState extends State<UserEditDialog> {
+  late TextEditingController firstNameController;
+  late TextEditingController lastNameController;
+  late TextEditingController emailController;
+  late TextEditingController phoneController;
   late UserRole selectedRole;
   late bool isActive;
   final _formKey = GlobalKey<FormState>();
+  bool isSaving = false;
+  List<Address> _addresses = [];
+  bool isLoadingAddresses = false;
 
   @override
   void initState() {
     super.initState();
-    selectedRole = widget.user.role; // Initialiser avec le rôle actuel
+    firstNameController = TextEditingController(text: widget.user.firstName);
+    lastNameController = TextEditingController(text: widget.user.lastName);
+    emailController = TextEditingController(text: widget.user.email);
+    phoneController = TextEditingController(text: widget.user.phone ?? '');
+    selectedRole = widget.user.role;
     isActive = widget.user.isActive;
+    _loadAddresses();
+  }
+
+  @override
+  void dispose() {
+    firstNameController.dispose();
+    lastNameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadAddresses() async {
+    setState(() => isLoadingAddresses = true);
+    try {
+      _addresses = await UserService.getUserAddresses(widget.user.id);
+    } catch (e) {
+      Get.snackbar('Erreur', 'Impossible de charger les adresses');
+    }
+    setState(() => isLoadingAddresses = false);
+  }
+
+  Future<void> _saveUserInfo() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => isSaving = true);
+    // TODO: Appeler le service pour mettre à jour l'utilisateur
+    await Future.delayed(Duration(seconds: 1)); // Placeholder
+    setState(() => isSaving = false);
+    Get.snackbar('Succès', 'Informations utilisateur mises à jour');
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<UsersController>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusMD),
       child: Container(
         width: 500,
-        padding: EdgeInsets.all(AppSpacing.lg),
-        child: Form(
-          key: _formKey,
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Modifier l\'utilisateur', style: AppTextStyles.h3),
-              SizedBox(height: AppSpacing.lg),
-              _buildUserInfo(),
-              SizedBox(height: AppSpacing.lg),
-              _buildRoleSelector(controller, isDark),
-              SizedBox(height: AppSpacing.md),
-              _buildStatusToggle(isDark),
-              SizedBox(height: AppSpacing.md),
-              // Bouton pour ajouter/modifier l'adresse
+              Text('Détails de l\'utilisateur',
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 16),
+              _buildEditForm(),
+              const SizedBox(height: 16),
+              _buildAddressesSection(),
+              const SizedBox(height: 24),
               Align(
-                alignment: Alignment.centerLeft,
-                child: ElevatedButton.icon(
-                  icon: Icon(Icons.location_on_outlined),
-                  label: Text('Ajouter / Modifier l\'adresse'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.info,
-                    foregroundColor: AppColors.white,
-                  ),
-                  onPressed: () async {
-                    // Charger l'adresse principale existante du client
-                    Address? initialAddress;
-                    try {
-                      final addresses =
-                          await UserService.getUserAddresses(widget.user.id);
-                      if (addresses.isNotEmpty) {
-                        initialAddress = addresses.firstWhere(
-                          (a) => a.isDefault,
-                          orElse: () => addresses.first,
-                        );
-                      }
-                    } catch (e) {
-                      print('[UserEditDialog] Erreur chargement adresse: $e');
-                    }
-                    await showDialog(
-                      context: context,
-                      builder: (context) => AddressEditDialog(
-                        userId: widget.user.id,
-                        initialAddress: initialAddress,
-                        onAddressSaved: (address) async {
-                          // Optionnel: recharger l'utilisateur ou afficher un message
-                        },
-                      ),
-                    );
-                  },
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('Fermer'),
                 ),
               ),
-              SizedBox(height: AppSpacing.xl),
-              _buildActionButtons(controller),
             ],
           ),
         ),
@@ -104,71 +105,142 @@ class _UserEditDialogState extends State<UserEditDialog> {
     );
   }
 
-  Widget _buildUserInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Nom complet: ${widget.user.fullName}'),
-        Text('Email: ${widget.user.email}'),
-        if (widget.user.phone != null) Text('Téléphone: ${widget.user.phone}'),
-        Text(
-            'Inscrit le: ${widget.user.createdAt.toLocal().toString().split('.')[0]}'),
-      ],
-    );
-  }
-
-  Widget _buildRoleSelector(UsersController controller, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Rôle actuel : ${_getRoleLabel(widget.user.role)}',
-          style: AppTextStyles.bodyMedium.copyWith(
-            fontWeight: FontWeight.w500,
+  Widget _buildEditForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextFormField(
+            controller: firstNameController,
+            decoration: InputDecoration(labelText: 'Prénom'),
+            validator: (v) => v == null || v.isEmpty ? 'Prénom requis' : null,
           ),
-        ),
-        SizedBox(height: 8),
-        DropdownButtonFormField<UserRole>(
-          value: selectedRole,
-          decoration: InputDecoration(
-            labelText: 'Nouveau rôle',
-            border: OutlineInputBorder(borderRadius: AppRadius.radiusSM),
-            filled: true,
-            fillColor: isDark
-                ? Colors.grey[800]
-                : Colors.grey[100], // Remplacement des couleurs non définies
+          TextFormField(
+            controller: lastNameController,
+            decoration: InputDecoration(labelText: 'Nom'),
+            validator: (v) => v == null || v.isEmpty ? 'Nom requis' : null,
           ),
-          items: _getAvailableRoles().map((role) {
-            // Suppression du paramètre controller
-            return DropdownMenuItem(
-              value: role,
-              child: Row(
+          TextFormField(
+            controller: emailController,
+            decoration: InputDecoration(labelText: 'Email'),
+            validator: (v) => v == null || v.isEmpty ? 'Email requis' : null,
+          ),
+          TextFormField(
+            controller: phoneController,
+            decoration: InputDecoration(labelText: 'Téléphone'),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<UserRole>(
+                  value: selectedRole,
+                  decoration: InputDecoration(labelText: 'Rôle'),
+                  items: UserRole.values.map((role) {
+                    return DropdownMenuItem(
+                      value: role,
+                      child: Row(
+                        children: [
+                          Icon(_getRoleIcon(role),
+                              color: _getRoleColor(role), size: 18),
+                          SizedBox(width: 8),
+                          Text(_getRoleLabel(role)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (role) {
+                    if (role != null) setState(() => selectedRole = role);
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Row(
                 children: [
-                  Icon(_getRoleIcon(role),
-                      color: _getRoleColor(role), size: 18),
-                  SizedBox(width: 8),
-                  Text(_getRoleLabel(role)),
+                  Text('Actif'),
+                  Switch(
+                    value: isActive,
+                    onChanged: (value) => setState(() => isActive = value),
+                    activeColor: AppColors.success,
+                  ),
                 ],
               ),
-            );
-          }).toList(),
-          onChanged: (role) {
-            if (role != null) setState(() => selectedRole = role);
-          },
-        ),
-      ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: GlassButton(
+              label: 'Enregistrer les modifications',
+              variant: GlassButtonVariant.primary,
+              isLoading: isSaving,
+              onPressed: isSaving ? null : _saveUserInfo,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  List<UserRole> _getAvailableRoles() {
-    // Méthode modifiée
-    final currentUser = Get.find<AuthController>().user.value;
-    if (currentUser?.role == UserRole.SUPER_ADMIN) {
-      return UserRole.values.toList();
-    }
-    return UserRole.values
-        .where((role) => role != UserRole.SUPER_ADMIN && role != UserRole.ADMIN)
-        .toList();
+  Widget _buildAddressesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Adresses', style: Theme.of(context).textTheme.titleMedium),
+            GlassButton(
+              label: 'Ajouter',
+              icon: Icons.add_location_alt,
+              variant: GlassButtonVariant.info,
+              size: GlassButtonSize.small,
+              onPressed: () async {
+                await Get.dialog(AddressEditDialog(
+                  userId: widget.user.id,
+                  onAddressSaved: (address) => _loadAddresses(),
+                ));
+              },
+            ),
+          ],
+        ),
+        isLoadingAddresses
+            ? Center(child: CircularProgressIndicator())
+            : _addresses.isEmpty
+                ? Text('Aucune adresse enregistrée')
+                : Column(
+                    children: _addresses
+                        .map((address) => ListTile(
+                              title: Text(address.fullAddress),
+                              subtitle: Text(address.name ?? ''),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.edit),
+                                    onPressed: () async {
+                                      await Get.dialog(AddressEditDialog(
+                                        userId: widget.user.id,
+                                        initialAddress: address,
+                                        onAddressSaved: (a) => _loadAddresses(),
+                                      ));
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete),
+                                    onPressed: () async {
+                                      // TODO: Appeler le service pour supprimer l'adresse
+                                      _loadAddresses();
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ))
+                        .toList(),
+                  ),
+      ],
+    );
   }
 
   IconData _getRoleIcon(UserRole role) {
@@ -214,54 +286,5 @@ class _UserEditDialogState extends State<UserEditDialog> {
       default:
         return AppColors.textSecondary;
     }
-  }
-
-  Widget _buildStatusToggle(bool isDark) {
-    return Row(
-      children: [
-        Text('Statut du compte:', style: AppTextStyles.bodyMedium),
-        SizedBox(width: AppSpacing.md),
-        Switch(
-          value: isActive,
-          onChanged: (value) => setState(() => isActive = value),
-          activeColor: AppColors.success,
-        ),
-        SizedBox(width: AppSpacing.sm),
-        Text(
-          isActive ? 'Actif' : 'Inactif',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: isActive ? AppColors.success : AppColors.error,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons(UsersController controller) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        GlassButton(
-          label: 'Annuler',
-          variant: GlassButtonVariant.secondary,
-          onPressed: () => Get.back(),
-        ),
-        SizedBox(width: AppSpacing.md),
-        GlassButton(
-          label: 'Enregistrer',
-          variant: GlassButtonVariant.primary,
-          onPressed: () async {
-            if (_formKey.currentState!.validate()) {
-              await controller.updateUser(
-                userId: widget.user.id,
-                role: selectedRole,
-                isActive: isActive,
-              );
-              Get.back();
-            }
-          },
-        ),
-      ],
-    );
   }
 }

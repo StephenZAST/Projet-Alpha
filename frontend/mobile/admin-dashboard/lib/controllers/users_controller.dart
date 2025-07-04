@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
@@ -484,24 +485,76 @@ class UsersController extends GetxController {
 
   // Notifications
   void _showSuccessSnackbar(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      backgroundColor: AppColors.success,
-      colorText: AppColors.textLight,
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.white, size: 22),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: AppColors.success.withOpacity(0.85),
+      borderRadius: 16,
+      margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       snackPosition: SnackPosition.TOP,
-      duration: Duration(seconds: 3),
+      duration: Duration(seconds: 2),
+      animationDuration: Duration(milliseconds: 350),
+      isDismissible: true,
+      overlayBlur: 2.5,
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
     );
   }
 
   void _showErrorSnackbar(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      backgroundColor: AppColors.error,
-      colorText: AppColors.textLight,
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.white, size: 22),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: AppColors.error.withOpacity(0.90),
+      borderRadius: 16,
+      margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       snackPosition: SnackPosition.TOP,
-      duration: Duration(seconds: 4),
+      duration: Duration(seconds: 3),
+      animationDuration: Duration(milliseconds: 350),
+      isDismissible: true,
+      overlayBlur: 2.5,
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
     );
   }
 
