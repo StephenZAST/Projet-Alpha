@@ -9,6 +9,7 @@ class PaginationControls extends StatelessWidget {
   final Function() onPrevious;
   final Function() onNext;
   final Function(int?) onItemsPerPageChanged;
+  final ValueChanged<int?>? onPageChanged;
 
   const PaginationControls({
     Key? key,
@@ -20,10 +21,13 @@ class PaginationControls extends StatelessWidget {
     required this.onPrevious,
     required this.onNext,
     required this.onItemsPerPageChanged,
+    this.onPageChanged,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    int start = ((currentPage - 1) * itemsPerPage) + 1;
+    int end = (start + itemCount - 1).clamp(1, totalItems);
     return Container(
       padding: EdgeInsets.all(16),
       child: Row(
@@ -48,6 +52,8 @@ class PaginationControls extends StatelessWidget {
               Text('éléments'),
             ],
           ),
+          // Affichage de la plage d'éléments
+          Text('$start–$end sur $totalItems'),
           // Navigation entre les pages
           if (totalPages > 1)
             Row(
@@ -56,10 +62,22 @@ class PaginationControls extends StatelessWidget {
                   icon: Icon(Icons.chevron_left),
                   onPressed: currentPage > 1 ? onPrevious : null,
                 ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: Text('Page $currentPage sur $totalPages'),
-                ),
+                if (totalPages > 5 && onPageChanged != null)
+                  DropdownButton<int>(
+                    value: currentPage,
+                    items: List.generate(totalPages, (i) => i + 1)
+                        .map((page) => DropdownMenuItem(
+                              value: page,
+                              child: Text('Page $page'),
+                            ))
+                        .toList(),
+                    onChanged: onPageChanged,
+                  )
+                else
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Text('Page $currentPage sur $totalPages'),
+                  ),
                 IconButton(
                   icon: Icon(Icons.chevron_right),
                   onPressed: currentPage < totalPages ? onNext : null,

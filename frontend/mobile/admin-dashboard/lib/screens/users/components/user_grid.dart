@@ -20,17 +20,45 @@ class UserGrid extends StatelessWidget {
         return Center(child: CircularProgressIndicator());
       }
 
+      // Afficher le message d'absence ET la pagination si besoin
       if (controller.users.isEmpty) {
-        return Center(
-          child: Text(
-            'Aucun utilisateur trouvé',
-            style: AppTextStyles.bodyLarge.copyWith(
-              color: Theme.of(context).textTheme.bodyLarge?.color,
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Aucun utilisateur trouvé',
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
-          ),
+            if (controller.totalPages.value > 1)
+              Padding(
+                padding: EdgeInsets.all(AppSpacing.md),
+                child: PaginationControls(
+                  currentPage: (controller.currentPage.value < 1)
+                      ? 1
+                      : controller.currentPage.value,
+                  totalPages: (controller.totalPages.value < 1)
+                      ? 1
+                      : controller.totalPages.value,
+                  itemsPerPage:
+                      [10, 25, 50, 100].contains(controller.itemsPerPage.value)
+                          ? controller.itemsPerPage.value
+                          : 10,
+                  totalItems: controller.totalUsers.value < 0
+                      ? 0
+                      : controller.totalUsers.value,
+                  onNextPage: controller.nextPage,
+                  onPreviousPage: controller.previousPage,
+                  onItemsPerPageChanged: (value) =>
+                      controller.setItemsPerPage(value),
+                ),
+              ),
+          ],
         );
       }
 
+      // Affiche la grille des utilisateurs reçus du backend, sans aucun filtrage local
       return Column(
         children: [
           Expanded(
@@ -59,35 +87,31 @@ class UserGrid extends StatelessWidget {
               },
             ),
           ),
-          _buildPagination(context),
+          if (controller.totalPages.value > 1)
+            Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: PaginationControls(
+                currentPage: (controller.currentPage.value < 1)
+                    ? 1
+                    : controller.currentPage.value,
+                totalPages: (controller.totalPages.value < 1)
+                    ? 1
+                    : controller.totalPages.value,
+                itemsPerPage:
+                    [10, 25, 50, 100].contains(controller.itemsPerPage.value)
+                        ? controller.itemsPerPage.value
+                        : 10,
+                totalItems: controller.totalUsers.value < 0
+                    ? 0
+                    : controller.totalUsers.value,
+                onNextPage: controller.nextPage,
+                onPreviousPage: controller.previousPage,
+                onItemsPerPageChanged: (value) =>
+                    controller.setItemsPerPage(value),
+              ),
+            ),
         ],
       );
     });
-  }
-
-  Widget _buildPagination(BuildContext context) {
-    final controller = Get.find<UsersController>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        border: Border(
-          top: BorderSide(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          ),
-        ),
-      ),
-      child: PaginationControls(
-        currentPage: controller.currentPage.value,
-        totalPages: controller.totalPages.value,
-        itemsPerPage: controller.itemsPerPage.value,
-        totalItems: controller.totalUsers.value,
-        onNextPage: controller.nextPage,
-        onPreviousPage: controller.previousPage,
-        onItemsPerPageChanged: (value) => controller.setItemsPerPage(value),
-      ),
-    );
   }
 }

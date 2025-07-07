@@ -84,27 +84,32 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     try {
-      print('[User] Parsing user data: ${json['id']}');
-
+      print('[User] Parsing user data: \\${json['id']}');
       String safeString(dynamic value, String defaultValue) {
         if (value == null) return defaultValue;
         return value.toString();
       }
 
+      // Mapping robuste du rôle, insensible à la casse
+      UserRole parseRole(dynamic value) {
+        if (value == null) return UserRole.CLIENT;
+        final str = value.toString().toUpperCase();
+        for (final role in UserRole.values) {
+          if (role.toString().split('.').last.toUpperCase() == str) {
+            return role;
+          }
+        }
+        print('[User] Unknown role value: \\${value}, fallback CLIENT');
+        return UserRole.CLIENT;
+      }
+
       return User(
         id: safeString(json['id'], ''),
         email: safeString(json['email'], ''),
-        firstName: safeString(
-            json['firstName'] ?? json['first_name'], ''), // Ajout de first_name
-        lastName: safeString(
-            json['lastName'] ?? json['last_name'], ''), // Ajout de last_name
+        firstName: safeString(json['firstName'] ?? json['first_name'], ''),
+        lastName: safeString(json['lastName'] ?? json['last_name'], ''),
         phone: json['phone']?.toString(),
-        role: UserRole.values.firstWhere(
-          (e) =>
-              e.toString().split('.').last ==
-              (json['role'] ?? 'CLIENT').toString().toUpperCase(),
-          orElse: () => UserRole.CLIENT,
-        ),
+        role: parseRole(json['role']),
         referralCode: json['referralCode']?.toString(),
         createdAt: json['createdAt'] != null
             ? DateTime.parse(json['createdAt'].toString())
@@ -120,8 +125,8 @@ class User {
         affiliateCode: json['affiliateCode']?.toString(),
       );
     } catch (e) {
-      print('[User] Error parsing User JSON: $e');
-      print('[User] Problematic JSON: $json');
+      print('[User] Error parsing User JSON: \\${e}');
+      print('[User] Problematic JSON: \\${json}');
       rethrow;
     }
   }

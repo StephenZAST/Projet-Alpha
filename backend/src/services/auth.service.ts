@@ -561,57 +561,43 @@ export class AuthService {
     filters?: UserFilters;
   } = {}): Promise<UserListResponse> {
     try {
-      const offset = (page - 1) * limit;
-      let query = prisma.users.findMany({
-        skip: offset,
-        take: limit,
-        orderBy: {
-          created_at: 'desc'
-        }
-      });
+      // Limiter le nombre d'éléments par page à 100 max
+      const safeLimit = Math.min(Math.max(limit, 1), 100);
+      // Compter le nombre total d'utilisateurs correspondant aux filtres
+      const where: any = {};
 
       if (filters.role) {
-        query = prisma.users.findMany({
-          where: {
-            role: filters.role.toUpperCase() as user_role
-          }
-        });
+        where.role = filters.role.toUpperCase();
       }
-
       if (filters.searchQuery) {
-        query = prisma.users.findMany({
-          where: {
-            OR: [
-              { first_name: { contains: filters.searchQuery, mode: 'insensitive' } },
-              { last_name: { contains: filters.searchQuery, mode: 'insensitive' } },
-              { email: { contains: filters.searchQuery, mode: 'insensitive' } }
-            ]
-          }
-        });
+        where.OR = [
+          { first_name: { contains: filters.searchQuery, mode: 'insensitive' } },
+          { last_name: { contains: filters.searchQuery, mode: 'insensitive' } },
+          { email: { contains: filters.searchQuery, mode: 'insensitive' } },
+        ];
       }
-
       if (filters.startDate) {
-        query = prisma.users.findMany({
-          where: {
-            created_at: {
-              gte: filters.startDate
-            }
-          }
-        });
+        where.created_at = { ...(where.created_at || {}), gte: filters.startDate };
       }
-
       if (filters.endDate) {
-        query = prisma.users.findMany({
-          where: {
-            created_at: {
-              lte: filters.endDate
-            }
-          }
-        });
+        where.created_at = { ...(where.created_at || {}), lte: filters.endDate };
       }
 
-      const data = await query;
-      const count = await prisma.users.count();
+      const count = await prisma.users.count({ where });
+      const totalPages = Math.max(1, Math.ceil(count / safeLimit));
+      // Corriger la page demandée si hors plage
+      const safePage = Math.max(1, Math.min(page, totalPages));
+      const skip = (safePage - 1) * safeLimit;
+
+      const data = count === 0 ? [] : await prisma.users.findMany({
+        where,
+        skip,
+        take: safeLimit,
+        orderBy: { created_at: 'desc' },
+      });
+
+      // Logging détaillé
+      console.log('[getAllUsers] page:', safePage, 'limit:', safeLimit, 'total:', count, 'totalPages:', totalPages, 'filters:', filters);
 
       return {
         data: data.map(user => ({
@@ -627,9 +613,9 @@ export class AuthService {
         })) as User[],
         pagination: {
           total: count,
-          page,
-          limit,
-          totalPages: Math.ceil(count / limit)
+          page: safePage,
+          limit: safeLimit,
+          totalPages: totalPages
         }
       };
     } catch (error) {
@@ -908,6 +894,97 @@ export class AuthService {
       referralCode: updated.referral_code || undefined,
       createdAt: updated.created_at || new Date(),
       updatedAt: updated.updated_at || new Date()
+    };
+  }
+
+  /**
+   * Recherche paginée et filtrée d'utilisateurs par rôle, recherche, etc.
+   * @param params { role, query, filter, page, limit }
+   * @returns { data, pagination }
+   */
+  static async searchUsers({
+    role = 'all',
+    query = '',
+    filter = 'all',
+    page = 1,
+    limit = 10
+  }: {
+    role?: string;
+    query?: string;
+    filter?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    // Sécuriser les paramètres
+    const safeLimit = Math.max(1, Math.min(limit, 100));
+    let safePage = Math.max(1, page);
+    const where: any = {};
+
+    // Filtrage par rôle (CLIENT, AFFILIATE, ADMIN, LIVREUR, ALL)
+    if (role && role.toUpperCase() !== 'ALL') {
+      where.role = role.toUpperCase();
+    }
+
+    // Recherche par champ
+    const search = query.trim();
+    if (search) {
+      switch (filter) {
+        case 'name':
+          where.OR = [
+            { first_name: { contains: search, mode: 'insensitive' } },
+            { last_name: { contains: search, mode: 'insensitive' } }
+          ];
+          break;
+        case 'email':
+          where.email = { contains: search, mode: 'insensitive' };
+          break;
+        case 'phone':
+          where.phone = { contains: search, mode: 'insensitive' };
+          break;
+        case 'all':
+        default:
+          where.OR = [
+            { first_name: { contains: search, mode: 'insensitive' } },
+            { last_name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            { phone: { contains: search, mode: 'insensitive' } }
+          ];
+          break;
+      }
+    }
+
+    // Compter le total filtré
+    const total = await prisma.users.count({ where });
+    const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+    safePage = Math.min(safePage, totalPages);
+    const skip = (safePage - 1) * safeLimit;
+
+    // Récupérer la page filtrée
+    const data = total === 0 ? [] : await prisma.users.findMany({
+      where,
+      skip,
+      take: safeLimit,
+      orderBy: { created_at: 'desc' },
+    });
+
+    return {
+      data: data.map(user => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone,
+        role: user.role,
+        password: user.password,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at
+      })),
+      pagination: {
+        total,
+        currentPage: safePage,
+        limit: safeLimit,
+        totalPages
+      }
     };
   }
 }

@@ -203,41 +203,39 @@ class UserService {
     }
   }
 
-  /// Recherche des utilisateurs avec filtres
-  static Future<ApiResponse<List<User>>> searchUsers({
+  /// Recherche des utilisateurs avec filtres avancés (multi-rôles, pagination)
+  static Future<PaginatedResponse<User>> searchUsers({
     required String query,
     required String filter,
+    String role = 'all',
+    int page = 1,
+    int limit = 10,
   }) async {
     try {
       final response = await _api.get('/api/users/search', queryParameters: {
         'query': query,
         'filter': filter,
+        'role': role,
+        'page': page.toString(),
+        'limit': limit.toString(),
       });
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
         final List<User> users = (response.data['data'] as List)
             .map((json) => User.fromJson(json))
             .toList();
-
-        return ApiResponse(
-          success: true,
-          data: users,
-          message: 'Recherche effectuée avec succès',
+        final pagination = response.data['pagination'] ?? {};
+        return PaginatedResponse<User>(
+          items: users,
+          total: pagination['total'] ?? users.length,
+          currentPage: pagination['currentPage'] ?? page,
+          totalPages: pagination['totalPages'] ?? 1,
         );
       }
-
-      return ApiResponse(
-        success: false,
-        data: [],
-        message: response.data['message'] ?? 'Erreur lors de la recherche',
-      );
+      throw response.data['message'] ?? 'Erreur lors de la recherche';
     } catch (e) {
       print('[UserService] Search error: $e');
-      return ApiResponse(
-        success: false,
-        data: [],
-        message: 'Erreur lors de la recherche des utilisateurs',
-      );
+      rethrow;
     }
   }
 

@@ -127,11 +127,7 @@ class OrdersController extends GetxController {
           .toList();
     } catch (e) {
       print('Error fetching orders: $e');
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les commandes',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _showErrorSnackbar('Impossible de charger les commandes');
     } finally {
       isLoading.value = false;
     }
@@ -548,12 +544,12 @@ class OrdersController extends GetxController {
         filter: filter,
       );
 
-      if (response.success) {
-        filteredClients.value = response.data;
+      if (response.items.isNotEmpty) {
+        filteredClients.value = response.items;
       } else {
         Get.snackbar(
           'Erreur',
-          'Impossible de rechercher les clients',
+          'Aucun client trouvé',
           backgroundColor: AppColors.error,
           colorText: AppColors.textLight,
         );

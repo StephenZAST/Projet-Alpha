@@ -59,7 +59,11 @@ class _UserEditDialogState extends State<UserEditDialog> {
     try {
       _addresses = await UserService.getUserAddresses(widget.user.id);
     } catch (e) {
-      Get.snackbar('Erreur', 'Impossible de charger les adresses');
+      _showGlassySnackbar(
+          message: 'Impossible de charger les adresses',
+          icon: Icons.error_outline,
+          color: AppColors.error,
+          duration: Duration(seconds: 3));
     }
     setState(() => isLoadingAddresses = false);
   }
@@ -67,10 +71,57 @@ class _UserEditDialogState extends State<UserEditDialog> {
   Future<void> _saveUserInfo() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => isSaving = true);
-    // TODO: Appeler le service pour mettre à jour l'utilisateur
-    await Future.delayed(Duration(seconds: 1)); // Placeholder
+    final controller = Get.find<UsersController>();
+    await controller.updateUser(
+      userId: widget.user.id,
+      email: emailController.text.trim(),
+      firstName: firstNameController.text.trim(),
+      lastName: lastNameController.text.trim(),
+      phone: phoneController.text.trim(),
+      role: selectedRole,
+      isActive: isActive,
+    );
     setState(() => isSaving = false);
-    Get.snackbar('Succès', 'Informations utilisateur mises à jour');
+    // Le dialog sera fermé et la notification affichée par le controller
+  }
+
+  void _showGlassySnackbar(
+      {required String message,
+      IconData icon = Icons.check_circle,
+      Color? color,
+      Duration? duration}) {
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Icon(icon, color: Colors.white, size: 22),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: (color ?? AppColors.success).withOpacity(0.85),
+      borderRadius: 16,
+      margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      snackPosition: SnackPosition.TOP,
+      duration: duration ?? Duration(seconds: 2),
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+      isDismissible: true,
+      overlayBlur: 2.5,
+    );
   }
 
   @override

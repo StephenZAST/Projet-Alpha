@@ -162,13 +162,50 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
     } else if (query.isNotEmpty) {
       controller.searchClients(query, selectedFilter);
     } else {
-      Get.snackbar(
-        'Attention',
-        'Veuillez entrer un terme de recherche',
-        backgroundColor: AppColors.warning.withOpacity(0.1),
-        colorText: AppColors.warning,
-      );
+      _showGlassySnackbar(
+          message: 'Veuillez entrer un terme de recherche',
+          icon: Icons.warning,
+          color: AppColors.warning);
     }
+  }
+
+  void _showGlassySnackbar(
+      {required String message,
+      IconData icon = Icons.warning,
+      Color? color,
+      Duration? duration}) {
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Icon(icon, color: Colors.white, size: 22),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: (color ?? AppColors.warning).withOpacity(0.85),
+      borderRadius: 16,
+      margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      snackPosition: SnackPosition.TOP,
+      duration: duration ?? Duration(seconds: 2),
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+      isDismissible: true,
+      overlayBlur: 2.5,
+    );
   }
 
   Widget _buildClientList() {

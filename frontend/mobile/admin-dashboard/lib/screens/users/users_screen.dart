@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/users_controller.dart';
 import 'components/user_stats_grid.dart';
-import 'components/user_search_bar.dart';
+import 'components/user_advanced_search_bar.dart';
 import 'components/view_toggle.dart';
 import 'components/active_filter_indicator.dart';
 import 'components/adaptive_user_view.dart';
@@ -71,7 +71,7 @@ class UsersScreen extends StatelessWidget {
                   // Barre de recherche et toggle view
                   Row(
                     children: [
-                      Expanded(child: UserSearchBar()),
+                      Expanded(child: UserAdvancedSearchBar()),
                       SizedBox(width: 16),
                       ViewToggle(),
                     ],

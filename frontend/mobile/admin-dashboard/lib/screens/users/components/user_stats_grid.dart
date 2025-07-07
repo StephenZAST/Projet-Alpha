@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/users_controller.dart';
+import '../../../types/user_search_filter.dart';
 
 class UserStatsGrid extends StatelessWidget {
   const UserStatsGrid({Key? key}) : super(key: key);
@@ -20,50 +21,67 @@ class UserStatsGrid extends StatelessWidget {
           children: [
             _buildStatCard(
               title: 'Clients',
-              count: controller.totalClientCount.value,
-              currentCount: controller.selectedRole.value == UserRole.CLIENT
-                  ? controller.users.length
-                  : controller.clientCount.value,
+              count: controller.selectedRoleString.value == 'CLIENT'
+                  ? controller.totalUsers.value // total filtré (toutes pages)
+                  : controller.totalClientCount.value, // total global
+              currentCount: controller.selectedRoleString.value == 'CLIENT'
+                  ? controller.users.length // affichés sur la page courante
+                  : controller.clientCount.value, // total global
               icon: Icons.people_outline,
               color: AppColors.primary,
-              isSelected: controller.selectedRole.value == UserRole.CLIENT,
-              onTap: () => controller.filterByRole(
-                  controller.selectedRole.value == UserRole.CLIENT
-                      ? null
-                      : UserRole.CLIENT),
+              isSelected: controller.selectedRoleString.value == 'CLIENT',
+              onTap: () {
+                final isSelected =
+                    controller.selectedRoleString.value == 'CLIENT';
+                controller.filterByRole(isSelected ? null : UserRole.CLIENT);
+              },
             ),
             _buildStatCard(
               title: 'Affiliés',
-              count: controller.totalAffiliateCount.value,
-              currentCount: controller.affiliateCount.value,
+              count: controller.selectedRoleString.value == 'AFFILIATE'
+                  ? controller.totalUsers.value
+                  : controller.totalAffiliateCount.value,
+              currentCount: controller.selectedRoleString.value == 'AFFILIATE'
+                  ? controller.users.length
+                  : controller.affiliateCount.value,
               icon: Icons.handshake_outlined,
               color: AppColors.accent,
-              isSelected: controller.selectedRole.value == UserRole.AFFILIATE,
-              onTap: () => controller.filterByRole(
-                  controller.selectedRole.value == UserRole.AFFILIATE
-                      ? null
-                      : UserRole.AFFILIATE),
+              isSelected: controller.selectedRoleString.value == 'AFFILIATE',
+              onTap: () {
+                final isSelected =
+                    controller.selectedRoleString.value == 'AFFILIATE';
+                controller.filterByRole(isSelected ? null : UserRole.AFFILIATE);
+              },
             ),
             _buildStatCard(
               title: 'Administrateurs',
-              count: controller.totalAdminCount.value,
-              currentCount: controller.adminCount.value,
+              count: controller.selectedRoleString.value == 'ADMIN'
+                  ? controller.totalUsers.value
+                  : controller.totalAdminCount.value,
+              currentCount: controller.selectedRoleString.value == 'ADMIN'
+                  ? controller.users.length
+                  : controller.adminCount.value,
               icon: Icons.admin_panel_settings_outlined,
               color: AppColors.error,
-              isSelected: controller.selectedRole.value == UserRole.ADMIN,
-              onTap: () => controller.filterByRole(
-                  controller.selectedRole.value == UserRole.ADMIN
-                      ? null
-                      : UserRole.ADMIN),
+              isSelected: controller.selectedRoleString.value == 'ADMIN',
+              onTap: () {
+                final isSelected =
+                    controller.selectedRoleString.value == 'ADMIN';
+                controller.filterByRole(isSelected ? null : UserRole.ADMIN);
+              },
             ),
             _buildStatCard(
               title: 'Total',
-              count: controller.totalUsersCount.value,
+              count: controller.selectedRoleString.value == 'all'
+                  ? controller.totalUsers.value
+                  : controller.totalUsersCount.value,
               currentCount: controller.users.length,
               icon: Icons.groups_outlined,
               color: AppColors.success,
-              isSelected: controller.selectedRole.value == null,
-              onTap: () => controller.filterByRole(null),
+              isSelected: controller.selectedRoleString.value == 'all',
+              onTap: () {
+                controller.filterByRole(null);
+              },
             ),
           ],
         ));

@@ -7,6 +7,7 @@ import '../../../../../models/user.dart';
 import '../../../../../models/address.dart';
 import '../../../../../services/address_service.dart';
 import '../../../users/components/address_edit_dialog.dart';
+import '../../../../constants.dart';
 
 class ClientDetailsDialog extends StatefulWidget {
   final User client;
@@ -49,7 +50,11 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
     try {
       _addresses = await UserService.getUserAddresses(widget.client.id);
     } catch (e) {
-      Get.snackbar('Erreur', 'Impossible de charger les adresses');
+      _showGlassySnackbar(
+          message: 'Impossible de charger les adresses',
+          icon: Icons.error_outline,
+          color: AppColors.error,
+          duration: Duration(seconds: 3));
     }
     setState(() => isLoadingAddresses = false);
   }
@@ -64,7 +69,11 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
         tempPassword: tempPassword,
       ));
     } catch (e) {
-      Get.snackbar('Erreur', e.toString());
+      _showGlassySnackbar(
+          message: e.toString(),
+          icon: Icons.error_outline,
+          color: AppColors.error,
+          duration: Duration(seconds: 3));
     }
   }
 
@@ -138,7 +147,10 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
     // TODO: Appeler le service pour mettre à jour le client
     await Future.delayed(Duration(seconds: 1)); // Placeholder
     setState(() => isSaving = false);
-    Get.snackbar('Succès', 'Informations client mises à jour');
+    _showGlassySnackbar(
+        message: 'Informations client mises à jour',
+        icon: Icons.check_circle,
+        color: AppColors.success);
   }
 
   Widget _buildAddressesSection() {
@@ -215,6 +227,45 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
       ],
     );
   }
+
+  void _showGlassySnackbar(
+      {required String message,
+      IconData icon = Icons.check_circle,
+      Color? color,
+      Duration? duration}) {
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Icon(icon, color: Colors.white, size: 22),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: (color ?? AppColors.success).withOpacity(0.85),
+      borderRadius: 16,
+      margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      snackPosition: SnackPosition.TOP,
+      duration: duration ?? Duration(seconds: 2),
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+      isDismissible: true,
+      overlayBlur: 2.5,
+    );
+  }
 }
 
 class _PasswordResetResultDialog extends StatelessWidget {
@@ -224,6 +275,45 @@ class _PasswordResetResultDialog extends StatelessWidget {
   const _PasswordResetResultDialog(
       {Key? key, required this.user, required this.tempPassword})
       : super(key: key);
+
+  void _showGlassySnackbar(
+      {required String message,
+      IconData icon = Icons.check_circle,
+      Color? color,
+      Duration? duration}) {
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Icon(icon, color: Colors.white, size: 22),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: (color ?? AppColors.success).withOpacity(0.85),
+      borderRadius: 16,
+      margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      snackPosition: SnackPosition.TOP,
+      duration: duration ?? Duration(seconds: 2),
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+      isDismissible: true,
+      overlayBlur: 2.5,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -259,8 +349,11 @@ Email : ${user['email']}
 Téléphone : ${user['phone'] ?? '-'}
 Nouveau mot de passe : $tempPassword''';
                   Clipboard.setData(ClipboardData(text: info));
-                  Get.snackbar('Copié',
-                      'Infos client et mot de passe copiés dans le presse-papier');
+                  _showGlassySnackbar(
+                      message:
+                          'Infos client et mot de passe copiés dans le presse-papier',
+                      icon: Icons.copy,
+                      color: AppColors.info);
                 },
               ),
             ),

@@ -22,18 +22,38 @@ class UsersPagination extends StatelessWidget {
           ),
         ),
       ),
-      child: Obx(() => PaginationControls(
-            currentPage: controller.currentPage.value,
-            totalPages: controller.totalPages.value,
-            onPrevious: controller.previousPage,
-            onNext: controller.nextPage,
-            itemCount: controller.users.length,
-            totalItems: controller.totalUsers.value,
-            itemsPerPage: controller.itemsPerPage.value,
-            onItemsPerPageChanged: (value) {
-              if (value != null) controller.setItemsPerPage(value);
-            },
-          )),
+      child: Obx(() {
+        // Sécurisation des valeurs pour éviter les ArgumentError
+        final currentPage =
+            controller.currentPage.value < 1 ? 1 : controller.currentPage.value;
+        final totalPages =
+            controller.totalPages.value < 1 ? 1 : controller.totalPages.value;
+        final itemsPerPage = controller.itemsPerPage.value < 1
+            ? 10
+            : controller.itemsPerPage.value;
+        final totalItems =
+            controller.totalUsers.value < 0 ? 0 : controller.totalUsers.value;
+        final itemCount =
+            controller.users.length < 0 ? 0 : controller.users.length;
+
+        return PaginationControls(
+          currentPage: currentPage,
+          totalPages: totalPages,
+          onPrevious: controller.previousPage,
+          onNext: controller.nextPage,
+          itemCount: itemCount,
+          totalItems: totalItems,
+          itemsPerPage: itemsPerPage,
+          onItemsPerPageChanged: (value) {
+            if (value != null) controller.setItemsPerPage(value);
+          },
+          onPageChanged: (page) {
+            if (page != null && page != currentPage) {
+              controller.goToPage(page);
+            }
+          },
+        );
+      }),
     );
   }
 }

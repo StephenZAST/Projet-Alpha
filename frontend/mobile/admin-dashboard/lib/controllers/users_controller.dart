@@ -11,6 +11,7 @@ import '../services/user_service.dart';
 import '../constants.dart';
 import './auth_controller.dart';
 import 'package:admin/screens/users/components/delete_user_dialog.dart';
+import '../types/user_search_filter.dart';
 
 enum ViewMode { list, grid }
 
@@ -61,6 +62,8 @@ class UsersController extends GetxController {
   final viewMode = Rx<ViewMode>(ViewMode.list);
   final sortField = Rx<SortField>(SortField.createdAt);
   final sortOrder = Rx<SortOrder>(SortOrder.desc);
+  final selectedRoleString = 'all'.obs; // Nouvelle propriété ajoutée
+  final selectedFilter = UserSearchFilter.all.obs;
 
   @override
   void onInit() {
@@ -124,7 +127,7 @@ class UsersController extends GetxController {
 
   Future<void> fetchUsers({bool resetPage = false}) async {
     try {
-      print('[UsersController] Starting fetchUsers...'); // Ajout du log
+      print('[UsersController] Starting fetchUsers...');
       isLoading.value = true;
 
       if (resetPage) {
@@ -132,8 +135,12 @@ class UsersController extends GetxController {
       }
 
       // Correction du paramètre role pour le filtrage
-      final roleParam = selectedRole.value?.toString().split('.').last;
-      print('[UsersController] Fetching with role: $roleParam'); // Ajout du log
+      final roleParam = (selectedRoleString.value == null ||
+              selectedRoleString.value == '' ||
+              selectedRoleString.value == 'all')
+          ? null
+          : selectedRoleString.value.toUpperCase();
+      print('[UsersController] Fetching with role: $roleParam');
 
       final result = await UserService.getUsers(
         page: currentPage.value,
@@ -142,18 +149,37 @@ class UsersController extends GetxController {
         searchQuery: searchQuery.value,
       );
 
-      // Stocker tous les utilisateurs
+      // Sécurisation : si la réponse n'est pas conforme, on affiche une liste vide
+      if (result.items == null || result.items is! List) {
+        allUsers.value = [];
+        users.value = [];
+        totalPages.value = 1;
+        totalUsers.value = 0;
+        hasError.value = true;
+        errorMessage.value =
+            'Erreur de chargement des utilisateurs (réponse invalide)';
+        return;
+      }
+
+      // Stocker tous les utilisateurs paginés
       allUsers.value = result.items;
-      // Appliquer le filtre actuel
-      _applyFilters();
+      users.value = result.items;
+      // Ne pas appliquer de filtre local ici !
 
-      totalPages.value = result.totalPages;
-      totalUsers.value = result.total;
+      totalPages.value = result.totalPages ?? 1;
+      totalUsers.value = result.total ?? 0;
+      hasError.value = false;
+      errorMessage.value = '';
 
-      print(
-          '[UsersController] Fetched ${allUsers.length} users'); // Ajout du log
+      print('[UsersController] Fetched ${allUsers.length} users');
     } catch (e) {
       print('[UsersController] Error fetching users: $e');
+      allUsers.value = [];
+      users.value = [];
+      totalPages.value = 1;
+      totalUsers.value = 0;
+      hasError.value = true;
+      errorMessage.value = 'Erreur de chargement des utilisateurs';
       _showErrorSnackbar(
           'Erreur de chargement', 'Impossible de charger les utilisateurs');
     } finally {
@@ -177,6 +203,10 @@ class UsersController extends GetxController {
 
   Future<void> updateUser({
     required String userId,
+    String? email,
+    String? firstName,
+    String? lastName,
+    String? phone,
     UserRole? role,
     bool? isActive,
   }) async {
@@ -184,7 +214,11 @@ class UsersController extends GetxController {
       print('[UsersController] Updating user $userId');
       isLoading.value = true;
 
-      final updates = {
+      final updates = <String, dynamic>{
+        if (email != null) 'email': email,
+        if (firstName != null) 'firstName': firstName,
+        if (lastName != null) 'lastName': lastName,
+        if (phone != null) 'phone': phone,
         if (role != null) 'role': role.toString().split('.').last,
         if (isActive != null) 'isActive': isActive,
       };
@@ -234,66 +268,112 @@ class UsersController extends GetxController {
     }
   }
 
-  // Méthodes de pagination
+  /// Méthode centrale harmonisée pour la recherche, le filtrage et la pagination
+  Future<void> fetchUsersOrSearch({bool resetPage = false}) async {
+    try {
+      isLoading.value = true;
+      if (resetPage) currentPage.value = 1;
+
+      // Détection d'un filtre ou d'une recherche avancée
+      final hasSearch = searchQuery.value.trim().isNotEmpty;
+      final hasRole = selectedRoleString.value != 'ALL';
+      final hasAdvanced = selectedStatus.value.isNotEmpty ||
+          phoneFilter.value.isNotEmpty ||
+          startDate.value != null ||
+          endDate.value != null;
+
+      print(
+          '[UsersController] fetchUsersOrSearch: rôle envoyé = \'${selectedRoleString.value}\'');
+
+      dynamic result;
+      if (hasSearch || hasRole || hasAdvanced) {
+        // Recherche avancée (toujours via /api/users/search)
+        final filter = selectedFilter.value; // Utilise le filtre sélectionné
+        result = await UserService.searchUsers(
+          query: searchQuery.value,
+          filter: filter.toString().split('.').last,
+          role: selectedRoleString.value,
+          page: currentPage.value,
+          limit: itemsPerPage.value,
+        );
+      } else {
+        // Liste simple (aucun filtre)
+        result = await UserService.getUsers(
+          page: currentPage.value,
+          limit: itemsPerPage.value,
+        );
+      }
+
+      // Toujours mettre à jour la pagination, même si la liste est vide
+      users.value = result.items;
+      totalPages.value = result.totalPages ?? 1;
+      totalUsers.value = result.total ?? 0;
+      currentPage.value = result.currentPage ?? 1;
+
+      // Si la page courante est hors limites (ex: page 2 mais totalPages=1), revenir à la page 1
+      if (currentPage.value > totalPages.value && totalPages.value > 0) {
+        currentPage.value = 1;
+        // Relancer la requête sur la page 1
+        await fetchUsersOrSearch(resetPage: true);
+        return;
+      }
+
+      hasError.value = false;
+      errorMessage.value = '';
+    } catch (e) {
+      users.value = [];
+      totalPages.value = 1;
+      totalUsers.value = 0;
+      hasError.value = true;
+      errorMessage.value = 'Erreur de chargement des utilisateurs';
+      _showErrorSnackbar('Erreur', 'Impossible de charger les utilisateurs');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Rediriger toutes les actions vers la méthode centrale
   void nextPage() {
     if (currentPage.value < totalPages.value) {
       currentPage.value++;
-      fetchUsers();
+      fetchUsersOrSearch();
     }
   }
 
   void previousPage() {
     if (currentPage.value > 1) {
       currentPage.value--;
-      fetchUsers();
+      fetchUsersOrSearch();
     }
   }
 
   void setItemsPerPage(int value) {
     if (value != itemsPerPage.value) {
       itemsPerPage.value = value;
-      currentPage.value = 1; // Reset to first page when changing items per page
-      fetchUsers();
+      currentPage.value = 1;
+      fetchUsersOrSearch(resetPage: true);
     }
   }
 
   void goToPage(int page) {
     if (page >= 1 && page <= totalPages.value) {
       currentPage.value = page;
-      fetchUsers();
+      fetchUsersOrSearch();
     }
   }
 
-  // Méthodes de filtrage
   Future<void> filterByRole(UserRole? role) async {
     try {
       isLoading.value = true;
-      print('[UsersController] Filtering by role: ${role?.toString()}');
-
       selectedRole.value = role;
+      // Toujours stocker en MAJUSCULES pour l'API
+      selectedRoleString.value =
+          role != null ? role.toString().split('.').last.toUpperCase() : 'ALL';
+      print(
+          '[UsersController] Filtrage par rôle: \'${selectedRoleString.value}\'');
       currentPage.value = 1;
-
-      // Utiliser la méthode toApiString() pour le rôle
-      final roleString = role?.toApiString();
-      print('[UsersController] Formatted role for API: $roleString');
-
-      final result = await UserService.getUsers(
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-        role: roleString,
-        searchQuery: searchQuery.value,
-      );
-
-      users.value = result.items;
-      totalPages.value = result.totalPages;
-      totalUsers.value = result.total;
-
-      // Appliquer le filtre localement
-      _applyFilters();
-
-      print('[UsersController] Filter applied successfully');
+      await fetchUsersOrSearch(resetPage: true);
     } catch (e) {
-      print('[UsersController] Error filtering by role: $e');
       _showErrorSnackbar('Erreur', 'Impossible de filtrer les utilisateurs');
     } finally {
       isLoading.value = false;
@@ -302,24 +382,23 @@ class UsersController extends GetxController {
 
   void searchUsers(String query) {
     searchQuery.value = query;
-    fetchUsers(resetPage: true);
+    fetchUsersOrSearch(resetPage: true);
   }
 
-  // Méthodes pour les filtres avancés
   void setStatus(String? status) {
     selectedStatus.value = status ?? '';
-    fetchUsers(resetPage: true);
+    fetchUsersOrSearch(resetPage: true);
   }
 
   void setDateRange(DateTime? start, DateTime? end) {
     startDate.value = start;
     endDate.value = end;
-    fetchUsers(resetPage: true);
+    fetchUsersOrSearch(resetPage: true);
   }
 
   void setPhoneFilter(String phone) {
     phoneFilter.value = phone;
-    fetchUsers(resetPage: true);
+    fetchUsersOrSearch(resetPage: true);
   }
 
   void resetFilters() {
@@ -328,41 +407,12 @@ class UsersController extends GetxController {
     endDate.value = null;
     phoneFilter.value = '';
     selectedRole.value = null;
+    selectedRoleString.value = 'all';
     searchQuery.value = '';
-    fetchUsers(resetPage: true);
+    fetchUsersOrSearch(resetPage: true);
   }
 
   // Méthodes utilitaires
-  void _updateLocalCounts() {
-    clientCount.value = users.where((u) => u.role == UserRole.CLIENT).length;
-    adminCount.value = users
-        .where(
-            (u) => u.role == UserRole.ADMIN || u.role == UserRole.SUPER_ADMIN)
-        .length;
-    affiliateCount.value =
-        users.where((u) => u.role == UserRole.AFFILIATE).length;
-  }
-
-  void _applyFilters() {
-    if (selectedRole.value == null) {
-      // Si aucun filtre n'est sélectionné, afficher tous les utilisateurs
-      filteredUsers.value = allUsers;
-      users.value = allUsers;
-    } else {
-      // Filtrer les utilisateurs selon le rôle sélectionné
-      filteredUsers.value = allUsers.where((user) {
-        return user.role == selectedRole.value;
-      }).toList();
-      users.value = filteredUsers;
-    }
-
-    // Mettre à jour les compteurs locaux
-    _updateLocalCounts();
-
-    print('[UsersController] Filtered users: ${filteredUsers.length}');
-    print('[UsersController] Selected role: ${selectedRole.value}');
-  }
-
   void sortUsers(SortField field) {
     if (sortField.value == field) {
       sortOrder.value =
@@ -441,7 +491,7 @@ class UsersController extends GetxController {
       if (GetPlatform.isWeb) {
         final blob = html.Blob([csvContent], 'text/csv');
         final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
+        html.AnchorElement(href: url)
           ..setAttribute(
               'download', 'users_${DateTime.now().toIso8601String()}.csv')
           ..click();
@@ -593,6 +643,34 @@ class UsersController extends GetxController {
         await fetchUsers();
         _showSuccessSnackbar('Succès', 'Utilisateur supprimé avec succès');
       });
+    }
+  }
+
+  // Recherche avancée multi-critères (API, pagination, multi-rôles)
+  Future<void> advancedUserSearch(
+      String query, UserSearchFilter filter, String role,
+      {int page = 1, int limit = 10}) async {
+    isLoading.value = true;
+    try {
+      final filterString = filter.toString().split('.').last;
+      final result = await UserService.searchUsers(
+        query: query,
+        filter: filterString,
+        role: role,
+        page: page,
+        limit: limit,
+      );
+      filteredUsers.value = result.items;
+      totalPages.value = result.totalPages;
+      totalUsers.value = result.total;
+      currentPage.value = result.currentPage;
+    } catch (e) {
+      print('[UsersController] advancedUserSearch error: $e');
+      filteredUsers.value = [];
+      totalPages.value = 1;
+      totalUsers.value = 0;
+    } finally {
+      isLoading.value = false;
     }
   }
 
