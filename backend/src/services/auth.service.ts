@@ -299,12 +299,30 @@ export class AuthService {
     });
   }
 
-  static async updateUser(targetUserId: string, email: string, firstName: string, lastName: string, phone?: string, role?: string): Promise<User> {
-    const user = await prisma.users.findUnique({
-      where: { id: targetUserId }
-    });
-
-    if (!user) throw new Error('User not found');
+  static async updateUser(targetUserId: string, email: string, firstName: string, lastName: string, phone?: string, role?: string, currentUser?: { id: string, role: string }): Promise<User> {
+    // Vérification des permissions pour la modification du rôle
+    if (role) {
+      if (!currentUser) {
+        throw new Error('Permission denied: utilisateur non authentifié');
+      }
+      // Récupérer l'utilisateur cible
+      const targetUser = await prisma.users.findUnique({ where: { id: targetUserId } });
+      if (!targetUser) throw new Error('User not found');
+      const targetRole = targetUser.role;
+      const currentRole = currentUser.role;
+      // Seul un SUPER_ADMIN peut modifier le rôle d'un SUPER_ADMIN
+      if (targetRole === 'SUPER_ADMIN' && currentRole !== 'SUPER_ADMIN') {
+        throw new Error('Permission denied: seul un SUPER_ADMIN peut modifier un SUPER_ADMIN');
+      }
+      // Un ADMIN ne peut pas modifier le rôle d'un autre ADMIN
+      if (targetRole === 'ADMIN' && currentRole !== 'SUPER_ADMIN') {
+        throw new Error('Permission denied: seul un SUPER_ADMIN peut modifier un ADMIN');
+      }
+      // Seuls ADMIN et SUPER_ADMIN peuvent modifier les rôles
+      if (!['ADMIN', 'SUPER_ADMIN'].includes(currentRole)) {
+        throw new Error('Permission denied: seuls les ADMIN ou SUPER_ADMIN peuvent modifier les rôles');
+      }
+    }
 
     const data = await prisma.users.update({
       where: { id: targetUserId },

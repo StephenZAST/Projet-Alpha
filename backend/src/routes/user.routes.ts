@@ -100,7 +100,16 @@ router.put('/:id',
   asyncHandler(async (req, res) => {
     const userId = req.params.id;
     const { email, firstName, lastName, phone, role } = req.body;
-    const updatedUser = await AuthService.updateUser(userId, email, firstName, lastName, phone, role);
+    // Passe le rôle de l'utilisateur authentifié à la méthode updateUser
+    const updatedUser = await AuthService.updateUser(
+      userId,
+      email,
+      firstName,
+      lastName,
+      phone,
+      role,
+      { id: req.user!.id, role: req.user!.role }
+    );
     res.json({ success: true, data: updatedUser });
   })
 );

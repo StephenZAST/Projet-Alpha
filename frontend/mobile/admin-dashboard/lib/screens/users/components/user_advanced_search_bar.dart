@@ -59,30 +59,72 @@ class _UserAdvancedSearchBarState extends State<UserAdvancedSearchBar> {
     return Row(
       children: [
         Expanded(
-          child: TextField(
-            controller: searchController,
-            decoration: InputDecoration(
-              hintText: 'Rechercher un utilisateur...',
-              prefixIcon: Icon(Icons.search),
-              suffixIcon: IconButton(
-                icon: Icon(Icons.filter_list),
-                tooltip: 'Filtrer la recherche',
-                onPressed: _showFilterOptions,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Rechercher un utilisateur...',
+                        prefixIcon: Icon(Icons.search),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.filter_list),
+                          tooltip: 'Filtrer la recherche',
+                          onPressed: _showFilterOptions,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onChanged: (value) {},
+                      onSubmitted: (value) => _onSearchChanged(),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  GlassButton(
+                    label: 'Rechercher',
+                    icon: Icons.search,
+                    variant: GlassButtonVariant.primary,
+                    onPressed: _onSearchChanged,
+                  ),
+                ],
               ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onChanged: (value) {},
-            onSubmitted: (value) => _onSearchChanged(),
+              SizedBox(height: 4),
+              Obx(() {
+                // Affiche le filtre actif de façon claire
+                final filter = controller.selectedFilter.value;
+                String label;
+                switch (filter) {
+                  case UserSearchFilter.name:
+                    label = 'Recherche par : Nom';
+                    break;
+                  case UserSearchFilter.email:
+                    label = 'Recherche par : Email';
+                    break;
+                  case UserSearchFilter.phone:
+                    label = 'Recherche par : Téléphone';
+                    break;
+                  case UserSearchFilter.all:
+                  default:
+                    label = 'Recherche sur tous les champs';
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(left: 4.0, top: 2.0),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.blueGrey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }),
+            ],
           ),
-        ),
-        SizedBox(width: 8),
-        GlassButton(
-          label: 'Rechercher',
-          icon: Icons.search,
-          variant: GlassButtonVariant.primary,
-          onPressed: _onSearchChanged,
         ),
       ],
     );

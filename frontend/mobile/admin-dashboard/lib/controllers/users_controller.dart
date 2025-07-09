@@ -8,6 +8,7 @@ import 'package:universal_html/html.dart' as html; // Ajout de cet import
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
+import '../services/address_service.dart'; // Import manquant ajouté
 import '../constants.dart';
 import './auth_controller.dart';
 import 'package:admin/screens/users/components/delete_user_dialog.dart';
@@ -121,7 +122,7 @@ class UsersController extends GetxController {
           '[UsersController] Updated stats - Total: ${totalUsersCount.value}'); // Debug
     } catch (e) {
       print('[UsersController] Error loading global stats: $e');
-      _showErrorSnackbar('Erreur', 'Impossible de charger les statistiques');
+      showErrorSnackbar('Erreur', 'Impossible de charger les statistiques');
     }
   }
 
@@ -180,7 +181,7 @@ class UsersController extends GetxController {
       totalUsers.value = 0;
       hasError.value = true;
       errorMessage.value = 'Erreur de chargement des utilisateurs';
-      _showErrorSnackbar(
+      showErrorSnackbar(
           'Erreur de chargement', 'Impossible de charger les utilisateurs');
     } finally {
       isLoading.value = false;
@@ -197,7 +198,7 @@ class UsersController extends GetxController {
       adminCount.value = stats['adminCount'] ?? 0;
     } catch (e) {
       print('[UsersController] Error fetching stats: $e');
-      _showErrorSnackbar('Erreur', 'Impossible de charger les statistiques');
+      showErrorSnackbar('Erreur', 'Impossible de charger les statistiques');
     }
   }
 
@@ -230,8 +231,7 @@ class UsersController extends GetxController {
       _showSuccessSnackbar('Succès', 'Utilisateur mis à jour avec succès');
     } catch (e) {
       print('[UsersController] Error updating user: $e');
-      _showErrorSnackbar(
-          'Erreur', 'Impossible de mettre à jour l\'utilisateur');
+      showErrorSnackbar('Erreur', 'Impossible de mettre à jour l\'utilisateur');
     } finally {
       isLoading.value = false;
     }
@@ -245,7 +245,7 @@ class UsersController extends GetxController {
       await fetchUsers();
       _showSuccessSnackbar('Succès', 'Statut mis à jour avec succès');
     } catch (e) {
-      _showErrorSnackbar('Erreur', 'Impossible de mettre à jour le statut');
+      showErrorSnackbar('Erreur', 'Impossible de mettre à jour le statut');
     } finally {
       isLoading.value = false;
     }
@@ -262,7 +262,7 @@ class UsersController extends GetxController {
       );
       return response.items;
     } catch (e) {
-      _showErrorSnackbar(
+      showErrorSnackbar(
           'Erreur', 'Impossible de récupérer les données pour l\'export');
       return [];
     }
@@ -326,7 +326,7 @@ class UsersController extends GetxController {
       totalUsers.value = 0;
       hasError.value = true;
       errorMessage.value = 'Erreur de chargement des utilisateurs';
-      _showErrorSnackbar('Erreur', 'Impossible de charger les utilisateurs');
+      showErrorSnackbar('Erreur', 'Impossible de charger les utilisateurs');
     } finally {
       isLoading.value = false;
     }
@@ -374,7 +374,7 @@ class UsersController extends GetxController {
       currentPage.value = 1;
       await fetchUsersOrSearch(resetPage: true);
     } catch (e) {
-      _showErrorSnackbar('Erreur', 'Impossible de filtrer les utilisateurs');
+      showErrorSnackbar('Erreur', 'Impossible de filtrer les utilisateurs');
     } finally {
       isLoading.value = false;
     }
@@ -469,7 +469,7 @@ class UsersController extends GetxController {
 
       _showSuccessSnackbar('Succès', 'Données exportées avec succès');
     } catch (e) {
-      _showErrorSnackbar('Erreur', 'Impossible d\'exporter les données');
+      showErrorSnackbar('Erreur', 'Impossible d\'exporter les données');
     } finally {
       isLoading.value = false;
     }
@@ -515,7 +515,7 @@ class UsersController extends GetxController {
           'Export réussi', 'Le fichier CSV a été créé avec succès');
     } catch (e) {
       print('[UsersController] Error exporting to CSV: $e');
-      _showErrorSnackbar(
+      showErrorSnackbar(
           'Erreur d\'export', 'Impossible d\'exporter les données en CSV');
     }
   }
@@ -571,7 +571,7 @@ class UsersController extends GetxController {
     );
   }
 
-  void _showErrorSnackbar(String title, String message) {
+  void showErrorSnackbar(String title, String message) {
     Get.closeAllSnackbars();
     Get.rawSnackbar(
       messageText: Row(
@@ -582,22 +582,18 @@ class UsersController extends GetxController {
             child: Text(
               message,
               style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16),
             ),
           ),
         ],
       ),
-      backgroundColor: AppColors.error.withOpacity(0.90),
+      backgroundColor: AppColors.error.withOpacity(0.85),
       borderRadius: 16,
       margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       snackPosition: SnackPosition.TOP,
-      duration: Duration(seconds: 3),
-      animationDuration: Duration(milliseconds: 350),
-      isDismissible: true,
-      overlayBlur: 2.5,
+      duration: Duration(seconds: 2),
       boxShadows: [
         BoxShadow(
           color: Colors.black26,
@@ -605,6 +601,8 @@ class UsersController extends GetxController {
           offset: Offset(0, 4),
         ),
       ],
+      isDismissible: true,
+      overlayBlur: 2.5,
     );
   }
 
@@ -617,7 +615,7 @@ class UsersController extends GetxController {
     } catch (e) {
       hasError.value = true;
       errorMessage.value = e.toString();
-      _showErrorSnackbar('Erreur', e.toString());
+      showErrorSnackbar('Erreur', e.toString());
     } finally {
       isLoading.value = false;
     }
@@ -671,6 +669,29 @@ class UsersController extends GetxController {
       totalUsers.value = 0;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Récupère les adresses d'un utilisateur cible (client, affilié, etc)
+  Future<List<dynamic>> getUserAddresses(String userId) async {
+    try {
+      final addresses = await UserService.getUserAddresses(userId);
+      // On retourne une liste de Map pour compatibilité avec l'affichage dynamique
+      return addresses.map((a) => a.toJson()).toList();
+    } catch (e) {
+      print('[UsersController] getUserAddresses error: $e');
+      rethrow;
+    }
+  }
+
+  /// Supprime une adresse d'un utilisateur cible
+  Future<void> deleteUserAddress(String addressId, String userId) async {
+    try {
+      // Correction : utilise la méthode deleteAddress sans paramètre supplémentaire
+      await AddressService.deleteAddress(addressId);
+    } catch (e) {
+      print('[UsersController] deleteUserAddress error: $e');
+      rethrow;
     }
   }
 

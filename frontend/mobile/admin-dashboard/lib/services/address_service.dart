@@ -79,7 +79,8 @@ class AddressService {
 
   static Future<void> deleteAddress(String id) async {
     try {
-      final response = await _api.delete('$_basePath/$id');
+      // Correction : utilise le bon endpoint backend pour la suppression
+      final response = await _api.delete('$_basePath/delete/$id');
 
       if (!response.data['success']) {
         throw response.data['message'] ?? 'Failed to delete address';

@@ -4,6 +4,7 @@ import '../../../constants.dart';
 import '../../../controllers/users_controller.dart';
 import '../../../models/user.dart';
 import '../../../widgets/shared/app_button.dart';
+import '../../../controllers/auth_controller.dart';
 
 class UserDetails extends StatelessWidget {
   const UserDetails({Key? key}) : super(key: key);
@@ -85,6 +86,9 @@ class UserDetails extends StatelessWidget {
               isDark,
             ),
           ],
+          SizedBox(height: AppSpacing.lg),
+          // Section Adresses utilisateur
+          _UserAddressesSection(userId: user.id),
           SizedBox(height: AppSpacing.xl),
           // Actions
           Row(
@@ -140,8 +144,30 @@ class UserDetails extends StatelessWidget {
                 variant: user.isActive
                     ? AppButtonVariant.error
                     : AppButtonVariant.success,
-                onPressed: () =>
-                    controller.updateUserStatus(user.id, !user.isActive),
+                onPressed: () {
+                  final authController = Get.find<AuthController>();
+                  final currentUser = authController.user.value;
+                  // Règle : seul un SUPER_ADMIN peut désactiver un SUPER_ADMIN, un ADMIN ne peut pas désactiver un autre ADMIN
+                  if (user.role == UserRole.SUPER_ADMIN &&
+                      currentUser?.role != UserRole.SUPER_ADMIN) {
+                    controller.showErrorSnackbar('Action non autorisée',
+                        'Seul un SUPER ADMIN peut désactiver un SUPER ADMIN.');
+                    return;
+                  }
+                  if (user.role == UserRole.ADMIN &&
+                      currentUser?.role != UserRole.SUPER_ADMIN) {
+                    controller.showErrorSnackbar('Action non autorisée',
+                        'Seul un SUPER ADMIN peut désactiver un ADMIN.');
+                    return;
+                  }
+                  if (!(currentUser?.role == UserRole.ADMIN ||
+                      currentUser?.role == UserRole.SUPER_ADMIN)) {
+                    controller.showErrorSnackbar('Action non autorisée',
+                        'Seuls les ADMIN ou SUPER ADMIN peuvent désactiver un utilisateur.');
+                    return;
+                  }
+                  controller.updateUserStatus(user.id, !user.isActive);
+                },
               ),
               if (user.role != UserRole.SUPER_ADMIN) ...[
                 SizedBox(width: AppSpacing.md),
@@ -150,6 +176,28 @@ class UserDetails extends StatelessWidget {
                   icon: Icons.manage_accounts_outlined,
                   variant: AppButtonVariant.orange,
                   onPressed: () {
+                    final authController = Get.find<AuthController>();
+                    final currentUser = authController.user.value;
+                    // Règle : seul un SUPER_ADMIN peut modifier le rôle d'un SUPER_ADMIN ou d'un ADMIN
+                    if (user.role == UserRole.SUPER_ADMIN &&
+                        currentUser?.role != UserRole.SUPER_ADMIN) {
+                      controller.showErrorSnackbar('Action non autorisée',
+                          'Seul un SUPER ADMIN peut modifier le rôle d\'un SUPER ADMIN.');
+                      return;
+                    }
+                    if (user.role == UserRole.ADMIN &&
+                        currentUser?.role != UserRole.SUPER_ADMIN) {
+                      controller.showErrorSnackbar('Action non autorisée',
+                          'Seul un SUPER ADMIN peut modifier le rôle d\'un ADMIN.');
+                      return;
+                    }
+                    if (!(currentUser?.role == UserRole.ADMIN ||
+                        currentUser?.role == UserRole.SUPER_ADMIN)) {
+                      controller.showErrorSnackbar('Action non autorisée',
+                          'Seuls les ADMIN ou SUPER ADMIN peuvent modifier les rôles.');
+                      return;
+                    }
+                    // Ici, ouvrir la modale de modification de rôle (à implémenter)
                     Get.dialog(
                       AlertDialog(
                         title: Text('Modifier le rôle'),
@@ -213,6 +261,112 @@ class UserDetails extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _UserAddressesSection extends StatefulWidget {
+  final String userId;
+  const _UserAddressesSection({required this.userId});
+
+  @override
+  State<_UserAddressesSection> createState() => _UserAddressesSectionState();
+}
+
+class _UserAddressesSectionState extends State<_UserAddressesSection> {
+  List<dynamic> addresses = [];
+  bool isLoading = false;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAddresses();
+  }
+
+  Future<void> _loadAddresses() async {
+    setState(() {
+      isLoading = true;
+      error = null;
+    });
+    try {
+      final data =
+          await Get.find<UsersController>().getUserAddresses(widget.userId);
+      setState(() {
+        addresses = data;
+      });
+    } catch (e) {
+      setState(() {
+        error = 'Erreur lors du chargement des adresses';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _deleteAddress(String addressId) async {
+    try {
+      await Get.find<UsersController>()
+          .deleteUserAddress(addressId, widget.userId);
+      _loadAddresses();
+      Get.find<UsersController>()
+          .showErrorSnackbar('Succès', 'Adresse supprimée');
+    } catch (e) {
+      Get.find<UsersController>()
+          .showErrorSnackbar('Erreur', 'Suppression impossible');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return _buildSection(
+      'Adresses',
+      [
+        if (isLoading) Center(child: CircularProgressIndicator()),
+        if (error != null)
+          Text(error!, style: TextStyle(color: AppColors.error)),
+        if (!isLoading && addresses.isEmpty && error == null)
+          Text('Aucune adresse enregistrée'),
+        if (!isLoading && addresses.isNotEmpty)
+          ...addresses.map((address) => ListTile(
+                title: Text(address['name'] ?? ''),
+                subtitle: Text(
+                    '${address['street'] ?? ''}, ${address['city'] ?? ''}'),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete, color: AppColors.error),
+                  onPressed: () => _deleteAddress(address['id']),
+                ),
+              )),
+      ],
+      isDark,
+    );
+  }
+
+  Widget _buildSection(String title, List<Widget> children, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: AppTextStyles.bodyBold.copyWith(
+            color: isDark ? AppColors.textLight : AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: AppSpacing.sm),
+        Container(
+          padding: EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.gray800 : AppColors.gray100,
+            borderRadius: AppRadius.radiusMD,
+          ),
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
     );
   }
 }
