@@ -82,7 +82,8 @@ class AddressService {
       // Correction : utilise le bon endpoint backend pour la suppression
       final response = await _api.delete('$_basePath/delete/$id');
 
-      if (!response.data['success']) {
+      // Correction : accepte aussi le cas où le backend ne renvoie pas 'success'
+      if (response.data != null && response.data['success'] == false) {
         throw response.data['message'] ?? 'Failed to delete address';
       }
     } catch (e) {

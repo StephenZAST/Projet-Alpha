@@ -200,9 +200,39 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
                                   IconButton(
                                     icon: Icon(Icons.delete),
                                     onPressed: () async {
-                                      await AddressService.deleteAddress(
-                                          address.id);
-                                      _loadAddresses();
+                                      final confirm = await Get.dialog<bool>(
+                                        AlertDialog(
+                                          title:
+                                              Text('Confirmer la suppression'),
+                                          content: Text(
+                                              'Voulez-vous vraiment supprimer cette adresse ?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Get.back(result: false),
+                                              child: Text('Annuler'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Get.back(result: true),
+                                              child: Text('Supprimer',
+                                                  style: TextStyle(
+                                                      color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        await AddressService.deleteAddress(
+                                            address.id);
+                                        _showGlassySnackbar(
+                                          message:
+                                              'Adresse supprimée avec succès',
+                                          icon: Icons.delete,
+                                          color: AppColors.success,
+                                        );
+                                        _loadAddresses();
+                                      }
                                     },
                                   ),
                                 ],

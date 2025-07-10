@@ -95,9 +95,12 @@ class _AddressEditDialogState extends State<AddressEditDialog> {
     final address = await addressController.createAddress(addressData);
     if (address != null) {
       widget.onAddressSaved(address);
-      Get.back();
-      Get.snackbar('Succès', 'Adresse enregistrée',
-          backgroundColor: AppColors.success, colorText: Colors.white);
+      // Fermer uniquement le dialog courant (sécurité)
+      if (context.mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        Get.back();
+      }
     }
   }
 

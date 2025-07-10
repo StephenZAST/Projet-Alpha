@@ -7,6 +7,7 @@ import '../../../constants.dart';
 import 'address_edit_dialog.dart';
 import '../../../models/address.dart';
 import '../../../services/user_service.dart';
+import '../../../services/address_service.dart';
 import '../../../widgets/shared/glass_button.dart';
 
 class UserEditDialog extends StatefulWidget {
@@ -281,8 +282,47 @@ class _UserEditDialogState extends State<UserEditDialog> {
                                   IconButton(
                                     icon: Icon(Icons.delete),
                                     onPressed: () async {
-                                      // TODO: Appeler le service pour supprimer l'adresse
-                                      _loadAddresses();
+                                      final confirm = await Get.dialog<bool>(
+                                        AlertDialog(
+                                          title:
+                                              Text('Confirmer la suppression'),
+                                          content: Text(
+                                              'Voulez-vous vraiment supprimer cette adresse ?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Get.back(result: false),
+                                              child: Text('Annuler'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Get.back(result: true),
+                                              child: Text('Supprimer',
+                                                  style: TextStyle(
+                                                      color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (confirm == true) {
+                                        try {
+                                          await AddressService.deleteAddress(
+                                              address.id);
+                                          _showGlassySnackbar(
+                                            message:
+                                                'Adresse supprimée avec succès',
+                                            icon: Icons.delete,
+                                            color: AppColors.success,
+                                          );
+                                          _loadAddresses();
+                                        } catch (e) {
+                                          _showGlassySnackbar(
+                                            message: 'Suppression impossible',
+                                            icon: Icons.error_outline,
+                                            color: AppColors.error,
+                                          );
+                                        }
+                                      }
                                     },
                                   ),
                                 ],

@@ -46,10 +46,41 @@ class AddressController extends GetxController {
     try {
       final newAddress = await AddressService.createAddress(addressData);
       addresses.add(newAddress);
+      _showSuccessSnackbar('Adresse ajoutée avec succès');
       return newAddress;
     } catch (e) {
       print('[AddressController] Error creating address: $e');
+      _showErrorSnackbar('Erreur lors de l\'ajout de l\'adresse');
       return null;
+    }
+  }
+
+  Future<Address?> updateAddress(
+      String id, Map<String, dynamic> addressData) async {
+    try {
+      final updatedAddress =
+          await AddressService.updateAddress(id, addressData);
+      final index = addresses.indexWhere((a) => a.id == id);
+      if (index != -1) addresses[index] = updatedAddress;
+      _showSuccessSnackbar('Adresse modifiée avec succès');
+      return updatedAddress;
+    } catch (e) {
+      print('[AddressController] Error updating address: $e');
+      _showErrorSnackbar('Erreur lors de la modification de l\'adresse');
+      return null;
+    }
+  }
+
+  Future<bool> deleteAddress(String id) async {
+    try {
+      await AddressService.deleteAddress(id);
+      addresses.removeWhere((a) => a.id == id);
+      _showSuccessSnackbar('Adresse supprimée avec succès');
+      return true;
+    } catch (e) {
+      print('[AddressController] Error deleting address: $e');
+      _showErrorSnackbar('Erreur lors de la suppression de l\'adresse');
+      return false;
     }
   }
 

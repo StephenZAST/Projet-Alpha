@@ -3,8 +3,10 @@ import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/users_controller.dart';
 import '../../../models/user.dart';
+import '../../../models/address.dart';
 import '../../../widgets/shared/app_button.dart';
 import '../../../controllers/auth_controller.dart';
+import 'address_edit_dialog.dart';
 
 class UserDetails extends StatelessWidget {
   const UserDetails({Key? key}) : super(key: key);
@@ -306,25 +308,28 @@ class _UserAddressesSectionState extends State<_UserAddressesSection> {
     }
   }
 
-  Future<void> _deleteAddress(String addressId) async {
-    try {
-      await Get.find<UsersController>()
-          .deleteUserAddress(addressId, widget.userId);
-      _loadAddresses();
-      Get.find<UsersController>()
-          .showErrorSnackbar('Succès', 'Adresse supprimée');
-    } catch (e) {
-      Get.find<UsersController>()
-          .showErrorSnackbar('Erreur', 'Suppression impossible');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return _buildSection(
       'Adresses',
       [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Adresses', style: Theme.of(context).textTheme.titleMedium),
+            IconButton(
+              icon: Icon(Icons.add_location_alt, color: AppColors.info),
+              tooltip: 'Ajouter une adresse',
+              onPressed: () async {
+                await Get.dialog(AddressEditDialog(
+                  userId: widget.userId,
+                  onAddressSaved: (address) => _loadAddresses(),
+                ));
+              },
+            ),
+          ],
+        ),
         if (isLoading) Center(child: CircularProgressIndicator()),
         if (error != null)
           Text(error!, style: TextStyle(color: AppColors.error)),
@@ -335,9 +340,121 @@ class _UserAddressesSectionState extends State<_UserAddressesSection> {
                 title: Text(address['name'] ?? ''),
                 subtitle: Text(
                     '${address['street'] ?? ''}, ${address['city'] ?? ''}'),
-                trailing: IconButton(
-                  icon: Icon(Icons.delete, color: AppColors.error),
-                  onPressed: () => _deleteAddress(address['id']),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.edit, color: AppColors.primary),
+                      tooltip: 'Modifier',
+                      onPressed: () async {
+                        await Get.dialog(AddressEditDialog(
+                          userId: widget.userId,
+                          initialAddress: Address.fromJson(address),
+                          onAddressSaved: (a) => _loadAddresses(),
+                        ));
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.delete, color: AppColors.error),
+                      tooltip: 'Supprimer',
+                      onPressed: () async {
+                        final confirm = await Get.dialog<bool>(
+                          AlertDialog(
+                            title: Text('Confirmer la suppression'),
+                            content: Text(
+                                'Voulez-vous vraiment supprimer cette adresse ?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Get.back(result: false),
+                                child: Text('Annuler'),
+                              ),
+                              TextButton(
+                                onPressed: () => Get.back(result: true),
+                                child: Text('Supprimer',
+                                    style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          try {
+                            await Get.find<UsersController>().deleteUserAddress(
+                                address['id'], widget.userId);
+                            _loadAddresses();
+                            Get.rawSnackbar(
+                              messageText: Row(
+                                children: [
+                                  Icon(Icons.delete,
+                                      color: Colors.white, size: 22),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Adresse supprimée avec succès',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor:
+                                  AppColors.success.withOpacity(0.85),
+                              borderRadius: 16,
+                              margin: EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              snackPosition: SnackPosition.TOP,
+                              duration: Duration(seconds: 2),
+                              boxShadows: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 16,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                              isDismissible: true,
+                              overlayBlur: 2.5,
+                            );
+                          } catch (e) {
+                            Get.rawSnackbar(
+                              messageText: Row(
+                                children: [
+                                  Icon(Icons.error_outline,
+                                      color: Colors.white, size: 22),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Suppression impossible',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor:
+                                  AppColors.error.withOpacity(0.85),
+                              borderRadius: 16,
+                              margin: EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              snackPosition: SnackPosition.TOP,
+                              duration: Duration(seconds: 2),
+                              boxShadows: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 16,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                              isDismissible: true,
+                              overlayBlur: 2.5,
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ],
                 ),
               )),
       ],

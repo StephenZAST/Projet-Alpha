@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../controllers/users_controller.dart';
 import '../../../types/user_search_filter.dart';
 import '../../../widgets/shared/glass_button.dart';
+import '../../../constants.dart';
 
 class UserAdvancedSearchBar extends StatefulWidget {
   const UserAdvancedSearchBar({Key? key}) : super(key: key);
@@ -15,6 +16,48 @@ class _UserAdvancedSearchBarState extends State<UserAdvancedSearchBar> {
   final controller = Get.find<UsersController>();
   final searchController = TextEditingController();
   UserSearchFilter selectedFilter = UserSearchFilter.all;
+  bool get _hasSearch => searchController.text.isNotEmpty;
+
+  Widget _glassyIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    GlassButtonVariant variant = GlassButtonVariant.secondary,
+    String? tooltip,
+  }) {
+    final button = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(100),
+        onTap: onTap,
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: GlassButtonVariant.primary == variant
+                ? AppColors.primary.withOpacity(0.12)
+                : variant == GlassButtonVariant.info
+                    ? AppColors.info.withOpacity(0.10)
+                    : AppColors.gray100.withOpacity(0.90),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Icon(icon, color: _getIconColor(variant), size: 20),
+        ),
+      ),
+    );
+    return tooltip != null ? Tooltip(message: tooltip, child: button) : button;
+  }
+
+  Color _getIconColor(GlassButtonVariant variant) {
+    switch (variant) {
+      case GlassButtonVariant.primary:
+        return AppColors.primary;
+      case GlassButtonVariant.info:
+        return AppColors.info;
+      default:
+        return AppColors.textMuted;
+    }
+  }
 
   void _showFilterOptions() async {
     final filter = await showMenu<UserSearchFilter>(
@@ -54,8 +97,19 @@ class _UserAdvancedSearchBarState extends State<UserAdvancedSearchBar> {
     controller.fetchUsersOrSearch(resetPage: true);
   }
 
+  void _clearSearch() {
+    setState(() {
+      searchController.clear();
+      selectedFilter = UserSearchFilter.all;
+    });
+    controller.searchQuery.value = '';
+    controller.selectedFilter.value = UserSearchFilter.all;
+    controller.fetchUsersOrSearch(resetPage: true);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Expanded(
@@ -65,22 +119,52 @@ class _UserAdvancedSearchBarState extends State<UserAdvancedSearchBar> {
               Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Rechercher un utilisateur...',
-                        prefixIcon: Icon(Icons.search),
-                        suffixIcon: IconButton(
-                          icon: Icon(Icons.filter_list),
-                          tooltip: 'Filtrer la recherche',
-                          onPressed: _showFilterOptions,
+                    child: Stack(
+                      alignment: Alignment.centerRight,
+                      children: [
+                        TextField(
+                          controller: searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Rechercher un utilisateur...',
+                            prefixIcon: _glassyIconButton(
+                              icon: Icons.search_rounded,
+                              onTap: _onSearchChanged,
+                              variant: GlassButtonVariant.primary,
+                              tooltip: 'Rechercher',
+                            ),
+                            suffixIcon: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _glassyIconButton(
+                                  icon: Icons.filter_alt_outlined,
+                                  onTap: _showFilterOptions,
+                                  variant: GlassButtonVariant.info,
+                                  tooltip: 'Filtrer la recherche',
+                                ),
+                                if (_hasSearch)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 4.0),
+                                    child: _glassyIconButton(
+                                      icon: Icons.close_rounded,
+                                      onTap: _clearSearch,
+                                      variant: GlassButtonVariant
+                                          .info, // Utilise le même fond glassy bleu que le filtre
+                                      tooltip: 'Effacer la recherche',
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onChanged: (value) {
+                            setState(
+                                () {}); // Pour afficher/masquer l'icône close
+                          },
+                          onSubmitted: (value) => _onSearchChanged(),
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onChanged: (value) {},
-                      onSubmitted: (value) => _onSearchChanged(),
+                      ],
                     ),
                   ),
                   SizedBox(width: 8),

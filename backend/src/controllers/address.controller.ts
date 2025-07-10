@@ -79,45 +79,36 @@ export class AddressController {
     try {
       const addressId = req.params.addressId;
       const userId = req.user?.id;
+      const userRole = req.user?.role ?? '';
 
       if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
       const existingAddress = await AddressService.getAddressById(addressId);
-      
       if (!existingAddress) {
         return res.status(404).json({ error: 'Adresse non trouvée' });
       }
 
-      // Utiliser user_id au lieu de userId
-      if (existingAddress.user_id !== userId) {
-        return res.status(403).json({ 
-          error: 'Vous ne pouvez modifier que vos propres adresses' 
-        });
+      // Autoriser la modification si propriétaire OU admin/superadmin
+      if (existingAddress.user_id !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
+        return res.status(403).json({ error: 'Non autorisé à modifier cette adresse' });
       }
 
-      // Procéder à la mise à jour si l'adresse appartient à l'utilisateur
-      const { 
+      // Utiliser le user_id de l'adresse pour la mise à jour (admin peut modifier pour autrui)
+      const {
         name,
-        street, 
-        city, 
-        postal_code, 
-        gps_latitude, 
-        gps_longitude, 
-        is_default 
+        street,
+        city,
+        postal_code,
+        gps_latitude,
+        gps_longitude,
+        is_default
       } = req.body;
-
-      console.log('Updating address:', {
-        addressId,
-        userId,
-        existingAddress,
-        requestBody: req.body
-      });
 
       const updatedAddress = await AddressService.updateAddress(
         addressId,
-        userId,
+        existingAddress.user_id,
         name,
         street,
         city,
@@ -138,10 +129,19 @@ export class AddressController {
     try {
       const addressId = req.params.addressId;
       const userId = req.user?.id;
+      const userRole = req.user?.role ?? '';
 
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-      await AddressService.deleteAddress(addressId, userId);
+      const address = await AddressService.getAddressById(addressId);
+      if (!address) return res.status(404).json({ error: 'Adresse non trouvée' });
+
+      // Autoriser la suppression si propriétaire OU admin/superadmin
+      if (address.user_id !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
+        return res.status(403).json({ error: 'Non autorisé à supprimer cette adresse' });
+      }
+
+      await AddressService.deleteAddress(addressId, address.user_id);
       res.json({ message: 'Address deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
