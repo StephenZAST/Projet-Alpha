@@ -22,7 +22,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
-    controller.fetchOrders();
+    controller.loadOrdersPage(status: controller.filterStatus.value);
   }
 
   void _updateStatus(String orderId, OrderStatus newStatus) {
@@ -43,23 +43,92 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Widget _buildPaginationControls() {
-    return Padding(
-      padding: EdgeInsets.all(defaultPadding),
-      child: PaginationControls(
-        currentPage: controller.currentPage.value,
-        totalPages: controller.totalPages.value,
-        onPrevious: controller.previousPage,
-        onNext: controller.nextPage,
-        itemCount: controller.orders.length,
-        totalItems: controller.totalOrders.value,
-        itemsPerPage: controller.itemsPerPage.value,
-        onItemsPerPageChanged: (value) {
-          if (value != null) {
-            controller.setItemsPerPage(value);
-          }
-        },
-      ),
-    );
+    // Guards et auto-fix pour la pagination
+    final currentPage =
+        controller.currentPage.value < 1 ? 1 : controller.currentPage.value;
+    final totalPages =
+        controller.totalPages.value < 1 ? 1 : controller.totalPages.value;
+    final itemsPerPage =
+        controller.itemsPerPage.value < 1 ? 10 : controller.itemsPerPage.value;
+    final itemCount =
+        controller.orders.length < 0 ? 0 : controller.orders.length;
+    final totalItems =
+        controller.totalOrders.value < 0 ? 0 : controller.totalOrders.value;
+
+    // Si la pagination est incohérente (page courante > totalPages), auto-fix ou affiche une erreur
+    if (currentPage > totalPages) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.currentPage.value = totalPages;
+        controller.loadOrdersPage(
+          page: totalPages,
+          status: controller.filterStatus.value,
+        );
+      });
+      return Padding(
+        padding: EdgeInsets.all(defaultPadding),
+        child: Column(
+          children: [
+            Text(
+              'Pagination incohérente : page $currentPage > $totalPages. Correction automatique...',
+              style:
+                  TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            AppButton(
+              label: 'Réinitialiser',
+              icon: Icons.refresh,
+              onPressed: () => controller.loadOrdersPage(
+                  page: 1, status: controller.filterStatus.value),
+              variant: AppButtonVariant.primary,
+            ),
+          ],
+        ),
+      );
+    }
+    try {
+      return Padding(
+        padding: EdgeInsets.all(defaultPadding),
+        child: PaginationControls(
+          currentPage: currentPage,
+          totalPages: totalPages,
+          itemCount: itemCount,
+          totalItems: totalItems,
+          itemsPerPage: itemsPerPage,
+          onPrevious: () => controller.loadOrdersPage(
+            page: currentPage > 1 ? currentPage - 1 : 1,
+            status: controller.filterStatus.value,
+          ),
+          onNext: () => controller.loadOrdersPage(
+            page: currentPage < totalPages ? currentPage + 1 : totalPages,
+            status: controller.filterStatus.value,
+          ),
+          onItemsPerPageChanged: (value) {
+            if (value != null && value > 0) {
+              controller.setItemsPerPage(value);
+              controller.loadOrdersPage(
+                page: 1,
+                status: controller.filterStatus.value,
+                limit: value,
+              );
+            }
+          },
+          onPageChanged: (page) {
+            if (page != null && page != currentPage) {
+              controller.currentPage.value = page;
+              controller.loadOrdersPage(
+                  page: page, status: controller.filterStatus.value);
+            }
+          },
+        ),
+      );
+    } catch (e, stack) {
+      print('[PaginationControls][ERROR] $e\n$stack');
+      return Padding(
+        padding: EdgeInsets.all(defaultPadding),
+        child: Text('Erreur de pagination: $e',
+            style: TextStyle(color: Colors.red)),
+      );
+    }
   }
 
   @override
@@ -113,7 +182,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               AppButton(
                                 label: 'Réessayer',
                                 icon: Icons.refresh_outlined,
-                                onPressed: controller.fetchOrders,
+                                onPressed: controller.loadOrdersPage,
                                 variant: AppButtonVariant.primary,
                               ),
                             ],
@@ -149,17 +218,44 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         );
                       }
 
-                      return Column(
-                        children: [
-                          Expanded(
-                            child: OrdersTable(
-                              orders: controller.orders,
-                              onStatusUpdate: _updateStatus,
-                              onOrderSelect: _handleOrderSelect,
+                      return SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: OrdersTable(
+                                orders: controller.orders,
+                                onStatusUpdate: _updateStatus,
+                                onOrderSelect: _handleOrderSelect,
+                              ),
                             ),
-                          ),
-                          _buildPaginationControls(),
-                        ],
+                            // Ajout pagination locale juste en dessous de OrdersTable
+                            Padding(
+                              padding: EdgeInsets.only(top: 8.0),
+                              child: PaginationControls(
+                                currentPage: controller.currentPage.value,
+                                totalPages: controller.totalPages.value,
+                                itemCount: controller.orders.length,
+                                totalItems: controller.totalOrders.value,
+                                itemsPerPage: controller.itemsPerPage.value,
+                                onPrevious: controller.previousPage,
+                                onNext: controller.nextPage,
+                                onItemsPerPageChanged: (value) {
+                                  if (value != null && value > 0) {
+                                    controller.setItemsPerPage(value);
+                                  }
+                                },
+                                onPageChanged: (page) {
+                                  if (page != null &&
+                                      page != controller.currentPage.value) {
+                                    controller.currentPage.value = page;
+                                    controller.loadOrdersPage(page: page);
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     }),
                   ),

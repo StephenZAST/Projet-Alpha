@@ -1,0 +1,87 @@
+{
+  "info": {
+    "name": "Admin Orders Advanced Filters (corrigé)",
+    "description": "Tests avancés pour la route GET /orders avec les bons noms de champs selon le modèle Prisma.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Filtre par code affilié",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/orders?affiliateCode=AFF123",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"],
+          "query": [
+            {"key": "affiliateCode", "value": "AFF123"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Filtre par type de récurrence",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/orders?recurrenceType=WEEKLY",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"],
+          "query": [
+            {"key": "recurrenceType", "value": "WEEKLY"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Filtre par récurrence",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/orders?isRecurring=true",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"],
+          "query": [
+            {"key": "isRecurring", "value": "true"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Tri par date de prochaine récurrence",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/orders?sortByNextRecurrenceDate=asc",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"],
+          "query": [
+            {"key": "sortByNextRecurrenceDate", "value": "asc"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "Filtre combiné avancé",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/orders?affiliateCode=AFF123&recurrenceType=WEEKLY&isRecurring=true&sortByNextRecurrenceDate=asc",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"],
+          "query": [
+            {"key": "affiliateCode", "value": "AFF123"},
+            {"key": "recurrenceType", "value": "WEEKLY"},
+            {"key": "isRecurring", "value": "true"},
+            {"key": "sortByNextRecurrenceDate", "value": "asc"}
+          ]
+        }
+      }
+    }
+  ]
+}

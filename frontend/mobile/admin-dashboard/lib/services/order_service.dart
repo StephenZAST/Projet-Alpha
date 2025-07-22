@@ -37,6 +37,14 @@ class OrderService {
     int page = 1,
     int limit = 50,
     String? status,
+    String? serviceTypeId,
+    String? paymentMethod,
+    String? startDate,
+    String? endDate,
+    String? minAmount,
+    String? maxAmount,
+    bool? isFlashOrder,
+    String? searchTerm,
     String sortField = 'createdAt',
     String sortOrder = 'desc',
   }) async {
@@ -46,6 +54,16 @@ class OrderService {
         'limit': limit.toString(),
         'sort': '$sortField:$sortOrder',
         if (status != null && status.isNotEmpty) 'status': status.toUpperCase(),
+        if (serviceTypeId != null && serviceTypeId != 'all')
+          'serviceTypeId': serviceTypeId,
+        if (paymentMethod != null && paymentMethod != 'all')
+          'paymentMethod': paymentMethod,
+        if (startDate != null) 'startDate': startDate,
+        if (endDate != null) 'endDate': endDate,
+        if (minAmount != null) 'minAmount': minAmount,
+        if (maxAmount != null) 'maxAmount': maxAmount,
+        if (isFlashOrder != null) 'isFlashOrder': isFlashOrder,
+        if (searchTerm != null && searchTerm.isNotEmpty) 'query': searchTerm,
       };
 
       final response = await _api.get(_baseUrl, queryParameters: queryParams);
@@ -53,35 +71,12 @@ class OrderService {
       print('[OrderService] Query params: $queryParams');
       print('[OrderService] Response: ${response.data}');
 
-      if (!response.data['success']) {
+      if (response.data == null || response.data['success'] != true) {
         throw 'Invalid response from server';
       }
 
-      final List<Order> orders = [];
-      if (response.data['data'] != null) {
-        final List rawOrders = response.data['data'] as List;
-
-        for (var item in rawOrders) {
-          try {
-            final normalizedData = _normalizeOrderData(item);
-            final order = Order.fromJson(normalizedData);
-            orders.add(order);
-          } catch (e) {
-            print('[OrderService] Error parsing order: $e');
-            // Continue avec la commande suivante
-            continue;
-          }
-        }
-      }
-
-      final pagination = response.data['pagination'] ?? {};
-      return OrdersPageData(
-        orders: orders,
-        total: pagination['total'] ?? 0,
-        currentPage: pagination['page'] ?? page,
-        limit: pagination['limit'] ?? limit,
-        totalPages: pagination['totalPages'] ?? 1,
-      );
+      // Utiliser le parsing robuste du modèle
+      return OrdersPageData.fromJson(response.data);
     } catch (e) {
       print('[OrderService] Error loading orders page: $e');
       return OrdersPageData.empty();

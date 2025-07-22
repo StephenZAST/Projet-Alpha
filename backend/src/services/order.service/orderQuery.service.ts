@@ -23,6 +23,51 @@ interface OrderSearchParams {
 }
 
 export class OrderQueryService {
+  /**
+   * Retourne les commandes paginées avec le total
+   */
+  static async getAllOrdersPaginated({ page = 1, limit = 10 }) {
+    // Calcul du total
+    const totalItems = await prisma.orders.count();
+    const totalPages = Math.ceil(totalItems / limit);
+
+    // Récupération des commandes paginées
+    const orders = await prisma.orders.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            phone: true
+          }
+        },
+        service_types: {
+          select: {
+            id: true,
+            name: true,
+            description: true
+          }
+        },
+        address: true,
+        order_items: {
+          include: {
+            article: {
+              include: {
+                article_categories: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return { orders, totalItems, totalPages };
+  }
   private static readonly orderInclude = {
     users: {
       select: {

@@ -294,30 +294,150 @@ export class AdminService {
       status?: order_status;
       sortField?: string;
       sortOrder?: 'asc' | 'desc';
+      startDate?: string;
+      endDate?: string;
+      paymentMethod?: string;
+      serviceTypeId?: string;
+      minAmount?: string;
+      maxAmount?: string;
+      isFlashOrder?: boolean;
+      query?: string;
+      // paymentStatus?: string; // supprimé
+      affiliateCode?: string;
+      recurrenceType?: string;
+      city?: string;
+      postalCode?: string;
+      collectionDateStart?: string;
+      collectionDateEnd?: string;
+      deliveryDateStart?: string;
+      deliveryDateEnd?: string;
+      isRecurring?: boolean;
+      sortByNextRecurrenceDate?: 'asc' | 'desc';
     }
   ) {
     const skip = (page - 1) * limit;
-    
+    // Construction dynamique du filtre avancé
+    const where: any = {};
+
+    // Statut (inclut le filtre flash si combiné)
+    if (params?.status) {
+      where.status = params.status;
+    }
+
+    // Type de commande flash (statut DRAFT)
+    if (typeof params?.isFlashOrder === 'boolean') {
+      if (params.isFlashOrder) {
+        where.status = 'DRAFT';
+      } else {
+        if (!params.status) {
+          where.status = { not: 'DRAFT' };
+        }
+      }
+    }
+
+    // Type de service dynamique
+    if (params?.serviceTypeId) {
+      where.service_type_id = params.serviceTypeId;
+    }
+
+    // Méthode de paiement
+    if (params?.paymentMethod) {
+      where.paymentMethod = params.paymentMethod;
+    }
+
+    // Statut de paiement supprimé (non présent dans le modèle)
+
+    // Code affilié
+    if (params?.affiliateCode) {
+      where.affiliateCode = params.affiliateCode;
+    }
+
+    // Type de récurrence
+    if (params?.recurrenceType) {
+      where.recurrenceType = params.recurrenceType;
+    }
+
+    // Ville
+    if (params?.city) {
+      where.address = { ...where.address, city: { contains: params.city, mode: 'insensitive' } };
+    }
+
+    // Code postal
+    if (params?.postalCode) {
+      where.address = { ...where.address, postal_code: { contains: params.postalCode, mode: 'insensitive' } };
+    }
+
+    // Plage de dates de collecte
+    if (params?.collectionDateStart) {
+      where.collectionDate = { ...where.collectionDate, gte: new Date(params.collectionDateStart) };
+    }
+    if (params?.collectionDateEnd) {
+      where.collectionDate = { ...where.collectionDate, lte: new Date(params.collectionDateEnd) };
+    }
+
+    // Plage de dates de livraison
+    if (params?.deliveryDateStart) {
+      where.deliveryDate = { ...where.deliveryDate, gte: new Date(params.deliveryDateStart) };
+    }
+    if (params?.deliveryDateEnd) {
+      where.deliveryDate = { ...where.deliveryDate, lte: new Date(params.deliveryDateEnd) };
+    }
+
+    // Commande récurrente
+    if (typeof params?.isRecurring === 'boolean') {
+      where.isRecurring = params.isRecurring;
+    }
+
+    // Montant
+    if (params?.minAmount) {
+      where.totalAmount = { ...where.totalAmount, gte: Number(params.minAmount) };
+    }
+    if (params?.maxAmount) {
+      where.totalAmount = { ...where.totalAmount, lte: Number(params.maxAmount) };
+    }
+
+    // Recherche globale (sur user, email, etc.)
+    if (params?.query) {
+      where.OR = [
+        {
+          user: {
+            is: {
+              OR: [
+                { first_name: { contains: params.query, mode: 'insensitive' } },
+                { last_name: { contains: params.query, mode: 'insensitive' } },
+                { email: { contains: params.query, mode: 'insensitive' } }
+              ]
+            }
+          }
+        }
+      ];
+    }
+
+    // Gestion du tri par date de récurrence si demandé
+    let orderBy: any = params?.sortField ? {
+      [params.sortField]: params.sortOrder || 'desc'
+    } : { createdAt: 'desc' };
+    if (params?.sortByNextRecurrenceDate) {
+      orderBy = { nextRecurrenceDate: params.sortByNextRecurrenceDate };
+    }
+
     const orders = await prisma.orders.findMany({
       skip,
       take: limit,
-      where: params?.status ? { status: params.status } : undefined,
-      orderBy: params?.sortField ? {
-        [params.sortField]: params.sortOrder || 'desc'
-      } : undefined,
+      where,
+      orderBy,
       include: {
         user: true,
         order_items: {
           include: {
             article: true
           }
-        }
+        },
+        address: true
       }
     });
 
-    const total = await prisma.orders.count({
-      where: params?.status ? { status: params.status } : undefined
-    });
+    const total = await prisma.orders.count({ where });
 
     return {
       orders,

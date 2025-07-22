@@ -152,16 +152,14 @@ export class OrderQueryController {
 
   static async getAllOrders(req: Request, res: Response) {
     try {
-      const { 
-        page = 1, 
-        limit = 20, 
-        status, 
-        startDate, 
-        endDate 
-      } = req.query;
+      // Récupération des paramètres de pagination
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+      const status = req.query.status;
+      const startDate = req.query.startDate;
+      const endDate = req.query.endDate;
 
-      const skip = (Number(page) - 1) * Number(limit);
-      
+      const skip = (page - 1) * limit;
       const where: any = {};
       if (status) where.status = status;
       if (startDate && endDate) {
@@ -171,32 +169,34 @@ export class OrderQueryController {
         };
       }
 
-      const [orders, totalCount] = await prisma.$transaction([
-        prisma.orders.findMany({
-          where,
-          include: {
-            user: {
-              select: {
-                id: true,
-                first_name: true,
-                last_name: true
-              }
-            },
-            service_types: {
-              select: {
-                id: true,
-                name: true,
-                description: true
-              }
+      // Récupérer le total avant pagination
+      const totalCount = await prisma.orders.count({ where });
+
+      // Récupérer les commandes paginées
+      const orders = await prisma.orders.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true
             }
           },
-          skip,
-          take: Number(limit),
-          orderBy: { createdAt: 'desc' }
-        }),
-        prisma.orders.count({ where })
-      ]);
+          service_types: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
+          }
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      });
 
+      // Ajouter les items à chaque commande
       const ordersWithItems = await Promise.all(
         orders.map(async (order) => ({
           ...order,
@@ -206,12 +206,10 @@ export class OrderQueryController {
 
       res.json({
         data: ordersWithItems,
-        pagination: {
-          page: Number(page),
-          limit: Number(limit),
-          total: totalCount,
-          totalPages: Math.ceil(totalCount / Number(limit))
-        }
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
       });
     } catch (error: any) {
       console.error('[OrderController] Error getting all orders:', error);

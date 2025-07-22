@@ -15,6 +15,84 @@ import '../services/api_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  // Filtres avancés pour la recherche
+  final serviceTypes = <Service>[].obs;
+  final selectedServiceType = RxnString();
+  final paymentMethods = <String>[].obs;
+  final selectedPaymentMethod = RxnString();
+  final selectedOrderType = RxnString(); // Changement de type pour dropdown
+  final startDateController = TextEditingController();
+  final endDateController = TextEditingController();
+  final minAmount = ''.obs;
+  final maxAmount = ''.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadClients();
+    loadDraftOrders();
+    loadServiceTypes();
+    loadPaymentMethods();
+    loadOrdersPage();
+  }
+
+  void loadServiceTypes() {
+    // À adapter selon la source réelle des services
+    final now = DateTime.now();
+    serviceTypes.value = [
+      Service(
+          id: 'all',
+          name: 'Tous',
+          description: '',
+          price: 0,
+          createdAt: now,
+          updatedAt: now),
+      Service(
+          id: 'standard',
+          name: 'Standard',
+          description: '',
+          price: 0,
+          createdAt: now,
+          updatedAt: now),
+      Service(
+          id: 'flash',
+          name: 'Flash',
+          description: '',
+          price: 0,
+          createdAt: now,
+          updatedAt: now),
+      // Ajouter les vrais services ici
+    ];
+  }
+
+  void loadPaymentMethods() {
+    paymentMethods.value = ['CASH', 'ORANGE_MONEY', 'CARTE', 'BANQUE'];
+  }
+
+  Future<void> pickStartDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      startDateController.text = picked.toIso8601String().substring(0, 10);
+    }
+  }
+
+  Future<void> pickEndDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      endDateController.text = picked.toIso8601String().substring(0, 10);
+    }
+  }
+
   final ApiService _apiService = Get.find<ApiService>();
 
   // État de chargement et erreurs
@@ -52,7 +130,7 @@ class OrdersController extends GetxController {
   final searchQuery = ''.obs;
 
   // Ajouter cette propriété pour le filtre de type de commande
-  final selectedOrderType = Rxn<bool>();
+  // Suppression de la version Rxn<bool> (doublon)
 
   // Ajouter les propriétés pour les filtres avancés
   final filterStatus = ''.obs;
@@ -94,43 +172,8 @@ class OrdersController extends GetxController {
   // Ajouter cette propriété pour l'étape courante
   final currentStep = 0.obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-    // Ajouter le chargement initial des clients
-    loadClients();
-    loadDraftOrders();
-    fetchOrders();
-  }
-
   Future<void> fetchOrders() async {
-    try {
-      isLoading.value = true;
-
-      // Construction des paramètres de requête
-      final queryParams = <String, dynamic>{};
-      if (filterStatus.value.isNotEmpty) {
-        queryParams['status'] = filterStatus.value;
-      }
-      if (filterStartDate.value != null) {
-        queryParams['startDate'] = filterStartDate.value!.toIso8601String();
-      }
-      if (filterEndDate.value != null) {
-        queryParams['endDate'] = filterEndDate.value!.toIso8601String();
-      }
-
-      final response =
-          await _apiService.get('/api/orders', queryParameters: queryParams);
-
-      orders.value = (response.data['data'] as List)
-          .map((json) => Order.fromJson(json))
-          .toList();
-    } catch (e) {
-      print('Error fetching orders: $e');
-      _showErrorSnackbar('Impossible de charger les commandes');
-    } finally {
-      isLoading.value = false;
-    }
+    await loadOrdersPage(status: filterStatus.value);
   }
 
   Future<void> fetchOrderDetails(String orderId) async {
@@ -164,14 +207,14 @@ class OrdersController extends GetxController {
   // Méthodes de filtrage
   void filterByStatus(OrderStatus? status) {
     selectedStatus.value = status;
+    filterStatus.value = status?.name ?? '';
     currentPage.value = 1; // Réinitialiser la page
     fetchOrders();
   }
 
   // Ajouter cette méthode pour filtrer par type de commande
   void filterByType(bool? isFlash) {
-    selectedOrderType.value = isFlash;
-    fetchOrders();
+    // Ne rien faire ici, le type de commande est géré par le dropdown avancé
   }
 
   Future<void> _updateStatusCounts() async {
@@ -191,14 +234,14 @@ class OrdersController extends GetxController {
   void nextPage() {
     if (currentPage.value < totalPages.value) {
       currentPage.value++;
-      fetchOrders();
+      loadOrdersPage(page: currentPage.value, status: filterStatus.value);
     }
   }
 
   void previousPage() {
     if (currentPage.value > 1) {
       currentPage.value--;
-      fetchOrders();
+      loadOrdersPage(page: currentPage.value, status: filterStatus.value);
     }
   }
 
@@ -240,7 +283,7 @@ class OrdersController extends GetxController {
     if (value != itemsPerPage.value) {
       itemsPerPage.value = value;
       currentPage.value = 1;
-      fetchOrders();
+      loadOrdersPage(page: 1, status: filterStatus.value, limit: value);
     }
   }
 
@@ -482,6 +525,14 @@ class OrdersController extends GetxController {
     int? page,
     int? limit,
     String? status,
+    String? serviceTypeId,
+    String? paymentMethod,
+    String? startDate,
+    String? endDate,
+    String? minAmount,
+    String? maxAmount,
+    bool? isFlashOrder,
+    String? searchTerm,
     String sortField = 'created_at',
     String sortOrder = 'desc',
   }) async {
@@ -491,6 +542,14 @@ class OrdersController extends GetxController {
         page: page ?? currentPage.value,
         limit: limit ?? itemsPerPage.value,
         status: status,
+        serviceTypeId: serviceTypeId,
+        paymentMethod: paymentMethod,
+        startDate: startDate,
+        endDate: endDate,
+        minAmount: minAmount,
+        maxAmount: maxAmount,
+        isFlashOrder: isFlashOrder,
+        searchTerm: searchTerm,
         sortField: sortField,
         sortOrder: sortOrder,
       );
@@ -519,7 +578,38 @@ class OrdersController extends GetxController {
   }
 
   Future<void> applyFilters() async {
-    await fetchOrders();
+    // Construction des paramètres avancés
+    final params = {
+      'searchTerm': searchQuery.value,
+      'serviceTypeId':
+          selectedServiceType.value == 'all' ? null : selectedServiceType.value,
+      'paymentMethod': selectedPaymentMethod.value == 'all'
+          ? null
+          : selectedPaymentMethod.value,
+      'status': filterStatus.value,
+      'startDate':
+          startDateController.text.isNotEmpty ? startDateController.text : null,
+      'endDate':
+          endDateController.text.isNotEmpty ? endDateController.text : null,
+      'minAmount': minAmount.value.isNotEmpty ? minAmount.value : null,
+      'maxAmount': maxAmount.value.isNotEmpty ? maxAmount.value : null,
+      'isFlashOrder': selectedOrderType.value == 'flash'
+          ? true
+          : selectedOrderType.value == 'standard'
+              ? false
+              : null,
+    };
+    await loadOrdersPage(
+      status: params['status'] as String?,
+      serviceTypeId: params['serviceTypeId'] as String?,
+      paymentMethod: params['paymentMethod'] as String?,
+      startDate: params['startDate'] as String?,
+      endDate: params['endDate'] as String?,
+      minAmount: params['minAmount'] as String?,
+      maxAmount: params['maxAmount'] as String?,
+      isFlashOrder: params['isFlashOrder'] as bool?,
+      searchTerm: params['searchTerm'] as String?,
+    );
   }
 
   // Méthode pour rechercher des clients

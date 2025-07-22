@@ -28,14 +28,19 @@ class OrdersPageData {
         }
       }
 
+      // Supporte les deux formats : pagination racine ou objet pagination
       final pagination = json['pagination'] ?? {};
+      final total = json['total'] ?? pagination['total'] ?? 0;
+      final currentPage = json['page'] ?? pagination['page'] ?? 1;
+      final limit = json['limit'] ?? pagination['limit'] ?? 50;
+      final totalPages = json['totalPages'] ?? pagination['totalPages'] ?? 1;
 
       return OrdersPageData(
         orders: orders,
-        total: pagination['total'] ?? 0,
-        currentPage: pagination['page'] ?? 1,
-        limit: pagination['limit'] ?? 50,
-        totalPages: pagination['totalPages'] ?? 1,
+        total: total,
+        currentPage: currentPage,
+        limit: limit,
+        totalPages: totalPages,
       );
     } catch (e) {
       print('Error creating OrdersPageData: $e');

@@ -31,17 +31,57 @@ router.get(
   authenticateToken,
   asyncHandler(async (req, res) => {
     try {
+
+      // Paramètres de base
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
-      // Convertir le status en order_status
       const status = req.query.status ? (req.query.status as string).toUpperCase() as order_status : undefined;
-      const sortField = req.query.sort_field as string || 'createdAt';
-      const sortOrder = (req.query.sort_order as 'asc' | 'desc') || 'desc';
+      const sortField = req.query.sortField as string || 'createdAt';
+      const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      const paymentMethod = req.query.paymentMethod as string | undefined;
+      const serviceTypeId = req.query.serviceTypeId as string | undefined;
+      const minAmount = req.query.minAmount as string | undefined;
+      const maxAmount = req.query.maxAmount as string | undefined;
+      const isFlashOrder = req.query.isFlashOrder !== undefined ? req.query.isFlashOrder === 'true' : undefined;
+      const query = req.query.query as string | undefined;
+
+      // Nouveaux paramètres avancés
+      // const paymentStatus = req.query.paymentStatus as string | undefined; // supprimé
+      const affiliateCode = req.query.affiliateCode as string | undefined;
+      const recurrenceType = req.query.recurrenceType as string | undefined;
+      const city = req.query.city as string | undefined;
+      const postalCode = req.query.postalCode as string | undefined;
+      const collectionDateStart = req.query.collectionDateStart as string | undefined;
+      const collectionDateEnd = req.query.collectionDateEnd as string | undefined;
+      const deliveryDateStart = req.query.deliveryDateStart as string | undefined;
+      const deliveryDateEnd = req.query.deliveryDateEnd as string | undefined;
+      const isRecurring = req.query.isRecurring !== undefined ? req.query.isRecurring === 'true' : undefined;
+      const sortByNextRecurrenceDate = req.query.sortByNextRecurrenceDate as 'asc' | 'desc' | undefined;
 
       const result = await AdminService.getAllOrders(page, limit, {
         status,
         sortField,
-        sortOrder
+        sortOrder,
+        startDate,
+        endDate,
+        paymentMethod,
+        serviceTypeId,
+        minAmount,
+        maxAmount,
+        isFlashOrder,
+        query,
+        affiliateCode,
+        recurrenceType,
+        city,
+        postalCode,
+        collectionDateStart,
+        collectionDateEnd,
+        deliveryDateStart,
+        deliveryDateEnd,
+        isRecurring,
+        sortByNextRecurrenceDate
       });
 
       res.json({

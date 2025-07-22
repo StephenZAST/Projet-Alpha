@@ -1,0 +1,40 @@
+{
+  "name": "Liste des commandes (pagination)",
+  "request": {
+    "method": "GET",
+    "header": [
+      {
+        "key": "Authorization",
+        "value": "Bearer {{adminToken}}"
+      }
+    ],
+    "url": {
+      "raw": "{{baseUrl}}/orders?page=1&limit=10",
+      "host": ["{{baseUrl}}"],
+      "path": ["orders"],
+      "query": [
+        { "key": "page", "value": "1" },
+        { "key": "limit", "value": "10" }
+      ]
+    }
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Status code est 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test(\"La réponse contient le champ total\", function () {",
+          "    var jsonData = pm.response.json();",
+          "    pm.expect(jsonData.total).to.exist;",
+          "    pm.expect(jsonData.total).to.be.a('number');",
+          "});"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "info": {
+    "name": "Alpha - Recherche avancée Commandes",
+    "description": "Tests du endpoint /orders avec tous les paramètres avancés.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Recherche avancée - Statut + Date + Montant",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders?page=1&limit=10&status=DELIVERED&startDate=2025-07-01&endDate=2025-07-21&minAmount=1000&maxAmount=5000",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"],
+          "query": [
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" },
+            { "key": "status", "value": "DELIVERED" },
+            { "key": "startDate", "value": "2025-07-01" },
+            { "key": "endDate", "value": "2025-07-21" },
+            { "key": "minAmount", "value": "1000" },
+            { "key": "maxAmount", "value": "5000" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Recherche avancée - Service + Paiement + Type",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders?serviceTypeId={{serviceTypeId}}&paymentMethod=CASH&isFlashOrder=false",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"],
+          "query": [
+            { "key": "serviceTypeId", "value": "{{serviceTypeId}}" },
+            { "key": "paymentMethod", "value": "CASH" },
+            { "key": "isFlashOrder", "value": "false" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Recherche avancée - Recherche globale",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders?query=client@email.com",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders"],
+          "query": [
+            { "key": "query", "value": "client@email.com" }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001/api", "type": "string" },
+    { "key": "adminToken", "value": "<A REMPLACER PAR VOTRE TOKEN>", "type": "string" },
+    { "key": "serviceTypeId", "value": "<A REMPLACER PAR UN ID VALIDE>", "type": "string" }
+  ]
+}
