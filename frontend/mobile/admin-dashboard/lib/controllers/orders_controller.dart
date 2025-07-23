@@ -15,12 +15,80 @@ import '../services/api_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  // Filtres avancés supplémentaires
+  final affiliateCode = ''.obs;
+  final selectedRecurrenceType = RxnString();
+  final recurrenceTypes = <String>["NONE", "WEEKLY", "BIWEEKLY", "MONTHLY"].obs;
+  final collectionDateStartController = TextEditingController();
+  final collectionDateEndController = TextEditingController();
+  final deliveryDateStartController = TextEditingController();
+  final deliveryDateEndController = TextEditingController();
+  final city = ''.obs;
+  final postalCode = ''.obs;
+  final isRecurring = false.obs;
+
+  Future<void> pickCollectionDateStart(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      collectionDateStartController.text =
+          picked.toIso8601String().substring(0, 10);
+    }
+  }
+
+  Future<void> pickCollectionDateEnd(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      collectionDateEndController.text =
+          picked.toIso8601String().substring(0, 10);
+    }
+  }
+
+  Future<void> pickDeliveryDateStart(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      deliveryDateStartController.text =
+          picked.toIso8601String().substring(0, 10);
+    }
+  }
+
+  Future<void> pickDeliveryDateEnd(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      deliveryDateEndController.text =
+          picked.toIso8601String().substring(0, 10);
+    }
+  }
+
   // Filtres avancés pour la recherche
   final serviceTypes = <Service>[].obs;
   final selectedServiceType = RxnString();
+
+  // ...existing code...
+
   final paymentMethods = <String>[].obs;
   final selectedPaymentMethod = RxnString();
-  final selectedOrderType = RxnString(); // Changement de type pour dropdown
+  final isFlashOrderFilter =
+      false.obs; // Switch pour le filtre 'Commande flash'
   final startDateController = TextEditingController();
   final endDateController = TextEditingController();
   final minAmount = ''.obs;
@@ -66,7 +134,11 @@ class OrdersController extends GetxController {
   }
 
   void loadPaymentMethods() {
-    paymentMethods.value = ['CASH', 'ORANGE_MONEY', 'CARTE', 'BANQUE'];
+    // Doit correspondre exactement aux valeurs enum du backend (Prisma)
+    paymentMethods.value = [
+      'CASH',
+      'ORANGE_MONEY',
+    ];
   }
 
   Future<void> pickStartDate(BuildContext context) async {
@@ -213,8 +285,10 @@ class OrdersController extends GetxController {
   }
 
   // Ajouter cette méthode pour filtrer par type de commande
-  void filterByType(bool? isFlash) {
-    // Ne rien faire ici, le type de commande est géré par le dropdown avancé
+  void filterByFlashOrder(bool value) {
+    isFlashOrderFilter.value = value;
+    currentPage.value = 1;
+    fetchOrders();
   }
 
   Future<void> _updateStatusCounts() async {
@@ -290,7 +364,7 @@ class OrdersController extends GetxController {
   @override
   void clearFilters() {
     selectedStatus.value = null;
-    selectedOrderType.value = null;
+    isFlashOrderFilter.value = false;
     searchQuery.value = '';
     currentPage.value = 1;
     itemsPerPage.value = 50;
@@ -593,11 +667,7 @@ class OrdersController extends GetxController {
           endDateController.text.isNotEmpty ? endDateController.text : null,
       'minAmount': minAmount.value.isNotEmpty ? minAmount.value : null,
       'maxAmount': maxAmount.value.isNotEmpty ? maxAmount.value : null,
-      'isFlashOrder': selectedOrderType.value == 'flash'
-          ? true
-          : selectedOrderType.value == 'standard'
-              ? false
-              : null,
+      'isFlashOrder': isFlashOrderFilter.value ? true : null,
     };
     await loadOrdersPage(
       status: params['status'] as String?,

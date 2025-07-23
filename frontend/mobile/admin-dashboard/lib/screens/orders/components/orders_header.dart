@@ -122,49 +122,7 @@ class OrdersHeader extends StatelessWidget {
           ),
           SizedBox(height: defaultPadding),
 
-          // Barre de recherche et filtres
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: "Rechercher des commandes...",
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: isDark
-                          ? AppColors.textLight
-                          : AppColors.textSecondary,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: AppRadius.radiusMD,
-                      borderSide: BorderSide(
-                        color: isDark
-                            ? AppColors.borderDark
-                            : AppColors.borderLight,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: AppRadius.radiusMD,
-                      borderSide: BorderSide(
-                        color: isDark
-                            ? AppColors.borderDark
-                            : AppColors.borderLight,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: Theme.of(context).cardColor,
-                  ),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                  ),
-                  onChanged: controller.searchOrders,
-                ),
-              ),
-              SizedBox(width: defaultPadding),
-              // Ici vous pouvez ajouter d'autres filtres si nécessaire
-            ],
-          ),
+          // Barre de recherche supprimée, la recherche avancée la remplace
         ],
       ),
     );

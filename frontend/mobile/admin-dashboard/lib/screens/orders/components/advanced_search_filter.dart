@@ -38,7 +38,7 @@ class AdvancedSearchFilter extends StatelessWidget {
               ],
             ),
             SizedBox(height: AppSpacing.md),
-            // Ligne 2 : Type de service, Méthode de paiement, Type de commande
+            // Ligne 2 : Type de service, Méthode de paiement, Type de commande, Code affilié, Type de récurrence
             Row(
               children: [
                 Expanded(
@@ -48,12 +48,15 @@ class AdvancedSearchFilter extends StatelessWidget {
                       border: OutlineInputBorder(),
                     ),
                     value: controller.selectedServiceType.value,
-                    items: controller.serviceTypes
-                        .map((type) => DropdownMenuItem(
-                              value: type.id,
-                              child: Text(type.name),
-                            ))
-                        .toList(),
+                    items: [
+                      DropdownMenuItem(value: null, child: Text('Tous')),
+                      ...controller.serviceTypes
+                          .map((type) => DropdownMenuItem(
+                                value: type.id,
+                                child: Text(type.name),
+                              ))
+                          .toList(),
+                    ],
                     onChanged: (value) =>
                         controller.selectedServiceType.value = value,
                   ),
@@ -77,33 +80,47 @@ class AdvancedSearchFilter extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: AppSpacing.md),
+                // Switch 'Commande flash' retiré, car les commandes flash ont leur propre page
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Code affilié',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.code),
+                    ),
+                    onChanged: (value) =>
+                        controller.affiliateCode.value = value,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     decoration: InputDecoration(
-                      labelText: 'Type de commande',
+                      labelText: 'Type de récurrence',
                       border: OutlineInputBorder(),
                     ),
-                    value: controller.selectedOrderType.value,
-                    items: [
-                      DropdownMenuItem(value: 'all', child: Text('Tous')),
-                      DropdownMenuItem(value: 'flash', child: Text('Flash')),
-                      DropdownMenuItem(
-                          value: 'standard', child: Text('Standard')),
-                    ],
+                    value: controller.selectedRecurrenceType.value,
+                    items: controller.recurrenceTypes
+                        .map((type) => DropdownMenuItem(
+                              value: type,
+                              child: Text(type),
+                            ))
+                        .toList(),
                     onChanged: (value) =>
-                        controller.selectedOrderType.value = value,
+                        controller.selectedRecurrenceType.value = value,
                   ),
                 ),
               ],
             ),
             SizedBox(height: AppSpacing.md),
-            // Ligne 3 : Plage de dates, Montant min/max
+            // Ligne 3 : Plages de dates, Montant min/max, Ville, Code postal, Récurrence
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      labelText: 'Date de début',
+                      labelText: 'Date de création début',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.date_range),
                     ),
@@ -116,7 +133,7 @@ class AdvancedSearchFilter extends StatelessWidget {
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      labelText: 'Date de fin',
+                      labelText: 'Date de création fin',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.date_range),
                     ),
@@ -126,6 +143,62 @@ class AdvancedSearchFilter extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Date collecte début',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.event_available),
+                    ),
+                    readOnly: true,
+                    controller: controller.collectionDateStartController,
+                    onTap: () => controller.pickCollectionDateStart(context),
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Date collecte fin',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.event_available),
+                    ),
+                    readOnly: true,
+                    controller: controller.collectionDateEndController,
+                    onTap: () => controller.pickCollectionDateEnd(context),
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Date livraison début',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.local_shipping),
+                    ),
+                    readOnly: true,
+                    controller: controller.deliveryDateStartController,
+                    onTap: () => controller.pickDeliveryDateStart(context),
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Date livraison fin',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.local_shipping),
+                    ),
+                    readOnly: true,
+                    controller: controller.deliveryDateEndController,
+                    onTap: () => controller.pickDeliveryDateEnd(context),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
@@ -149,6 +222,36 @@ class AdvancedSearchFilter extends StatelessWidget {
                     onChanged: (value) => controller.maxAmount.value = value,
                   ),
                 ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Ville',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.location_city),
+                    ),
+                    onChanged: (value) => controller.city.value = value,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Code postal',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.markunread_mailbox),
+                    ),
+                    onChanged: (value) => controller.postalCode.value = value,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: SwitchListTile(
+                    title: Text('Récurrente'),
+                    value: controller.isRecurring.value,
+                    onChanged: (value) => controller.isRecurring.value = value,
+                  ),
+                ),
               ],
             ),
             SizedBox(height: AppSpacing.md),
@@ -156,21 +259,26 @@ class AdvancedSearchFilter extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                GlassButton(
-                  label: 'Réinitialiser',
-                  onPressed: controller.resetFilters,
-                  variant: GlassButtonVariant.secondary,
-                  size: GlassButtonSize.medium,
-                  isOutlined: true,
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: GlassButton(
+                    label: 'Réinitialiser',
+                    onPressed: controller.resetFilters,
+                    variant: GlassButtonVariant.secondary,
+                    size: GlassButtonSize.medium,
+                    isOutlined: true,
+                  ),
                 ),
-                SizedBox(width: AppSpacing.md),
-                GlassButton(
-                  label: 'Rechercher',
-                  onPressed: controller.applyFilters,
-                  icon: Icons.search,
-                  variant: GlassButtonVariant.primary,
-                  size: GlassButtonSize.medium,
-                  isFullWidth: false,
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: GlassButton(
+                    label: 'Rechercher',
+                    onPressed: controller.applyFilters,
+                    icon: Icons.search,
+                    variant: GlassButtonVariant.primary,
+                    size: GlassButtonSize.medium,
+                    isFullWidth: false,
+                  ),
                 ),
               ],
             ),
