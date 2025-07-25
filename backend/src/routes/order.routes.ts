@@ -1,4 +1,5 @@
 import express from 'express';
+import { AddressController } from '../controllers/address.controller';
 import { OrderController } from '../controllers/order.controller/index';
 import { FlashOrderController } from '../controllers/order.controller/flashOrder.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
@@ -24,6 +25,13 @@ router.use((req, res, next) => {
 
 // Protection des routes avec authentification
 router.use(authenticateToken);
+
+// Route pour modifier l'adresse d'une commande
+router.patch(
+  '/:orderId/address',
+  authenticateToken,
+  asyncHandler(AddressController.updateOrderAddress)
+);
 
 // Ajouter cette route AVANT les autres routes
 router.get(

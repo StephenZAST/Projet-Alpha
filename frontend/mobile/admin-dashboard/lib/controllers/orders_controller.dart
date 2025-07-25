@@ -612,6 +612,8 @@ class OrdersController extends GetxController {
   }) async {
     try {
       isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
       final result = await OrderService.loadOrdersPage(
         page: page ?? currentPage.value,
         limit: limit ?? itemsPerPage.value,
@@ -634,6 +636,7 @@ class OrdersController extends GetxController {
     } catch (e) {
       print('[OrdersController] Error loading orders page: $e');
       hasError.value = true;
+      errorMessage.value = 'Erreur lors du chargement des commandes : $e';
     } finally {
       isLoading.value = false;
     }

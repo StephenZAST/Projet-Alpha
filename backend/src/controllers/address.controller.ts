@@ -1,8 +1,74 @@
+// Ajout pour la modification de l'adresse d'une commande
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 import { Request, Response } from 'express';
 import { AddressService } from '../services/address.service'; 
 import { Address } from '../models/types';
 
 export class AddressController {
+  // PATCH /orders/:orderId/address
+  static async updateOrderAddress(req: Request, res: Response) {
+    try {
+      const orderId = req.params.orderId;
+      const { addressId } = req.body;
+      const userId = req.user?.id;
+      const userRole = req.user?.role ?? '';
+
+      console.log('[updateOrderAddress] Payload:', req.body);
+      console.log('[updateOrderAddress] orderId:', orderId, 'addressId:', addressId, 'userId:', userId, 'userRole:', userRole);
+
+      if (!userId) {
+        console.error('[updateOrderAddress] No userId');
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      if (!addressId) {
+        console.error('[updateOrderAddress] addressId manquant');
+        return res.status(400).json({ error: 'addressId requis' });
+      }
+
+      // Vérifier que la commande existe et appartient à l'utilisateur ou admin
+      const order = await prisma.orders.findUnique({ where: { id: orderId } });
+      console.log('[updateOrderAddress] Order trouvé:', order);
+      if (!order) {
+        console.error('[updateOrderAddress] Commande non trouvée');
+        return res.status(404).json({ error: 'Commande non trouvée' });
+      }
+      if (order.userId !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
+        console.error('[updateOrderAddress] Non autorisé à modifier cette commande');
+        return res.status(403).json({ error: 'Non autorisé à modifier cette commande' });
+      }
+
+      // Vérifier que l'adresse existe et appartient à l'utilisateur
+      const address = await prisma.addresses.findUnique({ where: { id: addressId } });
+      console.log('[updateOrderAddress] Adresse trouvée:', address);
+      if (!address) {
+        console.error('[updateOrderAddress] Adresse non trouvée');
+        return res.status(404).json({ error: 'Adresse non trouvée' });
+      }
+      if (address.user_id !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
+        console.error('[updateOrderAddress] Non autorisé à utiliser cette adresse');
+        return res.status(403).json({ error: 'Non autorisé à utiliser cette adresse' });
+      }
+
+      // Mettre à jour l'adresse de la commande
+      try {
+        const updatedOrder = await prisma.orders.update({
+          where: { id: orderId },
+          data: { addressId }
+        });
+        console.log('[updateOrderAddress] Commande mise à jour:', updatedOrder);
+        res.json({ success: true, data: updatedOrder });
+      } catch (updateError) {
+        const errMsg = (updateError instanceof Error) ? updateError.message : String(updateError);
+        console.error('[updateOrderAddress] Erreur lors de la mise à jour:', updateError);
+        res.status(500).json({ error: 'Failed to update order address', details: errMsg });
+      }
+    } catch (error) {
+      const errMsg = (error instanceof Error) ? error.message : String(error);
+      console.error('Update order address error:', error);
+      res.status(500).json({ error: 'Failed to update order address', details: errMsg });
+    }
+  }
   static async createAddress(req: Request, res: Response) {
     try {
       console.log('Creating address with data:', req.body);

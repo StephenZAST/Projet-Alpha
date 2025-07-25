@@ -4,6 +4,17 @@ import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware
 import { asyncHandler } from '../utils/asyncHandler'; 
 
 const router = express.Router();
+// Route PATCH standard REST pour mise à jour d'une adresse
+router.patch(
+  '/:addressId',
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await AddressController.updateAddress(req, res);
+    } catch (error) {
+      next(error);
+    }
+  })
+);
 
 // Protection des routes avec authentification
 router.use(authenticateToken as express.RequestHandler);  // Cette ligne exige un token JWT

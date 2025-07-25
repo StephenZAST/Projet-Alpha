@@ -5,6 +5,23 @@ import '../models/orders_page_data.dart';
 import 'api_service.dart';
 
 class OrderService {
+  /// Met à jour l'adresse d'une commande
+  static Future<bool> updateOrderAddress(
+      String orderId, Map<String, dynamic> addressData) async {
+    try {
+      final response =
+          await _api.patch('$_baseUrl/$orderId/address', data: addressData);
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      }
+      print('[OrderService] Error updating address: ${response.data}');
+      return false;
+    } catch (e) {
+      print('[OrderService] Exception updating address: $e');
+      return false;
+    }
+  }
+
   static final _api = ApiService();
   // Modifier cette constante
   static const String _baseUrl =

@@ -9,7 +9,7 @@ import '../../widgets/shared/app_button.dart';
 import 'components/order_filters.dart';
 import 'components/orders_header.dart';
 import 'components/orders_table.dart';
-import 'components/order_details.dart';
+import 'components/order_details_dialog.dart';
 
 class OrdersScreen extends StatefulWidget {
   @override
@@ -31,15 +31,28 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   void _handleOrderSelect(String orderId) {
     controller.fetchOrderDetails(orderId);
-    Get.dialog(
-      Dialog(
-        child: Container(
-          width: 800,
-          padding: EdgeInsets.all(defaultPadding),
-          child: OrderDetails(),
+    final order = controller.orders.firstWhereOrNull((o) => o.id == orderId) ??
+        controller.selectedOrder.value;
+    if (order != null) {
+      Get.dialog(
+        Dialog(
+          child: Container(
+            width: 800,
+            padding: EdgeInsets.all(defaultPadding),
+            child: OrderDetailsDialog(order: order),
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      Get.rawSnackbar(
+        messageText: Text('Commande non trouvée.'),
+        backgroundColor: Colors.red,
+        borderRadius: 12,
+        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 2),
+      );
+    }
   }
 
   Widget _buildPaginationControls() {

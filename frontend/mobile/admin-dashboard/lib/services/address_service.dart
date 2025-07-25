@@ -2,6 +2,27 @@ import 'package:admin/models/address.dart';
 import 'api_service.dart';
 
 class AddressService {
+  static Future<List<Address>> getAddressesByUser(String userId) async {
+    try {
+      final response = await _api.get('$_basePath/user/$userId');
+      if (response.data == null || response.data['data'] == null) {
+        return [];
+      }
+      final List<Address> addresses = [];
+      for (var item in response.data['data'] as List) {
+        try {
+          addresses.add(Address.fromJson(item));
+        } catch (e) {
+          print('[AddressService] Error parsing address: $e');
+        }
+      }
+      return addresses;
+    } catch (e) {
+      print('[AddressService] Error getting addresses for user $userId: $e');
+      return [];
+    }
+  }
+
   static final _api = ApiService();
   static const String _basePath = '/api/addresses';
 

@@ -1,3 +1,5 @@
+import 'service.dart';
+
 class Article {
   final String id;
   final String name;
@@ -10,6 +12,7 @@ class Article {
   final DateTime updatedAt;
   final bool isDeleted;
   final DateTime? deletedAt;
+  final List<Service>? services;
 
   Article({
     required this.id,
@@ -23,6 +26,7 @@ class Article {
     required this.updatedAt,
     this.isDeleted = false,
     this.deletedAt,
+    this.services,
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
@@ -50,6 +54,11 @@ class Article {
       deletedAt: json['deletedAt'] != null
           ? DateTime.tryParse(json['deletedAt'])
           : null,
+      services: json['services'] != null
+          ? (json['services'] as List)
+              .map((s) => Service.fromJson(s as Map<String, dynamic>))
+              .toList()
+          : <Service>[],
     );
   }
 
@@ -66,6 +75,8 @@ class Article {
       'updatedAt': updatedAt.toIso8601String(),
       'isDeleted': isDeleted,
       'deletedAt': deletedAt?.toIso8601String(),
+      if (services != null)
+        'services': services!.map((s) => s.toJson()).toList(),
     };
   }
 }
