@@ -31,28 +31,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   void _handleOrderSelect(String orderId) {
     controller.fetchOrderDetails(orderId);
-    final order = controller.orders.firstWhereOrNull((o) => o.id == orderId) ??
-        controller.selectedOrder.value;
-    if (order != null) {
-      Get.dialog(
-        Dialog(
-          child: Container(
-            width: 800,
-            padding: EdgeInsets.all(defaultPadding),
-            child: OrderDetailsDialog(order: order),
-          ),
+    Get.dialog(
+      Dialog(
+        child: Container(
+          width: 800,
+          padding: EdgeInsets.all(defaultPadding),
+          child: OrderDetailsDialog(orderId: orderId),
         ),
-      );
-    } else {
-      Get.rawSnackbar(
-        messageText: Text('Commande non trouvée.'),
-        backgroundColor: Colors.red,
-        borderRadius: 12,
-        margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 2),
-      );
-    }
+      ),
+    );
   }
 
   Widget _buildPaginationControls() {

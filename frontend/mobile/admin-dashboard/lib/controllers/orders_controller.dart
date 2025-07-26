@@ -15,6 +15,49 @@ import '../services/api_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  // Formulaire d'édition pour l'adresse de commande (clé = champ, valeur = valeur éditée)
+  final orderAddressEditForm = <String, dynamic>{}.obs;
+
+  void setOrderAddressEditField(String key, dynamic value) {
+    orderAddressEditForm[key] = value;
+  }
+
+  void loadOrderAddressEditForm(Address address) {
+    orderAddressEditForm['id'] = address.id;
+    orderAddressEditForm['name'] = address.name ?? '';
+    orderAddressEditForm['street'] = address.street;
+    orderAddressEditForm['city'] = address.city;
+    orderAddressEditForm['postalCode'] = address.postalCode ?? '';
+    orderAddressEditForm['gpsLatitude'] = address.gpsLatitude;
+    orderAddressEditForm['gpsLongitude'] = address.gpsLongitude;
+    orderAddressEditForm['userId'] = address.userId;
+  }
+
+  void clearOrderAddressEditForm() {
+    orderAddressEditForm.clear();
+  }
+
+  // Formulaire d'édition pour le détail de commande (clé = champ, valeur = valeur éditée)
+  final orderEditForm = <String, dynamic>{}.obs;
+
+  void setOrderEditField(String key, dynamic value) {
+    orderEditForm[key] = value;
+  }
+
+  void loadOrderEditForm(Order order) {
+    orderEditForm['totalAmount'] = order.totalAmount.toString();
+    orderEditForm['affiliateCode'] = order.affiliateCode ?? '';
+    orderEditForm['status'] = order.status;
+    orderEditForm['paymentMethod'] = order.paymentMethod.name;
+    orderEditForm['collectionDate'] = order.collectionDate;
+    orderEditForm['deliveryDate'] = order.deliveryDate;
+    // Ajoute d'autres champs si besoin
+  }
+
+  void clearOrderEditForm() {
+    orderEditForm.clear();
+  }
+
   // Filtres avancés supplémentaires
   final affiliateCode = ''.obs;
   final selectedRecurrenceType = RxnString();
@@ -327,17 +370,27 @@ class OrdersController extends GetxController {
   Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     try {
       isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
       final isFlash = await OrderService.isFlashOrder(orderId);
-
-      // Vérifier si c'est une commande flash
       if (isFlash && !_isValidFlashTransition(newStatus)) {
         throw 'Transition non autorisée pour une commande flash';
       }
-
       await OrderService.updateOrderStatus(orderId, newStatus.name);
-      await fetchOrders();
+      await loadOrdersPage(
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        status: filterStatus.value,
+      );
+      await fetchOrderDetails(orderId);
+      _showSuccessSnackbar('Statut de la commande mis à jour');
     } catch (e) {
-      // ...error handling...
+      print('[OrdersController] Error updating order status: $e');
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors de la mise à jour du statut : $e';
+      _showErrorSnackbar(errorMessage.value);
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -361,7 +414,6 @@ class OrdersController extends GetxController {
     }
   }
 
-  @override
   void clearFilters() {
     selectedStatus.value = null;
     isFlashOrderFilter.value = false;
@@ -464,13 +516,22 @@ class OrdersController extends GetxController {
   Future<void> createOrder(Map<String, dynamic> orderData) async {
     try {
       isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
       final result = await OrderService.createOrder(orderData);
       Get.back();
-      fetchOrders();
+      await loadOrdersPage(
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        status: filterStatus.value,
+      );
+      await fetchOrderDetails(result.id);
       _showSuccessSnackbar('Commande créée avec succès');
     } catch (e) {
       print('[OrdersController] Error creating order: $e');
-      _showErrorSnackbar('Impossible de créer la commande');
+      hasError.value = true;
+      errorMessage.value = 'Impossible de créer la commande : $e';
+      _showErrorSnackbar(errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -480,13 +541,51 @@ class OrdersController extends GetxController {
       String orderId, Map<String, dynamic> orderData) async {
     try {
       isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
       await OrderService.updateOrder(orderId, orderData);
       Get.back();
-      fetchOrders();
+      await loadOrdersPage(
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        status: filterStatus.value,
+      );
+      await fetchOrderDetails(orderId);
       _showSuccessSnackbar('Commande mise à jour avec succès');
     } catch (e) {
       print('[OrdersController] Error updating order: $e');
-      _showErrorSnackbar('Impossible de mettre à jour la commande');
+      hasError.value = true;
+      errorMessage.value = 'Impossible de mettre à jour la commande : $e';
+      _showErrorSnackbar(errorMessage.value);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Ajout : méthode pour mettre à jour l'adresse d'une commande
+  Future<void> updateOrderAddress(
+      String orderId, Map<String, dynamic> addressData) async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+      // Correction : toujours envoyer {"addressId": ...} au backend
+      final patchData = {
+        'addressId': addressData['id'] ?? addressData['addressId'],
+      };
+      await OrderService.updateOrderAddress(orderId, patchData);
+      await loadOrdersPage(
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        status: filterStatus.value,
+      );
+      await fetchOrderDetails(orderId);
+      _showSuccessSnackbar('Adresse de la commande mise à jour');
+    } catch (e) {
+      print('[OrdersController] Error updating order address: $e');
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors de la mise à jour de l\'adresse : $e';
+      _showErrorSnackbar(errorMessage.value);
     } finally {
       isLoading.value = false;
     }
@@ -510,22 +609,32 @@ class OrdersController extends GetxController {
       if (selectedFlashOrder.value == null || selectedService.value == null) {
         throw 'Informations manquantes';
       }
-
       isLoading.value = true;
-
+      hasError.value = false;
+      errorMessage.value = '';
       final orderId = selectedFlashOrder.value!.id;
-      // Créer un objet FlashOrderUpdate au lieu d'un Map
       final updateData = flash_update.FlashOrderUpdate(
         serviceId: selectedService.value!.id,
         items: selectedArticles.toList(),
         collectionDate: collectionDate.value,
         deliveryDate: deliveryDate.value,
       );
-
-      final order = await OrderService.completeFlashOrder(orderId, updateData);
-      // ...rest of the method...
+      await OrderService.completeFlashOrder(orderId, updateData);
+      await loadOrdersPage(
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        status: filterStatus.value,
+      );
+      await fetchOrderDetails(orderId);
+      _showSuccessSnackbar('Commande flash mise à jour');
     } catch (e) {
-      // ...error handling...
+      print('[OrdersController] Error updating flash order: $e');
+      hasError.value = true;
+      errorMessage.value =
+          'Erreur lors de la mise à jour de la commande flash : $e';
+      _showErrorSnackbar(errorMessage.value);
+    } finally {
+      isLoading.value = false;
     }
   }
 

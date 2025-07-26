@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../constants.dart';
 import '../../../models/address.dart';
 import '../../../widgets/shared/app_button.dart';
@@ -156,20 +157,20 @@ class _AddressSelectionMapState extends State<AddressSelectionMap> {
                           // Card d'adresse épurée et moderne
                           if (_selectedAddress != null)
                             Positioned(
-                              left: 24,
-                              right: 24,
+                              left: 32,
+                              right: 32,
                               bottom: 18,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
+                                    horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.75),
-                                  borderRadius: BorderRadius.circular(18),
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 3),
+                                      color: Colors.black.withOpacity(0.10),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
@@ -186,8 +187,9 @@ class _AddressSelectionMapState extends State<AddressSelectionMap> {
                                                 'Sans nom',
                                             style: AppTextStyles.bodyMedium
                                                 .copyWith(
-                                                    fontWeight:
-                                                        FontWeight.w600),
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.primary,
+                                            ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -196,8 +198,8 @@ class _AddressSelectionMapState extends State<AddressSelectionMap> {
                                               _selectedAddress!.street,
                                               style: AppTextStyles.bodySmall
                                                   .copyWith(
-                                                      color: AppColors
-                                                          .textSecondary),
+                                                color: AppColors.textPrimary,
+                                              ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -208,12 +210,35 @@ class _AddressSelectionMapState extends State<AddressSelectionMap> {
                                             ].where((e) => e != null).join(' '),
                                             style: AppTextStyles.bodySmall
                                                 .copyWith(
-                                                    color: AppColors
-                                                        .textSecondary),
+                                              color: AppColors.textSecondary,
+                                            ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Material(
+                                      color: Colors.transparent,
+                                      child: IconButton(
+                                        icon: Icon(Icons.open_in_new_rounded,
+                                            color: AppColors.primary, size: 22),
+                                        tooltip: 'Ouvrir dans Google Maps',
+                                        onPressed: () {
+                                          final lat =
+                                              _selectedAddress?.gpsLatitude;
+                                          final lng =
+                                              _selectedAddress?.gpsLongitude;
+                                          if (lat != null && lng != null) {
+                                            final url =
+                                                'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+                                            // ignore: deprecated_member_use
+                                            launchUrl(Uri.parse(url),
+                                                mode: LaunchMode
+                                                    .externalApplication);
+                                          }
+                                        },
                                       ),
                                     ),
                                   ],

@@ -1,6 +1,4 @@
 import 'package:admin/controllers/orders_controller.dart';
-import 'package:admin/services/address_service.dart';
-import 'package:admin/services/order_service.dart';
 import 'package:admin/widgets/glass_button.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -11,13 +9,13 @@ import 'package:admin/screens/orders/components/client_addresses_tab.dart';
 class OrderAddressDialog extends StatefulWidget {
   final Address initialAddress;
   final String orderId;
-  final Function(Address) onAddressSaved;
+  final Function(Address)? onAddressSaved;
 
   const OrderAddressDialog({
     Key? key,
     required this.initialAddress,
     required this.orderId,
-    required this.onAddressSaved,
+    this.onAddressSaved,
   }) : super(key: key);
 
   @override
@@ -28,44 +26,25 @@ class _OrderAddressDialogState extends State<OrderAddressDialog>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Contrôleurs pour les champs d'adresse
-  late TextEditingController nameController;
-  late TextEditingController streetController;
-  late TextEditingController cityController;
-  late TextEditingController postalCodeController;
-  double? latitude;
-  double? longitude;
-
-  Address? selectedAddress;
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    nameController =
-        TextEditingController(text: widget.initialAddress.name ?? '');
-    streetController =
-        TextEditingController(text: widget.initialAddress.street);
-    cityController = TextEditingController(text: widget.initialAddress.city);
-    postalCodeController =
-        TextEditingController(text: widget.initialAddress.postalCode ?? '');
-    latitude = widget.initialAddress.gpsLatitude;
-    longitude = widget.initialAddress.gpsLongitude;
-    selectedAddress = widget.initialAddress;
+    final OrdersController controller = Get.find<OrdersController>();
+    if (controller.orderAddressEditForm.isEmpty) {
+      controller.loadOrderAddressEditForm(widget.initialAddress);
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    nameController.dispose();
-    streetController.dispose();
-    cityController.dispose();
-    postalCodeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final OrdersController controller = Get.find<OrdersController>();
     return Dialog(
       child: Container(
         width: 700,
@@ -86,43 +65,23 @@ class _OrderAddressDialogState extends State<OrderAddressDialog>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildAddressForm(),
+                  _buildAddressForm(controller),
                   AddressSelectionMap(
-                    initialAddress: selectedAddress ?? widget.initialAddress,
+                    initialAddress: widget.initialAddress,
                     onAddressSelected: (address) {
-                      setState(() {
-                        latitude = address.gpsLatitude;
-                        longitude = address.gpsLongitude;
-                        selectedAddress = address;
-                      });
+                      controller.loadOrderAddressEditForm(address);
                     },
                   ),
-                  // Onglet adresses du client
                   ClientAddressesTab(
                     userId: widget.initialAddress.userId,
-                    selectedAddress: selectedAddress,
+                    selectedAddress: _addressFromForm(controller),
                     onAddressSelected: (address) {
-                      setState(() {
-                        nameController.text = address.name ?? '';
-                        streetController.text = address.street;
-                        cityController.text = address.city;
-                        postalCodeController.text = address.postalCode ?? '';
-                        latitude = address.gpsLatitude;
-                        longitude = address.gpsLongitude;
-                        selectedAddress = address;
-                      });
+                      controller.loadOrderAddressEditForm(address);
                       _tabController.animateTo(0);
                     },
                     onAddNewAddress: () {
+                      controller.clearOrderAddressEditForm();
                       _tabController.animateTo(0);
-                      nameController.clear();
-                      streetController.clear();
-                      cityController.clear();
-                      postalCodeController.clear();
-                      latitude = null;
-                      longitude = null;
-                      selectedAddress = null;
-                      setState(() {});
                     },
                   ),
                 ],
@@ -135,7 +94,9 @@ class _OrderAddressDialogState extends State<OrderAddressDialog>
                 GlassButton(
                   label: 'Enregistrer',
                   variant: GlassButtonVariant.primary,
-                  onPressed: _onSavePressed,
+                  onPressed: () async {
+                    await _onSavePressed(context, controller);
+                  },
                 ),
                 const SizedBox(width: 12),
                 GlassButton(
@@ -151,11 +112,79 @@ class _OrderAddressDialogState extends State<OrderAddressDialog>
     );
   }
 
-  Future<void> _onSavePressed() async {
+  Widget _buildAddressForm(OrdersController controller) {
+    return Obx(() => SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                decoration: const InputDecoration(labelText: 'Nom'),
+                onChanged: (v) =>
+                    controller.setOrderAddressEditField('name', v),
+                controller: TextEditingController(
+                  text: controller.orderAddressEditForm['name'] ?? '',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(labelText: 'Rue'),
+                onChanged: (v) =>
+                    controller.setOrderAddressEditField('street', v),
+                controller: TextEditingController(
+                  text: controller.orderAddressEditForm['street'] ?? '',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(labelText: 'Ville'),
+                onChanged: (v) =>
+                    controller.setOrderAddressEditField('city', v),
+                controller: TextEditingController(
+                  text: controller.orderAddressEditForm['city'] ?? '',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(labelText: 'Code postal'),
+                onChanged: (v) =>
+                    controller.setOrderAddressEditField('postalCode', v),
+                controller: TextEditingController(
+                  text: controller.orderAddressEditForm['postalCode'] ?? '',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                  'Latitude: ${controller.orderAddressEditForm['gpsLatitude'] ?? ''}'),
+              Text(
+                  'Longitude: ${controller.orderAddressEditForm['gpsLongitude'] ?? ''}'),
+            ],
+          ),
+        ));
+  }
+
+  Address _addressFromForm(OrdersController controller) {
+    // Fournit tous les champs requis pour Address
+    return Address(
+      id: controller.orderAddressEditForm['id'] ?? '',
+      name: controller.orderAddressEditForm['name'] ?? '',
+      street: controller.orderAddressEditForm['street'] ?? '',
+      city: controller.orderAddressEditForm['city'] ?? '',
+      postalCode: controller.orderAddressEditForm['postalCode'] ?? '',
+      gpsLatitude: controller.orderAddressEditForm['gpsLatitude'],
+      gpsLongitude: controller.orderAddressEditForm['gpsLongitude'],
+      userId: controller.orderAddressEditForm['userId'] ?? '',
+      isDefault: controller.orderAddressEditForm['isDefault'] ?? false,
+      createdAt: controller.orderAddressEditForm['createdAt'] ?? DateTime.now(),
+      updatedAt: controller.orderAddressEditForm['updatedAt'] ?? DateTime.now(),
+    );
+  }
+
+  Future<void> _onSavePressed(
+      BuildContext context, OrdersController controller) async {
     // Validation simple
-    if (selectedAddress == null) {
+    if ((controller.orderAddressEditForm['street'] ?? '').isEmpty) {
       Get.rawSnackbar(
-        messageText: const Text('Veuillez sélectionner une adresse.'),
+        messageText: const Text('Veuillez renseigner une adresse valide.'),
         backgroundColor: Colors.red,
         borderRadius: 12,
         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -164,19 +193,12 @@ class _OrderAddressDialogState extends State<OrderAddressDialog>
       );
       return;
     }
-
     try {
-      // Toujours PATCH la commande avec l'adresse sélectionnée
-      await OrderService.updateOrderAddress(
-        widget.orderId,
-        selectedAddress!.toJson(),
-      );
-      // Rafraîchir les détails de la commande ET la liste après modification
-      final ordersController = Get.find<OrdersController>();
-      await ordersController.fetchOrderDetails(widget.orderId);
-      await ordersController.loadOrdersPage(
-          status: ordersController.filterStatus.value);
-      widget.onAddressSaved(selectedAddress!);
+      await controller.updateOrderAddress(widget.orderId,
+          Map<String, dynamic>.from(controller.orderAddressEditForm));
+      if (widget.onAddressSaved != null) {
+        widget.onAddressSaved!(_addressFromForm(controller));
+      }
       Navigator.of(context).pop();
       Get.rawSnackbar(
         messageText: const Text('Adresse enregistrée avec succès.'),
@@ -196,37 +218,5 @@ class _OrderAddressDialogState extends State<OrderAddressDialog>
         duration: const Duration(seconds: 2),
       );
     }
-  }
-
-  Widget _buildAddressForm() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: nameController,
-            decoration: const InputDecoration(labelText: 'Nom'),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: streetController,
-            decoration: const InputDecoration(labelText: 'Rue'),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: cityController,
-            decoration: const InputDecoration(labelText: 'Ville'),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: postalCodeController,
-            decoration: const InputDecoration(labelText: 'Code postal'),
-          ),
-          const SizedBox(height: 16),
-          Text('Latitude: ${latitude ?? ''}'),
-          Text('Longitude: ${longitude ?? ''}'),
-        ],
-      ),
-    );
   }
 }
