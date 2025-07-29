@@ -38,6 +38,40 @@ class AdvancedSearchFilter extends StatelessWidget {
               ],
             ),
             SizedBox(height: AppSpacing.md),
+            // Ligne dédiée : Recherche par ID
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Recherche par ID',
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: isDark ? Colors.black12 : Colors.white,
+                    ),
+                    onChanged: (value) =>
+                        controller.orderIdSearch.value = value,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                GlassButton(
+                  label: 'Recherche par ID',
+                  onPressed: () async {
+                    if (controller.orderIdSearch.value.isNotEmpty) {
+                      await controller
+                          .fetchOrderDetails(controller.orderIdSearch.value);
+                      // Optionnel: Afficher un snackbar ou gérer l'affichage du résultat
+                    }
+                  },
+                  variant:
+                      GlassButtonVariant.info, // ou .primary selon la charte
+                  isOutlined: false,
+                  icon: Icons.search,
+                  size: GlassButtonSize.medium,
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
             // Ligne 2 : Type de service, Méthode de paiement, Type de commande, Code affilié, Type de récurrence
             Row(
               children: [

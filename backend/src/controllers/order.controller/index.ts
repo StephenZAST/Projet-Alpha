@@ -4,6 +4,7 @@ import { OrderQueryController } from './orderQuery.controller';
 import { OrderStatusController } from './orderStatus.controller';
 import { FlashOrderController } from './flashOrder.controller';
 import { OrderSharedMethods } from './shared';  
+import { OrderUpdateController } from './orderUpdate.controller';
 
 export class OrderController {
   // Méthodes de création
@@ -18,6 +19,11 @@ export class OrderController {
   // Méthodes de lecture
   static async getOrderDetails(req: Request, res: Response): Promise<void> {
     await OrderQueryController.getOrderDetails(req, res);
+  }
+
+  // Export de la recherche par ID
+  static async getOrderById(req: Request, res: Response): Promise<void> {
+    await OrderQueryController.getOrderById(req, res);
   }
 
   static async getUserOrders(req: Request, res: Response): Promise<void> {
@@ -47,6 +53,11 @@ export class OrderController {
 
   static async deleteOrder(req: Request, res: Response): Promise<void> {
     await OrderStatusController.deleteOrder(req, res);
+  }
+
+  // PATCH flexible d'une commande
+  static async patchOrderFields(req: Request, res: Response): Promise<void> {
+    await OrderUpdateController.patchOrderFields(req, res);
   }
 
   // Méthodes de commande flash

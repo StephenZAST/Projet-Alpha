@@ -7,9 +7,16 @@ import { validateOrder } from '../middleware/validators';
 import { validateCreateFlashOrder, validateCompleteFlashOrder } from '../middleware/flashOrderValidator';
 import { asyncHandler } from '../utils/asyncHandler';
 import { AdminService } from '../services/admin.service';
-import { order_status } from '@prisma/client'; // Ajout de l'import
+import { order_status } from '@prisma/client';
 
 const router = express.Router();
+
+// Dedicated endpoint for searching by order ID (placed immediately after router declaration)
+router.get(
+  '/by-id/:orderId',
+  authenticateToken,
+  asyncHandler(OrderController.getOrderById)
+);
 
 // Ajouter des logs pour le debugging
 router.use((req, res, next) => {
@@ -33,14 +40,20 @@ router.patch(
   asyncHandler(AddressController.updateOrderAddress)
 );
 
-// Ajouter cette route AVANT les autres routes
+// PATCH flexible d'une commande (paiement, dates, code affilié, etc.)
+router.patch(
+  '/:orderId',
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN', 'CLIENT']),
+  asyncHandler(OrderController.patchOrderFields)
+);
+
+// Route principale pour la recherche et la liste des commandes
 router.get(
-  '/', // Correction ici
+  '/',
   authenticateToken,
   asyncHandler(async (req, res) => {
     try {
-
-      // Paramètres de base
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
       const status = req.query.status ? (req.query.status as string).toUpperCase() as order_status : undefined;
@@ -54,9 +67,6 @@ router.get(
       const maxAmount = req.query.maxAmount as string | undefined;
       const isFlashOrder = req.query.isFlashOrder !== undefined ? req.query.isFlashOrder === 'true' : undefined;
       const query = req.query.query as string | undefined;
-
-      // Nouveaux paramètres avancés
-      // const paymentStatus = req.query.paymentStatus as string | undefined; // supprimé
       const affiliateCode = req.query.affiliateCode as string | undefined;
       const recurrenceType = req.query.recurrenceType as string | undefined;
       const city = req.query.city as string | undefined;
@@ -112,7 +122,7 @@ router.get(
   })
 );
 
-// Regrouper les routes flash en premier pour éviter les conflits
+// Routes flash
 router.route('/flash')
   .post(
     authenticateToken,
@@ -122,18 +132,17 @@ router.route('/flash')
   .get(
     authenticateToken,
     authorizeRoles(['ADMIN']),
-    asyncHandler(FlashOrderController.getAllPendingOrders)  // Changé pour utiliser une méthode existante
+    asyncHandler(FlashOrderController.getAllPendingOrders)
   );
 
-// Route spécifique pour les commandes flash en DRAFT
 router.get(
   '/flash/draft',
   authenticateToken,
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
-  asyncHandler(FlashOrderController.getAllPendingOrders)  // Changé pour utiliser une méthode existante
+  asyncHandler(FlashOrderController.getAllPendingOrders)
 );
 
-// Routes commande standard
+// Commande standard
 router.post(
   '/',
   validateOrder,
@@ -145,7 +154,6 @@ router.get(
   asyncHandler(OrderController.getUserOrders)
 );
 
-// Placer ces routes AVANT la route '/:orderId'
 router.get('/by-status', asyncHandler(OrderController.getOrdersByStatus));
 router.get('/recent', asyncHandler(OrderController.getRecentOrders));
 
@@ -164,7 +172,7 @@ router.post(
   asyncHandler(OrderController.calculateTotal)
 );
 
-// Routes pour les commandes flash
+// Commandes flash
 router.patch(
   '/flash/:orderId/complete',
   authenticateToken,

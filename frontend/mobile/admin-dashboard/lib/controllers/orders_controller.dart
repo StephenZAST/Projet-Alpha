@@ -17,6 +17,8 @@ import '../constants.dart';
 class OrdersController extends GetxController {
   // Formulaire d'édition pour l'adresse de commande (clé = champ, valeur = valeur éditée)
   final orderAddressEditForm = <String, dynamic>{}.obs;
+  // Champ de recherche par ID
+  final orderIdSearch = ''.obs;
 
   void setOrderAddressEditField(String key, dynamic value) {
     orderAddressEditForm[key] = value;
@@ -125,8 +127,6 @@ class OrdersController extends GetxController {
   // Filtres avancés pour la recherche
   final serviceTypes = <Service>[].obs;
   final selectedServiceType = RxnString();
-
-  // ...existing code...
 
   final paymentMethods = <String>[].obs;
   final selectedPaymentMethod = RxnString();
@@ -543,6 +543,10 @@ class OrdersController extends GetxController {
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
+      // S'assurer que le champ affiliateCode est bien transmis
+      if (orderEditForm.containsKey('affiliateCode')) {
+        orderData['affiliateCode'] = orderEditForm['affiliateCode'];
+      }
       await OrderService.updateOrder(orderId, orderData);
       Get.back();
       await loadOrdersPage(
@@ -555,7 +559,13 @@ class OrdersController extends GetxController {
     } catch (e) {
       print('[OrdersController] Error updating order: $e');
       hasError.value = true;
-      errorMessage.value = 'Impossible de mettre à jour la commande : $e';
+      // Gestion d'erreur pour le code affilié
+      if (e.toString().contains('affiliate')) {
+        errorMessage.value = 'Erreur sur le code affilié : $e';
+      } else {
+        errorMessage.value =
+            e is String ? e : 'Impossible de mettre à jour la commande : $e';
+      }
       _showErrorSnackbar(errorMessage.value);
     } finally {
       isLoading.value = false;

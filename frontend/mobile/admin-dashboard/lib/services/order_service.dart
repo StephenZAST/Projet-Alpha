@@ -5,6 +5,43 @@ import '../models/orders_page_data.dart';
 import 'api_service.dart';
 
 class OrderService {
+  /// Vérifie si une commande est de type flash
+  static Future<bool> isFlashOrder(String orderId) async {
+    try {
+      final order = await getOrderById(orderId);
+      // On considère qu'une commande flash a le champ serviceId égal à 'flash' ou le type de service égal à 'flash'
+      if (order.serviceId == 'flash') {
+        return true;
+      }
+      final service = order.service;
+      if (service != null && service.name.toLowerCase() == 'flash') {
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('[OrderService] Error checking if order is flash: $e');
+      return false;
+    }
+  }
+
+  // Ajoute la méthode helper pour normaliser les données de service
+  static Map<String, dynamic> _normalizeServiceData(dynamic serviceData) {
+    if (serviceData == null) return {};
+    final data = Map<String, dynamic>.from(serviceData);
+    return {
+      'id': data['id']?.toString() ?? '',
+      'name': data['name']?.toString() ?? '',
+      'description': data['description']?.toString(),
+      'basePrice': _normalizeNumber(data['basePrice']),
+      'premiumPrice': _normalizeNumber(data['premiumPrice']),
+      'categoryId': data['categoryId']?.toString(),
+      'createdAt': data['createdAt'] ??
+          data['created_at'] ??
+          DateTime.now().toIso8601String(),
+      'updatedAt': data['updatedAt'] ?? data['updated_at'],
+    };
+  }
+
   /// Met à jour l'adresse d'une commande
   static Future<bool> updateOrderAddress(
       String orderId, Map<String, dynamic> addressData) async {
@@ -342,9 +379,14 @@ class OrderService {
       String orderId, Map<String, dynamic> orderData) async {
     try {
       print('[OrderService] Updating order: $orderId with data: $orderData');
-      final response = await _api.put(
+      // S'assurer que le champ affiliateCode est bien transmis
+      final patchData = Map<String, dynamic>.from(orderData);
+      if (orderData.containsKey('affiliateCode')) {
+        patchData['affiliateCode'] = orderData['affiliateCode'];
+      }
+      final response = await _api.patch(
         '$_baseUrl/$orderId',
-        data: orderData,
+        data: patchData,
       );
 
       if (response.statusCode == 401) {
@@ -359,6 +401,10 @@ class OrderService {
         final message = response.data?['error'] ??
             response.data?['message'] ??
             'Erreur lors de la mise à jour de la commande';
+        // Gestion d'erreur pour le code affilié
+        if (message.toString().contains('affiliate')) {
+          throw 'Erreur sur le code affilié : $message';
+        }
         throw message;
       }
 
@@ -505,13 +551,12 @@ class OrderService {
     try {
       print('[OrderService] Fetching revenue statistics');
       final response = await _api.get('$_baseUrl/revenue/stats');
-      // Corriger l'appel print en utilisant string interpolation
       print('[OrderService] Revenue stats response: ${response.data}');
 
       if (response.data != null && response.data['data'] != null) {
         final List<dynamic> rawData = response.data['data'];
         return rawData
-            .map((item) => {
+            .map<Map<String, dynamic>>((item) => {
                   'date': item['date'],
                   'amount': (item['amount'] as num).toDouble(),
                   'count': item['count'] as int,
@@ -520,37 +565,8 @@ class OrderService {
       }
       return [];
     } catch (e) {
-      print('[OrderService] Error getting revenue statistics: $e');
+      print('[OrderService] Error fetching revenue statistics: $e');
       return [];
     }
-  }
-
-  // Ajouter cette méthode pour supporter les commandes flash
-  static Future<bool> isFlashOrder(String orderId) async {
-    try {
-      final order = await getOrderById(orderId);
-      return order.isFlashOrder;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  static Map<String, dynamic>? _normalizeServiceData(dynamic serviceData) {
-    if (serviceData == null) return null;
-
-    if (serviceData is! Map) return null;
-
-    final data = Map<String, dynamic>.from(serviceData);
-    return {
-      'id': data['id']?.toString() ?? '',
-      'name': data['name']?.toString() ?? '',
-      'description': data['description']?.toString(),
-      'price': _normalizeNumber(data['price']),
-      'typeId': data['typeId']?.toString() ?? data['type_id']?.toString(),
-      'createdAt': data['createdAt'] ??
-          data['created_at'] ??
-          DateTime.now().toIso8601String(),
-      'updatedAt': data['updatedAt'] ?? data['updated_at']
-    };
   }
 }

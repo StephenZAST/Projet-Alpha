@@ -1,17 +1,17 @@
 import 'package:admin/controllers/orders_controller.dart';
 import 'package:admin/screens/orders/new_order/components/client_details_dialog.dart';
 import 'package:admin/screens/orders/components/order_address_dialog.dart';
-import 'package:admin/screens/orders/components/order_items_edit_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:admin/widgets/shared/glass_button.dart';
-import '../../../models/order.dart';
-import '../../../constants.dart';
 import '../../../models/enums.dart';
+import 'copy_order_id_row.dart';
 
 class OrderDetailsDialog extends StatelessWidget {
   Widget _buildClientSection(order) {
     final user = order.user;
+    final OrdersController controller = Get.find<OrdersController>();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -27,19 +27,28 @@ class OrderDetailsDialog extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Client associé',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Client', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text('Nom : ${user?.firstName ?? ''} ${user?.lastName ?? ''}'),
-                Text('Email : ${user?.email ?? ''}'),
-                Text('Téléphone : ${user?.phone ?? ''}'),
+                Text(
+                  user == null
+                      ? 'Aucun client'
+                      : ((user.firstName ?? '') + ' ' + (user.lastName ?? ''))
+                              .trim()
+                              .isEmpty
+                          ? 'Aucun client'
+                          : ((user.firstName ?? '') +
+                                  ' ' +
+                                  (user.lastName ?? ''))
+                              .trim(),
+                ),
+                Text(user?.phone ?? ''),
+                Text(user?.email ?? ''),
               ],
             ),
           ),
           const SizedBox(width: 8),
           GlassButton(
-            label: 'Modifier',
-            icon: Icons.edit,
+            label: 'Voir / Modifier',
             variant: GlassButtonVariant.info,
             onPressed: user == null
                 ? null
@@ -223,36 +232,61 @@ class OrderDetailsDialog extends StatelessWidget {
               Text('Détails de la commande',
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
-              Text('ID : ${order.id}'),
+              CopyOrderIdRow(orderId: order.id),
               const SizedBox(height: 16),
-              // Montant total
-              Obx(() => TextField(
-                    decoration: InputDecoration(labelText: 'Montant total'),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) =>
-                        controller.setOrderEditField('totalAmount', v),
-                    controller: TextEditingController(
-                        text: controller.orderEditForm['totalAmount'] ?? '')
-                      ..selection = TextSelection.collapsed(
-                          offset:
-                              (controller.orderEditForm['totalAmount'] ?? '')
-                                  .toString()
-                                  .length),
-                  )),
+              // Montant total (non modifiable, couleur dynamique)
+              Obx(() {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final textColor = isDark ? Colors.white : Colors.black87;
+                final bgColor = isDark
+                    ? Colors.white.withOpacity(0.06)
+                    : Colors.grey.withOpacity(0.08);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Montant total',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, color: textColor)),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        controller.orderEditForm['totalAmount']?.toString() ??
+                            '',
+                        style: TextStyle(fontSize: 16, color: textColor),
+                      ),
+                    ),
+                  ],
+                );
+              }),
               const SizedBox(height: 16),
-              // Code affilié
-              Obx(() => TextField(
-                    decoration: InputDecoration(labelText: 'Code affilié'),
-                    onChanged: (v) =>
-                        controller.setOrderEditField('affiliateCode', v),
-                    controller: TextEditingController(
-                        text: controller.orderEditForm['affiliateCode'] ?? '')
-                      ..selection = TextSelection.collapsed(
-                          offset:
-                              (controller.orderEditForm['affiliateCode'] ?? '')
-                                  .toString()
-                                  .length),
-                  )),
+              // Code affilié (modification possible)
+              Obx(() {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      initialValue:
+                          controller.orderEditForm['affiliateCode'] ?? '',
+                      decoration: InputDecoration(
+                        labelText: 'Code affilié',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      style: TextStyle(fontSize: 16),
+                      onChanged: (value) {
+                        controller.setOrderEditField('affiliateCode', value);
+                      },
+                    ),
+                  ],
+                );
+              }),
               const SizedBox(height: 16),
               // Statut
               Obx(() {
@@ -356,24 +390,46 @@ class OrderDetailsDialog extends StatelessWidget {
                   GlassButton(
                     label: 'Enregistrer',
                     variant: GlassButtonVariant.primary,
-                    onPressed: () async {
-                      // Appel du controller pour sauvegarder
-                      await controller.updateOrder(order.id, {
-                        'totalAmount': controller.orderEditForm['totalAmount'],
-                        'affiliateCode':
-                            controller.orderEditForm['affiliateCode'],
-                        'status': controller.orderEditForm['status'],
-                        'paymentMethod':
-                            controller.orderEditForm['paymentMethod'],
-                        'collectionDate': controller
-                            .orderEditForm['collectionDate']
-                            ?.toIso8601String(),
-                        'deliveryDate': controller.orderEditForm['deliveryDate']
-                            ?.toIso8601String(),
-                        // Ajoute d'autres champs si besoin
-                      });
-                      controller.clearOrderEditForm();
-                    },
+                    isLoading: controller.isLoading.value,
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : () async {
+                            // Préparer le patch : n'envoyer que les champs modifiables et non nuls
+                            final patch = <String, dynamic>{};
+                            final form = controller.orderEditForm;
+                            if (form['affiliateCode'] != null)
+                              patch['affiliateCode'] = form['affiliateCode'];
+                            if (form['status'] != null)
+                              patch['status'] = form['status'];
+                            if (form['paymentMethod'] != null)
+                              patch['paymentMethod'] = form['paymentMethod'];
+                            if (form['collectionDate'] != null)
+                              patch['collectionDate'] =
+                                  form['collectionDate']?.toIso8601String();
+                            if (form['deliveryDate'] != null)
+                              patch['deliveryDate'] =
+                                  form['deliveryDate']?.toIso8601String();
+                            // Ajoute d'autres champs modifiables si besoin
+                            try {
+                              await controller.updateOrder(order.id, patch);
+                              controller.clearOrderEditForm();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'Commande mise à jour avec succès')),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'Erreur lors de la mise à jour : $e')),
+                                );
+                              }
+                            }
+                          },
                   ),
                   const SizedBox(width: 12),
                   GlassButton(

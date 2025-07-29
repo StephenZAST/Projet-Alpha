@@ -191,10 +191,13 @@ export class OrderQueryService {
   static async searchOrders(params: OrderSearchParams) {
     try {
       const where: any = {};
+      // Déclaration globale pour les logs
+      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
       // Recherche textuelle globale
       if (params.searchTerm) {
-        where.OR = [
+        // Ajout d'un match exact sur l'id si la recherche est un UUID
+        const orFilters = [
           { id: { contains: params.searchTerm, mode: 'insensitive' } },
           { 'user.first_name': { contains: params.searchTerm, mode: 'insensitive' } },
           { 'user.last_name': { contains: params.searchTerm, mode: 'insensitive' } },
@@ -210,6 +213,13 @@ export class OrderQueryService {
             }
           }
         ];
+        if (uuidRegex.test(params.searchTerm)) {
+          console.log('[OrderQueryService] Recherche par ID détectée:', params.searchTerm);
+          orFilters.unshift({ id: { equals: params.searchTerm } as any });
+        } else {
+          console.log('[OrderQueryService] Recherche standard (pas ID):', params.searchTerm);
+        }
+        where.OR = orFilters;
       }
 
       // Ajout de nouveaux filtres
@@ -284,6 +294,14 @@ export class OrderQueryService {
         order_metadata: true
       };
 
+      // LOGS DEBUG
+      console.log('[OrderQueryService] searchOrders params:', JSON.stringify(params, null, 2));
+      console.log('[OrderQueryService] Prisma where:', JSON.stringify(where, null, 2));
+      console.log('[OrderQueryService] Prisma include:', JSON.stringify(include, null, 2));
+      if (params.searchTerm && uuidRegex.test(params.searchTerm)) {
+        console.log('[OrderQueryService] DEBUG: La recherche utilise un filtre exact sur l\'ID.');
+      }
+
       // Exécuter la requête avec pagination
       const [orders, total] = await Promise.all([
         prisma.orders.findMany({
@@ -297,6 +315,9 @@ export class OrderQueryService {
         }),
         prisma.orders.count({ where })
       ]);
+
+      console.log('[OrderQueryService] Prisma result orders:', orders);
+      console.log('[OrderQueryService] Prisma result total:', total);
 
       return {
         orders: orders.map(this.formatOrder),

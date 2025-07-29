@@ -6,6 +6,24 @@ import { OrderQueryService } from '../../services/order.service/orderQuery.servi
 import { OrderStatus } from '@prisma/client';
 
 export class OrderQueryController {
+  // Endpoint dédié à la recherche par ID
+  static async getOrderById(req: Request, res: Response) {
+    try {
+      const { orderId } = req.params;
+      if (!orderId) {
+        return res.status(400).json({ success: false, error: 'orderId requis' });
+      }
+      // Recherche directe par clé primaire
+      const order = await OrderQueryService.getOrderDetails(orderId);
+      if (!order) {
+        return res.status(404).json({ success: false, error: 'Commande non trouvée' });
+      }
+      res.json({ success: true, data: order });
+    } catch (error: any) {
+      console.error('[OrderQueryController] getOrderById error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur', message: error.message });
+    }
+  }
   static getOrderItems = OrderSharedMethods.getOrderItems;
 
   static async getOrderDetails(req: Request, res: Response) {
@@ -263,36 +281,37 @@ export class OrderQueryController {
   static async searchOrders(req: Request, res: Response) {
     try {
       const {
-        query,          // terme de recherche global
-        status,         // statut de la commande
-        startDate,      // date de début
-        endDate,        // date de fin
-        minAmount,      // montant minimum
-        maxAmount,      // montant maximum
-        isFlashOrder,   // type de commande
+        query,
+        searchTerm,
+        status,
+        startDate,
+        endDate,
+        minAmount,
+        maxAmount,
+        isFlashOrder,
         page = 1,
         limit = 10,
         sortBy = 'createdAt',
         sortOrder = 'desc'
       } = req.query;
 
-      // Convertir et valider les paramètres
+      // Prendre 'searchTerm' si présent, sinon 'query'
+      const globalSearch = (searchTerm ?? query) as string;
+
       const searchParams = {
-        searchTerm: query as string,
+        searchTerm: globalSearch,
         status: status as OrderStatus,
-        dateRange: startDate || endDate ? {
-          start: startDate ? new Date(startDate as string) : undefined,
-          end: endDate ? new Date(endDate as string) : undefined
-        } : undefined,
-        price: {
-          min: minAmount ? Number(minAmount) : undefined,
-          max: maxAmount ? Number(maxAmount) : undefined
-        },
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        minAmount: minAmount ? Number(minAmount) : undefined,
+        maxAmount: maxAmount ? Number(maxAmount) : undefined,
         isFlashOrder: isFlashOrder === 'true',
         pagination: {
           page: Number(page),
           limit: Number(limit)
-        }
+        },
+        sortBy: sortBy as string,
+        sortOrder: sortOrder as 'asc' | 'desc'
       };
 
       const result = await OrderQueryService.searchOrders(searchParams);

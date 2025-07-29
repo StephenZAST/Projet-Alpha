@@ -1,0 +1,43 @@
+{
+  "info": {
+    "name": "Order By ID Test",
+    "description": "Test du endpoint GET /orders/:orderId pour la recherche par ID.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Order By ID (exemple)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/2f180c46-97c0-4d81-88e7-8194c5f9d00c",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders", "2f180c46-97c0-4d81-88e7-8194c5f9d00c"]
+        }
+      }
+    },
+    {
+      "name": "Get Order By ID (inexistant)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/orders/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+          "host": ["{{baseUrl}}"],
+          "path": ["orders", "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"]
+        }
+      }
+    }
+  ]
+}
