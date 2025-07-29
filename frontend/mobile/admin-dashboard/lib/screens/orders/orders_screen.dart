@@ -29,17 +29,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
     controller.updateOrderStatus(orderId, newStatus);
   }
 
-  void _handleOrderSelect(String orderId) {
-    controller.fetchOrderDetails(orderId);
-    Get.dialog(
-      Dialog(
-        child: Container(
-          width: 800,
-          padding: EdgeInsets.all(defaultPadding),
-          child: OrderDetailsDialog(orderId: orderId),
+  Future<void> _handleOrderSelect(String orderId) async {
+    await controller.fetchOrderDetails(orderId);
+    final order = controller.selectedOrder.value;
+    if (order != null && order.id == orderId) {
+      Get.dialog(
+        Dialog(
+          child: Container(
+            width: 800,
+            padding: EdgeInsets.all(defaultPadding),
+            child: OrderDetailsDialog(orderId: orderId),
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      // Optionnel : affiche une erreur ou un toast si l'order n'est pas prêt
+      Get.snackbar(
+          'Erreur', 'Impossible de charger les détails de la commande.');
+    }
   }
 
   Widget _buildPaginationControls() {
@@ -223,11 +230,22 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         child: Column(
                           children: [
                             Expanded(
-                              child: OrdersTable(
-                                orders: controller.orders,
-                                onStatusUpdate: _updateStatus,
-                                onOrderSelect: _handleOrderSelect,
-                              ),
+                              child: Obx(() {
+                                if (controller.isOrderIdSearchActive.value &&
+                                    controller.orderIdResult.value != null) {
+                                  return OrdersTable(
+                                    orders: [controller.orderIdResult.value!],
+                                    onStatusUpdate: _updateStatus,
+                                    onOrderSelect: _handleOrderSelect,
+                                  );
+                                } else {
+                                  return OrdersTable(
+                                    orders: controller.orders,
+                                    onStatusUpdate: _updateStatus,
+                                    onOrderSelect: _handleOrderSelect,
+                                  );
+                                }
+                              }),
                             ),
                             // Ajout pagination locale juste en dessous de OrdersTable
                             Padding(

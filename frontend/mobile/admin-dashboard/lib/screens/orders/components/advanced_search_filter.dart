@@ -24,16 +24,28 @@ class AdvancedSearchFilter extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher une commande...',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                      filled: true,
-                      fillColor: isDark ? Colors.black12 : Colors.white,
-                    ),
-                    onChanged: (value) => controller.searchQuery.value = value,
-                  ),
+                  child: Obx(() => TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher une commande...',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                          filled: true,
+                          fillColor: isDark ? Colors.black12 : Colors.white,
+                          suffixIcon: controller.searchQuery.value.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(Icons.clear),
+                                  onPressed: () {
+                                    controller.searchQuery.value = '';
+                                    controller.fetchOrders();
+                                  },
+                                )
+                              : null,
+                        ),
+                        onChanged: (value) =>
+                            controller.searchQuery.value = value,
+                        controller: TextEditingController(
+                            text: controller.searchQuery.value),
+                      )),
                 ),
               ],
             ),
@@ -42,16 +54,24 @@ class AdvancedSearchFilter extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Recherche par ID',
-                      border: OutlineInputBorder(),
-                      filled: true,
-                      fillColor: isDark ? Colors.black12 : Colors.white,
-                    ),
-                    onChanged: (value) =>
-                        controller.orderIdSearch.value = value,
-                  ),
+                  child: Obx(() => TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Recherche par ID',
+                          border: OutlineInputBorder(),
+                          filled: true,
+                          fillColor: isDark ? Colors.black12 : Colors.white,
+                          suffixIcon: controller.orderIdSearch.value.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(Icons.clear),
+                                  onPressed: controller.resetOrderIdSearch,
+                                )
+                              : null,
+                        ),
+                        onChanged: (value) =>
+                            controller.orderIdSearch.value = value,
+                        controller: TextEditingController(
+                            text: controller.orderIdSearch.value),
+                      )),
                 ),
                 SizedBox(width: AppSpacing.md),
                 GlassButton(
@@ -60,11 +80,9 @@ class AdvancedSearchFilter extends StatelessWidget {
                     if (controller.orderIdSearch.value.isNotEmpty) {
                       await controller
                           .fetchOrderDetails(controller.orderIdSearch.value);
-                      // Optionnel: Afficher un snackbar ou gérer l'affichage du résultat
                     }
                   },
-                  variant:
-                      GlassButtonVariant.info, // ou .primary selon la charte
+                  variant: GlassButtonVariant.info,
                   isOutlined: false,
                   icon: Icons.search,
                   size: GlassButtonSize.medium,

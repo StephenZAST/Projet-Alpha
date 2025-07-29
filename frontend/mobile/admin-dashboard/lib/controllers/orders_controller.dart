@@ -287,26 +287,58 @@ class OrdersController extends GetxController {
   // Ajouter cette propriété pour l'étape courante
   final currentStep = 0.obs;
 
+  // Ajout des propriétés et méthodes pour la recherche par ID indépendante et réinitialisable.
+  final isOrderIdSearchActive = false.obs;
+  final orderIdResult = Rxn<Order>();
+
   Future<void> fetchOrders() async {
+    // Si une recherche par ID était active, on la désactive
+    isOrderIdSearchActive.value = false;
+    orderIdResult.value = null;
     await loadOrdersPage(status: filterStatus.value);
   }
 
-  Future<void> fetchOrderDetails(String orderId) async {
+  /// Récupère les détails d'une commande.
+  /// [activateOrderIdSearch] doit être true UNIQUEMENT pour la recherche par ID (champ dédié),
+  /// et false pour un clic sur une ligne du tableau (affichage du dialog sans changer le mode du tableau).
+  Future<void> fetchOrderDetails(String orderId,
+      {bool activateOrderIdSearch = false}) async {
     try {
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
-
       final order = await OrderService.getOrderById(orderId);
-      selectedOrder.value = order;
+      if (order != null) {
+        orderIdResult.value = order;
+        selectedOrder.value = order;
+        isOrderIdSearchActive.value = activateOrderIdSearch;
+      } else {
+        orderIdResult.value = null;
+        selectedOrder.value = null;
+        isOrderIdSearchActive.value = false;
+        hasError.value = true;
+        errorMessage.value = 'Aucune commande trouvée pour cet ID.';
+      }
     } catch (e) {
       print('[OrdersController] Error fetching order details: $e');
       hasError.value = true;
       errorMessage.value =
           'Erreur lors du chargement des détails de la commande';
+      orderIdResult.value = null;
+      selectedOrder.value = null;
+      isOrderIdSearchActive.value = false;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void resetOrderIdSearch() {
+    orderIdSearch.value = '';
+    orderIdResult.value = null;
+    isOrderIdSearchActive.value = false;
+    hasError.value = false;
+    errorMessage.value = '';
+    fetchOrders(); // recharge la liste normale
   }
 
   // Méthodes pour les métriques et statistiques
@@ -382,7 +414,7 @@ class OrdersController extends GetxController {
         limit: itemsPerPage.value,
         status: filterStatus.value,
       );
-      await fetchOrderDetails(orderId);
+      await fetchOrderDetails(orderId, activateOrderIdSearch: false);
       _showSuccessSnackbar('Statut de la commande mis à jour');
     } catch (e) {
       print('[OrdersController] Error updating order status: $e');
@@ -525,7 +557,7 @@ class OrdersController extends GetxController {
         limit: itemsPerPage.value,
         status: filterStatus.value,
       );
-      await fetchOrderDetails(result.id);
+      await fetchOrderDetails(result.id, activateOrderIdSearch: false);
       _showSuccessSnackbar('Commande créée avec succès');
     } catch (e) {
       print('[OrdersController] Error creating order: $e');
@@ -554,7 +586,7 @@ class OrdersController extends GetxController {
         limit: itemsPerPage.value,
         status: filterStatus.value,
       );
-      await fetchOrderDetails(orderId);
+      await fetchOrderDetails(orderId, activateOrderIdSearch: false);
       _showSuccessSnackbar('Commande mise à jour avec succès');
     } catch (e) {
       print('[OrdersController] Error updating order: $e');
@@ -589,7 +621,7 @@ class OrdersController extends GetxController {
         limit: itemsPerPage.value,
         status: filterStatus.value,
       );
-      await fetchOrderDetails(orderId);
+      await fetchOrderDetails(orderId, activateOrderIdSearch: false);
       _showSuccessSnackbar('Adresse de la commande mise à jour');
     } catch (e) {
       print('[OrdersController] Error updating order address: $e');
