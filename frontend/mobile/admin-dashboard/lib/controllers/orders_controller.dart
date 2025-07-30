@@ -15,6 +15,61 @@ import '../services/api_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  /// Ajoute un nouvel item à la commande (OrderEditForm)
+  Future<void> addOrderItem(Map<String, dynamic> item) async {
+    if (orderEditForm['items'] == null) {
+      orderEditForm['items'] = <Map<String, dynamic>>[];
+    }
+    (orderEditForm['items'] as List).add(item);
+    await recalculateOrderTotalFromBackend();
+  }
+
+  /// Met à jour un item existant à l'index donné
+  Future<void> updateOrderItem(int index, Map<String, dynamic> item) async {
+    if (orderEditForm['items'] != null &&
+        index >= 0 &&
+        index < (orderEditForm['items'] as List).length) {
+      (orderEditForm['items'] as List)[index] = item;
+      await recalculateOrderTotalFromBackend();
+    }
+  }
+
+  /// Supprime un item à l'index donné
+  Future<void> removeOrderItem(int index) async {
+    if (orderEditForm['items'] != null &&
+        index >= 0 &&
+        index < (orderEditForm['items'] as List).length) {
+      (orderEditForm['items'] as List).removeAt(index);
+      await recalculateOrderTotalFromBackend();
+    }
+  }
+
+  /// Recalcule le total de la commande via le backend (pricing)
+  Future<void> recalculateOrderTotalFromBackend() async {
+    final items = orderEditForm['items'] as List?;
+    final userId = selectedClientId.value;
+    if (items == null || items.isEmpty || userId == null || userId.isEmpty) {
+      orderEditForm['totalAmount'] = 0.0;
+      orderEditForm['subtotal'] = 0.0;
+      orderEditForm['discounts'] = [];
+      return;
+    }
+    try {
+      final result = await PricingService.calculateOrderTotal(
+        items: List<Map<String, dynamic>>.from(items),
+        userId: userId,
+      );
+      orderEditForm['subtotal'] = result['subtotal'] ?? 0.0;
+      orderEditForm['discounts'] = result['discounts'] ?? [];
+      orderEditForm['totalAmount'] = result['total'] ?? 0.0;
+    } catch (e) {
+      orderEditForm['totalAmount'] = 0.0;
+      orderEditForm['subtotal'] = 0.0;
+      orderEditForm['discounts'] = [];
+      _showErrorSnackbar('Erreur lors du calcul du total : $e');
+    }
+  }
+
   // Formulaire d'édition pour l'adresse de commande (clé = champ, valeur = valeur éditée)
   final orderAddressEditForm = <String, dynamic>{}.obs;
   // Champ de recherche par ID

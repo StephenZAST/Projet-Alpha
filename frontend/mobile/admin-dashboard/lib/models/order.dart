@@ -377,6 +377,7 @@ class OrderItem {
   final Article? article;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final bool isPremium;
 
   OrderItem({
     required this.id,
@@ -388,6 +389,7 @@ class OrderItem {
     this.article,
     required this.createdAt,
     this.updatedAt,
+    this.isPremium = false,
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
@@ -410,6 +412,7 @@ class OrderItem {
         updatedAt: json['updatedAt'] != null
             ? DateTime.parse(json['updatedAt'].toString())
             : null,
+        isPremium: json['isPremium'] == true || json['isPremium'] == 1,
       );
     } catch (e) {
       print('Error parsing OrderItem JSON: $e');
@@ -422,6 +425,7 @@ class OrderItem {
         quantity: 1,
         unitPrice: 0,
         createdAt: DateTime.now(),
+        isPremium: false,
       );
     }
   }
@@ -437,6 +441,7 @@ class OrderItem {
       'article': article?.toJson(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'isPremium': isPremium,
     };
   }
 

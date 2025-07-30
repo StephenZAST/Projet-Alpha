@@ -1,6 +1,7 @@
 import 'package:admin/controllers/orders_controller.dart';
 import 'package:admin/screens/orders/new_order/components/client_details_dialog.dart';
 import 'package:admin/screens/orders/components/order_address_dialog.dart';
+import 'package:admin/screens/orders/components/order_item_edit_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -8,10 +9,34 @@ import 'package:admin/widgets/shared/glass_button.dart';
 import '../../../models/enums.dart';
 import 'copy_order_id_row.dart';
 
+// Helpers pour l'affichage des remises
+String discountLabel(String key) {
+  switch (key) {
+    case 'offers':
+      return 'Offres spéciales';
+    case 'loyalty':
+      return 'Points fidélité';
+    case 'promo':
+      return 'Code promo';
+    default:
+      return key;
+  }
+}
+
+String discountTotal(Map discounts) {
+  try {
+    final total = discounts.values.fold<num>(
+        0, (sum, v) => sum + (v is num ? v : num.tryParse(v.toString()) ?? 0));
+    return total.toString();
+  } catch (_) {
+    return '0';
+  }
+}
+
 class OrderDetailsDialog extends StatelessWidget {
   Widget _buildClientSection(order) {
     final user = order.user;
-    final OrdersController controller = Get.find<OrdersController>();
+    // final OrdersController controller = Get.find<OrdersController>();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -120,7 +145,8 @@ class OrderDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderItemsSection(order) {
+  Widget _buildOrderItemsSection(order, BuildContext context) {
+    final OrdersController controller = Get.find<OrdersController>();
     final items = order.items ?? [];
     return Container(
       padding: const EdgeInsets.all(16),
@@ -139,12 +165,29 @@ class OrderDetailsDialog extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold)),
               Spacer(),
               GlassButton(
-                label: 'Modifier',
-                icon: Icons.edit,
+                label: 'Ajouter',
+                icon: Icons.add,
                 variant: GlassButtonVariant.success,
                 onPressed: () async {
-                  // Ouvre le dialog d'édition des articles/services (stateless)
-                  // Tu peux ici ouvrir un dialog dédié si besoin
+                  // Charger les articles et services si vides
+                  if (controller.articles.isEmpty) {
+                    await controller.loadArticles();
+                  }
+                  if (controller.services.isEmpty) {
+                    await controller.loadServices();
+                  }
+                  final availableArticles = controller.articles;
+                  final availableServices = controller.services;
+                  final newItem = await showDialog(
+                    context: context,
+                    builder: (_) => OrderItemEditDialog(
+                      availableArticles: availableArticles,
+                      availableServices: availableServices,
+                    ),
+                  );
+                  if (newItem != null) {
+                    controller.addOrderItem(newItem.toJson());
+                  }
                 },
               ),
             ],
@@ -160,16 +203,69 @@ class OrderDetailsDialog extends StatelessWidget {
               separatorBuilder: (_, __) => Divider(),
               itemBuilder: (context, index) {
                 final item = items[index];
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(child: Text(item.article?.name ?? '')),
-                    Text('x${item.quantity}'),
-                    Text('${item.unitPrice} FCFA'),
-                  ],
+                final articleName = item.article?.name ?? '';
+                // Trouver le nom du service à partir de l'id
+                String serviceName = '';
+                if (item.serviceId != null &&
+                    item.serviceId.toString().isNotEmpty) {
+                  final service = controller.services
+                      .firstWhereOrNull((s) => s.id == item.serviceId);
+                  serviceName = service?.name ?? '';
+                }
+                final quantity = item.quantity ?? 1;
+                final unitPrice = item.unitPrice ?? 0;
+                final total = unitPrice * quantity;
+                return ListTile(
+                  title: Text(articleName),
+                  subtitle: Text('Service: $serviceName'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('x$quantity'),
+                      const SizedBox(width: 8),
+                      Text('$unitPrice FCFA'),
+                      const SizedBox(width: 8),
+                      Text('Total: $total'),
+                      IconButton(
+                        icon: Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () async {
+                          final availableArticles = controller.articles;
+                          final availableServices = controller.services;
+                          final editedItem = await showDialog(
+                            context: context,
+                            builder: (_) => OrderItemEditDialog(
+                              item: item,
+                              availableArticles: availableArticles,
+                              availableServices: availableServices,
+                            ),
+                          );
+                          if (editedItem != null) {
+                            controller.updateOrderItem(index, editedItem);
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          controller.removeOrderItem(index);
+                        },
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              'Total commande : ${order.totalAmount ?? 0} FCFA',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.green[900]),
+            ),
+          ),
         ],
       ),
     );
@@ -244,6 +340,91 @@ class OrderDetailsDialog extends StatelessWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Sous-total
+                    Text('Sous-total',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, color: textColor)),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        controller.orderEditForm['subtotal']?.toString() ?? '',
+                        style: TextStyle(fontSize: 16, color: textColor),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Remises (discounts)
+                    Text('Remises',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600, color: textColor)),
+                    const SizedBox(height: 4),
+                    Builder(
+                      builder: (_) {
+                        final discounts = controller.orderEditForm['discounts'];
+                        if (discounts is Map) {
+                          final entries = discounts.entries.toList();
+                          if (entries.isNotEmpty) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ...entries.map<Widget>((e) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 2),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(discountLabel(e.key),
+                                              style:
+                                                  TextStyle(color: textColor)),
+                                          Text('-${e.value} FCFA',
+                                              style:
+                                                  TextStyle(color: textColor)),
+                                        ],
+                                      ),
+                                    )),
+                                Divider(
+                                    height: 12,
+                                    color: bgColor.withOpacity(0.5)),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Total remises',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: textColor)),
+                                    Text('-${discountTotal(discounts)} FCFA',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: textColor)),
+                                  ],
+                                ),
+                              ],
+                            );
+                          }
+                        }
+                        // fallback: simple montant
+                        return Container(
+                          padding:
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            (discounts?.toString() ?? '0'),
+                            style: TextStyle(fontSize: 16, color: textColor),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    // Montant total
                     Text('Montant total',
                         style: TextStyle(
                             fontWeight: FontWeight.w600, color: textColor)),
@@ -447,7 +628,7 @@ class OrderDetailsDialog extends StatelessWidget {
               const SizedBox(height: 24),
               _buildAddressSection(controller.selectedOrder.value),
               const SizedBox(height: 24),
-              _buildOrderItemsSection(controller.selectedOrder.value),
+              _buildOrderItemsSection(controller.selectedOrder.value, context),
               const SizedBox(height: 24),
               _buildActionsSection(controller.selectedOrder.value, controller),
             ],

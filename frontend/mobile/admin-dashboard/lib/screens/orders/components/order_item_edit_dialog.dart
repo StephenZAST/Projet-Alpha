@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:admin/models/order.dart';
 import 'package:admin/models/article.dart';
+import 'package:admin/models/service.dart';
 import 'package:admin/widgets/shared/glass_button.dart';
 import 'package:get/get.dart';
-import '../../../constants.dart';
 
 class OrderItemEditDialog extends StatefulWidget {
   final OrderItem? item;
   final List<Article> availableArticles;
-  const OrderItemEditDialog(
-      {Key? key, this.item, required this.availableArticles})
-      : super(key: key);
+  final List<Service> availableServices;
+  const OrderItemEditDialog({
+    Key? key,
+    this.item,
+    required this.availableArticles,
+    required this.availableServices,
+  }) : super(key: key);
 
   @override
   State<OrderItemEditDialog> createState() => _OrderItemEditDialogState();
@@ -21,6 +25,7 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
   String? selectedServiceId;
   late TextEditingController quantityController;
   late TextEditingController unitPriceController;
+  bool isPremium = false;
 
   @override
   void initState() {
@@ -32,9 +37,21 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
     selectedServiceId = widget.item?.serviceId ?? '';
     quantityController =
         TextEditingController(text: widget.item?.quantity.toString() ?? '1');
-    unitPriceController = TextEditingController(
-        text: widget.item?.unitPrice.toString() ??
-            (selectedArticle?.basePrice.toString() ?? '0'));
+    isPremium = widget.item?.isPremium ?? false;
+    unitPriceController = TextEditingController(text: '0');
+    _updateUnitPrice();
+  }
+
+  void _updateUnitPrice() {
+    double price = 0;
+    if (selectedArticle != null) {
+      if (isPremium && selectedArticle!.premiumPrice != null) {
+        price = selectedArticle!.premiumPrice!;
+      } else {
+        price = selectedArticle!.basePrice;
+      }
+    }
+    unitPriceController.text = price.toString();
   }
 
   @override
@@ -71,20 +88,38 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
               onChanged: (value) {
                 setState(() {
                   selectedArticle = value;
-                  unitPriceController.text = value?.basePrice.toString() ?? '0';
                   selectedServiceId = '';
+                  _updateUnitPrice();
                 });
               },
               decoration: InputDecoration(labelText: 'Article / Service'),
             ),
             const SizedBox(height: 12),
-            // Sélection du service lié à l'article (si applicable)
             if (selectedArticle != null &&
-                selectedArticle!.services != null &&
-                selectedArticle!.services!.isNotEmpty)
+                selectedArticle!.premiumPrice != null)
+              Row(
+                children: [
+                  Switch(
+                    value: isPremium,
+                    onChanged: (val) {
+                      setState(() {
+                        isPremium = val;
+                        _updateUnitPrice();
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Text('Prix premium'),
+                ],
+              ),
+            if (selectedArticle != null &&
+                selectedArticle!.premiumPrice != null)
+              const SizedBox(height: 12),
+            // Sélection dynamique du service (tous les services disponibles)
+            if (widget.availableServices.isNotEmpty)
               DropdownButtonFormField<String>(
                 value: selectedServiceId != '' ? selectedServiceId : null,
-                items: selectedArticle!.services!.map((service) {
+                items: widget.availableServices.map((service) {
                   return DropdownMenuItem<String>(
                     value: service.id,
                     child: Text(service.name),
@@ -93,9 +128,10 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
                 onChanged: (value) {
                   setState(() {
                     selectedServiceId = value;
+                    _updateUnitPrice();
                   });
                 },
-                decoration: InputDecoration(labelText: 'Service lié'),
+                decoration: InputDecoration(labelText: 'Service'),
               ),
             const SizedBox(height: 12),
             TextField(
@@ -106,8 +142,11 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
             const SizedBox(height: 12),
             TextField(
               controller: unitPriceController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: 'Prix unitaire (FCFA)'),
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: 'Prix unitaire (FCFA)',
+                suffixIcon: Icon(Icons.lock_outline, size: 18),
+              ),
             ),
             const SizedBox(height: 24),
             Row(
@@ -190,6 +229,7 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
                       article: selectedArticle,
                       quantity: quantity,
                       unitPrice: unitPrice,
+                      isPremium: isPremium,
                       createdAt: widget.item?.createdAt ?? DateTime.now(),
                       updatedAt: DateTime.now(),
                       // Ajoute d'autres champs si besoin
