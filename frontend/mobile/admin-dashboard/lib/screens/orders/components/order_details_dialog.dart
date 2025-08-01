@@ -186,7 +186,14 @@ class OrderDetailsDialog extends StatelessWidget {
                     ),
                   );
                   if (newItem != null) {
-                    controller.addOrderItem(newItem.toJson());
+                    await controller.addOrderItem(newItem.toJson());
+                    // Patch the order with the updated items
+                    final orderId = controller.selectedOrder.value?.id;
+                    if (orderId != null) {
+                      await controller.updateOrder(
+                          orderId, controller.orderEditForm);
+                      await controller.fetchOrderDetails(orderId);
+                    }
                   }
                 },
               ),

@@ -1,5 +1,6 @@
 import express from 'express';
 import { ArticleServiceController } from '../controllers/articleService.controller';
+import { ArticleServicePriceController } from '../controllers/articleServicePrice.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler'; 
 
@@ -13,8 +14,10 @@ router.get('/:articleId/prices', asyncHandler(ArticleServiceController.getArticl
 
 // Routes admin
 router.use(authorizeRoles(['ADMIN', 'SUPER_ADMIN']));
+
 router.post('/prices', asyncHandler(ArticleServiceController.createPrice));
 router.put('/prices/:id', asyncHandler(ArticleServiceController.updatePrice));
+router.delete('/prices/:id', asyncHandler(ArticleServicePriceController.delete));
 
 export default router;
   

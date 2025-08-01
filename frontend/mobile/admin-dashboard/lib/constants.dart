@@ -241,4 +241,5 @@ class MenuIndices {
   static const int users = 6;
   static const int profile = 7;
   static const int notifications = 8;
+  static const int serviceArticleCouples = 9;
 }

@@ -166,12 +166,6 @@ class Order {
   }
 
   // Méthodes helper pour le parsing sécurisé
-  static double? _parseDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
-    return null;
-  }
 
   static DateTime? _parseDateTime(dynamic value) {
     if (value == null) return null;
@@ -378,6 +372,7 @@ class OrderItem {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final bool isPremium;
+  final double? weight;
 
   OrderItem({
     required this.id,
@@ -390,6 +385,7 @@ class OrderItem {
     required this.createdAt,
     this.updatedAt,
     this.isPremium = false,
+    this.weight,
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
@@ -413,6 +409,8 @@ class OrderItem {
             ? DateTime.parse(json['updatedAt'].toString())
             : null,
         isPremium: json['isPremium'] == true || json['isPremium'] == 1,
+        weight:
+            json['weight'] != null ? (json['weight'] as num).toDouble() : null,
       );
     } catch (e) {
       print('Error parsing OrderItem JSON: $e');
@@ -426,6 +424,7 @@ class OrderItem {
         unitPrice: 0,
         createdAt: DateTime.now(),
         isPremium: false,
+        weight: null,
       );
     }
   }
@@ -442,6 +441,7 @@ class OrderItem {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'isPremium': isPremium,
+      if (weight != null) 'weight': weight,
     };
   }
 

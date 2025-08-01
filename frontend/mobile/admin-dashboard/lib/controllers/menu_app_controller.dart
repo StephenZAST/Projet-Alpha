@@ -11,6 +11,7 @@ import '../screens/users/users_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../routes/admin_routes.dart';
 import '../controllers/users_controller.dart';
+import '../screens/services/service_article_couples_screen.dart';
 
 class MenuAppController extends GetxController {
   // Singleton pattern
@@ -94,6 +95,8 @@ class MenuAppController extends GetxController {
         return 'ProfileScreen';
       case MenuIndices.notifications:
         return 'NotificationsScreen';
+      case MenuIndices.serviceArticleCouples:
+        return 'ServiceArticleCouplesScreen';
       default:
         return 'Unknown';
     }
@@ -167,6 +170,8 @@ class MenuAppController extends GetxController {
         return CategoriesScreen();
       case MenuIndices.articles:
         return ArticlesScreen();
+      case MenuIndices.serviceArticleCouples:
+        return ServiceArticleCouplesScreen();
       case MenuIndices.users:
         // Initialiser le UsersController avant de retourner l'écran
         if (!Get.isRegistered<UsersController>()) {

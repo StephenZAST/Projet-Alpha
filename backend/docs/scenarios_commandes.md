@@ -137,3 +137,40 @@ Le backend gère un système de commandes avancé pour une application de gestio
 ---
 
 > Ce document doit être mis à jour à chaque évolution majeure du backend ou du frontend.
+
+
+### 2.9 Gestion avancée des prix : couple Article/Service
+
+- Les prix des articles dépendent du service sélectionné (ex : lavage, repassage, etc.).
+- La table `article_service_prices` permet de définir :
+  - Un prix de base (`basePrice`)
+  - Un prix premium (`premiumPrice`)
+  - Un prix au kilo (`pricePerKg`) pour les services au poids
+- Lors de la création ou modification d’un item de commande :
+  - L’utilisateur sélectionne d’abord le service, puis l’article compatible.
+  - Les prix affichés sont ceux du couple article/service.
+  - Si le service est “au poids”, l’utilisateur saisit le poids total ; sinon, il saisit la quantité d’articles.
+
+#### Exemple de workflow
+1. L’admin sélectionne “Lavage au kilo” comme service.
+2. Il choisit “Chemise” dans la liste des articles compatibles.
+3. Le prix au kilo s’affiche (issu de `article_service_prices`).
+4. L’admin saisit le poids total à traiter.
+5. Le prix total est calculé automatiquement.
+
+---
+
+### 3.2 Ajout/édition d’un item (mise à jour)
+
+- **POST** `/api/order-items` ou **PATCH** `/api/order-items/:id`
+- Données : `orderId`, `articleId`, `serviceId`, `quantity` OU `weight`, `isPremium`
+- Les prix sont récupérés via la table `article_service_prices` selon le couple sélectionné.
+- Si le service est au poids, le champ `weight` est obligatoire et le prix est calculé avec `pricePerKg`.
+
+---
+
+### 3.3 Calcul du total (mise à jour)
+
+- **POST** `/api/pricing/calculate`
+- Données : `items` (avec pour chaque item : `articleId`, `serviceId`, `quantity` OU `weight`, `isPremium`)
+- Le backend utilise la table `article_service_prices` pour chaque item.

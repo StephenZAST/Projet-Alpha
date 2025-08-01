@@ -19,6 +19,7 @@ export class OrderUpdateService {
       deliveryDate: Date | string;
       affiliateCode: string;
       status: string;
+      items: any[];
     }> = {},
     userId: string,
     userRole: string
@@ -66,22 +67,50 @@ export class OrderUpdateService {
       }
     }
     if (updateFields.status) data.status = updateFields.status;
-    if (Object.keys(data).length === 0) {
-      console.warn(`[OrderUpdateService] No valid fields to update for order ${orderId}`);
-      throw new Error('No valid fields to update');
-    }
     data.updatedAt = new Date();
-    let updatedOrder;
-    try {
-      updatedOrder = await prisma.orders.update({
-        where: { id: orderId },
-        data
-      });
-    } catch (err) {
-      console.error(`[OrderUpdateService] Error updating order ${orderId}:`, err);
-      throw new Error('Database error while updating order');
+
+    // --- PATCH ORDER ITEMS LOGIC ---
+    if (updateFields.items) {
+      // Remove all existing items for this order
+      await prisma.order_items.deleteMany({ where: { orderId } });
+      // Insert new items
+      if (Array.isArray(updateFields.items) && updateFields.items.length > 0) {
+        await prisma.order_items.createMany({
+          data: updateFields.items.map((item: any) => ({
+            orderId,
+            articleId: item.articleId,
+            serviceId: item.serviceId || null,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            isPremium: item.isPremium || false,
+            createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+            updatedAt: new Date(),
+          }))
+        });
+      }
     }
-    console.log(`[OrderUpdateService] Order updated successfully:`, updatedOrder);
-    return updatedOrder as unknown as Order;
+
+    if (Object.keys(data).length > 1 || (Object.keys(data).length === 1 && Object.keys(data)[0] !== 'updatedAt')) {
+      let updatedOrder;
+      try {
+        updatedOrder = await prisma.orders.update({
+          where: { id: orderId },
+          data
+        });
+      } catch (err) {
+        console.error(`[OrderUpdateService] Error updating order ${orderId}:`, err);
+        throw new Error('Database error while updating order');
+      }
+      console.log(`[OrderUpdateService] Order updated successfully:`, updatedOrder);
+    }
+
+    // Return the updated order with items
+    const orderWithItems = await prisma.orders.findUnique({
+      where: { id: orderId },
+      include: {
+        order_items: true
+      }
+    });
+    return orderWithItems as unknown as Order;
   }
 }

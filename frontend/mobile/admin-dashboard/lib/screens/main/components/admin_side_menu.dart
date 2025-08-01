@@ -79,6 +79,14 @@ class AdminSideMenu extends StatelessWidget {
                   menuController.selectedIndex == MenuIndices.articles, // 4
               onPress: () => menuController.updateIndex(MenuIndices.articles),
             ),
+            DrawerListTile(
+              title: "Couples Service/Article",
+              icon: Icons.link,
+              isSelected: menuController.selectedIndex ==
+                  MenuIndices.serviceArticleCouples,
+              onPress: () =>
+                  menuController.updateIndex(MenuIndices.serviceArticleCouples),
+            ),
             Divider(color: theme.dividerColor),
             // GESTION DES UTILISATEURS
             Padding(
