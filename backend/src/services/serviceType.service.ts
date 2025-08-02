@@ -39,7 +39,8 @@ export class ServiceTypeService {
         supports_premium: serviceType.supports_premium || false,
         is_active: serviceType.is_active || false,
         created_at: serviceType.created_at || new Date(),
-        updated_at: serviceType.updated_at || new Date()
+        updated_at: serviceType.updated_at || new Date(),
+        pricing_type: serviceType.requires_weight ? 'WEIGHT_BASED' : 'FIXED'
       };
     } catch (error) {
       console.error('Error creating service type:', error);
@@ -76,7 +77,8 @@ export class ServiceTypeService {
         supports_premium: serviceType.supports_premium || false,
         is_active: serviceType.is_active || false,
         created_at: serviceType.created_at || new Date(),
-        updated_at: serviceType.updated_at || new Date()
+        updated_at: serviceType.updated_at || new Date(),
+        pricing_type: serviceType.requires_weight ? 'WEIGHT_BASED' : 'FIXED'
       };
     } catch (error) {
       console.error('Error updating service type:', error);
@@ -113,7 +115,8 @@ export class ServiceTypeService {
         supports_premium: updatedServiceType.supports_premium || false,
         is_active: updatedServiceType.is_active || false,
         created_at: updatedServiceType.created_at || new Date(),
-        updated_at: updatedServiceType.updated_at || new Date()
+        updated_at: updatedServiceType.updated_at || new Date(),
+        pricing_type: updatedServiceType.requires_weight ? 'WEIGHT_BASED' : 'FIXED'
       };
     } catch (error) {
       console.error('Error updating service type:', error);
@@ -149,7 +152,8 @@ export class ServiceTypeService {
         supports_premium: serviceType.supports_premium || false,
         is_active: serviceType.is_active || false,
         created_at: serviceType.created_at || new Date(),
-        updated_at: serviceType.updated_at || new Date()
+        updated_at: serviceType.updated_at || new Date(),
+        pricing_type: serviceType.requires_weight ? 'WEIGHT_BASED' : 'FIXED'
       };
     } catch (error) {
       console.error('Error getting service type:', error);
@@ -177,7 +181,8 @@ export class ServiceTypeService {
         supports_premium: st.supports_premium || false,
         is_active: st.is_active || false,
         created_at: st.created_at || new Date(),
-        updated_at: st.updated_at || new Date()
+        updated_at: st.updated_at || new Date(),
+        pricing_type: st.requires_weight ? 'WEIGHT_BASED' : 'FIXED'
       }));
     } catch (error) {
       console.error('Error getting service types:', error);
@@ -205,7 +210,8 @@ export class ServiceTypeService {
         supports_premium: serviceType.supports_premium || false,
         is_active: serviceType.is_active || false,
         created_at: serviceType.created_at || new Date(),
-        updated_at: serviceType.updated_at || new Date()
+        updated_at: serviceType.updated_at || new Date(),
+        pricing_type: serviceType.requires_weight ? 'WEIGHT_BASED' : 'FIXED'
       };
     } catch (error) {
       console.error('Error getting default service type:', error);

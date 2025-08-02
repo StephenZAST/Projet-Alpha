@@ -169,7 +169,55 @@ Le backend gère un système de commandes avancé pour une application de gestio
 
 ---
 
-### 3.3 Calcul du total (mise à jour)
+
+---
+
+## 8. Référence complète – Gestion des couples ServiceType / Service / Article
+
+### 8.1 Fonctionnement général
+
+- Un couple ServiceType/Article définit la logique de tarification et de compatibilité pour chaque commande.
+- Les prix sont stockés dans `article_service_prices` : base, premium, prix au kilo (si applicable).
+- Les ServiceTypes pilotent le comportement : tarification au poids (`requires_weight`), premium (`supports_premium`), abonnement (`pricing_type`), etc.
+- Les Services sont liés à un ServiceType : ils héritent de ses propriétés et restrictions.
+- Les Articles sont compatibles avec certains Services/ServiceTypes : la compatibilité doit être vérifiée avant ajout.
+
+### 8.2 Bonnes pratiques d’implémentation frontend
+
+- Toujours charger dynamiquement la liste des ServiceTypes et Services depuis l’API.
+- Adapter le formulaire selon le ServiceType sélectionné :
+  - Si `requires_weight` : afficher le champ poids et prix au kilo.
+  - Si `supports_premium` : afficher le champ prix premium.
+  - Si `pricing_type` = 'SUBSCRIPTION' : afficher les champs liés à l’abonnement.
+- Vérifier la compatibilité article/service avant validation.
+- Utiliser les endpoints de calcul de prix pour chaque item (jamais calculer côté frontend).
+- Afficher les feedbacks utilisateur :
+  - Notification si l’utilisateur tente d’activer `requires_weight` sur un type non prévu.
+  - Avertir si plusieurs ServiceTypes sont marqués `is_default` (un seul doit l’être).
+  - Masquer les ServiceTypes inactifs (`is_active: false`).
+- Simuler tous les scénarios (poids, premium, abonnement, offres, points) pour valider l’UX.
+
+### 8.3 Erreurs à éviter
+
+- Ne jamais activer `requires_weight` pour un ServiceType qui ne doit pas gérer de tarification au poids.
+- Ne pas avoir plusieurs ServiceTypes avec `is_default: true`.
+- Ne pas ignorer le champ `is_active` lors de l’affichage (éviter de proposer des types inactifs).
+- Ne pas calculer les prix côté frontend : toujours passer par l’API.
+- Ne pas ignorer la compatibilité article/service : vérifier avant chaque ajout.
+
+### 8.4 Feedback utilisateur et notifications
+
+- Afficher une notification claire si une action interdite est tentée (ex : activer le poids sur un type non prévu).
+- Avertir l’utilisateur si la configuration d’un couple est incohérente (ex : prix au kilo manquant pour un type au poids).
+- Afficher les réductions, offres, points de fidélité et commissions affiliés dans le récapitulatif de commande.
+- Proposer des messages d’erreur explicites en cas de problème de compatibilité ou de disponibilité.
+
+### 8.5 Référence pour futures features
+
+- Cette section doit servir de guide pour toute nouvelle feature liée aux couples ServiceType/Service/Article.
+- Toujours se référer à la logique métier décrite ici pour garantir la cohérence et la robustesse des implémentations.
+
+---
 
 - **POST** `/api/pricing/calculate`
 - Données : `items` (avec pour chaque item : `articleId`, `serviceId`, `quantity` OU `weight`, `isPremium`)

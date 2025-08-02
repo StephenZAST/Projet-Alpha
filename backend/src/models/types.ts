@@ -294,6 +294,7 @@ export interface ServiceType {
   is_active: boolean;  // Ajout de cette propriété
   created_at: Date;
   updated_at: Date;
+  pricing_type?: string;
 }
 
 export interface ArticleService {
