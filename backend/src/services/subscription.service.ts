@@ -5,6 +5,20 @@ import { NotificationService } from './notification.service';
 const prisma = new PrismaClient();
 
 export class SubscriptionService {
+  // Helper pour récupérer le prix d’un article/service via la logique centralisée
+  static async getCentralizedServicePrice(articleId: string, serviceTypeId: string, weight?: number): Promise<number | null> {
+    try {
+      // Appel direct à la fonction stockée pour obtenir le prix
+      const result = await prisma.$queryRaw`SELECT public.calculate_service_price(${articleId}, ${serviceTypeId}, ${weight ?? null}) AS price`;
+      if (Array.isArray(result) && result.length > 0 && result[0].price !== null) {
+        return Number(result[0].price);
+      }
+      return null;
+    } catch (error) {
+      console.error('[SubscriptionService] Centralized price error:', error);
+      throw error;
+    }
+  }
   static async createPlan(planData: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> {
     try {
       const data = await prisma.subscription_plans.create({

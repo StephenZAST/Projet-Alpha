@@ -1,0 +1,61 @@
+{
+  "info": {
+    "name": "Order - PATCH Service Type",
+    "description": "Collection pour tester la modification du service_type_id d'une commande et le recalcul automatique des prix.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "PATCH Order - Change Service Type",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "{{orderId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"service_type_id\": \"{{newServiceTypeId}}\",\n  \"items\": [\n    {\n      \"articleId\": \"087518bd-d6bc-4ab6-a230-b23c7ad25c38\",\n      \"serviceId\": \"f2a87b59-ebab-4f5c-9973-b9453e2e1757\",\n      \"quantity\": 2,\n      \"isPremium\": true\n    }\n  ]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response contains updated service_type_id', function() {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.service_type_id).to.eql(pm.variables.get('newServiceTypeId'));",
+              "});",
+              "pm.test('Items prices are recalculated', function() {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.items).to.be.an('array');",
+              "    pm.expect(jsonData.data.items[0].unitPrice).to.be.a('number');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" },
+    { "key": "adminToken", "value": "" },
+    { "key": "orderId", "value": "2f180c46-97c0-4d81-88e7-8194c5f9d00c" },
+    { "key": "newServiceTypeId", "value": "b8dbd27a-9915-48ad-a8e9-276a4c8aca91" }
+  ]
+}

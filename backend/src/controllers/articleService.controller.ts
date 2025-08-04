@@ -1,72 +1,11 @@
 import { Request, Response } from 'express';
-import { ArticleServiceService } from '../services/articleService.service';
+// import legacy service supprimé
 import { ArticleServicePriceService } from '../services/articleServicePrice.service';
 import { handleError } from '../utils/errorHandler';
 import { CreateArticleServicePriceDTO, UpdateArticleServicePriceDTO } from '../models/serviceManagement.types'; 
 
 export class ArticleServiceController {
-  static async createArticleService(req: Request, res: Response) {
-    try {
-      const { articleId, serviceId, priceMultiplier } = req.body;
-
-      // Validation
-      if (!articleId || !serviceId || typeof priceMultiplier !== 'number') {
-        return res.status(400).json({
-          success: false,
-          error: 'Missing or invalid required fields'
-        });
-      }
-
-      const articleService = await ArticleServiceService.createArticleService(articleId, serviceId, priceMultiplier);
-      res.status(201).json({
-        success: true,
-        data: articleService
-      });
-    } catch (error: any) {
-      handleError(res, error);
-    }
-  }
-
-  static async getAllArticleServices(req: Request, res: Response) {
-    try {
-      const articleServices = await ArticleServiceService.getAllArticleServices();
-      res.json({ data: articleServices });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  } 
-
-  static async updateArticleService(req: Request, res: Response) {
-    try {
-      const { articleServiceId } = req.params;
-      const { priceMultiplier } = req.body;
-
-      if (typeof priceMultiplier !== 'number') {
-        return res.status(400).json({
-          success: false,
-          error: 'Price multiplier must be a number'
-        });
-      }
-
-      const articleService = await ArticleServiceService.updateArticleService(articleServiceId, priceMultiplier);
-      res.json({
-        success: true,
-        data: articleService
-      });
-    } catch (error: any) {
-      handleError(res, error);
-    }
-  } 
-
-  static async deleteArticleService(req: Request, res: Response) {
-    try {
-      const { articleServiceId } = req.params;
-      await ArticleServiceService.deleteArticleService(articleServiceId);
-      res.json({ success: true });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
+  // Méthodes legacy supprimées : toute la logique doit passer par ArticleServicePriceService
 
   static async getAllPrices(req: Request, res: Response): Promise<void> {
     try {

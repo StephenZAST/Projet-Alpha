@@ -49,16 +49,18 @@ export class ArchiveService {
         updated_at: order.addresses.updated_at || new Date()
       } : undefined;
 
-      // Transformer le service
+      // Transformer le service (ne pas exposer le prix direct, mais le prix calculé)
       const transformedService: Service | undefined = order.services ? {
         id: order.services.id,
         name: order.services.name,
         description: order.services.description || undefined,
-        price: order.services.price || 0,
+        price: 0, // Le prix direct n'est plus utilisé
         createdAt: order.services.created_at || new Date(),
         updatedAt: order.services.updated_at || new Date()
       } : undefined;
 
+      // Calculer le total via la logique centralisée si possible
+      // ...existing code...
       return {
         id: order.id,
         userId: order.userId || '',
@@ -69,7 +71,7 @@ export class ArchiveService {
         isRecurring: order.isrecurring || false,
         recurrenceType: (order.recurrencetype as RecurrenceType) || 'NONE',
         nextRecurrenceDate: order.nextrecurrencedate || null,
-        totalAmount: order.totalAmount.toNumber(),
+        totalAmount: order.totalAmount ? Number(order.totalAmount) : 0, // À ajuster si tu veux recalculer via OrderPricingService
         collectionDate: order.collectiondate || null,
         deliveryDate: order.deliverydate || null,
         createdAt: order.createdAt || new Date(),

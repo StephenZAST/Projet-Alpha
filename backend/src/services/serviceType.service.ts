@@ -20,15 +20,21 @@ export class ServiceTypeService {
         }
       });
 
-      // Notify admins
-      await NotificationService.sendNotification(
-        'ADMIN',
-        NotificationType.SERVICE_TYPE_CREATED,
-        {
-          serviceTypeId: serviceType.id,
-          name: serviceType.name
-        }
-      );
+      // Notify all admins (UUID réel)
+      const admins = await prisma.users.findMany({
+        where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+        select: { id: true }
+      });
+      await Promise.all(admins.map(admin =>
+        NotificationService.sendNotification(
+          admin.id,
+          NotificationType.SERVICE_TYPE_CREATED,
+          {
+            serviceTypeId: serviceType.id,
+            name: serviceType.name
+          }
+        )
+      ));
 
       return {
         id: serviceType.id,
@@ -58,15 +64,22 @@ export class ServiceTypeService {
         }
       });
 
-      await NotificationService.sendNotification(
-        'ADMIN',
-        NotificationType.SERVICE_TYPE_UPDATED,
-        {
-          serviceTypeId: serviceType.id,
-          name: serviceType.name,
-          changes: data
-        }
-      );
+      // Notify all admins (UUID réel)
+      const admins = await prisma.users.findMany({
+        where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+        select: { id: true }
+      });
+      await Promise.all(admins.map(admin =>
+        NotificationService.sendNotification(
+          admin.id,
+          NotificationType.SERVICE_TYPE_UPDATED,
+          {
+            serviceTypeId: serviceType.id,
+            name: serviceType.name,
+            changes: data
+          }
+        )
+      ));
 
       return {
         id: serviceType.id,

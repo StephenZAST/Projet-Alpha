@@ -21,7 +21,7 @@ model addresses {
   updated_at     DateTime?        @default(now()) @db.Timestamptz(6)
   name           String?          @db.VarChar
   users          users?           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  orders         orders[]         // Ajout de la relation inverse
+  orders         orders[]
   orders_archive orders_archive[]
 }
 
@@ -76,43 +76,32 @@ model article_service_prices {
   created_at      DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at      DateTime?      @default(now()) @db.Timestamptz(6)
   pricing_type    String?        @db.VarChar
+  service_id      String?        @db.Uuid
   articles        articles?      @relation(fields: [article_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  services        services?      @relation(fields: [service_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   service_types   service_types? @relation(fields: [service_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([service_type_id, article_id], map: "article_service_prices_article_id_service_type_id_key")
   @@index([service_type_id, article_id], map: "idx_asp_service_type")
-}
-
-model article_services {
-  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  article_id       String?   @db.Uuid
-  service_id       String?   @db.Uuid
-  price_multiplier Decimal   @default(1.0) @db.Decimal
-  created_at       DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
-  articles         articles? @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  services         services? @relation(fields: [service_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  @@index([service_id], map: "idx_asp_service_id")
 }
 
 model articles {
-  id                            String                          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  categoryId                    String?                         @db.Uuid
-  name                          String                          @db.VarChar
-  description                   String?
-  basePrice                     Decimal                         @db.Decimal
-  createdAt                     DateTime?                       @default(now()) @db.Timestamptz(6)
-  updatedAt                     DateTime?                       @default(now()) @db.Timestamptz(6)
-  premiumPrice                  Decimal?                        @default(0) @db.Decimal
-  isDeleted                     Boolean?                        @default(false)
-  deletedAt                     DateTime?                       @db.Timestamptz(6)
-  article_archives              article_archives[]
-  article_service_compatibility article_service_compatibility[]
-  article_service_prices        article_service_prices[]
-  article_services              article_services[]
-  order_items                   order_items[]
-  article_categories            article_categories?             @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "articles_category_id_fkey")
-  offer_articles                offer_articles[]
-  service_specific_prices       service_specific_prices[]
+  id                     String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  categoryId             String?                  @db.Uuid
+  name                   String                   @db.VarChar
+  description            String?
+  basePrice              Decimal                  @db.Decimal
+  createdAt              DateTime?                @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime?                @default(now()) @db.Timestamptz(6)
+  premiumPrice           Decimal?                 @default(0) @db.Decimal
+  isDeleted              Boolean?                 @default(false)
+  deletedAt              DateTime?                @db.Timestamptz(6)
+  article_archives       article_archives[]
+  article_service_prices article_service_prices[]
+  article_categories     article_categories?      @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "articles_category_id_fkey")
+  offer_articles         offer_articles[]
+  order_items            order_items[]
 }
 
 model blog_categories {
@@ -231,8 +220,8 @@ model order_items {
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @db.Timestamptz(6)
   isPremium Boolean? @default(false)
-  order     orders   @relation(fields: [orderId], references: [id])
   article   articles @relation(fields: [articleId], references: [id])
+  order     orders   @relation(fields: [orderId], references: [id])
 }
 
 model order_metadata {
@@ -271,14 +260,14 @@ model orders {
   userId                  String                    @db.Uuid
   paymentMethod           payment_method_enum?      @default(CASH)
   commission_transactions commission_transactions[]
+  order_items             order_items[]
   order_metadata          order_metadata?
   order_notes             order_notes[]
+  address                 addresses?                @relation(fields: [addressId], references: [id])
   service_types           service_types             @relation(fields: [service_type_id], references: [id])
+  user                    users                     @relation(fields: [userId], references: [id])
   orders_archive          orders_archive?
   user_offers             user_offers[]
-  order_items             order_items[]
-  user                    users                     @relation(fields: [userId], references: [id])
-  address                 addresses?                @relation(fields: [addressId], references: [id])
 }
 
 model orders_archive {
@@ -344,39 +333,20 @@ model service_types {
   orders                 orders[]
   orders_archive         orders_archive[]
   services               services[]
-  weight_based_pricing   weight_based_pricing[]
 }
 
 model services {
-  id                            String                          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name                          String                          @db.VarChar
-  description                   String?
-  created_at                    DateTime?                       @default(now()) @db.Timestamptz(6)
-  updated_at                    DateTime?                       @default(now()) @db.Timestamptz(6)
-  price                         Int?
-  is_partial                    Boolean?                        @default(false)
-  service_type_id               String?                         @db.Uuid
-  article_service_compatibility article_service_compatibility[]
-  article_services              article_services[]
-  orders_archive                orders_archive[]
-  service_types                 service_types?                  @relation(fields: [service_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  service_specific_prices       service_specific_prices[]
-}
-
-model service_specific_prices {
-  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  article_id    String    @db.Uuid
-  service_id    String    @db.Uuid
-  base_price    Decimal   @db.Decimal
-  premium_price Decimal?  @db.Decimal
-  is_available  Boolean   @default(true)
-  created_at    DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime  @default(now()) @db.Timestamptz(6)
-  services      services? @relation(fields: [service_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  articles      articles? @relation(fields: [article_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([article_id])
-  @@index([service_id])
+  id                     String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name                   String                   @db.VarChar
+  description            String?
+  created_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  price                  Int?
+  is_partial             Boolean?                 @default(false)
+  service_type_id        String?                  @db.Uuid
+  article_service_prices article_service_prices[]
+  orders_archive         orders_archive[]
+  service_types          service_types?           @relation(fields: [service_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -410,11 +380,11 @@ model users {
   notification_preferences notification_preferences[]
   notifications            notifications[]
   offer_subscriptions      offer_subscriptions[]
+  orders                   orders[]
   point_transactions       point_transactions[]
   reset_codes              reset_codes[]
-  user_offers              user_offers[]
   user_activity_logs       user_activity_logs[]
-  orders                   orders[]
+  user_offers              user_offers[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -428,17 +398,6 @@ model article_archives {
   id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   original_id String?   @db.Uuid
   articles    articles? @relation(fields: [original_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model article_service_compatibility {
-  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  article_id    String?   @db.Uuid
-  service_id    String?   @db.Uuid
-  is_compatible Boolean   @default(true)
-  articles      articles? @relation(fields: [article_id], references: [id])
-  services      services? @relation(fields: [service_id], references: [id])
-
-  @@unique([service_id, article_id])
 }
 
 model blog_articles {
@@ -457,8 +416,8 @@ model commission_transactions {
   updated_at         DateTime?           @default(now()) @db.Timestamptz(6)
   order_id           String?             @db.Uuid
   affiliate_id       String?             @db.Uuid
-  amount             Decimal             @db.Decimal  // Ajout du champ amount
-  status             commission_status   @default(PENDING)  // Ajout du champ status
+  amount             Decimal             @db.Decimal
+  status             commission_status   @default(PENDING)
   affiliate_profiles affiliate_profiles? @relation(fields: [affiliate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   orders             orders?             @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -500,27 +459,15 @@ model user_offers {
   users    users?  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model user_subscriptions {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-}
-
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model weight_based_pricing {
-  id              String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  min_weight      Decimal       @default(0) @db.Decimal
-  max_weight      Decimal       @default(999999) @db.Decimal
-  price_per_kg    Decimal       @db.Decimal
-  service_type_id String        @db.Uuid
-  created_at      DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
-  service_type    service_types @relation(fields: [service_type_id], references: [id])
-
-  @@index([service_type_id])
+  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  min_weight   Decimal  @default(0) @db.Decimal
+  max_weight   Decimal  @default(999999) @db.Decimal
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  price_per_kg Decimal  @db.Decimal
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
 }
-
-/// We could not retrieve columns for the underlying table. Either it has none or you are missing rights to see them. Please check your privileges.
-// model discount_rules {
-// }
 
 model user_activity_logs {
   id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid

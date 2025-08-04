@@ -39,22 +39,6 @@
   "Règle Suppression": "NO ACTION",
   "Règle Mise à Jour": "NO ACTION"
 }, {
-  "Table": "article_service_compatibility",
-  "Colonne": "article_id",
-  "Nom Contrainte": "article_service_compatibility_article_id_fkey",
-  "Table Référencée": "articles",
-  "Colonne Référencée": "id",
-  "Règle Suppression": "NO ACTION",
-  "Règle Mise à Jour": "NO ACTION"
-}, {
-  "Table": "article_service_compatibility",
-  "Colonne": "service_id",
-  "Nom Contrainte": "article_service_compatibility_service_id_fkey",
-  "Table Référencée": "services",
-  "Colonne Référencée": "id",
-  "Règle Suppression": "NO ACTION",
-  "Règle Mise à Jour": "NO ACTION"
-}, {
   "Table": "article_service_prices",
   "Colonne": "article_id",
   "Nom Contrainte": "article_service_prices_article_id_fkey",
@@ -175,6 +159,22 @@
   "Règle Suppression": "NO ACTION",
   "Règle Mise à Jour": "NO ACTION"
 }, {
+  "Table": "order_items",
+  "Colonne": "articleId",
+  "Nom Contrainte": "order_items_articleId_fkey",
+  "Table Référencée": "articles",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "RESTRICT",
+  "Règle Mise à Jour": "CASCADE"
+}, {
+  "Table": "order_items",
+  "Colonne": "orderId",
+  "Nom Contrainte": "order_items_orderId_fkey",
+  "Table Référencée": "orders",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "RESTRICT",
+  "Règle Mise à Jour": "CASCADE"
+}, {
   "Table": "order_metadata",
   "Colonne": "order_id",
   "Nom Contrainte": "order_metadata_order_id_fkey",
@@ -192,12 +192,28 @@
   "Règle Mise à Jour": "NO ACTION"
 }, {
   "Table": "orders",
+  "Colonne": "addressId",
+  "Nom Contrainte": "orders_addressId_fkey",
+  "Table Référencée": "addresses",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "SET NULL",
+  "Règle Mise à Jour": "CASCADE"
+}, {
+  "Table": "orders",
   "Colonne": "service_type_id",
   "Nom Contrainte": "orders_service_type_id_fkey",
   "Table Référencée": "service_types",
   "Colonne Référencée": "id",
-  "Règle Suppression": "NO ACTION",
-  "Règle Mise à Jour": "NO ACTION"
+  "Règle Suppression": "RESTRICT",
+  "Règle Mise à Jour": "CASCADE"
+}, {
+  "Table": "orders",
+  "Colonne": "userId",
+  "Nom Contrainte": "orders_userId_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "RESTRICT",
+  "Règle Mise à Jour": "CASCADE"
 }, {
   "Table": "orders_archive",
   "Colonne": "address_id",
@@ -247,6 +263,22 @@
   "Règle Suppression": "CASCADE",
   "Règle Mise à Jour": "NO ACTION"
 }, {
+  "Table": "service_specific_prices",
+  "Colonne": "article_id",
+  "Nom Contrainte": "service_specific_prices_article_id_fkey",
+  "Table Référencée": "articles",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "service_specific_prices",
+  "Colonne": "service_id",
+  "Nom Contrainte": "service_specific_prices_service_id_fkey",
+  "Table Référencée": "services",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "NO ACTION",
+  "Règle Mise à Jour": "NO ACTION"
+}, {
   "Table": "services",
   "Colonne": "service_type_id",
   "Nom Contrainte": "services_service_type_id_fkey",
@@ -254,6 +286,14 @@
   "Colonne Référencée": "id",
   "Règle Suppression": "NO ACTION",
   "Règle Mise à Jour": "NO ACTION"
+}, {
+  "Table": "user_activity_logs",
+  "Colonne": "user_id",
+  "Nom Contrainte": "user_activity_logs_user_id_fkey",
+  "Table Référencée": "users",
+  "Colonne Référencée": "id",
+  "Règle Suppression": "CASCADE",
+  "Règle Mise à Jour": "CASCADE"
 }, {
   "Table": "user_offers",
   "Colonne": "offer_id",

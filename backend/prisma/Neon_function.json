@@ -68,12 +68,6 @@
   "Info": "=== trigger_update_affiliate_level ===",
   "Définition": "CREATE OR REPLACE FUNCTION public.trigger_update_affiliate_level()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    -- Mise à jour du niveau basé sur les gains\n    UPDATE affiliate_profiles\n    SET level_id = (\n        SELECT id \n        FROM affiliate_levels \n        WHERE minimum_earnings <= NEW.total_earned \n        ORDER BY minimum_earnings DESC \n        LIMIT 1\n    )\n    WHERE id = NEW.id;\n    \n    NEW.updated_at = CURRENT_TIMESTAMP;\n    RETURN NEW;\nEND;\n$function$\n"
 }, {
-  "Info": "=== update_article_services ===",
-  "Définition": "CREATE OR REPLACE FUNCTION public.update_article_services()\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    UPDATE article_service_compatibility\n    SET updated_at = CURRENT_TIMESTAMP;\nEND;\n$function$\n"
-}, {
-  "Info": "=== update_article_services ===",
-  "Définition": "CREATE OR REPLACE FUNCTION public.update_article_services(article_id_param uuid)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    UPDATE article_service_compatibility\n    SET updated_at = CURRENT_TIMESTAMP\n    WHERE article_id = article_id_param;\nEND;\n$function$\n"
-}, {
   "Info": "=== update_loyalty_points_balance ===",
   "Définition": "CREATE OR REPLACE FUNCTION public.update_loyalty_points_balance()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    -- Mise à jour du solde de points\n    UPDATE loyalty_points\n    SET \"pointsBalance\" = \"pointsBalance\" + NEW.amount,\n        updated_at = CURRENT_TIMESTAMP\n    WHERE \"userId\" = NEW.\"userId\";\n\n    -- Vérification du nouveau solde\n    IF EXISTS (\n        SELECT 1 \n        FROM loyalty_points \n        WHERE \"userId\" = NEW.\"userId\" \n        AND \"pointsBalance\" < 0\n    ) THEN\n        RAISE EXCEPTION 'Le solde de points ne peut pas être négatif';\n    END IF;\n    \n    RETURN NEW;\nEND;\n$function$\n"
 }, {
@@ -90,7 +84,7 @@
   "Définition": "CREATE OR REPLACE FUNCTION public.update_order_total()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    UPDATE orders\r\n    SET total = calculate_order_total(NEW.\"orderId\"),\r\n        updated_at = CURRENT_TIMESTAMP\r\n    WHERE id = NEW.\"orderId\";\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
 }, {
   "Info": "=== update_orders_timestamp ===",
-  "Définition": "CREATE OR REPLACE FUNCTION public.update_orders_timestamp()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    NEW.updated_at = CURRENT_TIMESTAMP;\n    RETURN NEW;\nEND;\n$function$\n"
+  "Définition": "CREATE OR REPLACE FUNCTION public.update_orders_timestamp()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n  NEW.\"updatedAt\" = CURRENT_TIMESTAMP;\r\n  RETURN NEW;\r\nEND;\r\n$function$\n"
 }, {
   "Info": "=== update_service_timestamps ===",
   "Définition": "CREATE OR REPLACE FUNCTION public.update_service_timestamps()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    NEW.updated_at = CURRENT_TIMESTAMP;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
@@ -99,7 +93,7 @@
   "Définition": "CREATE OR REPLACE FUNCTION public.update_timestamp()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF TG_OP = 'UPDATE' THEN\r\n        NEW.updated_at = CURRENT_TIMESTAMP;\r\n    ELSE\r\n        -- Pour INSERT\r\n        NEW.created_at = COALESCE(NEW.created_at, CURRENT_TIMESTAMP);\r\n        NEW.updated_at = CURRENT_TIMESTAMP;\r\n    END IF;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
 }, {
   "Info": "=== update_timestamp_column ===",
-  "Définition": "CREATE OR REPLACE FUNCTION public.update_timestamp_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    NEW.updated_at = CURRENT_TIMESTAMP;\n    RETURN NEW;\nEND;\n$function$\n"
+  "Définition": "CREATE OR REPLACE FUNCTION public.update_timestamp_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n  NEW.\"updatedAt\" = CURRENT_TIMESTAMP;\r\n  RETURN NEW;\r\nEND;\r\n$function$\n"
 }, {
   "Info": "=== update_updated_at_column ===",
   "Définition": "CREATE OR REPLACE FUNCTION public.update_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    NEW.updated_at = CURRENT_TIMESTAMP;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
@@ -131,7 +125,3 @@
   "Info": "=== validate_weight_range_constraint ===",
   "Définition": "CREATE OR REPLACE FUNCTION public.validate_weight_range_constraint()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    -- Log de début de validation\n    RAISE NOTICE 'Validation des plages de poids pour ID: %', NEW.id;\n\n    -- Vérification des valeurs minimales\n    IF NEW.min_weight IS NULL OR NEW.min_weight < 0 THEN\n        RAISE EXCEPTION 'Le poids minimum doit être positif';\n    END IF;\n\n    -- Vérification des valeurs maximales\n    IF NEW.max_weight IS NULL OR NEW.max_weight <= NEW.min_weight THEN\n        RAISE EXCEPTION 'Le poids maximum doit être supérieur au poids minimum (min: %)', NEW.min_weight;\n    END IF;\n\n    -- Vérification du prix par kg\n    IF NEW.price_per_kg <= 0 THEN\n        RAISE EXCEPTION 'Le prix par kg doit être positif';\n    END IF;\n\n    -- Vérification du chevauchement des plages\n    IF EXISTS (\n        SELECT 1 \n        FROM weight_based_pricing w\n        WHERE w.service_type_id = NEW.service_type_id\n        AND w.id != NEW.id\n        AND (\n            (NEW.min_weight BETWEEN w.min_weight AND w.max_weight)\n            OR (NEW.max_weight BETWEEN w.min_weight AND w.max_weight)\n        )\n    ) THEN\n        RAISE EXCEPTION 'Chevauchement détecté avec une plage existante';\n    END IF;\n\n    -- Mise à jour du timestamp\n    NEW.updated_at = CURRENT_TIMESTAMP;\n    \n    RAISE NOTICE 'Validation réussie pour la plage: % - %kg', NEW.min_weight, NEW.max_weight;\n    RETURN NEW;\nEND;\n$function$\n"
 }]
-
-
-
-

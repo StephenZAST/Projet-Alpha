@@ -1,6 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { OrderItem } from '../models/types';
-import { ServiceCompatibilityService } from './serviceCompatibility.service';
 
 const prisma = new PrismaClient();
 
@@ -53,11 +52,14 @@ export class PricingCalculatorService {
     items: Array<{articleId: string; serviceId: string}>
   ): Promise<void> {
     for (const item of items) {
-      const isCompatible = await ServiceCompatibilityService.checkCompatibility(
-        item.articleId,
-        item.serviceId
-      );
-      if (!isCompatible) {
+      // Vérifie la compatibilité via la table source de vérité (service_specific_prices)
+      const exists = await prisma.service_specific_prices.findFirst({
+        where: {
+          article_id: item.articleId,
+          service_id: item.serviceId
+        }
+      });
+      if (!exists) {
         throw new Error(`Service ${item.serviceId} is not compatible with article ${item.articleId}`);
       }
     }

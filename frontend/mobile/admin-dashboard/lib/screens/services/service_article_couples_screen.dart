@@ -1,3 +1,4 @@
+// Import legacy supprimé
 import 'package:flutter/material.dart';
 import 'package:admin/models/service_type.dart';
 import 'package:admin/models/article.dart';
@@ -10,7 +11,6 @@ import 'package:admin/models/service.dart';
 import 'package:admin/services/service_service.dart';
 import 'package:get/get.dart';
 import 'package:get/get_navigation/src/snackbar/snackbar.dart';
-// ...existing code...
 
 class ServiceArticleCouplesScreen extends StatefulWidget {
   const ServiceArticleCouplesScreen({Key? key}) : super(key: key);
@@ -119,6 +119,9 @@ class _ServiceArticleCouplesScreenState
       // Récupération des sous-objets
       final serviceType = json['service_types'] ?? {};
       final article = json['articles'] ?? {};
+      // DEBUG: Affiche les IDs reçus pour chaque couple
+      print(
+          'COUPLE DEBUG => id: \\${json['id']}, articleId: \\${json['article_id']}, serviceId: \\${json['service_id']}');
       return ArticleServiceCouple(
         id: json['id']?.toString() ?? '',
         serviceTypeName: serviceType['name'] ?? '',
@@ -133,6 +136,9 @@ class _ServiceArticleCouplesScreenState
         premiumPrice: parseDouble(json['premium_price']),
         pricePerKg: parseDouble(json['price_per_kg']),
         isAvailable: json['is_available'] ?? false,
+        articleId: json['article_id']?.toString() ?? '', // Ajouté
+        serviceId:
+            json['service_id']?.toString() ?? '', // Correction compatibilité
       );
     }).toList();
     setState(() {
@@ -413,6 +419,8 @@ class ArticleServiceCouple {
   final double premiumPrice;
   final double pricePerKg;
   final bool isAvailable;
+  final String articleId; // Ajouté
+  final String serviceId; // Ajouté
 
   ArticleServiceCouple({
     required this.id,
@@ -428,6 +436,8 @@ class ArticleServiceCouple {
     required this.premiumPrice,
     required this.pricePerKg,
     required this.isAvailable,
+    required this.articleId,
+    required this.serviceId,
   });
 }
 
@@ -604,22 +614,10 @@ class _ServiceArticleCoupleDialogState
     try {
       final articles = await ArticleService.getAllArticles();
       final serviceTypesRaw = await ServiceTypeService.getAllServiceTypes();
+      // Filtrer pour n'afficher que les services types actifs dans le dropdown
       final serviceTypes =
           serviceTypesRaw.where((t) => t.isActive == true).toList();
       final servicesRaw = await ServiceService.getAllServices();
-      print('--- DEBUG: _fetchDropdowns ---');
-      print('serviceTypes:');
-      for (var t in serviceTypes) {
-        print('  id: ${t.id}, name: ${t.name}, isActive: ${t.isActive}');
-      }
-      print('servicesRaw:');
-      for (var s in servicesRaw) {
-        print('  id: ${s.id}, name: ${s.name}, typeId: ${s.typeId}');
-      }
-      print('articles:');
-      for (var a in articles) {
-        print('  id: ${a.id}, name: ${a.name}');
-      }
       setState(() {
         _articles = articles;
         _serviceTypes = serviceTypes;

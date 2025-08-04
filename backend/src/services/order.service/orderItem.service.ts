@@ -14,7 +14,7 @@ export class OrderItemService {
   };
 
   static async createOrderItem(orderItemData: CreateOrderItemDTO): Promise<OrderItem> {
-    const { orderId, articleId, serviceId, quantity, unitPrice } = orderItemData;
+    const { orderId, articleId, serviceId, quantity, unitPrice, serviceTypeId, isPremium, weight } = orderItemData as any;
 
     // Vérification de l'article
     const article = await prisma.articles.findFirst({
@@ -23,26 +23,48 @@ export class OrderItemService {
         isDeleted: false
       }
     });
-
     if (!article) {
       throw new Error(`Article not found or inactive: ${articleId}`);
     }
 
-    // Création de l'item avec le bon nom de table
+    // Récupération du prix via la table centralisée
+    const priceEntry = await prisma.article_service_prices.findFirst({
+      where: {
+        article_id: articleId,
+        service_type_id: serviceTypeId
+      },
+      include: {
+        service_types: true
+      }
+    });
+    if (!priceEntry || !priceEntry.is_available) {
+      throw new Error('No price available for this article/service type');
+    }
+
+    let calculatedUnitPrice = 0;
+    if (priceEntry.service_types?.pricing_type === 'PER_WEIGHT' || priceEntry.price_per_kg) {
+      // Cas prix au poids
+      if (!weight) throw new Error('Weight required for PER_WEIGHT service');
+      calculatedUnitPrice = Number(priceEntry.price_per_kg) * Number(weight);
+    } else {
+      // Cas prix fixe
+      calculatedUnitPrice = isPremium ? Number(priceEntry.premium_price) : Number(priceEntry.base_price);
+    }
+
     const orderItem = await prisma.order_items.create({
       data: {
         orderId,
         articleId,
         serviceId,
         quantity,
-        unitPrice: new Prisma.Decimal(unitPrice),
+        unitPrice: new Prisma.Decimal(calculatedUnitPrice),
+        isPremium: !!isPremium,
         createdAt: new Date(),
         updatedAt: new Date()
       },
       include: this.itemInclude
     });
 
-    // Conversion en OrderItem
     return {
       id: orderItem.id,
       orderId: orderItem.orderId,
@@ -169,28 +191,31 @@ export class OrderItemService {
     });
   }
 
-  static async calculateTotal(orderItems: Array<{ articleId: string; quantity: number }>): Promise<number> {
-    const articleIds = orderItems.map(item => item.articleId);
-    
-    const articles = await prisma.articles.findMany({
-      where: {
-        id: { in: articleIds }
-      },
-      select: {
-        id: true,
-        basePrice: true
+  static async calculateTotal(orderItems: Array<{ articleId: string; serviceTypeId: string; quantity?: number; weight?: number; isPremium?: boolean }>): Promise<number> {
+    let total = 0;
+    for (const item of orderItems) {
+      const priceEntry = await prisma.article_service_prices.findFirst({
+        where: {
+          article_id: item.articleId,
+          service_type_id: item.serviceTypeId
+        },
+        include: {
+          service_types: true
+        }
+      });
+      if (!priceEntry || !priceEntry.is_available) {
+        throw new Error('No price available for this article/service type');
       }
-    });
-
-    const priceMap = new Map(
-      articles.map(article => [article.id, Number(article.basePrice)])
-    );
-
-    return orderItems.reduce((total, item) => {
-      const price = priceMap.get(item.articleId);
-      if (!price) throw new Error(`Article not found: ${item.articleId}`);
-      return total + (price * item.quantity);
-    }, 0);
+      let itemTotal = 0;
+      if (priceEntry.service_types?.pricing_type === 'PER_WEIGHT' || priceEntry.price_per_kg) {
+        if (!item.weight) throw new Error('Weight required for PER_WEIGHT service');
+        itemTotal = Number(priceEntry.price_per_kg) * Number(item.weight);
+      } else {
+        itemTotal = (item.isPremium ? Number(priceEntry.premium_price) : Number(priceEntry.base_price)) * (item.quantity || 1);
+      }
+      total += itemTotal;
+    }
+    return total;
   }
 
   static async getOrderItemsByOrderId(orderId: string) {

@@ -809,15 +809,6 @@ export interface PriceHistoryEntry {
   };
 }
 
-// Nouvelles interfaces pour les tables ajoutées
-export interface ArticleServiceCompatibility {
-  id: string;
-  article_id: string;
-  service_id: string;
-  is_compatible: boolean;
-  created_at: Date;
-  updated_at: Date;
-}
 
 export interface ServiceSpecificPrice {
   id: string;
@@ -830,24 +821,6 @@ export interface ServiceSpecificPrice {
   updated_at: Date;
 }
 
-export interface ServiceCompatibility {
-  id: string;
-  article_id: string;
-  service_id: string;
-  is_compatible: boolean;
-  restrictions?: string[];
-  article?: {
-    id: string;
-    name: string;
-  };
-  service?: {
-    id: string;
-    name: string;
-  };
-  created_at: Date;
-  updated_at: Date;
-}
-
 // Ajout des nouveaux types pour la gestion des services et des prix
 export interface ServicePricingBase {
   base_price?: number;
@@ -856,12 +829,6 @@ export interface ServicePricingBase {
   is_available?: boolean;
 }
 
-export interface ServiceCompatibilityCreateDTO {
-  article_id: string;
-  service_id: string;
-  is_compatible: boolean;
-  restrictions?: string[];
-}
 
 export interface ArticleServiceUpdate extends ServicePricingBase {
   service_type_id: string;

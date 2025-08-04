@@ -20,6 +20,7 @@ export class OrderUpdateService {
       affiliateCode: string;
       status: string;
       items: any[];
+      service_type_id: string;
     }> = {},
     userId: string,
     userRole: string
@@ -67,26 +68,49 @@ export class OrderUpdateService {
       }
     }
     if (updateFields.status) data.status = updateFields.status;
+    if (updateFields.service_type_id) data.service_type_id = updateFields.service_type_id;
     data.updatedAt = new Date();
 
     // --- PATCH ORDER ITEMS LOGIC ---
+    // Si le service_type_id est modifié, recalculer les prix des items
+    let newServiceTypeId = updateFields.service_type_id || order.service_type_id;
     if (updateFields.items) {
       // Remove all existing items for this order
       await prisma.order_items.deleteMany({ where: { orderId } });
-      // Insert new items
+      // Insert new items avec recalcul du prix
       if (Array.isArray(updateFields.items) && updateFields.items.length > 0) {
-        await prisma.order_items.createMany({
-          data: updateFields.items.map((item: any) => ({
+        const PricingService = require('../../services/pricing.service').PricingService;
+        const recalculatedItems = [];
+        for (const item of updateFields.items) {
+          // Recalculer le prix selon le nouveau service type
+          let priceDetails;
+          try {
+            priceDetails = await PricingService.calculatePrice({
+              articleId: item.articleId,
+              serviceTypeId: newServiceTypeId,
+              quantity: item.quantity,
+              weight: item.weight,
+              isPremium: item.isPremium || false
+            });
+          } catch (err) {
+            let msg = 'Erreur inconnue';
+            if (err instanceof Error) {
+              msg = err.message;
+            }
+            throw new Error(`Erreur de calcul du prix pour l'article ${item.articleId}: ${msg}`);
+          }
+          recalculatedItems.push({
             orderId,
             articleId: item.articleId,
             serviceId: item.serviceId || null,
             quantity: item.quantity,
-            unitPrice: item.unitPrice,
+            unitPrice: priceDetails.basePrice,
             isPremium: item.isPremium || false,
             createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
             updatedAt: new Date(),
-          }))
-        });
+          });
+        }
+        await prisma.order_items.createMany({ data: recalculatedItems });
       }
     }
 

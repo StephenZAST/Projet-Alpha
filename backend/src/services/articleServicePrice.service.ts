@@ -83,12 +83,50 @@ export class ArticleServicePriceService {
 
   static async getAllPrices() {
     try {
-      return await prisma.article_service_prices.findMany({
+      const data = await prisma.article_service_prices.findMany({
         include: {
           articles: true,
           service_types: true
         }
       });
+      // Nouvelle logique : on considère article_services comme source unique de compatibilité
+      const result = await Promise.all(data.map(async item => {
+        // On récupère l'article_service correspondant à l'article et au service_type
+        // On récupère l'article_service correspondant à l'article et au service lié au service_type
+        // On doit d'abord retrouver le service_id correspondant au service_type_id
+        const service = await prisma.services.findFirst({
+          where: {
+            service_type_id: item.service_type_id ?? undefined
+          }
+        });
+        let articleService = null;
+        if (service) {
+          articleService = await prisma.article_services.findFirst({
+            where: {
+              article_id: item.article_id ?? undefined,
+              service_id: service.id
+            },
+            include: {
+              services: true
+            }
+          });
+        }
+        return {
+          id: item.id,
+          article_id: item.article_id,
+          service_type_id: item.service_type_id,
+          service_id: articleService?.service_id ?? '',
+          base_price: item.base_price,
+          premium_price: item.premium_price,
+          price_per_kg: item.price_per_kg,
+          is_available: item.is_available,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          articles: item.articles,
+          service_types: item.service_types
+        };
+      }));
+      return result;
     } catch (error) {
       console.error('Error getting all prices:', error);
       throw error;

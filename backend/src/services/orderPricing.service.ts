@@ -4,32 +4,35 @@ import { Article, OrderItem } from '../models/types';
 const prisma = new PrismaClient();
 
 export class OrderPricingService {
-  static async calculateItemPrice(item: OrderItem): Promise<number> {
+  static async calculateItemPrice(item: OrderItem & { serviceTypeId?: string; weight?: number }): Promise<number> {
     try {
-      const article = await prisma.articles.findUnique({
-        where: { id: item.articleId },
-        select: {
-          basePrice: true,
-          premiumPrice: true
+      // Récupérer le prix via la table centralisée
+      const priceEntry = await prisma.article_service_prices.findFirst({
+        where: {
+          article_id: item.articleId,
+          service_type_id: item.serviceTypeId
+        },
+        include: {
+          service_types: true
         }
       });
-
-      if (!article) {
-        throw new Error('Article not found');
+      if (!priceEntry || !priceEntry.is_available) throw new Error('No price available for this article/service type');
+      let price = 0;
+      if (priceEntry.service_types?.pricing_type === 'PER_WEIGHT' || priceEntry.price_per_kg) {
+        if (!item.weight) throw new Error('Weight required for PER_WEIGHT service');
+        price = Number(priceEntry.price_per_kg) * Number(item.weight);
+      } else {
+        price = item.isPremium ? Number(priceEntry.premium_price) : Number(priceEntry.base_price);
+        price = price * (item.quantity || 1);
       }
-
-      const price = item.isPremium 
-        ? Number(article.premiumPrice) || Number(article.basePrice)
-        : Number(article.basePrice);
-
-      return price * item.quantity;
+      return price;
     } catch (error) {
       console.error('Calculate item price error:', error);
       throw error;
     }
   }
 
-  static async calculateTotalPrice(items: OrderItem[]): Promise<number> {
+  static async calculateTotalPrice(items: Array<OrderItem & { serviceTypeId?: string; weight?: number }>): Promise<number> {
     try {
       const pricePromises = items.map(item => this.calculateItemPrice(item));
       const prices = await Promise.all(pricePromises);
