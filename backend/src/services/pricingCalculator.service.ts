@@ -52,11 +52,12 @@ export class PricingCalculatorService {
     items: Array<{articleId: string; serviceId: string}>
   ): Promise<void> {
     for (const item of items) {
-      // Vérifie la compatibilité via la table source de vérité (service_specific_prices)
-      const exists = await prisma.service_specific_prices.findFirst({
+      // Vérifie la compatibilité via la table centralisée article_service_prices
+      const exists = await prisma.article_service_prices.findFirst({
         where: {
           article_id: item.articleId,
-          service_id: item.serviceId
+          service_id: item.serviceId,
+          is_available: true
         }
       });
       if (!exists) {
@@ -91,21 +92,19 @@ export class PricingCalculatorService {
     const breakdown = [];
 
     for (const item of items) {
-      const price = await prisma.service_specific_prices.findFirst({
+      const price = await prisma.article_service_prices.findFirst({
         where: {
           article_id: item.articleId,
-          service_id: item.serviceId
+          service_id: item.serviceId,
+          is_available: true
         }
       });
-
       if (price) {
         const basePrice = item.isPremium ? 
-          Number(price.premium_price || price.base_price) : 
+          Number(price.premium_price ?? price.base_price) : 
           Number(price.base_price);
-        
         const itemCost = basePrice * item.quantity;
         total += itemCost;
-        
         breakdown.push({
           type: 'ITEM',
           ...item,

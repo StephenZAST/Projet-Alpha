@@ -157,16 +157,7 @@ export class PricingService {
       }
     });
 
-    if (!servicePrice) throw new Error('Price configuration not found');
-
-    const compatibility = await prisma.article_service_compatibility.findFirst({
-      where: {
-        article_id: articleId,
-        service_id: serviceTypeId
-      }
-    });
-
-    if (!compatibility?.is_compatible) {
+    if (!servicePrice || !servicePrice.is_available) {
       throw new Error('Service is not compatible with this article');
     }
 

@@ -26,6 +26,7 @@ export interface ArticleServicePrice {
 export interface CreateArticleServicePriceDTO {
   article_id: string;
   service_type_id: string;
+  service_id?: string;
   base_price: number;
   premium_price?: number;
   price_per_kg?: number;
@@ -36,6 +37,7 @@ export interface UpdateArticleServicePriceDTO {
   base_price?: number;
   premium_price?: number;
   price_per_kg?: number;
+  service_id?: string;
   is_available?: boolean;
 }
 

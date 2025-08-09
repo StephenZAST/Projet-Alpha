@@ -1,0 +1,51 @@
+{
+  "info": {
+    "name": "Article-Service Couples - Liste",
+    "description": "Collection pour tester la récupération de la liste des couples article/service/service-type.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET Liste Couples Article-Service",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/article-services/prices",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "article-services", "prices"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response contains data array', function() {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.be.an('array');",
+              "    if(jsonData.data.length > 0) {",
+              "      pm.expect(jsonData.data[0]).to.have.property('article_id');",
+              "      pm.expect(jsonData.data[0]).to.have.property('service_type_id');",
+              "      pm.expect(jsonData.data[0]).to.have.property('article_name');",
+              "      pm.expect(jsonData.data[0]).to.have.property('service_type_name');",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001" }
+  ]
+}

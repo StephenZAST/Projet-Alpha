@@ -1,3 +1,4 @@
+import subscriptionRoutes from './subscription.routes';
 import express, { Request, Response, NextFunction } from 'express';
 import { AdminController } from '../controllers/admin.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
@@ -12,6 +13,9 @@ const router = express.Router();
 
 // Protection des routes avec authentification
 router.use(authenticateToken as express.RequestHandler);
+
+// Register subscription management routes under /admin/subscriptions
+router.use('/subscriptions', subscriptionRoutes);
 
 // Routes de gestion des commandes
 router.get(

@@ -64,6 +64,7 @@ class AdminRoutes {
   static const String users = '/users';
   static const String profile = '/profile';
   static const String notifications = '/notifications';
+  static const String subscriptions = '/subscriptions';
 
   // Ajouter les routes pour les commandes flash
   static const String flashOrders = '/orders/flash';
@@ -91,6 +92,8 @@ class AdminRoutes {
         return profile;
       case MenuIndices.notifications:
         return notifications;
+      case MenuIndices.subscriptions:
+        return subscriptions;
       default:
         return dashboard;
     }
@@ -117,6 +120,8 @@ class AdminRoutes {
         return MenuIndices.profile;
       case notifications:
         return MenuIndices.notifications;
+      case subscriptions:
+        return MenuIndices.subscriptions;
       default:
         return MenuIndices.dashboard;
     }

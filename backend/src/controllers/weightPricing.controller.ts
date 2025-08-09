@@ -13,9 +13,7 @@ export class WeightPricingController {
           min_weight: minWeight,
           max_weight: maxWeight,
           price_per_kg: pricePerKg,
-          service_type: {
-            connect: { id: serviceTypeId }
-          },
+          service_type_id: serviceTypeId,
           created_at: new Date(),
           updated_at: new Date()
         }

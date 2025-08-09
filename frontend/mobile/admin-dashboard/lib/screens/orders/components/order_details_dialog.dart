@@ -332,6 +332,16 @@ class OrderDetailsDialog extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (order.isSubscriptionOrder)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: GlassButton(
+                    label: 'Commande Abonné Premium',
+                    icon: Icons.star,
+                    variant: GlassButtonVariant.info,
+                    onPressed: null,
+                  ),
+                ),
               Text('Détails de la commande',
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),

@@ -486,6 +486,7 @@ export interface CreateOrderResponse {
     pointsEarned: number;
     currentBalance: number;
   };
+  isSubscriptionOrder?: boolean;
 }
 
 // Address related types
@@ -753,12 +754,12 @@ export interface SubscriptionPlan {
   name: string;
   description?: string;
   price: number;
-  durationDays: number;
-  maxWeightPerOrder?: number;
-  maxOrdersPerMonth?: number;
-  isPremium: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  duration_days: number;
+  max_orders_per_month: number;
+  max_weight_per_order?: number;
+  is_premium: boolean;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface UserSubscription {
@@ -770,6 +771,7 @@ export interface UserSubscription {
   status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
   remainingWeight: number;
   remainingOrders: number;
+  expired: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -832,6 +834,7 @@ export interface ServicePricingBase {
 
 export interface ArticleServiceUpdate extends ServicePricingBase {
   service_type_id: string;
+  service_id?: string;
   is_available: boolean;  // Override pour rendre obligatoire
 }
 
@@ -844,6 +847,7 @@ export interface ArticleServicePrice extends ServicePricingBase {
   id: string;
   article_id: string;
   service_type_id: string;
+  service_id?: string; // Optionnel pour correspondre à la réalité de la base et éviter les erreurs de création
   base_price: number;     // Champs obligatoires pour la BD
   premium_price?: number;
   price_per_kg?: number;

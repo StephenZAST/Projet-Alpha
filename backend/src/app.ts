@@ -120,7 +120,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/article-categories', articleCategoryRoutes);
 app.use('/api/articles', articleRoutes);
-// app.use('/api/article-services', articleServiceRoutes); // Legacy route désactivée, logique centralisée utilisée
+app.use('/api/article-services', articleServiceRoutes);
 app.use('/api/blog-categories', blogCategoryRoutes);
 app.use('/api/blog-articles', blogArticleRoutes);
 app.use('/api/order-items', orderItemRoutes);

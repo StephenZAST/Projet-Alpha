@@ -13,6 +13,7 @@ import '../screens/profile/profile_screen.dart';
 import '../routes/admin_routes.dart';
 import '../controllers/users_controller.dart';
 import '../screens/services/service_article_couples_screen.dart';
+import '../screens/subscriptions/subscription_management_page.dart';
 
 class MenuAppController extends GetxController {
   // Singleton pattern
@@ -98,6 +99,8 @@ class MenuAppController extends GetxController {
         return 'NotificationsScreen';
       case MenuIndices.serviceArticleCouples:
         return 'ServiceArticleCouplesScreen';
+      case MenuIndices.subscriptions:
+        return 'SubscriptionManagementPage';
       default:
         return 'Unknown';
     }
@@ -117,6 +120,7 @@ class MenuAppController extends GetxController {
   void goToUsers() => updateIndex(6);
   void goToProfile() => updateIndex(7);
   void goToNotifications() => updateIndex(8);
+  void goToSubscriptions() => updateIndex(9); // Nouvelle section
 
   // Obtenir le titre de la page actuelle
   String getCurrentPageTitle() {
@@ -139,6 +143,8 @@ class MenuAppController extends GetxController {
         return 'Profil';
       case MenuIndices.notifications:
         return 'Notifications';
+      case MenuIndices.subscriptions:
+        return 'Abonnements';
       default:
         return 'Tableau de bord';
     }
@@ -185,6 +191,8 @@ class MenuAppController extends GetxController {
         return const ProfileScreen();
       case MenuIndices.notifications:
         return NotificationsScreen();
+      case MenuIndices.subscriptions:
+        return SubscriptionManagementPage();
       default:
         return DashboardScreen();
     }

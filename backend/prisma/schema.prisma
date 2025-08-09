@@ -1,3 +1,17 @@
+model user_subscriptions {
+  id                String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id           String   @db.Uuid
+  plan_id           String   @db.Uuid
+  start_date        DateTime @default(now()) @db.Timestamptz(6)
+  end_date          DateTime @db.Timestamptz(6)
+  status            String   // 'ACTIVE', 'CANCELLED', etc.
+  remaining_orders  Int?     // nombre de commandes restantes incluses
+  expired           Boolean  @default(false)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @default(now()) @db.Timestamptz(6)
+  user              users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  subscription_plans subscription_plans @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+}
 generator client {
   provider = "prisma-client-js"
 }
@@ -81,7 +95,7 @@ model article_service_prices {
   services        services?      @relation(fields: [service_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   service_types   service_types? @relation(fields: [service_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([service_type_id, article_id], map: "article_service_prices_article_id_service_type_id_key")
+  @@unique([service_type_id, article_id, service_id], map: "article_service_prices_unique_couple")
   @@index([service_type_id, article_id], map: "idx_asp_service_type")
   @@index([service_id], map: "idx_asp_service_id")
 }
@@ -333,6 +347,7 @@ model service_types {
   orders                 orders[]
   orders_archive         orders_archive[]
   services               services[]
+  weight_based_pricings  weight_based_pricing[]
 }
 
 model services {
@@ -385,6 +400,7 @@ model users {
   reset_codes              reset_codes[]
   user_activity_logs       user_activity_logs[]
   user_offers              user_offers[]
+  user_subscriptions      user_subscriptions[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -447,6 +463,16 @@ model rewards {
 
 model subscription_plans {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name String @db.VarChar
+  description String?
+  price Decimal @db.Decimal
+  duration_days Int @default(30)
+  max_orders_per_month Int @default(10)
+  max_weight_per_order Decimal? @db.Decimal
+  is_premium Boolean @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  user_subscriptions user_subscriptions[]
 }
 
 model user_offers {
@@ -461,12 +487,14 @@ model user_offers {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model weight_based_pricing {
-  id           String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  min_weight   Decimal  @default(0) @db.Decimal
-  max_weight   Decimal  @default(999999) @db.Decimal
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
-  price_per_kg Decimal  @db.Decimal
-  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+  id             String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  min_weight     Decimal        @default(0) @db.Decimal
+  max_weight     Decimal        @default(999999) @db.Decimal
+  created_at     DateTime       @default(now()) @db.Timestamptz(6)
+  price_per_kg   Decimal        @db.Decimal
+  updated_at     DateTime       @default(now()) @db.Timestamptz(6)
+  service_type_id String        @db.Uuid
+  service_type    service_types @relation(fields: [service_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model user_activity_logs {

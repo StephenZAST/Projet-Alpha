@@ -9,28 +9,32 @@ export class ArticleRestrictionService {
     articleId: string, 
     serviceId: string
   ) {
+
     try {
-      const data = await prisma.article_service_compatibility.upsert({
+      // Migration : on utilise la table centralisée service_specific_prices
+      const data = await prisma.article_service_prices.upsert({
         where: {
-          service_id_article_id: {
+          service_type_id_article_id_service_id: {
+            service_type_id: serviceId,
             article_id: articleId,
-            service_id: serviceId
+            service_id: ''
           }
         },
         update: {
-          is_compatible: true
-          // Suppression du champ updated_at qui n'existe pas dans le modèle
+          is_available: true,
+          updated_at: new Date()
         },
         create: {
           article_id: articleId,
-          service_id: serviceId,
-          is_compatible: true
+          service_type_id: serviceId,
+          base_price: 0, // valeur par défaut, à ajuster si besoin
+          is_available: true,
+          created_at: new Date(),
+          updated_at: new Date()
         },
-        include: {
-          articles: true,
-          services: true
-        }
+        include: {}
       });
+
 
       // Notifier les administrateurs des changements
       const admins = await prisma.users.findMany({

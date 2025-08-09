@@ -9,6 +9,7 @@ export class ArticleServicePriceService {
       data: {
         article_id: data.article_id,
         service_type_id: data.service_type_id,
+        service_id: data.service_id ?? null,
         base_price: data.base_price,
         premium_price: data.premium_price,
         price_per_kg: data.price_per_kg,
@@ -20,7 +21,10 @@ export class ArticleServicePriceService {
   static async update(id: string, data: Partial<ArticleServicePrice>) {
     return await prisma.article_service_prices.update({
       where: { id },
-      data
+      data: {
+        ...data,
+        service_id: data.service_id ?? undefined
+      }
     });
   }
 
@@ -47,9 +51,10 @@ export class ArticleServicePriceService {
     try {
       const price = await prisma.article_service_prices.upsert({
         where: {
-          service_type_id_article_id: {
+          service_type_id_article_id_service_id: {
+            service_type_id: serviceTypeId,
             article_id: articleId,
-            service_type_id: serviceTypeId
+            service_id: priceData.service_id ?? ''
           }
         },
         update: {
@@ -57,11 +62,13 @@ export class ArticleServicePriceService {
           premium_price: priceData.premium_price ? new Prisma.Decimal(priceData.premium_price) : null,
           price_per_kg: priceData.price_per_kg ? new Prisma.Decimal(priceData.price_per_kg) : null,
           is_available: priceData.is_available,
+          service_id: priceData.service_id ?? undefined,
           updated_at: new Date()
         },
         create: {
           article_id: articleId,
           service_type_id: serviceTypeId,
+          service_id: priceData.service_id ?? null,
           base_price: new Prisma.Decimal(priceData.base_price || 0),
           premium_price: priceData.premium_price ? new Prisma.Decimal(priceData.premium_price) : null,
           price_per_kg: priceData.price_per_kg ? new Prisma.Decimal(priceData.price_per_kg) : null,
@@ -83,47 +90,28 @@ export class ArticleServicePriceService {
 
   static async getAllPrices() {
     try {
-      const data = await prisma.article_service_prices.findMany({
-        include: {
-          articles: true,
-          service_types: true
-        }
-      });
-      // Nouvelle logique : on considère article_services comme source unique de compatibilité
-      const result = await Promise.all(data.map(async item => {
-        // On récupère l'article_service correspondant à l'article et au service_type
-        // On récupère l'article_service correspondant à l'article et au service lié au service_type
-        // On doit d'abord retrouver le service_id correspondant au service_type_id
-        const service = await prisma.services.findFirst({
-          where: {
-            service_type_id: item.service_type_id ?? undefined
-          }
-        });
-        let articleService = null;
-        if (service) {
-          articleService = await prisma.article_services.findFirst({
-            where: {
-              article_id: item.article_id ?? undefined,
-              service_id: service.id
-            },
-            include: {
-              services: true
-            }
-          });
-        }
+      const data = await prisma.article_service_prices.findMany();
+      const result = await Promise.all(data.map(async (item: any) => {
+        // Récupérer les entités associées
+        const [article, serviceType, service] = await Promise.all([
+          prisma.articles.findUnique({ where: { id: item.article_id } }),
+          prisma.service_types.findUnique({ where: { id: item.service_type_id } }),
+          item.service_id ? prisma.services.findUnique({ where: { id: item.service_id } }) : null
+        ]);
         return {
           id: item.id,
           article_id: item.article_id,
           service_type_id: item.service_type_id,
-          service_id: articleService?.service_id ?? '',
+          service_id: item.service_id ?? '',
           base_price: item.base_price,
           premium_price: item.premium_price,
           price_per_kg: item.price_per_kg,
           is_available: item.is_available,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          articles: item.articles,
-          service_types: item.service_types
+          article_name: article?.name ?? '',
+          service_type_name: serviceType?.name ?? '',
+          service_name: service?.name ?? ''
         };
       }));
       return result;
@@ -154,6 +142,7 @@ export class ArticleServicePriceService {
       id: data.id,
       article_id: data.article_id,
       service_type_id: data.service_type_id,
+      service_id: data.service_id ?? '',
       base_price: Number(data.base_price),
       premium_price: data.premium_price ? Number(data.premium_price) : undefined,
       price_per_kg: data.price_per_kg ? Number(data.price_per_kg) : undefined,

@@ -538,7 +538,6 @@ class _ServiceArticleCoupleDialogState
   List<Service> _compatibleServices = [];
   List<Article> _articles = [];
   List<ServiceType> _serviceTypes = [];
-  List<Article> _compatibleArticles = [];
 
   // Génère dynamiquement les champs selon le type de service sélectionné
   List<Widget> _buildDynamicFields() {
@@ -653,9 +652,27 @@ class _ServiceArticleCoupleDialogState
       _showErrorSnackbar('Le prix de base est obligatoire.');
       return;
     }
+
+    // Vérification d'unicité côté frontend (empêche doublon)
+    if (widget.editCouple == null) {
+      final parentState =
+          context.findAncestorStateOfType<_ServiceArticleCouplesScreenState>();
+      if (parentState != null) {
+        final alreadyExists = parentState.couples.any((c) =>
+            c.articleId == _selectedArticleId &&
+            c.serviceTypeName == selectedType.name);
+        if (alreadyExists) {
+          _showErrorSnackbar(
+              'Ce couple existe déjà (type de service + article).');
+          return;
+        }
+      }
+    }
+
     setState(() => _isLoading = true);
     final data = {
       'service_type_id': _selectedServiceTypeId,
+      'service_id': _selectedServiceId,
       'article_id': _selectedArticleId,
       'base_price': _basePrice,
       'premium_price': _premiumPrice,
@@ -672,7 +689,11 @@ class _ServiceArticleCoupleDialogState
             widget.editCouple!.id, data);
       }
     } catch (e) {
-      _showErrorSnackbar('Erreur technique: ${e.toString()}');
+      String errorMsg = 'Erreur technique: ${e.toString()}';
+      if (e.toString().contains('Unique constraint failed')) {
+        errorMsg = 'Ce couple existe déjà (type de service + article).';
+      }
+      _showErrorSnackbar(errorMsg);
       setState(() => _isLoading = false);
       return;
     }
@@ -718,7 +739,6 @@ class _ServiceArticleCoupleDialogState
                             _selectedServiceId = null;
                             _selectedArticleId = null;
                             _compatibleServices = [];
-                            _compatibleArticles = [];
                           });
                           if (v != null) {
                             final compatibleServices =

@@ -59,6 +59,7 @@ class Order {
   final bool isFlashOrder; // Indicateur pour les commandes flash
   final String? note; // Ajouter le champ note
   final OrderMetadata? metadata; // Ajouter le champ metadata
+  final bool isSubscriptionOrder;
 
   // Relations
   final Service? service;
@@ -108,6 +109,7 @@ class Order {
     this.isFlashOrder = false, // Par défaut, ce n'est pas une commande flash
     this.note,
     this.metadata,
+    this.isSubscriptionOrder = false,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -156,6 +158,7 @@ class Order {
         metadata: json['metadata'] != null
             ? OrderMetadata.fromJson(json['metadata'])
             : null,
+        isSubscriptionOrder: Order.safeBool(json['isSubscriptionOrder']),
       );
     } catch (e, stackTrace) {
       print('[Order] Error creating Order from JSON: $e');
@@ -248,6 +251,7 @@ class Order {
       'isFlashOrder': isFlashOrder,
       'note': note,
       'metadata': metadata?.toJson(),
+      'isSubscriptionOrder': isSubscriptionOrder,
     };
   }
 
@@ -276,6 +280,7 @@ class Order {
     bool? isFlashOrder,
     String? note,
     OrderMetadata? metadata,
+    bool? isSubscriptionOrder,
   }) {
     return Order(
       id: id ?? this.id,
@@ -302,6 +307,7 @@ class Order {
       isFlashOrder: isFlashOrder ?? this.isFlashOrder,
       note: note ?? this.note,
       metadata: metadata ?? this.metadata,
+      isSubscriptionOrder: isSubscriptionOrder ?? this.isSubscriptionOrder,
     );
   }
 }

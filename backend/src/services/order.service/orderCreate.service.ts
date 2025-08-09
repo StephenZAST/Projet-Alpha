@@ -17,6 +17,9 @@ const prisma = new PrismaClient();
 
 export class OrderCreateService {
   static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
+      // Vérification d’abonnement actif
+      const subscription = await import('../subscription.service').then(m => m.SubscriptionService.getUserActiveSubscription(orderData.userId));
+      const isSubscriptionOrder = !!subscription;
     try {
       const service_type_id = orderData.service_type_id || orderData.serviceTypeId;
       if (!service_type_id) {
@@ -172,7 +175,8 @@ export class OrderCreateService {
         rewards: {
           pointsEarned: earnedPoints,
           currentBalance: currentPoints
-        }
+        },
+        isSubscriptionOrder
       };
 
     } catch (error) {

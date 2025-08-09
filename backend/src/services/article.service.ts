@@ -168,9 +168,10 @@ export class ArticleService {
       for (const update of serviceUpdates) {
         await tx.article_service_prices.upsert({
           where: {
-            service_type_id_article_id: {
+            service_type_id_article_id_service_id: {
+              service_type_id: update.service_type_id,
               article_id: articleId,
-              service_type_id: update.service_type_id
+              service_id: update.service_id ?? ''
             }
           },
           update: {

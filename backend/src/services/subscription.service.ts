@@ -5,6 +5,38 @@ import { NotificationService } from './notification.service';
 const prisma = new PrismaClient();
 
 export class SubscriptionService {
+  static async getAllPlans() {
+    // Récupère tous les plans d'abonnement
+    const plans = await prisma.subscription_plans.findMany();
+    return plans.map(plan => ({
+      id: plan.id,
+      name: plan.name,
+      description: plan.description ?? undefined,
+      price: Number(plan.price),
+      duration_days: plan.duration_days,
+      max_orders_per_month: plan.max_orders_per_month,
+      max_weight_per_order: plan.max_weight_per_order ? Number(plan.max_weight_per_order) : undefined,
+      is_premium: plan.is_premium,
+      created_at: plan.created_at,
+      updated_at: plan.updated_at
+    }));
+  }
+  // Vérifie et met à jour l’expiration des abonnements (à appeler périodiquement ou lors de chaque accès)
+  static async expireSubscriptions(): Promise<void> {
+    const now = new Date();
+    await prisma.user_subscriptions.updateMany({
+      where: {
+        end_date: { lt: now },
+        expired: false,
+        status: 'ACTIVE',
+      },
+      data: {
+        expired: true,
+        status: 'EXPIRED',
+        updated_at: now,
+      }
+    });
+  }
   // Helper pour récupérer le prix d’un article/service via la logique centralisée
   static async getCentralizedServicePrice(articleId: string, serviceTypeId: string, weight?: number): Promise<number | null> {
     try {
@@ -23,23 +55,27 @@ export class SubscriptionService {
     try {
       const data = await prisma.subscription_plans.create({
         data: {
-          id: planData.id!
-          // Les timestamps sont gérés automatiquement par Prisma
+          id: planData.id,
+          name: planData.name!,
+        description: planData.description ?? undefined,
+          price: planData.price!,
+          duration_days: planData.duration_days ?? 30,
+          max_orders_per_month: planData.max_orders_per_month ?? 10,
+          max_weight_per_order: planData.max_weight_per_order,
+          is_premium: planData.is_premium ?? false,
         }
       });
-
-      // Conversion vers le type attendu
       return {
         id: data.id,
-        name: planData.name || '',
-        description: planData.description,
-        price: planData.price || 0,
-        durationDays: planData.durationDays || 0,
-        maxWeightPerOrder: planData.maxWeightPerOrder,
-        maxOrdersPerMonth: planData.maxOrdersPerMonth,
-        isPremium: planData.isPremium || false,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        name: data.name,
+        description: data.description ?? undefined,
+        price: Number(data.price),
+        duration_days: data.duration_days,
+        max_orders_per_month: data.max_orders_per_month,
+        max_weight_per_order: data.max_weight_per_order ? Number(data.max_weight_per_order) : undefined,
+        is_premium: data.is_premium,
+        created_at: data.created_at,
+        updated_at: data.updated_at
       };
     } catch (error) {
       console.error('[SubscriptionService] Error creating plan:', error);
@@ -49,25 +85,33 @@ export class SubscriptionService {
 
   static async subscribeToPlan(userId: string, planId: string): Promise<UserSubscription> {
     try {
+      const now = new Date();
+      const plan = await prisma.subscription_plans.findUnique({ where: { id: planId } });
+      if (!plan) throw new Error('Plan not found');
+      const endDate = new Date(now.getTime() + plan.duration_days * 24 * 60 * 60 * 1000);
       const userSub = await prisma.user_subscriptions.create({
         data: {
-          id: planId
-          // Les autres champs ne sont pas dans le schéma Prisma
+          user_id: userId,
+          plan_id: planId,
+          start_date: now,
+          end_date: endDate,
+          status: 'ACTIVE',
+          remaining_orders: plan.max_orders_per_month,
+          expired: false,
         }
       });
-
-      // Construction manuelle de l'objet retourné
       return {
         id: userSub.id,
-        userId,
-        planId,
-        startDate: new Date(),
-        endDate: new Date(),
-        status: 'ACTIVE',
-        remainingWeight: 0,
-        remainingOrders: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        userId: userSub.user_id,
+        planId: userSub.plan_id,
+        startDate: userSub.start_date,
+        endDate: userSub.end_date,
+        status: userSub.status as 'ACTIVE' | 'CANCELLED' | 'EXPIRED',
+        remainingWeight: plan.max_weight_per_order ? Number(plan.max_weight_per_order) : 0,
+        remainingOrders: userSub.remaining_orders ?? 0,
+        expired: userSub.expired,
+        createdAt: userSub.created_at,
+        updatedAt: userSub.updated_at
       };
     } catch (error) {
       console.error('[SubscriptionService] Error subscribing to plan:', error);
@@ -76,25 +120,32 @@ export class SubscriptionService {
   }
 
   static async getUserActiveSubscription(userId: string): Promise<UserSubscription | null> {
+      // Met à jour l’expiration avant de chercher l’abonnement actif
+      await SubscriptionService.expireSubscriptions();
     try {
       const subscription = await prisma.user_subscriptions.findFirst({
-        where: { id: userId }
+        where: {
+          user_id: userId,
+          status: 'ACTIVE',
+          end_date: { gte: new Date() },
+          expired: false,
+        },
+        orderBy: { start_date: 'desc' }
       });
-
       if (!subscription) return null;
-
-      // Construction manuelle de l'objet retourné
+      const plan = await prisma.subscription_plans.findUnique({ where: { id: subscription.plan_id } });
       return {
         id: subscription.id,
-        userId,
-        planId: subscription.id,
-        startDate: new Date(),
-        endDate: new Date(),
-        status: 'ACTIVE',
-        remainingWeight: 0,
-        remainingOrders: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        userId: subscription.user_id,
+        planId: subscription.plan_id,
+        startDate: subscription.start_date,
+        endDate: subscription.end_date,
+        status: subscription.status as 'ACTIVE' | 'CANCELLED' | 'EXPIRED',
+        remainingWeight: plan?.max_weight_per_order ? Number(plan.max_weight_per_order) : 0,
+        remainingOrders: subscription.remaining_orders ?? 0,
+        expired: subscription.expired,
+        createdAt: subscription.created_at,
+        updatedAt: subscription.updated_at
       };
     } catch (error) {
       console.error('[SubscriptionService] Error getting active subscription:', error);
@@ -104,12 +155,10 @@ export class SubscriptionService {
 
   static async cancelSubscription(userId: string, subscriptionId: string): Promise<void> {
     try {
-      // Mise à jour simple car le schéma ne contient que l'ID
       await prisma.user_subscriptions.update({
         where: { id: subscriptionId },
-        data: {} // Pas de champs à mettre à jour dans le schéma actuel
+        data: { status: 'CANCELLED', expired: true, updated_at: new Date() }
       });
-
       await NotificationService.sendNotification(
         userId,
         NotificationType.SUBSCRIPTION_CANCELLED,
@@ -126,17 +175,40 @@ export class SubscriptionService {
 
   static async checkSubscriptionUsage(subscriptionId: string, weightKg?: number): Promise<boolean> {
     try {
-      const subscription = await prisma.user_subscriptions.findUnique({
-        where: { id: subscriptionId }
-      });
-
+      const subscription = await prisma.user_subscriptions.findUnique({ where: { id: subscriptionId } });
       if (!subscription) throw new Error('Subscription not found');
-
-      // Comme il n'y a pas ces champs dans le schéma, on retourne toujours true
+      if (subscription.expired || subscription.status !== 'ACTIVE') return false;
+      if (typeof subscription.remaining_orders === 'number' && subscription.remaining_orders <= 0) return false;
+      if (subscription.end_date < new Date()) return false;
+      if (weightKg !== undefined) {
+        const plan = await prisma.subscription_plans.findUnique({ where: { id: subscription.plan_id } });
+        if (plan?.max_weight_per_order !== undefined && weightKg > Number(plan.max_weight_per_order)) return false;
+      }
       return true;
     } catch (error) {
       console.error('[SubscriptionService] Error checking subscription usage:', error);
       throw error;
     }
+  }
+
+  static async getPlanSubscribersWithNames(planId: string) {
+    // Récupère tous les abonnements pour un plan donné, avec le nom de l'utilisateur
+    const subs = await prisma.user_subscriptions.findMany({
+      where: { plan_id: planId },
+      include: { user: true }, // Assure que le modèle Prisma user_subscriptions a une relation 'user'
+    });
+    return subs.map(sub => ({
+      id: sub.id,
+      userId: sub.user_id,
+      userName: sub.user?.first_name ? `${sub.user.first_name} ${sub.user.last_name ?? ''}`.trim() : sub.user?.email ?? '',
+      planId: sub.plan_id,
+      startDate: sub.start_date,
+      endDate: sub.end_date,
+      status: sub.status,
+      remainingOrders: sub.remaining_orders,
+      expired: sub.expired,
+      createdAt: sub.created_at,
+      updatedAt: sub.updated_at
+    }));
   }
 }

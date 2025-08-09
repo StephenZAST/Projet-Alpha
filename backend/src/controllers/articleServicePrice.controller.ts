@@ -4,7 +4,7 @@ import { ArticleServicePriceService } from '../services/articleServicePrice.serv
 export class ArticleServicePriceController {
   static async create(req: Request, res: Response) {
     try {
-      const { article_id, service_type_id, base_price, premium_price, price_per_kg, is_available } = req.body;
+      const { article_id, service_type_id, service_id, base_price, premium_price, price_per_kg, is_available } = req.body;
 
       if (!article_id || !service_type_id || !base_price) {
         return res.status(400).json({
@@ -16,6 +16,7 @@ export class ArticleServicePriceController {
       const newPrice = await ArticleServicePriceService.create({
         article_id,
         service_type_id,
+        service_id: service_id ?? undefined,
         base_price,
         premium_price,
         price_per_kg,
@@ -38,7 +39,11 @@ export class ArticleServicePriceController {
     try {
       const { id } = req.params;
       const priceData = req.body;
-      const updatedPrice = await ArticleServicePriceService.update(id, priceData);
+      const updateDTO = {
+        ...priceData,
+        service_id: priceData.service_id ?? undefined
+      };
+      const updatedPrice = await ArticleServicePriceService.update(id, updateDTO);
 
       res.json({
         success: true,

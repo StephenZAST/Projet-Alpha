@@ -30,11 +30,7 @@ export class WeightPricingService {
 
       const pricing = await prisma.weight_based_pricing.create({
         data: {
-          service_type: {
-            connect: {
-              id: data.service_type_id
-            }
-          },
+          service_type_id: data.service_type_id,
           min_weight: new Prisma.Decimal(data.min_weight),
           max_weight: new Prisma.Decimal(data.max_weight),
           price_per_kg: new Prisma.Decimal(data.price_per_kg),

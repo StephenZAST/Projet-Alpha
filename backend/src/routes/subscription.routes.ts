@@ -27,6 +27,16 @@ router.post(
 );
 
 // Routes admin
+router.get(
+  '/plans',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(SubscriptionController.getAllPlans)
+);
+router.get(
+  '/plans/:planId/users',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(SubscriptionController.getPlanSubscribersWithNames)
+);
 router.post(
   '/plans',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
@@ -34,4 +44,3 @@ router.post(
 );
 
 export default router;
-  

@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { validateUUID } from '../../utils/validators'; 
+import { validateUUID } from '../../utils/validators';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export const validateServiceTypeCreate = (req: Request, res: Response, next: NextFunction) => {
   const { name, description } = req.body;
@@ -55,8 +58,8 @@ export const validateWeightPricing = (req: Request, res: Response, next: NextFun
   next();
 };
 
-export const validateServiceCompatibility = (req: Request, res: Response, next: NextFunction) => {
-  const { article_id, service_id, is_compatible } = req.body;
+export const validateServiceCompatibility = async (req: Request, res: Response, next: NextFunction) => {
+  const { article_id, service_id } = req.body;
 
   if (!validateUUID(article_id) || !validateUUID(service_id)) {
     return res.status(400).json({
@@ -65,12 +68,27 @@ export const validateServiceCompatibility = (req: Request, res: Response, next: 
     });
   }
 
-  if (typeof is_compatible !== 'boolean') {
-    return res.status(400).json({
+  // Vérification centralisée de la compatibilité
+  try {
+    const compatibility = await prisma.article_service_prices.findFirst({
+      where: {
+        article_id,
+        service_id,
+        is_available: true
+      }
+    });
+    if (!compatibility) {
+      return res.status(400).json({
+        success: false,
+        message: 'Service non compatible avec cet article'
+      });
+    }
+    next();
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: 'La compatibilité doit être un booléen'
+      message: 'Erreur lors de la vérification de compatibilité',
+      error: error instanceof Error ? error.message : error
     });
   }
-
-  next();
 };
