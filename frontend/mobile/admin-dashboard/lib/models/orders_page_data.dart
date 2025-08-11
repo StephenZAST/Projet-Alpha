@@ -67,21 +67,4 @@ class OrdersPageData {
           'totalPages': totalPages,
         },
       };
-
-  // Méthode utilitaire pour parser les entiers de manière sécurisée
-  static int? _parseIntSafely(dynamic value) {
-    if (value == null) return null;
-    if (value is int) return value;
-    if (value is String) {
-      try {
-        return int.parse(value);
-      } catch (_) {
-        return null;
-      }
-    }
-    if (value is double) {
-      return value.toInt();
-    }
-    return null;
-  }
 }

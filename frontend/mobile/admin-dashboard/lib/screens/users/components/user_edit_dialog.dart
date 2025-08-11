@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../models/user.dart';
 import '../../../controllers/users_controller.dart';
-import '../../../controllers/auth_controller.dart'; // Ajout de l'import manquant
 import '../../../constants.dart';
 import 'address_edit_dialog.dart';
 import '../../../models/address.dart';

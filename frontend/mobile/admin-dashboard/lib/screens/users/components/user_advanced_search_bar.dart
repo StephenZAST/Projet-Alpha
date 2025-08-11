@@ -109,7 +109,6 @@ class _UserAdvancedSearchBarState extends State<UserAdvancedSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Expanded(

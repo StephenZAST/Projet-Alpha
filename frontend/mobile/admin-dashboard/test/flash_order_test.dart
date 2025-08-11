@@ -1,13 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/controllers/orders_controller.dart';
 
 void main() {
   group('Flash Order Tests', () {
-    late OrdersController controller;
-
-    setUp(() {
-      controller = OrdersController();
-    });
+    setUp(() {});
 
     test('should create flash order update data correctly', () {
       // Add test implementation

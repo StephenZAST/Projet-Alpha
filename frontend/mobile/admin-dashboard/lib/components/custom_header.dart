@@ -20,7 +20,6 @@ class CustomHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<MenuAppController>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: EdgeInsets.all(defaultPadding),

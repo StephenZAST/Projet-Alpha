@@ -1,3 +1,4 @@
+import '../../constants.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../screens/services/components/service_type_dialog.dart';
@@ -173,71 +174,156 @@ class _ServiceTypesScreenState extends State<ServiceTypesScreen> {
             final type = controller.serviceTypes[index];
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 8),
-              child: ListTile(
-                title: Text(type.name,
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(type.description ?? ''),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
+              child: ExpansionTile(
+                title: Row(
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.edit),
-                      onPressed: () async {
-                        final result = await showDialog<Map<String, dynamic>>(
-                          context: context,
-                          builder: (context) =>
-                              ServiceTypeDialog(editType: type),
-                        );
-                        if (result != null) {
-                          final success = await controller.updateServiceType(
-                              type.id, result);
-                          if (success) {
-                            _showSuccessSnackbar(
-                                'Type de service modifié avec succès');
-                          } else {
-                            _showErrorSnackbar(controller.errorMessage.value);
-                          }
-                        }
-                      },
+                    // Nom du type à gauche
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        type.name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                          fontSize: 16,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () async {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text('Confirmer la suppression'),
-                            content: Text(
-                                'Voulez-vous vraiment supprimer ce type de service ?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(false),
-                                child: Text('Annuler'),
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(true),
-                                child: Text('Supprimer',
-                                    style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
+                    // Description au centre
+                    Expanded(
+                      flex: 3,
+                      child: Center(
+                        child: Text(
+                          type.description ?? '-',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.orange,
+                            fontSize: 15,
                           ),
-                        );
-                        if (confirm == true) {
-                          final success =
-                              await controller.deleteServiceType(type.id);
-                          if (success) {
-                            _showSuccessSnackbar(
-                                'Type de service supprimé avec succès');
-                          } else {
-                            _showErrorSnackbar(controller.errorMessage.value);
-                          }
-                        }
-                      },
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                   ],
                 ),
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Détails',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 15)),
+                        SizedBox(height: 6),
+                        Text.rich(TextSpan(children: [
+                          TextSpan(
+                              text: 'Nom : ',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(text: type.name),
+                        ])),
+                        if (type.description != null &&
+                            type.description!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text.rich(TextSpan(children: [
+                              TextSpan(
+                                  text: 'Description : ',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              TextSpan(text: type.description!),
+                            ])),
+                          ),
+                        if (type.pricingType != null)
+                          Text.rich(TextSpan(children: [
+                            TextSpan(
+                                text: 'Tarification : ',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(text: type.pricingType ?? 'Non renseigné'),
+                          ])),
+                        if (type.requiresWeight == true)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text('Ce type nécessite le poids.',
+                                style: TextStyle(color: Colors.blueGrey)),
+                          ),
+                        if (type.supportsPremium == true)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text('Ce type supporte le premium.',
+                                style: TextStyle(color: Colors.blueGrey)),
+                          ),
+                        SizedBox(height: 12),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () async {
+                                final result =
+                                    await showDialog<Map<String, dynamic>>(
+                                  context: context,
+                                  builder: (context) =>
+                                      ServiceTypeDialog(editType: type),
+                                );
+                                if (result != null) {
+                                  final success = await controller
+                                      .updateServiceType(type.id, result);
+                                  if (success) {
+                                    _showSuccessSnackbar(
+                                        'Type de service modifié avec succès');
+                                  } else {
+                                    _showErrorSnackbar(
+                                        controller.errorMessage.value);
+                                  }
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: Text('Confirmer la suppression'),
+                                    content: Text(
+                                        'Voulez-vous vraiment supprimer ce type de service ?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: Text('Annuler'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: Text('Supprimer',
+                                            style:
+                                                TextStyle(color: Colors.red)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  final success = await controller
+                                      .deleteServiceType(type.id);
+                                  if (success) {
+                                    _showSuccessSnackbar(
+                                        'Type de service supprimé avec succès');
+                                  } else {
+                                    _showErrorSnackbar(
+                                        controller.errorMessage.value);
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             );
           },

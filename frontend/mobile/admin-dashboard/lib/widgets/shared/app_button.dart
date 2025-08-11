@@ -39,7 +39,7 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final theme = Theme.of(context);
+    Theme.of(context);
 
     Color getBackgroundColor() {
       switch (variant) {
@@ -68,7 +68,6 @@ class AppButton extends StatelessWidget {
         case AppButtonVariant.orange:
           return AppColors.orange;
       }
-      return AppColors.primary; // Valeur par défaut
     }
 
     Color getTextColor() {
@@ -89,7 +88,6 @@ class AppButton extends StatelessWidget {
         case AppButtonVariant.outline:
           return isDark ? AppColors.textLight : AppColors.primary;
       }
-      return AppColors.textLight; // Valeur par défaut
     }
 
     BoxBorder? getBorder() {

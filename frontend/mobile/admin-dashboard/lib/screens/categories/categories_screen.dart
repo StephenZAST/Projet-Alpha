@@ -1,6 +1,4 @@
-import 'package:admin/widgets/shared/action_button.dart';
 import 'package:admin/widgets/shared/app_button.dart';
-import 'package:admin/widgets/shared/bouncy_button.dart';
 import 'package:admin/widgets/shared/glass_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,7 +6,7 @@ import '../../constants.dart';
 import '../../controllers/category_controller.dart';
 import '../../models/category.dart';
 import 'components/category_dialog.dart';
-import 'components/category_list_tile.dart';
+import 'components/category_expansion_tile.dart';
 
 class CategoriesScreen extends StatelessWidget {
   @override
@@ -178,13 +176,12 @@ class CategoriesScreen extends StatelessWidget {
                     itemCount: filteredCategories.length,
                     itemBuilder: (context, index) {
                       final category = filteredCategories[index];
-                      return CategoryListTile(
+                      return CategoryExpansionTile(
                         category: category,
                         onEdit: (cat) =>
                             Get.dialog(CategoryDialog(category: cat)),
                         onDelete: (cat) =>
                             _showDeleteDialog(context, cat, controller),
-                        // Ajout d'options pour badge, nombre d'articles, etc. dans le widget
                       );
                     },
                   );

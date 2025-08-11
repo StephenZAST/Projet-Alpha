@@ -1,3 +1,4 @@
+import 'package:admin/constants.dart';
 // Import legacy supprimé
 import 'package:flutter/material.dart';
 import 'package:admin/models/service_type.dart';
@@ -5,7 +6,6 @@ import 'package:admin/models/article.dart';
 import 'package:admin/services/article_service.dart';
 import 'package:admin/services/service_type_service.dart';
 import 'package:admin/services/article_service_couple_service.dart';
-import 'package:admin/services/article_service_service.dart';
 import 'package:admin/widgets/shared/glass_button.dart';
 import 'package:admin/models/service.dart';
 import 'package:admin/services/service_service.dart';
@@ -116,29 +116,27 @@ class _ServiceArticleCouplesScreenState
         return 0.0;
       }
 
-      // Récupération des sous-objets
-      final serviceType = json['service_types'] ?? {};
-      final article = json['articles'] ?? {};
-      // DEBUG: Affiche les IDs reçus pour chaque couple
+      // Mapping direct depuis la racine du JSON
       print(
           'COUPLE DEBUG => id: \\${json['id']}, articleId: \\${json['article_id']}, serviceId: \\${json['service_id']}');
       return ArticleServiceCouple(
         id: json['id']?.toString() ?? '',
-        serviceTypeName: serviceType['name'] ?? '',
-        serviceTypeDescription: serviceType['description'] ?? '',
-        serviceTypePricingType: serviceType['pricing_type'] ?? '',
-        serviceTypeRequiresWeight: serviceType['requires_weight'] ?? false,
-        serviceTypeSupportsPremium: serviceType['supports_premium'] ?? false,
+        serviceTypeName: json['service_type_name'] ?? '',
+        serviceTypeDescription: json['service_type_description'] ?? '',
+        serviceTypePricingType: json['service_type_pricing_type'] ?? '',
+        serviceTypeRequiresWeight:
+            json['service_type_requires_weight'] ?? false,
+        serviceTypeSupportsPremium:
+            json['service_type_supports_premium'] ?? false,
         serviceName: json['service_name'] ?? '',
-        articleName: article['name'] ?? '',
-        articleDescription: article['description'] ?? '',
+        articleName: json['article_name'] ?? '',
+        articleDescription: json['article_description'] ?? '',
         basePrice: parseDouble(json['base_price']),
         premiumPrice: parseDouble(json['premium_price']),
         pricePerKg: parseDouble(json['price_per_kg']),
         isAvailable: json['is_available'] ?? false,
-        articleId: json['article_id']?.toString() ?? '', // Ajouté
-        serviceId:
-            json['service_id']?.toString() ?? '', // Correction compatibilité
+        articleId: json['article_id']?.toString() ?? '',
+        serviceId: json['service_id']?.toString() ?? '',
       );
     }).toList();
     setState(() {
@@ -227,14 +225,51 @@ class _ServiceArticleCouplesScreenState
                     child: ExpansionTile(
                       title: Row(
                         children: [
+                          // Service Type Name à gauche
                           Expanded(
-                              child: Text(couple.serviceTypeName,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold))),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text(couple.serviceName)),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text(couple.articleName)),
+                            flex: 2,
+                            child: Text(
+                              couple.serviceTypeName,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                                fontSize: 15,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          // Service Name au centre
+                          Expanded(
+                            flex: 3,
+                            child: Center(
+                              child: Text(
+                                couple.serviceName.isNotEmpty
+                                    ? couple.serviceName
+                                    : '-',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          // Article Name à droite
+                          Expanded(
+                            flex: 2,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                couple.articleName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.orange,
+                                  fontSize: 15,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       children: [

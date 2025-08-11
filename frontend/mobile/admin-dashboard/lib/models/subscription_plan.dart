@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 class SubscriptionPlan {
   final String id;
   final String name;

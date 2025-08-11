@@ -1,4 +1,6 @@
-import 'package:admin/screens/services/components/service_card.dart';
+import 'package:admin/controllers/service_type_controller.dart';
+import 'package:admin/models/service_type.dart';
+import 'package:admin/screens/services/components/service_expansion_card.dart';
 import 'package:admin/screens/services/components/service_form_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,6 +11,8 @@ import '../../widgets/shared/glass_button.dart';
 class ServicesScreen extends GetView<ServiceController> {
   @override
   Widget build(BuildContext context) {
+    // S'assure que le ServiceTypeController est bien initialisé
+    Get.put(ServiceTypeController());
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -102,17 +106,25 @@ class ServicesScreen extends GetView<ServiceController> {
                     );
                   }
 
-                  return GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: _getCrossAxisCount(context),
-                      crossAxisSpacing: defaultPadding,
-                      mainAxisSpacing: defaultPadding,
-                      childAspectRatio: 1.3,
-                    ),
+                  // Affichage uniforme en ListView avec ServiceExpansionCard
+                  return ListView.builder(
                     itemCount: controller.services.length,
                     itemBuilder: (context, index) {
                       final service = controller.services[index];
-                      return ServiceCard(service: service);
+                      // Recherche du type de service associé
+                      final serviceTypeController =
+                          Get.find<ServiceTypeController>();
+                      ServiceType? serviceType;
+                      try {
+                        serviceType = serviceTypeController.serviceTypes
+                            .firstWhere((t) => t.id == service.typeId);
+                      } catch (_) {
+                        serviceType = null;
+                      }
+                      return ServiceExpansionCard(
+                        service: service,
+                        serviceType: serviceType,
+                      );
                     },
                   );
                 }),
@@ -124,11 +136,5 @@ class ServicesScreen extends GetView<ServiceController> {
     );
   }
 
-  int _getCrossAxisCount(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width > 1200) return 4;
-    if (width > 900) return 3;
-    if (width > 600) return 2;
-    return 1;
-  }
+  // Méthode de grille supprimée, affichage en ListView expansible
 }

@@ -26,17 +26,18 @@ export class ArticleCategoryController {
   static async getAllArticleCategories(req: Request, res: Response) {
     try {
       const categories = await ArticleCategoryService.getAllArticleCategories();
+      // articlesCount est inclus dans chaque objet catégorie
       return res.status(200).json({
         success: true,
         data: categories,
-        message: 'Categories retrieved successfully'
+        message: 'Catégories récupérées avec succès'
       });
     } catch (error) {
-      console.error('Error in getAllArticleCategories controller:', error);
+      console.error('Erreur dans getAllArticleCategories controller:', error);
       return res.status(500).json({
         success: false,
-        message: 'Failed to retrieve categories',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        message: 'Échec de la récupération des catégories',
+        error: error instanceof Error ? error.message : 'Erreur inconnue'
       });
     }
   } 

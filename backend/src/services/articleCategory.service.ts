@@ -42,15 +42,18 @@ export class ArticleCategoryService {
 
   static async getAllArticleCategories(): Promise<ArticleCategory[]> {
     try {
-      const data = await prisma.article_categories.findMany({
-        orderBy: { name: 'asc' }
+      // Récupère toutes les catégories et compte les articles associés
+      const categories = await prisma.article_categories.findMany({
+        orderBy: { name: 'asc' },
+        include: { articles: true }
       });
 
-      return data.map(category => ({
+      return categories.map(category => ({
         id: category.id,
         name: category.name,
         description: category.description || undefined,
-        createdAt: category.createdAt || new Date()
+        createdAt: category.createdAt || new Date(),
+        articlesCount: category.articles ? category.articles.length : 0
       }));
     } catch (error) {
       console.error('Error in getAllCategories:', error);

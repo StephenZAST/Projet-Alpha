@@ -35,8 +35,7 @@ class _ArticleEditDialogState extends State<ArticleEditDialog> {
     );
 
     // S'assurer que le prix n'est pas null
-    final price =
-        isPremium ? article.premiumPrice ?? 0.0 : article.basePrice ?? 0.0;
+    final price = isPremium ? article.premiumPrice ?? 0.0 : article.basePrice;
 
     controller.selectedArticles[widget.itemIndex] = FlashOrderItem(
       articleId: item.articleId,

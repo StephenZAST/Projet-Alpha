@@ -68,7 +68,6 @@ class AuthMiddleware extends GetMiddleware {
     return page;
   }
 
-  @override
   GetPageBuilder? onPageBuildDone(GetPageBuilder? page) {
     print('[AuthMiddleware] Page build complete');
     return page;

@@ -84,8 +84,7 @@ class OrdersHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final OrdersController controller = Get.find<OrdersController>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    Get.find<OrdersController>();
 
     return Container(
       margin: EdgeInsets.only(bottom: defaultPadding),

@@ -35,8 +35,6 @@ class GlassStyle {
     required Color color,
     bool isSelected = false,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return BoxDecoration(
       color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
       borderRadius: BorderRadius.circular(20),

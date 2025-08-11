@@ -136,11 +136,10 @@ class UsersController extends GetxController {
       }
 
       // Correction du paramètre role pour le filtrage
-      final roleParam = (selectedRoleString.value == null ||
-              selectedRoleString.value == '' ||
-              selectedRoleString.value == 'all')
-          ? null
-          : selectedRoleString.value.toUpperCase();
+      final roleParam =
+          (selectedRoleString.value == '' || selectedRoleString.value == 'all')
+              ? null
+              : selectedRoleString.value.toUpperCase();
       print('[UsersController] Fetching with role: $roleParam');
 
       final result = await UserService.getUsers(
@@ -150,25 +149,13 @@ class UsersController extends GetxController {
         searchQuery: searchQuery.value,
       );
 
-      // Sécurisation : si la réponse n'est pas conforme, on affiche une liste vide
-      if (result.items == null || result.items is! List) {
-        allUsers.value = [];
-        users.value = [];
-        totalPages.value = 1;
-        totalUsers.value = 0;
-        hasError.value = true;
-        errorMessage.value =
-            'Erreur de chargement des utilisateurs (réponse invalide)';
-        return;
-      }
-
       // Stocker tous les utilisateurs paginés
       allUsers.value = result.items;
       users.value = result.items;
       // Ne pas appliquer de filtre local ici !
 
-      totalPages.value = result.totalPages ?? 1;
-      totalUsers.value = result.total ?? 0;
+      totalPages.value = result.totalPages;
+      totalUsers.value = result.total;
       hasError.value = false;
       errorMessage.value = '';
 

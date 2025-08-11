@@ -85,8 +85,6 @@ class _ArticleFormScreenState extends State<ArticleFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Dialog(
       child: Container(
         width: 800,

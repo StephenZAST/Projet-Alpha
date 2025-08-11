@@ -311,10 +311,6 @@ class OrdersTable extends StatelessWidget {
         return Icons.help_outline;
     }
   }
-
-  String _normalizeStatus(String status) {
-    return status.trim().toUpperCase();
-  }
 }
 
 class _StatusUpdateButton extends StatelessWidget {

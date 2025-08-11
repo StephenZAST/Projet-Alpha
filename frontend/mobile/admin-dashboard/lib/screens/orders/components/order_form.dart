@@ -177,7 +177,7 @@ class _OrderFormState extends State<OrderForm> {
   }
 
   void _showAddressDialog() {
-    final addressController = Get.find<AddressController>();
+    Get.find<AddressController>();
     Get.dialog(
       Dialog(
         child: AddressSelectionMap(

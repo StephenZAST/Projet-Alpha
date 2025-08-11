@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/users_controller.dart';
-import '../../../types/user_search_filter.dart';
 
 class UserStatsGrid extends StatelessWidget {
   const UserStatsGrid({Key? key}) : super(key: key);

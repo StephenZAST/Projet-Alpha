@@ -12,7 +12,7 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(AdminProfileController());
+    Get.put(AdminProfileController());
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(

@@ -132,7 +132,7 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
     // S'assurer que le prix n'est pas null
     final price = isPremium
         ? selectedArticle!.premiumPrice ?? 0.0
-        : selectedArticle!.basePrice ?? 0.0;
+        : selectedArticle!.basePrice;
 
     controller.selectedArticles.add(FlashOrderItem(
       articleId: selectedArticle!.id,

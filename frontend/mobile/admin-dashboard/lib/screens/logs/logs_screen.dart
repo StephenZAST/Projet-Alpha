@@ -10,7 +10,7 @@ class LogsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final logController = Get.put(LogController());
-    final exportController = Get.put(ExportController());
+    Get.put(ExportController());
 
     return Scaffold(
       appBar: AppBar(

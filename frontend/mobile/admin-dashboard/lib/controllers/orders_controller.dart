@@ -11,7 +11,6 @@ import '../services/order_service.dart';
 import '../services/user_service.dart';
 import '../services/pricing_service.dart';
 import '../services/service_service.dart';
-import '../services/api_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
@@ -263,8 +262,6 @@ class OrdersController extends GetxController {
     }
   }
 
-  final ApiService _apiService = Get.find<ApiService>();
-
   // État de chargement et erreurs
   final isLoading = false.obs;
   final hasError = false.obs;
@@ -363,17 +360,9 @@ class OrdersController extends GetxController {
       hasError.value = false;
       errorMessage.value = '';
       final order = await OrderService.getOrderById(orderId);
-      if (order != null) {
-        orderIdResult.value = order;
-        selectedOrder.value = order;
-        isOrderIdSearchActive.value = activateOrderIdSearch;
-      } else {
-        orderIdResult.value = null;
-        selectedOrder.value = null;
-        isOrderIdSearchActive.value = false;
-        hasError.value = true;
-        errorMessage.value = 'Aucune commande trouvée pour cet ID.';
-      }
+      orderIdResult.value = order;
+      selectedOrder.value = order;
+      isOrderIdSearchActive.value = activateOrderIdSearch;
     } catch (e) {
       print('[OrdersController] Error fetching order details: $e');
       hasError.value = true;
@@ -419,20 +408,6 @@ class OrdersController extends GetxController {
     isFlashOrderFilter.value = value;
     currentPage.value = 1;
     fetchOrders();
-  }
-
-  Future<void> _updateStatusCounts() async {
-    try {
-      final allOrders = await OrderService.getOrders();
-      final statusCount = <String, int>{};
-      for (var order in allOrders) {
-        final status = order.status;
-        statusCount[status] = (statusCount[status] ?? 0) + 1;
-      }
-      orderStatusCount.value = statusCount;
-    } catch (e) {
-      print('[OrdersController] Error updating status counts: $e');
-    }
   }
 
   void nextPage() {

@@ -1,12 +1,10 @@
 import 'package:admin/models/article.dart';
-import 'package:admin/screens/articles/components/article_card.dart';
 import 'package:admin/screens/articles/components/article_form_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/article_controller.dart';
-import '../../responsive.dart';
-import './components/article_list_item.dart';
+import '../../controllers/category_controller.dart';
 import 'package:admin/widgets/shared/glass_button.dart';
 
 class ArticlesScreen extends GetView<ArticleController> {
@@ -21,10 +19,10 @@ class ArticlesScreen extends GetView<ArticleController> {
             children: [
               _buildHeader(context),
               SizedBox(height: defaultPadding),
-              _buildSearchAndViewToggle(context),
+              _buildSearchBar(context),
               SizedBox(height: defaultPadding),
               Expanded(
-                child: Obx(() => _buildArticlesList(context)),
+                child: Obx(() => _buildArticlesByCategory(context)),
               ),
             ],
           ),
@@ -68,72 +66,22 @@ class ArticlesScreen extends GetView<ArticleController> {
     );
   }
 
-  Widget _buildSearchAndViewToggle(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            onChanged: controller.searchArticles,
-            decoration: InputDecoration(
-              hintText: "Rechercher un article...",
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
+  Widget _buildSearchBar(BuildContext context) {
+    return TextField(
+      onChanged: controller.searchArticles,
+      decoration: InputDecoration(
+        hintText: "Rechercher un article...",
+        prefixIcon: Icon(Icons.search),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
-        SizedBox(width: AppSpacing.md),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: AppRadius.radiusMD,
-            border: Border.all(
-              color: Theme.of(context).dividerColor,
-            ),
-          ),
-          child: Row(
-            children: [
-              _buildViewModeButton(
-                icon: Icons.grid_view,
-                mode: ArticleViewMode.grid,
-              ),
-              _buildViewModeButton(
-                icon: Icons.list,
-                mode: ArticleViewMode.list,
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildViewModeButton({
-    required IconData icon,
-    required ArticleViewMode mode,
-  }) {
-    return Obx(() {
-      final isSelected = controller.viewMode.value == mode;
-      return InkWell(
-        onTap: () => controller.toggleViewMode(mode),
-        child: Container(
-          padding: EdgeInsets.all(AppSpacing.sm),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary.withOpacity(0.1) : null,
-            borderRadius: AppRadius.radiusSM,
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: isSelected ? AppColors.primary : AppColors.textSecondary,
-          ),
-        ),
-      );
-    });
-  }
+  // Suppression du toggle grille/liste, non utilisé dans la nouvelle UI
 
-  Widget _buildArticlesList(BuildContext context) {
+  Widget _buildArticlesByCategory(BuildContext context) {
     if (controller.isLoading.value) {
       return Center(child: CircularProgressIndicator());
     }
@@ -144,40 +92,157 @@ class ArticlesScreen extends GetView<ArticleController> {
       );
     }
 
-    return Obx(() {
-      if (controller.viewMode.value == ArticleViewMode.grid) {
-        return GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: _getCrossAxisCount(context),
-            crossAxisSpacing: defaultPadding,
-            mainAxisSpacing: defaultPadding,
-            childAspectRatio: 1.3,
-          ),
-          itemCount: controller.articles.length,
-          itemBuilder: (context, index) {
-            final article = controller.articles[index];
-            return ArticleCard(
-              article: article, // Only pass the article
-            );
-          },
-        );
-      } else {
-        return ListView.builder(
-          itemCount: controller.articles.length,
-          itemBuilder: (context, index) {
-            final article = controller.articles[index];
-            return ArticleListItem(
-              article: article,
-              onEdit: () => Get.dialog(
-                ArticleFormDialog(article: article),
-                barrierDismissible: false,
-              ),
-              onDelete: () => controller.deleteArticle(article.id),
-            );
-          },
-        );
+    // Regrouper les articles par catégorie
+    final Map<String, List<Article>> articlesByCategory = {};
+    for (var article in controller.articles) {
+      final catId = article.categoryId ?? 'Autre';
+      if (!articlesByCategory.containsKey(catId)) {
+        articlesByCategory[catId] = [];
       }
-    });
+      articlesByCategory[catId]!.add(article);
+    }
+
+    // Récupérer les noms de catégorie via le controller (si possible)
+    final categoryController = Get.isRegistered<CategoryController>()
+        ? Get.find<CategoryController>()
+        : null;
+    String getCategoryName(String catId) {
+      if (categoryController == null) return 'Autre';
+      final cat =
+          categoryController.categories.firstWhereOrNull((c) => c.id == catId);
+      return cat?.name ?? 'Autre';
+    }
+
+    return ListView(
+      children: articlesByCategory.entries.map((entry) {
+        final catId = entry.key;
+        final catName = getCategoryName(catId);
+        final articles = entry.value;
+        return ExpansionTile(
+          title: Text(
+            catName,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : AppColors.primaryDark,
+            ),
+          ),
+          children: articles.map((article) {
+            return Card(
+              margin: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              elevation: 2,
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      child: Icon(Icons.article_outlined,
+                          color: AppColors.primary),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(article.name,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16)),
+                          SizedBox(height: 4),
+                          Text(
+                            article.description ?? '',
+                            style: TextStyle(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white
+                                  : AppColors.primaryDark,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .cardColor
+                                      .withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AppColors.primary.withOpacity(0.5),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${article.basePrice} FCFA',
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              if (article.premiumPrice != null)
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .cardColor
+                                        .withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: AppColors.orange.withOpacity(0.5),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${article.premiumPrice} FCFA',
+                                    style: TextStyle(
+                                      color: AppColors.orange,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          color: AppColors.primary,
+                          onPressed: () => Get.dialog(
+                              ArticleFormDialog(article: article),
+                              barrierDismissible: false),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          color: AppColors.error,
+                          onPressed: () => controller.deleteArticle(article.id),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      }).toList(),
+    );
   }
 
   void _showAddArticleDialog(BuildContext context) {
@@ -187,21 +252,7 @@ class ArticlesScreen extends GetView<ArticleController> {
     );
   }
 
-  void _showEditArticleDialog(Article article) {
-    print('[ArticlesScreen] Opening edit dialog for article: ${article.id}');
-    Get.dialog(
-      ArticleFormDialog(article: article),
-      barrierDismissible: false,
-    );
-  }
+  // Suppression des méthodes non utilisées
 
-  void _showDeleteConfirmation(BuildContext context, Article article) {
-    // TODO: Implement delete confirmation
-  }
-
-  int _getCrossAxisCount(BuildContext context) {
-    if (Responsive.isDesktop(context)) return 3;
-    if (Responsive.isTablet(context)) return 2;
-    return 1;
-  }
+  // Suppression du calcul du nombre de colonnes, non utilisé dans la nouvelle UI
 }

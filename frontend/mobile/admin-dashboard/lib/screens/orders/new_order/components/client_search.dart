@@ -133,38 +133,4 @@ class _ClientSearchState extends State<ClientSearch> {
       onPressed: () => Get.dialog(CreateClientDialog()),
     );
   }
-
-  void _showFilterOptions() {
-    Get.dialog(
-      AlertDialog(
-        title: Text('Filtrer par'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text('Nom'),
-              onTap: () {
-                controller.setClientSearchFilter('name');
-                Get.back();
-              },
-            ),
-            ListTile(
-              title: Text('Email'),
-              onTap: () {
-                controller.setClientSearchFilter('email');
-                Get.back();
-              },
-            ),
-            ListTile(
-              title: Text('Téléphone'),
-              onTap: () {
-                controller.setClientSearchFilter('phone');
-                Get.back();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
