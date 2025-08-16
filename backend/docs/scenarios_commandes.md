@@ -104,6 +104,40 @@ Le backend gère un système de commandes avancé pour une application de gestio
 ### 4.5 Commande avec points de fidélité
 - Points utilisés pour réduire le total
 
+### 4.6 Ajout/Mise à jour en lot des items d'une commande (par article ou par poids)
+```json
+{
+  "items": [
+    { "articleId": "A1", "serviceId": "S1", "quantity": 2, "isPremium": false },
+    { "articleId": "A2", "serviceId": "S1", "weight": 3.5, "isPremium": true }
+  ]
+}
+```
+  - Tous les items existants de la commande sont supprimés puis remplacés par ceux du tableau `items`.
+  - Le backend recalcule automatiquement les prix (quantité ou poids, premium, etc.) pour chaque item.
+  - Le total de la commande est mis à jour.
+  - Compatible articles à l’unité et services au poids.
+  
+
+**Note sur les services par poids** :
+Pour les types de services au poids (`WEIGHT_BASED`), il n'est pas nécessaire de sélectionner des articles : l'utilisateur saisit uniquement la valeur du poids et le service à effectuer. Le prix est calculé automatiquement selon le couple type de service/service et le prix au kilo défini dans la table `article_service_prices`. Le payload doit donc contenir le champ `weight` et le `serviceId` (et éventuellement `isPremium` si applicable), sans sélection d'article.
+
+**Exemple pour un service au poids** :
+```json
+{
+  "items": [
+    { "serviceId": "S2", "weight": 5.0, "isPremium": false }
+  ]
+}
+```
+
+**Comportement** :
+  - Pour les services au poids, le backend utilise le prix au kilo du couple type de service/service pour le calcul.
+  - Aucun article n'est sélectionné, seule la saisie du poids est requise.
+  - Le total est recalculé automatiquement.
+
+**Remarque** : Cette distinction permet de simplifier l'UX et d'éviter toute ambiguïté lors de la gestion des commandes par poids.
+
 ---
 
 ## 5. État d’implémentation frontend

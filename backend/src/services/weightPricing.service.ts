@@ -8,29 +8,16 @@ const prisma = new PrismaClient();
 export class WeightPricingService {
   static async createPricing(data: CreateWeightPricingDTO): Promise<WeightBasedPricing> {
     try {
-      // Vérifier le type de service d'abord
-      const serviceType = await prisma.service_types.findUnique({
-        where: { id: data.service_type_id }
-      });
-
-      if (!serviceType?.requires_weight) {
-        throw new Error('This service type does not support weight-based pricing');
-      }
-
-      // Vérifier les chevauchements
+      // Vérifier les chevauchements (à adapter si besoin, ici on ne filtre plus par serviceTypeId)
       const hasOverlap = await this.checkOverlappingRanges(
-        data.service_type_id,
         data.min_weight,
         data.max_weight
       );
-
       if (hasOverlap) {
         throw new Error('Weight ranges cannot overlap');
       }
-
       const pricing = await prisma.weight_based_pricing.create({
         data: {
-          service_type_id: data.service_type_id,
           min_weight: new Prisma.Decimal(data.min_weight),
           max_weight: new Prisma.Decimal(data.max_weight),
           price_per_kg: new Prisma.Decimal(data.price_per_kg),
@@ -38,10 +25,8 @@ export class WeightPricingService {
           updated_at: new Date()
         }
       });
-
       return {
         id: pricing.id,
-        service_type_id: data.service_type_id,
         min_weight: Number(pricing.min_weight),
         max_weight: Number(pricing.max_weight),
         price_per_kg: Number(pricing.price_per_kg),
@@ -55,7 +40,6 @@ export class WeightPricingService {
   }
 
   private static async checkOverlappingRanges(
-    serviceTypeId: string,
     minWeight: number,
     maxWeight: number
   ): Promise<boolean> {
@@ -67,19 +51,10 @@ export class WeightPricingService {
         ]
       }
     });
-
     return existingRanges.length > 0;
   }
 
-  static async calculatePrice(service_type_id: string, weight: number): Promise<number> {
-    const serviceType = await prisma.service_types.findUnique({
-      where: { id: service_type_id }
-    });
-
-    if (!serviceType?.requires_weight) {
-      throw new Error('This service type does not support weight-based pricing');
-    }
-
+  static async calculatePrice(weight: number): Promise<number> {
     const pricing = await prisma.weight_based_pricing.findFirst({
       where: {
         AND: [
@@ -88,39 +63,15 @@ export class WeightPricingService {
         ]
       }
     });
-
     if (!pricing) {
       throw new Error('No pricing found for this weight range');
     }
-
-    return Number(pricing.min_weight) * weight;
+    return Number(pricing.price_per_kg) * weight;
   }
 
-  static async getPricingForService(serviceId: string): Promise<WeightBasedPricing[]> {
-    const pricings = await prisma.weight_based_pricing.findMany({
-      orderBy: { min_weight: 'asc' }
-    });
-
-    return pricings.map(pricing => ({
-      id: pricing.id,
-      service_type_id: serviceId,
-      min_weight: Number(pricing.min_weight),
-      max_weight: Number(pricing.max_weight),
-      price_per_kg: 0, // Cette valeur devra être ajoutée au schéma Prisma
-      created_at: new Date(),
-      updated_at: new Date()
-    }));
-  }
-
-  static async getAll(serviceTypeId?: string) {
+  static async getAll() {
     try {
       return await prisma.weight_based_pricing.findMany({
-        where: serviceTypeId ? {
-          service_type_id: serviceTypeId
-        } : undefined,
-        include: {
-          service_type: true
-        },
         orderBy: {
           min_weight: 'asc'
         }
@@ -131,26 +82,18 @@ export class WeightPricingService {
     }
   }
 
+
   static async create(data: {
     minWeight: number;
     maxWeight: number;
     pricePerKg: number;
-    serviceTypeId: string;
   }) {
     try {
       return await prisma.weight_based_pricing.create({
         data: {
           min_weight: data.minWeight,
           max_weight: data.maxWeight,
-          price_per_kg: data.pricePerKg,
-          service_type: {
-            connect: {
-              id: data.serviceTypeId
-            }
-          }
-        },
-        include: {
-          service_type: true
+          price_per_kg: data.pricePerKg
         }
       });
     } catch (error) {

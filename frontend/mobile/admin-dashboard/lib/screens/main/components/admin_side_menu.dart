@@ -149,14 +149,7 @@ class AdminSideMenu extends StatelessWidget {
                   menuController.selectedIndex == MenuIndices.profile, // 7
               onPress: () => menuController.updateIndex(MenuIndices.profile),
             ),
-            DrawerListTile(
-              title: "Abonnements",
-              icon: Icons.subscriptions_outlined,
-              isSelected: menuController.selectedIndex ==
-                  MenuIndices.subscriptions, // 10
-              onPress: () =>
-                  menuController.updateIndex(MenuIndices.subscriptions),
-            ),
+            // Onglet "Abonnements" retiré ici pour éviter le doublon
           ],
         );
       }),

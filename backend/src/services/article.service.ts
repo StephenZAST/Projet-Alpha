@@ -56,7 +56,7 @@ export class ArticleService {
       const data = await prisma.articles.findMany({
         where: { isDeleted: false },
         include: {
-          article_categories: true
+          article_categories: { select: { name: true } }
         }
       });
 
@@ -68,7 +68,8 @@ export class ArticleService {
         basePrice: Number(article.basePrice),
         premiumPrice: article.premiumPrice ? Number(article.premiumPrice) : 0,
         createdAt: article.createdAt || new Date(),
-        updatedAt: article.updatedAt || new Date()
+        updatedAt: article.updatedAt || new Date(),
+        category: article.article_categories?.name || 'Uncategorized'
       }));
     } catch (error) {
       console.error('Error in getAllArticles:', error);

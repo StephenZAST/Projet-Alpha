@@ -161,6 +161,12 @@ class _ServiceTypesScreenState extends State<ServiceTypesScreen> {
               );
             },
           ),
+          GlassButton(
+            label: '',
+            icon: Icons.refresh,
+            variant: GlassButtonVariant.secondary,
+            onPressed: controller.fetchServiceTypes,
+          ),
         ],
       ),
       body: Obx(() {

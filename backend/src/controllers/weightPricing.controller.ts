@@ -6,14 +6,13 @@ const prisma = new PrismaClient();
 export class WeightPricingController {
   static async create(req: Request, res: Response) {
     try {
-      const { minWeight, maxWeight, pricePerKg, serviceTypeId } = req.body;
 
+      const { minWeight, maxWeight, pricePerKg } = req.body;
       const weightPricing = await prisma.weight_based_pricing.create({
         data: {
           min_weight: minWeight,
           max_weight: maxWeight,
           price_per_kg: pricePerKg,
-          service_type_id: serviceTypeId,
           created_at: new Date(),
           updated_at: new Date()
         }

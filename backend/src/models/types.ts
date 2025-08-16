@@ -312,6 +312,7 @@ export interface Service {
   description?: string;
   createdAt: Date;
   updatedAt: Date;
+  service_type_id?: string;
 }
 
 // Ajout de la fonction fromJson comme une fonction utilitaire séparée
@@ -323,6 +324,7 @@ export const ServiceFromJson = (json: Record<string, any>): Service => {
     description: json.description,
     createdAt: new Date(json.createdAt),
     updatedAt: new Date(json.updatedAt),
+    service_type_id: json.service_type_id,
   };
 };
 
@@ -399,7 +401,8 @@ export interface OrderItem {
     serviceId: string;
     quantity: number;
     unitPrice: number;
-    isPremium?: boolean;  // Ajout du champ manquant
+  isPremium?: boolean;  // Ajout du champ manquant
+  weight?: number;
     article?: Article;
     createdAt: Date;
     updatedAt: Date;
@@ -523,6 +526,7 @@ export interface OrderItemInput {
   articleId: string;
   quantity: number;
   isPremium?: boolean;
+  weight?: number;
   premiumPrice?: boolean;  // Support des deux formats pour la rétrocompatibilité
 }
 
@@ -565,11 +569,13 @@ export interface AdminCreateOrderDTO {
 }
 
 export interface CreateOrderItemDTO {
-    orderId: string;
+  orderId: string;
   articleId: string;
   serviceId: string;
   quantity: number;
   unitPrice: number;
+  isPremium?: boolean;
+  weight?: number;
 }
 
 export interface OrderItemDTO {

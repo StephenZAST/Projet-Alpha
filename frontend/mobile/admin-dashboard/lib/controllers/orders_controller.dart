@@ -199,6 +199,7 @@ class OrdersController extends GetxController {
     loadServiceTypes();
     loadPaymentMethods();
     loadOrdersPage();
+    loadServices(); // S'assure que la liste des services est chargée dès l'init
   }
 
   void loadServiceTypes() {

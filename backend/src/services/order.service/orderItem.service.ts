@@ -14,7 +14,7 @@ export class OrderItemService {
   };
 
   static async createOrderItem(orderItemData: CreateOrderItemDTO): Promise<OrderItem> {
-    const { orderId, articleId, serviceId, quantity, unitPrice, serviceTypeId, isPremium, weight } = orderItemData as any;
+  const { orderId, articleId, serviceId, quantity, unitPrice, serviceTypeId, isPremium, weight } = orderItemData as any;
 
     // Vérification de l'article
     const article = await prisma.articles.findFirst({
@@ -59,6 +59,7 @@ export class OrderItemService {
         quantity,
         unitPrice: new Prisma.Decimal(calculatedUnitPrice),
         isPremium: !!isPremium,
+        weight: weight !== undefined ? weight : null,
         createdAt: new Date(),
         updatedAt: new Date()
       },

@@ -26,7 +26,6 @@ export class OrderUpdateService {
     userRole: string
   ): Promise<Order> {
     console.log(`[OrderUpdateService] patchOrderFields for order ${orderId} by user ${userId} (${userRole})`, updateFields);
-    // Autorisation : ADMIN, SUPER_ADMIN, ou propriétaire de la commande
     const allowedRoles = ['ADMIN', 'SUPER_ADMIN'];
     let order;
     try {
@@ -43,14 +42,12 @@ export class OrderUpdateService {
       console.warn(`[OrderUpdateService] Unauthorized update attempt by user ${userId} (${userRole}) on order ${orderId}`);
       throw new Error('Unauthorized to update order');
     }
-    // Construction dynamique des champs à mettre à jour
     const data: any = {};
     if (updateFields.paymentMethod) data.paymentMethod = updateFields.paymentMethod;
     if (updateFields.collectionDate) data.collectionDate = new Date(updateFields.collectionDate);
     if (updateFields.deliveryDate) data.deliveryDate = new Date(updateFields.deliveryDate);
     if (updateFields.affiliateCode !== undefined) {
       if (updateFields.affiliateCode) {
-        // Vérifier que le code affilié existe et est actif
         const affiliate = await prisma.affiliate_profiles.findFirst({
           where: {
             affiliate_code: updateFields.affiliateCode,
@@ -63,7 +60,6 @@ export class OrderUpdateService {
         }
         data.affiliateCode = updateFields.affiliateCode;
       } else {
-        // Suppression du code affilié
         data.affiliateCode = null;
       }
     }
@@ -71,18 +67,14 @@ export class OrderUpdateService {
     if (updateFields.service_type_id) data.service_type_id = updateFields.service_type_id;
     data.updatedAt = new Date();
 
-    // --- PATCH ORDER ITEMS LOGIC ---
-    // Si le service_type_id est modifié, recalculer les prix des items
+    // PATCH ORDER ITEMS LOGIC
     let newServiceTypeId = updateFields.service_type_id || order.service_type_id;
     if (updateFields.items) {
-      // Remove all existing items for this order
       await prisma.order_items.deleteMany({ where: { orderId } });
-      // Insert new items avec recalcul du prix
       if (Array.isArray(updateFields.items) && updateFields.items.length > 0) {
         const PricingService = require('../../services/pricing.service').PricingService;
-        const recalculatedItems = [];
+        let recalculatedItems: any[] = [];
         for (const item of updateFields.items) {
-          // Recalculer le prix selon le nouveau service type
           let priceDetails;
           try {
             priceDetails = await PricingService.calculatePrice({
@@ -100,26 +92,43 @@ export class OrderUpdateService {
             throw new Error(`Erreur de calcul du prix pour l'article ${item.articleId}: ${msg}`);
           }
           recalculatedItems.push({
-            orderId,
+            orderId: orderId,
             articleId: item.articleId,
             serviceId: item.serviceId || null,
             quantity: item.quantity,
             unitPrice: priceDetails.basePrice,
             isPremium: item.isPremium || false,
+            weight: item.weight !== undefined ? item.weight : null,
             createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
-            updatedAt: new Date(),
+            updatedAt: new Date()
           });
         }
-        await prisma.order_items.createMany({ data: recalculatedItems });
+        // Filtrage strict des propriétés autorisées (inclut weight)
+        const filteredItems = recalculatedItems.map(item => ({
+          orderId: item.orderId,
+          articleId: item.articleId,
+          serviceId: item.serviceId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          isPremium: item.isPremium,
+          weight: item.weight,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        }));
+        // Log pour traquer la présence de propriétés inattendues
+        console.log('[OrderUpdateService] Items à insérer dans order_items:', JSON.stringify(filteredItems, null, 2));
+        await prisma.order_items.createMany({ data: filteredItems });
       }
     }
 
-    if (Object.keys(data).length > 1 || (Object.keys(data).length === 1 && Object.keys(data)[0] !== 'updatedAt')) {
+    // Mise à jour de la commande si des champs ont changé (hors updatedAt)
+    const dataKeys = Object.keys(data);
+    if (dataKeys.length > 0 && !(dataKeys.length === 1 && dataKeys[0] === 'updatedAt')) {
       let updatedOrder;
       try {
         updatedOrder = await prisma.orders.update({
           where: { id: orderId },
-          data
+          data: data
         });
       } catch (err) {
         console.error(`[OrderUpdateService] Error updating order ${orderId}:`, err);

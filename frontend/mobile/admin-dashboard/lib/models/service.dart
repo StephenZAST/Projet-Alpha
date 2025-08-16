@@ -3,7 +3,7 @@ class Service {
   final String name;
   final String? description;
   final double price;
-  final String? typeId;
+  final String? serviceTypeId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -12,7 +12,7 @@ class Service {
     required this.name,
     this.description,
     required this.price,
-    this.typeId,
+    this.serviceTypeId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -24,7 +24,7 @@ class Service {
         name: json['name']?.toString() ?? '',
         description: json['description']?.toString(),
         price: _parsePrice(json['price']) ?? 0.0,
-        typeId: json['typeId']?.toString(),
+        serviceTypeId: json['service_type_id']?.toString(),
         createdAt: _parseDateTime(json['created_at'] ?? json['createdAt']) ??
             DateTime.now(),
         updatedAt: _parseDateTime(json['updated_at'] ?? json['updatedAt']) ??
@@ -62,7 +62,7 @@ class Service {
       'name': name,
       'description': description,
       'price': price,
-      'typeId': typeId,
+      'service_type_id': serviceTypeId,
     };
   }
 }

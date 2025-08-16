@@ -44,7 +44,8 @@ export class ServiceService {
         price: service.price || 0,
         description: service.description || undefined,
         createdAt: service.created_at || new Date(),
-        updatedAt: service.updated_at || new Date()
+        updatedAt: service.updated_at || new Date(),
+        service_type_id: service.service_type_id ?? undefined // Corrige le type pour éviter null
       }));
     } catch (error) {
       console.error('Get all services error:', error);

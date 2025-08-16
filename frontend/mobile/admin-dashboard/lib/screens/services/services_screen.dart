@@ -117,7 +117,7 @@ class ServicesScreen extends GetView<ServiceController> {
                       ServiceType? serviceType;
                       try {
                         serviceType = serviceTypeController.serviceTypes
-                            .firstWhere((t) => t.id == service.typeId);
+                            .firstWhere((t) => t.id == service.serviceTypeId);
                       } catch (_) {
                         serviceType = null;
                       }

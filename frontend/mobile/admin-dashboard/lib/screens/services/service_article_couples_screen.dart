@@ -1,5 +1,4 @@
 import 'package:admin/constants.dart';
-// Import legacy supprimé
 import 'package:flutter/material.dart';
 import 'package:admin/models/service_type.dart';
 import 'package:admin/models/article.dart';
@@ -10,7 +9,6 @@ import 'package:admin/widgets/shared/glass_button.dart';
 import 'package:admin/models/service.dart';
 import 'package:admin/services/service_service.dart';
 import 'package:get/get.dart';
-import 'package:get/get_navigation/src/snackbar/snackbar.dart';
 
 class ServiceArticleCouplesScreen extends StatefulWidget {
   const ServiceArticleCouplesScreen({Key? key}) : super(key: key);
@@ -209,6 +207,12 @@ class _ServiceArticleCouplesScreenState
             label: 'Ajouter un couple',
             variant: GlassButtonVariant.primary,
             onPressed: _openAddCoupleDialog,
+          ),
+          GlassButton(
+            label: '',
+            icon: Icons.refresh,
+            variant: GlassButtonVariant.secondary,
+            onPressed: _fetchCouples,
           ),
         ],
       ),
@@ -776,13 +780,14 @@ class _ServiceArticleCoupleDialogState
                             _compatibleServices = [];
                           });
                           if (v != null) {
-                            final compatibleServices =
-                                _services.where((s) => s.typeId == v).toList();
+                            final compatibleServices = _services
+                                .where((s) => s.serviceTypeId == v)
+                                .toList();
                             print(
                                 '--- DEBUG: compatibleServices for ServiceTypeId=$v ---');
                             for (var s in compatibleServices) {
                               print(
-                                  '  id: ${s.id}, name: ${s.name}, typeId: ${s.typeId}');
+                                  '  id: ${s.id}, name: ${s.name}, serviceTypeId: ${s.serviceTypeId}');
                             }
                             setState(() {
                               _compatibleServices = compatibleServices;

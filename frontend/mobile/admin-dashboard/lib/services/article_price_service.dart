@@ -1,7 +1,7 @@
 import '../services/api_service.dart';
 
 class ArticlePriceService {
-  static const String _baseUrl = '/api/admin/article-prices';
+  static const String _baseUrl = '/api/article-services';
   static final ApiService _api = ApiService();
 
   /// Récupère les prix du couple article/service
@@ -10,8 +10,8 @@ class ArticlePriceService {
     required String serviceTypeId,
   }) async {
     try {
-      final response = await _api.get(_baseUrl, queryParameters: {
-        'articleId': articleId,
+      final url = '$_baseUrl/$articleId/prices';
+      final response = await _api.get(url, queryParameters: {
         'serviceTypeId': serviceTypeId,
       });
       if (response.data != null && response.data['data'] != null) {

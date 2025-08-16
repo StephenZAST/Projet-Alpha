@@ -1,5 +1,6 @@
 import 'package:admin/bindings/app_bindings.dart';
 import 'package:admin/controllers/orders_controller.dart';
+import 'package:admin/controllers/service_type_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -23,6 +24,7 @@ void main() async {
   Get.put(MenuAppController(), permanent: true);
   Get.put<OrdersController>(OrdersController(), permanent: true);
   Get.put<ThemeController>(ThemeController(), permanent: true);
+  Get.put<ServiceTypeController>(ServiceTypeController(), permanent: true);
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.dumpErrorToConsole(details);

@@ -12,6 +12,20 @@ class SubscriptionManagementPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Gestion des abonnements'),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.refresh),
+              tooltip: 'Recharger',
+              onPressed: () {
+                // On force le rebuild des tabs en changeant la clé
+                // (solution simple pour relancer le fetch)
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                      builder: (_) => const SubscriptionManagementPage()),
+                );
+              },
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Plans d\'abonnement'),

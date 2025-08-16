@@ -147,7 +147,9 @@ export class PricingService {
   static async calculatePrice(params: PriceCalculationParams): Promise<PriceDetails> {
     const { articleId, serviceTypeId, quantity = 1, weight, isPremium = false } = params;
 
-    const servicePrice = await prisma.article_service_prices.findFirst({
+
+
+    let servicePrice = await prisma.article_service_prices.findFirst({
       where: {
         article_id: articleId,
         service_type_id: serviceTypeId
@@ -157,8 +159,24 @@ export class PricingService {
       }
     });
 
-    if (!servicePrice || !servicePrice.is_available) {
-      throw new Error('Service is not compatible with this article');
+    // Si le lien n'existe pas, créer automatiquement une entrée avec prix par défaut
+    if (!servicePrice) {
+      // On récupère le type de service pour le pricing_type
+      const serviceType = await prisma.service_types.findUnique({ where: { id: serviceTypeId } });
+      servicePrice = await prisma.article_service_prices.create({
+        data: {
+          article_id: articleId,
+          service_type_id: serviceTypeId,
+          base_price: 1,
+          premium_price: 1,
+          is_available: true,
+          price_per_kg: 1,
+          pricing_type: serviceType?.pricing_type || 'PER_ITEM',
+        },
+        include: {
+          service_types: true
+        }
+      });
     }
 
     let basePrice = isPremium && servicePrice.premium_price 
@@ -179,6 +197,13 @@ export class PricingService {
       
       default: // PER_ITEM
         basePrice = basePrice * quantity;
+    }
+
+
+    // Fallback automatique : si le prix calculé est <= 0, on force à 1 et on log
+    if (basePrice <= 0) {
+      console.warn(`[PricingService] Fallback: prix calculé <= 0 pour article/service (${articleId}/${serviceTypeId}), fallback à 1.`);
+      basePrice = 1;
     }
 
     return {

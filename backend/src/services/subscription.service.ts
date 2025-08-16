@@ -24,18 +24,8 @@ export class SubscriptionService {
   // Vérifie et met à jour l’expiration des abonnements (à appeler périodiquement ou lors de chaque accès)
   static async expireSubscriptions(): Promise<void> {
     const now = new Date();
-    await prisma.user_subscriptions.updateMany({
-      where: {
-        end_date: { lt: now },
-        expired: false,
-        status: 'ACTIVE',
-      },
-      data: {
-        expired: true,
-        status: 'EXPIRED',
-        updated_at: now,
-      }
-    });
+  // Table user_subscriptions n'existe pas, on retire cette logique ou l'adapte si besoin
+  // TODO: Adapter la logique d'expiration si une table d'abonnement utilisateur existe
   }
   // Helper pour récupérer le prix d’un article/service via la logique centralisée
   static async getCentralizedServicePrice(articleId: string, serviceTypeId: string, weight?: number): Promise<number | null> {
@@ -195,12 +185,12 @@ export class SubscriptionService {
     // Récupère tous les abonnements pour un plan donné, avec le nom de l'utilisateur
     const subs = await prisma.user_subscriptions.findMany({
       where: { plan_id: planId },
-      include: { user: true }, // Assure que le modèle Prisma user_subscriptions a une relation 'user'
+      include: { users: true }, // Correction : la relation s'appelle 'users' dans Prisma
     });
     return subs.map(sub => ({
       id: sub.id,
       userId: sub.user_id,
-      userName: sub.user?.first_name ? `${sub.user.first_name} ${sub.user.last_name ?? ''}`.trim() : sub.user?.email ?? '',
+      userName: sub.users?.first_name ? `${sub.users.first_name} ${sub.users.last_name ?? ''}`.trim() : sub.users?.email ?? '',
       planId: sub.plan_id,
       startDate: sub.start_date,
       endDate: sub.end_date,

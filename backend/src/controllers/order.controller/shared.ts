@@ -71,6 +71,7 @@ export class OrderSharedMethods {
       serviceId: item.serviceId,
       quantity: item.quantity,
       unitPrice: Number(item.unitPrice),
+    isPremium: item.isPremium || false,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
       article: {
@@ -151,6 +152,7 @@ export class OrderSharedMethods {
         serviceId: item.serviceId,
         quantity: item.quantity,
         unitPrice: Number(item.unitPrice),
+    isPremium: item.isPremium || false,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt
       }))
