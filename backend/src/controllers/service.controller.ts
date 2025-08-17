@@ -34,10 +34,10 @@ export class ServiceController {
 
   static async updateService(req: Request, res: Response) {
     try {
-      const serviceId = req.params.serviceId;
-      const { name, price, description } = req.body;
-      const service = await ServiceService.updateService(serviceId, name, price, description);
-      res.json({ data: service });
+  const serviceId = req.params.serviceId;
+  const { name, price, description, service_type_id } = req.body;
+  const service = await ServiceService.updateService(serviceId, name, price, description, service_type_id);
+  res.json({ data: service });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

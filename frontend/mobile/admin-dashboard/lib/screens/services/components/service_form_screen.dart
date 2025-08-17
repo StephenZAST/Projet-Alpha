@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:admin/controllers/service_type_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
@@ -20,6 +21,7 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
   late TextEditingController _priceController;
   late TextEditingController _descriptionController;
   bool isSubmitting = false;
+  String? _selectedServiceTypeId;
 
   @override
   void initState() {
@@ -42,7 +44,12 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ServiceController>();
+    final serviceTypeController = Get.find<ServiceTypeController>();
     final isEdit = widget.service != null;
+    // Préselectionner le type si édition
+    if (isEdit && _selectedServiceTypeId == null) {
+      _selectedServiceTypeId = widget.service?.serviceTypeId;
+    }
     return Dialog(
       backgroundColor: Colors.transparent,
       child: ClipRRect(
@@ -91,6 +98,40 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
                       return null;
                     },
                   ),
+                  SizedBox(height: AppSpacing.md),
+                  // Dropdown pour le type de service
+                  Obx(() {
+                    if (serviceTypeController.isLoading.value) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    return DropdownButtonFormField<String>(
+                      value: _selectedServiceTypeId,
+                      items: serviceTypeController.serviceTypes
+                          .map((type) => DropdownMenuItem(
+                                value: type.id,
+                                child: Text(type.name),
+                              ))
+                          .toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedServiceTypeId = val;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Type de service',
+                        border: OutlineInputBorder(
+                            borderRadius: AppRadius.radiusSM),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.12),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Le type de service est requis';
+                        }
+                        return null;
+                      },
+                    );
+                  }),
                   SizedBox(height: AppSpacing.md),
                   TextFormField(
                     controller: _priceController,
@@ -152,6 +193,7 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
                                           .replaceAll(',', '.')),
                                       description:
                                           _descriptionController.text.trim(),
+                                      typeId: _selectedServiceTypeId,
                                     );
                                   } else {
                                     await controller.updateService(
@@ -161,7 +203,9 @@ class _ServiceFormScreenState extends State<ServiceFormScreen> {
                                           .replaceAll(',', '.')),
                                       description:
                                           _descriptionController.text.trim(),
+                                      typeId: _selectedServiceTypeId,
                                     );
+                                    Get.back(); // Ferme le dialog après édition
                                   }
                                   setState(() => isSubmitting = false);
                                 }

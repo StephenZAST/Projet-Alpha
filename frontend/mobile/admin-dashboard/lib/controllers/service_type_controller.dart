@@ -17,9 +17,9 @@ class ServiceTypeController extends GetxController {
     isLoading.value = true;
     errorMessage.value = '';
     try {
-      final types = await ServiceTypeService.getAllServiceTypes();
-      // Filtrer pour n'afficher que les services types actifs
-      serviceTypes.assignAll(types.where((t) => t.isActive == true).toList());
+      final types =
+          await ServiceTypeService.getAllServiceTypes(includeInactive: true);
+      serviceTypes.assignAll(types);
     } catch (e) {
       errorMessage.value = 'Erreur lors du chargement des types de service';
     } finally {

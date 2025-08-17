@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../../constants.dart';
 import '../../../../controllers/orders_controller.dart';
 import '../../../../models/article.dart';
+import '../../../../services/article_price_service.dart';
 
 class ArticleSelectionDialog extends StatefulWidget {
   @override
@@ -16,6 +17,8 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
   int quantity = 1;
   bool isPremium = false;
   double? unitPrice;
+  Map<String, dynamic>? priceData;
+  bool isLoadingPrice = false;
 
   @override
   Widget build(BuildContext context) {
@@ -43,12 +46,38 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
                   child: Text(article.name),
                 );
               }).toList(),
-              onChanged: (article) {
+              onChanged: (article) async {
                 setState(() {
                   selectedArticle = article;
-                  unitPrice =
-                      isPremium ? article?.premiumPrice : article?.basePrice;
+                  isLoadingPrice = true;
+                  priceData = null;
+                  unitPrice = null;
                 });
+                if (article != null &&
+                    controller.selectedService.value != null) {
+                  final serviceTypeId =
+                      controller.selectedService.value!.serviceTypeId;
+                  if (serviceTypeId != null) {
+                    final data =
+                        await ArticlePriceService.getArticleServicePrice(
+                      articleId: article.id,
+                      serviceTypeId: serviceTypeId,
+                    );
+                    setState(() {
+                      priceData = data;
+                      isLoadingPrice = false;
+                      unitPrice = _getUnitPrice(data);
+                    });
+                  } else {
+                    setState(() {
+                      isLoadingPrice = false;
+                    });
+                  }
+                } else {
+                  setState(() {
+                    isLoadingPrice = false;
+                  });
+                }
               },
             ),
             SizedBox(height: AppSpacing.md),
@@ -60,15 +89,36 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
                   child: CheckboxListTile(
                     title: Text('Service Premium'),
                     value: isPremium,
-                    onChanged: (value) {
+                    onChanged: (value) async {
                       setState(() {
                         isPremium = value ?? false;
-                        if (selectedArticle != null) {
-                          unitPrice = isPremium
-                              ? selectedArticle!.premiumPrice
-                              : selectedArticle!.basePrice;
-                        }
+                        isLoadingPrice = true;
                       });
+                      if (selectedArticle != null &&
+                          controller.selectedService.value != null) {
+                        final serviceTypeId =
+                            controller.selectedService.value!.serviceTypeId;
+                        if (serviceTypeId != null) {
+                          final data =
+                              await ArticlePriceService.getArticleServicePrice(
+                            articleId: selectedArticle!.id,
+                            serviceTypeId: serviceTypeId,
+                          );
+                          setState(() {
+                            priceData = data;
+                            isLoadingPrice = false;
+                            unitPrice = _getUnitPrice(data);
+                          });
+                        } else {
+                          setState(() {
+                            isLoadingPrice = false;
+                          });
+                        }
+                      } else {
+                        setState(() {
+                          isLoadingPrice = false;
+                        });
+                      }
                     },
                   ),
                 ),
@@ -95,7 +145,12 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
             ),
 
             // Total
-            if (selectedArticle != null && unitPrice != null) ...[
+            if (isLoadingPrice)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(),
+              )
+            else if (selectedArticle != null && unitPrice != null) ...[
               SizedBox(height: AppSpacing.md),
               Text(
                 'Total: ${(unitPrice! * quantity).toStringAsFixed(2)} FCFA',
@@ -126,18 +181,23 @@ class _ArticleSelectionDialogState extends State<ArticleSelectionDialog> {
     );
   }
 
-  void addArticle() {
-    if (selectedArticle == null) return;
+  double? _getUnitPrice(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    if (isPremium && data['premium_price'] != null) {
+      return (data['premium_price'] as num).toDouble();
+    } else if (data['base_price'] != null) {
+      return (data['base_price'] as num).toDouble();
+    }
+    return null;
+  }
 
-    // S'assurer que le prix n'est pas null
-    final price = isPremium
-        ? selectedArticle!.premiumPrice ?? 0.0
-        : selectedArticle!.basePrice;
+  void addArticle() {
+    if (selectedArticle == null || unitPrice == null) return;
 
     controller.selectedArticles.add(FlashOrderItem(
       articleId: selectedArticle!.id,
       quantity: quantity,
-      unitPrice: price, // Utiliser le prix avec valeur par défaut
+      unitPrice: unitPrice!,
       isPremium: isPremium,
     ));
     Get.back();

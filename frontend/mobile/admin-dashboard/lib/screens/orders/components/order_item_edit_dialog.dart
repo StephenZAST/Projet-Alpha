@@ -1,4 +1,5 @@
 import 'package:admin/services/article_price_service.dart';
+import 'package:admin/services/article_service_couple_service.dart';
 import 'package:flutter/material.dart';
 import 'package:admin/models/order.dart';
 import 'package:admin/models/article.dart';
@@ -24,18 +25,30 @@ class OrderItemEditDialog extends StatefulWidget {
 }
 
 class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
-  // Fonction pour construire le catalogue d'articles trié par catégorie
-  // Nouvelle version : utilise les prix du couple article/service
+  // Nouvelle version : affiche uniquement les articles issus des couples article/serviceType avec prix
+  List<Map<String, dynamic>> couples = [];
+
+  Future<void> _loadCouples() async {
+    if (selectedServiceType == null) return;
+    setState(() => isLoading = true);
+    couples = await ArticleServiceCoupleService.getCouplesForServiceType(
+      serviceTypeId: selectedServiceType!.id,
+      serviceId: selectedService?.id,
+    );
+    setState(() => isLoading = false);
+  }
+
   List<Widget> _buildArticleCatalog() {
-    Map<String, List<Article>> articlesByCategory = {};
-    for (var article in articles) {
-      final catId = article.categoryId ?? 'Autres';
-      articlesByCategory.putIfAbsent(catId, () => []).add(article);
+    Map<String, List<Map<String, dynamic>>> couplesByCategory = {};
+    for (var couple in couples) {
+      final catId = couple['article_category_id'] ?? 'Autres';
+      couplesByCategory.putIfAbsent(catId, () => []).add(couple);
     }
     List<Widget> widgets = [];
-    articlesByCategory.forEach((catId, articlesList) {
-      String? categoryName =
-          articlesList.isNotEmpty ? articlesList.first.category : null;
+    couplesByCategory.forEach((catId, couplesList) {
+      String? categoryName = couplesList.isNotEmpty
+          ? couplesList.first['article_category_name']
+          : null;
       widgets.add(Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Text(
@@ -43,120 +56,83 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ));
-      for (var article in articlesList) {
-        widgets.add(FutureBuilder<Map<String, dynamic>?>(
-          future: (selectedServiceType != null)
-              ? ArticlePriceService.getArticleServicePrice(
-                  articleId: article.id,
-                  serviceTypeId: selectedServiceType!.id,
-                )
-              : Future.value(null),
-          builder: (context, snapshot) {
-            final priceData = snapshot.data;
-            final basePrice =
-                priceData != null && priceData['base_price'] != null
-                    ? priceData['base_price'] as num
-                    : article.basePrice;
-            final premiumPrice =
-                priceData != null && priceData['premium_price'] != null
-                    ? priceData['premium_price'] as num
-                    : article.premiumPrice;
-            final displayPrice =
-                showPremiumSwitch && isPremium && premiumPrice != null
-                    ? premiumPrice
-                    : basePrice;
-            return Card(
-              margin: EdgeInsets.symmetric(vertical: 4),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
+      for (var couple in couplesList) {
+        final articleId = couple['article_id'];
+        final articleName = couple['article_name'] ?? '';
+        final articleDescription = couple['article_description'] ?? '';
+        final basePrice =
+            double.tryParse(couple['base_price'].toString()) ?? 0.0;
+        final premiumPrice =
+            double.tryParse(couple['premium_price'].toString()) ?? 0.0;
+        final displayPrice =
+            showPremiumSwitch && isPremium ? premiumPrice : basePrice;
+        widgets.add(Card(
+          margin: EdgeInsets.symmetric(vertical: 4),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(articleName,
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      if (articleDescription.isNotEmpty)
+                        Text(articleDescription,
+                            style: TextStyle(
+                                color: Colors.grey[600], fontSize: 13)),
+                      Text('Prix: ${displayPrice} F CFA',
+                          style: TextStyle(color: Colors.blueAccent)),
+                    ],
+                  ),
+                ),
+                Row(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(article.name,
-                              style: TextStyle(fontWeight: FontWeight.w600)),
-                          if (article.description != null)
-                            Text(article.description!,
-                                style: TextStyle(
-                                    color: Colors.grey[600], fontSize: 13)),
-                          Text('Prix: ${displayPrice} F CFA',
-                              style: TextStyle(color: Colors.blueAccent)),
-                        ],
-                      ),
+                    IconButton(
+                      icon: Icon(Icons.remove_circle_outline),
+                      onPressed: () {
+                        setState(() {
+                          selectedArticles[articleId] =
+                              (selectedArticles[articleId] ?? 0) - 1;
+                          if (selectedArticles[articleId]! < 0)
+                            selectedArticles[articleId] = 0;
+                        });
+                      },
                     ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.remove_circle_outline),
-                          onPressed: () {
-                            setState(() {
-                              selectedArticles[article.id] =
-                                  (selectedArticles[article.id] ?? 0) - 1;
-                              if (selectedArticles[article.id]! < 0)
-                                selectedArticles[article.id] = 0;
-                            });
-                          },
-                        ),
-                        Text('${selectedArticles[article.id] ?? 0}',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        IconButton(
-                          icon: Icon(Icons.add_circle_outline),
-                          onPressed: () {
-                            setState(() {
-                              selectedArticles[article.id] =
-                                  (selectedArticles[article.id] ?? 0) + 1;
-                            });
-                          },
-                        ),
-                      ],
+                    Text('${selectedArticles[articleId] ?? 0}',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: Icon(Icons.add_circle_outline),
+                      onPressed: () {
+                        setState(() {
+                          selectedArticles[articleId] =
+                              (selectedArticles[articleId] ?? 0) + 1;
+                        });
+                      },
                     ),
                   ],
                 ),
-              ),
-            );
-          },
+              ],
+            ),
+          ),
         ));
       }
     });
     // Estimation du total avec les bons prix
-    Future<double> totalEstimateFuture = (() async {
-      double sum = 0;
-      for (var article in articles) {
-        final qty = selectedArticles[article.id] ?? 0;
-        Map<String, dynamic>? priceData;
-        if (selectedServiceType != null) {
-          priceData = await ArticlePriceService.getArticleServicePrice(
-            articleId: article.id,
-            serviceTypeId: selectedServiceType!.id,
-          );
-        }
-        final basePrice = priceData != null && priceData['base_price'] != null
-            ? priceData['base_price'] as num
-            : article.basePrice;
-        final premiumPrice =
-            priceData != null && priceData['premium_price'] != null
-                ? priceData['premium_price'] as num
-                : article.premiumPrice;
-        final price = showPremiumSwitch && isPremium && premiumPrice != null
-            ? premiumPrice
-            : basePrice;
-        sum += price * qty;
-      }
-      return sum;
-    })();
-    widgets.add(FutureBuilder<double>(
-      future: totalEstimateFuture,
-      builder: (context, snapshot) {
-        final total = snapshot.data ?? 0;
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          child: Text('Estimation totale : ${total.toStringAsFixed(2)} F CFA',
-              style:
-                  TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-        );
-      },
+    double sum = 0;
+    for (var couple in couples) {
+      final qty = selectedArticles[couple['article_id']] ?? 0;
+      final basePrice = double.tryParse(couple['base_price'].toString()) ?? 0.0;
+      final premiumPrice =
+          double.tryParse(couple['premium_price'].toString()) ?? 0.0;
+      final price = showPremiumSwitch && isPremium ? premiumPrice : basePrice;
+      sum += price * qty;
+    }
+    widgets.add(Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Text('Estimation totale : ${sum.toStringAsFixed(2)} F CFA',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
     ));
     return widgets;
   }
@@ -200,7 +176,7 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
       Map<String, dynamic> data = {
         'serviceTypeId': selectedServiceType!.id,
         'serviceId': selectedService!.id,
-        'premium': isPremium,
+        'isPremium': isPremium,
       };
       if (selectedServiceType?.pricingType == 'FIXED') {
         if (selectedArticle == null || quantity < 1) {
@@ -221,8 +197,15 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
         data: data,
       );
       price = response.data['data']?['price']?.toDouble();
+      if (price == 1 && isPremium) {
+        _showErrorSnackbar(
+            'Prix premium non configuré pour cet article/service.');
+      }
     } catch (e) {
       price = null;
+      setState(() => isLoading = false);
+      _showErrorSnackbar('Impossible de charger le prix premium.');
+      return;
     }
     setState(() => isLoading = false);
   }
@@ -248,8 +231,9 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
       selectedService = null;
       selectedArticle = null;
       services = [];
-      articles = [];
-      weight = null; // Réinitialise le poids
+      weight = null;
+      couples = [];
+      selectedArticles.clear();
     });
     if (type != null) {
       setState(() => isLoading = true);
@@ -266,16 +250,12 @@ class _OrderItemEditDialogState extends State<OrderItemEditDialog> {
     setState(() {
       selectedService = service;
       selectedArticle = null;
-      articles = [];
-      weight = null; // Réinitialise le poids
+      weight = null;
+      couples = [];
+      selectedArticles.clear();
     });
-    if (service != null) {
-      setState(() => isLoading = true);
-      final response = await api.get('/api/articles?serviceId=${service.id}');
-      articles = (response.data['data'] as List)
-          .map((json) => Article.fromJson(json))
-          .toList();
-      setState(() => isLoading = false);
+    if (service != null && selectedServiceType != null) {
+      await _loadCouples();
     }
   }
 

@@ -4,6 +4,43 @@ import { ArticleServicePrice, ArticleServiceUpdate } from '../models/types';
 const prisma = new PrismaClient();
 
 export class ArticleServicePriceService {
+  // Retourne tous les couples article/serviceType disponibles avec prix, filtré par where
+  static async getCouples(where: any) {
+    try {
+      const data = await prisma.article_service_prices.findMany({
+        where,
+        include: {
+          articles: true,
+          service_types: true,
+          services: true
+        }
+      });
+      // Format enrichi pour le frontend
+      return data.map((item: any) => ({
+        id: item.id,
+        article_id: item.article_id,
+        service_type_id: item.service_type_id,
+        service_id: item.service_id ?? '',
+  base_price: item.base_price !== null ? Number(item.base_price) : null,
+  premium_price: item.premium_price !== null ? Number(item.premium_price) : null,
+        price_per_kg: item.price_per_kg !== null ? Number(item.price_per_kg) : null,
+        is_available: item.is_available,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        article_name: item.articles?.name ?? '',
+        article_description: item.articles?.description ?? '',
+        service_type_name: item.service_types?.name ?? '',
+        service_type_description: item.service_types?.description ?? '',
+        service_type_pricing_type: item.service_types?.pricing_type ?? '',
+        service_type_requires_weight: item.service_types?.requires_weight ?? false,
+        service_type_supports_premium: item.service_types?.supports_premium ?? false,
+        service_name: item.services?.name ?? '',
+      }));
+    } catch (error) {
+      console.error('Error getting couples:', error);
+      throw error;
+    }
+  }
   static async create(data: Omit<ArticleServicePrice, 'id' | 'created_at' | 'updated_at'>) {
     return await prisma.article_service_prices.create({
       data: {
@@ -93,10 +130,13 @@ export class ArticleServicePriceService {
       const data = await prisma.article_service_prices.findMany();
       const result = await Promise.all(data.map(async (item: any) => {
         // Récupérer les entités associées
+        const articlePromise = item.article_id ? prisma.articles.findUnique({ where: { id: item.article_id } }) : null;
+        const serviceTypePromise = item.service_type_id ? prisma.service_types.findUnique({ where: { id: item.service_type_id } }) : null;
+        const servicePromise = item.service_id ? prisma.services.findUnique({ where: { id: item.service_id } }) : null;
         const [article, serviceType, service] = await Promise.all([
-          prisma.articles.findUnique({ where: { id: item.article_id } }),
-          prisma.service_types.findUnique({ where: { id: item.service_type_id } }),
-          item.service_id ? prisma.services.findUnique({ where: { id: item.service_id } }) : null
+          articlePromise,
+          serviceTypePromise,
+          servicePromise
         ]);
         return {
           id: item.id,

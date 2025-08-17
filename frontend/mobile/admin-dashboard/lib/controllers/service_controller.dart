@@ -44,9 +44,10 @@ class ServiceController extends GetxController {
 
       // Créer le DTO correct
       await ServiceService.createService(
-        name: name, // Passer les paramètres requis individuellement
+        name: name,
         price: price,
         description: description,
+        typeId: typeId,
       );
 
       await fetchServices();
@@ -77,6 +78,7 @@ class ServiceController extends GetxController {
         name: name,
         price: price,
         description: description,
+        typeId: typeId,
       );
 
       await fetchServices();

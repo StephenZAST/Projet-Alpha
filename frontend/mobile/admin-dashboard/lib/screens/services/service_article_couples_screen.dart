@@ -675,21 +675,24 @@ class _ServiceArticleCoupleDialogState
       orElse: () => ServiceType(id: '', name: ''),
     );
     // Validation avancée
-    if (selectedType.requiresWeight == true &&
-        (_pricePerKg == null || _pricePerKg! <= 0)) {
-      _showErrorSnackbar(
-          'Le prix au kilo est obligatoire pour ce type de service.');
-      return;
-    }
-    if (selectedType.supportsPremium == true &&
-        (_premiumPrice == null || _premiumPrice! <= 0)) {
-      _showErrorSnackbar(
-          'Le prix premium est obligatoire pour ce type de service.');
-      return;
-    }
-    if (_basePrice == null || _basePrice! <= 0) {
-      _showErrorSnackbar('Le prix de base est obligatoire.');
-      return;
+    if (selectedType.pricingType == 'WEIGHT_BASED') {
+      if (_pricePerKg == null || _pricePerKg! <= 0) {
+        _showErrorSnackbar(
+            'Le prix au kilo est obligatoire pour ce type de service.');
+        return;
+      }
+      // Pas de validation sur base/premium
+    } else {
+      if (selectedType.supportsPremium == true &&
+          (_premiumPrice == null || _premiumPrice! <= 0)) {
+        _showErrorSnackbar(
+            'Le prix premium est obligatoire pour ce type de service.');
+        return;
+      }
+      if (_basePrice == null || _basePrice! <= 0) {
+        _showErrorSnackbar('Le prix de base est obligatoire.');
+        return;
+      }
     }
 
     // Vérification d'unicité côté frontend (empêche doublon)
@@ -709,14 +712,19 @@ class _ServiceArticleCoupleDialogState
     }
 
     setState(() => _isLoading = true);
-    final data = {
+    final data = <String, dynamic>{
       'service_type_id': _selectedServiceTypeId,
       'service_id': _selectedServiceId,
       'article_id': _selectedArticleId,
-      'base_price': _basePrice,
-      'premium_price': _premiumPrice,
-      'price_per_kg': _pricePerKg,
       'is_available': true,
+      // Toujours envoyer base_price (0 si WEIGHT_BASED)
+      'base_price':
+          selectedType.pricingType == 'WEIGHT_BASED' ? 1 : (_basePrice ?? 1),
+      if (selectedType.pricingType == 'WEIGHT_BASED')
+        'price_per_kg': _pricePerKg,
+      if (selectedType.pricingType != 'WEIGHT_BASED' &&
+          selectedType.supportsPremium == true)
+        'premium_price': _premiumPrice,
     };
     bool success = false;
     try {
@@ -817,8 +825,12 @@ class _ServiceArticleCoupleDialogState
                             _selectedArticleId = null;
                           });
                         },
-                        validator: (v) =>
-                            v == null ? 'Sélectionnez un service' : null,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) {
+                            return 'La sélection du service est obligatoire';
+                          }
+                          return null;
+                        },
                         decoration: const InputDecoration(labelText: 'Service'),
                       ),
                       const SizedBox(height: 12),

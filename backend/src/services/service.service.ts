@@ -53,16 +53,20 @@ export class ServiceService {
     }
   }
 
-  static async updateService(serviceId: string, name: string, price: number, description?: string): Promise<Service> {
+  static async updateService(serviceId: string, name: string, price: number, description?: string, service_type_id?: string): Promise<Service> {
     try {
+      const updateData: any = {
+        name,
+        price,
+        description: description || null,
+        updated_at: new Date()
+      };
+      if (service_type_id) {
+        updateData.service_type_id = service_type_id;
+      }
       const service = await prisma.services.update({
         where: { id: serviceId },
-        data: {
-          name,
-          price,
-          description: description || null,
-          updated_at: new Date()
-        }
+        data: updateData
       });
 
       return {
@@ -71,7 +75,8 @@ export class ServiceService {
         price: service.price || 0,
         description: service.description || undefined,
         createdAt: service.created_at || new Date(),
-        updatedAt: service.updated_at || new Date()
+        updatedAt: service.updated_at || new Date(),
+        service_type_id: service.service_type_id ?? undefined
       };
     } catch (error) {
       console.error('Update service error:', error);

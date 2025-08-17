@@ -26,6 +26,7 @@ class ServiceService {
     required String name,
     required double price,
     String? description,
+    String? typeId,
   }) async {
     try {
       // Correction: utiliser le bon endpoint backend
@@ -33,6 +34,7 @@ class ServiceService {
         'name': name,
         'price': price,
         if (description != null) 'description': description,
+        if (typeId != null) 'service_type_id': typeId,
       });
       if (response.statusCode != 201 && response.statusCode != 200) {
         throw 'Erreur lors de la création du service: ${response.statusCode}';
@@ -49,6 +51,7 @@ class ServiceService {
     String? name,
     double? price,
     String? description,
+    String? typeId,
   }) async {
     try {
       // Correction: utiliser le bon endpoint backend
@@ -56,6 +59,7 @@ class ServiceService {
         if (name != null) 'name': name,
         if (price != null) 'price': price,
         if (description != null) 'description': description,
+        if (typeId != null) 'service_type_id': typeId,
       });
       return Service.fromJson(response.data['data']);
     } catch (e) {

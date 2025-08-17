@@ -1,6 +1,30 @@
 import '../services/api_service.dart';
 
 class ArticleServiceCoupleService {
+  /// Récupère dynamiquement les couples article/serviceType avec prix
+  static Future<List<Map<String, dynamic>>> getCouplesForServiceType({
+    required String serviceTypeId,
+    String? serviceId,
+  }) async {
+    try {
+      final response = await _api.get(
+        '/api/article-services/couples',
+        queryParameters: {
+          'serviceTypeId': serviceTypeId,
+          if (serviceId != null) 'serviceId': serviceId,
+        },
+      );
+      if (response.data != null && response.data['data'] != null) {
+        return List<Map<String, dynamic>>.from(response.data['data']);
+      }
+      return [];
+    } catch (e) {
+      print(
+          '[ArticleServiceCoupleService] Error fetching couples for serviceType: $e');
+      return [];
+    }
+  }
+
   static const String _baseUrl = '/api/article-services/prices';
   static final ApiService _api = ApiService();
 
