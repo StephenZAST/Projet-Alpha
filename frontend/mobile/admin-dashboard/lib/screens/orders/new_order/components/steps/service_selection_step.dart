@@ -5,6 +5,7 @@ import '../../../../../constants.dart';
 import '../../../../../controllers/orders_controller.dart';
 import '../../../../../models/service.dart';
 import '../../../../../models/service_type.dart';
+import '../../../../../models/article.dart';
 import '../../../../../services/api_service.dart';
 
 class ServiceSelectionStep extends StatefulWidget {
@@ -13,39 +14,59 @@ class ServiceSelectionStep extends StatefulWidget {
 }
 
 class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
+  void _addArticleToControllerIfMissing(Map<String, dynamic> couple) {
+    final articleId = couple['article_id'];
+    if (articleId == null) return;
+    final alreadyExists = controller.articles.any((a) => a.id == articleId);
+    if (!alreadyExists) {
+      controller.articles.add(
+        Article(
+          id: articleId,
+          name: couple['article_name'] ?? 'Article inconnu',
+          description: couple['article_description'],
+          basePrice: double.tryParse(couple['base_price'].toString()) ?? 0.0,
+          premiumPrice: double.tryParse(couple['premium_price'].toString()),
+          categoryId: couple['article_category_id'],
+          category: couple['article_category_name'],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+    }
+  }
+
   final controller = Get.find<OrdersController>();
   final api = Get.find<ApiService>();
 
   List<ServiceType> serviceTypes = [];
   List<Service> services = [];
   List<Map<String, dynamic>> couples = [];
-  Map<String, int> selectedArticles = {};
+  Map<String, int> selectedArticles =
+      {}; // (Gardé pour l'affichage, mais la source de vérité devient le controller)
   void _syncSelectedItemsToController() {
-    final controller = Get.find<OrdersController>();
-    // On enrichit chaque item avec les infos du couple (nom, prix, etc.)
-    controller.selectedItems.value =
-        selectedArticles.entries.where((e) => e.value > 0).map((e) {
-      final couple = couples.firstWhereOrNull((c) => c['article_id'] == e.key);
-      return {
-        'articleId': e.key,
-        'quantity': e.value,
-        'articleName': couple != null ? couple['article_name'] : null,
-        'articleDescription':
-            couple != null ? couple['article_description'] : null,
-        'price': couple != null
-            ? (showPremiumSwitch && isPremium
-                ? double.tryParse(couple['premium_price'].toString()) ?? 0.0
-                : double.tryParse(couple['base_price'].toString()) ?? 0.0)
-            : 0.0,
-        'serviceId': selectedService?.id,
-        'serviceName': selectedService?.name,
-        'serviceTypeId': selectedServiceType?.id,
-        'serviceTypeName': selectedServiceType?.name,
-        'serviceTypePricing': selectedServiceType?.pricingType,
-        'weight': weight,
-        'isPremium': showPremiumSwitch && isPremium,
-      };
-    }).toList();
+    // Ajoute tous les articles sélectionnés dans la liste articles du controller si absents
+    for (final couple in couples) {
+      if (selectedArticles.containsKey(couple['article_id'])) {
+        _addArticleToControllerIfMissing(couple);
+      }
+    }
+    // Stocke la sélection courante dans le controller pour accès global
+    controller.lastSelectedArticles = Map<String, int>.from(selectedArticles);
+    controller.lastCouples = List<Map<String, dynamic>>.from(couples);
+    controller.lastIsPremium = isPremium;
+    controller.lastSelectedService = selectedService;
+    controller.lastSelectedServiceType = selectedServiceType;
+    controller.lastWeight = weight;
+    controller.lastShowPremiumSwitch = showPremiumSwitch;
+    controller.syncSelectedItemsFrom(
+      selectedArticles: selectedArticles,
+      couples: couples,
+      isPremium: isPremium,
+      selectedService: selectedService,
+      selectedServiceType: selectedServiceType,
+      weight: weight,
+      showPremiumSwitch: showPremiumSwitch,
+    );
   }
 
   ServiceType? selectedServiceType;
@@ -79,6 +100,13 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
       selectedArticles.clear();
       weight = null;
       isPremium = false;
+      // MAJ OrderDraft avec le serviceType sélectionné
+      if (type != null) {
+        controller.orderDraft.update((draft) {
+          draft?.serviceTypeId = type.id;
+        });
+        controller.update();
+      }
     });
     if (type != null) {
       setState(() => isLoading = true);
@@ -99,6 +127,9 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
       selectedService = service;
       controller.selectedService.value = service;
       controller.selectedServiceId.value = service?.id;
+      if (service != null) {
+        controller.setSelectedService(service.id); // MAJ OrderDraft
+      }
       couples = [];
       selectedArticles.clear();
       weight = null;
@@ -169,34 +200,41 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
                     ],
                   ),
                 ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.remove_circle_outline),
-                      onPressed: () {
-                        setState(() {
-                          selectedArticles[articleId] =
-                              (selectedArticles[articleId] ?? 0) - 1;
-                          if (selectedArticles[articleId]! < 0)
-                            selectedArticles[articleId] = 0;
-                          _syncSelectedItemsToController();
-                        });
-                      },
-                    ),
-                    Text('${selectedArticles[articleId] ?? 0}',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    IconButton(
-                      icon: Icon(Icons.add_circle_outline),
-                      onPressed: () {
-                        setState(() {
-                          selectedArticles[articleId] =
-                              (selectedArticles[articleId] ?? 0) + 1;
-                          _syncSelectedItemsToController();
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                Obx(() => Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.remove_circle_outline),
+                          onPressed: () {
+                            final currentQty = controller.orderDraft.value.items
+                                    .firstWhereOrNull(
+                                        (i) => i.articleId == articleId)
+                                    ?.quantity ??
+                                0;
+                            final newQty = (currentQty - 1).clamp(0, 999);
+                            controller.updateDraftItemQuantity(
+                                articleId, newQty,
+                                isPremium: showPremiumSwitch && isPremium);
+                          },
+                        ),
+                        Text(
+                            '${controller.orderDraft.value.items.firstWhereOrNull((i) => i.articleId == articleId)?.quantity ?? 0}',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: Icon(Icons.add_circle_outline),
+                          onPressed: () {
+                            final currentQty = controller.orderDraft.value.items
+                                    .firstWhereOrNull(
+                                        (i) => i.articleId == articleId)
+                                    ?.quantity ??
+                                0;
+                            final newQty = (currentQty + 1).clamp(0, 999);
+                            controller.updateDraftItemQuantity(
+                                articleId, newQty,
+                                isPremium: showPremiumSwitch && isPremium);
+                          },
+                        ),
+                      ],
+                    )),
               ],
             ),
           ),
@@ -205,13 +243,18 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
     });
     // Estimation du total avec les bons prix
     double sum = 0;
-    for (var couple in couples) {
-      final qty = selectedArticles[couple['article_id']] ?? 0;
-      final basePrice = double.tryParse(couple['base_price'].toString()) ?? 0.0;
-      final premiumPrice =
-          double.tryParse(couple['premium_price'].toString()) ?? 0.0;
-      final price = showPremiumSwitch && isPremium ? premiumPrice : basePrice;
-      sum += price * qty;
+    for (var item in controller.orderDraft.value.items) {
+      // On retrouve le couple pour le prix
+      final couple =
+          couples.firstWhereOrNull((c) => c['article_id'] == item.articleId);
+      final basePrice = couple != null
+          ? double.tryParse(couple['base_price'].toString()) ?? 0.0
+          : 0.0;
+      final premiumPrice = couple != null
+          ? double.tryParse(couple['premium_price'].toString()) ?? 0.0
+          : 0.0;
+      final price = (item.isPremium ? premiumPrice : basePrice);
+      sum += price * item.quantity;
     }
     widgets.add(Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -268,10 +311,10 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
                     couples.isNotEmpty)
                   Expanded(
                     child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: _buildArticleCatalog(),
-                      ),
+                      child: Obx(() => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: _buildArticleCatalog(),
+                          )),
                     ),
                   ),
                 if (selectedServiceType != null &&

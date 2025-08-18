@@ -11,9 +11,8 @@ class OrderItemRecapCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final int quantity = item['quantity'] ?? 1;
     final double? weight = item['weight'];
-    final int price = item['price'] is int
-        ? item['price']
-        : (item['price'] as num?)?.toInt() ?? 0;
+    final double unitPrice = (item['unitPrice'] as num?)?.toDouble() ?? 0.0;
+    final double lineTotal = (item['lineTotal'] as num?)?.toDouble() ?? 0.0;
     final String articleName = item['articleName'] ?? 'Article inconnu';
     final String articleDescription = item['articleDescription'] ?? '';
     final String serviceName = item['serviceName'] ?? '';
@@ -60,7 +59,7 @@ class OrderItemRecapCard extends StatelessWidget {
               child: Row(
                 children: [
                   Text('Prix unitaire : ', style: TextStyle(color: textColor)),
-                  Text('$price FCFA',
+                  Text('${unitPrice.toStringAsFixed(0)} FCFA',
                       style: TextStyle(
                           fontWeight: FontWeight.bold, color: priceColor)),
                 ],
@@ -69,7 +68,7 @@ class OrderItemRecapCard extends StatelessWidget {
             Row(
               children: [
                 Text('Total : ', style: TextStyle(color: textColor)),
-                Text('${price * quantity} FCFA',
+                Text('${lineTotal.toStringAsFixed(0)} FCFA',
                     style: TextStyle(
                         fontWeight: FontWeight.bold, color: priceColor)),
               ],

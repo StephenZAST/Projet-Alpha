@@ -1,3 +1,4 @@
+import '../models/order_draft.dart';
 import 'package:admin/models/article.dart';
 import 'package:admin/models/flash_order_update.dart' as flash_update;
 import 'package:admin/models/user.dart';
@@ -15,6 +16,231 @@ import '../services/service_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  /// Détail local des articles sélectionnés (pour l'affichage du récap)
+  /// Chaque entrée contient :
+  /// {
+  ///   'articleId': String,
+  ///   'articleName': String,
+  ///   'articleDescription': String?,
+  ///   'basePrice': double,
+  ///   'premiumPrice': double?,
+  ///   'quantity': int,
+  ///   'isPremium': bool,
+  ///   'serviceId': String?,
+  ///   'serviceName': String?,
+  ///   'serviceTypeId': String?,
+  ///   'serviceTypeName': String?,
+  ///   'serviceTypePricing': String?,
+  ///   'weight': double?,
+  /// }
+  final selectedArticleDetails = <Map<String, dynamic>>[].obs;
+
+  /// Ajoute ou met à jour un article dans le cache local des détails sélectionnés
+  void addOrUpdateArticleDetail({
+    required String articleId,
+    required String articleName,
+    String? articleDescription,
+    required double basePrice,
+    double? premiumPrice,
+    required int quantity,
+    required bool isPremium,
+    String? serviceId,
+    String? serviceName,
+    String? serviceTypeId,
+    String? serviceTypeName,
+    String? serviceTypePricing,
+    double? weight,
+  }) {
+    final idx =
+        selectedArticleDetails.indexWhere((d) => d['articleId'] == articleId);
+    final detail = {
+      'articleId': articleId,
+      'articleName': articleName,
+      'articleDescription': articleDescription,
+      'basePrice': basePrice,
+      'premiumPrice': premiumPrice,
+      'quantity': quantity,
+      'isPremium': isPremium,
+      'serviceId': serviceId,
+      'serviceName': serviceName,
+      'serviceTypeId': serviceTypeId,
+      'serviceTypeName': serviceTypeName,
+      'serviceTypePricing': serviceTypePricing,
+      'weight': weight,
+    };
+    if (idx >= 0) {
+      selectedArticleDetails[idx] = detail;
+    } else {
+      selectedArticleDetails.add(detail);
+    }
+    print('[OrdersController] addOrUpdateArticleDetail: $detail');
+    print(
+        '[OrdersController] Etat du cache selectedArticleDetails: $selectedArticleDetails');
+    update();
+  }
+
+  /// Supprime un article du cache local des détails sélectionnés
+  void removeArticleDetail(String articleId) {
+    selectedArticleDetails.removeWhere((d) => d['articleId'] == articleId);
+    update();
+  }
+
+  /// Vide le cache local des détails sélectionnés (à appeler lors d'une nouvelle commande)
+  void clearArticleDetails() {
+    selectedArticleDetails.clear();
+    update();
+  }
+
+  void updateDraftItemQuantity(String articleId, int quantity,
+      {bool isPremium = false}) {
+    orderDraft.update((draft) {
+      if (draft == null) return;
+      // Crée une nouvelle liste pour forcer la réactivité GetX
+      final newItems = List<OrderDraftItem>.from(draft.items);
+      newItems.removeWhere((i) => i.articleId == articleId);
+      if (quantity > 0) {
+        newItems.add(OrderDraftItem(
+            articleId: articleId, quantity: quantity, isPremium: isPremium));
+      }
+      draft.items = newItems;
+    });
+    update();
+  }
+
+  // État centralisé de la commande en cours
+  final orderDraft = OrderDraft().obs;
+
+  // Setters pour chaque étape du stepper
+  void setSelectedClient(String clientId) {
+    orderDraft.update((draft) {
+      draft?.clientId = clientId;
+    });
+    update();
+  }
+
+  void setSelectedAddress(String addressId) {
+    orderDraft.update((draft) {
+      draft?.addressId = addressId;
+    });
+    update();
+  }
+
+  void setSelectedService(String serviceId) {
+    orderDraft.update((draft) {
+      draft?.serviceId = serviceId;
+    });
+    update();
+  }
+
+  void setOrderItems(List<OrderDraftItem> items) {
+    orderDraft.update((draft) {
+      draft?.items = items;
+    });
+    update();
+  }
+
+  void addDraftItem(OrderDraftItem item) {
+    orderDraft.update((draft) {
+      draft?.items.add(item);
+    });
+    update();
+  }
+
+  void removeDraftItem(String articleId) {
+    orderDraft.update((draft) {
+      draft?.items.removeWhere((i) => i.articleId == articleId);
+    });
+    update();
+  }
+
+  // Setter générique pour champs additionnels (dates, code promo, etc.)
+  void setOrderDraftField(String key, dynamic value) {
+    orderDraft.update((draft) {
+      draft?.setField(key, value);
+    });
+    update();
+  }
+
+  // Génère le payload final à envoyer au backend
+  Map<String, dynamic> buildOrderPayload() {
+    return orderDraft.value.toPayload();
+  }
+
+  // Pour garder en mémoire la dernière sélection d'articles et couples (pour le stepper)
+  Map<String, int> lastSelectedArticles = {};
+  List<Map<String, dynamic>> lastCouples = [];
+  bool lastIsPremium = false;
+  Service? lastSelectedService;
+  ServiceType? lastSelectedServiceType;
+  double? lastWeight;
+  bool lastShowPremiumSwitch = false;
+
+  /// Synchronise les articles sélectionnés depuis la sélection UI (catalogue)
+  void syncSelectedItemsFrom({
+    required Map<String, int> selectedArticles,
+    required List<Map<String, dynamic>> couples,
+    required bool isPremium,
+    required Service? selectedService,
+    required ServiceType? selectedServiceType,
+    double? weight,
+    bool showPremiumSwitch = false,
+  }) {
+    selectedItems.clear();
+    selectedArticles.entries.where((e) => e.value > 0).forEach((e) {
+      final couple = couples.firstWhereOrNull((c) => c['article_id'] == e.key);
+      selectedItems.add({
+        'articleId': e.key,
+        'quantity': e.value,
+        'articleName': couple != null ? couple['article_name'] : null,
+        'articleDescription':
+            couple != null ? couple['article_description'] : null,
+        'price': couple != null
+            ? (showPremiumSwitch && isPremium
+                ? double.tryParse(couple['premium_price'].toString()) ?? 0.0
+                : double.tryParse(couple['base_price'].toString()) ?? 0.0)
+            : 0.0,
+        'serviceId': selectedService?.id,
+        'serviceName': selectedService?.name,
+        'serviceTypeId': selectedServiceType?.id,
+        'serviceTypeName': selectedServiceType?.name,
+        'serviceTypePricing': selectedServiceType?.pricingType,
+        'weight': weight,
+        'isPremium': showPremiumSwitch && isPremium,
+      });
+      // Ajoute/MAJ le détail local pour l'affichage du récap
+      final existingIdx =
+          selectedArticleDetails.indexWhere((d) => d['articleId'] == e.key);
+      final detail = {
+        'articleId': e.key,
+        'articleName': couple != null ? couple['article_name'] : null,
+        'articleDescription':
+            couple != null ? couple['article_description'] : null,
+        'basePrice': couple != null
+            ? double.tryParse(couple['base_price'].toString()) ?? 0.0
+            : 0.0,
+        'premiumPrice': couple != null
+            ? double.tryParse(couple['premium_price'].toString())
+            : null,
+        'serviceId': selectedService?.id,
+        'serviceName': selectedService?.name,
+        'serviceTypeId': selectedServiceType?.id,
+        'serviceTypeName': selectedServiceType?.name,
+        'serviceTypePricing': selectedServiceType?.pricingType,
+        'quantity': e.value,
+      };
+      if (existingIdx >= 0) {
+        selectedArticleDetails[existingIdx] = detail;
+      } else {
+        selectedArticleDetails.add(detail);
+      }
+      print(
+          '[OrdersController] Article ajouté (sync): ${e.key}, quantité: ${e.value}');
+      print(
+          '[OrdersController] Etat du cache selectedArticleDetails (sync): $selectedArticleDetails');
+    });
+    update();
+  }
+
   // Méthode pour charger les adresses du client (nécessaire pour selectClient)
   Future<void> loadClientAddresses(String clientId) async {
     try {
@@ -82,42 +308,49 @@ class OrdersController extends GetxController {
     _calculateTotal();
   }
 
-  /// Retourne une liste d'objets enrichis pour le récapitulatif à partir de selectedItems
+  /// Helper pour retrouver le service type sélectionné à partir de l'ID du draft
+  ServiceType? get selectedServiceTypeFromDraft {
+    final id = orderDraft.value.serviceTypeId;
+    if (id == null) return null;
+    return serviceTypes.firstWhereOrNull((t) => t.id == id);
+  }
+
+  /// Retourne une liste d'objets enrichis pour le récapitulatif à partir de orderDraft.items
   List<Map<String, dynamic>> getRecapOrderItems() {
-    return selectedItems.map((item) {
-      // Utilise d'abord les infos enrichies de selectedItems
-      final article =
-          articles.firstWhereOrNull((a) => a.id == item['articleId']);
-      final service = item['serviceId'] != null
-          ? services.firstWhereOrNull((s) => s.id == item['serviceId'])
-          : (selectedServiceId.value != null
-              ? services
-                  .firstWhereOrNull((s) => s.id == selectedServiceId.value)
-              : null);
-      final serviceType = item['serviceTypeId'] != null
-          ? serviceTypes.firstWhereOrNull((t) => t.id == item['serviceTypeId'])
-          : (service != null && service.serviceTypeId != null
-              ? serviceTypes
-                  .firstWhereOrNull((t) => t.id == service.serviceTypeId)
-              : null);
+    return orderDraft.value.items.map((item) {
+      final detail = selectedArticleDetails
+          .firstWhereOrNull((d) => d['articleId'] == item.articleId);
+      final articleName = detail?['articleName'] ?? 'Article inconnu';
+      final serviceName = detail?['serviceName'] ?? '';
+      final serviceTypeName = detail?['serviceTypeName'] ?? 'Type inconnu';
+      final serviceTypePricing = detail?['serviceTypePricing'] ?? '';
+      final articleDescription = detail?['articleDescription'];
+      double unitPrice = 0;
+      if (detail != null) {
+        unitPrice = item.isPremium
+            ? (detail['premiumPrice'] ?? detail['basePrice'] ?? 0.0)
+            : (detail['basePrice'] ?? 0.0);
+      }
+      final lineTotal = unitPrice * item.quantity;
       return {
-        'article': article,
-        'articleName':
-            item['articleName'] ?? article?.name ?? 'Article inconnu',
-        'articleDescription':
-            item['articleDescription'] ?? article?.description,
-        'service': service,
-        'serviceName': item['serviceName'] ?? service?.name ?? '',
-        'serviceType': serviceType,
-        'serviceTypeName': item['serviceTypeName'] ?? serviceType?.name ?? '',
-        'serviceTypePricing':
-            item['serviceTypePricing'] ?? serviceType?.pricingType ?? '',
-        'quantity': item['quantity'] ?? 1,
-        'weight': item['weight'],
-        'price': item['price'] ?? article?.basePrice ?? 0,
-        'isPremium': item['isPremium'] ?? false,
+        'articleName': articleName,
+        'articleDescription': articleDescription,
+        'serviceName': serviceName,
+        'serviceTypeName': serviceTypeName,
+        'serviceTypePricing': serviceTypePricing,
+        'quantity': item.quantity,
+        'weight': null,
+        'unitPrice': unitPrice,
+        'lineTotal': lineTotal,
+        'isPremium': item.isPremium,
       };
     }).toList();
+  }
+
+  /// Calcule le total estimé de la commande (somme des lignes)
+  double get estimatedTotal {
+    return getRecapOrderItems()
+        .fold(0.0, (sum, item) => sum + (item['lineTotal'] as double));
   }
 
   /// Ajoute un nouvel item à la commande (OrderEditForm)

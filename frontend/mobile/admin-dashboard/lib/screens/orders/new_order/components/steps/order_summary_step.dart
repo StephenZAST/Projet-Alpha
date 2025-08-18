@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../constants.dart';
 import '../../../../../controllers/orders_controller.dart';
+import 'package:admin/models/enums.dart';
 import '../order_item_recap_card.dart';
 
 class OrderSummaryStep extends StatelessWidget {
@@ -18,6 +19,8 @@ class OrderSummaryStep extends StatelessWidget {
           SizedBox(height: AppSpacing.xl),
           _buildClientSummary(),
           _buildDivider(),
+          _buildExtraFieldsSummary(),
+          _buildDivider(),
           _buildServiceSummary(),
           _buildDivider(),
           _buildArticlesSummary(),
@@ -26,6 +29,82 @@ class OrderSummaryStep extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildExtraFieldsSummary() {
+    return Obx(() {
+      final draft = controller.orderDraft.value;
+      String? statusLabel;
+      Color? statusColor;
+      IconData? statusIcon;
+      if (draft.status != null) {
+        final statusEnum =
+            OrderStatus.values.firstWhereOrNull((s) => s.name == draft.status);
+        statusLabel = statusEnum?.label;
+        statusColor = statusEnum?.color;
+        statusIcon = statusEnum?.icon;
+      }
+      String? paymentLabel;
+      if (draft.paymentMethod != null) {
+        final paymentEnum = PaymentMethod.values
+            .firstWhereOrNull((p) => p.name == draft.paymentMethod);
+        paymentLabel = paymentEnum?.label;
+      }
+      String? recurrenceLabel;
+      if (draft.recurrenceType != null) {
+        switch (draft.recurrenceType) {
+          case 'WEEKLY':
+            recurrenceLabel = 'Hebdomadaire';
+            break;
+          case 'BIWEEKLY':
+            recurrenceLabel = 'Toutes les 2 semaines';
+            break;
+          case 'MONTHLY':
+            recurrenceLabel = 'Mensuelle';
+            break;
+          default:
+            recurrenceLabel = 'Aucune';
+        }
+      }
+      return _buildSection(
+        title: 'Informations complémentaires',
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoRow(
+                'Date de collecte',
+                draft.collectionDate != null
+                    ? draft.collectionDate!.toLocal().toString().split(' ')[0]
+                    : ''),
+            _buildInfoRow(
+                'Date de livraison',
+                draft.deliveryDate != null
+                    ? draft.deliveryDate!.toLocal().toString().split(' ')[0]
+                    : ''),
+            if (statusLabel != null)
+              Row(
+                children: [
+                  if (statusIcon != null)
+                    Icon(statusIcon, color: statusColor, size: 18),
+                  SizedBox(width: 6),
+                  _buildInfoRow('Statut', statusLabel),
+                ],
+              ),
+            if (paymentLabel != null)
+              _buildInfoRow('Méthode de paiement', paymentLabel),
+            if (draft.affiliateCode != null && draft.affiliateCode!.isNotEmpty)
+              _buildInfoRow('Code affilié', draft.affiliateCode!),
+            if (recurrenceLabel != null && recurrenceLabel != 'Aucune')
+              _buildInfoRow('Type de récurrence', recurrenceLabel),
+            if (draft.nextRecurrenceDate != null &&
+                draft.recurrenceType != null &&
+                draft.recurrenceType != 'NONE')
+              _buildInfoRow('Prochaine récurrence',
+                  draft.nextRecurrenceDate!.toLocal().toString().split(' ')[0]),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildClientSummary() {
@@ -74,15 +153,29 @@ class OrderSummaryStep extends StatelessWidget {
       title: 'Articles',
       content: Obx(() {
         final isDark = Theme.of(Get.context!).brightness == Brightness.dark;
-        final items = controller.getRecapOrderItems();
+        final items = controller.selectedArticleDetails;
         if (items.isEmpty) {
           return Text('Aucun article/service sélectionné',
               style: TextStyle(color: isDark ? Colors.white : Colors.black87));
         }
         return Column(
-          children: items
-              .map((item) => OrderItemRecapCard(item: item, darkMode: isDark))
-              .toList(),
+          children: items.map((item) {
+            // Calcul du prix unitaire et du total de ligne selon premium ou non
+            final bool isPremium = item['isPremium'] ?? false;
+            final double unitPrice = isPremium
+                ? (item['premiumPrice'] ?? item['basePrice'] ?? 0.0)
+                : (item['basePrice'] ?? 0.0);
+            final int quantity = item['quantity'] ?? 1;
+            final double lineTotal = unitPrice * quantity;
+            return OrderItemRecapCard(
+              item: {
+                ...item,
+                'unitPrice': unitPrice,
+                'lineTotal': lineTotal,
+              },
+              darkMode: isDark,
+            );
+          }).toList(),
         );
       }),
     );
@@ -91,14 +184,15 @@ class OrderSummaryStep extends StatelessWidget {
   Widget _buildTotalSection() {
     return Obx(() {
       final items = controller.getRecapOrderItems();
-      final total = items.fold<int>(0, (sum, item) {
-        final price = item['price'] is int
-            ? item['price'] as int
-            : (item['price'] as num?)?.toInt() ?? 0;
+      final total = items.fold<double>(0, (sum, item) {
+        // Utilise lineTotal si dispo, sinon fallback sur unitPrice * quantity
+        final lineTotal = (item['lineTotal'] as num?)?.toDouble();
+        if (lineTotal != null) return sum + lineTotal;
+        final unitPrice = (item['unitPrice'] as num?)?.toDouble() ?? 0.0;
         final quantity = item['quantity'] is int
             ? item['quantity'] as int
             : (item['quantity'] as num?)?.toInt() ?? 1;
-        return sum + (price * quantity);
+        return sum + (unitPrice * quantity);
       });
       return Container(
         padding: EdgeInsets.all(AppSpacing.md),

@@ -11,10 +11,18 @@ class OrderAddressStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final selectedAddressId = controller.selectedAddressId.value;
       final addresses = controller.clientAddresses;
-      final selectedAddress =
-          addresses.firstWhereOrNull((a) => a.id == selectedAddressId);
+      // Sélection automatique stricte de l'adresse par défaut (et MAJ OrderDraft) si aucune sélection
+      if ((controller.selectedAddressId.value == null ||
+              controller.orderDraft.value.addressId == null) &&
+          addresses.isNotEmpty) {
+        final defaultAddress =
+            addresses.firstWhereOrNull((a) => a.isDefault) ?? addresses.first;
+        controller.selectAddress(defaultAddress.id);
+        controller.setSelectedAddress(defaultAddress.id);
+      }
+      final selectedAddress = addresses
+          .firstWhereOrNull((a) => a.id == controller.selectedAddressId.value);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -67,6 +75,7 @@ class OrderAddressStep extends StatelessWidget {
         orderId: orderId,
         onAddressSaved: (address) {
           controller.selectAddress(address.id);
+          controller.setSelectedAddress(address.id); // MAJ OrderDraft
         },
       ),
     );

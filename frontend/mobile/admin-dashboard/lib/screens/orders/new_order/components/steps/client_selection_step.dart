@@ -282,7 +282,10 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
               isSelected ? Icons.check_circle : Icons.check_circle_outline,
               color: isSelected ? AppColors.primary : AppColors.gray400,
             ),
-            onPressed: () => controller.selectClient(client.id),
+            onPressed: () {
+              controller.selectClient(client.id);
+              controller.setSelectedClient(client.id); // MAJ OrderDraft
+            },
           ),
           onTap: () => Get.dialog(ClientDetailsDialog(client: client)),
         ),

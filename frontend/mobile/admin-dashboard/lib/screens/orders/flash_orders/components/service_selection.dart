@@ -29,6 +29,10 @@ class ServiceSelection extends StatelessWidget {
                   }).toList(),
                   onChanged: (service) {
                     controller.selectedService.value = service;
+                    if (service != null) {
+                      controller
+                          .setSelectedService(service.id); // MAJ OrderDraft
+                    }
                   },
                   decoration: InputDecoration(
                     border: OutlineInputBorder(),
