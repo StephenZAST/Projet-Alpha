@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../models/order.dart';
 import '../models/enums.dart';
 import '../models/service.dart';
+import '../models/service_type.dart';
 import '../models/address.dart';
 import '../services/order_service.dart';
 import '../services/user_service.dart';
@@ -14,6 +15,111 @@ import '../services/service_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  // Méthode pour charger les adresses du client (nécessaire pour selectClient)
+  Future<void> loadClientAddresses(String clientId) async {
+    try {
+      final result = await UserService.getUserAddresses(clientId);
+      clientAddresses.value = result;
+      if (result.isNotEmpty) {
+        final defaultAddress = result.firstWhereOrNull((a) => a.isDefault);
+        selectedAddressId.value = defaultAddress?.id ?? result.first.id;
+      }
+    } catch (e) {
+      print('[OrdersController] Error loading client addresses: $e');
+      throw 'Erreur lors du chargement des adresses';
+    }
+  }
+
+  // Setter pour la sélection du service
+  void selectService(String id) {
+    print('[OrdersController] Service sélectionné: $id');
+    selectedServiceId.value = id;
+  }
+
+  // Setter pour la sélection du client (fusionné, unique)
+  void selectClient(String clientId) {
+    print('[OrdersController] Client sélectionné: $clientId');
+    selectedClientId.value = clientId;
+    loadClientAddresses(clientId);
+  }
+
+  // Setter pour la sélection de l'adresse (fusionné, unique)
+  void selectAddress(String addressId) {
+    print('[OrdersController] Adresse sélectionnée: $addressId');
+    selectedAddressId.value = addressId;
+  }
+
+  // Setter pour l'ajout d'un article (fusionné, unique)
+  void addItem(String articleId) {
+    print('[OrdersController] Article ajouté: $articleId');
+    final article = articles.firstWhere((a) => a.id == articleId);
+    selectedItems.add({
+      'articleId': articleId,
+      'quantity': 1,
+      'isPremium': false,
+      'price': article.basePrice,
+    });
+    _calculateTotal();
+  }
+
+  // Setter pour la mise à jour d'un article (fusionné, unique)
+  void updateItemPrice(int index, bool isPremium) {
+    final item = selectedItems[index];
+    final article = articles.firstWhere((a) => a.id == item['articleId']);
+    item['isPremium'] = isPremium;
+    item['price'] = isPremium ? article.premiumPrice : article.basePrice;
+    selectedItems[index] = item;
+    print(
+        '[OrdersController] Article modifié: \\${item['articleId']} isPremium=$isPremium');
+    _calculateTotal();
+  }
+
+  // Setter pour la suppression d'un article (fusionné, unique)
+  void removeItem(int index) {
+    print(
+        '[OrdersController] Article supprimé: ${selectedItems[index]['articleId']}');
+    selectedItems.removeAt(index);
+    _calculateTotal();
+  }
+
+  /// Retourne une liste d'objets enrichis pour le récapitulatif à partir de selectedItems
+  List<Map<String, dynamic>> getRecapOrderItems() {
+    return selectedItems.map((item) {
+      // Utilise d'abord les infos enrichies de selectedItems
+      final article =
+          articles.firstWhereOrNull((a) => a.id == item['articleId']);
+      final service = item['serviceId'] != null
+          ? services.firstWhereOrNull((s) => s.id == item['serviceId'])
+          : (selectedServiceId.value != null
+              ? services
+                  .firstWhereOrNull((s) => s.id == selectedServiceId.value)
+              : null);
+      final serviceType = item['serviceTypeId'] != null
+          ? serviceTypes.firstWhereOrNull((t) => t.id == item['serviceTypeId'])
+          : (service != null && service.serviceTypeId != null
+              ? serviceTypes
+                  .firstWhereOrNull((t) => t.id == service.serviceTypeId)
+              : null);
+      return {
+        'article': article,
+        'articleName':
+            item['articleName'] ?? article?.name ?? 'Article inconnu',
+        'articleDescription':
+            item['articleDescription'] ?? article?.description,
+        'service': service,
+        'serviceName': item['serviceName'] ?? service?.name ?? '',
+        'serviceType': serviceType,
+        'serviceTypeName': item['serviceTypeName'] ?? serviceType?.name ?? '',
+        'serviceTypePricing':
+            item['serviceTypePricing'] ?? serviceType?.pricingType ?? '',
+        'quantity': item['quantity'] ?? 1,
+        'weight': item['weight'],
+        'price': item['price'] ?? article?.basePrice ?? 0,
+        'isPremium': item['isPremium'] ?? false,
+      };
+    }).toList();
+  }
+
   /// Ajoute un nouvel item à la commande (OrderEditForm)
   Future<void> addOrderItem(Map<String, dynamic> item) async {
     if (orderEditForm['items'] == null) {
@@ -179,7 +285,7 @@ class OrdersController extends GetxController {
   }
 
   // Filtres avancés pour la recherche
-  final serviceTypes = <Service>[].obs;
+  final serviceTypes = <ServiceType>[].obs;
   final selectedServiceType = RxnString();
 
   final paymentMethods = <String>[].obs;
@@ -204,30 +310,28 @@ class OrdersController extends GetxController {
 
   void loadServiceTypes() {
     // À adapter selon la source réelle des services
-    final now = DateTime.now();
     serviceTypes.value = [
-      Service(
-          id: 'all',
-          name: 'Tous',
-          description: '',
-          price: 0,
-          createdAt: now,
-          updatedAt: now),
-      Service(
-          id: 'standard',
-          name: 'Standard',
-          description: '',
-          price: 0,
-          createdAt: now,
-          updatedAt: now),
-      Service(
-          id: 'flash',
-          name: 'Flash',
-          description: '',
-          price: 0,
-          createdAt: now,
-          updatedAt: now),
-      // Ajouter les vrais services ici
+      ServiceType(
+        id: 'standard',
+        name: 'Standard',
+        description: 'Service standard',
+        requiresWeight: false,
+        pricingType: 'FIXED',
+        isActive: true,
+        supportsPremium: true,
+        isDefault: true,
+      ),
+      ServiceType(
+        id: 'weight',
+        name: 'Au poids',
+        description: 'Service au poids',
+        requiresWeight: true,
+        pricingType: 'WEIGHT_BASED',
+        isActive: true,
+        supportsPremium: false,
+        isDefault: false,
+      ),
+      // Ajouter d'autres types mock ou charger dynamiquement depuis l'API
     ];
   }
 
@@ -520,53 +624,7 @@ class OrdersController extends GetxController {
     }
   }
 
-  void selectClient(String clientId) {
-    selectedClientId.value = clientId;
-    loadClientAddresses(clientId);
-  }
-
-  Future<void> loadClientAddresses(String clientId) async {
-    try {
-      final result = await UserService.getUserAddresses(clientId);
-      clientAddresses.value = result;
-      if (result.isNotEmpty) {
-        final defaultAddress = result.firstWhereOrNull((a) => a.isDefault);
-        selectedAddressId.value = defaultAddress?.id ?? result.first.id;
-      }
-    } catch (e) {
-      print('[OrdersController] Error loading client addresses: $e');
-      throw 'Erreur lors du chargement des adresses';
-    }
-  }
-
-  void selectAddress(String addressId) {
-    selectedAddressId.value = addressId;
-  }
-
-  void addItem(String articleId) {
-    final article = articles.firstWhere((a) => a.id == articleId);
-    selectedItems.add({
-      'articleId': articleId,
-      'quantity': 1,
-      'isPremium': false,
-      'price': article.basePrice,
-    });
-    _calculateTotal();
-  }
-
-  void updateItemPrice(int index, bool isPremium) {
-    final item = selectedItems[index];
-    final article = articles.firstWhere((a) => a.id == item['articleId']);
-    item['isPremium'] = isPremium;
-    item['price'] = isPremium ? article.premiumPrice : article.basePrice;
-    selectedItems[index] = item;
-    _calculateTotal();
-  }
-
-  void removeItem(int index) {
-    selectedItems.removeAt(index);
-    _calculateTotal();
-  }
+  // ...existing code...
 
   void _calculateTotal() {
     double total = 0;
@@ -582,7 +640,6 @@ class OrdersController extends GetxController {
       hasError.value = false;
       errorMessage.value = '';
       final result = await OrderService.createOrder(orderData);
-      Get.back();
       await loadOrdersPage(
         page: currentPage.value,
         limit: itemsPerPage.value,
@@ -590,6 +647,8 @@ class OrdersController extends GetxController {
       );
       await fetchOrderDetails(result.id, activateOrderIdSearch: false);
       _showSuccessSnackbar('Commande créée avec succès');
+      // Ferme tous les écrans jusqu'à la page des commandes
+      Get.offAllNamed('/orders');
     } catch (e) {
       print('[OrdersController] Error creating order: $e');
       hasError.value = true;
@@ -611,7 +670,7 @@ class OrdersController extends GetxController {
         orderData['affiliateCode'] = orderEditForm['affiliateCode'];
       }
       await OrderService.updateOrder(orderId, orderData);
-      Get.back();
+      // Get.back() supprimé pour éviter de fermer le dialog parent
       await loadOrdersPage(
         page: currentPage.value,
         limit: itemsPerPage.value,
@@ -940,7 +999,7 @@ class OrdersController extends GetxController {
 
       // Ajouter le nouveau client à la liste
       clients.add(user);
-      Get.back();
+      // Get.back() supprimé pour éviter de fermer le dialog parent
 
       Get.snackbar(
         'Succès',

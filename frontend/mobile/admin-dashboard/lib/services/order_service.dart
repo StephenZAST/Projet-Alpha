@@ -360,18 +360,18 @@ class OrderService {
     try {
       print('[OrderService] Creating new order with data: $orderData');
       final response = await _api.post(
-        '$_baseUrl/create-for-customer',
+        _baseUrl, // Utilise la route correcte du backend
         data: orderData,
       );
-      print('[OrderService] Create order response: ${response.data}');
+      print('[OrderService] Create order response: [${response.data}');
 
       if (response.data != null && response.data['data'] != null) {
         return Order.fromJson(response.data['data']);
       }
-      throw 'Erreur lors de la création de la commande';
+      throw 'Erreur lors de la cr e9ation de la commande';
     } catch (e) {
       print('[OrderService] Error creating order: $e');
-      throw 'Erreur lors de la création de la commande';
+      throw 'Erreur lors de la cr e9ation de la commande';
     }
   }
 

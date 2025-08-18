@@ -4,8 +4,8 @@ import '../../../../constants.dart';
 import '../../../../controllers/orders_controller.dart';
 import 'steps/client_selection_step.dart';
 import 'steps/service_selection_step.dart';
-import 'steps/articles_selection_step.dart';
 import 'steps/order_summary_step.dart';
+import 'steps/order_address_step.dart';
 import '../../../../widgets/shared/glass_button.dart';
 
 class OrderStepper extends StatelessWidget {
@@ -14,7 +14,7 @@ class OrderStepper extends StatelessWidget {
   final steps = [
     'Sélection du client',
     'Service',
-    'Articles',
+    'Adresse',
     'Récapitulatif',
   ];
 
@@ -25,7 +25,7 @@ class OrderStepper extends StatelessWidget {
       case 1:
         return ServiceSelectionStep();
       case 2:
-        return ArticlesSelectionStep();
+        return OrderAddressStep();
       case 3:
         return OrderSummaryStep();
       default:
@@ -96,15 +96,54 @@ class OrderStepper extends StatelessWidget {
       case 0:
         return controller.selectedClientId.value != null;
       case 1:
-        return controller.selectedServiceId.value != null;
+        // Pour valider l'étape Service, il faut un service ET au moins un article sélectionné
+        return controller.selectedServiceId.value != null &&
+            controller.selectedItems.isNotEmpty;
       case 2:
-        return controller.selectedItems.isNotEmpty;
+        // Pour valider l'étape Adresse, il faut une adresse sélectionnée
+        return controller.selectedAddressId.value != null &&
+            controller.selectedAddressId.value!.isNotEmpty;
       default:
         return true;
     }
   }
 
   void _submitOrder() {
-    // Logique de soumission de la commande
+    final addressId = controller.selectedAddressId.value;
+    final serviceId = controller.selectedServiceId.value;
+    final items = controller
+        .getRecapOrderItems()
+        .where((item) => (item['article']?.id ?? item['articleId']) != null)
+        .map((item) => {
+              'articleId': item['article']?.id ?? item['articleId'],
+              'quantity': item['quantity'],
+              'isPremium': item['isPremium'] ?? false,
+            })
+        .toList();
+
+    // Debug log détaillé
+    print('[OrderStepper] addressId: $addressId');
+    print('[OrderStepper] serviceId: $serviceId');
+    print('[OrderStepper] items: $items');
+    final orderData = <String, dynamic>{
+      'addressId': addressId,
+      'serviceId': serviceId,
+      'items': items,
+      // Ajoute d'autres champs nécessaires ici (dates, code promo, etc.)
+    };
+    print('[OrderStepper] Payload envoyé au backend: $orderData');
+
+    // Vérification stricte
+    if (addressId == null ||
+        addressId.isEmpty ||
+        serviceId == null ||
+        serviceId.isEmpty ||
+        items.isEmpty) {
+      Get.snackbar('Erreur',
+          'Veuillez remplir tous les champs obligatoires (service, adresse, articles).');
+      return;
+    }
+
+    controller.createOrder(orderData);
   }
 }

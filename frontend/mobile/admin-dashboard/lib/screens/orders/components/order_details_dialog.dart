@@ -219,7 +219,6 @@ class OrderDetailsDialog extends StatelessWidget {
                 int quantity = item.quantity ?? 1;
                 double? weight = item.weight;
                 int unitPrice = item.unitPrice ?? 0;
-                int total = 0;
                 var service = item.serviceId != null
                     ? controller.services
                         .firstWhereOrNull((s) => s.id == item.serviceId)
@@ -242,10 +241,8 @@ class OrderDetailsDialog extends StatelessWidget {
                     quantOrWeight = weight != null
                         ? 'Poids : ${weight.toStringAsFixed(2)} kg'
                         : '';
-                    total = unitPrice * (weight != null ? weight.round() : 0);
                   } else {
                     quantOrWeight = 'Quantité : $quantity';
-                    total = unitPrice * quantity;
                   }
                 }
                 return Card(
@@ -262,11 +259,10 @@ class OrderDetailsDialog extends StatelessWidget {
                         if (serviceTypeLabel.isNotEmpty)
                           Text('Type de service : $serviceTypeLabel'),
                         if (quantOrWeight.isNotEmpty) Text(quantOrWeight),
-                        Text('Prix unitaire : $unitPrice FCFA'),
-                        Text('Total : $total FCFA',
+                        Text('Prix unitaire : $unitPrice FCFA',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green[800])),
+                                color: Colors.orange[700])),
                       ],
                     ),
                   ),
@@ -281,7 +277,7 @@ class OrderDetailsDialog extends StatelessWidget {
               style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.green[900]),
+                  color: Colors.orange[700]),
             ),
           ),
         ],

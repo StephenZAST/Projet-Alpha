@@ -1,6 +1,21 @@
 import 'package:admin/utils/parser_utils.dart';
 
 class Address {
+  factory Address.empty({required String userId}) {
+    return Address(
+      id: '',
+      name: '',
+      city: '',
+      street: '',
+      userId: userId,
+      isDefault: false,
+      postalCode: '',
+      gpsLatitude: null,
+      gpsLongitude: null,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
   final String id;
   final String? name;
   final String city;

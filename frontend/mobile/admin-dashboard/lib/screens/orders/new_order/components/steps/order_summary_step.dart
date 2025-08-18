@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../constants.dart';
 import '../../../../../controllers/orders_controller.dart';
+import '../order_item_recap_card.dart';
 
 class OrderSummaryStep extends StatelessWidget {
   final controller = Get.find<OrdersController>();
@@ -71,40 +72,54 @@ class OrderSummaryStep extends StatelessWidget {
   Widget _buildArticlesSummary() {
     return _buildSection(
       title: 'Articles',
-      content: Obx(() => Column(
-            children: controller.selectedItems.map((item) {
-              final article = controller.articles
-                  .firstWhere((a) => a.id == item['articleId']);
-
-              return _buildInfoRow(
-                article.name,
-                '${item['quantity']} × ${item['price']} = ${item['quantity'] * item['price']} FCFA',
-              );
-            }).toList(),
-          )),
+      content: Obx(() {
+        final isDark = Theme.of(Get.context!).brightness == Brightness.dark;
+        final items = controller.getRecapOrderItems();
+        if (items.isEmpty) {
+          return Text('Aucun article/service sélectionné',
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87));
+        }
+        return Column(
+          children: items
+              .map((item) => OrderItemRecapCard(item: item, darkMode: isDark))
+              .toList(),
+        );
+      }),
     );
   }
 
   Widget _buildTotalSection() {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
-        borderRadius: AppRadius.radiusMD,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Total', style: AppTextStyles.h3),
-          Obx(() => Text(
-                '${controller.orderTotal.value} FCFA',
-                style: AppTextStyles.h3.copyWith(
-                  color: AppColors.primary,
-                ),
-              )),
-        ],
-      ),
-    );
+    return Obx(() {
+      final items = controller.getRecapOrderItems();
+      final total = items.fold<int>(0, (sum, item) {
+        final price = item['price'] is int
+            ? item['price'] as int
+            : (item['price'] as num?)?.toInt() ?? 0;
+        final quantity = item['quantity'] is int
+            ? item['quantity'] as int
+            : (item['quantity'] as num?)?.toInt() ?? 1;
+        return sum + (price * quantity);
+      });
+      return Container(
+        padding: EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          borderRadius: AppRadius.radiusMD,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Total estimé', style: AppTextStyles.h3),
+            Text(
+              '$total FCFA',
+              style: AppTextStyles.h3.copyWith(
+                color: AppColors.orange,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildSection({required String title, required Widget content}) {
@@ -119,6 +134,7 @@ class OrderSummaryStep extends StatelessWidget {
   }
 
   Widget _buildInfoRow(String label, String value) {
+    final isDark = Theme.of(Get.context!).brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -126,12 +142,16 @@ class OrderSummaryStep extends StatelessWidget {
           Text(
             '$label: ',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: isDark
+                  ? Colors.white.withOpacity(0.7)
+                  : AppColors.textSecondary,
             ),
           ),
           Text(
             value,
-            style: AppTextStyles.bodyMedium,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? Colors.white : null,
+            ),
           ),
         ],
       ),
