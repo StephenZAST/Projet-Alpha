@@ -20,13 +20,17 @@ class OrderDraft {
       'serviceId': serviceId,
       'serviceTypeId': serviceTypeId,
       'items': items.map((e) => e.toPayload()).toList(),
-      'collectionDate': collectionDate?.toIso8601String(),
-      'deliveryDate': deliveryDate?.toIso8601String(),
-      'status': status,
+      'collectionDate': collectionDate != null
+          ? collectionDate!.toUtc().toIso8601String()
+          : null,
+      'deliveryDate':
+          deliveryDate != null ? deliveryDate!.toUtc().toIso8601String() : null,
       'paymentMethod': paymentMethod,
       'affiliateCode': affiliateCode,
       'recurrenceType': recurrenceType,
-      'nextRecurrenceDate': nextRecurrenceDate?.toIso8601String(),
+      'nextRecurrenceDate': nextRecurrenceDate != null
+          ? nextRecurrenceDate!.toUtc().toIso8601String()
+          : null,
     };
   }
 

@@ -124,19 +124,25 @@ export class OrderCreateController {
         isPremium?: boolean;
       }
 
-      await prisma.order_items.createMany({
-        data: items.map((item: CreateOrderItemData): OrderItemCreate => ({
-          orderId: order.id,
+      console.log('[OrderController] Payload order_items (raw):', items);
+      function pickOrderItemFields(item: any, orderId: string, serviceId: string, articleMap: Map<string, Article>) {
+        return {
+          orderId,
           articleId: item.articleId,
           serviceId,
           quantity: item.quantity,
           unitPrice: item.isPremium 
-        ? Number(articleMap.get(item.articleId)?.premiumPrice)
-        : Number(articleMap.get(item.articleId)?.basePrice),
+            ? Number(articleMap.get(item.articleId)?.premiumPrice)
+            : Number(articleMap.get(item.articleId)?.basePrice),
           createdAt: new Date(),
           updatedAt: new Date(),
-          isPremium: item.isPremium
-        }))
+          isPremium: item.isPremium ?? false
+        };
+      }
+  const mappedItems = items.map((item: CreateOrderItemData) => pickOrderItemFields(item, order.id, serviceId, articleMap));
+      console.log('[OrderController] Payload order_items (mapped):', mappedItems);
+      await prisma.order_items.createMany({
+        data: mappedItems
       });
 
       // 5. Si code affilié, créer transaction de commission

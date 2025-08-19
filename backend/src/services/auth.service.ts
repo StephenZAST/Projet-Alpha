@@ -142,7 +142,7 @@ export class AuthService {
     try {
       await prisma.affiliate_profiles.create({
         data: {
-          user_id: userId,
+          userId: userId,
           affiliate_code: affiliateCode,
           parent_affiliate_id: null,
           commission_balance: 0,
@@ -289,7 +289,7 @@ export class AuthService {
 
     // Supprimer les préférences de notification liées à l'utilisateur
     await prisma.notification_preferences.deleteMany({
-      where: { user_id: targetUserId }
+      where: { userId: targetUserId }
     });
 
     // Ajouter ici d'autres suppressions de dépendances si besoin (adresses, commandes, etc.)
@@ -363,7 +363,7 @@ export class AuthService {
 
       const affiliateProfile = await prisma.affiliate_profiles.create({
         data: {
-          user_id: user.id,
+          userId: user.id,
           affiliate_code: affiliateCode,
           parent_affiliate_id: null,
           commission_balance: 0,
@@ -393,7 +393,7 @@ export class AuthService {
         token,
         affiliateProfile: {
           id: affiliateProfile.id,
-          userId: affiliateProfile.user_id,
+          userId: affiliateProfile.userId,
           affiliateCode: affiliateProfile.affiliate_code,
           commission_rate: Number(affiliateProfile.commission_rate || 10),
           commissionBalance: Number(affiliateProfile.commission_balance || 0),
@@ -427,7 +427,7 @@ export class AuthService {
 
       await prisma.reset_codes.create({
         data: {
-          user_id: user.id,
+          userId: user.id,
           email: email,
           code: code,
           expires_at: expirationTime,
@@ -468,7 +468,7 @@ export class AuthService {
 
     const data = await prisma.reset_codes.create({
       data: {
-      user_id: user.id,
+      userId: user.id,
       email,
       code,
       expires_at: expirationTime,
@@ -712,7 +712,7 @@ export class AuthService {
 
   static async getUserNotifications(userId: string) {
     const data = await prisma.notifications.findMany({
-      where: { user_id: userId },
+      where: { userId: userId },
       orderBy: {
         created_at: 'desc'
       }
@@ -723,7 +723,7 @@ export class AuthService {
 
   static async updateNotificationPreferences(userId: string, preferences: any) {
     const existingPrefs = await prisma.notification_preferences.findFirst({
-      where: { user_id: userId }
+      where: { userId: userId }
     });
 
     await prisma.notification_preferences.upsert({
@@ -740,7 +740,7 @@ export class AuthService {
       },
       create: {
       id: uuidv4(),
-      user_id: userId,
+      userId: userId,
       email: preferences.email ?? true,
       push: preferences.push ?? true,
       sms: preferences.sms ?? false,
@@ -757,7 +757,7 @@ export class AuthService {
 
   static async getUserAddresses(userId: string) {
     const data = await prisma.addresses.findMany({
-      where: { user_id: userId }
+      where: { userId: userId }
     });
 
     return data;
@@ -765,7 +765,7 @@ export class AuthService {
 
   static async getUserLoyaltyPoints(userId: string) {
     const data = await prisma.loyalty_points.findUnique({
-      where: { user_id: userId }
+      where: { userId: userId }
     });
 
     return data;
@@ -777,7 +777,7 @@ export class AuthService {
         await prisma.$executeRaw`
             INSERT INTO user_activity_logs (
                 id, 
-                user_id, 
+                userId, 
                 action, 
                 details, 
                 ip_address, 

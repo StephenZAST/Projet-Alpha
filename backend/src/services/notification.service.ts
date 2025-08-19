@@ -103,7 +103,7 @@ export class NotificationService {
 
         if (affiliate) {
           await this.sendAffiliateNotification(
-            affiliate.user_id,
+            affiliate.userId,
             orderId,
             Number(order.totalAmount)
           );
@@ -131,7 +131,7 @@ export class NotificationService {
   ): Promise<void> {
     try {
       const affiliate = await prisma.affiliate_profiles.findFirst({
-        where: { user_id: affiliateUserId }
+        where: { userId: affiliateUserId }
       });
 
       if (!affiliate) return;
@@ -182,7 +182,7 @@ export class NotificationService {
     try {
       await prisma.notifications.create({
         data: {
-          user_id: userId,
+          userId: userId,
           type,
           message,
           data,
@@ -201,13 +201,13 @@ export class NotificationService {
     try {
       const [notifications, total] = await prisma.$transaction([
         prisma.notifications.findMany({
-          where: { user_id: userId },
+          where: { userId: userId },
           orderBy: { created_at: 'desc' },
           skip: (page - 1) * limit,
           take: limit
         }),
         prisma.notifications.count({
-          where: { user_id: userId }
+          where: { userId: userId }
         })
       ]);
 
@@ -227,7 +227,7 @@ export class NotificationService {
     try {
       return await prisma.notifications.count({
         where: {
-          user_id: userId,
+          userId: userId,
           read: false
         }
       });
@@ -242,7 +242,7 @@ export class NotificationService {
       await prisma.notifications.updateMany({
         where: {
           id: notificationId,
-          user_id: userId
+          userId: userId
         },
         data: {
           read: true,
@@ -259,7 +259,7 @@ export class NotificationService {
     try {
       await prisma.notifications.updateMany({
         where: {
-          user_id: userId,
+          userId: userId,
           read: false
         },
         data: {
@@ -278,7 +278,7 @@ export class NotificationService {
       await prisma.notifications.deleteMany({
         where: {
           id: notificationId,
-          user_id: userId
+          userId: userId
         }
       });
     } catch (error) {
@@ -290,7 +290,7 @@ export class NotificationService {
   static async getNotificationPreferences(userId: string): Promise<any> {
     try {
       return await prisma.notification_preferences.findFirst({
-        where: { user_id: userId }
+        where: { userId: userId }
       });
     } catch (error) {
       console.error('[NotificationService] Error getting notification preferences:', error);
@@ -301,7 +301,7 @@ export class NotificationService {
   static async updateNotificationPreferences(userId: string, preferences: any): Promise<void> {
     try {
       const existingPreferences = await prisma.notification_preferences.findFirst({
-        where: { user_id: userId }
+        where: { userId: userId }
       });
 
       if (existingPreferences) {
@@ -315,7 +315,7 @@ export class NotificationService {
       } else {
         await prisma.notification_preferences.create({
           data: {
-            user_id: userId,
+            userId: userId,
             ...preferences,
             created_at: new Date(),
             updated_at: new Date()
@@ -360,7 +360,7 @@ export class NotificationService {
 
         await prisma.notifications.create({
           data: {
-            user_id: notification.user_id,
+            userId: notification.user_id,
             type: notification.type,
             message: notification.message,
             data: notification.data || {},
@@ -372,7 +372,7 @@ export class NotificationService {
       } else {
         const existing = await prisma.notifications.findFirst({
           where: {
-            user_id: userIdOrNotification,
+            userId: userIdOrNotification,
             type: type as string,
             message: message as string,
             read: false
@@ -389,7 +389,7 @@ export class NotificationService {
 
         await prisma.notifications.create({
           data: {
-            user_id: userIdOrNotification,
+            userId: userIdOrNotification,
             type: type as string,
             message: message as string,
             data,

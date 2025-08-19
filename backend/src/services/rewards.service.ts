@@ -19,7 +19,7 @@ export class RewardsService {
       await prisma.$transaction(async (tx) => {
         // Vérifier et mettre à jour le profil de fidélité
         const loyalty = await tx.loyalty_points.upsert({
-          where: { user_id: userId },
+          where: { userId: userId },
           update: {
             pointsBalance: {
               increment: pointsToAward
@@ -30,7 +30,7 @@ export class RewardsService {
             updatedAt: new Date()
           },
           create: {
-            user_id: userId,
+            userId: userId,
             pointsBalance: pointsToAward,
             totalEarned: pointsToAward,
             createdAt: new Date(),
@@ -65,7 +65,7 @@ export class RewardsService {
       await prisma.$transaction(async (tx) => {
         // Mettre à jour les points du parrain
         await tx.loyalty_points.upsert({
-          where: { user_id: referrerId },
+          where: { userId: referrerId },
           update: {
             pointsBalance: {
               increment: pointsAmount
@@ -76,7 +76,7 @@ export class RewardsService {
             updatedAt: new Date()
           },
           create: {
-            user_id: referrerId,
+            userId: referrerId,
             pointsBalance: pointsAmount,
             totalEarned: pointsAmount,
             createdAt: new Date(),
@@ -256,7 +256,7 @@ export class RewardsService {
     try {
       await prisma.$transaction(async (tx) => {
         const loyalty = await tx.loyalty_points.findUnique({
-          where: { user_id: userId }
+          where: { userId: userId }
         });
 
         // Vérification plus stricte des points
@@ -266,7 +266,7 @@ export class RewardsService {
         }
 
         await tx.loyalty_points.update({
-          where: { user_id: userId },
+          where: { userId: userId },
           data: {
             pointsBalance: Math.max(0, currentPoints - points), // Éviter les valeurs négatives
             updatedAt: new Date()

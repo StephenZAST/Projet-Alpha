@@ -114,7 +114,7 @@ export class AffiliateCommissionService {
 
       // Utilisation du type de notification correct
       await NotificationService.sendNotification(
-        affiliate.user_id,
+        affiliate.userId,
         NotificationType.WITHDRAWAL_REQUESTED,
         {
           amount,

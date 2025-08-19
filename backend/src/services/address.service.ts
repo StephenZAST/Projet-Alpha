@@ -15,7 +15,7 @@ export class AddressService {
       if (!address) return null;
       return {
         id: address.id,
-        user_id: address.user_id || '',
+        user_id: address.userId || '',
         name: address.name || '',
         street: address.street,
         city: address.city,
@@ -45,7 +45,7 @@ export class AddressService {
     try {
       const address = await prisma.addresses.create({
         data: {
-          user_id: userId,
+          userId: userId,
           name,
           street,
           city,
@@ -60,7 +60,7 @@ export class AddressService {
 
       return {
         id: address.id,
-        user_id: address.user_id || '',
+        user_id: address.userId || '',
         name: address.name || '',
         street: address.street,
         city: address.city,
@@ -80,12 +80,12 @@ export class AddressService {
   static async getAllAddresses(userId: string): Promise<Address[]> {
     try {
       const addresses = await prisma.addresses.findMany({
-        where: { user_id: userId }
+        where: { userId: userId }
       });
 
       return addresses.map(address => ({
         id: address.id,
-        user_id: address.user_id || '',
+        user_id: address.userId || '',
         name: address.name || '',
         street: address.street,
         city: address.city,
@@ -129,7 +129,7 @@ export class AddressService {
     const existingAddress = await prisma.addresses.findFirst({
       where: {
         id: addressId,
-        user_id: userId
+        userId: userId
       }
     });
 
@@ -156,7 +156,7 @@ export class AddressService {
     console.log('Address updated successfully:', updatedAddress);
     return {
       id: updatedAddress.id,
-      user_id: updatedAddress.user_id || '',
+      user_id: updatedAddress.userId || '',
       name: updatedAddress.name || '',
       street: updatedAddress.street,
       city: updatedAddress.city,
@@ -174,7 +174,7 @@ export class AddressService {
       await prisma.addresses.deleteMany({
         where: {
           id: addressId,
-          user_id: userId
+          userId: userId
         }
       });
     } catch (error) {

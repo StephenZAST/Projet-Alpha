@@ -149,7 +149,7 @@ export class DiscountService {
   ): Promise<Discount | null> {
     const loyalty = await prisma.loyalty_points.findUnique({
       where: {
-        user_id: userId
+        userId: userId
       },
       select: {
         pointsBalance: true

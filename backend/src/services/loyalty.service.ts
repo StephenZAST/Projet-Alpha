@@ -14,14 +14,14 @@ export class LoyaltyService {
     try {
       const result = await prisma.$transaction(async (tx) => {
         const loyaltyPoints = await tx.loyalty_points.findUnique({
-          where: { user_id: userId }
+          where: { userId: userId }
         });
 
         const currentBalance = loyaltyPoints?.pointsBalance || 0;
         const currentTotal = loyaltyPoints?.totalEarned || 0;
 
         const updatedPoints = await tx.loyalty_points.update({
-          where: { user_id: userId },
+          where: { userId: userId },
           data: {
             pointsBalance: currentBalance + points,
             totalEarned: currentTotal + points,
@@ -43,7 +43,7 @@ export class LoyaltyService {
 
         return {
           id: updatedPoints.id,
-          user_id: updatedPoints.user_id || userId, // Assure une valeur non-null
+          user_id: updatedPoints.userId || userId, // Assure une valeur non-null
           pointsBalance: updatedPoints.pointsBalance || 0,
           totalEarned: updatedPoints.totalEarned || 0,
           createdAt: updatedPoints.createdAt || new Date(),
@@ -67,7 +67,7 @@ export class LoyaltyService {
     try {
       return await prisma.$transaction(async (tx) => {
         const loyaltyPoints = await tx.loyalty_points.findUnique({
-          where: { user_id: userId }
+          where: { userId: userId }
         });
 
         const currentBalance = loyaltyPoints?.pointsBalance ?? 0;
@@ -76,7 +76,7 @@ export class LoyaltyService {
         }
 
         const updatedPoints = await tx.loyalty_points.update({
-          where: { user_id: userId },
+          where: { userId: userId },
           data: {
             pointsBalance: currentBalance - points,
             updatedAt: new Date()
@@ -98,7 +98,7 @@ export class LoyaltyService {
         // Transformer en type non-null
         return {
           id: updatedPoints.id,
-          user_id: updatedPoints.user_id ?? userId,
+          user_id: updatedPoints.userId ?? userId,
           pointsBalance: updatedPoints.pointsBalance ?? 0,
           totalEarned: updatedPoints.totalEarned ?? 0,
           createdAt: updatedPoints.createdAt ?? new Date(),
@@ -114,14 +114,14 @@ export class LoyaltyService {
   static async getPointsBalance(userId: string): Promise<LoyaltyPoints | null> {
     try {
       const points = await prisma.loyalty_points.findUnique({
-        where: { user_id: userId }
+        where: { userId: userId }
       });
 
       if (!points) return null;
 
       return {
         id: points.id,
-        user_id: points.user_id || userId,
+        user_id: points.userId || userId,
         pointsBalance: points.pointsBalance || 0,
         totalEarned: points.totalEarned || 0,
         createdAt: points.createdAt || new Date(),
@@ -136,7 +136,7 @@ export class LoyaltyService {
   static async getCurrentPoints(userId: string): Promise<number> {
     try {
       const points = await prisma.loyalty_points.findUnique({
-        where: { user_id: userId },
+        where: { userId: userId },
         select: { pointsBalance: true }
       });
       return points?.pointsBalance || 0;
@@ -154,7 +154,7 @@ export class LoyaltyService {
     try {
       await prisma.$transaction(async (tx) => {
         const loyalty = await tx.loyalty_points.findUnique({
-          where: { user_id: userId }
+          where: { userId: userId }
         });
 
         // Vérifier explicitement la valeur de pointsBalance
@@ -164,7 +164,7 @@ export class LoyaltyService {
         }
 
         await tx.loyalty_points.update({
-          where: { user_id: userId },
+          where: { userId: userId },
           data: {
             pointsBalance: currentBalance - points,
             updatedAt: new Date()

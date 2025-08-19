@@ -100,7 +100,7 @@ export class AffiliateController {
 
       // Recherche des préférences existantes
       const existingPrefs = await prisma.notification_preferences.findFirst({
-        where: { user_id: userId }
+        where: { userId: userId }
       });
 
       // Mise à jour ou création des préférences
@@ -113,7 +113,7 @@ export class AffiliateController {
         await prisma.notification_preferences.create({
           data: {
             ...preferences,
-            user_id: userId
+            userId: userId
           }
         });
       }
@@ -165,7 +165,7 @@ export class AffiliateController {
 
       const profile = await prisma.affiliate_profiles.findUnique({
         where: {
-          user_id: userId
+          userId: userId
         },
         select: {
           id: true

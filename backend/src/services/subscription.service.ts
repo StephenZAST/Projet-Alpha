@@ -81,7 +81,7 @@ export class SubscriptionService {
       const endDate = new Date(now.getTime() + plan.duration_days * 24 * 60 * 60 * 1000);
       const userSub = await prisma.user_subscriptions.create({
         data: {
-          user_id: userId,
+          userId: userId,
           plan_id: planId,
           start_date: now,
           end_date: endDate,
@@ -92,7 +92,7 @@ export class SubscriptionService {
       });
       return {
         id: userSub.id,
-        userId: userSub.user_id,
+        userId: userSub.userId,
         planId: userSub.plan_id,
         startDate: userSub.start_date,
         endDate: userSub.end_date,
@@ -115,7 +115,7 @@ export class SubscriptionService {
     try {
       const subscription = await prisma.user_subscriptions.findFirst({
         where: {
-          user_id: userId,
+          userId: userId,
           status: 'ACTIVE',
           end_date: { gte: new Date() },
           expired: false,
@@ -126,7 +126,7 @@ export class SubscriptionService {
       const plan = await prisma.subscription_plans.findUnique({ where: { id: subscription.plan_id } });
       return {
         id: subscription.id,
-        userId: subscription.user_id,
+        userId: subscription.userId,
         planId: subscription.plan_id,
         startDate: subscription.start_date,
         endDate: subscription.end_date,
@@ -189,7 +189,7 @@ export class SubscriptionService {
     });
     return subs.map(sub => ({
       id: sub.id,
-      userId: sub.user_id,
+      userId: sub.userId,
       userName: sub.users?.first_name ? `${sub.users.first_name} ${sub.users.last_name ?? ''}`.trim() : sub.users?.email ?? '',
       planId: sub.plan_id,
       startDate: sub.start_date,

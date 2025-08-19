@@ -37,7 +37,7 @@ export class ArchiveService {
       // Transformer l'adresse avec une gestion correcte des types null/undefined
       const transformedAddress = order.addresses ? {
         id: order.addresses.id,
-        user_id: order.addresses.user_id || '',  // Conversion de null en string vide
+        user_id: order.addresses.userId || '',  // Conversion de null en string vide
         name: order.addresses.name || '',
         street: order.addresses.street,
         city: order.addresses.city,

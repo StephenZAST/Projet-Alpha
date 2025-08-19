@@ -33,7 +33,7 @@ export class AffiliateWithdrawalService {
           where: { id: affiliateId },
           select: {
             commission_balance: true,
-            user_id: true
+            userId: true
           }
         });
 
@@ -189,9 +189,9 @@ export class AffiliateWithdrawalService {
         });
 
         // Notification
-        if (withdrawal.affiliate_profiles?.user_id) {
+        if (withdrawal.affiliate_profiles?.userId) {
           await NotificationService.sendNotification(
-            withdrawal.affiliate_profiles.user_id,
+            withdrawal.affiliate_profiles.userId,
             NotificationType.WITHDRAWAL_REJECTED,
             {
               amount: refundAmount,
@@ -235,9 +235,9 @@ export class AffiliateWithdrawalService {
         });
 
         // Notification
-        if (withdrawal.affiliate_profiles?.user_id) {
+        if (withdrawal.affiliate_profiles?.userId) {
           await NotificationService.sendNotification(
-            withdrawal.affiliate_profiles.user_id,
+            withdrawal.affiliate_profiles.userId,
             NotificationType.WITHDRAWAL_PROCESSED,
             {
               amount: Math.abs(Number(withdrawal.amount || 0)),

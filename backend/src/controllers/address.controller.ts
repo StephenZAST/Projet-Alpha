@@ -45,7 +45,7 @@ export class AddressController {
         console.error('[updateOrderAddress] Adresse non trouvée');
         return res.status(404).json({ error: 'Adresse non trouvée' });
       }
-      if (address.user_id !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
+      if (address.userId !== userId && !['ADMIN', 'SUPER_ADMIN'].includes(userRole)) {
         console.error('[updateOrderAddress] Non autorisé à utiliser cette adresse');
         return res.status(403).json({ error: 'Non autorisé à utiliser cette adresse' });
       }

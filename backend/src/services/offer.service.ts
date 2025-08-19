@@ -148,7 +148,7 @@ export class OfferService {
 
       if (!offer.isCumulative) {
         await prisma.offer_subscriptions.updateMany({
-          where: { user_id: userId },
+          where: { userId: userId },
           data: {
             status: 'INACTIVE',
             updated_at: new Date()
@@ -158,7 +158,7 @@ export class OfferService {
 
       const subscription = await prisma.offer_subscriptions.create({
         data: {
-          user_id: userId,
+          userId: userId,
           offer_id: offerId,
           status: 'ACTIVE',
           subscribed_at: new Date(),
@@ -188,7 +188,7 @@ export class OfferService {
   static async getUserSubscriptions(userId: string): Promise<OfferSubscription[]> {
     const subscriptions = await prisma.offer_subscriptions.findMany({
       where: {
-        user_id: userId,
+        userId: userId,
         status: 'ACTIVE'
       },
       include: {
@@ -215,11 +215,11 @@ export class OfferService {
       return subscriptions
         .filter(subscription => {
           const offer = subscription.offers;
-          return subscription.users && subscription.user_id && offer;
+          return subscription.users && subscription.userId && offer;
         })
         .map(subscription => ({
           id: subscription.id,
-          userId: subscription.user_id!,
+          userId: subscription.userId!,
           offerId: subscription.offer_id ?? '',
           status: subscription.status ?? 'ACTIVE',
           subscribedAt: new Date(subscription.subscribed_at || new Date()),
@@ -242,7 +242,7 @@ export class OfferService {
   static async unsubscribeFromOffer(userId: string, offerId: string): Promise<void> {
     await prisma.offer_subscriptions.updateMany({
       where: {
-        user_id: userId,
+        userId: userId,
         offer_id: offerId
       },
       data: {
@@ -263,7 +263,7 @@ export class OfferService {
     try {
       const subscriptions = await prisma.offer_subscriptions.findMany({
         where: {
-          user_id: userId,
+          userId: userId,
           status: 'ACTIVE'
         },
         include: {
@@ -359,7 +359,7 @@ export class OfferService {
   private static formatSubscription(data: any): OfferSubscription {
     return {
       id: data.id,
-      userId: data.user_id,
+      userId: data.userId,
       offerId: data.offer_id,
       status: data.status,
       subscribedAt: new Date(data.subscribed_at),

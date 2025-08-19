@@ -8,7 +8,7 @@ export class OrderPaymentService {
     try {
       const loyaltyPoints = await prisma.loyalty_points.findUnique({
         where: {
-          user_id: userId
+          userId: userId
         },
         select: {
           pointsBalance: true
@@ -74,7 +74,7 @@ export class OrderPaymentService {
           break;
         case 'POINTS_EXCHANGE':
           const loyalty = await prisma.loyalty_points.findUnique({
-            where: { user_id: userId },
+            where: { userId: userId },
             select: { pointsBalance: true }
           });
 
@@ -83,7 +83,7 @@ export class OrderPaymentService {
           discountAmount = Number(offer.discountValue);
 
           await prisma.loyalty_points.update({
-            where: { user_id: userId },
+            where: { userId: userId },
             data: {
               pointsBalance: loyalty.pointsBalance! - Number(offer.pointsRequired)
             }

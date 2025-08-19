@@ -1,40 +1,39 @@
 {
-  "name": "Liste des commandes (pagination)",
-  "request": {
-    "method": "GET",
-    "header": [
-      {
-        "key": "Authorization",
-        "value": "Bearer {{adminToken}}"
-      }
-    ],
-    "url": {
-      "raw": "{{baseUrl}}/orders?page=1&limit=10",
-      "host": ["{{baseUrl}}"],
-      "path": ["orders"],
-      "query": [
-        { "key": "page", "value": "1" },
-        { "key": "limit", "value": "10" }
-      ]
-    }
+  "info": {
+    "name": "Alpha - Test Création Commande",
+    "_postman_id": "d1e2f3a4-b5c6-7890-1234-56789abcdef0",
+    "description": "Test création d'une commande avec order items",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
-  "event": [
+  "item": [
     {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          "pm.test(\"Status code est 200\", function () {",
-          "    pm.response.to.have.status(200);",
-          "});",
-          "",
-          "pm.test(\"La réponse contient le champ total\", function () {",
-          "    var jsonData = pm.response.json();",
-          "    pm.expect(jsonData.total).to.exist;",
-          "    pm.expect(jsonData.total).to.be.a('number');",
-          "});"
-        ]
-      }
+      "name": "Créer une commande avec order items",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"399f5297-557a-4caf-bbee-141d3c8d5a67\",\n  \"addressId\": \"c8b653a4-6af1-4b3d-8806-b568d7550a9f\",\n  \"serviceId\": \"f2a87b59-ebab-4f5c-9973-b9453e2e1757\",\n  \"serviceTypeId\": \"b2737f90-14db-460c-a9e3-7b701d414028\",\n  \"items\": [\n    {\n      \"articleId\": \"9b91e9a0-fcc7-4f6a-90dc-47c89e4132cf\",\n      \"quantity\": 2,\n      \"isPremium\": false\n    },\n    {\n      \"articleId\": \"6181f7c9-67a2-4423-83d0-34c02872484a\",\n      \"quantity\": 2,\n      \"isPremium\": false\n    },\n    {\n      \"articleId\": \"c0126077-b3be-4881-b381-2ae8a4b25609\",\n      \"quantity\": 2,\n      \"isPremium\": false\n    },\n    {\n      \"articleId\": \"0206d22d-a4f8-4ed7-8f9f-5fa8da46446e\",\n      \"quantity\": 2,\n      \"isPremium\": false\n    }\n  ],\n  \"collectionDate\": \"2025-08-19T22:00:00.000Z\",\n  \"deliveryDate\": \"2025-08-20T22:00:00.000Z\",\n  \"paymentMethod\": \"ORANGE_MONEY\",\n  \"affiliateCode\": null,\n  \"recurrenceType\": \"WEEKLY\",\n  \"nextRecurrenceDate\": \"2025-08-26T22:00:00.000Z\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3001/api/orders",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3001",
+          "path": [
+            "api",
+            "orders"
+          ]
+        }
+      },
+      "response": []
     }
   ]
 }

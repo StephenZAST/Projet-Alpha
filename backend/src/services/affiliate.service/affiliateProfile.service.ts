@@ -23,7 +23,7 @@ export class AffiliateProfileService {
   }): Promise<AffiliateProfile> {
     const profile = await prisma.affiliate_profiles.create({
       data: {
-        user_id: data.userId,
+        userId: data.userId,
         affiliate_code: data.affiliateCode,
         parent_affiliate_id: data.parent_affiliate_id,
         commission_rate: 10,
@@ -39,7 +39,7 @@ export class AffiliateProfileService {
 
     return {
       id: profile.id,
-      userId: profile.user_id,
+      userId: profile.userId,
       affiliateCode: profile.affiliate_code,
       parent_affiliate_id: profile.parent_affiliate_id || undefined,
       commission_rate: Number(profile.commission_rate),
@@ -72,7 +72,7 @@ export class AffiliateProfileService {
   private static formatProfile(profile: any): AffiliateProfile {
     return {
       id: profile.id,
-      userId: profile.user_id,
+      userId: profile.userId,
       affiliateCode: profile.affiliate_code,
       parent_affiliate_id: profile.parent_affiliate_id || undefined,
       commission_rate: Number(profile.commission_rate),
@@ -92,7 +92,7 @@ export class AffiliateProfileService {
     try {
       // Vérifier si l'utilisateur existe déjà comme affilié
       const existingProfile = await prisma.affiliate_profiles.findUnique({
-        where: { user_id: data.userId }
+        where: { userId: data.userId }
       });
 
       if (existingProfile) {
@@ -122,7 +122,7 @@ export class AffiliateProfileService {
       // Créer le profil affilié
       const profile = await prisma.affiliate_profiles.create({
         data: {
-          user_id: data.userId,
+          userId: data.userId,
           affiliate_code: affiliateCode,
           parent_affiliate_id: parentId,
           commission_balance: new Prisma.Decimal(0),
@@ -166,7 +166,7 @@ export class AffiliateProfileService {
 
       return {
         id: profile.id,
-        userId: profile.user_id,
+        userId: profile.userId,
         affiliateCode: profile.affiliate_code,
         parent_affiliate_id: profile.parent_affiliate_id || undefined,
         commissionBalance: Number(profile.commission_balance),
@@ -203,7 +203,7 @@ export class AffiliateProfileService {
     try {
       const where = byId 
         ? { id: identifier }
-        : { user_id: identifier };
+        : { userId: identifier };
 
       const profile = await prisma.affiliate_profiles.findUnique({
         where,
@@ -217,7 +217,7 @@ export class AffiliateProfileService {
 
       return {
         id: profile.id,
-        userId: profile.user_id,
+        userId: profile.userId,
         affiliateCode: profile.affiliate_code,
         parent_affiliate_id: profile.parent_affiliate_id || undefined, // Utiliser le nom exact
         commissionBalance: Number(profile.commission_balance),
@@ -259,7 +259,7 @@ export class AffiliateProfileService {
 
       if (data.status) {
         await NotificationService.sendNotification(
-          affiliate.user_id,
+          affiliate.userId,
           NotificationType.AFFILIATE_STATUS_UPDATED,
           {
             title: 'Statut d\'affiliation mis à jour',
@@ -271,7 +271,7 @@ export class AffiliateProfileService {
 
       return {
         id: affiliate.id,
-        userId: affiliate.user_id,
+        userId: affiliate.userId,
         affiliateCode: affiliate.affiliate_code,
         parent_affiliate_id: affiliate.parent_affiliate_id || undefined,
         commissionBalance: Number(affiliate.commission_balance),
@@ -331,7 +331,7 @@ export class AffiliateProfileService {
       return {
         affiliates: affiliates.map(affiliate => ({
           id: affiliate.id,
-          userId: affiliate.user_id,
+          userId: affiliate.userId,
           affiliateCode: affiliate.affiliate_code,
           parentAffiliateId: affiliate.parent_affiliate_id || undefined,
           commissionBalance: Number(affiliate.commission_balance),
@@ -378,7 +378,7 @@ export class AffiliateProfileService {
 
       return referrals.map(referral => ({
         id: referral.id,
-        userId: referral.user_id,
+        userId: referral.userId,
         affiliateCode: referral.affiliate_code,
         parentAffiliateId: referral.parent_affiliate_id || undefined,
         commissionBalance: Number(referral.commission_balance),

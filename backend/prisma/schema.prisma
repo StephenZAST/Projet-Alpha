@@ -10,7 +10,7 @@ datasource db {
 
 model addresses {
   id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id        String?          @db.Uuid
+  userId         String?          @db.Uuid
   street         String           @db.VarChar
   city           String           @db.VarChar
   postal_code    String?          @db.VarChar
@@ -20,7 +20,7 @@ model addresses {
   created_at     DateTime?        @default(now()) @db.Timestamptz(6)
   updated_at     DateTime?        @default(now()) @db.Timestamptz(6)
   name           String?          @db.VarChar
-  users          users?           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users          users?           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "addresses_userid_fkey")
   orders         orders[]
   orders_archive orders_archive[]
 }
@@ -37,7 +37,7 @@ model affiliate_levels {
 
 model affiliate_profiles {
   id                       String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id                  String                    @unique @db.Uuid
+  userId                   String                    @unique(map: "affiliate_profiles_userid_key") @db.Uuid
   affiliate_code           String                    @unique @db.VarChar
   parent_affiliate_id      String?                   @db.Uuid
   commission_balance       Decimal?                  @default(0) @db.Decimal
@@ -53,7 +53,7 @@ model affiliate_profiles {
   affiliate_levels         affiliate_levels?         @relation(fields: [level_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   affiliate_profiles       affiliate_profiles?       @relation("affiliate_profilesToaffiliate_profiles", fields: [parent_affiliate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   other_affiliate_profiles affiliate_profiles[]      @relation("affiliate_profilesToaffiliate_profiles")
-  users                    users                     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                    users                     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "affiliate_profiles_userid_fkey")
   commission_transactions  commission_transactions[]
 }
 
@@ -126,17 +126,17 @@ model commissionTransactions {
 
 model loyalty_points {
   id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id       String?   @unique @db.Uuid
+  userId        String?   @unique(map: "loyalty_points_userid_key") @db.Uuid
   pointsBalance Int?      @default(0)
   totalEarned   Int?      @default(0)
   createdAt     DateTime? @default(now()) @db.Timestamptz(6)
   updatedAt     DateTime? @default(now()) @db.Timestamptz(6)
-  users         users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "loyalty_points_userid_fkey")
 }
 
 model notification_preferences {
   id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id       String    @db.Uuid
+  userId        String    @db.Uuid
   email         Boolean?  @default(true)
   push          Boolean?  @default(true)
   sms           Boolean?  @default(false)
@@ -146,7 +146,7 @@ model notification_preferences {
   loyalty       Boolean?  @default(true)
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @default(now()) @db.Timestamptz(6)
-  users         users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         users     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "notification_preferences_userid_fkey")
 }
 
 model notification_rules {
@@ -160,14 +160,14 @@ model notification_rules {
 
 model notifications {
   id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id    String?   @db.Uuid
+  userId     String?   @db.Uuid
   type       String
   message    String
   read       Boolean?  @default(false)
   data       Json?
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamptz(6)
-  users      users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users      users?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "notifications_userid_fkey")
 }
 
 model offer_articles {
@@ -181,13 +181,13 @@ model offer_articles {
 
 model offer_subscriptions {
   id            String             @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id       String?            @db.Uuid
+  userId        String?            @db.Uuid
   offer_id      String?            @db.Uuid
   status        offer_status_enum? @default(ACTIVE)
   subscribed_at DateTime?          @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?          @default(now()) @db.Timestamptz(6)
   offers        offers?            @relation(fields: [offer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users         users?             @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         users?             @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "offer_subscriptions_userid_fkey")
 }
 
 model offers {
@@ -309,14 +309,14 @@ model point_transactions {
 
 model reset_codes {
   id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id    String    @db.Uuid
+  userId     String    @db.Uuid
   email      String
   code       String    @db.VarChar
   expires_at DateTime  @db.Timestamptz(6)
   used       Boolean?  @default(false)
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamptz(6)
-  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "reset_codes_userid_fkey")
 }
 
 model service_types {
@@ -353,12 +353,13 @@ model services {
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model temp_notifications {
   id         String?   @db.Uuid
-  user_id    String?   @db.Uuid
+  userId     String?   @db.Uuid
   message    String?
   read       Boolean?
   created_at DateTime? @db.Timestamptz(6)
   updated_at DateTime? @db.Timestamptz(6)
   data       Json?
+  users      users?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "temp_notifications_userid_fkey")
 
   @@ignore
 }
@@ -384,6 +385,7 @@ model users {
   orders                   orders[]
   point_transactions       point_transactions[]
   reset_codes              reset_codes[]
+  temp_notifications       temp_notifications[]       @ignore
   user_activity_logs       user_activity_logs[]
   user_offers              user_offers[]
   user_subscriptions       user_subscriptions[]
@@ -463,12 +465,12 @@ model subscription_plans {
 
 model user_offers {
   id       String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id  String? @db.Uuid
+  userId   String? @db.Uuid
   offer_id String? @db.Uuid
   order_id String? @db.Uuid
   offers   offers? @relation(fields: [offer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   orders   orders? @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users    users?  @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users    users?  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_offers_userid_fkey")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -483,20 +485,20 @@ model weight_based_pricing {
 
 model user_activity_logs {
   id         String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  user_id    String   @db.Uuid
+  userId     String   @db.Uuid
   action     String
   details    Json?
   ip_address String?
   user_agent String?
   created_at DateTime @default(now()) @db.Timestamptz(6)
-  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  users      users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_activity_logs_userid_fkey")
 
-  @@index([user_id])
+  @@index([userId], map: "user_activity_logs_user_id_idx")
 }
 
 model user_subscriptions {
   id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id            String             @db.Uuid
+  userId             String             @db.Uuid
   plan_id            String             @db.Uuid
   start_date         DateTime           @default(now()) @db.Timestamptz(6)
   end_date           DateTime           @db.Timestamptz(6)
@@ -506,10 +508,10 @@ model user_subscriptions {
   created_at         DateTime           @default(now()) @db.Timestamptz(6)
   updated_at         DateTime           @default(now()) @db.Timestamptz(6)
   subscription_plans subscription_plans @relation(fields: [plan_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_plan")
-  users              users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user")
+  users              users              @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_subscription_user")
 
   @@index([plan_id], map: "idx_user_subscriptions_plan_id")
-  @@index([user_id], map: "idx_user_subscriptions_user_id")
+  @@index([userId], map: "idx_user_subscriptions_user_id")
 }
 
 enum commission_status {
