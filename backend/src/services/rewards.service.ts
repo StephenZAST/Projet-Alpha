@@ -47,6 +47,7 @@ export class RewardsService {
             source,
             referenceId: order.id,
             createdAt: new Date()
+            // Ne pas inclure updated_at
           }
         });
       });
@@ -93,6 +94,7 @@ export class RewardsService {
             source: 'REFERRAL',
             referenceId: referredUserId,
             createdAt: new Date()
+            // Ne pas inclure updated_at
           }
         });
       });
@@ -281,6 +283,7 @@ export class RewardsService {
             source: 'ORDER',
             referenceId: orderId,
             createdAt: new Date()
+            // Ne pas inclure updated_at
           }
         });
       });

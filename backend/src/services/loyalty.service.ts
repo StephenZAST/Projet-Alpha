@@ -41,6 +41,21 @@ export class LoyaltyService {
           }
         });
 
+        // Mise à jour du solde de points (remplace le trigger SQL)
+        await tx.loyalty_points.update({
+          where: { userId: userId },
+          data: {
+            pointsBalance: { increment: points },
+            updatedAt: new Date()
+          }
+        });
+
+        // Vérification du solde négatif
+        const checkLoyalty = await tx.loyalty_points.findUnique({ where: { userId } });
+        if (checkLoyalty && (checkLoyalty.pointsBalance ?? 0) < 0) {
+          throw new Error('Le solde de points ne peut pas être négatif');
+        }
+
         return {
           id: updatedPoints.id,
           user_id: updatedPoints.userId || userId, // Assure une valeur non-null
@@ -94,6 +109,21 @@ export class LoyaltyService {
             createdAt: new Date()
           }
         });
+
+        // Mise à jour du solde de points (remplace le trigger SQL)
+        await tx.loyalty_points.update({
+          where: { userId: userId },
+          data: {
+            pointsBalance: { decrement: points },
+            updatedAt: new Date()
+          }
+        });
+
+        // Vérification du solde négatif
+        const checkLoyalty = await tx.loyalty_points.findUnique({ where: { userId } });
+        if (checkLoyalty && (checkLoyalty.pointsBalance ?? 0) < 0) {
+          throw new Error('Le solde de points ne peut pas être négatif');
+        }
 
         // Transformer en type non-null
         return {
@@ -182,6 +212,21 @@ export class LoyaltyService {
             createdAt: new Date()
           }
         });
+
+        // Mise à jour du solde de points (remplace le trigger SQL)
+        await tx.loyalty_points.update({
+          where: { userId: userId },
+          data: {
+            pointsBalance: { decrement: points },
+            updatedAt: new Date()
+          }
+        });
+
+        // Vérification du solde négatif
+        const checkLoyalty = await tx.loyalty_points.findUnique({ where: { userId } });
+        if (checkLoyalty && (checkLoyalty.pointsBalance ?? 0) < 0) {
+          throw new Error('Le solde de points ne peut pas être négatif');
+        }
       });
     } catch (error) {
       console.error('[LoyaltyService] Error deducting points:', error);

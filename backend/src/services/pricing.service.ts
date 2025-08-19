@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export class PricingService {
   static async calculateOrderTotal(orderData: {
-    items: { articleId: string; quantity: number; isPremium?: boolean }[];
+  items: { articleId: string; quantity: number; isPremium?: boolean; serviceTypeId?: string; weight?: number }[];
     userId: string;
     appliedOfferIds?: string[];
     usePoints?: number;
@@ -17,30 +17,24 @@ export class PricingService {
     total: number;
   }> {
     try {
+
       let subtotal = 0;
       const itemPrices = new Map<string, number>();
+      const PricingService = require('./pricing.service').PricingService;
 
-      const articles = await prisma.articles.findMany({
-        where: {
-          id: {
-            in: orderData.items.map(item => item.articleId)
-          }
-        }
-      });
-
-      const articleMap = new Map(articles.map(article => [article.id, article]));
-      
-      // Calculer le sous-total
       for (const item of orderData.items) {
-        const article = articleMap.get(item.articleId);
-        if (!article) throw new Error(`Article not found: ${item.articleId}`);
-
-        const price = item.isPremium && article.premiumPrice 
-          ? Number(article.premiumPrice)
-          : Number(article.basePrice);
-
-        itemPrices.set(item.articleId, price);
-        subtotal += price * item.quantity;
+        // On suppose que serviceTypeId est fourni dans item ou dans orderData
+        const serviceTypeId = item.serviceTypeId;
+        if (!serviceTypeId) throw new Error('serviceTypeId is required for price calculation');
+        const priceDetails = await PricingService.calculatePrice({
+          articleId: item.articleId,
+          serviceTypeId,
+          quantity: item.quantity,
+          isPremium: item.isPremium || false,
+          weight: item.weight
+        });
+        itemPrices.set(item.articleId, priceDetails.basePrice);
+        subtotal += priceDetails.basePrice;
       }
 
       // Calculer les réductions

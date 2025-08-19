@@ -17,9 +17,9 @@ const prisma = new PrismaClient();
 
 export class OrderCreateService {
   static async createOrder(orderData: CreateOrderDTO): Promise<CreateOrderResponse> {
-      // Vérification d’abonnement actif
-      const subscription = await import('../subscription.service').then(m => m.SubscriptionService.getUserActiveSubscription(orderData.userId));
-      const isSubscriptionOrder = !!subscription;
+    // Vérification d’abonnement actif
+    const subscription = await import('../subscription.service').then(m => m.SubscriptionService.getUserActiveSubscription(orderData.userId));
+    const isSubscriptionOrder = !!subscription;
     try {
       const service_type_id = orderData.service_type_id || orderData.serviceTypeId;
       if (!service_type_id) {
@@ -38,7 +38,28 @@ export class OrderCreateService {
         throw new Error('One or more articles are not available');
       }
 
-      // Création de la commande
+      // Calculer le prix de chaque item via PricingService
+      const PricingService = require('../pricing.service').PricingService;
+      const orderItemsWithPrice = [];
+      for (const item of orderData.items) {
+        const priceDetails = await PricingService.calculatePrice({
+          articleId: item.articleId,
+          serviceTypeId: service_type_id,
+          quantity: item.quantity,
+          isPremium: item.premiumPrice || false,
+          weight: item.weight
+        });
+        orderItemsWithPrice.push({
+          articleId: item.articleId,
+          serviceId: orderData.serviceId,
+          quantity: item.quantity,
+          isPremium: item.premiumPrice || false,
+          unitPrice: priceDetails.basePrice,
+          weight: item.weight
+        });
+      }
+
+      // Création de la commande avec les bons prix
       const createdOrder = await prisma.orders.create({
         data: {
           userId: orderData.userId,
@@ -53,13 +74,7 @@ export class OrderCreateService {
           service_type_id: service_type_id,
           paymentMethod: orderData.paymentMethod as payment_method_enum,
           order_items: {
-            create: orderData.items.map(item => ({
-              articleId: item.articleId,
-              serviceId: orderData.serviceId,
-              quantity: item.quantity,
-              isPremium: item.premiumPrice || false,
-              unitPrice: 0
-            }))
+            create: orderItemsWithPrice
           }
         },
         include: {
@@ -91,12 +106,30 @@ export class OrderCreateService {
         
         finalAmount = discountResult.finalAmount;
         appliedDiscounts = discountResult.appliedDiscounts;
-
-        await prisma.orders.update({
-          where: { id: createdOrder.id },
-          data: { totalAmount: finalAmount }
-        });
       }
+
+      // Toujours mettre à jour le totalAmount de la commande avec le vrai total calculé
+      await prisma.orders.update({
+        where: { id: createdOrder.id },
+        data: { totalAmount: finalAmount }
+      });
+
+      // Rafraîchir la commande pour avoir le totalAmount à jour
+      const refreshedOrder = await prisma.orders.findUnique({
+        where: { id: createdOrder.id },
+        include: {
+          order_items: {
+            include: {
+              article: {
+                include: {
+                  article_categories: true
+                }
+              }
+            }
+          },
+          service_types: true
+        }
+      });
 
       // Traitement affilié et points
       if (orderData.affiliateCode) {
@@ -134,23 +167,26 @@ export class OrderCreateService {
         }
       );
 
-      // Construction de la réponse
+      // Construction de la réponse avec la commande rafraîchie
+      if (!refreshedOrder) {
+        throw new Error('Order not found after update');
+      }
       const orderResponse: Order = {
-        id: createdOrder.id,
-        userId: createdOrder.userId,
-        service_id: createdOrder.serviceId || '',
-        address_id: createdOrder.addressId || '',
-        status: createdOrder.status || 'PENDING',
-        isRecurring: createdOrder.isRecurring || false,
-        recurrenceType: createdOrder.recurrenceType || 'NONE',
-        totalAmount: Number(finalAmount),
-        createdAt: createdOrder.createdAt || new Date(),
-        updatedAt: createdOrder.updatedAt || new Date(),
+        id: refreshedOrder.id,
+        userId: refreshedOrder.userId,
+        service_id: refreshedOrder.serviceId || '',
+        address_id: refreshedOrder.addressId || '',
+        status: refreshedOrder.status || 'PENDING',
+        isRecurring: refreshedOrder.isRecurring || false,
+        recurrenceType: refreshedOrder.recurrenceType || 'NONE',
+        totalAmount: Number(refreshedOrder.totalAmount),
+        createdAt: refreshedOrder.createdAt || new Date(),
+        updatedAt: refreshedOrder.updatedAt || new Date(),
         service_type_id: service_type_id,
         paymentStatus: PaymentStatus.PENDING,
         paymentMethod: orderData.paymentMethod,
-        affiliateCode: createdOrder.affiliateCode || undefined,
-        items: orderItems.map(item => ({
+        affiliateCode: refreshedOrder.affiliateCode || undefined,
+        items: refreshedOrder.order_items.map(item => ({
           id: item.id,
           orderId: item.orderId,
           articleId: item.articleId,
@@ -159,7 +195,19 @@ export class OrderCreateService {
           unitPrice: Number(item.unitPrice),
           isPremium: item.isPremium || false,
           createdAt: item.createdAt,
-          updatedAt: item.updatedAt
+          updatedAt: item.updatedAt,
+          article: item.article
+            ? {
+                ...item.article,
+                categoryId: item.article.categoryId ?? '', // force string, jamais null
+                description: item.article.description ?? '', // force string, jamais null
+                basePrice: item.article.basePrice ? Number(item.article.basePrice) : 0,
+                premiumPrice: item.article.premiumPrice ? Number(item.article.premiumPrice) : 0,
+                createdAt: item.article.createdAt ? new Date(item.article.createdAt) : new Date(),
+                updatedAt: item.article.updatedAt ? new Date(item.article.updatedAt) : new Date(),
+                // ignore article_categories, deletedAt, etc. qui ne sont pas dans le type Article
+              }
+            : undefined
         }))
       };
 
@@ -168,7 +216,7 @@ export class OrderCreateService {
       return {
         order: orderResponse,
         pricing: {
-          subtotal: totalAmount,
+          subtotal: finalAmount, // synchronisé avec le vrai total
           discounts: appliedDiscounts,
           total: finalAmount
         },
