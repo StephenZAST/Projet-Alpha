@@ -102,9 +102,13 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
       isPremium = false;
       // MAJ OrderDraft avec le serviceType sélectionné
       if (type != null) {
+        print(
+            '[ServiceSelectionStep] ServiceType sélectionné : id=${type.id}, name=${type.name}');
         controller.orderDraft.update((draft) {
           draft?.serviceTypeId = type.id;
         });
+        print(
+            '[ServiceSelectionStep] Draft après sélection serviceType : serviceTypeId=${controller.orderDraft.value.serviceTypeId}');
         controller.update();
       }
     });

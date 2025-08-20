@@ -115,50 +115,50 @@ class Order {
   factory Order.fromJson(Map<String, dynamic> json) {
     try {
       print('[Order] Parsing order from JSON: $json');
-
-      // Vérifier d'abord si les données essentielles sont présentes
-      if (json['id'] == null) {
-        throw 'Order ID is required';
-      }
-
+      final data =
+          json.containsKey('order') && json['order'] is Map<String, dynamic>
+              ? json['order'] as Map<String, dynamic>
+              : json;
+      final id = data['id']?.toString() ?? data['orderId']?.toString() ?? '';
+      if (id.isEmpty) throw 'Order ID is required';
       return Order(
-        id: json['id']?.toString() ?? '',
-        userId: json['userId']?.toString() ?? json['user_id']?.toString() ?? '',
+        id: id,
+        userId: data['userId']?.toString() ?? data['user_id']?.toString() ?? '',
         serviceId:
-            json['serviceId']?.toString() ?? json['service_id']?.toString(),
-        addressId: json['addressId']?.toString() ??
-            json['address_id']?.toString() ??
+            data['serviceId']?.toString() ?? data['service_id']?.toString(),
+        addressId: data['addressId']?.toString() ??
+            data['address_id']?.toString() ??
             '',
-        affiliateCode: json['affiliateCode']?.toString(),
-        status: (json['status'] as String?)?.toUpperCase() ?? 'PENDING',
-        isRecurring: safeBool(json['isRecurring']),
-        recurrenceType: json['recurrenceType']?.toString(),
-        totalAmount: safeDouble(json['totalAmount']),
-        nextRecurrenceDate: _parseDateTime(json['nextRecurrenceDate']),
-        collectionDate: _parseDateTime(json['collectionDate']),
-        deliveryDate: _parseDateTime(json['deliveryDate']),
-        createdAt: _parseDateTime(json['createdAt'] ?? json['created_at']) ??
+        affiliateCode: data['affiliateCode']?.toString(),
+        status: (data['status'] as String?)?.toUpperCase() ?? 'PENDING',
+        isRecurring: safeBool(data['isRecurring']),
+        recurrenceType: data['recurrenceType']?.toString(),
+        totalAmount: safeDouble(data['totalAmount']),
+        nextRecurrenceDate: _parseDateTime(data['nextRecurrenceDate']),
+        collectionDate: _parseDateTime(data['collectionDate']),
+        deliveryDate: _parseDateTime(data['deliveryDate']),
+        createdAt: _parseDateTime(data['createdAt'] ?? data['created_at']) ??
             DateTime.now(),
-        updatedAt: _parseDateTime(json['updatedAt'] ?? json['updated_at']),
-        items: _parseOrderItems(json['items']),
-        notes: json['notes']?.toString(),
-        paymentStatus: _parsePaymentStatus(json['paymentStatus']),
-        paymentMethod: _parsePaymentMethod(json['paymentMethod']),
-        service: json['service'] != null
-            ? Service.fromJson(Map<String, dynamic>.from(json['service']))
+        updatedAt: _parseDateTime(data['updatedAt'] ?? data['updated_at']),
+        items: _parseOrderItems(data['items']),
+        notes: data['notes']?.toString(),
+        paymentStatus: _parsePaymentStatus(data['paymentStatus']),
+        paymentMethod: _parsePaymentMethod(data['paymentMethod']),
+        service: data['service'] != null
+            ? Service.fromJson(Map<String, dynamic>.from(data['service']))
             : null,
-        address: json['address'] != null
-            ? Address.fromJson(Map<String, dynamic>.from(json['address']))
+        address: data['address'] != null
+            ? Address.fromJson(Map<String, dynamic>.from(data['address']))
             : null,
-        user: json['user'] != null
-            ? User.fromJson(Map<String, dynamic>.from(json['user']))
+        user: data['user'] != null
+            ? User.fromJson(Map<String, dynamic>.from(data['user']))
             : null,
-        isFlashOrder: safeBool(json['isFlashOrder']),
-        note: json['note']?.toString(),
-        metadata: json['metadata'] != null
-            ? OrderMetadata.fromJson(json['metadata'])
+        isFlashOrder: safeBool(data['isFlashOrder']),
+        note: data['note']?.toString(),
+        metadata: data['metadata'] != null
+            ? OrderMetadata.fromJson(data['metadata'])
             : null,
-        isSubscriptionOrder: Order.safeBool(json['isSubscriptionOrder']),
+        isSubscriptionOrder: Order.safeBool(data['isSubscriptionOrder']),
       );
     } catch (e, stackTrace) {
       print('[Order] Error creating Order from JSON: $e');

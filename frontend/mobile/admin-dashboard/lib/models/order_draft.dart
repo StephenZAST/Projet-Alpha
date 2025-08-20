@@ -14,12 +14,15 @@ class OrderDraft {
   DateTime? nextRecurrenceDate;
 
   Map<String, dynamic> toPayload() {
+    print(
+        '[OrderDraft] toPayload: serviceTypeId=$serviceTypeId, serviceId=$serviceId, clientId=$clientId');
     return {
       'userId': clientId,
       'addressId': addressId,
       'serviceId': serviceId,
       'serviceTypeId': serviceTypeId,
-      'items': items.map((e) => e.toPayload()).toList(),
+      'items':
+          items.map((e) => e.toPayload(serviceTypeId: serviceTypeId)).toList(),
       'collectionDate': collectionDate != null
           ? collectionDate!.toUtc().toIso8601String()
           : null,
@@ -75,11 +78,12 @@ class OrderDraftItem {
     this.isPremium = false,
   });
 
-  Map<String, dynamic> toPayload() {
+  Map<String, dynamic> toPayload({String? serviceTypeId}) {
     return {
       'articleId': articleId,
       'quantity': quantity,
       'isPremium': isPremium,
+      if (serviceTypeId != null) 'serviceTypeId': serviceTypeId,
     };
   }
 }

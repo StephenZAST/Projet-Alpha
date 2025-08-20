@@ -56,10 +56,15 @@ export class OrderCreateController {
         items,
         paymentMethod,
         appliedOfferIds,
-        serviceTypeId
+        serviceTypeId,
+        userId: userIdFromPayload
       } = req.body;
-      
-      const userId = req.user?.id;
+
+      // Logique hybride :
+      // - Si admin/superadmin ET userId fourni dans le payload, on l'utilise
+      // - Sinon, on utilise l'utilisateur authentifié
+      const isAdmin = req.user?.role === 'ADMIN' || req.user?.role === 'SUPER_ADMIN';
+      const userId = isAdmin && userIdFromPayload ? userIdFromPayload : req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
       // 1. Calculer le prix total avec les réductions

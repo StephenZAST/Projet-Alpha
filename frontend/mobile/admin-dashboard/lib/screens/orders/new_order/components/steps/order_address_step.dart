@@ -16,10 +16,12 @@ class OrderAddressStep extends StatelessWidget {
       if ((controller.selectedAddressId.value == null ||
               controller.orderDraft.value.addressId == null) &&
           addresses.isNotEmpty) {
-        final defaultAddress =
-            addresses.firstWhereOrNull((a) => a.isDefault) ?? addresses.first;
-        controller.selectAddress(defaultAddress.id);
-        controller.setSelectedAddress(defaultAddress.id);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final defaultAddress =
+              addresses.firstWhereOrNull((a) => a.isDefault) ?? addresses.first;
+          controller.selectAddress(defaultAddress.id);
+          controller.setSelectedAddress(defaultAddress.id);
+        });
       }
       final selectedAddress = addresses
           .firstWhereOrNull((a) => a.id == controller.selectedAddressId.value);

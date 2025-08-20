@@ -878,7 +878,7 @@ class OrdersController extends GetxController {
         limit: itemsPerPage.value,
         status: filterStatus.value,
       );
-      await fetchOrderDetails(result.id, activateOrderIdSearch: false);
+      // Affiche une notification de succès
       _showSuccessSnackbar('Commande créée avec succès');
       // Ferme tous les écrans jusqu'à la page des commandes
       Get.offAllNamed('/orders');
