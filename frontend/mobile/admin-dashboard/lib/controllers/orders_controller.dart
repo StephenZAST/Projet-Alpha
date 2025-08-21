@@ -16,6 +16,31 @@ import '../services/service_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  /// Réinitialise tout le contexte du stepper (draft, articles, etc.)
+  void resetOrderStepper() {
+    orderDraft.value = OrderDraft();
+    selectedArticleDetails.clear();
+    update();
+  }
+
+  /// Calcule le total estimé à partir d'une liste de couples (source de vérité)
+  double estimatedTotalFromCouples(List<Map<String, dynamic>> couples) {
+    double sum = 0;
+    for (var item in orderDraft.value.items) {
+      final couple =
+          couples.firstWhereOrNull((c) => c['article_id'] == item.articleId);
+      final basePrice = couple != null
+          ? double.tryParse(couple['base_price'].toString()) ?? 0.0
+          : 0.0;
+      final premiumPrice = couple != null
+          ? double.tryParse(couple['premium_price'].toString()) ?? 0.0
+          : 0.0;
+      final price = (item.isPremium ? premiumPrice : basePrice);
+      sum += price * item.quantity;
+    }
+    return sum;
+  }
+
   /// Archive une commande (manuel)
   Future<void> archiveOrder(String orderId) async {
     try {

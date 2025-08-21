@@ -177,6 +177,7 @@ class OrderStepper extends StatelessWidget {
     }
     try {
       await controller.createOrder(orderData);
+      controller.resetOrderStepper(); // Reset le contexte après succès
       Get.back(); // Ferme le stepper après succès
       Future.delayed(Duration(milliseconds: 100), () {
         controller.fetchOrders(); // Recharge la liste des commandes

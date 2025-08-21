@@ -246,20 +246,7 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
       }
     });
     // Estimation du total avec les bons prix
-    double sum = 0;
-    for (var item in controller.orderDraft.value.items) {
-      // On retrouve le couple pour le prix
-      final couple =
-          couples.firstWhereOrNull((c) => c['article_id'] == item.articleId);
-      final basePrice = couple != null
-          ? double.tryParse(couple['base_price'].toString()) ?? 0.0
-          : 0.0;
-      final premiumPrice = couple != null
-          ? double.tryParse(couple['premium_price'].toString()) ?? 0.0
-          : 0.0;
-      final price = (item.isPremium ? premiumPrice : basePrice);
-      sum += price * item.quantity;
-    }
+    final sum = controller.estimatedTotalFromCouples(couples);
     widgets.add(Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Text(

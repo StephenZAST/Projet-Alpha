@@ -19,6 +19,17 @@ class NewOrderScreen extends StatelessWidget {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            tooltip: 'Abandonner / Réinitialiser',
+            onPressed: () {
+              controller.resetOrderStepper();
+              Get.snackbar('Commande réinitialisée',
+                  'Le formulaire a été remis à zéro.');
+            },
+          ),
+        ],
       ),
       body: Container(
         padding: EdgeInsets.all(AppSpacing.md),
