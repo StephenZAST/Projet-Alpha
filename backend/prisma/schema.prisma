@@ -267,7 +267,6 @@ model orders {
   address                 addresses?                @relation(fields: [addressId], references: [id])
   service_types           service_types             @relation(fields: [service_type_id], references: [id])
   user                    users                     @relation(fields: [userId], references: [id])
-  orders_archive          orders_archive?
   user_offers             user_offers[]
 }
 
@@ -289,7 +288,6 @@ model orders_archive {
   userId             String?        @db.Uuid
   archived_at        DateTime?      @default(now()) @db.Timestamptz(6)
   addresses          addresses?     @relation(fields: [address_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  orders             orders         @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   services           services?      @relation(fields: [service_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   service_types      service_types? @relation(fields: [service_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -304,6 +302,7 @@ model point_transactions {
   createdAt              DateTime? @default(now()) @db.Timestamptz(6)
   conversion_rate        Decimal?  @db.Decimal
   related_transaction_id String?   @db.Uuid
+  updated_at             DateTime? @default(now()) @db.Timestamptz(6)
   users                  users?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "point_transactions_userid_fkey")
 }
 
@@ -385,7 +384,7 @@ model users {
   orders                   orders[]
   point_transactions       point_transactions[]
   reset_codes              reset_codes[]
-  temp_notifications       temp_notifications[]       @ignore
+  temp_notifications       temp_notifications[] @ignore
   user_activity_logs       user_activity_logs[]
   user_offers              user_offers[]
   user_subscriptions       user_subscriptions[]

@@ -7,6 +7,13 @@ const router = express.Router();
 // Route accessible à tous les utilisateurs authentifiés
 router.get('/orders', authenticateToken, ArchiveController.getArchivedOrders);
 
+// Route pour archiver une commande (admin ou propriétaire)
+router.post(
+  '/orders/:orderId',
+  authenticateToken,
+  ArchiveController.archiveOrder
+);
+
 // Route accessible uniquement aux ADMIN et SUPER_ADMIN
 router.post(
   '/cleanup',

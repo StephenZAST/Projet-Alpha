@@ -95,57 +95,38 @@ export class OrderCreateController {
         }
       });
 
-      // 3. Récupérer les articles pour leurs prix
-      const articles = await prisma.articles.findMany({
-        where: {
-          id: {
-            in: items.map((item: CreateOrderItemData) => item.articleId)
-          }
-        }
-      }).then(articles => articles.map(article => ({
-        id: article.id,
-        categoryId: article.categoryId || '',
-        name: article.name,
-        description: article.description || '',
-        basePrice: Number(article.basePrice),
-        premiumPrice: Number(article.premiumPrice || 0),
-        createdAt: article.createdAt || new Date(),
-        updatedAt: article.updatedAt || new Date()
-      })));
 
-      const articleMap = new Map(
-        articles.map(article => [article.id, article])
+      // 3. Récupérer les prix réels des couples article/service/serviceType
+      const couplePrices = await prisma.article_service_prices.findMany({
+        where: {
+          article_id: { in: items.map((item: CreateOrderItemData) => item.articleId) },
+          service_type_id: serviceTypeId
+        }
+      });
+      const couplePriceMap = new Map<string, { base_price: number; premium_price: number }>(
+        couplePrices
+          .filter(c => c.article_id)
+          .map(c => [c.article_id as string, { base_price: Number(c.base_price), premium_price: Number(c.premium_price) }])
       );
 
-      // 4. Créer les items de commande
-      interface OrderItemCreate {
-        orderId: string;
-        articleId: string;
-        serviceId: string;
-        quantity: number;
-        unitPrice: number;
-        createdAt: Date;
-        updatedAt: Date;
-        isPremium?: boolean;
-      }
-
-      console.log('[OrderController] Payload order_items (raw):', items);
-      function pickOrderItemFields(item: any, orderId: string, serviceId: string, articleMap: Map<string, Article>) {
+      // 4. Créer les items de commande avec le bon prix
+      const mappedItems = items.map((item: CreateOrderItemData) => {
+        const couple = couplePriceMap.get(item.articleId);
+        const unitPrice = couple
+          ? (item.isPremium ? couple.premium_price : couple.base_price)
+          : 1; // fallback si pas trouvé
         return {
-          orderId,
+          orderId: order.id,
           articleId: item.articleId,
           serviceId,
           quantity: item.quantity,
-          unitPrice: item.isPremium 
-            ? Number(articleMap.get(item.articleId)?.premiumPrice)
-            : Number(articleMap.get(item.articleId)?.basePrice),
+          unitPrice,
           createdAt: new Date(),
           updatedAt: new Date(),
           isPremium: item.isPremium ?? false
         };
-      }
-  const mappedItems = items.map((item: CreateOrderItemData) => pickOrderItemFields(item, order.id, serviceId, articleMap));
-      console.log('[OrderController] Payload order_items (mapped):', mappedItems);
+      });
+      console.log('[OrderController] Payload order_items (mapped with couple prices):', mappedItems);
       await prisma.order_items.createMany({
         data: mappedItems
       });

@@ -4,6 +4,63 @@ import { OrderArchiveResponse, OrderArchive, OrderStatus, PaymentStatus, Payment
 const prisma = new PrismaClient();
 
 export class ArchiveService {
+  /**
+   * Archive une commande et ses items (manuel)
+   */
+  static async archiveOrder(orderId: string, userId: string, isAdmin: boolean): Promise<void> {
+    // Récupérer la commande avec items
+    const order = await prisma.orders.findUnique({
+      where: { id: orderId },
+      include: { order_items: true }
+    });
+    if (!order) throw new Error('Commande introuvable');
+    if (!isAdmin && order.userId !== userId) throw new Error('Non autorisé');
+
+    // Vérifier si une archive existe déjà pour cet id
+    const alreadyArchived = await prisma.orders_archive.findUnique({ where: { id: orderId } });
+    if (alreadyArchived) {
+      // On supprime l'archive existante pour écraser proprement
+      await prisma.orders_archive.delete({ where: { id: orderId } });
+    }
+
+    // Copier la commande dans orders_archive
+    await prisma.orders_archive.create({
+      data: {
+        id: order.id,
+        address_id: order.addressId,
+        affiliatecode: order.affiliateCode,
+        status: order.status ?? '',
+        isrecurring: order.isRecurring,
+        recurrencetype: order.recurrenceType,
+        nextrecurrencedate: order.nextRecurrenceDate,
+        totalAmount: order.totalAmount ?? 0,
+        collectiondate: order.collectionDate,
+        deliverydate: order.deliveryDate,
+        createdAt: order.createdAt,
+        updatedat: order.updatedAt,
+        service_id: order.serviceId,
+        service_type_id: order.service_type_id,
+        userId: order.userId,
+        archived_at: new Date(),
+      }
+    });
+
+    // Copier les items dans order_items_archive si la table existe
+    if (order.order_items && order.order_items.length > 0) {
+      // Vérifier si la table order_items_archive existe dans Prisma
+      // Si oui, insérer les items
+      try {
+        await prisma.$executeRaw`INSERT INTO order_items_archive (id, "orderId", "articleId", quantity, "unitPrice", weight, created_at, updated_at)
+          SELECT id, "orderId", "articleId", quantity, "unitPrice", weight, created_at, updated_at FROM order_items WHERE "orderId" = ${orderId}`;
+      } catch (e) {
+        // Si la table n'existe pas, ignorer
+      }
+    }
+
+    // Supprimer les items puis la commande
+    await prisma.order_items.deleteMany({ where: { orderId } });
+    await prisma.orders.delete({ where: { id: orderId } });
+  }
   static async getArchivedOrders(
     userId: string,
     page: number = 1,

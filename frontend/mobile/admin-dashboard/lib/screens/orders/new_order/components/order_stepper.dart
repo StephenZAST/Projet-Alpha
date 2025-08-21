@@ -58,128 +58,113 @@ class OrderStepper extends StatelessWidget {
           top: BorderSide(color: AppColors.borderLight),
         ),
       ),
-      child: Obx(() => Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GlassButton(
-                label: 'Retour',
-                icon: Icons.arrow_back,
-                variant: GlassButtonVariant.secondary,
-                onPressed: () {
-                  if (controller.currentStep.value > 0) {
-                    controller.currentStep.value--;
-                  } else {
-                    Get.back();
-                  }
-                },
-              ),
-              GlassButton(
-                label: controller.currentStep.value < steps.length - 1
-                    ? 'Suivant'
-                    : 'Créer la commande',
-                icon: controller.currentStep.value < steps.length - 1
-                    ? Icons.arrow_forward
-                    : Icons.check,
-                variant: GlassButtonVariant.primary,
-                onPressed: () async {
-                  // Debug : print l'état du cache et du contexte à chaque étape
-                  print('[OrderStepper] Step: ${controller.currentStep.value}');
-                  print(
-                      '[OrderStepper] Etat du cache selectedArticleDetails: ${controller.selectedArticleDetails}');
-                  print(
-                      '[OrderStepper] Etat du draft: ${controller.orderDraft.value.toPayload()}');
-                  // Correction : forcer l'adresse par défaut si aucune n'est sélectionnée
-                  if (controller.currentStep.value == 2) {
-                    if (controller.selectedAddressId.value == null &&
-                        controller.clientAddresses.isNotEmpty) {
-                      final defaultAddress = controller.clientAddresses.first;
-                      controller.selectAddress(defaultAddress.id);
-                      controller.setSelectedAddress(defaultAddress.id);
-                    }
-                  }
-                  // Synchronisation du cache à partir du draft juste avant le récap
-                  if (controller.currentStep.value == 2) {
-                    // On va passer à l'étape récapitulatif (step 3)
-                    // Recharge dynamiquement les couples depuis l'API
-                    final items = controller.orderDraft.value.items;
-                    final serviceTypeId =
-                        controller.orderDraft.value.serviceTypeId;
-                    final serviceId = controller.orderDraft.value.serviceId;
-                    List<Map<String, dynamic>> couples = [];
-                    if (serviceTypeId != null && serviceId != null) {
-                      try {
-                        couples = await ArticleServiceCoupleService
-                            .getCouplesForServiceType(
-                          serviceTypeId: serviceTypeId,
-                          serviceId: serviceId,
-                        );
-                        print(
-                            '[OrderStepper] Couples rechargés depuis l\'API: ${couples.length} couples');
-                      } catch (e) {
-                        print(
-                            '[OrderStepper] Erreur lors du rechargement des couples: $e');
+      child: Obx(() {
+        final isLoading = controller.isLoading.value;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            GlassButton(
+              label: 'Retour',
+              icon: Icons.arrow_back,
+              variant: GlassButtonVariant.secondary,
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      if (controller.currentStep.value > 0) {
+                        controller.currentStep.value--;
+                      } else {
+                        Get.back();
                       }
-                    }
-                    final selectedService = controller.lastSelectedService;
-                    final selectedServiceType =
-                        controller.lastSelectedServiceType;
-                    final isPremium = controller.lastIsPremium;
-                    final weight = controller.lastWeight;
-                    final showPremiumSwitch = controller.lastShowPremiumSwitch;
-                    // Reconstruit la map des articles sélectionnés (articleId -> quantité)
-                    final selectedArticles = <String, int>{};
-                    for (final item in items) {
-                      selectedArticles[item.articleId] = item.quantity;
-                    }
-                    controller.syncSelectedItemsFrom(
-                      selectedArticles: selectedArticles,
-                      couples: couples,
-                      isPremium: isPremium,
-                      selectedService: selectedService,
-                      selectedServiceType: selectedServiceType,
-                      weight: weight,
-                      showPremiumSwitch: showPremiumSwitch,
-                    );
-                    print(
-                        '[OrderStepper] Synchronisation du cache selectedArticleDetails à partir du draft avec couples enrichis avant le récap.');
-                  }
-                  if (controller.currentStep.value < steps.length - 1) {
-                    controller.currentStep.value++;
-                  } else {
-                    _submitOrder();
-                  }
-                },
-              ),
-            ],
-          )),
+                    },
+            ),
+            controller.currentStep.value < steps.length - 1
+                ? GlassButton(
+                    label: 'Suivant',
+                    icon: Icons.arrow_forward,
+                    variant: GlassButtonVariant.primary,
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            // ...étapes intermédiaires inchangées...
+                            if (controller.currentStep.value == 2) {
+                              if (controller.selectedAddressId.value == null &&
+                                  controller.clientAddresses.isNotEmpty) {
+                                final defaultAddress =
+                                    controller.clientAddresses.first;
+                                controller.selectAddress(defaultAddress.id);
+                                controller
+                                    .setSelectedAddress(defaultAddress.id);
+                              }
+                            }
+                            if (controller.currentStep.value == 2) {
+                              final items = controller.orderDraft.value.items;
+                              final serviceTypeId =
+                                  controller.orderDraft.value.serviceTypeId;
+                              final serviceId =
+                                  controller.orderDraft.value.serviceId;
+                              List<Map<String, dynamic>> couples = [];
+                              if (serviceTypeId != null && serviceId != null) {
+                                try {
+                                  couples = await ArticleServiceCoupleService
+                                      .getCouplesForServiceType(
+                                    serviceTypeId: serviceTypeId,
+                                    serviceId: serviceId,
+                                  );
+                                  print(
+                                      '[OrderStepper] Couples rechargés depuis l\'API: ${couples.length} couples');
+                                } catch (e) {
+                                  print(
+                                      '[OrderStepper] Erreur lors du rechargement des couples: $e');
+                                }
+                              }
+                              final selectedService =
+                                  controller.lastSelectedService;
+                              final selectedServiceType =
+                                  controller.lastSelectedServiceType;
+                              final isPremium = controller.lastIsPremium;
+                              final weight = controller.lastWeight;
+                              final showPremiumSwitch =
+                                  controller.lastShowPremiumSwitch;
+                              final selectedArticles = <String, int>{};
+                              for (final item in items) {
+                                selectedArticles[item.articleId] =
+                                    item.quantity;
+                              }
+                              controller.syncSelectedItemsFrom(
+                                selectedArticles: selectedArticles,
+                                couples: couples,
+                                isPremium: isPremium,
+                                selectedService: selectedService,
+                                selectedServiceType: selectedServiceType,
+                                weight: weight,
+                                showPremiumSwitch: showPremiumSwitch,
+                              );
+                              print(
+                                  '[OrderStepper] Synchronisation du cache selectedArticleDetails à partir du draft avec couples enrichis avant le récap.');
+                            }
+                            controller.currentStep.value++;
+                          },
+                  )
+                : GlassButton(
+                    label: isLoading ? 'Création...' : 'Créer la commande',
+                    icon: isLoading ? null : Icons.check,
+                    variant: GlassButtonVariant.primary,
+                    isLoading: isLoading,
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            await _submitOrderWithLoader();
+                          },
+                  ),
+          ],
+        );
+      }),
     );
   }
 
-  bool _canProceedToNextStep() {
-    switch (controller.currentStep.value) {
-      case 0:
-        return controller.orderDraft.value.clientId != null;
-      case 1:
-        // Pour valider l'étape Service, il faut un service ET au moins un article sélectionné
-        return controller.orderDraft.value.serviceId != null &&
-            controller.orderDraft.value.items.isNotEmpty;
-      case 2:
-        // Pour valider l'étape Adresse, il faut une adresse sélectionnée
-        return controller.orderDraft.value.addressId != null &&
-            (controller.orderDraft.value.addressId?.isNotEmpty ?? false);
-      default:
-        return true;
-    }
-  }
-
-  void _submitOrder() {
-    // Utilise le système centralisé OrderDraft pour construire le payload
+  Future<void> _submitOrderWithLoader() async {
     final orderData = controller.buildOrderPayload();
-
-    // Debug log détaillé
     print('[OrderStepper] Payload envoyé au backend: $orderData');
-
-    // Vérification stricte
     if (orderData['addressId'] == null ||
         (orderData['addressId'] as String).isEmpty ||
         orderData['serviceId'] == null ||
@@ -190,7 +175,14 @@ class OrderStepper extends StatelessWidget {
           'Veuillez remplir tous les champs obligatoires (service, adresse, articles).');
       return;
     }
-
-    controller.createOrder(orderData);
+    try {
+      await controller.createOrder(orderData);
+      Get.back(); // Ferme le stepper après succès
+      Future.delayed(Duration(milliseconds: 100), () {
+        controller.fetchOrders(); // Recharge la liste des commandes
+      });
+    } catch (_) {}
   }
 }
+
+// Les méthodes _canProceedToNextStep et _submitOrder sont supprimées car non utilisées

@@ -16,6 +16,30 @@ import '../services/service_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  /// Archive une commande (manuel)
+  Future<void> archiveOrder(String orderId) async {
+    try {
+      isLoading.value = true;
+      hasError.value = false;
+      errorMessage.value = '';
+      await OrderService.archiveOrder(orderId);
+      await loadOrdersPage(
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        status: filterStatus.value,
+      );
+      _showSuccessSnackbar('Commande archivée avec succès');
+    } catch (e) {
+      print('[OrdersController] Error archiving order: $e');
+      hasError.value = true;
+      errorMessage.value = 'Erreur lors de l\'archivage : $e';
+      _showErrorSnackbar(errorMessage.value);
+      rethrow;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   /// Détail local des articles sélectionnés (pour l'affichage du récap)
   /// Chaque entrée contient :
   /// {
@@ -872,15 +896,14 @@ class OrdersController extends GetxController {
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
-      final result = await OrderService.createOrder(orderData);
+      final createdOrder = await OrderService.createOrder(orderData);
+      print('[OrdersController] Order created: ${createdOrder.toJson()}');
       await loadOrdersPage(
         page: currentPage.value,
         limit: itemsPerPage.value,
         status: filterStatus.value,
       );
-      // Affiche une notification de succès
       _showSuccessSnackbar('Commande créée avec succès');
-      // Ferme tous les écrans jusqu'à la page des commandes
       Get.offAllNamed('/orders');
     } catch (e) {
       print('[OrdersController] Error creating order: $e');

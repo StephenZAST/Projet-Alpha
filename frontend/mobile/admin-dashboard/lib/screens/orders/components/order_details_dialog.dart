@@ -296,10 +296,67 @@ class OrderDetailsDialog extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         GlassButton(
-          label: 'Dupliquer',
+          label: 'Archiver',
           variant: GlassButtonVariant.info,
-          onPressed: () {
-            // TODO: Action duplication
+          onPressed: () async {
+            final confirm = await showDialog<bool>(
+              context: Get.context!,
+              builder: (context) => AlertDialog(
+                title: Text('Archiver la commande ?'),
+                content: Text(
+                    'Cette action déplacera la commande dans les archives. Voulez-vous continuer ?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text('Annuler'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text('Archiver'),
+                  ),
+                ],
+              ),
+            );
+            if (confirm == true) {
+              try {
+                await controller.archiveOrder(order.id);
+                // Affiche la notification de succès avec blur avant de fermer le dialog
+                Get.closeAllSnackbars();
+                Get.rawSnackbar(
+                  messageText: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green, size: 24),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Commande archivée avec succès',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: Colors.green.withOpacity(0.85),
+                  borderRadius: 16,
+                  margin: EdgeInsets.all(24),
+                  snackPosition: SnackPosition.TOP,
+                  duration: Duration(seconds: 2),
+                  boxShadows: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 16,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                  isDismissible: true,
+                  overlayBlur: 2.5,
+                );
+                await Future.delayed(Duration(milliseconds: 800));
+                Get.back(); // Ferme le dialog après la notif
+              } catch (_) {}
+            }
           },
         ),
       ],

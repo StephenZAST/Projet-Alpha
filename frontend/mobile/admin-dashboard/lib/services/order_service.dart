@@ -5,6 +5,21 @@ import '../models/orders_page_data.dart';
 import 'api_service.dart';
 
 class OrderService {
+  /// Archive une commande (manuel)
+  static Future<void> archiveOrder(String orderId) async {
+    try {
+      print('[OrderService] Archiving order: $orderId');
+      final response = await _api.post('/archives/orders/$orderId');
+      if (response.statusCode != 200) {
+        throw response.data?['error'] ?? 'Erreur lors de l\'archivage';
+      }
+      print('[OrderService] Order archived successfully');
+    } catch (e) {
+      print('[OrderService] Error archiving order: $e');
+      throw 'Erreur lors de l\'archivage de la commande';
+    }
+  }
+
   /// Vérifie si une commande est de type flash
   static Future<bool> isFlashOrder(String orderId) async {
     try {

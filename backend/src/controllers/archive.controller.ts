@@ -2,6 +2,24 @@ import { Request, Response } from 'express';
 import { ArchiveService } from '../services/archive.service'; 
 
 export class ArchiveController {
+  /**
+   * Archive une commande à la demande (manuel)
+   */
+  static async archiveOrder(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const userRole = req.user?.role;
+      const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
+      const { orderId } = req.params;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+      if (!orderId) return res.status(400).json({ error: 'orderId requis' });
+
+      await ArchiveService.archiveOrder(orderId, userId, isAdmin);
+      res.json({ message: 'Commande archivée avec succès' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
   static async getArchivedOrders(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
