@@ -10,7 +10,8 @@ export class OrderPricingService {
       const priceEntry = await prisma.article_service_prices.findFirst({
         where: {
           article_id: item.articleId,
-          service_type_id: item.serviceTypeId
+          service_type_id: item.serviceTypeId,
+          service_id: item.serviceId
         },
         include: {
           service_types: true

@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export class PricingCalculatorService {
   static async calculateOrderPrice(
-    items: Array<{articleId: string; serviceId: string; quantity: number; isPremium?: boolean}>,
+    items: Array<{articleId: string; serviceId: string; serviceTypeId: string; quantity: number; isPremium?: boolean}>,
     weight?: number
   ): Promise<{ total: number; breakdown: any[] }> {
     try {
@@ -24,7 +24,12 @@ export class PricingCalculatorService {
         breakdown.push(weightCost);
       }
 
-      const itemCosts = await this.calculateItemBasedPrices(items);
+      // S'assurer que chaque item a bien serviceTypeId
+      const itemsWithType = items.map(item => ({
+        ...item,
+        serviceTypeId: item.serviceTypeId || '' // à adapter si valeur par défaut nécessaire
+      }));
+      const itemCosts = await this.calculateItemBasedPrices(itemsWithType);
       total += itemCosts.total;
       breakdown.push(...itemCosts.breakdown);
 
@@ -86,7 +91,7 @@ export class PricingCalculatorService {
   }
 
   private static async calculateItemBasedPrices(
-    items: Array<{articleId: string; serviceId: string; quantity: number; isPremium?: boolean}>
+  items: Array<{articleId: string; serviceId: string; serviceTypeId: string; quantity: number; isPremium?: boolean}>
   ) {
     let total = 0;
     const breakdown = [];
@@ -96,6 +101,7 @@ export class PricingCalculatorService {
         where: {
           article_id: item.articleId,
           service_id: item.serviceId,
+          service_type_id: item.serviceTypeId,
           is_available: true
         }
       });

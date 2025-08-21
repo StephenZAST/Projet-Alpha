@@ -146,7 +146,8 @@ export class PricingService {
     let servicePrice = await prisma.article_service_prices.findFirst({
       where: {
         article_id: articleId,
-        service_type_id: serviceTypeId
+        service_type_id: serviceTypeId,
+        service_id: params.serviceId
       },
       include: {
         service_types: true

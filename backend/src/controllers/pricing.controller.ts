@@ -8,6 +8,7 @@ export class PricingController {
       const priceParams: PriceCalculationParams = {
         articleId: req.body.articleId,
         serviceTypeId: req.body.serviceTypeId,
+        serviceId: req.body.serviceId,
         quantity: req.body.quantity,
         weight: req.body.weight,
         isPremium: req.body.isPremium

@@ -64,11 +64,12 @@ export class ServiceController {
       } = req.body;
 
       const priceDetails = await PricingService.calculatePrice({
-        articleId,
-        serviceTypeId,
-        quantity,
-        weight,
-        isPremium
+  articleId,
+  serviceTypeId,
+  serviceId: req.body.serviceId,
+  quantity,
+  weight,
+  isPremium
       });
 
       return res.json({

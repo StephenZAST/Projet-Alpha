@@ -1,3 +1,30 @@
+### ⚠️ Subtilité critique : Matching du couple prix
+
+Le prix d'un article dans une commande dépend **strictement** du couple/trio `(article_id, service_type_id, service_id)` dans la table `article_service_prices`.
+
+- **Il ne faut jamais filtrer uniquement sur `article_id` et `service_type_id`** : il peut exister plusieurs couples pour un même article/serviceType mais avec des services différents (ex : "Nettoyage à sec" vs "Repassage").
+- **Le backend doit TOUJOURS filtrer sur les trois clés** :
+  - `article_id`
+  - `service_type_id`
+  - `service_id`
+- Sinon, le prix récupéré peut être celui d'un autre service, ce qui fausse le total et la cohérence avec le frontend.
+- Cette erreur est fréquente lors de l'évolution du modèle ou de l'ajout de nouveaux services/types.
+
+**Exemple de requête correcte (Prisma) :**
+
+```ts
+const couplePrices = await prisma.article_service_prices.findMany({
+  where: {
+    article_id: { in: items.map(item => item.articleId) },
+    service_type_id: serviceTypeId,
+    service_id: serviceId
+  }
+});
+```
+
+**À retenir :**
+- Toujours vérifier que le couple exact existe et que le prix affiché au frontend correspond à celui utilisé par le backend.
+- Documenter cette subtilité dans tout nouveau développement lié à la tarification.
 # Documentation : Système de prix lors de la création d'une commande
 
 ## Résumé

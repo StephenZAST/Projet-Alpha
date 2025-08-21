@@ -96,13 +96,19 @@ export class OrderCreateController {
       });
 
 
-      // 3. Récupérer les prix réels des couples article/service/serviceType
+      // 3. Récupérer les prix réels des couples article/service/serviceType/service
+      // IMPORTANT : Le couple prix DOIT matcher sur le trio (article_id, service_type_id, service_id) !
+      // Si on ne filtre pas sur les trois, on peut récupérer un prix d'un autre service ou d'un autre couple, ce qui fausse le calcul.
+      // Cette subtilité est source de bugs fréquents : TOUJOURS filtrer sur les trois clés pour garantir le bon prix.
       const couplePrices = await prisma.article_service_prices.findMany({
         where: {
           article_id: { in: items.map((item: CreateOrderItemData) => item.articleId) },
-          service_type_id: serviceTypeId
+          service_type_id: serviceTypeId,
+          service_id: serviceId
         }
       });
+      // On log les couples trouvés pour debug (à retirer en prod)
+      console.log('[OrderController] Couples prix utilisés (ids):', couplePrices.map(c => c.id));
       const couplePriceMap = new Map<string, { base_price: number; premium_price: number }>(
         couplePrices
           .filter(c => c.article_id)
