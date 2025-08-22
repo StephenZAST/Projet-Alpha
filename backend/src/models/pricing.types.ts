@@ -1,4 +1,4 @@
-export type PricingType = 'PER_ITEM' | 'PER_WEIGHT' | 'SUBSCRIPTION';
+export type PricingType = 'PER_ITEM' | 'PER_WEIGHT' | 'SUBSCRIPTION' | 'FIXED';
 
 export interface PriceCalculationParams {
   articleId: string;
@@ -10,8 +10,8 @@ export interface PriceCalculationParams {
 }
 
 export interface PriceDetails {
-  basePrice: number;
-  total: number;
+  unitPrice: number; // prix unitaire
+  lineTotal: number; // prix total pour la ligne (unitPrice * quantity ou * weight)
   pricingType: PricingType;
   isPremium: boolean;
 }

@@ -921,7 +921,7 @@ export interface PriceDetails {
   isPremium: boolean;
 }
 
-export type PricingType = 'PER_ITEM' | 'PER_WEIGHT' | 'SUBSCRIPTION';
+export type PricingType = 'PER_ITEM' | 'PER_WEIGHT' | 'SUBSCRIPTION' | 'FIXED';
 
 export interface NotificationCreate {
   user_id: string;

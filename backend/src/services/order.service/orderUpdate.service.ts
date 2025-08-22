@@ -75,33 +75,33 @@ export class OrderUpdateService {
         const PricingService = require('../../services/pricing.service').PricingService;
         let recalculatedItems: any[] = [];
         for (const item of updateFields.items) {
-          let priceDetails;
-          try {
-            priceDetails = await PricingService.calculatePrice({
-              articleId: item.articleId,
-              serviceTypeId: newServiceTypeId,
-              quantity: item.quantity,
-              weight: item.weight,
-              isPremium: item.isPremium || false
-            });
-          } catch (err) {
-            let msg = 'Erreur inconnue';
-            if (err instanceof Error) {
-              msg = err.message;
+            let priceDetails;
+            try {
+              priceDetails = await PricingService.calculatePrice({
+                articleId: item.articleId,
+                serviceTypeId: newServiceTypeId,
+                quantity: item.quantity,
+                weight: item.weight,
+                isPremium: item.isPremium || false
+              });
+            } catch (err) {
+              let msg = 'Erreur inconnue';
+              if (err instanceof Error) {
+                msg = err.message;
+              }
+              throw new Error(`Erreur de calcul du prix pour l'article ${item.articleId}: ${msg}`);
             }
-            throw new Error(`Erreur de calcul du prix pour l'article ${item.articleId}: ${msg}`);
-          }
-          recalculatedItems.push({
-            orderId: orderId,
-            articleId: item.articleId,
-            serviceId: item.serviceId || null,
-            quantity: item.quantity,
-            unitPrice: priceDetails.basePrice,
-            isPremium: item.isPremium || false,
-            weight: item.weight !== undefined ? item.weight : null,
-            createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
-            updatedAt: new Date()
-          });
+            recalculatedItems.push({
+              orderId: orderId,
+              articleId: item.articleId,
+              serviceId: item.serviceId || null,
+              quantity: item.quantity,
+              unitPrice: priceDetails.unitPrice,
+              isPremium: item.isPremium || false,
+              weight: item.weight !== undefined ? item.weight : null,
+              createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+              updatedAt: new Date()
+            });
         }
         // Filtrage strict des propriétés autorisées (inclut weight)
         const filteredItems = recalculatedItems.map(item => ({

@@ -71,11 +71,13 @@ class OrderDraftItem {
   String articleId;
   int quantity;
   bool isPremium;
+  String? serviceId;
 
   OrderDraftItem({
     required this.articleId,
     required this.quantity,
     this.isPremium = false,
+    this.serviceId,
   });
 
   Map<String, dynamic> toPayload({String? serviceTypeId}) {
@@ -84,6 +86,7 @@ class OrderDraftItem {
       'quantity': quantity,
       'isPremium': isPremium,
       if (serviceTypeId != null) 'serviceTypeId': serviceTypeId,
+      if (serviceId != null) 'serviceId': serviceId,
     };
   }
 }

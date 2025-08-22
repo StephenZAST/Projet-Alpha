@@ -149,7 +149,11 @@ class OrdersController extends GetxController {
       newItems.removeWhere((i) => i.articleId == articleId);
       if (quantity > 0) {
         newItems.add(OrderDraftItem(
-            articleId: articleId, quantity: quantity, isPremium: isPremium));
+          articleId: articleId,
+          quantity: quantity,
+          isPremium: isPremium,
+          serviceId: draft.serviceId, // Ajout du serviceId sélectionné
+        ));
       }
       draft.items = newItems;
     });
@@ -190,7 +194,14 @@ class OrdersController extends GetxController {
 
   void addDraftItem(OrderDraftItem item) {
     orderDraft.update((draft) {
-      draft?.items.add(item);
+      if (draft != null) {
+        draft.items.add(OrderDraftItem(
+          articleId: item.articleId,
+          quantity: item.quantity,
+          isPremium: item.isPremium,
+          serviceId: draft.serviceId, // Ajout du serviceId sélectionné
+        ));
+      }
     });
     update();
   }

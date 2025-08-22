@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export class PricingService {
   static async calculateOrderTotal(orderData: {
-  items: { articleId: string; quantity: number; isPremium?: boolean; serviceTypeId?: string; weight?: number }[];
+  items: { articleId: string; quantity: number; isPremium?: boolean; serviceTypeId?: string; serviceId?: string; weight?: number }[];
     userId: string;
     appliedOfferIds?: string[];
     usePoints?: number;
@@ -23,19 +23,22 @@ export class PricingService {
       const PricingService = require('./pricing.service').PricingService;
 
       for (const item of orderData.items) {
-        // On suppose que serviceTypeId est fourni dans item ou dans orderData
         const serviceTypeId = item.serviceTypeId;
         if (!serviceTypeId) throw new Error('serviceTypeId is required for price calculation');
         const priceDetails = await PricingService.calculatePrice({
           articleId: item.articleId,
           serviceTypeId,
+          serviceId: item.serviceId,
           quantity: item.quantity,
           isPremium: item.isPremium || false,
           weight: item.weight
         });
-        itemPrices.set(item.articleId, priceDetails.basePrice);
-        subtotal += priceDetails.basePrice;
+        itemPrices.set(item.articleId, priceDetails.unitPrice);
+        console.log(`[OrderTotal] articleId=${item.articleId} | serviceTypeId=${serviceTypeId} | unitPrice=${priceDetails.unitPrice} | quantity=${item.quantity} | lineTotal=${priceDetails.lineTotal}`);
+        subtotal += priceDetails.lineTotal;
       }
+
+  // Rétablit la logique normale : subtotal non modifié
 
       // Calculer les réductions
       const discounts = await this.calculateDiscounts(
@@ -139,15 +142,16 @@ export class PricingService {
   }
 
   static async calculatePrice(params: PriceCalculationParams): Promise<PriceDetails> {
-    const { articleId, serviceTypeId, quantity = 1, weight, isPremium = false } = params;
+  const { articleId, serviceTypeId, serviceId, quantity = 1, weight, isPremium = false } = params;
 
-
-
+    if (!serviceId) {
+      console.error(`[PricingService] ERREUR: serviceId manquant pour articleId=${articleId}, serviceTypeId=${serviceTypeId}`);
+    }
     let servicePrice = await prisma.article_service_prices.findFirst({
       where: {
         article_id: articleId,
         service_type_id: serviceTypeId,
-        service_id: params.serviceId
+        service_id: serviceId
       },
       include: {
         service_types: true
@@ -156,7 +160,6 @@ export class PricingService {
 
     // Si le lien n'existe pas, créer automatiquement une entrée avec prix par défaut
     if (!servicePrice) {
-      // On récupère le type de service pour le pricing_type
       const serviceType = await prisma.service_types.findUnique({ where: { id: serviceTypeId } });
       servicePrice = await prisma.article_service_prices.create({
         data: {
@@ -174,36 +177,44 @@ export class PricingService {
       });
     }
 
-    let basePrice = isPremium && servicePrice.premium_price 
-      ? Number(servicePrice.premium_price)
-      : Number(servicePrice.base_price);
-
     const pricingType = servicePrice.service_types?.pricing_type as PricingType || 'PER_ITEM';
+    let unitPrice: number;
+    let lineTotal: number;
 
-    switch (pricingType) {
-      case 'PER_WEIGHT':
-        if (!weight) throw new Error('Weight is required for this service type');
-        if (!servicePrice.price_per_kg) throw new Error('Price per kg not configured');
-        basePrice = Number(servicePrice.price_per_kg) * weight;
-        break;
-      
-      case 'SUBSCRIPTION':
-        break;
-      
-      default: // PER_ITEM
-        basePrice = basePrice * quantity;
+    // Log stratégique : affiche le pricingType et les prix en base
+    console.log(`[PricingService] articleId=${articleId} serviceTypeId=${serviceTypeId} serviceId=${params.serviceId} pricingType=${pricingType} basePrice=${servicePrice.base_price} premiumPrice=${servicePrice.premium_price} pricePerKg=${servicePrice.price_per_kg}`);
+
+    if (pricingType === 'PER_WEIGHT') {
+      if (!weight) throw new Error('Weight is required for this service type');
+      if (!servicePrice.price_per_kg) throw new Error('Price per kg not configured');
+      unitPrice = Number(servicePrice.price_per_kg);
+      lineTotal = unitPrice * weight;
+      console.log(`[PricingService] PER_WEIGHT: unitPrice=${unitPrice} * weight=${weight} = lineTotal=${lineTotal}`);
+    } else if (pricingType === 'PER_ITEM') {
+      unitPrice = isPremium ? Number(servicePrice.premium_price) : Number(servicePrice.base_price);
+      lineTotal = unitPrice * quantity;
+      console.log(`[PricingService] PER_ITEM: unitPrice=${unitPrice} * quantity=${quantity} = lineTotal=${lineTotal}`);
+    } else if (pricingType === 'FIXED') {
+      unitPrice = isPremium ? Number(servicePrice.premium_price) : Number(servicePrice.base_price);
+      lineTotal = unitPrice * quantity;
+      console.log(`[PricingService] FIXED: unitPrice=${unitPrice} * quantity=${quantity} = lineTotal=${lineTotal}`);
+    } else {
+      // Autre type ou fallback
+      unitPrice = 1;
+      lineTotal = unitPrice * quantity;
+      console.warn(`[PricingService] Fallback: type inconnu ou prix non trouvé, unitPrice=1`);
     }
 
-
-    // Fallback automatique : si le prix calculé est <= 0, on force à 1 et on log
-    if (basePrice <= 0) {
-      console.warn(`[PricingService] Fallback: prix calculé <= 0 pour article/service (${articleId}/${serviceTypeId}), fallback à 1.`);
-      basePrice = 1;
+    // Fallback automatique : si le prix unitaire est <= 0, on force à 1 et on log
+    if (unitPrice <= 0) {
+      console.warn(`[PricingService] Fallback: prix unitaire <= 0 pour article/service (${articleId}/${serviceTypeId}), fallback à 1.`);
+      unitPrice = 1;
+      lineTotal = unitPrice * (pricingType === 'PER_WEIGHT' ? (weight || 1) : quantity);
     }
 
     return {
-      basePrice,
-      total: basePrice,
+      unitPrice, // prix unitaire réel
+      lineTotal, // prix total pour la ligne (unitPrice * quantity ou * weight)
       pricingType,
       isPremium
     };

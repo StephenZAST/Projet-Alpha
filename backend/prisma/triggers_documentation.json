@@ -164,37 +164,37 @@
   "trigger_timing": "BEFORE"
 }, {
   "trigger_name": "ensure_valid_order_items",
-  "trigger_event": "INSERT",
+  "trigger_event": "UPDATE",
   "table_name": "order_items",
   "trigger_definition": "EXECUTE FUNCTION validate_order_items_constraint()",
   "trigger_timing": "BEFORE"
 }, {
   "trigger_name": "ensure_valid_order_items",
-  "trigger_event": "UPDATE",
+  "trigger_event": "INSERT",
   "table_name": "order_items",
   "trigger_definition": "EXECUTE FUNCTION validate_order_items_constraint()",
   "trigger_timing": "BEFORE"
 }, {
   "trigger_name": "ensure_valid_service_type",
-  "trigger_event": "UPDATE",
+  "trigger_event": "INSERT",
   "table_name": "service_types",
   "trigger_definition": "EXECUTE FUNCTION validate_service_types_constraint()",
   "trigger_timing": "BEFORE"
 }, {
   "trigger_name": "ensure_valid_service_type",
-  "trigger_event": "INSERT",
+  "trigger_event": "UPDATE",
   "table_name": "service_types",
   "trigger_definition": "EXECUTE FUNCTION validate_service_types_constraint()",
   "trigger_timing": "BEFORE"
 }, {
   "trigger_name": "ensure_valid_weight_range",
-  "trigger_event": "UPDATE",
+  "trigger_event": "INSERT",
   "table_name": "weight_based_pricing",
   "trigger_definition": "EXECUTE FUNCTION validate_weight_range_constraint()",
   "trigger_timing": "BEFORE"
 }, {
   "trigger_name": "ensure_valid_weight_range",
-  "trigger_event": "INSERT",
+  "trigger_event": "UPDATE",
   "table_name": "weight_based_pricing",
   "trigger_definition": "EXECUTE FUNCTION validate_weight_range_constraint()",
   "trigger_timing": "BEFORE"
@@ -210,24 +210,6 @@
   "table_name": "order_items",
   "trigger_definition": "EXECUTE FUNCTION log_order_items_insert()",
   "trigger_timing": "BEFORE"
-}, {
-  "trigger_name": "order_items_total_update",
-  "trigger_event": "UPDATE",
-  "table_name": "order_items",
-  "trigger_definition": "EXECUTE FUNCTION update_order_total()",
-  "trigger_timing": "AFTER"
-}, {
-  "trigger_name": "order_items_total_update",
-  "trigger_event": "DELETE",
-  "table_name": "order_items",
-  "trigger_definition": "EXECUTE FUNCTION update_order_total()",
-  "trigger_timing": "AFTER"
-}, {
-  "trigger_name": "order_items_total_update",
-  "trigger_event": "INSERT",
-  "table_name": "order_items",
-  "trigger_definition": "EXECUTE FUNCTION update_order_total()",
-  "trigger_timing": "AFTER"
 }, {
   "trigger_name": "order_metadata_timestamp",
   "trigger_event": "UPDATE",
@@ -296,13 +278,13 @@
   "trigger_timing": "BEFORE"
 }, {
   "trigger_name": "validate_article_service_price_trigger",
-  "trigger_event": "INSERT",
+  "trigger_event": "UPDATE",
   "table_name": "article_service_prices",
   "trigger_definition": "EXECUTE FUNCTION validate_article_service_price()",
   "trigger_timing": "BEFORE"
 }, {
   "trigger_name": "validate_article_service_price_trigger",
-  "trigger_event": "UPDATE",
+  "trigger_event": "INSERT",
   "table_name": "article_service_prices",
   "trigger_definition": "EXECUTE FUNCTION validate_article_service_price()",
   "trigger_timing": "BEFORE"
