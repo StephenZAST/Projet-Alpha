@@ -5,7 +5,6 @@ import '../../../../../constants.dart';
 import '../../../../../controllers/orders_controller.dart';
 import '../../../../../models/service.dart';
 import '../../../../../models/service_type.dart';
-import '../../../../../models/article.dart';
 import '../../../../../services/api_service.dart';
 
 class ServiceSelectionStep extends StatefulWidget {
@@ -14,27 +13,6 @@ class ServiceSelectionStep extends StatefulWidget {
 }
 
 class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
-  void _addArticleToControllerIfMissing(Map<String, dynamic> couple) {
-    final articleId = couple['article_id'];
-    if (articleId == null) return;
-    final alreadyExists = controller.articles.any((a) => a.id == articleId);
-    if (!alreadyExists) {
-      controller.articles.add(
-        Article(
-          id: articleId,
-          name: couple['article_name'] ?? 'Article inconnu',
-          description: couple['article_description'],
-          basePrice: double.tryParse(couple['base_price'].toString()) ?? 0.0,
-          premiumPrice: double.tryParse(couple['premium_price'].toString()),
-          categoryId: couple['article_category_id'],
-          category: couple['article_category_name'],
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      );
-    }
-  }
-
   final controller = Get.find<OrdersController>();
   final api = Get.find<ApiService>();
 
@@ -43,31 +21,6 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep> {
   List<Map<String, dynamic>> couples = [];
   Map<String, int> selectedArticles =
       {}; // (Gardé pour l'affichage, mais la source de vérité devient le controller)
-  void _syncSelectedItemsToController() {
-    // Ajoute tous les articles sélectionnés dans la liste articles du controller si absents
-    for (final couple in couples) {
-      if (selectedArticles.containsKey(couple['article_id'])) {
-        _addArticleToControllerIfMissing(couple);
-      }
-    }
-    // Stocke la sélection courante dans le controller pour accès global
-    controller.lastSelectedArticles = Map<String, int>.from(selectedArticles);
-    controller.lastCouples = List<Map<String, dynamic>>.from(couples);
-    controller.lastIsPremium = isPremium;
-    controller.lastSelectedService = selectedService;
-    controller.lastSelectedServiceType = selectedServiceType;
-    controller.lastWeight = weight;
-    controller.lastShowPremiumSwitch = showPremiumSwitch;
-    controller.syncSelectedItemsFrom(
-      selectedArticles: selectedArticles,
-      couples: couples,
-      isPremium: isPremium,
-      selectedService: selectedService,
-      selectedServiceType: selectedServiceType,
-      weight: weight,
-      showPremiumSwitch: showPremiumSwitch,
-    );
-  }
 
   ServiceType? selectedServiceType;
   Service? selectedService;
