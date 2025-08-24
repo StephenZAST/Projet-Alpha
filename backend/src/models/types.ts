@@ -447,6 +447,7 @@ export interface Order {
   service_type_id?: string;
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod;
+  notes?: (string | null)[];
 }
 
 export type OrderStatus =
@@ -461,7 +462,7 @@ export type OrderStatus =
   | 'CANCELLED';
 
 export interface FlashOrder extends Omit<Order, 'serviceId' | 'items' | 'totalAmount'> {
-  notes?: string;
+  notes?: (string | null)[];
 }
 
 export interface CompleteFlashOrderDTO {

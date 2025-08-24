@@ -7,9 +7,46 @@ Le backend gère un système de commandes avancé pour une application de gestio
 - Tarification flexible (par poids, premium, etc.)
 - Système de fidélité et notifications
 
-## 2. Scénarios principaux
 
-### 2.1 Création et gestion d’une commande
+## 2.1 Conversion d'une commande flash en commande normale
+
+### Fonctionnement
+- La conversion d'une commande flash en commande normale s'effectue via l'endpoint dédié (ex : `/api/flash-orders/:orderId/complete`).
+- Lors de la conversion :
+  - Le backend vérifie que la commande est bien une commande flash et qu'elle est en statut `DRAFT`.
+  - Les items du payload sont utilisés pour créer les nouveaux items de la commande, avec calcul automatique du prix unitaire (`unitPrice`) pour chaque item selon le couple `articleId/serviceTypeId/serviceId` (table `article_service_prices`).
+  - Le total de la commande est recalculé et mis à jour.
+  - Le champ `total` est explicitement retourné dans la réponse JSON pour faciliter la lecture côté frontend.
+
+### Gestion des notes lors de la conversion
+- Le payload de conversion peut contenir un champ `note`.
+- Si ce champ est présent :
+  - La note existante associée à la commande est remplacée (mise à jour dans la table `order_notes`).
+  - Si aucune note n'existe encore, une nouvelle entrée est créée dans `order_notes`.
+- Cela permet de modifier ou d'ajouter une note lors de la conversion, sans doublon ni perturbation du système.
+
+### Exemple de payload de conversion
+```json
+{
+  "serviceId": "...",
+  "serviceTypeId": "...",
+  "collectionDate": "2025-08-19T22:00:00.000Z",
+  "deliveryDate": "2025-08-20T22:00:00.000Z",
+  "items": [
+    { "articleId": "A1", "serviceId": "S1", "quantity": 2, "isPremium": false },
+    { "articleId": "A2", "serviceId": "S1", "quantity": 1, "isPremium": true }
+  ],
+  "note": "Livrer avant 18h, fragile"
+}
+```
+
+### Points d'attention
+- Le calcul des prix est toujours effectué côté backend, jamais côté frontend.
+- La note peut être modifiée à tout moment lors de la conversion, elle remplace la précédente.
+- Le système est compatible avec la gestion des articles à l'unité et des services au poids.
+
+
+### 2.2 Création et gestion d’une commande
 - **Création** : `/api/orders` (OrderController, OrderCreateService)
   - Vérification articles/services, compatibilité, calcul du prix initial
   - Ajout d’items via `/api/order-items`
@@ -52,12 +89,33 @@ Le backend gère un système de commandes avancé pour une application de gestio
 ## 3. Détail des scénarios et APIs
 
 ### 3.1 Création d’une commande
+
+#### Ajout ou modification d'une note
+- Lors de la création d'une commande (normale ou flash), le champ `note` peut être inclus dans le payload.
+- Une entrée est créée dans la table `order_notes` et liée à la commande.
+- Lors de la conversion d'une commande flash, la note peut être modifiée ou ajoutée (voir section précédente).
+
+#### Exemple de payload avec note
+```json
+{
+  "userId": "...",
+  "items": [ ... ],
+  "serviceTypeId": "...",
+  "note": "Ne pas repasser, urgent"
+}
+```
+
 - **POST** `/api/orders`
 - Données : `userId`, `items` (articleId, serviceId, quantité, poids, premium), `serviceTypeId`, `appliedOfferIds`
 - Vérifications : disponibilité, compatibilité, application offres/points
 - Réponse : JSON complet de la commande
 
 ### 3.2 Ajout/édition d’un item
+
+#### Gestion des notes
+- Pour modifier la note d'une commande existante, il suffit d'envoyer un payload avec le champ `note` lors d'une opération de conversion ou de modification.
+- La note sera remplacée dans la table `order_notes` pour la commande concernée.
+
 - **POST** `/api/order-items` ou **PATCH** `/api/order-items/:id`
 - Données : `orderId`, `articleId`, `serviceId`, `quantity`, `isPremium`, `weight`
 - Vérifications : compatibilité, calcul prix

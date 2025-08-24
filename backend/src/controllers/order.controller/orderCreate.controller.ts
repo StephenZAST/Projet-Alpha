@@ -57,7 +57,8 @@ export class OrderCreateController {
         paymentMethod,
         appliedOfferIds,
         serviceTypeId,
-        userId: userIdFromPayload
+        userId: userIdFromPayload,
+        note // Ajout du champ note dans le payload
       } = req.body;
 
       // Logique hybride :
@@ -91,7 +92,10 @@ export class OrderCreateController {
           status: 'PENDING',
           service_type_id: serviceTypeId,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          order_notes: note && typeof note === 'string' && note.trim().length > 0 ? {
+            create: [{ note }]
+          } : undefined
         }
       });
 
@@ -165,7 +169,8 @@ export class OrderCreateController {
             include: {
               article: true
             }
-          }
+          },
+          order_notes: true
         }
       });
 
@@ -211,7 +216,8 @@ export class OrderCreateController {
             createdAt: item.article.createdAt || new Date(),
             updatedAt: item.article.updatedAt || new Date()
           } : undefined
-        }))
+        })),
+        notes: orderData.order_notes?.map(n => n.note).filter(Boolean) || []
       };
 
       // 7. Traiter les points et notifications

@@ -176,7 +176,7 @@ router.post(
 router.patch(
   '/flash/:orderId/complete',
   authenticateToken,
-  authorizeRoles(['ADMIN', 'DELIVERY']),
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN', 'DELIVERY']),
   validateCompleteFlashOrder,
   asyncHandler(FlashOrderController.completeFlashOrder)
 );

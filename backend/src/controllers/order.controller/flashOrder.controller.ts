@@ -114,7 +114,8 @@ export class FlashOrderController {
         items,
         serviceTypeId,
         collectionDate,
-        deliveryDate
+        deliveryDate,
+        note // Ajout du champ note dans le payload
       } = req.body;
 
       // Vérifier que la commande existe et est une commande flash
@@ -140,10 +141,10 @@ export class FlashOrderController {
         });
       }
 
-      // Mise à jour de la commande avec transaction
+      // Transaction : mise à jour, calcul des prix, création des items, calcul du total
       const updatedOrder = await prisma.$transaction(async (tx) => {
         // 1. Mise à jour de la commande
-        const order = await tx.orders.update({
+        await tx.orders.update({
           where: { id: orderId },
           data: {
             serviceId,
@@ -155,44 +156,71 @@ export class FlashOrderController {
           }
         });
 
-        // 2. Création des items
-        if (items?.length > 0) {
-            interface OrderItemCreate {
-            orderId: string;
-            articleId: string;
-            serviceId: string;
-            quantity: number;
-            unitPrice: number;
-            isPremium?: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            }
+        // 1bis. Mise à jour ou création de la note si fournie
+        if (typeof note === 'string' && note.trim().length > 0) {
+          const existingNote = await tx.order_notes.findFirst({
+            where: { order_id: orderId }
+          });
+          if (existingNote) {
+            await tx.order_notes.update({
+              where: { id: existingNote.id },
+              data: { note, updated_at: new Date() }
+            });
+          } else {
+            await tx.order_notes.create({
+              data: {
+                order_id: orderId,
+                note,
+                created_at: new Date(),
+                updated_at: new Date()
+              }
+            });
+          }
+        }
 
-            await tx.order_items.createMany({
-            data: items.map((item: OrderItem): OrderItemCreate => ({
+        // 2. Calcul automatique du unitPrice et création des items
+        let mappedItems: any[] = [];
+        if (items?.length > 0) {
+          // Récupérer tous les couples de prix pour les articles concernés
+          const couplePrices = await tx.article_service_prices.findMany({
+            where: {
+              article_id: { in: items.map((item: OrderItem) => item.articleId) },
+              service_type_id: serviceTypeId,
+              service_id: serviceId
+            }
+          });
+          const couplePriceMap = new Map<string, { base_price: number; premium_price: number }>(
+            couplePrices
+              .filter((c: any) => c.article_id)
+              .map((c: any) => [c.article_id as string, { base_price: Number(c.base_price), premium_price: Number(c.premium_price) }])
+          );
+
+          mappedItems = items.map((item: OrderItem) => {
+            const couple = couplePriceMap.get(item.articleId);
+            const unitPrice = couple
+              ? (item.isPremium ? couple.premium_price : couple.base_price)
+              : 1; // fallback si pas trouvé
+            return {
               orderId,
               articleId: item.articleId,
               serviceId,
               quantity: item.quantity,
-              unitPrice: item.unitPrice,
+              unitPrice,
               isPremium: item.isPremium,
               createdAt: new Date(),
               updatedAt: new Date()
-            }))
-            });
+            };
+          });
+          await tx.order_items.createMany({ data: mappedItems });
         }
 
-        // 3. Calcul et mise à jour du total
-        interface SummableItem {
-          quantity: number;
-          unitPrice: number;
-        }
-
-        const total: number = items.reduce((sum: number, item: SummableItem): number => 
-          sum + (item.quantity * item.unitPrice), 
+        // 3. Calcul du total à partir des items insérés
+        const total: number = mappedItems.reduce((sum: number, item: any): number =>
+          sum + (item.quantity * item.unitPrice),
           0
         );
 
+        // 4. Mise à jour du total et retour de la commande complète
         return await tx.orders.update({
           where: { id: orderId },
           data: { totalAmount: total },
@@ -211,13 +239,15 @@ export class FlashOrderController {
                 article: true
               }
             },
-            order_metadata: true
+            order_metadata: true,
+            order_notes: true
           }
         });
       });
 
       res.json({
         data: updatedOrder,
+        total: updatedOrder.totalAmount,
         message: 'Flash order completed successfully'
       });
 

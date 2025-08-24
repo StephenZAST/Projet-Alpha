@@ -13,7 +13,7 @@ const completeFlashOrderSchema = z.object({
   items: z.array(z.object({
     articleId: z.string().uuid('Invalid article ID'),
     quantity: z.number().positive('Quantity must be positive'),
-    unitPrice: z.number().nonnegative('Unit price cannot be negative'),
+  unitPrice: z.number().nonnegative('Unit price cannot be negative').optional(),
     isPremium: z.boolean()
   })),
   collectionDate: z.string().datetime().optional(),
