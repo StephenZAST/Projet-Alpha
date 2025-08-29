@@ -53,7 +53,7 @@ class Order {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final List<OrderItem>? items;
-  final String? notes; // Notes spécifiques aux commandes flash
+  // final String? notes; // Supprimé, on utilise uniquement note
   final PaymentStatus paymentStatus;
   final PaymentMethod paymentMethod;
   final bool isFlashOrder; // Indicateur pour les commandes flash
@@ -100,7 +100,7 @@ class Order {
     required this.createdAt,
     this.updatedAt,
     this.items,
-    this.notes,
+    // this.notes,
     required this.paymentStatus,
     required this.paymentMethod,
     this.service,
@@ -141,7 +141,7 @@ class Order {
             DateTime.now(),
         updatedAt: _parseDateTime(data['updatedAt'] ?? data['updated_at']),
         items: _parseOrderItems(data['items']),
-        notes: data['notes']?.toString(),
+        // notes: data['notes']?.toString(),
         paymentStatus: _parsePaymentStatus(data['paymentStatus']),
         paymentMethod: _parsePaymentMethod(data['paymentMethod']),
         service: data['service'] != null
@@ -154,7 +154,10 @@ class Order {
             ? User.fromJson(Map<String, dynamic>.from(data['user']))
             : null,
         isFlashOrder: safeBool(data['isFlashOrder']),
-        note: data['note']?.toString(),
+        note: data['note']?.toString() ??
+            (data['order_notes'] is List && data['order_notes'].isNotEmpty
+                ? data['order_notes'][0]['note']?.toString()
+                : null),
         metadata: data['metadata'] != null
             ? OrderMetadata.fromJson(data['metadata'])
             : null,
@@ -243,7 +246,7 @@ class Order {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'items': items?.map((item) => item.toJson()).toList(),
-      'notes': notes,
+      // 'notes': notes,
       'paymentStatus': paymentStatus.name,
       'paymentMethod': paymentMethod.name,
       'service': service?.toJson(),
@@ -271,7 +274,7 @@ class Order {
     DateTime? createdAt,
     DateTime? updatedAt,
     List<OrderItem>? items,
-    String? notes,
+    // String? notes,
     PaymentStatus? paymentStatus,
     PaymentMethod? paymentMethod,
     Service? service,
@@ -298,7 +301,7 @@ class Order {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       items: items ?? this.items,
-      notes: notes ?? this.notes,
+      // notes: notes ?? this.notes,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       service: service ?? this.service,
@@ -318,7 +321,7 @@ class FlashOrder extends Order {
     required String id,
     required String userId,
     required String addressId,
-    String? notes,
+    String? note,
     String status = 'DRAFT', // Par défaut DRAFT pour les commandes flash
   }) : super(
           id: id,
@@ -330,7 +333,7 @@ class FlashOrder extends Order {
           createdAt: DateTime.now(),
           paymentStatus: PaymentStatus.PENDING,
           paymentMethod: PaymentMethod.CASH,
-          notes: notes,
+          note: note,
           isFlashOrder: true,
         );
 
@@ -344,7 +347,7 @@ class FlashOrder extends Order {
         id: json['id']?.toString() ?? '',
         userId: json['userId']?.toString() ?? '',
         addressId: json['address_id']?.toString() ?? '',
-        notes: json['notes']?.toString(),
+        note: json['note']?.toString(),
         status: json['status']?.toString().toUpperCase() ?? 'DRAFT',
       );
     } catch (e) {
@@ -360,7 +363,6 @@ class FlashOrder extends Order {
       'id': id,
       'userId': userId,
       'address_id': addressId,
-      'notes': notes,
       'status': status,
       'isFlashOrder': true,
     };

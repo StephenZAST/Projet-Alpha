@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/flash_orders_controller.dart';
 import 'components/flash_order_card.dart';
+import 'components/flash_order_stepper.dart';
+import '../../../controllers/flash_order_stepper_controller.dart';
 
 class FlashOrdersScreen extends GetView<FlashOrdersController> {
   const FlashOrdersScreen({Key? key}) : super(key: key);
@@ -53,10 +55,20 @@ class FlashOrdersScreen extends GetView<FlashOrdersController> {
               final order = controller.draftOrders[index];
               return FlashOrderCard(
                 order: order,
-                onTap: () => Get.toNamed(
-                  '/orders/flash/${order.id}',
-                  arguments: order,
-                ),
+                onTap: () {
+                  final stepperController =
+                      Get.put(FlashOrderStepperController());
+                  stepperController.initDraftFromFlashOrder(order);
+                  showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      child: SizedBox(
+                        width: 600,
+                        child: FlashOrderStepper(),
+                      ),
+                    ),
+                  );
+                },
               );
             },
           ),

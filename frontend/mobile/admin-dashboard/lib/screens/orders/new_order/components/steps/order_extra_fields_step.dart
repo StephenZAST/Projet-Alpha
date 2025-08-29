@@ -10,6 +10,18 @@ class OrderExtraFieldsStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Pré-remplissage automatique des dates si non définies
+    final now = DateTime.now();
+    if (controller.orderDraft.value.collectionDate == null) {
+      controller.setOrderDraftField(
+          'collectionDate', now.add(Duration(days: 1)));
+    }
+    if (controller.orderDraft.value.deliveryDate == null) {
+      final collect = controller.orderDraft.value.collectionDate ??
+          now.add(Duration(days: 1));
+      controller.setOrderDraftField(
+          'deliveryDate', collect.add(Duration(days: 3)));
+    }
     return Form(
       key: _formKey,
       child: ListView(
@@ -113,6 +125,14 @@ class OrderExtraFieldsStep extends StatelessWidget {
             initialValue: controller.orderDraft.value.affiliateCode ?? '',
             decoration: InputDecoration(labelText: 'Code affilié'),
             onChanged: (v) => controller.setOrderDraftField('affiliateCode', v),
+          ),
+          // Note de commande
+          TextFormField(
+            initialValue: controller.orderDraft.value.note ?? '',
+            decoration: InputDecoration(labelText: 'Note de commande'),
+            minLines: 2,
+            maxLines: 5,
+            onChanged: (v) => controller.setOrderDraftField('note', v),
           ),
           // Type de récurrence (chips glassy)
           Padding(

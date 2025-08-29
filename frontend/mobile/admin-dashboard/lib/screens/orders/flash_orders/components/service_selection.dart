@@ -17,17 +17,19 @@ class ServiceSelection extends StatelessWidget {
           children: [
             Text('Service', style: AppTextStyles.h3),
             SizedBox(height: AppSpacing.md),
-            Obx(() => DropdownButtonFormField<Service>(
-                  value: controller.selectedService.value,
+            Obx(() => DropdownButtonFormField<String>(
+                  value: controller.selectedService.value?.id,
                   hint: Text('Sélectionner un service'),
                   isExpanded: true,
                   items: controller.services.map((service) {
-                    return DropdownMenuItem(
-                      value: service,
+                    return DropdownMenuItem<String>(
+                      value: service.id,
                       child: Text(service.name),
                     );
                   }).toList(),
-                  onChanged: (service) {
+                  onChanged: (serviceId) {
+                    final service = controller.services
+                        .firstWhereOrNull((s) => s.id == serviceId);
                     controller.selectedService.value = service;
                     if (service != null) {
                       controller

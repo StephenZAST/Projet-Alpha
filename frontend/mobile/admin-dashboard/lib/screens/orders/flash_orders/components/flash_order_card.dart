@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../constants.dart';
 import '../../../../models/order.dart';
+import 'flash_order_detail_dialog.dart';
 
 class FlashOrderCard extends StatelessWidget {
   final Order order;
   final VoidCallback onTap;
-
   const FlashOrderCard({
     Key? key,
     required this.order,
@@ -17,8 +17,13 @@ class FlashOrderCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.only(bottom: AppSpacing.md),
       child: InkWell(
-        onTap: onTap,
         borderRadius: AppRadius.radiusMD,
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (_) => FlashOrderDetailDialog(order: order),
+          );
+        },
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.md),
           child: Column(
@@ -72,9 +77,9 @@ class FlashOrderCard extends StatelessWidget {
                 ),
                 SizedBox(height: AppSpacing.sm),
               ],
-              if (order.notes?.isNotEmpty == true) ...[
+              if (order.note != null && order.note!.isNotEmpty) ...[
                 Text(
-                  'Notes: ${order.notes}',
+                  'Note: ${order.note}',
                   style: AppTextStyles.bodySmall.copyWith(
                     fontStyle: FontStyle.italic,
                   ),

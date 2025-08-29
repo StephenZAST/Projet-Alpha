@@ -5,6 +5,7 @@ class OrderDraft {
   String? serviceTypeId;
   List<OrderDraftItem> items = [];
   // Champs additionnels pour la commande
+  String? note;
   DateTime? collectionDate;
   DateTime? deliveryDate;
   String? status;
@@ -34,6 +35,7 @@ class OrderDraft {
       'nextRecurrenceDate': nextRecurrenceDate != null
           ? nextRecurrenceDate!.toUtc().toIso8601String()
           : null,
+      'note': note,
     };
   }
 
@@ -60,6 +62,9 @@ class OrderDraft {
         break;
       case 'nextRecurrenceDate':
         nextRecurrenceDate = value;
+        break;
+      case 'note':
+        note = value;
         break;
       default:
         break;

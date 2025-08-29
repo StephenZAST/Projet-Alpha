@@ -43,7 +43,7 @@ Future<void> main() async {
     final draftOrders = await OrderService.getDraftOrders();
     print('Commandes flash trouvées: ${draftOrders.length}');
     for (var order in draftOrders) {
-      print('- ${order.id}: ${order.status} (Notes: ${order.notes})');
+      print('- ${order.id}: ${order.status} (Notes: ${order.note})');
     }
 
     // 4. Test des commandes récentes

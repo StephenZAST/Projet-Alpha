@@ -81,6 +81,8 @@ class OrderSummaryStep extends StatelessWidget {
                 draft.deliveryDate != null
                     ? draft.deliveryDate!.toLocal().toString().split(' ')[0]
                     : ''),
+            if (draft.note != null && draft.note!.trim().isNotEmpty)
+              _buildInfoRow('Note de commande', draft.note!),
             if (statusLabel != null)
               Row(
                 children: [

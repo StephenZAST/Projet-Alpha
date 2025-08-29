@@ -43,6 +43,7 @@ export class FlashOrderController {
         throw new Error('No default service type found');
       }
 
+      // Création de la commande
       const order = await prisma.orders.create({
         data: {
           userId,
@@ -51,23 +52,36 @@ export class FlashOrderController {
           totalAmount: 0,
           createdAt: new Date(),
           updatedAt: new Date(),
-          service_type_id: defaultServiceTypeId.id, // Utiliser l'ID du service type par défaut
+          service_type_id: defaultServiceTypeId.id,
           order_metadata: {
             create: {
               is_flash_order: true,
               metadata: { note: noteText }
             }
-          },
-          order_notes: {
-            create: {
-              note: noteText
-            }
           }
         }
       });
 
-      console.log('[FlashOrderController] Order created successfully:', order);
-      res.json({ data: order });
+      // Création de la note unique (si fournie)
+      let noteRecord = null;
+      if (noteText && typeof noteText === 'string' && noteText.trim().length > 0) {
+        noteRecord = await prisma.order_notes.create({
+          data: {
+            order_id: order.id,
+            note: noteText,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+      }
+
+      // Retourne la commande + note unique
+      res.json({
+        data: {
+          ...order,
+          note: noteRecord?.note || null
+        }
+      });
 
     } catch (error: any) {
       console.error('[FlashOrderController] Unexpected error:', error);
@@ -82,24 +96,43 @@ export class FlashOrderController {
     try {
       const orders = await prisma.orders.findMany({
         where: {
-          status: 'PENDING'
+          status: 'DRAFT',
+          order_metadata: {
+            is_flash_order: true
+          }
         },
         include: {
           user: {
             select: {
               first_name: true,
               last_name: true,
-              phone: true
+              phone: true,
+              email: true
             }
           },
-          address: true
+          address: true,
+          order_notes: true
         },
         orderBy: {
           createdAt: 'desc'
         }
       });
 
-      res.json({ data: orders });
+      // Ajoute le champ note à chaque commande (s'il existe, robustesse)
+      const ordersWithNote = orders.map(order => {
+        let note = null;
+        if (order.order_notes && Array.isArray(order.order_notes)) {
+          // Cherche la première note non nulle/non vide
+          const found = order.order_notes.find(n => n && typeof n.note === 'string' && n.note.trim().length > 0);
+          note = found ? found.note : null;
+        }
+        return {
+          ...order,
+          note
+        };
+      });
+
+      res.json({ data: ordersWithNote });
     } catch (error: any) {
       console.error('[FlashOrderController] Error fetching pending orders:', error);
       res.status(500).json({ error: error.message });
@@ -221,9 +254,15 @@ export class FlashOrderController {
         );
 
         // 4. Mise à jour du total et retour de la commande complète
-        return await tx.orders.update({
+        // Mise à jour du total
+        await tx.orders.update({
           where: { id: orderId },
-          data: { totalAmount: total },
+          data: { totalAmount: total }
+        });
+
+        // Récupérer la commande et la note unique
+        const order = await tx.orders.findUnique({
+          where: { id: orderId },
           include: {
             user: {
               select: {
@@ -239,15 +278,20 @@ export class FlashOrderController {
                 article: true
               }
             },
-            order_metadata: true,
-            order_notes: true
+            order_metadata: true
           }
         });
+  const noteRecord = await tx.order_notes.findFirst({ where: { order_id: orderId } });
+        return {
+          ...order,
+          note: noteRecord?.note || null
+        };
       });
 
       res.json({
         data: updatedOrder,
         total: updatedOrder.totalAmount,
+        note: updatedOrder.note,
         message: 'Flash order completed successfully'
       });
 

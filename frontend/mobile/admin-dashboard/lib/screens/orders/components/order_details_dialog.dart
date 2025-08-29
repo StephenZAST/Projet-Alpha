@@ -545,6 +545,24 @@ class OrderDetailsDialog extends StatelessWidget {
                         controller.setOrderEditField('affiliateCode', value);
                       },
                     ),
+                    const SizedBox(height: 16),
+                    // Champ note de commande
+                    TextFormField(
+                      initialValue:
+                          controller.orderEditForm['note'] ?? order.note ?? '',
+                      decoration: InputDecoration(
+                        labelText: 'Note de commande',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      minLines: 2,
+                      maxLines: 5,
+                      style: TextStyle(fontSize: 16),
+                      onChanged: (value) {
+                        controller.setOrderEditField('note', value);
+                      },
+                    ),
                   ],
                 );
               }),
@@ -660,6 +678,8 @@ class OrderDetailsDialog extends StatelessWidget {
                             final form = controller.orderEditForm;
                             if (form['affiliateCode'] != null)
                               patch['affiliateCode'] = form['affiliateCode'];
+                            if (form['note'] != null)
+                              patch['note'] = form['note'];
                             if (form['status'] != null)
                               patch['status'] = form['status'];
                             if (form['paymentMethod'] != null)

@@ -92,12 +92,22 @@ export class OrderCreateController {
           status: 'PENDING',
           service_type_id: serviceTypeId,
           createdAt: new Date(),
-          updatedAt: new Date(),
-          order_notes: note && typeof note === 'string' && note.trim().length > 0 ? {
-            create: [{ note }]
-          } : undefined
+          updatedAt: new Date()
         }
       });
+
+      // Création de la note unique (si fournie)
+      let noteRecord = null;
+      if (note && typeof note === 'string' && note.trim().length > 0) {
+        noteRecord = await prisma.order_notes.create({
+          data: {
+            order_id: order.id,
+            note,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        });
+      }
 
 
       // 3. Récupérer les prix réels des couples article/service/serviceType/service
@@ -169,10 +179,10 @@ export class OrderCreateController {
             include: {
               article: true
             }
-          },
-          order_notes: true
+          }
         }
       });
+      const noteUnique = noteRecord?.note || null;
 
       if (!orderData) {
         throw new Error('Failed to retrieve complete order');
@@ -217,7 +227,7 @@ export class OrderCreateController {
             updatedAt: item.article.updatedAt || new Date()
           } : undefined
         })),
-        notes: orderData.order_notes?.map(n => n.note).filter(Boolean) || []
+        note: noteUnique
       };
 
       // 7. Traiter les points et notifications
