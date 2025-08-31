@@ -57,8 +57,8 @@ export class OrderCreateController {
         paymentMethod,
         appliedOfferIds,
         serviceTypeId,
-        userId: userIdFromPayload,
-        note // Ajout du champ note dans le payload
+        userId: userIdFromPayload, // Correction ici
+        note
       } = req.body;
 
       // Logique hybride :
@@ -69,12 +69,73 @@ export class OrderCreateController {
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
       // 1. Calculer le prix total avec les réductions
-      const pricing = await PricingService.calculateOrderTotal({
-        items,
-        userId,
-        appliedOfferIds
-      });
+            // 1. Récupérer les offres actives auxquelles l'utilisateur est inscrit
+            const userOffers = await prisma.offer_subscriptions.findMany({
+              where: {
+                userId,
+                status: 'ACTIVE',
+                offers: {
+                  is_active: true,
+                  startDate: { lte: new Date() },
+                  endDate: { gte: new Date() }
+                }
+              },
+              include: {
+                offers: {
+                  include: {
+                    offer_articles: true
+                  }
+                }
+              }
+            });
 
+            // 2. Filtrer les offres valides de façon flexible
+            const validOffers = userOffers
+              .map(sub => sub.offers)
+              .filter((offer): offer is typeof offer => !!offer);
+
+            const filteredValidOffers = validOffers.filter(offer => {
+              if (!offer) return false;
+              // Articles concernés : si la condition existe, on la vérifie, sinon on passe
+              if (Array.isArray(offer.offer_articles) && offer.offer_articles.length > 0) {
+                const offerArticleIds = offer.offer_articles.map(a => a.article_id);
+                const hasValidArticle = items.some((item: any) => offerArticleIds.includes(item.articleId));
+                if (!hasValidArticle) return false;
+              }
+              // Montant minimum d'achat : si défini et > 0, on vérifie, sinon on passe
+              if (typeof offer.minPurchaseAmount === 'number' && offer.minPurchaseAmount > 0) {
+                const subtotal = items.reduce((sum: number, item: any) => sum + (item.unitPrice || 0) * item.quantity, 0);
+                if (subtotal < offer.minPurchaseAmount) return false;
+              }
+              // Dates de validité : si définies, on vérifie, sinon on passe
+              if (offer.startDate && new Date() < new Date(offer.startDate)) return false;
+              if (offer.endDate && new Date() > new Date(offer.endDate)) return false;
+              return true;
+            });
+
+            // 3. Séparer cumulables et non-cumulables
+            const cumulableOffers = filteredValidOffers.filter(o => o && o.isCumulative === true);
+            const nonCumulableOffers = filteredValidOffers.filter(o => o && o.isCumulative === false);
+
+            // 4. Appliquer la meilleure offre non-cumulable (si présente), sinon toutes les cumulables
+            let appliedOffers = [];
+            if (nonCumulableOffers.length) {
+              // Prendre la plus avantageuse
+              const bestOffer = nonCumulableOffers.reduce((max, offer) => {
+                if (!offer || !max) return max || offer;
+                return (Number(offer.discountValue) > Number(max.discountValue)) ? offer : max;
+              }, nonCumulableOffers[0]);
+              appliedOffers = bestOffer ? [bestOffer] : [];
+            } else {
+              appliedOffers = cumulableOffers;
+            }
+
+            // 5. Calculer le prix total avec les réductions
+            const pricing = await PricingService.calculateOrderTotal({
+              items,
+              userId,
+              appliedOfferIds: appliedOffers.filter((o): o is NonNullable<typeof o> => !!o && typeof o.id === 'string').map(o => o.id)
+            });
       // 2. Créer la commande avec le montant total
       const order = await prisma.orders.create({
         data: {

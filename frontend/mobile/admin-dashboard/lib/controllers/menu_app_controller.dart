@@ -14,6 +14,7 @@ import '../routes/admin_routes.dart';
 import '../controllers/users_controller.dart';
 import '../screens/services/service_article_couples_screen.dart';
 import '../screens/subscriptions/subscription_management_page.dart';
+import '../screens/offers/offers_screen.dart';
 
 class MenuAppController extends GetxController {
   // Singleton pattern
@@ -193,6 +194,8 @@ class MenuAppController extends GetxController {
         return NotificationsScreen();
       case MenuIndices.subscriptions:
         return SubscriptionManagementPage();
+      case MenuIndices.offers:
+        return OffersScreen();
       default:
         return DashboardScreen();
     }

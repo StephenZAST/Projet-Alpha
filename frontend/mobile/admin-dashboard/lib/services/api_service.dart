@@ -245,4 +245,47 @@ class ApiService extends GetxService {
   Future<ApiService> init() async {
     return this;
   }
+
+  // Offres
+  Future<List<Map<String, dynamic>>> getOffers() async {
+    final response = await get('/offers');
+    if (response.statusCode == 200 &&
+        response.data != null &&
+        response.data['data'] != null) {
+      return List<Map<String, dynamic>>.from(response.data['data']);
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>?> createOffer(Map<String, dynamic> data) async {
+    final response = await post('/offers', data: data);
+    if (response.statusCode == 201 &&
+        response.data != null &&
+        response.data['data'] != null) {
+      return Map<String, dynamic>.from(response.data['data']);
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> updateOffer(
+      String offerId, Map<String, dynamic> data) async {
+    final response = await patch('/offers/$offerId', data: data);
+    if (response.statusCode == 200 &&
+        response.data != null &&
+        response.data['data'] != null) {
+      return Map<String, dynamic>.from(response.data['data']);
+    }
+    return null;
+  }
+
+  Future<bool> deleteOffer(String offerId) async {
+    final response = await delete('/offers/$offerId');
+    return response.statusCode == 200;
+  }
+
+  Future<bool> toggleOfferStatus(String offerId, bool isActive) async {
+    final response =
+        await patch('/offers/$offerId/status', data: {'isActive': isActive});
+    return response.statusCode == 200;
+  }
 }

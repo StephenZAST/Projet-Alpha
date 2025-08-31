@@ -300,6 +300,20 @@ export class OfferService {
     }
   }
 
+  // Admin: liste toutes les offres
+  static async getAllOffers(): Promise<Offer[]> {
+    const offers = await prisma.offers.findMany({
+      include: {
+        offer_articles: {
+          include: {
+            articles: true
+          }
+        }
+      }
+    });
+    return offers.map(offer => this.formatOffer(offer));
+  }
+
   private static isOfferValid(offer: any, subtotal: number): boolean {
     if (!offer) return false;
     

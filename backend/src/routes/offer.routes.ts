@@ -52,4 +52,11 @@ router.patch(
   OfferController.toggleOfferStatus
 );
 
+// Route admin pour lister toutes les offres
+router.get(
+  '/',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  OfferController.getAllOffers
+);
+
 export default router;

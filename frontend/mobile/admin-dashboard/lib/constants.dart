@@ -243,4 +243,5 @@ class MenuIndices {
   static const int notifications = 8;
   static const int serviceArticleCouples = 9;
   static const int subscriptions = 10;
+  static const int offers = 11;
 }

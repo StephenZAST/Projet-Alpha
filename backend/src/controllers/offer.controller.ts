@@ -70,4 +70,10 @@ export class OfferController {
     const offer = await OfferService.toggleOfferStatus(offerId, isActive);
     return res.json({ success: true, data: offer });
   }
+
+  // Admin: liste toutes les offres
+  static async getAllOffers(req: Request, res: Response) {
+    const offers = await OfferService.getAllOffers();
+    return res.json({ success: true, data: offers });
+  }
 }

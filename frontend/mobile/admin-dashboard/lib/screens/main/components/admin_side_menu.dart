@@ -116,6 +116,12 @@ class AdminSideMenu extends StatelessWidget {
                   menuController.updateIndex(MenuIndices.subscriptions),
             ),
             DrawerListTile(
+              title: "Offres",
+              icon: Icons.local_offer_outlined,
+              isSelected: menuController.selectedIndex == MenuIndices.offers,
+              onPress: () => menuController.updateIndex(MenuIndices.offers),
+            ),
+            DrawerListTile(
               title: "Utilisateurs",
               icon: Icons.people_outline,
               isSelected:
