@@ -8,6 +8,12 @@ class FlashOrderDraft {
   DateTime? collectionDate;
   DateTime? deliveryDate;
   String? note;
+  // Champs pour harmonisation avec OrderExtraFieldsStep
+  String? status;
+  String? paymentMethod;
+  String? affiliateCode;
+  String? recurrenceType;
+  DateTime? nextRecurrenceDate;
 
   FlashOrderDraft({
     this.orderId,
@@ -19,6 +25,11 @@ class FlashOrderDraft {
     this.collectionDate,
     this.deliveryDate,
     this.note,
+    this.status,
+    this.paymentMethod,
+    this.affiliateCode,
+    this.recurrenceType,
+    this.nextRecurrenceDate,
   }) {
     if (items != null) this.items = items;
   }
@@ -34,6 +45,11 @@ class FlashOrderDraft {
       'collectionDate': collectionDate?.toUtc().toIso8601String(),
       'deliveryDate': deliveryDate?.toUtc().toIso8601String(),
       'note': note,
+      'status': status,
+      'paymentMethod': paymentMethod,
+      'affiliateCode': affiliateCode,
+      'recurrenceType': recurrenceType,
+      'nextRecurrenceDate': nextRecurrenceDate?.toUtc().toIso8601String(),
     };
   }
 
@@ -53,6 +69,21 @@ class FlashOrderDraft {
         break;
       case 'note':
         note = value;
+        break;
+      case 'status':
+        status = value;
+        break;
+      case 'paymentMethod':
+        paymentMethod = value;
+        break;
+      case 'affiliateCode':
+        affiliateCode = value;
+        break;
+      case 'recurrenceType':
+        recurrenceType = value;
+        break;
+      case 'nextRecurrenceDate':
+        nextRecurrenceDate = value;
         break;
       case 'items':
         items = value;

@@ -118,6 +118,17 @@ class _AddressEditDialogState extends State<AddressEditDialog> {
                     label: 'Enregistrer',
                     variant: GlassButtonVariant.primary,
                     onPressed: () async {
+                      if (widget.orderId.isEmpty) {
+                        Get.snackbar(
+                          'Erreur',
+                          'Impossible de modifier l\'adresse : commande non créée.',
+                          backgroundColor: AppColors.error,
+                          colorText: AppColors.textLight,
+                          snackPosition: SnackPosition.TOP,
+                          duration: Duration(seconds: 3),
+                        );
+                        return;
+                      }
                       final addressData = {
                         'id': widget.address?.id ?? '',
                         'name': nameController.text,

@@ -1,5 +1,5 @@
 import { PrismaClient, user_role, Prisma } from '@prisma/client'; // Ajout de l'import Prisma
-import { AuthResponse, User, ResetCode, UserListResponse, UserStats, UserFilters, UserActivityLog } from '../models/types';
+import { AuthResponse, User, ResetCode, UserListResponse, UserStats, UserFilters, UserActivityLog, UserRole } from '../models/types';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from './email.service';
 import { v4 as uuidv4 } from 'uuid'; 
@@ -1003,6 +1003,26 @@ export class AuthService {
         limit: safeLimit,
         totalPages
       }
+    };
+  }
+
+  /**
+   * Récupère un utilisateur par son ID (pour l'API GET /api/users/:id)
+   */
+  static async getUserById(userId: string): Promise<User | null> {
+    const user = await prisma.users.findUnique({ where: { id: userId } });
+    if (!user) return null;
+    return {
+      id: user.id,
+      email: user.email,
+      password: user.password,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phone: user.phone || undefined,
+      role: (user.role as UserRole) || 'CLIENT',
+      referralCode: user.referral_code || undefined,
+      createdAt: user.created_at || new Date(),
+      updatedAt: user.updated_at || new Date()
     };
   }
 }

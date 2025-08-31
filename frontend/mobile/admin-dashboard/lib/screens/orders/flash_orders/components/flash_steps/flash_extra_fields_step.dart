@@ -20,6 +20,7 @@ class FlashExtraFieldsStep extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Date de collecte
         ListTile(
           title: Text('Date de collecte'),
           subtitle: Text(draft.collectionDate != null
@@ -38,6 +39,7 @@ class FlashExtraFieldsStep extends StatelessWidget {
             }
           },
         ),
+        // Date de livraison
         ListTile(
           title: Text('Date de livraison'),
           subtitle: Text(draft.deliveryDate != null
@@ -56,6 +58,7 @@ class FlashExtraFieldsStep extends StatelessWidget {
             }
           },
         ),
+        // Note de commande
         TextFormField(
           initialValue: draft.note ?? '',
           decoration: InputDecoration(labelText: 'Note de commande'),
@@ -63,7 +66,6 @@ class FlashExtraFieldsStep extends StatelessWidget {
           maxLines: 5,
           onChanged: (v) => controller.setDraftField('note', v),
         ),
-        // Ajouter d'autres champs extra si besoin
       ],
     );
   }

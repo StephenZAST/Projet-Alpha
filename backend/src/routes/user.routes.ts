@@ -147,6 +147,20 @@ router.get(
   })
 );
 
+// Route pour récupérer un utilisateur par son ID
+router.get(
+  '/:id',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(async (req, res) => {
+    const userId = req.params.id;
+    const user = await AuthService.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+    }
+    res.json({ success: true, data: user });
+  })
+);
+
 // Note : Suppression de la route PUT /users/:userId car elle existe déjà dans auth.routes.ts
 
 export default router;

@@ -9,7 +9,9 @@ import 'package:admin/services/user_service.dart';
 import 'package:admin/services/address_service.dart';
 import 'package:admin/services/service_service.dart';
 import 'package:admin/services/service_type_service.dart';
+import 'package:admin/models/enums.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class FlashSummaryStep extends StatefulWidget {
   final FlashOrderStepperController controller;
@@ -23,6 +25,7 @@ class FlashSummaryStep extends StatefulWidget {
 class _FlashSummaryStepState extends State<FlashSummaryStep> {
   User? user;
   Address? address;
+  List<Address> addresses = [];
   Service? service;
   ServiceType? serviceType;
   bool isLoading = true;
@@ -47,8 +50,18 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
       if (draft.userId != null) {
         user = await UserService.getUserById(draft.userId!);
       }
-      if (draft.addressId != null) {
-        address = await AddressService.getAddressById(draft.addressId!);
+      // Récupérer toutes les adresses de l'utilisateur une seule fois
+      if (draft.userId != null) {
+        addresses = await AddressService.getAddressesByUser(draft.userId!);
+      }
+      // Sélectionner l'adresse à partir de la liste locale
+      if (draft.addressId != null && addresses.isNotEmpty) {
+        address = addresses.firstWhere(
+          (a) => a.id == draft.addressId,
+          orElse: () => addresses.first,
+        );
+      } else {
+        address = null;
       }
       if (draft.serviceId != null) {
         final services = await ServiceService.getAllServices();
@@ -72,6 +85,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
         );
         // Synchronise les articles avec les couples de prix
         widget.controller.syncSelectedItemsFrom(couples: couples);
+        setState(() {}); // Forcer le rafraîchissement après la synchro
       }
     } catch (e) {
       // TODO: Afficher un snackbar d'erreur
@@ -83,16 +97,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
     final draft = widget.controller.draft.value;
     int total = 0;
     for (var item in draft.items) {
-      final couple = couples.firstWhere(
-        (c) => c['article_id'] == item.articleId,
-        orElse: () => <String, dynamic>{},
-      );
-      final basePrice = (couple['base_price'] ?? 0) as num;
-      final premiumPrice = (couple['premium_price'] ?? basePrice) as num;
-      final isPremium = item.isPremium;
-      final quantity = item.quantity;
-      total +=
-          quantity * (isPremium ? premiumPrice.toInt() : basePrice.toInt());
+      total += (item.unitPrice * item.quantity).toInt();
     }
     return total;
   }
@@ -100,9 +105,6 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
   @override
   Widget build(BuildContext context) {
     final draft = widget.controller.draft.value;
-    // Log du payload pour debug
-    print('[RECAP] Payload draft au recap:');
-    print(draft.toPayload());
     return isLoading
         ? Center(child: CircularProgressIndicator())
         : SingleChildScrollView(
@@ -110,24 +112,44 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Récapitulatif de la commande flash',
+                Text('Récapitulatif de la commande',
                     style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                SizedBox(height: 16),
-                _buildClientSummary(),
-                Divider(),
-                _buildAddressSummary(),
-                Divider(),
-                _buildServiceSummary(),
-                Divider(),
-                _buildArticlesSummary(draft),
-                Divider(),
-                _buildExtraFieldsSummary(draft),
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                SizedBox(height: 20),
+                _buildSection('Informations client', _buildClientSummary()),
+                _buildDivider(),
+                _buildSection('Adresse', _buildAddressSummary()),
+                _buildDivider(),
+                _buildSection('Service', _buildServiceSummary()),
+                _buildDivider(),
+                _buildSection('Articles', _buildArticlesSummary(draft)),
+                _buildDivider(),
+                _buildSection('Informations complémentaires',
+                    _buildExtraFieldsSummary(draft)),
                 SizedBox(height: 16),
                 _buildTotalSection(),
               ],
             ),
           );
+  }
+
+  Widget _buildSection(String title, Widget content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+        SizedBox(height: 8),
+        content,
+      ],
+    );
+  }
+
+  Widget _buildDivider() {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 12),
+      child: Divider(height: 1),
+    );
   }
 
   Widget _buildClientSummary() {
@@ -179,34 +201,120 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
       children: [
         Text('Articles/Services',
             style: TextStyle(fontWeight: FontWeight.w600)),
-        ...draft.items.map((item) {
-          final couple = couples.firstWhere(
-            (c) => c['article_id'] == item.articleId,
-            orElse: () => <String, dynamic>{},
-          );
-          final name = couple['article_name'] ?? item.articleId;
-          final price = item.isPremium
-              ? (couple['premium_price'] ?? 0)
-              : (couple['base_price'] ?? 0);
-          return Text('$name x${item.quantity} - ${price} FCFA');
-        }),
+        if (draft.items.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Text('Aucun article/service sélectionné',
+                style: TextStyle(color: Colors.grey)),
+          )
+        else
+          ...draft.items.map((item) {
+            final name = item.articleName ?? item.articleId;
+            final price = item.unitPrice;
+            final premiumLabel = item.isPremium ? ' (Premium)' : '';
+            return Text(
+                '$name x${item.quantity}$premiumLabel - ${(price * item.quantity).toStringAsFixed(0)} FCFA');
+          }),
       ],
     );
   }
 
   Widget _buildExtraFieldsSummary(FlashOrderDraft draft) {
+    String? statusLabel;
+    Color? statusColor;
+    IconData? statusIcon;
+    if (draft.status != null) {
+      final statusEnum =
+          OrderStatus.values.firstWhereOrNull((s) => s.name == draft.status);
+      statusLabel = statusEnum?.label;
+      statusColor = statusEnum?.color;
+      statusIcon = statusEnum?.icon;
+    }
+    String? paymentLabel;
+    if (draft.paymentMethod != null) {
+      final paymentEnum = PaymentMethod.values
+          .firstWhereOrNull((p) => p.name == draft.paymentMethod);
+      paymentLabel = paymentEnum?.label;
+    }
+    String? recurrenceLabel;
+    if (draft.recurrenceType != null) {
+      switch (draft.recurrenceType) {
+        case 'WEEKLY':
+          recurrenceLabel = 'Hebdomadaire';
+          break;
+        case 'BIWEEKLY':
+          recurrenceLabel = 'Toutes les 2 semaines';
+          break;
+        case 'MONTHLY':
+          recurrenceLabel = 'Mensuelle';
+          break;
+        default:
+          recurrenceLabel = 'Aucune';
+      }
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Informations complémentaires',
             style: TextStyle(fontWeight: FontWeight.w600)),
-        Text(
-            'Date collecte: ${draft.collectionDate != null ? draft.collectionDate!.toLocal().toString().split(' ')[0] : '-'}'),
-        Text(
-            'Date livraison: ${draft.deliveryDate != null ? draft.deliveryDate!.toLocal().toString().split(' ')[0] : '-'}'),
+        _buildInfoRow(
+            'Date de collecte',
+            draft.collectionDate != null
+                ? draft.collectionDate!.toLocal().toString().split(' ')[0]
+                : ''),
+        _buildInfoRow(
+            'Date de livraison',
+            draft.deliveryDate != null
+                ? draft.deliveryDate!.toLocal().toString().split(' ')[0]
+                : ''),
         if (draft.note != null && draft.note!.trim().isNotEmpty)
-          Text('Note: ${draft.note}'),
+          _buildInfoRow('Note de commande', draft.note!),
+        if (statusLabel != null)
+          Row(
+            children: [
+              if (statusIcon != null)
+                Icon(statusIcon, color: statusColor, size: 18),
+              SizedBox(width: 6),
+              _buildInfoRow('Statut', statusLabel),
+            ],
+          ),
+        if (paymentLabel != null)
+          _buildInfoRow('Méthode de paiement', paymentLabel),
+        if (draft.affiliateCode != null && draft.affiliateCode!.isNotEmpty)
+          _buildInfoRow('Code affilié', draft.affiliateCode!),
+        if (recurrenceLabel != null && recurrenceLabel != 'Aucune')
+          _buildInfoRow('Type de récurrence', recurrenceLabel),
+        if (draft.nextRecurrenceDate != null &&
+            draft.recurrenceType != null &&
+            draft.recurrenceType != 'NONE')
+          _buildInfoRow('Prochaine récurrence',
+              draft.nextRecurrenceDate!.toLocal().toString().split(' ')[0]),
       ],
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white : null,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

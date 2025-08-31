@@ -1,11 +1,12 @@
+import 'package:admin/constants.dart';
 import 'package:admin/controllers/flash_order_stepper_controller.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:admin/models/service_type.dart';
 import 'package:admin/models/service.dart';
 import 'package:admin/services/service_type_service.dart';
 import 'package:admin/services/service_service.dart';
 import 'package:admin/services/article_service_couple_service.dart';
-import 'package:admin/models/flash_order_draft.dart';
 
 class FlashServiceStep extends StatefulWidget {
   final FlashOrderStepperController controller;
@@ -23,29 +24,31 @@ class _FlashServiceStepState extends State<FlashServiceStep> {
   ServiceType? selectedServiceType;
   Service? selectedService;
   bool isLoading = false;
+  bool isPremium = false;
+  double? weight;
 
-  // Local state for quantities and premium selection
-  Map<String, int> quantities = {};
-  Map<String, bool> premiums = {};
+  int _getDraftQuantity(String articleId) {
+    final item = widget.controller.draft.value.items
+        .firstWhereOrNull((i) => i.articleId == articleId);
+    return item?.quantity ?? 0;
+  }
+
+  void _onQuantityChanged(String articleId, int value,
+      {bool? isPremium, String? serviceId}) {
+    widget.controller.updateDraftItemQuantity(
+      articleId,
+      value,
+      isPremium: isPremium ?? this.isPremium,
+      serviceId: serviceId,
+    );
+    widget.controller.syncSelectedItemsFrom(couples: couples);
+    setState(() {});
+  }
 
   @override
   void initState() {
     super.initState();
     _fetchServiceTypes();
-    // Restore draft if already selected
-    final draft = widget.controller.draft.value;
-    if (draft.serviceTypeId != null && serviceTypes.isNotEmpty) {
-      selectedServiceType = serviceTypes.firstWhere(
-        (t) => t.id == draft.serviceTypeId,
-        orElse: () => serviceTypes.first,
-      );
-    }
-    if (draft.serviceId != null && services.isNotEmpty) {
-      selectedService = services.firstWhere(
-        (s) => s.id == draft.serviceId,
-        orElse: () => services.first,
-      );
-    }
   }
 
   Future<void> _fetchServiceTypes() async {
@@ -59,8 +62,8 @@ class _FlashServiceStepState extends State<FlashServiceStep> {
       selectedServiceType = type;
       selectedService = null;
       couples = [];
-      quantities.clear();
-      premiums.clear();
+      isPremium = false;
+      weight = null;
     });
     widget.controller.setDraftField('serviceTypeId', type?.id);
     if (type != null) {
@@ -75,8 +78,8 @@ class _FlashServiceStepState extends State<FlashServiceStep> {
     setState(() {
       selectedService = service;
       couples = [];
-      quantities.clear();
-      premiums.clear();
+      isPremium = false;
+      weight = null;
     });
     widget.controller.setDraftField('serviceId', service?.id);
     if (service != null && selectedServiceType != null) {
@@ -85,234 +88,218 @@ class _FlashServiceStepState extends State<FlashServiceStep> {
         serviceTypeId: selectedServiceType!.id,
         serviceId: service.id,
       );
-      // Initialize quantities and premiums for each couple
-      for (var couple in couples) {
-        final articleId = couple['article_id'];
-        quantities[articleId] = 0;
-        premiums[articleId] = false;
-      }
       setState(() => isLoading = false);
-      _updateDraftItems();
     }
   }
 
-  void _onQuantityChanged(String articleId, int value) {
-    setState(() {
-      quantities[articleId] = value;
-    });
-    _updateDraftItems();
-  }
+  bool get showWeightField => selectedServiceType?.requiresWeight == true;
+  bool get showPremiumSwitch => selectedServiceType?.supportsPremium == true;
+  String? get pricingType => selectedServiceType?.pricingType;
 
-  void _onPremiumChanged(String articleId, bool value) {
-    setState(() {
-      premiums[articleId] = value;
-    });
-    _updateDraftItems();
-  }
-
-  void _updateDraftItems() {
-    final items = <FlashOrderDraftItem>[];
+  List<Widget> _buildArticleCatalog() {
+    Map<String, List<Map<String, dynamic>>> couplesByCategory = {};
     for (var couple in couples) {
-      final articleId = couple['article_id'];
-      final quantity = quantities[articleId] ?? 0;
-      final isPremium = premiums[articleId] ?? false;
-      if (quantity > 0) {
-        items.add(FlashOrderDraftItem(
-          articleId: articleId,
-          quantity: quantity,
-          isPremium: isPremium,
-          serviceId: selectedService?.id,
-          unitPrice: isPremium
-              ? (couple['premium_price'] ?? couple['base_price'] ?? 0)
-              : (couple['base_price'] ?? 0),
-          articleName: couple['article_name'] ?? articleId,
+      final catId = couple['article_category_id'] ?? 'Autres';
+      couplesByCategory.putIfAbsent(catId, () => []).add(couple);
+    }
+    List<Widget> widgets = [];
+    couplesByCategory.forEach((catId, couplesList) {
+      String? categoryName = couplesList.isNotEmpty
+          ? couplesList.first['article_category_name']
+          : null;
+      widgets.add(Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(
+          categoryName ?? catId,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+      ));
+      for (var couple in couplesList) {
+        final articleId = couple['article_id'];
+        final articleName = couple['article_name'] ?? '';
+        final articleDescription = couple['article_description'] ?? '';
+        final basePrice =
+            double.tryParse(couple['base_price'].toString()) ?? 0.0;
+        final premiumPrice =
+            double.tryParse(couple['premium_price'].toString()) ?? 0.0;
+        final displayPrice =
+            showPremiumSwitch && isPremium ? premiumPrice : basePrice;
+        widgets.add(Card(
+          margin: EdgeInsets.symmetric(vertical: 4),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(articleName,
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      if (articleDescription.isNotEmpty)
+                        Text(articleDescription,
+                            style: TextStyle(
+                                color: Colors.grey[600], fontSize: 13)),
+                      Text('Prix: ${displayPrice} F CFA',
+                          style: TextStyle(color: Colors.blueAccent)),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.remove_circle_outline),
+                      onPressed: () {
+                        final currentQty = widget.controller.draft.value.items
+                                .firstWhereOrNull(
+                                    (i) => i.articleId == articleId)
+                                ?.quantity ??
+                            0;
+                        final newQty = (currentQty - 1).clamp(0, 999);
+                        _onQuantityChanged(articleId, newQty,
+                            isPremium: showPremiumSwitch ? isPremium : null,
+                            serviceId: couple['service_id']);
+                      },
+                    ),
+                    Text(
+                        '${widget.controller.draft.value.items.firstWhereOrNull((i) => i.articleId == articleId)?.quantity ?? 0}',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: Icon(Icons.add_circle_outline),
+                      onPressed: () {
+                        final currentQty = widget.controller.draft.value.items
+                                .firstWhereOrNull(
+                                    (i) => i.articleId == articleId)
+                                ?.quantity ??
+                            0;
+                        final newQty = (currentQty + 1).clamp(0, 999);
+                        _onQuantityChanged(articleId, newQty,
+                            isPremium: showPremiumSwitch ? isPremium : null,
+                            serviceId: couple['service_id']);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ));
       }
-    }
-    widget.controller.setDraftField('items', items);
-  }
-
-  int _calculateTotal() {
-    int total = 0;
-    for (var couple in couples) {
-      final articleId = couple['article_id'];
-      final quantity = quantities[articleId] ?? 0;
-      final basePrice = (couple['base_price'] ?? 0) as num;
-      final premiumPrice = (couple['premium_price'] ?? basePrice) as num;
-      final isPremium = premiums[articleId] ?? false;
-      if (quantity > 0) {
-        total +=
-            quantity * (isPremium ? premiumPrice.toInt() : basePrice.toInt());
+    });
+    // Estimation du total avec les bons prix
+    int sum = 0;
+    for (var item in widget.controller.draft.value.items) {
+      final couple =
+          couples.firstWhereOrNull((c) => c['article_id'] == item.articleId);
+      if (couple != null) {
+        final basePrice =
+            double.tryParse(couple['base_price'].toString()) ?? 0.0;
+        final premiumPrice =
+            double.tryParse(couple['premium_price'].toString()) ?? 0.0;
+        final displayPrice =
+            showPremiumSwitch && isPremium ? premiumPrice : basePrice;
+        sum += item.quantity * displayPrice.toInt();
       }
     }
-    return total;
-  }
-
-  Widget _buildTotalSection() {
-    final total = _calculateTotal();
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blueAccent.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
+    widgets.add(Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Text(
+        'Estimation totale : ${sum.toStringAsFixed(2)} F CFA',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: AppColors.orange,
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Total estimé',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          Text('$total F CFA',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.orange)),
-        ],
-      ),
-    );
+    ));
+    return widgets;
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool canProceed = selectedServiceType != null &&
+        selectedService != null &&
+        couples.isNotEmpty &&
+        widget.controller.draft.value.items.isNotEmpty;
     return isLoading
         ? Center(child: CircularProgressIndicator())
-        : Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 16,
-                    offset: Offset(0, 8),
+        : Container(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Type de service', style: AppTextStyles.h3),
+                SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<ServiceType>(
+                  value: selectedServiceType,
+                  decoration: InputDecoration(
+                      labelText: 'Sélectionner le type de service'),
+                  items: serviceTypes
+                      .map((type) => DropdownMenuItem(
+                            value: type,
+                            child: Text(type.name),
+                          ))
+                      .toList(),
+                  onChanged: _onServiceTypeChanged,
+                ),
+                SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<Service>(
+                  value: selectedService,
+                  decoration:
+                      InputDecoration(labelText: 'Sélectionner le service'),
+                  items: services
+                      .map((service) => DropdownMenuItem(
+                            value: service,
+                            child: Text(service.name),
+                          ))
+                      .toList(),
+                  onChanged: _onServiceChanged,
+                ),
+                SizedBox(height: AppSpacing.md),
+                if (selectedServiceType != null &&
+                    pricingType == 'FIXED' &&
+                    couples.isNotEmpty)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _buildArticleCatalog(),
+                      ),
+                    ),
+                  ),
+                if (selectedServiceType != null &&
+                    pricingType == 'WEIGHT_BASED') ...[
+                  Text('Poids (kg)', style: AppTextStyles.h3),
+                  SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    initialValue: weight?.toString() ?? '',
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (val) {
+                      setState(() {
+                        weight = double.tryParse(val);
+                      });
+                    },
                   ),
                 ],
-                border: Border.all(color: Colors.white.withOpacity(0.3)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 16),
-                  Text('Type de service',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  SizedBox(height: 12),
-                  DropdownButton<ServiceType>(
-                    value: selectedServiceType,
-                    hint: Text('Sélectionner le type de service'),
-                    items: serviceTypes
-                        .map((type) => DropdownMenuItem(
-                              value: type,
-                              child: Text(type.name),
-                            ))
-                        .toList(),
-                    onChanged: _onServiceTypeChanged,
+                if (showPremiumSwitch) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Switch(
+                        value: isPremium,
+                        onChanged: (val) {
+                          setState(() {
+                            isPremium = val;
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      Text('Premium'),
+                    ],
                   ),
-                  SizedBox(height: 16),
-                  Text('Service',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  SizedBox(height: 12),
-                  DropdownButton<Service>(
-                    value: selectedService,
-                    hint: Text('Sélectionner le service'),
-                    items: services
-                        .map((service) => DropdownMenuItem(
-                              value: service,
-                              child: Text(service.name),
-                            ))
-                        .toList(),
-                    onChanged: _onServiceChanged,
-                  ),
-                  SizedBox(height: 16),
-                  Text('Articles / Couples',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  SizedBox(height: 12),
-                  if (couples.isNotEmpty)
-                    ...couples.map((couple) {
-                      final articleId = couple['article_id'];
-                      return Card(
-                        elevation: 0,
-                        color: Colors.white.withOpacity(0.12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(couple['article_name'] ?? '',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold)),
-                                    SizedBox(height: 4),
-                                    Text(
-                                        'Prix: ${couple['base_price'] ?? ''} F CFA'),
-                                    if (couple['premium_price'] != null)
-                                      Text(
-                                          'Premium: ${couple['premium_price']} F CFA',
-                                          style: TextStyle(
-                                              color: Colors.blueAccent)),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        icon: Icon(Icons.remove_circle_outline),
-                                        onPressed: () {
-                                          final current =
-                                              quantities[articleId] ?? 0;
-                                          if (current > 0)
-                                            _onQuantityChanged(
-                                                articleId, current - 1);
-                                        },
-                                      ),
-                                      Text('${quantities[articleId] ?? 0}',
-                                          style: TextStyle(fontSize: 16)),
-                                      IconButton(
-                                        icon: Icon(Icons.add_circle_outline),
-                                        onPressed: () {
-                                          final current =
-                                              quantities[articleId] ?? 0;
-                                          _onQuantityChanged(
-                                              articleId, current + 1);
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    children: [
-                                      Switch(
-                                        value: premiums[articleId] ?? false,
-                                        onChanged: (val) =>
-                                            _onPremiumChanged(articleId, val),
-                                        activeColor: Colors.blueAccent,
-                                      ),
-                                      Text('Premium',
-                                          style: TextStyle(
-                                              color: Colors.blueAccent)),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                  SizedBox(height: 16),
-                  _buildTotalSection(),
-                  SizedBox(height: 16),
                 ],
-              ),
+                // Suppression du bouton redondant ici
+              ],
             ),
           );
   }

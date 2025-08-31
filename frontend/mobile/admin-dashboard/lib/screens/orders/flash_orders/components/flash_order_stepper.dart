@@ -1,26 +1,24 @@
+import 'package:admin/screens/orders/flash_orders/components/flash_steps/flash_client_step.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../controllers/flash_order_stepper_controller.dart';
-import '../../../../models/flash_order_draft.dart';
-import '../../new_order/components/steps/client_selection_step.dart';
-import '../../new_order/components/steps/service_selection_step.dart';
-import '../../new_order/components/steps/order_address_step.dart';
-import '../../new_order/components/steps/order_extra_fields_step.dart';
-import '../../new_order/components/steps/order_summary_step.dart';
+import 'flash_steps/flash_service_step.dart';
+import 'flash_steps/flash_address_step.dart';
+import 'flash_steps/flash_extra_fields_step.dart';
+import 'flash_steps/flash_summary_step.dart';
 import '../../../../widgets/shared/glass_button.dart';
 
 class FlashOrderStepper extends StatelessWidget {
   final FlashOrderStepperController controller =
       Get.find<FlashOrderStepperController>();
 
-  final List<Widget> steps = [
-    // Use normal step widgets for now (will operate on OrdersController context)
-    ClientSelectionStep(),
-    ServiceSelectionStep(),
-    OrderAddressStep(),
-    OrderExtraFieldsStep(),
-    OrderSummaryStep(),
-  ];
+  List<Widget> get steps => [
+        FlashClientStep(controller: controller),
+        FlashServiceStep(controller: controller),
+        FlashAddressStep(controller: controller),
+        FlashExtraFieldsStep(controller: controller),
+        FlashSummaryStep(controller: controller),
+      ];
 
   @override
   Widget build(BuildContext context) {

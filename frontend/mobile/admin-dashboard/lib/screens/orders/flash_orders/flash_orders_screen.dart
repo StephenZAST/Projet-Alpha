@@ -4,6 +4,7 @@ import '../../../controllers/flash_orders_controller.dart';
 import 'components/flash_order_card.dart';
 import 'components/flash_order_stepper.dart';
 import '../../../controllers/flash_order_stepper_controller.dart';
+import '../../../routes/admin_routes.dart';
 
 class FlashOrdersScreen extends GetView<FlashOrdersController> {
   const FlashOrdersScreen({Key? key}) : super(key: key);
@@ -13,6 +14,12 @@ class FlashOrdersScreen extends GetView<FlashOrdersController> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Commandes Flash'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Get.offAllNamed(AdminRoutes.orders);
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

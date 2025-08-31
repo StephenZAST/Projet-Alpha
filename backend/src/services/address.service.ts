@@ -43,6 +43,13 @@ export class AddressService {
     isDefault: boolean = false
   ): Promise<Address> {
     try {
+      // Si isDefault, mettre toutes les autres adresses de ce user à false
+      if (isDefault) {
+        await prisma.addresses.updateMany({
+          where: { userId },
+          data: { is_default: false }
+        });
+      }
       const address = await prisma.addresses.create({
         data: {
           userId: userId,
@@ -135,6 +142,14 @@ export class AddressService {
 
     if (!existingAddress) {
       throw new Error('Address not found or unauthorized');
+    }
+
+    // Si isDefault, mettre toutes les autres adresses de ce user à false
+    if (isDefault) {
+      await prisma.addresses.updateMany({
+        where: { userId, NOT: { id: addressId } },
+        data: { is_default: false }
+      });
     }
 
     const updatedAddress = await prisma.addresses.update({

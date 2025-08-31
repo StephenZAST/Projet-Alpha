@@ -70,6 +70,7 @@ class _OrderAddressDialogState extends State<OrderAddressDialog>
                     initialAddress: widget.initialAddress,
                     onAddressSelected: (address) {
                       controller.loadOrderAddressEditForm(address);
+                      controller.setOrderAddressEditField('isDefault', true);
                     },
                   ),
                   ClientAddressesTab(
@@ -77,10 +78,12 @@ class _OrderAddressDialogState extends State<OrderAddressDialog>
                     selectedAddress: _addressFromForm(controller),
                     onAddressSelected: (address) {
                       controller.loadOrderAddressEditForm(address);
+                      controller.setOrderAddressEditField('isDefault', true);
                       _tabController.animateTo(0);
                     },
                     onAddNewAddress: () {
                       controller.clearOrderAddressEditForm();
+                      controller.setOrderAddressEditField('isDefault', true);
                       _tabController.animateTo(0);
                     },
                   ),

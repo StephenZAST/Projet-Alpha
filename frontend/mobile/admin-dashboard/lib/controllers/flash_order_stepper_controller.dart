@@ -1,9 +1,46 @@
 import 'package:admin/services/address_service.dart';
+import 'package:admin/services/order_service.dart';
+import 'package:admin/controllers/flash_orders_controller.dart';
+import 'package:admin/routes/admin_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/flash_order_draft.dart';
 
 class FlashOrderStepperController extends GetxController {
+  // Ajoute ou met à jour un item dans le draft (similaire à OrdersController)
+  void updateDraftItemQuantity(String articleId, int quantity,
+      {bool isPremium = false, String? serviceId}) {
+    final items = draft.value.items;
+    final idx = items.indexWhere((i) => i.articleId == articleId);
+    if (quantity > 0) {
+      if (idx >= 0) {
+        items[idx].quantity = quantity;
+        items[idx].isPremium = isPremium;
+        if (serviceId != null) items[idx].serviceId = serviceId;
+      } else {
+        items.add(FlashOrderDraftItem(
+          articleId: articleId,
+          quantity: quantity,
+          isPremium: isPremium,
+          serviceId: serviceId,
+        ));
+      }
+    } else if (idx >= 0) {
+      items.removeAt(idx);
+    }
+    draft.refresh();
+    print(
+        '[FLASH_CONTROLLER] updateDraftItemQuantity: $articleId -> $quantity, premium=$isPremium, serviceId=$serviceId');
+    print('[FLASH_CONTROLLER] Draft items:');
+    print(items.map((e) => e.toPayload()).toList());
+  }
+
+  // Ajoute ou met à jour la liste des items dans le draft
+  void setDraftItems(List<FlashOrderDraftItem> items) {
+    draft.value.items = items;
+    draft.refresh();
+  }
+
   // Synchronise les articles du draft avec les couples de prix
   void syncSelectedItemsFrom({
     required List<Map<String, dynamic>> couples,
@@ -48,8 +85,16 @@ class FlashOrderStepperController extends GetxController {
                   ))
               .toList()
           : [],
-      collectionDate: flashOrder.collectionDate,
-      deliveryDate: flashOrder.deliveryDate,
+      collectionDate: flashOrder.collectionDate != null
+          ? (flashOrder.collectionDate is DateTime
+              ? flashOrder.collectionDate
+              : DateTime.tryParse(flashOrder.collectionDate))
+          : null,
+      deliveryDate: flashOrder.deliveryDate != null
+          ? (flashOrder.deliveryDate is DateTime
+              ? flashOrder.deliveryDate
+              : DateTime.tryParse(flashOrder.deliveryDate))
+          : null,
       note: flashOrder.note,
     );
     // Log complet du payload reçu pour debug
@@ -127,14 +172,10 @@ class FlashOrderStepperController extends GetxController {
     errorMessage.value = '';
     final d = draft.value;
     // Validation des champs obligatoires
-    if (d.userId == null ||
-        d.userId!.isEmpty ||
-        d.addressId == null ||
-        d.addressId!.isEmpty ||
+    if (d.orderId == null ||
+        d.orderId!.isEmpty ||
         d.serviceId == null ||
         d.serviceId!.isEmpty ||
-        d.serviceTypeId == null ||
-        d.serviceTypeId!.isEmpty ||
         d.items.isEmpty) {
       isLoading.value = false;
       errorMessage.value = 'Veuillez remplir tous les champs obligatoires.';
@@ -147,8 +188,44 @@ class FlashOrderStepperController extends GetxController {
       return;
     }
     try {
-      // TODO: Appeler l'API de conversion avec draft.value.toPayload()
-      // await FlashOrderService.completeFlashOrder(draft.value.toPayload());
+      // Construction du payload conforme au backend
+      final payload = <String, dynamic>{
+        'userId': d.userId,
+        'addressId': d.addressId,
+        'serviceId': d.serviceId,
+        'serviceTypeId': d.serviceTypeId,
+        'items': d.items
+            .map((item) => {
+                  'articleId': item.articleId,
+                  'quantity': item.quantity,
+                  'isPremium': item.isPremium,
+                  'serviceId': item.serviceId ?? d.serviceId,
+                  'serviceTypeId': d.serviceTypeId,
+                })
+            .toList(),
+        'note': d.note,
+        'paymentMethod': d.paymentMethod,
+        'affiliateCode': d.affiliateCode,
+        'recurrenceType': d.recurrenceType,
+        'nextRecurrenceDate': d.nextRecurrenceDate != null
+            ? d.nextRecurrenceDate!.toIso8601String()
+            : null,
+      };
+      if (d.collectionDate != null) {
+        payload['collectionDate'] = d.collectionDate!.toUtc().toIso8601String();
+      }
+      if (d.deliveryDate != null) {
+        payload['deliveryDate'] = d.deliveryDate!.toUtc().toIso8601String();
+      }
+      payload.removeWhere((k, v) => v == null);
+      print('[FLASH_CONVERSION] Payload envoyé au backend :');
+      print(payload);
+      await OrderService.completeFlashOrder(d.orderId!, payload);
+      // Rafraîchir la liste des commandes flash
+      final flashOrdersController = Get.find<FlashOrdersController>();
+      await flashOrdersController.refreshOrders();
+      // Naviguer vers la liste des commandes flash
+      Get.offAllNamed(AdminRoutes.flashOrders);
       Get.snackbar(
         'Succès',
         'Commande flash convertie avec succès !',

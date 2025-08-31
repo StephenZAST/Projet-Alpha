@@ -41,7 +41,10 @@ export const validateCreateFlashOrder = (req: Request, res: Response, next: Next
 export const validateCompleteFlashOrder = (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log('[FlashOrderValidator] Request body:', JSON.stringify(req.body, null, 2));
-    
+    // Log type et valeur des dates
+    console.log('[FlashOrderValidator] Type collectionDate:', typeof req.body.collectionDate, req.body.collectionDate);
+    console.log('[FlashOrderValidator] Type deliveryDate:', typeof req.body.deliveryDate, req.body.deliveryDate);
+
     // Vérifier que les items sont bien un tableau
     if (!Array.isArray(req.body.items)) {
       console.error('[FlashOrderValidator] Items must be an array');
@@ -57,7 +60,7 @@ export const validateCompleteFlashOrder = (req: Request, res: Response, next: Ne
     });
 
     completeFlashOrderSchema.parse(req.body);
-    
+
     // Convertir les dates en format ISO
     if (req.body.collectionDate) {
       req.body.collectionDate = new Date(req.body.collectionDate).toISOString();

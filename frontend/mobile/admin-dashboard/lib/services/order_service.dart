@@ -1,5 +1,3 @@
-import 'package:admin/models/flash_order_update.dart';
-
 import '../models/order.dart';
 import '../models/orders_page_data.dart';
 import 'api_service.dart';
@@ -541,18 +539,24 @@ class OrderService {
   }
 
   static Future<Order> completeFlashOrder(
-      String orderId, FlashOrderUpdate updateData) async {
+      String orderId, Map<String, dynamic> payload) async {
     try {
       print('[OrderService] Completing flash order: $orderId');
-      print('[OrderService] Update data: ${updateData.toJson()}');
+      print('[OrderService] Update data: $payload');
 
       final response = await _api.patch(
         '$_baseUrl/flash/$orderId/complete',
-        data: updateData.toJson(),
+        data: payload,
       );
 
       if (response.data != null && response.data['data'] != null) {
-        return Order.fromJson(response.data['data']['order']);
+        // Certains backends renvoient data.order, d'autres data directement
+        final data = response.data['data'];
+        if (data is Map && data.containsKey('order')) {
+          return Order.fromJson(data['order']);
+        } else {
+          return Order.fromJson(data);
+        }
       }
 
       throw 'Réponse invalide du serveur';

@@ -1043,7 +1043,7 @@ class OrdersController extends GetxController {
         collectionDate: collectionDate.value,
         deliveryDate: deliveryDate.value,
       );
-      await OrderService.completeFlashOrder(orderId, updateData);
+      await OrderService.completeFlashOrder(orderId, updateData.toJson());
       await loadOrdersPage(
         page: currentPage.value,
         limit: itemsPerPage.value,
