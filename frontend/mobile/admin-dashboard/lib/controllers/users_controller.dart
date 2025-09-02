@@ -22,11 +22,11 @@ enum SortOrder { asc, desc }
 
 class UsersController extends GetxController {
   // État observable
-  final users = <User>[].obs;
-  final isLoading = false.obs;
-  final hasError = false.obs;
-  final errorMessage = ''.obs;
-  final selectedUser = Rxn<User>();
+  final RxList<User> users = <User>[].obs;
+  final RxBool isLoading = false.obs;
+  final RxBool hasError = false.obs;
+  final RxString errorMessage = ''.obs;
+  final Rxn<User> selectedUser = Rxn<User>();
 
   // Statistiques
   final clientCount = 0.obs;
@@ -63,7 +63,7 @@ class UsersController extends GetxController {
   final viewMode = Rx<ViewMode>(ViewMode.list);
   final sortField = Rx<SortField>(SortField.createdAt);
   final sortOrder = Rx<SortOrder>(SortOrder.desc);
-  final selectedRoleString = 'all'.obs; // Nouvelle propriété ajoutée
+  final selectedRoleString = 'ALL'.obs; // Initialisé en majuscules pour l'API
   final selectedFilter = UserSearchFilter.all.obs;
 
   @override
@@ -137,7 +137,7 @@ class UsersController extends GetxController {
 
       // Correction du paramètre role pour le filtrage
       final roleParam =
-          (selectedRoleString.value == '' || selectedRoleString.value == 'all')
+          (selectedRoleString.value == '' || selectedRoleString.value == 'ALL')
               ? null
               : selectedRoleString.value.toUpperCase();
       print('[UsersController] Fetching with role: $roleParam');
@@ -257,6 +257,8 @@ class UsersController extends GetxController {
 
   /// Méthode centrale harmonisée pour la recherche, le filtrage et la pagination
   Future<void> fetchUsersOrSearch({bool resetPage = false}) async {
+    print(
+        '[UsersController] fetchUsersOrSearch: users before API = ${users.length}');
     try {
       isLoading.value = true;
       if (resetPage) currentPage.value = 1;
@@ -273,9 +275,14 @@ class UsersController extends GetxController {
           '[UsersController] fetchUsersOrSearch: rôle envoyé = \'${selectedRoleString.value}\'');
 
       dynamic result;
-      if (hasSearch || hasRole || hasAdvanced) {
-        // Recherche avancée (toujours via /api/users/search)
-        final filter = selectedFilter.value; // Utilise le filtre sélectionné
+      // Correction : n'utiliser /api/users que si aucun filtre ou recherche n'est actif
+      if (!hasSearch && !hasRole && !hasAdvanced) {
+        result = await UserService.getUsers(
+          page: currentPage.value,
+          limit: itemsPerPage.value,
+        );
+      } else {
+        final filter = selectedFilter.value;
         result = await UserService.searchUsers(
           query: searchQuery.value,
           filter: filter.toString().split('.').last,
@@ -283,16 +290,12 @@ class UsersController extends GetxController {
           page: currentPage.value,
           limit: itemsPerPage.value,
         );
-      } else {
-        // Liste simple (aucun filtre)
-        result = await UserService.getUsers(
-          page: currentPage.value,
-          limit: itemsPerPage.value,
-        );
       }
 
       // Toujours mettre à jour la pagination, même si la liste est vide
       users.value = result.items;
+      print(
+          '[UsersController] fetchUsersOrSearch: users after API = ${users.length}');
       totalPages.value = result.totalPages ?? 1;
       totalUsers.value = result.total ?? 0;
       currentPage.value = result.currentPage ?? 1;
@@ -394,7 +397,7 @@ class UsersController extends GetxController {
     endDate.value = null;
     phoneFilter.value = '';
     selectedRole.value = null;
-    selectedRoleString.value = 'all';
+    selectedRoleString.value = 'ALL'; // Correction: utiliser 'ALL' au lieu de 'all'
     searchQuery.value = '';
     fetchUsersOrSearch(resetPage: true);
   }

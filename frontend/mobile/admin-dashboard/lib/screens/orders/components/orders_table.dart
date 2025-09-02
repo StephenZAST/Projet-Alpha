@@ -18,200 +18,157 @@ class OrdersTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // En-tête fixe
-        Container(
-          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-              ),
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                  flex: 1, child: Text('ID', style: AppTextStyles.bodyBold)),
-              Expanded(
-                  flex: 2,
-                  child: Text('Client', style: AppTextStyles.bodyBold)),
-              Expanded(
-                  flex: 2, child: Text('Date', style: AppTextStyles.bodyBold)),
-              Expanded(
-                  flex: 1,
-                  child: Text('Montant', style: AppTextStyles.bodyBold)),
-              Expanded(
-                  flex: 2,
-                  child: Text('Statut', style: AppTextStyles.bodyBold)),
-              Expanded(
-                  flex: 1,
-                  child: Text('Actions', style: AppTextStyles.bodyBold)),
-            ],
-          ),
-        ),
-        // Corps de la table avec scroll
-        Expanded(
-          child: ListView.builder(
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              return Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                    ),
-                  ),
-                ),
-                child: InkWell(
-                  onTap: () => onOrderSelect(order.id),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(flex: 1, child: _buildIdCell(order)),
-                        Expanded(
-                            flex: 2, child: _buildClientCell(order, context)),
-                        Expanded(
-                            flex: 2, child: _buildDateCell(order, context)),
-                        Expanded(
-                            flex: 1, child: _buildAmountCell(order, context)),
-                        Expanded(flex: 2, child: _buildStatusCell(order)),
-                        Expanded(flex: 1, child: _buildActionsCell(order)),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildIdCell(Order order) {
-    return Text(
-      '#${order.id}',
-      style: AppTextStyles.bodySmall.copyWith(
-        color: order.isFlashOrder ? AppColors.warning : AppColors.primary,
-        fontWeight: FontWeight.w600,
-      ),
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildClientCell(Order order, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (order.isFlashOrder)
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            margin: EdgeInsets.only(bottom: 4),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.1),
-              borderRadius: AppRadius.radiusSM,
-            ),
-            child: Text(
-              'FLASH',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.warning,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        Text(
-          order.customerName ?? 'N/A',
-          style: AppTextStyles.bodySmall.copyWith(
-            fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.textLight : AppColors.textPrimary,
-          ),
-        ),
-        if (order.customerEmail != null)
-          Text(
-            order.customerEmail!,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.textLight.withOpacity(0.7)
-                  : AppColors.textSecondary,
-              fontSize: 11,
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildDateCell(Order order, BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Text(
-      DateFormat('dd/MM/yyyy HH:mm').format(order.createdAt),
-      style: AppTextStyles.bodySmall.copyWith(
-        color: isDark ? AppColors.textLight : AppColors.textPrimary,
-      ),
-    );
-  }
-
-  Widget _buildAmountCell(Order order, BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currencyFormat = NumberFormat.currency(
-      locale: 'fr_FR',
-      symbol: 'fcfa',
-      decimalDigits: 0,
-    );
-    return Text(
-      currencyFormat.format(order.totalAmount),
-      style: AppTextStyles.bodySmall.copyWith(
-        fontWeight: FontWeight.w600,
-        fontStyle: order.isFlashOrder && order.totalAmount == 0
-            ? FontStyle.italic
-            : FontStyle.normal,
-        color: isDark ? AppColors.textLight : AppColors.textPrimary,
-      ),
-    );
-  }
-
-  Widget _buildStatusCell(Order order) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: 4,
-      ),
       decoration: BoxDecoration(
-        color: _getStatusColor(order.status).withOpacity(0.1),
-        borderRadius: AppRadius.radiusSM,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (order.isFlashOrder)
-            Padding(
-              padding: EdgeInsets.only(right: 4),
-              child: Icon(
-                Icons.flash_on,
-                size: 14,
-                color: AppColors.warning,
-              ),
-            ),
-          Icon(
-            _getStatusIcon(order.status),
-            size: 14,
-            color: _getStatusColor(order.status),
-          ),
-          SizedBox(width: 4),
-          Text(
-            _getStatusLabel(order.status),
-            style: AppTextStyles.bodySmall.copyWith(
-              color: _getStatusColor(order.status),
-              fontWeight: FontWeight.w500,
-            ),
+        color: Theme.of(context).cardColor,
+        borderRadius: AppRadius.radiusMD,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
+      ),
+      child: Column(
+        children: [
+          // Header row
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              border: Border(
+                bottom: BorderSide(color: Theme.of(context).dividerColor),
+              ),
+              borderRadius: BorderRadius.only(
+                topLeft: AppRadius.radiusMD.topLeft,
+                topRight: AppRadius.radiusMD.topRight,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                    flex: 2, child: Text('ID', style: AppTextStyles.bodyBold)),
+                Expanded(
+                    flex: 3,
+                    child: Text('Client', style: AppTextStyles.bodyBold)),
+                Expanded(
+                    flex: 3,
+                    child: Text('Date', style: AppTextStyles.bodyBold)),
+                Expanded(
+                    flex: 3,
+                    child: Text('Montant', style: AppTextStyles.bodyBold)),
+                Expanded(
+                    flex: 4,
+                    child: Text('Statut', style: AppTextStyles.bodyBold)),
+                Expanded(
+                    flex: 3,
+                    child: Text('Actions', style: AppTextStyles.bodyBold)),
+              ],
+            ),
+          ),
+          // Data rows
+          if (orders.isEmpty)
+            Container(
+              height: 120,
+              alignment: Alignment.center,
+              child: Text('Aucune commande trouvée',
+                  style: AppTextStyles.bodyMedium),
+            )
+          else
+            Expanded(
+              child: ListView.separated(
+                itemCount: orders.length,
+                separatorBuilder: (_, __) => Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final order = orders[index];
+                  return InkWell(
+                    onTap: () => onOrderSelect(order.id),
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: index % 2 == 0
+                            ? (isDark ? AppColors.gray900 : AppColors.gray50)
+                            : Colors.transparent,
+                      ),
+                      child: Row(
+                        children: [
+                          _dataCell(order.id, flex: 2),
+                          _dataCell(order.customerName ?? 'N/A', flex: 3),
+                          _dataCell(
+                              DateFormat('dd/MM/yyyy HH:mm')
+                                  .format(order.createdAt),
+                              flex: 3),
+                          _dataCell(
+                              NumberFormat.currency(
+                                      locale: 'fr_FR',
+                                      symbol: 'fcfa',
+                                      decimalDigits: 0)
+                                  .format(order.totalAmount),
+                              flex: 3),
+                          _statusCell(order, flex: 4),
+                          Expanded(flex: 3, child: _buildActionsCell(order)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dataCell(String value, {int flex = 1}) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        value,
+        style: AppTextStyles.bodySmall,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _statusCell(Order order, {int flex = 1}) {
+    return Expanded(
+      flex: flex,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+        decoration: BoxDecoration(
+          color: _getStatusColor(order.status).withOpacity(0.1),
+          borderRadius: AppRadius.radiusSM,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (order.isFlashOrder)
+              Padding(
+                padding: EdgeInsets.only(right: 4),
+                child: Icon(
+                  Icons.flash_on,
+                  size: 14,
+                  color: AppColors.warning,
+                ),
+              ),
+            Icon(
+              _getStatusIcon(order.status),
+              size: 14,
+              color: _getStatusColor(order.status),
+            ),
+            SizedBox(width: 4),
+            Text(
+              _getStatusLabel(order.status),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: _getStatusColor(order.status),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

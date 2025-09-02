@@ -1,22 +1,41 @@
+import 'package:admin/screens/users/components/users_table.dart';
+import 'package:admin/widgets/pagination_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/users_controller.dart';
 import 'components/user_stats_grid.dart';
-import 'components/user_advanced_search_bar.dart';
-import 'components/view_toggle.dart';
 import 'components/active_filter_indicator.dart';
-import 'components/adaptive_user_view.dart';
 import '../../widgets/shared/glass_button.dart';
 import 'components/user_create_dialog.dart';
 
-class UsersScreen extends StatelessWidget {
+class UsersScreen extends StatefulWidget {
   const UsersScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<UsersController>();
+  State<UsersScreen> createState() => _UsersScreenState();
+}
 
+class _UsersScreenState extends State<UsersScreen> {
+  late UsersController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    print('[UsersScreen] initState: Initialisation');
+    
+    // S'assurer que le contrôleur existe et est unique
+    if (Get.isRegistered<UsersController>()) {
+      controller = Get.find<UsersController>();
+    } else {
+      controller = Get.put(UsersController(), permanent: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print('[UsersScreen] build: Début de la construction');
+    
     return Scaffold(
       body: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -43,55 +62,112 @@ class UsersScreen extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          // Bouton Nouvel utilisateur (glassy)
                           GlassButton(
                             label: 'Nouvel utilisateur',
                             icon: Icons.person_add_alt_1,
                             variant: GlassButtonVariant.primary,
                             onPressed: () {
+                              print(
+                                  '[UsersScreen] Bouton Nouvel utilisateur cliqué');
                               Get.dialog(UserCreateDialog(),
                                   barrierDismissible: false);
                             },
                           ),
                           const SizedBox(width: 8),
-                          // Bouton refresh (glassy)
                           GlassButton(
+                            label: 'Rafraîchir',
                             icon: Icons.refresh,
-                            label: '',
                             variant: GlassButtonVariant.secondary,
                             size: GlassButtonSize.small,
-                            onPressed: controller
-                                .fetchUsers, // À adapter selon ton controller
+                            onPressed: () {
+                              print('[UsersScreen] Bouton Rafraîchir cliqué');
+                              controller.fetchUsers();
+                            },
                           ),
                         ],
                       ),
                     ],
                   ),
                   SizedBox(height: 24),
-                  // Barre de recherche et toggle view
-                  Row(
-                    children: [
-                      Expanded(child: UserAdvancedSearchBar()),
-                      SizedBox(width: 16),
-                      ViewToggle(),
-                    ],
-                  ),
                 ],
               ),
             ),
             SizedBox(height: 16),
-
             // Indicateur de filtre actif
             ActiveFilterIndicator(),
             SizedBox(height: 16),
-
             // Stats cards
             UserStatsGrid(),
             SizedBox(height: 16),
-
-            // Liste/Grille adaptative des utilisateurs
+            // Tableau des utilisateurs centralisé
             Expanded(
-              child: AdaptiveUserView(),
+              child: GetX<UsersController>(
+                builder: (controller) {
+                  print('[UsersScreen] GetX builder: UsersTable');
+                  print('[UsersScreen] Users count: ${controller.users.length}');
+                  
+                  if (controller.isLoading.value) {
+                    return Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                  
+                  if (controller.hasError.value) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                          SizedBox(height: 16),
+                          Text(
+                            'Erreur de chargement',
+                            style: AppTextStyles.h3,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            controller.errorMessage.value,
+                            style: AppTextStyles.bodyMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => controller.fetchUsers(),
+                            child: Text('Réessayer'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  
+                  return UsersTable(
+                    users: controller.users,
+                    onUserSelect: (id) {},
+                    onEdit: (id) {},
+                    onDelete: (id) {},
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 12),
+            // Pagination en dehors de l'Expanded
+            GetX<UsersController>(
+              builder: (controller) {
+                print('[UsersScreen] GetX builder: PaginationControls');
+                return controller.totalPages.value > 1
+                    ? PaginationControls(
+                        currentPage: controller.currentPage.value,
+                        totalPages: controller.totalPages.value,
+                        onPrevious: controller.previousPage,
+                        onNext: controller.nextPage,
+                        itemCount: controller.users.length,
+                        totalItems: controller.totalUsers.value,
+                        itemsPerPage: controller.itemsPerPage.value,
+                        onItemsPerPageChanged: (itemsPerPage) =>
+                            controller.setItemsPerPage(
+                                itemsPerPage ?? controller.itemsPerPage.value),
+                      )
+                    : SizedBox.shrink();
+              },
             ),
           ],
         ),

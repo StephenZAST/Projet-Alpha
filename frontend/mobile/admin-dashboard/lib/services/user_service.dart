@@ -40,11 +40,12 @@ class UserService {
           .map((json) => User.fromJson(json))
           .toList();
 
+      final pagination = response.data['pagination'] ?? {};
       return PaginatedResponse<User>(
         items: users,
-        total: response.data['total'] ?? 0,
-        currentPage: response.data['currentPage'] ?? page,
-        totalPages: response.data['totalPages'] ?? 1,
+        total: pagination['total'] ?? users.length,
+        currentPage: pagination['page'] ?? page,
+        totalPages: pagination['totalPages'] ?? 1,
       );
     } catch (e) {
       print('[UserService] Error in getUsers: $e');

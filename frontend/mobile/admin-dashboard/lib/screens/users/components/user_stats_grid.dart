@@ -71,13 +71,13 @@ class UserStatsGrid extends StatelessWidget {
             ),
             _buildStatCard(
               title: 'Total',
-              count: controller.selectedRoleString.value == 'all'
+              count: controller.selectedRoleString.value == 'ALL'
                   ? controller.totalUsers.value
                   : controller.totalUsersCount.value,
               currentCount: controller.users.length,
               icon: Icons.groups_outlined,
               color: AppColors.success,
-              isSelected: controller.selectedRoleString.value == 'all',
+              isSelected: controller.selectedRoleString.value == 'ALL',
               onTap: () {
                 controller.filterByRole(null);
               },

@@ -63,6 +63,7 @@ class OfferList extends StatelessWidget {
                               initialData: offer,
                               onSubmit: (data) {
                                 // Appelle la méthode d'update via callback parent
+                                // ignore: unnecessary_null_comparison
                                 if (onEdit != null) onEdit({...offer, ...data});
                               },
                             ),

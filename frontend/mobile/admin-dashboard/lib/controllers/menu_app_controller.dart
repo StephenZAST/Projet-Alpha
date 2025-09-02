@@ -183,9 +183,9 @@ class MenuAppController extends GetxController {
       case MenuIndices.serviceArticleCouples:
         return ServiceArticleCouplesScreen();
       case MenuIndices.users:
-        // Initialiser le UsersController avant de retourner l'écran
+        // S'assurer que le UsersController est enregistré
         if (!Get.isRegistered<UsersController>()) {
-          Get.put(UsersController());
+          Get.put(UsersController(), permanent: true);
         }
         return UsersScreen();
       case MenuIndices.profile:
