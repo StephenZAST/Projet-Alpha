@@ -58,16 +58,11 @@ class OfferList extends StatelessWidget {
                           label: '',
                           variant: GlassButtonVariant.info,
                           size: GlassButtonSize.small,
-                          onPressed: () => Get.dialog(
-                            OfferFormDialog(
-                              initialData: offer,
-                              onSubmit: (data) {
-                                // Appelle la méthode d'update via callback parent
-                                // ignore: unnecessary_null_comparison
-                                if (onEdit != null) onEdit({...offer, ...data});
-                              },
-                            ),
-                          ),
+                          onPressed: () {
+                            // Appeler directement onEdit avec l'offre complète
+                            // au lieu d'ouvrir un dialog ici
+                            onEdit(offer);
+                          },
                         ),
                         SizedBox(width: 8),
                         GlassButton(

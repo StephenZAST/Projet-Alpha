@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../components/custom_header.dart';
 import '../../constants.dart';
+import '../../services/offer_service.dart';
 import 'offer_list.dart';
 import 'components/offer_form_dialog.dart';
-import '../../services/api_service.dart';
 import '../../widgets/shared/glass_button.dart';
 
 class OffersScreen extends StatefulWidget {
@@ -29,8 +29,7 @@ class _OffersScreenState extends State<OffersScreen> {
   Future<void> _loadOffers() async {
     setState(() => isLoading = true);
     try {
-      final api = ApiService();
-      final result = await api.getOffers();
+      final result = await OfferService.getAllOffersAsMap();
       setState(() => offers = result);
     } catch (e) {
       Get.rawSnackbar(message: 'Erreur chargement des offres: $e');
@@ -40,37 +39,12 @@ class _OffersScreenState extends State<OffersScreen> {
   }
 
   Future<void> _addOffer(Map<String, dynamic> data) async {
-    final api = ApiService();
-    final created = await api.createOffer(data);
-    if (created != null) {
-      Get.rawSnackbar(
-          message: 'Offre créée avec succès',
-          backgroundColor: AppColors.success);
-      setState(() {
-        showForm = false;
-        editingOffer = null;
-      });
-      await _loadOffers();
-    } else {
-      Get.rawSnackbar(
-          message: 'Erreur création offre', backgroundColor: AppColors.error);
-    }
-  }
-
-  Future<void> _editOffer(Map<String, dynamic> offer) async {
-    setState(() {
-      showForm = true;
-      editingOffer = offer;
-    });
-  }
-
-  Future<void> _updateOffer(Map<String, dynamic> data) async {
-    final api = ApiService();
-    if (editingOffer != null) {
-      final updated = await api.updateOffer(editingOffer!['id'], data);
-      if (updated != null) {
+    try {
+      final created = await OfferService.createOfferFromMap(data);
+      if (created != null) {
         Get.rawSnackbar(
-            message: 'Offre modifiée', backgroundColor: AppColors.success);
+            message: 'Offre créée avec succès',
+            backgroundColor: AppColors.success);
         setState(() {
           showForm = false;
           editingOffer = null;
@@ -78,37 +52,92 @@ class _OffersScreenState extends State<OffersScreen> {
         await _loadOffers();
       } else {
         Get.rawSnackbar(
-            message: 'Erreur modification offre',
+            message: 'Erreur création offre', backgroundColor: AppColors.error);
+      }
+    } catch (e) {
+      Get.rawSnackbar(
+          message: 'Erreur création offre: $e', backgroundColor: AppColors.error);
+    }
+  }
+
+  void _editOffer(Map<String, dynamic> offer) {
+    // Vérifier que l'offre a bien un ID
+    if (offer['id'] == null) {
+      Get.rawSnackbar(
+        message: 'Erreur: Offre sans identifiant',
+        backgroundColor: AppColors.error,
+      );
+      return;
+    }
+
+    final String offerId = offer['id'];
+
+    Get.dialog(
+      OfferFormDialog(
+        initialData: offer,
+        onSubmit: (data) async {
+          await _updateOffer(offerId, data);
+        },
+      ),
+    );
+  }
+
+  Future<void> _updateOffer(String offerId, Map<String, dynamic> data) async {
+    try {
+      final updated = await OfferService.updateOfferFromMap(offerId, data);
+
+      if (updated != null) {
+        Get.rawSnackbar(
+            message: 'Offre modifiée avec succès',
+            backgroundColor: AppColors.success);
+        await _loadOffers();
+      } else {
+        Get.rawSnackbar(
+            message: 'Erreur: Aucune donnée retournée du serveur',
             backgroundColor: AppColors.error);
       }
+    } catch (e) {
+      Get.rawSnackbar(
+          message: 'Erreur modification offre: $e',
+          backgroundColor: AppColors.error);
     }
   }
 
   Future<void> _deleteOffer(Map<String, dynamic> offer) async {
-    final api = ApiService();
-    final ok = await api.deleteOffer(offer['id']);
-    if (ok) {
+    try {
+      final ok = await OfferService.deleteOffer(offer['id']);
+      if (ok) {
+        Get.rawSnackbar(
+            message: 'Offre supprimée', backgroundColor: AppColors.success);
+        await _loadOffers();
+      } else {
+        Get.rawSnackbar(
+            message: 'Erreur suppression offre',
+            backgroundColor: AppColors.error);
+      }
+    } catch (e) {
       Get.rawSnackbar(
-          message: 'Offre supprimée', backgroundColor: AppColors.success);
-      await _loadOffers();
-    } else {
-      Get.rawSnackbar(
-          message: 'Erreur suppression offre',
+          message: 'Erreur suppression offre: $e',
           backgroundColor: AppColors.error);
     }
   }
 
   Future<void> _toggleStatus(Map<String, dynamic> offer) async {
-    final api = ApiService();
-    final ok =
-        await api.toggleOfferStatus(offer['id'], !(offer['isActive'] ?? true));
-    if (ok) {
+    try {
+      final ok = await OfferService.toggleOfferStatus(
+          offer['id'], !(offer['isActive'] ?? true));
+      if (ok) {
+        Get.rawSnackbar(
+            message: 'Statut modifié', backgroundColor: AppColors.success);
+        await _loadOffers();
+      } else {
+        Get.rawSnackbar(
+            message: 'Erreur modification statut',
+            backgroundColor: AppColors.error);
+      }
+    } catch (e) {
       Get.rawSnackbar(
-          message: 'Statut modifié', backgroundColor: AppColors.success);
-      await _loadOffers();
-    } else {
-      Get.rawSnackbar(
-          message: 'Erreur modification statut',
+          message: 'Erreur modification statut: $e',
           backgroundColor: AppColors.error);
     }
   }

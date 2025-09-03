@@ -36,9 +36,18 @@ export class OfferController {
   }
 
   static async updateOffer(req: Request, res: Response) {
-    const { offerId } = req.params;
-    const offer = await OfferService.updateOffer(offerId, req.body);
-    return res.json({ success: true, data: offer });
+    try {
+      const { offerId } = req.params;
+      const offer = await OfferService.updateOffer(offerId, req.body);
+      return res.json({ success: true, data: offer });
+    } catch (error) {
+      console.error('[OfferController] updateOffer error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to update offer',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   }
 
   static async getSubscribers(req: Request, res: Response) {

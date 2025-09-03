@@ -6,8 +6,26 @@ import { NotificationService } from './notification.service';
 const prisma = new PrismaClient();
 
 export class OfferService {
+  // Fonction utilitaire pour normaliser les dates
+  private static normalizeDate(dateInput: any): Date | undefined {
+    if (!dateInput) return undefined;
+    
+    const dateStr = dateInput.toString();
+    
+    // Si la date ne contient pas de fuseau horaire, ajouter 'Z' pour UTC
+    if (!dateStr.includes('Z') && !dateStr.includes('+') && !dateStr.includes('-', 10)) {
+      return new Date(dateStr + 'Z');
+    }
+    
+    return new Date(dateStr);
+  }
+
   static async createOffer(data: CreateOfferDTO): Promise<Offer> {
     try {
+      // Normaliser les dates
+      const startDate = this.normalizeDate(data.startDate);
+      const endDate = this.normalizeDate(data.endDate);
+
       const offer = await prisma.offers.create({
         data: {
           name: data.name,
@@ -17,8 +35,8 @@ export class OfferService {
           minPurchaseAmount: data.minPurchaseAmount,
           maxDiscountAmount: data.maxDiscountAmount,
           isCumulative: data.isCumulative,
-          startDate: data.startDate,
-          endDate: data.endDate,
+          startDate: startDate,
+          endDate: endDate,
           is_active: true,
           pointsRequired: data.pointsRequired,
           created_at: new Date(),
@@ -91,30 +109,51 @@ export class OfferService {
   }
 
   static async updateOffer(offerId: string, updateData: Partial<CreateOfferDTO>): Promise<Offer> {
-    const { articleIds, ...offerDetails } = updateData;
+    try {
+      const { articleIds, ...offerDetails } = updateData;
 
-    const updatedOffer = await prisma.offers.update({
-      where: { id: offerId },
-      data: {
-        ...offerDetails,
-        updated_at: new Date(),
-        offer_articles: articleIds ? {
-          deleteMany: {},
-          create: articleIds.map(articleId => ({
-            article_id: articleId
-          }))
-        } : undefined
-      },
-      include: {
-        offer_articles: {
-          include: {
-            articles: true
+      // Mapper isActive vers is_active pour la base de données
+      const dbData = { ...offerDetails };
+      if ('isActive' in dbData) {
+        (dbData as any).is_active = dbData.isActive;
+        delete (dbData as any).isActive;
+      }
+
+      // Normaliser les dates pour Prisma
+      if (dbData.startDate) {
+        dbData.startDate = this.normalizeDate(dbData.startDate);
+      }
+
+      if (dbData.endDate) {
+        dbData.endDate = this.normalizeDate(dbData.endDate);
+      }
+
+      const updatedOffer = await prisma.offers.update({
+        where: { id: offerId },
+        data: {
+          ...dbData,
+          updated_at: new Date(),
+          offer_articles: articleIds ? {
+            deleteMany: {},
+            create: articleIds.map(articleId => ({
+              article_id: articleId
+            }))
+          } : undefined
+        },
+        include: {
+          offer_articles: {
+            include: {
+              articles: true
+            }
           }
         }
-      }
-    });
+      });
 
-    return this.formatOffer(updatedOffer);
+      return this.formatOffer(updatedOffer);
+    } catch (error) {
+      console.error('[OfferService] Update offer error:', error);
+      throw error;
+    }
   }
 
   static async deleteOffer(offerId: string): Promise<void> {

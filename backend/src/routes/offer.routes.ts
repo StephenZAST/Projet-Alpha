@@ -8,14 +8,16 @@ const router = express.Router();
 
 router.use(authenticateToken);
 
-// Routes without async handler wrapper since controller methods are already async
+// Routes spécifiques AVANT les routes avec paramètres
 router.get('/available', OfferController.getAvailableOffers);
 router.get('/my-subscriptions', OfferController.getUserSubscriptions);
 
-// Protected routes (with offerId parameter)
-router.get('/:offerId', OfferController.getOfferById);
-router.post('/:offerId/subscribe', OfferController.subscribeToOffer);
-router.post('/:offerId/unsubscribe', OfferController.unsubscribeFromOffer);
+// Route admin pour lister toutes les offres (AVANT /:offerId)
+router.get(
+  '/',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  OfferController.getAllOffers
+);
 
 // Admin only routes
 router.post(
@@ -26,18 +28,23 @@ router.post(
   OfferController.createOffer
 );
 
+// Routes avec paramètres offerId
+router.get('/:offerId', OfferController.getOfferById);
+router.post('/:offerId/subscribe', OfferController.subscribeToOffer);
+router.post('/:offerId/unsubscribe', OfferController.unsubscribeFromOffer);
+
+router.get(
+  '/:offerId/subscribers',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  OfferController.getSubscribers
+);
+
 router.patch(
   '/:offerId',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
   updateOfferValidation,
   validate,
   OfferController.updateOffer
-);
-
-router.get(
-  '/:offerId/subscribers',
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
-  OfferController.getSubscribers
 );
 
 router.delete(
@@ -50,13 +57,6 @@ router.patch(
   '/:offerId/status',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
   OfferController.toggleOfferStatus
-);
-
-// Route admin pour lister toutes les offres
-router.get(
-  '/',
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
-  OfferController.getAllOffers
 );
 
 export default router;

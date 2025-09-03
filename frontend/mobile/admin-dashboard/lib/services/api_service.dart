@@ -160,7 +160,7 @@ class ApiService extends GetxService {
     try {
       // Ajouter /api au début du path s'il n'est pas présent
       final endpoint = path.startsWith('/api/') ? path : '/api$path';
-      print('[ApiService] Making PATCH request to: $endpoint');
+      print('[ApiService] Making PATCH request to: $baseUrl$endpoint');
       print('[ApiService] Request data: $data');
 
       final response = await _dio.patch(
@@ -168,26 +168,10 @@ class ApiService extends GetxService {
         data: data,
       );
 
-      print('[ApiService] Response status code: ${response.statusCode}');
-      print('[ApiService] Response data: ${response.data}');
+      print('[ApiService] PATCH Response status code: ${response.statusCode}');
+      print('[ApiService] PATCH Response data: ${response.data}');
 
-      // Vérification du statut de la réponse
-      if (response.statusCode == 401) {
-        throw 'Session expirée. Veuillez vous reconnecter.';
-      }
-
-      if (response.statusCode == 500) {
-        throw response.data?['message'] ?? 'Erreur serveur interne';
-      }
-
-      if (response.statusCode != 200) {
-        throw 'Erreur serveur: ${response.statusCode}';
-      }
-
-      if (response.data == null) {
-        throw 'Réponse invalide du serveur';
-      }
-
+      // Ne pas lancer d'exception ici, laisser la méthode appelante gérer
       return response;
     } catch (e) {
       print('[ApiService] PATCH request error: $e');
@@ -246,46 +230,4 @@ class ApiService extends GetxService {
     return this;
   }
 
-  // Offres
-  Future<List<Map<String, dynamic>>> getOffers() async {
-    final response = await get('/offers');
-    if (response.statusCode == 200 &&
-        response.data != null &&
-        response.data['data'] != null) {
-      return List<Map<String, dynamic>>.from(response.data['data']);
-    }
-    return [];
   }
-
-  Future<Map<String, dynamic>?> createOffer(Map<String, dynamic> data) async {
-    final response = await post('/offers', data: data);
-    if (response.statusCode == 201 &&
-        response.data != null &&
-        response.data['data'] != null) {
-      return Map<String, dynamic>.from(response.data['data']);
-    }
-    return null;
-  }
-
-  Future<Map<String, dynamic>?> updateOffer(
-      String offerId, Map<String, dynamic> data) async {
-    final response = await patch('/offers/$offerId', data: data);
-    if (response.statusCode == 200 &&
-        response.data != null &&
-        response.data['data'] != null) {
-      return Map<String, dynamic>.from(response.data['data']);
-    }
-    return null;
-  }
-
-  Future<bool> deleteOffer(String offerId) async {
-    final response = await delete('/offers/$offerId');
-    return response.statusCode == 200;
-  }
-
-  Future<bool> toggleOfferStatus(String offerId, bool isActive) async {
-    final response =
-        await patch('/offers/$offerId/status', data: {'isActive': isActive});
-    return response.statusCode == 200;
-  }
-}
