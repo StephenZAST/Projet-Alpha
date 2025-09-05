@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
-import '../../../controllers/affiliate_controller.dart';
+import '../../../controllers/affiliates_controller.dart';
 import '../../../models/affiliate.dart';
 
 class AffiliateList extends StatelessWidget {
@@ -9,7 +9,7 @@ class AffiliateList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AffiliateController>();
+    final controller = Get.find<AffiliatesController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Obx(() {
@@ -17,16 +17,7 @@ class AffiliateList extends StatelessWidget {
         return Center(child: CircularProgressIndicator());
       }
 
-      if (controller.hasError.value) {
-        return Center(
-          child: Text(
-            controller.errorMessage.value,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.error,
-            ),
-          ),
-        );
-      }
+      // Les erreurs sont gérées par le snackbar dans le controller
 
       if (controller.affiliates.isEmpty) {
         return Center(
@@ -166,7 +157,7 @@ class AffiliateList extends StatelessWidget {
                         borderRadius: AppRadius.radiusSM,
                       ),
                       child: Text(
-                        affiliate.status.label,
+                        affiliate.status.name,
                         style: AppTextStyles.bodySmall.copyWith(
                           color: affiliate.status.color,
                         ),
@@ -186,7 +177,9 @@ class AffiliateList extends StatelessWidget {
                               affiliate.isActive ? 'Désactiver' : 'Activer',
                           onPressed: () => controller.updateAffiliateStatus(
                             affiliate.id,
-                            affiliate.status.toString().split('.').last,
+                            affiliate.isActive
+                                ? AffiliateStatus.SUSPENDED
+                                : AffiliateStatus.ACTIVE,
                             !affiliate.isActive,
                           ),
                         ),
@@ -200,13 +193,7 @@ class AffiliateList extends StatelessWidget {
                             affiliate.id,
                             affiliate.status == AffiliateStatus.SUSPENDED
                                 ? AffiliateStatus.ACTIVE
-                                    .toString()
-                                    .split('.')
-                                    .last
-                                : AffiliateStatus.SUSPENDED
-                                    .toString()
-                                    .split('.')
-                                    .last,
+                                : AffiliateStatus.SUSPENDED,
                             affiliate.isActive,
                           ),
                         ),

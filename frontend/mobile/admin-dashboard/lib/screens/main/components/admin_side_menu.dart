@@ -128,6 +128,13 @@ class AdminSideMenu extends StatelessWidget {
                   menuController.selectedIndex == MenuIndices.users, // 6
               onPress: () => menuController.updateIndex(MenuIndices.users),
             ),
+            DrawerListTile(
+              title: "Affiliés",
+              icon: Icons.handshake_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.affiliates, // 7
+              onPress: () => menuController.updateIndex(MenuIndices.affiliates),
+            ),
             Divider(color: theme.dividerColor),
             // NOTIFICATIONS ET PROFIL
             Padding(

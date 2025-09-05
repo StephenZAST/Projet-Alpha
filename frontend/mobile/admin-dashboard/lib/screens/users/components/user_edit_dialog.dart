@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'dart:ui';
 import '../../../models/user.dart';
 import '../../../controllers/users_controller.dart';
 import '../../../constants.dart';
@@ -60,10 +61,11 @@ class _UserEditDialogState extends State<UserEditDialog> {
       _addresses = await UserService.getUserAddresses(widget.user.id);
     } catch (e) {
       _showGlassySnackbar(
-          message: 'Impossible de charger les adresses',
-          icon: Icons.error_outline,
-          color: AppColors.error,
-          duration: Duration(seconds: 3));
+        message: 'Impossible de charger les adresses',
+        icon: Icons.error_outline,
+        color: AppColors.error,
+        duration: Duration(seconds: 3),
+      );
     }
     setState(() => isLoadingAddresses = false);
   }
@@ -82,14 +84,14 @@ class _UserEditDialogState extends State<UserEditDialog> {
       isActive: isActive,
     );
     setState(() => isSaving = false);
-    // Le dialog sera fermé et la notification affichée par le controller
   }
 
-  void _showGlassySnackbar(
-      {required String message,
-      IconData icon = Icons.check_circle,
-      Color? color,
-      Duration? duration}) {
+  void _showGlassySnackbar({
+    required String message,
+    IconData icon = Icons.check_circle,
+    Color? color,
+    Duration? duration,
+  }) {
     Get.closeAllSnackbars();
     Get.rawSnackbar(
       messageText: Row(
@@ -100,9 +102,10 @@ class _UserEditDialogState extends State<UserEditDialog> {
             child: Text(
               message,
               style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16),
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
             ),
           ),
         ],
@@ -126,107 +129,148 @@ class _UserEditDialogState extends State<UserEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       child: Container(
-        width: 500,
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Détails de l\'utilisateur',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              _buildEditForm(),
-              const SizedBox(height: 16),
-              _buildAddressesSection(),
-              const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Get.back(),
-                  child: const Text('Fermer'),
+        width: 700,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.radiusLG,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.radiusLG,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark 
+                    ? AppColors.gray900.withOpacity(0.95)
+                    : Colors.white.withOpacity(0.95),
+                borderRadius: AppRadius.radiusLG,
+                border: Border.all(
+                  color: isDark 
+                      ? AppColors.gray700.withOpacity(0.5)
+                      : AppColors.gray200.withOpacity(0.5),
+                  width: 1,
                 ),
               ),
-            ],
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(context, isDark),
+                    Padding(
+                      padding: EdgeInsets.all(AppSpacing.xl),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildEditForm(context, isDark),
+                          SizedBox(height: AppSpacing.lg),
+                          _buildAddressesSection(context, isDark),
+                          SizedBox(height: AppSpacing.xl),
+                          _buildActions(context),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildEditForm() {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildHeader(BuildContext context, bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _getRoleColor(widget.user.role).withOpacity(0.1),
+            _getRoleColor(widget.user.role).withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(AppRadius.lg),
+          topRight: Radius.circular(AppRadius.lg),
+        ),
+      ),
+      child: Row(
         children: [
-          TextFormField(
-            controller: firstNameController,
-            decoration: InputDecoration(labelText: 'Prénom'),
-            validator: (v) => v == null || v.isEmpty ? 'Prénom requis' : null,
-          ),
-          TextFormField(
-            controller: lastNameController,
-            decoration: InputDecoration(labelText: 'Nom'),
-            validator: (v) => v == null || v.isEmpty ? 'Nom requis' : null,
-          ),
-          TextFormField(
-            controller: emailController,
-            decoration: InputDecoration(labelText: 'Email'),
-            validator: (v) => v == null || v.isEmpty ? 'Email requis' : null,
-          ),
-          TextFormField(
-            controller: phoneController,
-            decoration: InputDecoration(labelText: 'Téléphone'),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<UserRole>(
-                  value: selectedRole,
-                  decoration: InputDecoration(labelText: 'Rôle'),
-                  items: UserRole.values.map((role) {
-                    return DropdownMenuItem(
-                      value: role,
-                      child: Row(
-                        children: [
-                          Icon(_getRoleIcon(role),
-                              color: _getRoleColor(role), size: 18),
-                          SizedBox(width: 8),
-                          Text(_getRoleLabel(role)),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (role) {
-                    if (role != null) setState(() => selectedRole = role);
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Row(
-                children: [
-                  Text('Actif'),
-                  Switch(
-                    value: isActive,
-                    onChanged: (value) => setState(() => isActive = value),
-                    activeColor: AppColors.success,
-                  ),
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  _getRoleColor(widget.user.role).withOpacity(0.2),
+                  _getRoleColor(widget.user.role).withOpacity(0.1),
                 ],
               ),
-            ],
+              borderRadius: AppRadius.radiusMD,
+              border: Border.all(
+                color: _getRoleColor(widget.user.role).withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              Icons.edit_outlined,
+              size: 32,
+              color: _getRoleColor(widget.user.role),
+            ),
           ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: GlassButton(
-              label: 'Enregistrer les modifications',
-              variant: GlassButtonVariant.primary,
-              isLoading: isSaving,
-              onPressed: isSaving ? null : _saveUserInfo,
+          SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Éditer l\'utilisateur',
+                  style: AppTextStyles.h2.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.xs),
+                Text(
+                  '${widget.user.firstName} ${widget.user.lastName}',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.xs),
+                _buildRoleBadge(widget.user.role),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: Icon(
+              Icons.close,
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            ),
+            style: IconButton.styleFrom(
+              backgroundColor: isDark 
+                  ? AppColors.gray800.withOpacity(0.5)
+                  : AppColors.gray100.withOpacity(0.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: AppRadius.radiusSM,
+              ),
             ),
           ),
         ],
@@ -234,103 +278,602 @@ class _UserEditDialogState extends State<UserEditDialog> {
     );
   }
 
-  Widget _buildAddressesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildEditForm(BuildContext context, bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark 
+            ? AppColors.gray800.withOpacity(0.5)
+            : AppColors.gray50.withOpacity(0.8),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: isDark 
+              ? AppColors.gray700.withOpacity(0.3)
+              : AppColors.gray200.withOpacity(0.5),
+        ),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Adresses', style: Theme.of(context).textTheme.titleMedium),
-            GlassButton(
-              label: 'Ajouter',
-              icon: Icons.add_location_alt,
-              variant: GlassButtonVariant.info,
-              size: GlassButtonSize.small,
-              onPressed: () async {
-                await Get.dialog(AddressEditDialog(
-                  userId: widget.user.id,
-                  onAddressSaved: (address) => _loadAddresses(),
-                ));
-              },
+            Row(
+              children: [
+                Icon(
+                  Icons.person_outline,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Informations personnelles',
+                  style: AppTextStyles.h4.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildGlassTextField(
+                    controller: firstNameController,
+                    label: 'Prénom',
+                    icon: Icons.person_outline,
+                    isDark: isDark,
+                    validator: (v) => v == null || v.isEmpty ? 'Prénom requis' : null,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _buildGlassTextField(
+                    controller: lastNameController,
+                    label: 'Nom',
+                    icon: Icons.person_outline,
+                    isDark: isDark,
+                    validator: (v) => v == null || v.isEmpty ? 'Nom requis' : null,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            _buildGlassTextField(
+              controller: emailController,
+              label: 'Email',
+              icon: Icons.email_outlined,
+              isDark: isDark,
+              keyboardType: TextInputType.emailAddress,
+              validator: (v) => v == null || v.isEmpty ? 'Email requis' : null,
+            ),
+            SizedBox(height: AppSpacing.md),
+            _buildGlassTextField(
+              controller: phoneController,
+              label: 'Téléphone',
+              icon: Icons.phone_outlined,
+              isDark: isDark,
+              keyboardType: TextInputType.phone,
+            ),
+            SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: isDark 
+                          ? AppColors.gray900.withOpacity(0.3)
+                          : Colors.white.withOpacity(0.6),
+                      borderRadius: AppRadius.radiusSM,
+                      border: Border.all(
+                        color: _getRoleColor(selectedRole).withOpacity(0.3),
+                      ),
+                    ),
+                    child: DropdownButtonFormField<UserRole>(
+                      value: selectedRole,
+                      decoration: InputDecoration(
+                        labelText: 'Rôle',
+                        prefixIcon: Icon(
+                          Icons.admin_panel_settings_outlined,
+                          color: AppColors.accent.withOpacity(0.7),
+                          size: 20,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      items: UserRole.values.map((role) {
+                        return DropdownMenuItem(
+                          value: role,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(AppSpacing.xs),
+                                decoration: BoxDecoration(
+                                  color: _getRoleColor(role).withOpacity(0.1),
+                                  borderRadius: AppRadius.radiusXS,
+                                ),
+                                child: Icon(
+                                  _getRoleIcon(role),
+                                  color: _getRoleColor(role),
+                                  size: 16,
+                                ),
+                              ),
+                              SizedBox(width: AppSpacing.sm),
+                              Text(_getRoleLabel(role)),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (role) {
+                        if (role != null) setState(() => selectedRole = role);
+                      },
+                    ),
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? AppColors.gray900.withOpacity(0.3)
+                        : Colors.white.withOpacity(0.6),
+                    borderRadius: AppRadius.radiusSM,
+                    border: Border.all(
+                      color: isActive 
+                          ? AppColors.success.withOpacity(0.3)
+                          : AppColors.error.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isActive ? Icons.check_circle_outline : Icons.cancel_outlined,
+                        color: isActive ? AppColors.success : AppColors.error,
+                        size: 20,
+                      ),
+                      SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Statut',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.sm),
+                      Switch(
+                        value: isActive,
+                        onChanged: (value) => setState(() => isActive = value),
+                        activeColor: AppColors.success,
+                        inactiveThumbColor: AppColors.error,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.lg),
+            Align(
+              alignment: Alignment.centerRight,
+              child: GlassButton(
+                label: 'Enregistrer les modifications',
+                icon: Icons.save_outlined,
+                variant: GlassButtonVariant.primary,
+                isLoading: isSaving,
+                onPressed: isSaving ? null : _saveUserInfo,
+              ),
             ),
           ],
         ),
-        isLoadingAddresses
-            ? Center(child: CircularProgressIndicator())
-            : _addresses.isEmpty
-                ? Text('Aucune adresse enregistrée')
-                : Column(
-                    children: _addresses
-                        .map((address) => ListTile(
-                              title: Text(address.fullAddress),
-                              subtitle: Text(address.name ?? ''),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.edit),
-                                    onPressed: () async {
-                                      await Get.dialog(AddressEditDialog(
-                                        userId: widget.user.id,
-                                        initialAddress: address,
-                                        onAddressSaved: (a) => _loadAddresses(),
-                                      ));
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.delete),
-                                    onPressed: () async {
-                                      final confirm = await Get.dialog<bool>(
-                                        AlertDialog(
-                                          title:
-                                              Text('Confirmer la suppression'),
-                                          content: Text(
-                                              'Voulez-vous vraiment supprimer cette adresse ?'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Get.back(result: false),
-                                              child: Text('Annuler'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Get.back(result: true),
-                                              child: Text('Supprimer',
-                                                  style: TextStyle(
-                                                      color: Colors.red)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                      if (confirm == true) {
-                                        try {
-                                          await AddressService.deleteAddress(
-                                              address.id);
-                                          _showGlassySnackbar(
-                                            message:
-                                                'Adresse supprimée avec succès',
-                                            icon: Icons.delete,
-                                            color: AppColors.success,
-                                          );
-                                          _loadAddresses();
-                                        } catch (e) {
-                                          _showGlassySnackbar(
-                                            message: 'Suppression impossible',
-                                            icon: Icons.error_outline,
-                                            color: AppColors.error,
-                                          );
-                                        }
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ))
-                        .toList(),
+      ),
+    );
+  }
+
+  Widget _buildAddressesSection(BuildContext context, bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark 
+            ? AppColors.gray800.withOpacity(0.5)
+            : AppColors.gray50.withOpacity(0.8),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: isDark 
+              ? AppColors.gray700.withOpacity(0.3)
+              : AppColors.gray200.withOpacity(0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    color: AppColors.accent,
+                    size: 20,
                   ),
+                  SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Adresses (${_addresses.length})',
+                    style: AppTextStyles.h4.copyWith(
+                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              GlassButton(
+                label: 'Ajouter',
+                icon: Icons.add_location_alt,
+                variant: GlassButtonVariant.info,
+                size: GlassButtonSize.small,
+                onPressed: () async {
+                  await Get.dialog(AddressEditDialog(
+                    userId: widget.user.id,
+                    onAddressSaved: (address) => _loadAddresses(),
+                  ));
+                },
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+          if (isLoadingAddresses)
+            Center(
+              child: Container(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            )
+          else if (_addresses.isEmpty)
+            Container(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: isDark 
+                    ? AppColors.gray900.withOpacity(0.3)
+                    : Colors.white.withOpacity(0.6),
+                borderRadius: AppRadius.radiusSM,
+                border: Border.all(
+                  color: isDark 
+                      ? AppColors.gray600.withOpacity(0.2)
+                      : AppColors.gray300.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.location_off_outlined,
+                    color: AppColors.textMuted,
+                    size: 24,
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Aucune adresse enregistrée',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textMuted,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: _addresses.map((address) => _buildAddressItem(context, isDark, address)).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressItem(BuildContext context, bool isDark, Address address) {
+    return Container(
+      margin: EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark 
+            ? AppColors.gray900.withOpacity(0.3)
+            : Colors.white.withOpacity(0.6),
+        borderRadius: AppRadius.radiusSM,
+        border: Border.all(
+          color: address.isDefault 
+              ? AppColors.primary.withOpacity(0.3)
+              : (isDark 
+                  ? AppColors.gray600.withOpacity(0.2)
+                  : AppColors.gray300.withOpacity(0.3)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppSpacing.xs),
+            decoration: BoxDecoration(
+              color: address.isDefault 
+                  ? AppColors.primary.withOpacity(0.1)
+                  : AppColors.accent.withOpacity(0.1),
+              borderRadius: AppRadius.radiusXS,
+            ),
+            child: Icon(
+              address.isDefault ? Icons.home : Icons.location_on,
+              color: address.isDefault ? AppColors.primary : AppColors.accent,
+              size: 16,
+            ),
+          ),
+          SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (address.name != null && address.name!.isNotEmpty) ...[
+                  Text(
+                    address.name!,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                ],
+                Text(
+                  address.fullAddress,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (address.isDefault)
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: AppRadius.radiusXS,
+              ),
+              child: Text(
+                'Défaut',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          SizedBox(width: AppSpacing.sm),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GlassButton(
+                label: '',
+                icon: Icons.edit_outlined,
+                variant: GlassButtonVariant.info,
+                size: GlassButtonSize.small,
+                onPressed: () async {
+                  await Get.dialog(AddressEditDialog(
+                    userId: widget.user.id,
+                    initialAddress: address,
+                    onAddressSaved: (a) => _loadAddresses(),
+                  ));
+                },
+              ),
+              SizedBox(width: AppSpacing.xs),
+              GlassButton(
+                label: '',
+                icon: Icons.delete_outline,
+                variant: GlassButtonVariant.error,
+                size: GlassButtonSize.small,
+                onPressed: () => _confirmDeleteAddress(address),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteAddress(Address address) async {
+    final confirm = await Get.dialog<bool>(
+      Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: 400,
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.gray900.withOpacity(0.95)
+                : Colors.white.withOpacity(0.95),
+            borderRadius: AppRadius.radiusLG,
+            border: Border.all(
+              color: AppColors.error.withOpacity(0.3),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: AppRadius.radiusLG,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.xl),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.delete_outline,
+                      color: AppColors.error,
+                      size: 48,
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Confirmer la suppression',
+                      style: AppTextStyles.h4,
+                    ),
+                    SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Voulez-vous vraiment supprimer cette adresse ?',
+                      style: AppTextStyles.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: AppSpacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GlassButton(
+                            label: 'Annuler',
+                            variant: GlassButtonVariant.secondary,
+                            onPressed: () => Get.back(result: false),
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: GlassButton(
+                            label: 'Supprimer',
+                            variant: GlassButtonVariant.error,
+                            onPressed: () => Get.back(result: true),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await AddressService.deleteAddress(address.id);
+        _showGlassySnackbar(
+          message: 'Adresse supprimée avec succès',
+          icon: Icons.delete,
+          color: AppColors.success,
+        );
+        _loadAddresses();
+      } catch (e) {
+        _showGlassySnackbar(
+          message: 'Suppression impossible',
+          icon: Icons.error_outline,
+          color: AppColors.error,
+        );
+      }
+    }
+  }
+
+  Widget _buildGlassTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark 
+            ? AppColors.gray900.withOpacity(0.3)
+            : Colors.white.withOpacity(0.6),
+        borderRadius: AppRadius.radiusSM,
+        border: Border.all(
+          color: isDark 
+              ? AppColors.gray600.withOpacity(0.2)
+              : AppColors.gray300.withOpacity(0.3),
+        ),
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        validator: validator,
+        style: AppTextStyles.bodyMedium.copyWith(
+          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(
+            icon,
+            color: AppColors.primary.withOpacity(0.7),
+            size: 20,
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.all(AppSpacing.md),
+          labelStyle: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? AppColors.gray400 : AppColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActions(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        GlassButton(
+          label: 'Fermer',
+          icon: Icons.close,
+          variant: GlassButtonVariant.secondary,
+          onPressed: () => Get.back(),
+        ),
       ],
     );
+  }
+
+  Widget _buildRoleBadge(UserRole role) {
+    final color = _getRoleColor(role);
+    final icon = _getRoleIcon(role);
+    final label = _getRoleLabel(role);
+    
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.15),
+            color.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: AppRadius.radiusSM,
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          SizedBox(width: AppSpacing.xs),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.SUPER_ADMIN:
+        return AppColors.violet;
+      case UserRole.ADMIN:
+        return AppColors.primary;
+      case UserRole.AFFILIATE:
+        return AppColors.orange;
+      case UserRole.CLIENT:
+        return AppColors.success;
+      case UserRole.DELIVERY:
+        return AppColors.teal;
+      default:
+        return AppColors.gray500;
+    }
   }
 
   IconData _getRoleIcon(UserRole role) {
@@ -340,11 +883,13 @@ class _UserEditDialogState extends State<UserEditDialog> {
       case UserRole.ADMIN:
         return Icons.admin_panel_settings;
       case UserRole.AFFILIATE:
-        return Icons.handshake;
+        return Icons.handshake_outlined;
       case UserRole.CLIENT:
-        return Icons.person;
-      default:
         return Icons.person_outline;
+      case UserRole.DELIVERY:
+        return Icons.delivery_dining_outlined;
+      default:
+        return Icons.help_outline;
     }
   }
 
@@ -358,23 +903,10 @@ class _UserEditDialogState extends State<UserEditDialog> {
         return 'Affilié';
       case UserRole.CLIENT:
         return 'Client';
+      case UserRole.DELIVERY:
+        return 'Livreur';
       default:
         return role.toString().split('.').last;
-    }
-  }
-
-  Color _getRoleColor(UserRole role) {
-    switch (role) {
-      case UserRole.SUPER_ADMIN:
-        return Colors.purple;
-      case UserRole.ADMIN:
-        return AppColors.error;
-      case UserRole.AFFILIATE:
-        return AppColors.accent;
-      case UserRole.CLIENT:
-        return AppColors.success;
-      default:
-        return AppColors.textSecondary;
     }
   }
 }

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
-import '../../../controllers/affiliate_controller.dart';
+import '../../../controllers/affiliates_controller.dart';
 
 class WithdrawalRequests extends StatelessWidget {
   const WithdrawalRequests({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AffiliateController>();
+    final controller = Get.find<AffiliatesController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -41,7 +41,7 @@ class WithdrawalRequests extends StatelessWidget {
                     ),
                     SizedBox(height: AppSpacing.xs),
                     Obx(() => Text(
-                          '${controller.pendingWithdrawals} demande(s)',
+                          '${controller.pendingWithdrawals.length} demande(s)',
                           style: AppTextStyles.h4.copyWith(
                             color: AppColors.warning,
                           ),
@@ -63,7 +63,7 @@ class WithdrawalRequests extends StatelessWidget {
                     ),
                     SizedBox(height: AppSpacing.xs),
                     Obx(() => Text(
-                          '${controller.totalCommissionsPaid.toStringAsFixed(2)} €',
+                          controller.stats.value?.formattedTotalCommissions ?? '0 FCFA',
                           style: AppTextStyles.h4.copyWith(
                             color: AppColors.success,
                           ),
@@ -92,7 +92,7 @@ class WithdrawalRequests extends StatelessWidget {
                 return Center(child: CircularProgressIndicator());
               }
 
-              if (controller.withdrawalRequests.isEmpty) {
+              if (controller.withdrawals.isEmpty) {
                 return Center(
                   child: Text(
                     'Aucune demande de retrait en attente',
@@ -106,13 +106,13 @@ class WithdrawalRequests extends StatelessWidget {
               }
 
               return ListView.separated(
-                itemCount: controller.withdrawalRequests.length,
+                itemCount: controller.withdrawals.length,
                 separatorBuilder: (context, index) => Divider(),
                 itemBuilder: (context, index) {
-                  final request = controller.withdrawalRequests[index];
+                  final request = controller.withdrawals[index];
                   return ListTile(
                     title: Text(
-                      'Demande de ${request.amount.toStringAsFixed(2)} €',
+                      request.formattedAmount,
                       style: AppTextStyles.bodyBold.copyWith(
                         color: isDark
                             ? AppColors.textLight
@@ -151,6 +151,7 @@ class WithdrawalRequests extends StatelessWidget {
                             foregroundColor: AppColors.error,
                           ),
                           onPressed: () {
+                            final reasonController = TextEditingController();
                             Get.dialog(
                               AlertDialog(
                                 title: Text('Rejeter la demande'),
@@ -161,12 +162,11 @@ class WithdrawalRequests extends StatelessWidget {
                                         'Veuillez indiquer la raison du rejet'),
                                     SizedBox(height: AppSpacing.md),
                                     TextField(
+                                      controller: reasonController,
                                       decoration: InputDecoration(
                                         hintText: 'Raison du rejet',
                                         border: OutlineInputBorder(),
                                       ),
-                                      onChanged: (value) => controller
-                                          .rejectionReason.value = value,
                                     ),
                                   ],
                                 ),
@@ -178,11 +178,10 @@ class WithdrawalRequests extends StatelessWidget {
                                   TextButton(
                                     child: Text('Confirmer'),
                                     onPressed: () {
-                                      if (controller
-                                          .rejectionReason.value.isNotEmpty) {
+                                      if (reasonController.text.isNotEmpty) {
                                         controller.rejectWithdrawal(
                                           request.id,
-                                          controller.rejectionReason.value,
+                                          reasonController.text,
                                         );
                                         Get.back();
                                       }

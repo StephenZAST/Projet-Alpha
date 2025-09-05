@@ -97,17 +97,23 @@ export class AffiliateService {
         prisma.affiliate_profiles.count({ where: whereConditions })
       ]);
 
+      // Log le résultat brut pour debug
+      console.log('[AffiliateService] Affiliates raw:', JSON.stringify(affiliates, null, 2));
+
+      // Mapping correct du champ 'user'
+      const mappedAffiliates = affiliates.map(affiliate => ({
+        ...affiliate,
+        user: affiliate.users ? {
+          id: affiliate.users.id,
+          email: affiliate.users.email,
+          firstName: affiliate.users.first_name,
+          lastName: affiliate.users.last_name,
+          phone: affiliate.users.phone
+        } : null
+      }));
+
       return {
-        data: affiliates.map(affiliate => ({
-          ...affiliate,
-          user: affiliate.users ? {
-            id: affiliate.users.id,
-            email: affiliate.users.email,
-            firstName: affiliate.users.first_name,
-            lastName: affiliate.users.last_name,
-            phone: affiliate.users.phone
-          } : null
-        })),
+        data: mappedAffiliates,
         pagination: {
           total,
           currentPage: page,
@@ -212,6 +218,79 @@ export class AffiliateService {
 
   static async getCurrentLevel(userId: string): Promise<any> {
     // Implémentation de la récupération du niveau
+  }
+
+  static async getAffiliateStats() {
+    try {
+      const [
+        totalAffiliates,
+        activeAffiliates,
+        pendingAffiliates,
+        suspendedAffiliates,
+        totalCommissions,
+        monthlyCommissions,
+        totalReferrals
+      ] = await Promise.all([
+        // Total des affiliés
+        prisma.affiliate_profiles.count(),
+        
+        // Affiliés actifs
+        prisma.affiliate_profiles.count({
+          where: { status: 'ACTIVE' }
+        }),
+        
+        // Affiliés en attente
+        prisma.affiliate_profiles.count({
+          where: { status: 'PENDING' }
+        }),
+        
+        // Affiliés suspendus
+        prisma.affiliate_profiles.count({
+          where: { status: 'SUSPENDED' }
+        }),
+        
+        // Total des commissions
+        prisma.commission_transactions.aggregate({
+          _sum: { amount: true },
+          where: { status: 'PAID' }
+        }),
+        
+        // Commissions du mois
+        prisma.commission_transactions.aggregate({
+          _sum: { amount: true },
+          where: {
+            status: 'PAID',
+            created_at: {
+              gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+            }
+          }
+        }),
+        
+        // Total des référencements
+        prisma.affiliate_profiles.aggregate({
+          _sum: { total_referrals: true }
+        })
+      ]);
+
+      // Calcul du taux moyen de commission
+      const averageCommissionRate = await prisma.affiliate_profiles.aggregate({
+        _avg: { commission_rate: true }
+      });
+
+      return {
+        totalAffiliates,
+        activeAffiliates,
+        pendingAffiliates,
+        suspendedAffiliates,
+        totalCommissions: Number(totalCommissions._sum.amount || 0),
+        monthlyCommissions: Number(monthlyCommissions._sum.amount || 0),
+        averageCommissionRate: Number(averageCommissionRate._avg.commission_rate || 0),
+        totalReferrals: Number(totalReferrals._sum.total_referrals || 0)
+      };
+    } catch (error) {
+      console.error('[AffiliateService] Get affiliate stats error:', error);
+      throw error;
+    }
   }
 
   static async updateProfileSettings(userId: string, data: {

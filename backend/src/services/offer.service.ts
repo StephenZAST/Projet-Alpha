@@ -115,7 +115,7 @@ export class OfferService {
       // Mapper isActive vers is_active pour la base de données
       const dbData = { ...offerDetails };
       if ('isActive' in dbData) {
-        (dbData as any).is_active = dbData.isActive;
+        (dbData as any).is_active = (dbData as any).isActive;
         delete (dbData as any).isActive;
       }
 

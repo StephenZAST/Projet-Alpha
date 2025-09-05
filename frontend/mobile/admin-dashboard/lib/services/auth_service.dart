@@ -13,7 +13,7 @@ class AuthService {
   static final _api = ApiService();
 
   static const String baseAuthPath = '/auth'; // Retiré le /api préfixe
-  static const String _baseUrl = '/api/auth'; // Modifier le chemin de base
+  static const String _baseUrl = '/auth'; // Modifier le chemin de base
 
   static String? get token => _storage.read(_tokenKey);
   static User? get currentUser {

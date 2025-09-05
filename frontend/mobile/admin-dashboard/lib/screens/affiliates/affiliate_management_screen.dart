@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../constants.dart';
-import '../../controllers/affiliate_controller.dart';
+import '../../controllers/affiliates_controller.dart';
 import '../../widgets/shared/pagination_controls.dart';
 import 'components/affiliate_list.dart';
 import 'components/affiliate_filters.dart';
@@ -17,14 +17,14 @@ class AffiliateManagementScreen extends StatefulWidget {
 class _AffiliateManagementScreenState extends State<AffiliateManagementScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late final AffiliateController controller;
+  late final AffiliatesController controller;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    controller = Get.put(AffiliateController());
-    controller.loadAffiliates();
+    controller = Get.put(AffiliatesController());
+    controller.fetchAffiliates();
   }
 
   @override

@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import { AffiliateController } from '../controllers/affiliate.controller';
-import { authMiddleware } from '../middleware/auth.middleware'; 
+import { authenticateToken, authMiddleware } from '../middleware/auth.middleware';
+import { debugMiddleware } from '../middleware/debug.middleware';
 
 const router = Router();
+
+// Ajouter le middleware de debug en développement
+if (process.env.NODE_ENV !== 'production') {
+  router.use(debugMiddleware);
+}
 
 // Middleware pour vérifier les droits admin
 const adminCheck = (req: any, res: any, next: any) => {
@@ -23,43 +29,13 @@ router.get('/current-level', authMiddleware, AffiliateController.getCurrentLevel
 router.post('/generate-code', authMiddleware, AffiliateController.generateAffiliateCode);
 
 // Routes d'administration
-router.get('/admin/list', 
-  authMiddleware,
-  adminCheck,
-  AffiliateController.getAllAffiliates
-); 
- 
-// Gestion des demandes de retrait (admin)
-router.get('/admin/withdrawals/pending',
-  authMiddleware,
-  adminCheck,
-  AffiliateController.getPendingWithdrawals
-);
-
-router.get('/admin/withdrawals',
-  authMiddleware,
-  adminCheck,
-  AffiliateController.getWithdrawals
-);
-
-router.patch('/admin/withdrawals/:withdrawalId/reject',
-  authMiddleware,
-  adminCheck,
-  AffiliateController.rejectWithdrawal
-);
-
-router.patch('/admin/withdrawals/:withdrawalId/approve',
-  authMiddleware,
-  adminCheck,
-  AffiliateController.approveWithdrawal
-);
-
-// Mise à jour du statut d'un affilié (admin)
-router.patch('/admin/affiliates/:affiliateId/status',
-  authMiddleware,
-  adminCheck,
-  AffiliateController.updateAffiliateStatus
-);
+router.get('/admin/list', authenticateToken, adminCheck, AffiliateController.getAllAffiliates);
+router.get('/admin/stats', authenticateToken, adminCheck, AffiliateController.getAffiliateStats);
+router.get('/admin/withdrawals/pending', authenticateToken, adminCheck, AffiliateController.getPendingWithdrawals);
+router.get('/admin/withdrawals', authenticateToken, adminCheck, AffiliateController.getWithdrawals);
+router.patch('/admin/withdrawals/:withdrawalId/reject', authenticateToken, adminCheck, AffiliateController.rejectWithdrawal);
+router.patch('/admin/withdrawals/:withdrawalId/approve', authenticateToken, adminCheck, AffiliateController.approveWithdrawal);
+router.patch('/admin/affiliates/:affiliateId/status', authenticateToken, adminCheck, AffiliateController.updateAffiliateStatus);
 
 // Création d'un client avec code affilié
 router.post('/register-with-code', AffiliateController.createCustomerWithAffiliateCode);

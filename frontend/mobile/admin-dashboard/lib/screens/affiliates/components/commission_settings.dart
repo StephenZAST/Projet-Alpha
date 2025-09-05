@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
-import '../../../controllers/affiliate_controller.dart';
+import '../../../controllers/affiliates_controller.dart';
 
 class CommissionSettings extends StatelessWidget {
   const CommissionSettings({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AffiliateController>();
+    final controller = Get.find<AffiliatesController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -48,72 +48,12 @@ class CommissionSettings extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: AppSpacing.sm),
-                TextFormField(
-                  initialValue: controller.commissionRate.value.toString(),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    hintText: 'Entrez le taux de commission',
-                    suffixText: '%',
-                    border: OutlineInputBorder(
-                      borderRadius: AppRadius.radiusSM,
-                    ),
-                  ),
-                  onChanged: (value) {
-                    if (value.isNotEmpty) {
-                      controller.commissionRate.value =
-                          double.tryParse(value) ?? 0.0;
-                    }
-                  },
-                ),
-                SizedBox(height: defaultPadding),
-                // Points de fidélité
                 Text(
-                  'Points de Fidélité par Parrainage',
-                  style: AppTextStyles.bodyBold.copyWith(
-                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  'Configuration des commissions disponible dans une version future',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
                   ),
-                ),
-                SizedBox(height: AppSpacing.sm),
-                TextFormField(
-                  initialValue: controller.rewardPoints.value.toString(),
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    hintText: 'Entrez les points de fidélité',
-                    suffixText: 'points',
-                    border: OutlineInputBorder(
-                      borderRadius: AppRadius.radiusSM,
-                    ),
-                  ),
-                  onChanged: (value) {
-                    if (value.isNotEmpty) {
-                      controller.rewardPoints.value = int.tryParse(value) ?? 0;
-                    }
-                  },
-                ),
-                SizedBox(height: defaultPadding * 2),
-                // Bouton de sauvegarde
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton.icon(
-                      icon: Icon(Icons.save),
-                      label: Text('Enregistrer les modifications'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.textLight,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xl,
-                          vertical: AppSpacing.md,
-                        ),
-                      ),
-                      onPressed: () {
-                        controller.updateCommissionSettings(
-                          controller.commissionRate.value,
-                          controller.rewardPoints.value,
-                        );
-                      },
-                    ),
-                  ],
                 ),
               ],
             );
@@ -146,21 +86,21 @@ class CommissionSettings extends StatelessWidget {
                 children: [
                   _buildStatTile(
                     'Affiliés Actifs',
-                    controller.activeAffiliates.toString(),
+                    controller.stats.value?.activeAffiliates.toString() ?? '0',
                     Icons.people_outline,
                     AppColors.success,
                     isDark,
                   ),
                   _buildStatTile(
                     'Commissions Totales',
-                    '${controller.totalCommissionsPaid.toStringAsFixed(2)} €',
+                    controller.stats.value?.formattedTotalCommissions ?? '0 FCFA',
                     Icons.monetization_on_outlined,
                     AppColors.accent,
                     isDark,
                   ),
                   _buildStatTile(
                     'Demandes en Attente',
-                    controller.pendingWithdrawals.toString(),
+                    controller.pendingWithdrawals.length.toString(),
                     Icons.access_time,
                     AppColors.warning,
                     isDark,

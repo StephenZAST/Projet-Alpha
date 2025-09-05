@@ -49,9 +49,14 @@ class ApiService extends GetxService {
           print('[ApiService] Making request to: ${options.path}');
           // Utiliser la nouvelle méthode getToken
           final token = getToken();
+          print('[ApiService] Token available: ${token != null}');
           if (token != null) {
+            print('[ApiService] Adding Authorization header with token: ${token.substring(0, 20)}...');
             options.headers['Authorization'] = 'Bearer $token';
+          } else {
+            print('[ApiService] ⚠️ NO TOKEN FOUND - Request will fail for protected routes');
           }
+          print('[ApiService] Request headers: ${options.headers}');
           return handler.next(options);
         },
         onResponse: (response, handler) {

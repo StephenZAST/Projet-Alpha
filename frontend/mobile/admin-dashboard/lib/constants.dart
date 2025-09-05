@@ -239,9 +239,10 @@ class MenuIndices {
   static const int articles = 4;
   static const int serviceTypes = 5;
   static const int users = 6;
-  static const int profile = 7;
-  static const int notifications = 8;
-  static const int serviceArticleCouples = 9;
-  static const int subscriptions = 10;
-  static const int offers = 11;
+  static const int affiliates = 7;        // 🤝 Nouvelle page Affiliés
+  static const int profile = 8;
+  static const int notifications = 9;
+  static const int serviceArticleCouples = 10;
+  static const int subscriptions = 11;
+  static const int offers = 12;
 }

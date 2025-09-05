@@ -8,6 +8,11 @@ import 'components/user_stats_grid.dart';
 import 'components/active_filter_indicator.dart';
 import '../../widgets/shared/glass_button.dart';
 import 'components/user_create_dialog.dart';
+import 'components/user_details_dialog.dart';
+import 'components/user_edit_dialog.dart';
+import '../../models/user.dart';
+import '../../models/address.dart';
+import '../../services/user_service.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({Key? key}) : super(key: key);
@@ -141,9 +146,9 @@ class _UsersScreenState extends State<UsersScreen> {
                   
                   return UsersTable(
                     users: controller.users,
-                    onUserSelect: (id) {},
-                    onEdit: (id) {},
-                    onDelete: (id) {},
+                    onUserSelect: (id) => _showUserDetails(id),
+                    onEdit: (id) => _editUser(id),
+                    onDelete: (id) => _deleteUser(id),
                   );
                 },
               ),
@@ -173,5 +178,127 @@ class _UsersScreenState extends State<UsersScreen> {
         ),
       ),
     );
+  }
+
+  /// Affiche les détails d'un utilisateur
+  Future<void> _showUserDetails(String userId) async {
+    try {
+      print('[UsersScreen] Affichage des détails pour l\'utilisateur: $userId');
+      
+      // Trouver l'utilisateur dans la liste
+      final user = controller.users.firstWhereOrNull((u) => u.id == userId);
+      if (user == null) {
+        Get.rawSnackbar(
+          message: 'Utilisateur introuvable',
+          backgroundColor: AppColors.error,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+
+      // Charger les adresses de l'utilisateur
+      List<Address> addresses = [];
+      try {
+        addresses = await UserService.getUserAddresses(userId);
+      } catch (e) {
+        print('[UsersScreen] Erreur lors du chargement des adresses: $e');
+        // Continuer même si les adresses ne se chargent pas
+      }
+
+      // Afficher le dialog des détails
+      Get.dialog(
+        UserDetailsDialog(
+          user: user,
+          addresses: addresses,
+        ),
+        barrierDismissible: true,
+      );
+    } catch (e) {
+      print('[UsersScreen] Erreur lors de l\'affichage des détails: $e');
+      Get.rawSnackbar(
+        message: 'Erreur lors du chargement des détails',
+        backgroundColor: AppColors.error,
+        snackPosition: SnackPosition.TOP,
+      );
+    }
+  }
+
+  /// Ouvre le dialog d'édition d'un utilisateur
+  Future<void> _editUser(String userId) async {
+    try {
+      print('[UsersScreen] Édition de l\'utilisateur: $userId');
+      
+      // Trouver l'utilisateur dans la liste
+      final user = controller.users.firstWhereOrNull((u) => u.id == userId);
+      if (user == null) {
+        Get.rawSnackbar(
+          message: 'Utilisateur introuvable',
+          backgroundColor: AppColors.error,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+
+      // Vérifier les permissions
+      if (!controller.canManageUser(user)) {
+        Get.rawSnackbar(
+          message: 'Vous n\'avez pas les permissions pour modifier cet utilisateur',
+          backgroundColor: AppColors.error,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+
+      // Afficher le dialog d'édition
+      Get.dialog(
+        UserEditDialog(user: user),
+        barrierDismissible: false,
+      );
+    } catch (e) {
+      print('[UsersScreen] Erreur lors de l\'ouverture du dialog d\'édition: $e');
+      Get.rawSnackbar(
+        message: 'Erreur lors de l\'ouverture du dialog d\'édition',
+        backgroundColor: AppColors.error,
+        snackPosition: SnackPosition.TOP,
+      );
+    }
+  }
+
+  /// Supprime un utilisateur
+  Future<void> _deleteUser(String userId) async {
+    try {
+      print('[UsersScreen] Suppression de l\'utilisateur: $userId');
+      
+      // Trouver l'utilisateur dans la liste
+      final user = controller.users.firstWhereOrNull((u) => u.id == userId);
+      if (user == null) {
+        Get.rawSnackbar(
+          message: 'Utilisateur introuvable',
+          backgroundColor: AppColors.error,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+
+      // Vérifier les permissions
+      if (!controller.canManageUser(user)) {
+        Get.rawSnackbar(
+          message: 'Vous n\'avez pas les permissions pour supprimer cet utilisateur',
+          backgroundColor: AppColors.error,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+
+      // Utiliser la méthode du contrôleur qui gère déjà la confirmation
+      await controller.deleteUser(userId, '${user.firstName} ${user.lastName}');
+    } catch (e) {
+      print('[UsersScreen] Erreur lors de la suppression: $e');
+      Get.rawSnackbar(
+        message: 'Erreur lors de la suppression',
+        backgroundColor: AppColors.error,
+        snackPosition: SnackPosition.TOP,
+      );
+    }
   }
 }

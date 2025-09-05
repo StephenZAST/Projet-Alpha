@@ -14,12 +14,22 @@ interface DecodedToken {
  */
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log(`[AuthMiddleware] ${req.method} ${req.path}`);
+    console.log('[AuthMiddleware] Headers:', {
+      authorization: req.headers['authorization'] ? 'Bearer [TOKEN_PRESENT]' : 'NO_AUTH_HEADER',
+      'content-type': req.headers['content-type'],
+      'user-agent': req.headers['user-agent']?.substring(0, 50) + '...'
+    });
+    
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
+      console.log('[AuthMiddleware] ❌ No token provided');
       return res.status(401).json({ error: 'Missing authentication token' });
     }
+
+    console.log('[AuthMiddleware] ✅ Token found:', token.substring(0, 20) + '...');
 
     if (AuthService.isTokenBlacklisted(token)) {
       return res.status(401).json({ error: 'Token is no longer valid' });

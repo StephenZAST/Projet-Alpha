@@ -15,6 +15,8 @@ import '../controllers/users_controller.dart';
 import '../screens/services/service_article_couples_screen.dart';
 import '../screens/subscriptions/subscription_management_page.dart';
 import '../screens/offers/offers_screen.dart';
+import '../screens/affiliates/affiliates_screen.dart';
+import '../controllers/affiliates_controller.dart';
 
 class MenuAppController extends GetxController {
   // Singleton pattern
@@ -76,6 +78,11 @@ class MenuAppController extends GetxController {
     if (index == MenuIndices.users && !Get.isRegistered<UsersController>()) {
       Get.put(UsersController());
     }
+    
+    // Si on navigue vers l'écran des affiliés, initialiser le contrôleur
+    if (index == MenuIndices.affiliates && !Get.isRegistered<AffiliatesController>()) {
+      Get.put(AffiliatesController());
+    }
   }
 
   String _getScreenName(int index) {
@@ -102,6 +109,8 @@ class MenuAppController extends GetxController {
         return 'ServiceArticleCouplesScreen';
       case MenuIndices.subscriptions:
         return 'SubscriptionManagementPage';
+      case MenuIndices.affiliates:
+        return 'AffiliatesScreen';
       default:
         return 'Unknown';
     }
@@ -119,9 +128,10 @@ class MenuAppController extends GetxController {
   void goToArticles() => updateIndex(4); // Nouvelle section
   void goToServiceTypes() => updateIndex(5); // Nouvelle section
   void goToUsers() => updateIndex(6);
-  void goToProfile() => updateIndex(7);
-  void goToNotifications() => updateIndex(8);
-  void goToSubscriptions() => updateIndex(9); // Nouvelle section
+  void goToAffiliates() => updateIndex(7); // 🤝 Nouvelle section Affiliés
+  void goToProfile() => updateIndex(8);
+  void goToNotifications() => updateIndex(9);
+  void goToSubscriptions() => updateIndex(11); // Nouvelle section
 
   // Obtenir le titre de la page actuelle
   String getCurrentPageTitle() {
@@ -146,6 +156,8 @@ class MenuAppController extends GetxController {
         return 'Notifications';
       case MenuIndices.subscriptions:
         return 'Abonnements';
+      case MenuIndices.affiliates:
+        return 'Affiliés';
       default:
         return 'Tableau de bord';
     }
@@ -196,6 +208,12 @@ class MenuAppController extends GetxController {
         return SubscriptionManagementPage();
       case MenuIndices.offers:
         return OffersScreen();
+      case MenuIndices.affiliates:
+        // S'assurer que le AffiliatesController est enregistré
+        if (!Get.isRegistered<AffiliatesController>()) {
+          Get.put(AffiliatesController(), permanent: true);
+        }
+        return AffiliatesScreen();
       default:
         return DashboardScreen();
     }

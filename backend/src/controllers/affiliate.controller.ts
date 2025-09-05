@@ -49,9 +49,11 @@ export class AffiliateController {
       const formattedLevels = levels.map(level => ({
         id: level.id,
         name: level.name,
-        minEarnings: level.minEarnings,
-        commissionRate: level.commissionRate,
-        description: `${level.commissionRate}% de commission sur les ventes directes`
+        minEarnings: Number(level.minEarnings),
+        commissionRate: Number(level.commissionRate),
+        description: `${level.commissionRate}% de commission sur les ventes directes`,
+        createdAt: level.created_at,
+        updatedAt: level.updated_at
       }));
 
       const additionalInfo = {
@@ -284,6 +286,20 @@ export class AffiliateController {
       res.json({ data: affiliates });
     } catch (error: any) {
       console.error('Get all affiliates error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getAffiliateStats(req: Request, res: Response) {
+    try {
+      if (req.user?.role !== 'ADMIN' && req.user?.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const stats = await AffiliateService.getAffiliateStats();
+      res.json({ data: stats });
+    } catch (error: any) {
+      console.error('Get affiliate stats error:', error);
       res.status(500).json({ error: error.message });
     }
   }
