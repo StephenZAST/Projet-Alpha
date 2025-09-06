@@ -12,7 +12,6 @@ class FlashClientStep extends StatelessWidget {
   Future<Map<String, dynamic>?> _fetchUser(String userId) async {
     try {
       final user = await UserService.getUserById(userId);
-      if (user == null) return null;
       // Ajout d'un log pour debug
       print('[FlashClientStep] Infos utilisateur récupérées: ${user.toJson()}');
       return {

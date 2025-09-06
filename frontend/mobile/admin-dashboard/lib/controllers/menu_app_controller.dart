@@ -17,6 +17,10 @@ import '../screens/subscriptions/subscription_management_page.dart';
 import '../screens/offers/offers_screen.dart';
 import '../screens/affiliates/affiliates_screen.dart';
 import '../controllers/affiliates_controller.dart';
+import '../screens/loyalty/loyalty_screen.dart';
+import '../controllers/loyalty_controller.dart';
+import '../screens/delivery/delivery_screen.dart';
+import '../controllers/delivery_controller.dart';
 
 class MenuAppController extends GetxController {
   // Singleton pattern
@@ -83,6 +87,16 @@ class MenuAppController extends GetxController {
     if (index == MenuIndices.affiliates && !Get.isRegistered<AffiliatesController>()) {
       Get.put(AffiliatesController());
     }
+    
+    // Si on navigue vers l'écran de fidélité, initialiser le contrôleur
+    if (index == MenuIndices.loyalty && !Get.isRegistered<LoyaltyController>()) {
+      Get.put(LoyaltyController());
+    }
+    
+    // Si on navigue vers l'écran de livraison, initialiser le contrôleur
+    if (index == MenuIndices.delivery && !Get.isRegistered<DeliveryController>()) {
+      Get.put(DeliveryController());
+    }
   }
 
   String _getScreenName(int index) {
@@ -111,6 +125,10 @@ class MenuAppController extends GetxController {
         return 'SubscriptionManagementPage';
       case MenuIndices.affiliates:
         return 'AffiliatesScreen';
+      case MenuIndices.loyalty:
+        return 'LoyaltyScreen';
+      case MenuIndices.delivery:
+        return 'DeliveryScreen';
       default:
         return 'Unknown';
     }
@@ -129,9 +147,11 @@ class MenuAppController extends GetxController {
   void goToServiceTypes() => updateIndex(5); // Nouvelle section
   void goToUsers() => updateIndex(6);
   void goToAffiliates() => updateIndex(7); // 🤝 Nouvelle section Affiliés
-  void goToProfile() => updateIndex(8);
-  void goToNotifications() => updateIndex(9);
-  void goToSubscriptions() => updateIndex(11); // Nouvelle section
+  void goToLoyalty() => updateIndex(8); // ⭐ Nouvelle section Loyalty & Rewards
+  void goToDelivery() => updateIndex(9); // 🚚 Nouvelle section Gestion Livreurs
+  void goToProfile() => updateIndex(10);
+  void goToNotifications() => updateIndex(11);
+  void goToSubscriptions() => updateIndex(13); // Nouvelle section
 
   // Obtenir le titre de la page actuelle
   String getCurrentPageTitle() {
@@ -158,6 +178,8 @@ class MenuAppController extends GetxController {
         return 'Abonnements';
       case MenuIndices.affiliates:
         return 'Affiliés';
+      case MenuIndices.loyalty:
+        return 'Système de Fidélité';
       default:
         return 'Tableau de bord';
     }
@@ -214,6 +236,12 @@ class MenuAppController extends GetxController {
           Get.put(AffiliatesController(), permanent: true);
         }
         return AffiliatesScreen();
+      case MenuIndices.loyalty:
+        // S'assurer que le LoyaltyController est enregistré
+        if (!Get.isRegistered<LoyaltyController>()) {
+          Get.put(LoyaltyController(), permanent: true);
+        }
+        return LoyaltyScreen();
       default:
         return DashboardScreen();
     }

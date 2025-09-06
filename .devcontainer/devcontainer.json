@@ -1,0 +1,19 @@
+{
+  "name": "Projet Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {},
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind"
+  ],
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-python.python",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}

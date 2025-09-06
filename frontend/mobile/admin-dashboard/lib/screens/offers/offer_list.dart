@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../widgets/shared/glass_button.dart';
-import 'components/offer_form_dialog.dart';
 
 class OfferList extends StatelessWidget {
   final List<Map<String, dynamic>> offers;

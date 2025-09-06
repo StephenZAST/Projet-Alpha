@@ -23,8 +23,8 @@ export class LoyaltyService {
         const updatedPoints = await tx.loyalty_points.update({
           where: { userId: userId },
           data: {
-            pointsBalance: currentBalance + points,
-            totalEarned: currentTotal + points,
+            pointsBalance: { increment: points },
+            totalEarned: { increment: points },
             updatedAt: new Date()
           }
         });
@@ -42,13 +42,7 @@ export class LoyaltyService {
         });
 
         // Mise à jour du solde de points (remplace le trigger SQL)
-        await tx.loyalty_points.update({
-          where: { userId: userId },
-          data: {
-            pointsBalance: { increment: points },
-            updatedAt: new Date()
-          }
-        });
+  // Suppression de l'update redondant du solde de points
 
         // Vérification du solde négatif
         const checkLoyalty = await tx.loyalty_points.findUnique({ where: { userId } });
@@ -93,7 +87,7 @@ export class LoyaltyService {
         const updatedPoints = await tx.loyalty_points.update({
           where: { userId: userId },
           data: {
-            pointsBalance: currentBalance - points,
+            pointsBalance: { decrement: points },
             updatedAt: new Date()
           }
         });
@@ -111,13 +105,7 @@ export class LoyaltyService {
         });
 
         // Mise à jour du solde de points (remplace le trigger SQL)
-        await tx.loyalty_points.update({
-          where: { userId: userId },
-          data: {
-            pointsBalance: { decrement: points },
-            updatedAt: new Date()
-          }
-        });
+  // Suppression de l'update redondant du solde de points
 
         // Vérification du solde négatif
         const checkLoyalty = await tx.loyalty_points.findUnique({ where: { userId } });

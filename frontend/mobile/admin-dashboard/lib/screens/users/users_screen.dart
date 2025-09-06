@@ -10,7 +10,6 @@ import '../../widgets/shared/glass_button.dart';
 import 'components/user_create_dialog.dart';
 import 'components/user_details_dialog.dart';
 import 'components/user_edit_dialog.dart';
-import '../../models/user.dart';
 import '../../models/address.dart';
 import '../../services/user_service.dart';
 
@@ -28,7 +27,7 @@ class _UsersScreenState extends State<UsersScreen> {
   void initState() {
     super.initState();
     print('[UsersScreen] initState: Initialisation');
-    
+
     // S'assurer que le contrôleur existe et est unique
     if (Get.isRegistered<UsersController>()) {
       controller = Get.find<UsersController>();
@@ -40,7 +39,7 @@ class _UsersScreenState extends State<UsersScreen> {
   @override
   Widget build(BuildContext context) {
     print('[UsersScreen] build: Début de la construction');
-    
+
     return Scaffold(
       body: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -109,20 +108,22 @@ class _UsersScreenState extends State<UsersScreen> {
               child: GetX<UsersController>(
                 builder: (controller) {
                   print('[UsersScreen] GetX builder: UsersTable');
-                  print('[UsersScreen] Users count: ${controller.users.length}');
-                  
+                  print(
+                      '[UsersScreen] Users count: ${controller.users.length}');
+
                   if (controller.isLoading.value) {
                     return Center(
                       child: CircularProgressIndicator(),
                     );
                   }
-                  
+
                   if (controller.hasError.value) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                          Icon(Icons.error_outline,
+                              size: 64, color: AppColors.error),
                           SizedBox(height: 16),
                           Text(
                             'Erreur de chargement',
@@ -143,7 +144,7 @@ class _UsersScreenState extends State<UsersScreen> {
                       ),
                     );
                   }
-                  
+
                   return UsersTable(
                     users: controller.users,
                     onUserSelect: (id) => _showUserDetails(id),
@@ -184,7 +185,7 @@ class _UsersScreenState extends State<UsersScreen> {
   Future<void> _showUserDetails(String userId) async {
     try {
       print('[UsersScreen] Affichage des détails pour l\'utilisateur: $userId');
-      
+
       // Trouver l'utilisateur dans la liste
       final user = controller.users.firstWhereOrNull((u) => u.id == userId);
       if (user == null) {
@@ -227,7 +228,7 @@ class _UsersScreenState extends State<UsersScreen> {
   Future<void> _editUser(String userId) async {
     try {
       print('[UsersScreen] Édition de l\'utilisateur: $userId');
-      
+
       // Trouver l'utilisateur dans la liste
       final user = controller.users.firstWhereOrNull((u) => u.id == userId);
       if (user == null) {
@@ -242,7 +243,8 @@ class _UsersScreenState extends State<UsersScreen> {
       // Vérifier les permissions
       if (!controller.canManageUser(user)) {
         Get.rawSnackbar(
-          message: 'Vous n\'avez pas les permissions pour modifier cet utilisateur',
+          message:
+              'Vous n\'avez pas les permissions pour modifier cet utilisateur',
           backgroundColor: AppColors.error,
           snackPosition: SnackPosition.TOP,
         );
@@ -255,7 +257,8 @@ class _UsersScreenState extends State<UsersScreen> {
         barrierDismissible: false,
       );
     } catch (e) {
-      print('[UsersScreen] Erreur lors de l\'ouverture du dialog d\'édition: $e');
+      print(
+          '[UsersScreen] Erreur lors de l\'ouverture du dialog d\'édition: $e');
       Get.rawSnackbar(
         message: 'Erreur lors de l\'ouverture du dialog d\'édition',
         backgroundColor: AppColors.error,
@@ -268,7 +271,7 @@ class _UsersScreenState extends State<UsersScreen> {
   Future<void> _deleteUser(String userId) async {
     try {
       print('[UsersScreen] Suppression de l\'utilisateur: $userId');
-      
+
       // Trouver l'utilisateur dans la liste
       final user = controller.users.firstWhereOrNull((u) => u.id == userId);
       if (user == null) {
@@ -283,7 +286,8 @@ class _UsersScreenState extends State<UsersScreen> {
       // Vérifier les permissions
       if (!controller.canManageUser(user)) {
         Get.rawSnackbar(
-          message: 'Vous n\'avez pas les permissions pour supprimer cet utilisateur',
+          message:
+              'Vous n\'avez pas les permissions pour supprimer cet utilisateur',
           backgroundColor: AppColors.error,
           snackPosition: SnackPosition.TOP,
         );

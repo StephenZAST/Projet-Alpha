@@ -65,6 +65,7 @@ class AdminRoutes {
   static const String profile = '/profile';
   static const String notifications = '/notifications';
   static const String subscriptions = '/subscriptions';
+  static const String loyalty = '/loyalty';
 
   // Ajouter les routes pour les commandes flash
   static const String flashOrders = '/orders/flash';
@@ -88,6 +89,8 @@ class AdminRoutes {
       //   return '/service-types'; // Ajout de la route service-types
       case MenuIndices.users:
         return users;
+      case MenuIndices.loyalty:
+        return loyalty;
       case MenuIndices.profile:
         return profile;
       case MenuIndices.notifications:
@@ -116,6 +119,8 @@ class AdminRoutes {
         return MenuIndices.serviceTypes;
       case users:
         return MenuIndices.users;
+      case loyalty:
+        return MenuIndices.loyalty;
       case profile:
         return MenuIndices.profile;
       case notifications:
@@ -237,6 +242,10 @@ class AdminRoutes {
 
   static void goToNotifications() {
     navigateByIndex(6);
+  }
+
+  static void goToLoyalty() {
+    navigateByIndex(MenuIndices.loyalty);
   }
 
   // Ajouter les méthodes de navigation

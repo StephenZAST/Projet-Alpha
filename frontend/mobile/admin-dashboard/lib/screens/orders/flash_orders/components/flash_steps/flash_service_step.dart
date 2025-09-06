@@ -27,12 +27,6 @@ class _FlashServiceStepState extends State<FlashServiceStep> {
   bool isPremium = false;
   double? weight;
 
-  int _getDraftQuantity(String articleId) {
-    final item = widget.controller.draft.value.items
-        .firstWhereOrNull((i) => i.articleId == articleId);
-    return item?.quantity ?? 0;
-  }
-
   void _onQuantityChanged(String articleId, int value,
       {bool? isPremium, String? serviceId}) {
     widget.controller.updateDraftItemQuantity(
@@ -216,10 +210,6 @@ class _FlashServiceStepState extends State<FlashServiceStep> {
 
   @override
   Widget build(BuildContext context) {
-    final bool canProceed = selectedServiceType != null &&
-        selectedService != null &&
-        couples.isNotEmpty &&
-        widget.controller.draft.value.items.isNotEmpty;
     return isLoading
         ? Center(child: CircularProgressIndicator())
         : Container(

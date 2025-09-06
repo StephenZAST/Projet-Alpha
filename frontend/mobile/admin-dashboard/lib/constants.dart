@@ -240,9 +240,11 @@ class MenuIndices {
   static const int serviceTypes = 5;
   static const int users = 6;
   static const int affiliates = 7;        // 🤝 Nouvelle page Affiliés
-  static const int profile = 8;
-  static const int notifications = 9;
-  static const int serviceArticleCouples = 10;
-  static const int subscriptions = 11;
-  static const int offers = 12;
+  static const int loyalty = 8;           // ⭐ Nouvelle page Loyalty & Rewards
+  static const int delivery = 9;          // 🚚 Nouvelle page Gestion Livreurs
+  static const int profile = 10;
+  static const int notifications = 11;
+  static const int serviceArticleCouples = 12;
+  static const int subscriptions = 13;
+  static const int offers = 14;
 }

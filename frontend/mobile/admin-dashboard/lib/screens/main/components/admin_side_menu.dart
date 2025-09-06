@@ -135,6 +135,20 @@ class AdminSideMenu extends StatelessWidget {
                   menuController.selectedIndex == MenuIndices.affiliates, // 7
               onPress: () => menuController.updateIndex(MenuIndices.affiliates),
             ),
+            DrawerListTile(
+              title: "Système de Fidélité",
+              icon: Icons.stars_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.loyalty, // 8
+              onPress: () => menuController.updateIndex(MenuIndices.loyalty),
+            ),
+            DrawerListTile(
+              title: "Gestion Livreurs",
+              icon: Icons.local_shipping_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.delivery, // 9
+              onPress: () => menuController.updateIndex(MenuIndices.delivery),
+            ),
             Divider(color: theme.dividerColor),
             // NOTIFICATIONS ET PROFIL
             Padding(
