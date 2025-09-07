@@ -182,26 +182,7 @@ Pour chaque nouveau screen `X` :
   - POST /<feature>/:id/action
   - Response envelope : `{ success: bool, data: ..., error?: { code, message, fields? } }`
 
----
 
-## Étapes d'implémentation recommandées (ordre)
-1. Centraliser tokens (vérifier `constants.dart`).
-2. S'assurer que `GlassContainer` lit ces tokens correctement.
-3. Remplacer les containers hard-coded par `GlassContainer` ou par `AppColors.cardBg*` + border token.
-4. Standardiser `GlassButton` et remplacer usages (voir `design_buton.md`).
-5. Ajouter skeletons pour les listes et la grille de stats.
-6. Exécuter `flutter analyze` et corriger les erreurs.
-7. QA visuelle (dark & light) : comparer avec `affiliates` et ajuster si nécessaire.
-8. Tests unitaires basiques pour le controller + widget smoke test.
-
----
-
-## Comment vérifier (smoke checklist)
-- `flutter analyze` -> no errors.
-- Loyalty et Affiliates affichent les mêmes valeurs de background (hex + opacité).
-- Keyboard navigation + focus visible.
-- Screens with many rows scroll smoothly (60fps target on dev machines).
-- Unit tests basiques pass.
 
 ---
 
@@ -243,4 +224,4 @@ Toujours relire avant modification :
 
 ---
 
-Si tu veux, j'applique maintenant ce plan (création du fichier déjà faite). Je peux aussi parcourir et patcher automatiquement tous les composants `loyalty/*` restants pour assurer la parité complète avec `affiliates`.
+
