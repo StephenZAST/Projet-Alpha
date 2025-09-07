@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:flutter_map/flutter_map.dart';
 import '../models/delivery.dart';
 import '../services/delivery_service.dart';
 
@@ -26,6 +27,11 @@ class DeliveryController extends GetxController {
   final delivererOrders = <DeliveryOrder>[].obs;
   final selectedOrder = Rxn<DeliveryOrder>();
 
+  // Map / visualization
+  final mapController = Rxn<MapController>();
+  final markers = <Marker>[].obs;
+  final routes = <Polyline>[].obs;
+
   // Filtres et recherche
   final searchQuery = ''.obs;
   final selectedStatus = Rxn<String>();
@@ -44,13 +50,19 @@ class DeliveryController extends GetxController {
   void onInit() {
     super.onInit();
     print('[DeliveryController] Initialisation');
-    
+
     // Charger les données initiales
     refreshAll();
 
+    // Initialiser le mapController si nécessaire
+    if (mapController.value == null) {
+      mapController.value = MapController();
+    }
+
     // Écouter les changements de recherche
-    debounce(searchQuery, (_) => _applyFilters(), time: Duration(milliseconds: 500));
-    
+    debounce(searchQuery, (_) => _applyFilters(),
+        time: Duration(milliseconds: 500));
+
     // Écouter les changements de filtres
     ever(selectedStatus, (_) => _applyFilters());
     ever(showActiveOnly, (_) => _applyFilters());
@@ -85,7 +97,7 @@ class DeliveryController extends GetxController {
 
       deliverers.assignAll(result);
       totalDeliverers.value = result.length;
-      
+
       _applyFilters();
 
       print('[DeliveryController] ${result.length} livreurs chargés');
@@ -93,7 +105,7 @@ class DeliveryController extends GetxController {
       print('[DeliveryController] Erreur lors du chargement des livreurs: $e');
       hasError.value = true;
       errorMessage.value = 'Erreur lors du chargement des livreurs';
-      
+
       Get.snackbar(
         'Erreur',
         'Impossible de charger les livreurs',
@@ -116,7 +128,8 @@ class DeliveryController extends GetxController {
 
       print('[DeliveryController] Statistiques globales chargées');
     } catch (e) {
-      print('[DeliveryController] Erreur lors du chargement des statistiques: $e');
+      print(
+          '[DeliveryController] Erreur lors du chargement des statistiques: $e');
     } finally {
       isLoadingStats.value = false;
     }
@@ -136,9 +149,11 @@ class DeliveryController extends GetxController {
 
       activeDeliveries.assignAll(orders);
 
-      print('[DeliveryController] ${orders.length} livraisons actives chargées');
+      print(
+          '[DeliveryController] ${orders.length} livraisons actives chargées');
     } catch (e) {
-      print('[DeliveryController] Erreur lors du chargement des livraisons: $e');
+      print(
+          '[DeliveryController] Erreur lors du chargement des livraisons: $e');
     } finally {
       isLoadingOrders.value = false;
     }
@@ -147,7 +162,7 @@ class DeliveryController extends GetxController {
   /// Sélectionne un livreur et charge ses données
   Future<void> selectDeliverer(DeliveryUser deliverer) async {
     selectedDeliverer.value = deliverer;
-    
+
     // Charger les statistiques et commandes du livreur
     await Future.wait([
       loadDelivererStats(deliverer.id),
@@ -158,24 +173,28 @@ class DeliveryController extends GetxController {
   /// Charge les statistiques d'un livreur
   Future<void> loadDelivererStats(String delivererId) async {
     try {
-      print('[DeliveryController] Chargement des statistiques du livreur: $delivererId');
+      print(
+          '[DeliveryController] Chargement des statistiques du livreur: $delivererId');
 
       final stats = await DeliveryService.getDelivererStats(delivererId);
       selectedDelivererStats.value = stats;
     } catch (e) {
-      print('[DeliveryController] Erreur lors du chargement des statistiques du livreur: $e');
+      print(
+          '[DeliveryController] Erreur lors du chargement des statistiques du livreur: $e');
     }
   }
 
   /// Charge les commandes d'un livreur
   Future<void> loadDelivererOrders(String delivererId) async {
     try {
-      print('[DeliveryController] Chargement des commandes du livreur: $delivererId');
+      print(
+          '[DeliveryController] Chargement des commandes du livreur: $delivererId');
 
       final orders = await DeliveryService.getDelivererOrders(delivererId);
       delivererOrders.assignAll(orders);
     } catch (e) {
-      print('[DeliveryController] Erreur lors du chargement des commandes du livreur: $e');
+      print(
+          '[DeliveryController] Erreur lors du chargement des commandes du livreur: $e');
     }
   }
 
@@ -216,10 +235,11 @@ class DeliveryController extends GetxController {
         snackPosition: SnackPosition.TOP,
       );
 
-      print('[DeliveryController] Livreur créé avec succès: ${newDeliverer.id}');
+      print(
+          '[DeliveryController] Livreur créé avec succès: ${newDeliverer.id}');
     } catch (e) {
       print('[DeliveryController] Erreur lors de la création du livreur: $e');
-      
+
       Get.snackbar(
         'Erreur',
         'Impossible de créer le livreur',
@@ -279,8 +299,9 @@ class DeliveryController extends GetxController {
 
       print('[DeliveryController] Livreur mis à jour avec succès');
     } catch (e) {
-      print('[DeliveryController] Erreur lors de la mise à jour du livreur: $e');
-      
+      print(
+          '[DeliveryController] Erreur lors de la mise à jour du livreur: $e');
+
       Get.snackbar(
         'Erreur',
         'Impossible de mettre à jour le livreur',
@@ -321,8 +342,9 @@ class DeliveryController extends GetxController {
         print('[DeliveryController] Livreur supprimé avec succès');
       }
     } catch (e) {
-      print('[DeliveryController] Erreur lors de la suppression du livreur: $e');
-      
+      print(
+          '[DeliveryController] Erreur lors de la suppression du livreur: $e');
+
       Get.snackbar(
         'Erreur',
         'Impossible de supprimer le livreur',
@@ -336,9 +358,11 @@ class DeliveryController extends GetxController {
   /// Active/désactive un livreur
   Future<void> toggleDelivererStatus(String delivererId, bool isActive) async {
     try {
-      print('[DeliveryController] ${isActive ? 'Activation' : 'Désactivation'} du livreur: $delivererId');
+      print(
+          '[DeliveryController] ${isActive ? 'Activation' : 'Désactivation'} du livreur: $delivererId');
 
-      final success = await DeliveryService.toggleDelivererStatus(delivererId, isActive);
+      final success =
+          await DeliveryService.toggleDelivererStatus(delivererId, isActive);
 
       if (success) {
         // Recharger les données
@@ -352,7 +376,7 @@ class DeliveryController extends GetxController {
       }
     } catch (e) {
       print('[DeliveryController] Erreur lors du changement de statut: $e');
-      
+
       Get.snackbar(
         'Erreur',
         'Impossible de changer le statut du livreur',
@@ -362,11 +386,14 @@ class DeliveryController extends GetxController {
   }
 
   /// Assigne une commande à un livreur
-  Future<void> assignOrderToDeliverer(String orderId, String delivererId) async {
+  Future<void> assignOrderToDeliverer(
+      String orderId, String delivererId) async {
     try {
-      print('[DeliveryController] Attribution de la commande $orderId au livreur $delivererId');
+      print(
+          '[DeliveryController] Attribution de la commande $orderId au livreur $delivererId');
 
-      final success = await DeliveryService.assignOrderToDeliverer(orderId, delivererId);
+      final success =
+          await DeliveryService.assignOrderToDeliverer(orderId, delivererId);
 
       if (success) {
         // Recharger les livraisons actives
@@ -379,8 +406,9 @@ class DeliveryController extends GetxController {
         );
       }
     } catch (e) {
-      print('[DeliveryController] Erreur lors de l\'attribution de la commande: $e');
-      
+      print(
+          '[DeliveryController] Erreur lors de l\'attribution de la commande: $e');
+
       Get.snackbar(
         'Erreur',
         'Impossible d\'assigner la commande',
@@ -390,17 +418,22 @@ class DeliveryController extends GetxController {
   }
 
   /// Met à jour le statut d'une commande
-  Future<void> updateOrderStatus(String orderId, String newStatus, {String? note}) async {
+  Future<void> updateOrderStatus(String orderId, String newStatus,
+      {String? note}) async {
     try {
-      print('[DeliveryController] Mise à jour du statut de la commande $orderId vers $newStatus');
+      print(
+          '[DeliveryController] Mise à jour du statut de la commande $orderId vers $newStatus');
 
-      final success = await DeliveryService.updateOrderStatus(orderId, newStatus, note: note);
+      final success = await DeliveryService.updateOrderStatus(
+          orderId, newStatus,
+          note: note);
 
       if (success) {
         // Recharger les données
         await Future.wait([
           loadActiveDeliveries(),
-          if (selectedDeliverer.value != null) loadDelivererOrders(selectedDeliverer.value!.id),
+          if (selectedDeliverer.value != null)
+            loadDelivererOrders(selectedDeliverer.value!.id),
         ]);
 
         Get.snackbar(
@@ -411,7 +444,7 @@ class DeliveryController extends GetxController {
       }
     } catch (e) {
       print('[DeliveryController] Erreur lors de la mise à jour du statut: $e');
-      
+
       Get.snackbar(
         'Erreur',
         'Impossible de mettre à jour le statut',
@@ -431,8 +464,8 @@ class DeliveryController extends GetxController {
       final query = searchQuery.value.toLowerCase();
       filtered = filtered.where((deliverer) {
         return deliverer.fullName.toLowerCase().contains(query) ||
-               deliverer.email.toLowerCase().contains(query) ||
-               (deliverer.phone?.toLowerCase().contains(query) ?? false);
+            deliverer.email.toLowerCase().contains(query) ||
+            (deliverer.phone?.toLowerCase().contains(query) ?? false);
       }).toList();
     }
 
@@ -497,17 +530,21 @@ class DeliveryController extends GetxController {
     try {
       return await DeliveryService.isEmailAvailable(email);
     } catch (e) {
-      print('[DeliveryController] Erreur lors de la vérification de l\'email: $e');
+      print(
+          '[DeliveryController] Erreur lors de la vérification de l\'email: $e');
       return false;
     }
   }
 
   /// Réinitialise le mot de passe d'un livreur
-  Future<void> resetDelivererPassword(String delivererId, String newPassword) async {
+  Future<void> resetDelivererPassword(
+      String delivererId, String newPassword) async {
     try {
-      print('[DeliveryController] Réinitialisation du mot de passe du livreur: $delivererId');
+      print(
+          '[DeliveryController] Réinitialisation du mot de passe du livreur: $delivererId');
 
-      final success = await DeliveryService.resetDelivererPassword(delivererId, newPassword);
+      final success = await DeliveryService.resetDelivererPassword(
+          delivererId, newPassword);
 
       if (success) {
         Get.snackbar(
@@ -517,8 +554,9 @@ class DeliveryController extends GetxController {
         );
       }
     } catch (e) {
-      print('[DeliveryController] Erreur lors de la réinitialisation du mot de passe: $e');
-      
+      print(
+          '[DeliveryController] Erreur lors de la réinitialisation du mot de passe: $e');
+
       Get.snackbar(
         'Erreur',
         'Impossible de réinitialiser le mot de passe',

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/delivery_controller.dart';
 import '../../../constants.dart';
+import '../../../models/delivery.dart';
+import '../../../models/enums.dart';
 
 class DeliveryList extends StatelessWidget {
   const DeliveryList({Key? key}) : super(key: key);
@@ -11,7 +13,7 @@ class DeliveryList extends StatelessWidget {
     final controller = Get.find<DeliveryController>();
 
     return Obx(() {
-      if (controller.isLoading.value) {
+      if (controller.isLoadingOrders.value) {
         return Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
@@ -19,7 +21,7 @@ class DeliveryList extends StatelessWidget {
         );
       }
 
-      if (controller.errorMessage.value.isNotEmpty) {
+      if (controller.hasError.value) {
         return Center(
           child: Text(
             controller.errorMessage.value,
@@ -30,7 +32,7 @@ class DeliveryList extends StatelessWidget {
         );
       }
 
-      if (controller.deliveries.isEmpty) {
+      if (controller.activeDeliveries.isEmpty) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -53,10 +55,28 @@ class DeliveryList extends StatelessWidget {
       }
 
       return ListView.separated(
-        itemCount: controller.deliveries.length,
+        itemCount: controller.activeDeliveries.length,
         separatorBuilder: (_, __) => Divider(height: 1),
         itemBuilder: (context, index) {
-          return Container(); // TODO: Implement DeliveryListItem
+          final DeliveryOrder order = controller.activeDeliveries[index];
+          return ListTile(
+            title: Text(order.customerName),
+            subtitle: Text(order.deliveryAddress),
+            trailing: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(order.formattedAmount, style: AppTextStyles.bodySmall),
+                SizedBox(height: 4),
+                Text(order.status.toDisplayString(),
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: order.status.deliveryColor)),
+              ],
+            ),
+            onTap: () async {
+              // open update status dialog
+              // TODO: import and use UpdateStatusDialog when ready
+            },
+          );
         },
       );
     });

@@ -22,36 +22,42 @@ class DeliveryStatsCard extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.lg),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildStatItem(
-              context,
-              icon: Icons.local_shipping_outlined,
-              title: 'Livraisons du jour',
-              value: controller.totalDeliveries as RxNum,
-              color: AppColors.primary,
-              isDark: isDark,
-            ),
-            _buildStatItem(
-              context,
-              icon: Icons.check_circle_outline,
-              title: 'Complétées',
-              value: controller.completedDeliveries as RxNum,
-              color: AppColors.success,
-              isDark: isDark,
-            ),
-            _buildStatItem(
-              context,
-              icon: Icons.route_outlined,
-              title: 'Distance totale',
-              value: controller.totalDistance as RxNum,
-              suffix: 'km',
-              color: AppColors.warning,
-              isDark: isDark,
-            ),
-          ],
-        ),
+        child: Obx(() {
+          final stats = controller.globalStats.value;
+          final total = stats?.totalOrdersToday ?? 0;
+          final completed = stats?.completedOrdersToday ?? 0;
+          final avgTime = stats?.averageDeliveryTime ?? 0.0;
+
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem(
+                context,
+                icon: Icons.local_shipping_outlined,
+                title: 'Livraisons du jour',
+                valueText: '$total',
+                color: AppColors.primary,
+                isDark: isDark,
+              ),
+              _buildStatItem(
+                context,
+                icon: Icons.check_circle_outline,
+                title: 'Complétées',
+                valueText: '$completed',
+                color: AppColors.success,
+                isDark: isDark,
+              ),
+              _buildStatItem(
+                context,
+                icon: Icons.timer_outlined,
+                title: 'Temps moyen',
+                valueText: '${avgTime.toStringAsFixed(0)} min',
+                color: AppColors.warning,
+                isDark: isDark,
+              ),
+            ],
+          );
+        }),
       ),
     );
   }
@@ -60,8 +66,7 @@ class DeliveryStatsCard extends StatelessWidget {
     BuildContext context, {
     required IconData icon,
     required String title,
-    required RxNum value,
-    String? suffix,
+    required String valueText,
     required Color color,
     required bool isDark,
   }) {
@@ -84,13 +89,13 @@ class DeliveryStatsCard extends StatelessWidget {
           ),
         ),
         SizedBox(height: AppSpacing.xs),
-        Obx(() => Text(
-              '${value.value.toString()}${suffix ?? ''}',
-              style: AppTextStyles.h3.copyWith(
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            )),
+        Text(
+          valueText,
+          style: AppTextStyles.h3.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }

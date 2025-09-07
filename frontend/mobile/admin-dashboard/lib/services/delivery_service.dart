@@ -1,13 +1,35 @@
 import '../services/api_service.dart';
 import '../models/delivery.dart';
-import '../models/user.dart';
 
 class DeliveryService {
   static final ApiService _apiService = ApiService();
 
+  // Helper: convert dynamic query values to Map<String, String>
+  static Map<String, String> _buildQueryParams(Map<String, dynamic>? source) {
+    final Map<String, String> params = {};
+    if (source == null) return params;
+    source.forEach((key, value) {
+      if (value == null) return;
+      if (value is List) {
+        params[key] = value.join(',');
+      } else {
+        params[key] = value.toString();
+      }
+    });
+    return params;
+  }
+
+  // Helper: safely extract a list from response['data']
+  static List<T> _extractList<T>(dynamic data, T Function(dynamic) mapper) {
+    if (data is List) {
+      return data.map(mapper).toList();
+    }
+    return <T>[];
+  }
+
   // ==================== GESTION DES LIVREURS ====================
 
-  /// Récupère tous les livreurs
+  /// Récupère tous les livreurs (paged).
   static Future<List<DeliveryUser>> getAllDeliverers({
     int page = 1,
     int limit = 20,
@@ -15,51 +37,40 @@ class DeliveryService {
     bool? isActive,
   }) async {
     try {
-      print('[DeliveryService] Récupération des livreurs - page: $page, limit: $limit');
-
-      final queryParams = <String, dynamic>{
-        'page': page.toString(),
-        'limit': limit.toString(),
+      final query = _buildQueryParams({
+        'page': page,
+        'limit': limit,
         'role': 'DELIVERY',
-      };
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (isActive != null) 'isActive': isActive,
+      });
 
-      if (search != null && search.isNotEmpty) {
-        queryParams['search'] = search;
+      final response = await _apiService.get('/users', queryParameters: query);
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return _extractList<DeliveryUser>(
+            data['data'], (u) => DeliveryUser.fromJson(u));
       }
-
-      if (isActive != null) {
-        queryParams['isActive'] = isActive.toString();
-      }
-
-      final response = await _apiService.get('/users', queryParams: queryParams);
-
-      if (response['success'] == true && response['data'] != null) {
-        final List<dynamic> usersData = response['data'] as List<dynamic>;
-        return usersData.map((userData) => DeliveryUser.fromJson(userData)).toList();
-      }
-
-      return [];
+      return <DeliveryUser>[];
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la récupération des livreurs: $e');
-      throw Exception('Erreur lors de la récupération des livreurs: $e');
+      // keep logs for debugging, but return empty list to avoid breaking callers
+      print('[DeliveryService] getAllDeliverers error: $e');
+      rethrow;
     }
   }
 
   /// Récupère un livreur par son ID
   static Future<DeliveryUser?> getDelivererById(String delivererId) async {
     try {
-      print('[DeliveryService] Récupération du livreur: $delivererId');
-
       final response = await _apiService.get('/users/$delivererId');
-
-      if (response['success'] == true && response['data'] != null) {
-        return DeliveryUser.fromJson(response['data']);
+      final data = response.data;
+      if (data is Map && data['success'] == true && data['data'] != null) {
+        return DeliveryUser.fromJson(data['data']);
       }
-
       return null;
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la récupération du livreur: $e');
-      throw Exception('Erreur lors de la récupération du livreur: $e');
+      print('[DeliveryService] getDelivererById error: $e');
+      rethrow;
     }
   }
 
@@ -74,28 +85,28 @@ class DeliveryService {
     String? vehicleType,
     String? licenseNumber,
   }) async {
+    final payload = <String, dynamic>{
+      'email': email,
+      'password': password,
+      'firstName': firstName,
+      'lastName': lastName,
+      'phone': phone,
+      'role': 'DELIVERY',
+      if (zone != null) 'zone': zone,
+      if (vehicleType != null) 'vehicleType': vehicleType,
+      if (licenseNumber != null) 'licenseNumber': licenseNumber,
+    };
+
     try {
-      print('[DeliveryService] Création d\'un nouveau livreur: $email');
-
-      final userData = {
-        'email': email,
-        'password': password,
-        'firstName': firstName,
-        'lastName': lastName,
-        'phone': phone,
-        'role': 'DELIVERY',
-      };
-
-      final response = await _apiService.post('/users', userData);
-
-      if (response['success'] == true && response['data'] != null) {
-        return DeliveryUser.fromJson(response['data']);
+      final response = await _apiService.post('/users', data: payload);
+      final data = response.data;
+      if (data is Map && data['success'] == true && data['data'] != null) {
+        return DeliveryUser.fromJson(data['data']);
       }
-
-      throw Exception('Erreur lors de la création du livreur');
+      throw Exception('Création livreur échouée');
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la création du livreur: $e');
-      throw Exception('Erreur lors de la création du livreur: $e');
+      print('[DeliveryService] createDeliverer error: $e');
+      rethrow;
     }
   }
 
@@ -111,40 +122,40 @@ class DeliveryService {
     String? vehicleType,
     String? licenseNumber,
   }) async {
+    final updateData = <String, dynamic>{
+      if (email != null) 'email': email,
+      if (firstName != null) 'firstName': firstName,
+      if (lastName != null) 'lastName': lastName,
+      if (phone != null) 'phone': phone,
+      if (isActive != null) 'isActive': isActive,
+      if (zone != null) 'zone': zone,
+      if (vehicleType != null) 'vehicleType': vehicleType,
+      if (licenseNumber != null) 'licenseNumber': licenseNumber,
+    };
+
     try {
-      print('[DeliveryService] Mise à jour du livreur: $delivererId');
-
-      final updateData = <String, dynamic>{};
-
-      if (email != null) updateData['email'] = email;
-      if (firstName != null) updateData['firstName'] = firstName;
-      if (lastName != null) updateData['lastName'] = lastName;
-      if (phone != null) updateData['phone'] = phone;
-
-      final response = await _apiService.put('/users/$delivererId', updateData);
-
-      if (response['success'] == true && response['data'] != null) {
-        return DeliveryUser.fromJson(response['data']);
+      final response =
+          await _apiService.put('/users/$delivererId', data: updateData);
+      final data = response.data;
+      if (data is Map && data['success'] == true && data['data'] != null) {
+        return DeliveryUser.fromJson(data['data']);
       }
-
-      throw Exception('Erreur lors de la mise à jour du livreur');
+      throw Exception('Mise à jour livreur échouée');
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la mise à jour du livreur: $e');
-      throw Exception('Erreur lors de la mise à jour du livreur: $e');
+      print('[DeliveryService] updateDeliverer error: $e');
+      rethrow;
     }
   }
 
   /// Supprime un livreur
   static Future<bool> deleteDeliverer(String delivererId) async {
     try {
-      print('[DeliveryService] Suppression du livreur: $delivererId');
-
       final response = await _apiService.delete('/users/$delivererId');
-
-      return response['success'] == true;
+      final data = response.data;
+      return data is Map && data['success'] == true;
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la suppression du livreur: $e');
-      throw Exception('Erreur lors de la suppression du livreur: $e');
+      print('[DeliveryService] deleteDeliverer error: $e');
+      rethrow;
     }
   }
 
@@ -153,19 +164,14 @@ class DeliveryService {
   /// Récupère les statistiques d'un livreur
   static Future<DeliveryStats> getDelivererStats(String delivererId) async {
     try {
-      print('[DeliveryService] Récupération des statistiques du livreur: $delivererId');
-
       final response = await _apiService.get('/delivery/stats/$delivererId');
-
-      if (response['success'] == true && response['data'] != null) {
-        return DeliveryStats.fromJson(response['data']);
+      final data = response.data;
+      if (data is Map && data['success'] == true && data['data'] != null) {
+        return DeliveryStats.fromJson(data['data']);
       }
-
-      // Retourner des statistiques vides si pas de données
       return DeliveryStats.fromJson({});
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la récupération des statistiques: $e');
-      // Retourner des statistiques vides en cas d'erreur
+      print('[DeliveryService] getDelivererStats error: $e');
       return DeliveryStats.fromJson({});
     }
   }
@@ -173,19 +179,14 @@ class DeliveryService {
   /// Récupère les statistiques globales de livraison
   static Future<GlobalDeliveryStats> getGlobalDeliveryStats() async {
     try {
-      print('[DeliveryService] Récupération des statistiques globales de livraison');
-
       final response = await _apiService.get('/delivery/stats/global');
-
-      if (response['success'] == true && response['data'] != null) {
-        return GlobalDeliveryStats.fromJson(response['data']);
+      final data = response.data;
+      if (data is Map && data['success'] == true && data['data'] != null) {
+        return GlobalDeliveryStats.fromJson(data['data']);
       }
-
-      // Retourner des statistiques vides si pas de données
       return GlobalDeliveryStats.fromJson({});
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la récupération des statistiques globales: $e');
-      // Retourner des statistiques vides en cas d'erreur
+      print('[DeliveryService] getGlobalDeliveryStats error: $e');
       return GlobalDeliveryStats.fromJson({});
     }
   }
@@ -200,67 +201,55 @@ class DeliveryService {
     int limit = 20,
   }) async {
     try {
-      print('[DeliveryService] Récupération des commandes du livreur: $delivererId');
-
-      final queryParams = <String, dynamic>{
-        'page': page.toString(),
-        'limit': limit.toString(),
+      final query = _buildQueryParams({
+        'page': page,
+        'limit': limit,
         'delivererId': delivererId,
-      };
+        if (status != null) 'status': status,
+      });
 
-      if (status != null) {
-        queryParams['status'] = status;
+      final response = await _apiService.get('/orders', queryParameters: query);
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return _extractList<DeliveryOrder>(
+            data['data'], (o) => DeliveryOrder.fromJson(o));
       }
-
-      final response = await _apiService.get('/orders', queryParams: queryParams);
-
-      if (response['success'] == true && response['data'] != null) {
-        final List<dynamic> ordersData = response['data'] as List<dynamic>;
-        return ordersData.map((orderData) => DeliveryOrder.fromJson(orderData)).toList();
-      }
-
-      return [];
+      return <DeliveryOrder>[];
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la récupération des commandes: $e');
-      throw Exception('Erreur lors de la récupération des commandes: $e');
+      print('[DeliveryService] getDelivererOrders error: $e');
+      rethrow;
     }
   }
 
   /// Assigne une commande à un livreur
-  static Future<bool> assignOrderToDeliverer(String orderId, String delivererId) async {
+  static Future<bool> assignOrderToDeliverer(
+      String orderId, String delivererId) async {
     try {
-      print('[DeliveryService] Attribution de la commande $orderId au livreur $delivererId');
-
-      final response = await _apiService.patch('/orders/$orderId/assign', {
-        'delivererId': delivererId,
-      });
-
-      return response['success'] == true;
+      final response = await _apiService
+          .patch('/orders/$orderId/assign', data: {'delivererId': delivererId});
+      final data = response.data;
+      return data is Map && data['success'] == true;
     } catch (e) {
-      print('[DeliveryService] Erreur lors de l\'attribution de la commande: $e');
-      throw Exception('Erreur lors de l\'attribution de la commande: $e');
+      print('[DeliveryService] assignOrderToDeliverer error: $e');
+      rethrow;
     }
   }
 
   /// Met à jour le statut d'une commande (admin override)
-  static Future<bool> updateOrderStatus(String orderId, String newStatus, {String? note}) async {
+  static Future<bool> updateOrderStatus(String orderId, String newStatus,
+      {String? note}) async {
     try {
-      print('[DeliveryService] Mise à jour du statut de la commande $orderId vers $newStatus');
-
-      final updateData = {
+      final updateData = <String, dynamic>{
         'status': newStatus,
+        if (note != null) 'note': note
       };
-
-      if (note != null && note.isNotEmpty) {
-        updateData['note'] = note;
-      }
-
-      final response = await _apiService.patch('/orders/$orderId/status', updateData);
-
-      return response['success'] == true;
+      final response =
+          await _apiService.patch('/orders/$orderId/status', data: updateData);
+      final data = response.data;
+      return data is Map && data['success'] == true;
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la mise à jour du statut: $e');
-      throw Exception('Erreur lors de la mise à jour du statut: $e');
+      print('[DeliveryService] updateOrderStatus error: $e');
+      rethrow;
     }
   }
 
@@ -272,35 +261,25 @@ class DeliveryService {
     String? delivererId,
   }) async {
     try {
-      print('[DeliveryService] Récupération de toutes les livraisons actives');
+      final defaultStatuses =
+          'COLLECTING,COLLECTED,PROCESSING,READY,DELIVERING';
+      final query = _buildQueryParams({
+        'page': page,
+        'limit': limit,
+        'status': status ?? defaultStatuses,
+        if (delivererId != null) 'delivererId': delivererId,
+      });
 
-      final queryParams = <String, dynamic>{
-        'page': page.toString(),
-        'limit': limit.toString(),
-      };
-
-      // Filtrer par statuts de livraison actifs
-      if (status != null) {
-        queryParams['status'] = status;
-      } else {
-        queryParams['status'] = 'COLLECTING,COLLECTED,PROCESSING,READY,DELIVERING';
+      final response = await _apiService.get('/orders', queryParameters: query);
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return _extractList<DeliveryOrder>(
+            data['data'], (o) => DeliveryOrder.fromJson(o));
       }
-
-      if (delivererId != null) {
-        queryParams['delivererId'] = delivererId;
-      }
-
-      final response = await _apiService.get('/orders', queryParams: queryParams);
-
-      if (response['success'] == true && response['data'] != null) {
-        final List<dynamic> ordersData = response['data'] as List<dynamic>;
-        return ordersData.map((orderData) => DeliveryOrder.fromJson(orderData)).toList();
-      }
-
-      return [];
+      return <DeliveryOrder>[];
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la récupération des livraisons actives: $e');
-      throw Exception('Erreur lors de la récupération des livraisons actives: $e');
+      print('[DeliveryService] getAllActiveDeliveries error: $e');
+      rethrow;
     }
   }
 
@@ -309,46 +288,49 @@ class DeliveryService {
   /// Vérifie si un email est disponible pour un nouveau livreur
   static Future<bool> isEmailAvailable(String email) async {
     try {
-      final response = await _apiService.get('/users/check-email', queryParams: {
-        'email': email,
-      });
-
-      return response['available'] == true;
+      final response = await _apiService
+          .get('/users/check-email', queryParameters: {'email': email});
+      final data = response.data;
+      if (data is Map) {
+        if (data.containsKey('available')) return data['available'] == true;
+        if (data['data'] != null &&
+            data['data'] is Map &&
+            data['data']['available'] != null) {
+          return data['data']['available'] == true;
+        }
+      }
+      return false;
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la vérification de l\'email: $e');
+      print('[DeliveryService] isEmailAvailable error: $e');
       return false;
     }
   }
 
   /// Active ou désactive un livreur
-  static Future<bool> toggleDelivererStatus(String delivererId, bool isActive) async {
+  static Future<bool> toggleDelivererStatus(
+      String delivererId, bool isActive) async {
     try {
-      print('[DeliveryService] ${isActive ? 'Activation' : 'Désactivation'} du livreur: $delivererId');
-
-      final response = await _apiService.patch('/users/$delivererId/status', {
-        'isActive': isActive,
-      });
-
-      return response['success'] == true;
+      final response = await _apiService
+          .patch('/users/$delivererId/status', data: {'isActive': isActive});
+      final data = response.data;
+      return data is Map && data['success'] == true;
     } catch (e) {
-      print('[DeliveryService] Erreur lors du changement de statut: $e');
-      throw Exception('Erreur lors du changement de statut: $e');
+      print('[DeliveryService] toggleDelivererStatus error: $e');
+      rethrow;
     }
   }
 
   /// Réinitialise le mot de passe d'un livreur
-  static Future<bool> resetDelivererPassword(String delivererId, String newPassword) async {
+  static Future<bool> resetDelivererPassword(
+      String delivererId, String newPassword) async {
     try {
-      print('[DeliveryService] Réinitialisation du mot de passe du livreur: $delivererId');
-
-      final response = await _apiService.patch('/users/$delivererId/password', {
-        'newPassword': newPassword,
-      });
-
-      return response['success'] == true;
+      final response = await _apiService.patch('/users/$delivererId/password',
+          data: {'newPassword': newPassword});
+      final data = response.data;
+      return data is Map && data['success'] == true;
     } catch (e) {
-      print('[DeliveryService] Erreur lors de la réinitialisation du mot de passe: $e');
-      throw Exception('Erreur lors de la réinitialisation du mot de passe: $e');
+      print('[DeliveryService] resetDelivererPassword error: $e');
+      rethrow;
     }
   }
 }

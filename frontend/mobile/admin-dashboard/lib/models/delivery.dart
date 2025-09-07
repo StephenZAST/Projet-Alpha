@@ -1,3 +1,5 @@
+import 'package:admin/models/address.dart';
+import 'package:admin/models/enums.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
 import 'user.dart';
@@ -31,8 +33,10 @@ class DeliveryUser {
     return DeliveryUser(
       id: json['id'] as String,
       email: json['email'] as String,
-      firstName: json['firstName'] as String? ?? json['first_name'] as String? ?? '',
-      lastName: json['lastName'] as String? ?? json['last_name'] as String? ?? '',
+      firstName:
+          json['firstName'] as String? ?? json['first_name'] as String? ?? '',
+      lastName:
+          json['lastName'] as String? ?? json['last_name'] as String? ?? '',
       phone: json['phone'] as String?,
       role: UserRole.values.firstWhere(
         (e) => e.name == (json['role'] as String? ?? 'CLIENT'),
@@ -45,7 +49,8 @@ class DeliveryUser {
           json['updated_at'] as String? ??
           DateTime.now().toIso8601String()),
       deliveryProfile: json['deliveryProfile'] != null
-          ? DeliveryProfile.fromJson(json['deliveryProfile'] as Map<String, dynamic>)
+          ? DeliveryProfile.fromJson(
+              json['deliveryProfile'] as Map<String, dynamic>)
           : null,
     );
   }
@@ -98,8 +103,10 @@ class DeliveryProfile {
       userId: json['userId'] as String? ?? json['user_id'] as String? ?? '',
       isActive: json['isActive'] as bool? ?? json['is_active'] as bool? ?? true,
       zone: json['zone'] as String?,
-      vehicleType: json['vehicleType'] as String? ?? json['vehicle_type'] as String?,
-      licenseNumber: json['licenseNumber'] as String? ?? json['license_number'] as String?,
+      vehicleType:
+          json['vehicleType'] as String? ?? json['vehicle_type'] as String?,
+      licenseNumber:
+          json['licenseNumber'] as String? ?? json['license_number'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String? ??
           json['created_at'] as String? ??
           DateTime.now().toIso8601String()),
@@ -149,17 +156,33 @@ class DeliveryStats {
 
   factory DeliveryStats.fromJson(Map<String, dynamic> json) {
     return DeliveryStats(
-      totalDeliveries: json['totalDeliveries'] as int? ?? json['total_deliveries'] as int? ?? 0,
-      completedDeliveries: json['completedDeliveries'] as int? ?? json['completed_deliveries'] as int? ?? 0,
-      cancelledDeliveries: json['cancelledDeliveries'] as int? ?? json['cancelled_deliveries'] as int? ?? 0,
-      pendingDeliveries: json['pendingDeliveries'] as int? ?? json['pending_deliveries'] as int? ?? 0,
-      completionRate: (json['completionRate'] as num?)?.toDouble() ?? 
-                     (json['completion_rate'] as num?)?.toDouble() ?? 0.0,
-      averageDeliveryTime: (json['averageDeliveryTime'] as num?)?.toDouble() ?? 
-                          (json['average_delivery_time'] as num?)?.toDouble() ?? 0.0,
-      deliveriesToday: json['deliveriesToday'] as int? ?? json['deliveries_today'] as int? ?? 0,
-      deliveriesThisWeek: json['deliveriesThisWeek'] as int? ?? json['deliveries_this_week'] as int? ?? 0,
-      deliveriesThisMonth: json['deliveriesThisMonth'] as int? ?? json['deliveries_this_month'] as int? ?? 0,
+      totalDeliveries: json['totalDeliveries'] as int? ??
+          json['total_deliveries'] as int? ??
+          0,
+      completedDeliveries: json['completedDeliveries'] as int? ??
+          json['completed_deliveries'] as int? ??
+          0,
+      cancelledDeliveries: json['cancelledDeliveries'] as int? ??
+          json['cancelled_deliveries'] as int? ??
+          0,
+      pendingDeliveries: json['pendingDeliveries'] as int? ??
+          json['pending_deliveries'] as int? ??
+          0,
+      completionRate: (json['completionRate'] as num?)?.toDouble() ??
+          (json['completion_rate'] as num?)?.toDouble() ??
+          0.0,
+      averageDeliveryTime: (json['averageDeliveryTime'] as num?)?.toDouble() ??
+          (json['average_delivery_time'] as num?)?.toDouble() ??
+          0.0,
+      deliveriesToday: json['deliveriesToday'] as int? ??
+          json['deliveries_today'] as int? ??
+          0,
+      deliveriesThisWeek: json['deliveriesThisWeek'] as int? ??
+          json['deliveries_this_week'] as int? ??
+          0,
+      deliveriesThisMonth: json['deliveriesThisMonth'] as int? ??
+          json['deliveries_this_month'] as int? ??
+          0,
     );
   }
 
@@ -178,7 +201,8 @@ class DeliveryStats {
   }
 
   String get formattedCompletionRate => '${completionRate.toStringAsFixed(1)}%';
-  String get formattedAverageTime => '${averageDeliveryTime.toStringAsFixed(0)} min';
+  String get formattedAverageTime =>
+      '${averageDeliveryTime.toStringAsFixed(0)} min';
 }
 
 // Commande du point de vue livraison
@@ -219,18 +243,21 @@ class DeliveryOrder {
         (e) => e.name == (json['status'] as String? ?? 'PENDING'),
         orElse: () => OrderStatus.PENDING,
       ),
-      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 
-                   (json['total_amount'] as num?)?.toDouble() ?? 0.0,
-      collectionDate: json['collectionDate'] != null || json['collection_date'] != null
-          ? DateTime.parse((json['collectionDate'] as String?) ??
-              (json['collection_date'] as String?) ??
-              DateTime.now().toIso8601String())
-          : null,
-      deliveryDate: json['deliveryDate'] != null || json['delivery_date'] != null
-          ? DateTime.parse((json['deliveryDate'] as String?) ??
-              (json['delivery_date'] as String?) ??
-              DateTime.now().toIso8601String())
-          : null,
+      totalAmount: (json['totalAmount'] as num?)?.toDouble() ??
+          (json['total_amount'] as num?)?.toDouble() ??
+          0.0,
+      collectionDate:
+          json['collectionDate'] != null || json['collection_date'] != null
+              ? DateTime.parse((json['collectionDate'] as String?) ??
+                  (json['collection_date'] as String?) ??
+                  DateTime.now().toIso8601String())
+              : null,
+      deliveryDate:
+          json['deliveryDate'] != null || json['delivery_date'] != null
+              ? DateTime.parse((json['deliveryDate'] as String?) ??
+                  (json['delivery_date'] as String?) ??
+                  DateTime.now().toIso8601String())
+              : null,
       createdAt: DateTime.parse(json['createdAt'] as String? ??
           json['created_at'] as String? ??
           DateTime.now().toIso8601String()),
@@ -244,7 +271,9 @@ class DeliveryOrder {
           ? Address.fromJson(json['address'] as Map<String, dynamic>)
           : null,
       items: json['items'] != null
-          ? (json['items'] as List).map((item) => OrderItem.fromJson(item)).toList()
+          ? (json['items'] as List)
+              .map((item) => OrderItem.fromJson(item))
+              .toList()
           : null,
       note: json['note'] as String?,
     );
@@ -271,7 +300,7 @@ class DeliveryOrder {
   String get customerName => user?.fullName ?? 'Client inconnu';
   String get customerPhone => user?.phone ?? 'N/A';
   String get deliveryAddress => address?.fullAddress ?? 'Adresse non définie';
-  
+
   bool get canCollect => status == OrderStatus.PENDING;
   bool get canProcess => status == OrderStatus.COLLECTED;
   bool get canDeliver => status == OrderStatus.READY;
@@ -303,19 +332,30 @@ class GlobalDeliveryStats {
 
   factory GlobalDeliveryStats.fromJson(Map<String, dynamic> json) {
     return GlobalDeliveryStats(
-      totalDeliverers: json['totalDeliverers'] as int? ?? json['total_deliverers'] as int? ?? 0,
-      activeDeliverers: json['activeDeliverers'] as int? ?? json['active_deliverers'] as int? ?? 0,
-      totalOrdersToday: json['totalOrdersToday'] as int? ?? json['total_orders_today'] as int? ?? 0,
-      completedOrdersToday: json['completedOrdersToday'] as int? ?? json['completed_orders_today'] as int? ?? 0,
-      pendingOrders: json['pendingOrders'] as int? ?? json['pending_orders'] as int? ?? 0,
-      averageDeliveryTime: (json['averageDeliveryTime'] as num?)?.toDouble() ?? 
-                          (json['average_delivery_time'] as num?)?.toDouble() ?? 0.0,
+      totalDeliverers: json['totalDeliverers'] as int? ??
+          json['total_deliverers'] as int? ??
+          0,
+      activeDeliverers: json['activeDeliverers'] as int? ??
+          json['active_deliverers'] as int? ??
+          0,
+      totalOrdersToday: json['totalOrdersToday'] as int? ??
+          json['total_orders_today'] as int? ??
+          0,
+      completedOrdersToday: json['completedOrdersToday'] as int? ??
+          json['completed_orders_today'] as int? ??
+          0,
+      pendingOrders:
+          json['pendingOrders'] as int? ?? json['pending_orders'] as int? ?? 0,
+      averageDeliveryTime: (json['averageDeliveryTime'] as num?)?.toDouble() ??
+          (json['average_delivery_time'] as num?)?.toDouble() ??
+          0.0,
       ordersByStatus: Map<String, int>.from(json['ordersByStatus'] as Map? ??
           json['orders_by_status'] as Map? ??
           {}),
-      deliverersByZone: Map<String, int>.from(json['deliverersByZone'] as Map? ??
-          json['deliverers_by_zone'] as Map? ??
-          {}),
+      deliverersByZone: Map<String, int>.from(
+          json['deliverersByZone'] as Map? ??
+              json['deliverers_by_zone'] as Map? ??
+              {}),
     );
   }
 
@@ -338,7 +378,8 @@ class GlobalDeliveryStats {
   }
 
   String get formattedCompletionRate => '${completionRate.toStringAsFixed(1)}%';
-  String get formattedAverageTime => '${averageDeliveryTime.toStringAsFixed(0)} min';
+  String get formattedAverageTime =>
+      '${averageDeliveryTime.toStringAsFixed(0)} min';
 }
 
 // Extensions pour les couleurs et icônes des statuts

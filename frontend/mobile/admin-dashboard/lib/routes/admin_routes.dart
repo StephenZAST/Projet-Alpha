@@ -7,6 +7,7 @@ import 'package:admin/screens/orders/new_order/new_order_screen.dart';
 import 'package:get/get.dart';
 import '../screens/main/main_screen.dart';
 import '../screens/auth/admin_login_screen.dart';
+import '../screens/delivery/delivery_screen.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/menu_app_controller.dart';
@@ -66,6 +67,7 @@ class AdminRoutes {
   static const String notifications = '/notifications';
   static const String subscriptions = '/subscriptions';
   static const String loyalty = '/loyalty';
+  static const String delivery = '/delivery';
 
   // Ajouter les routes pour les commandes flash
   static const String flashOrders = '/orders/flash';
@@ -91,6 +93,8 @@ class AdminRoutes {
         return users;
       case MenuIndices.loyalty:
         return loyalty;
+      case MenuIndices.delivery:
+        return delivery;
       case MenuIndices.profile:
         return profile;
       case MenuIndices.notifications:
@@ -121,6 +125,8 @@ class AdminRoutes {
         return MenuIndices.users;
       case loyalty:
         return MenuIndices.loyalty;
+      case delivery:
+        return MenuIndices.delivery;
       case profile:
         return MenuIndices.profile;
       case notifications:
@@ -177,6 +183,17 @@ class AdminRoutes {
           Get.put(CategoryController());
         }
       }),
+    ),
+    GetPage(
+      name: delivery,
+      page: () => DeliveryScreen(),
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<MenuAppController>()) {
+          Get.put(MenuAppController());
+        }
+      }),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.fadeIn,
     ),
     GetPage(
       name: '/orders/create',

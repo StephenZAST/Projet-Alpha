@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../models/delivery.dart';
+import '../../../models/enums.dart';
 import '../../../constants.dart';
+import '../../../controllers/delivery_controller.dart';
 
 class UpdateStatusDialog extends StatefulWidget {
-  final Delivery delivery;
+  final DeliveryOrder delivery;
 
   const UpdateStatusDialog({
     Key? key,
@@ -15,7 +18,7 @@ class UpdateStatusDialog extends StatefulWidget {
 }
 
 class _UpdateStatusDialogState extends State<UpdateStatusDialog> {
-  late DeliveryStatus selectedStatus;
+  late OrderStatus selectedStatus;
   final notesController = TextEditingController();
 
   @override
@@ -38,7 +41,7 @@ class _UpdateStatusDialogState extends State<UpdateStatusDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Mettre à jour - Commande #${widget.delivery.orderId}',
+              'Mettre à jour - Commande #${widget.delivery.id}',
               style: AppTextStyles.h4,
             ),
             SizedBox(height: AppSpacing.lg),
@@ -54,7 +57,7 @@ class _UpdateStatusDialogState extends State<UpdateStatusDialog> {
   }
 
   Widget _buildStatusDropdown(bool isDark) {
-    return DropdownButtonFormField<DeliveryStatus>(
+    return DropdownButtonFormField<OrderStatus>(
       value: selectedStatus,
       decoration: InputDecoration(
         labelText: 'Statut',
@@ -62,13 +65,13 @@ class _UpdateStatusDialogState extends State<UpdateStatusDialog> {
         filled: true,
         fillColor: isDark ? AppColors.gray700 : AppColors.gray100,
       ),
-      items: DeliveryStatus.values.map((DeliveryStatus status) {
-        return DropdownMenuItem<DeliveryStatus>(
+      items: OrderStatus.values.map((OrderStatus status) {
+        return DropdownMenuItem<OrderStatus>(
           value: status,
-          child: Text(status.label),
+          child: Text(status.toDisplayString()),
         );
       }).toList(),
-      onChanged: (DeliveryStatus? newValue) {
+      onChanged: (OrderStatus? newValue) {
         setState(() {
           selectedStatus = newValue!;
         });
@@ -99,9 +102,22 @@ class _UpdateStatusDialogState extends State<UpdateStatusDialog> {
         ),
         SizedBox(width: AppSpacing.md),
         ElevatedButton(
-          onPressed: () {
-            // TODO: Implémenter la logique de mise à jour du statut
-            Navigator.of(context).pop();
+          onPressed: () async {
+            final controller = Get.find<DeliveryController>();
+            try {
+              // Call controller to update status
+              await controller.updateOrderStatus(
+                widget.delivery.id,
+                selectedStatus.name,
+                note: notesController.text.isNotEmpty
+                    ? notesController.text
+                    : null,
+              );
+
+              Navigator.of(context).pop();
+            } catch (e) {
+              Get.snackbar('Erreur', 'Impossible de mettre à jour le statut');
+            }
           },
           child: Text('Mettre à jour'),
         ),

@@ -82,19 +82,22 @@ class MenuAppController extends GetxController {
     if (index == MenuIndices.users && !Get.isRegistered<UsersController>()) {
       Get.put(UsersController());
     }
-    
+
     // Si on navigue vers l'écran des affiliés, initialiser le contrôleur
-    if (index == MenuIndices.affiliates && !Get.isRegistered<AffiliatesController>()) {
+    if (index == MenuIndices.affiliates &&
+        !Get.isRegistered<AffiliatesController>()) {
       Get.put(AffiliatesController());
     }
-    
+
     // Si on navigue vers l'écran de fidélité, initialiser le contrôleur
-    if (index == MenuIndices.loyalty && !Get.isRegistered<LoyaltyController>()) {
+    if (index == MenuIndices.loyalty &&
+        !Get.isRegistered<LoyaltyController>()) {
       Get.put(LoyaltyController());
     }
-    
+
     // Si on navigue vers l'écran de livraison, initialiser le contrôleur
-    if (index == MenuIndices.delivery && !Get.isRegistered<DeliveryController>()) {
+    if (index == MenuIndices.delivery &&
+        !Get.isRegistered<DeliveryController>()) {
       Get.put(DeliveryController());
     }
   }
@@ -180,6 +183,8 @@ class MenuAppController extends GetxController {
         return 'Affiliés';
       case MenuIndices.loyalty:
         return 'Système de Fidélité';
+      case MenuIndices.delivery:
+        return 'Gestion Livreurs';
       default:
         return 'Tableau de bord';
     }
@@ -242,6 +247,12 @@ class MenuAppController extends GetxController {
           Get.put(LoyaltyController(), permanent: true);
         }
         return LoyaltyScreen();
+      case MenuIndices.delivery:
+        // S'assurer que le DeliveryController est enregistré
+        if (!Get.isRegistered<DeliveryController>()) {
+          Get.put(DeliveryController(), permanent: true);
+        }
+        return DeliveryScreen();
       default:
         return DashboardScreen();
     }
