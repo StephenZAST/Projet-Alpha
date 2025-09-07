@@ -6,10 +6,23 @@ import '../../../widgets/shared/glass_button.dart';
 
 class RewardsManagementDialog extends StatefulWidget {
   final RxList<Reward> rewards;
-  final Function(String name, String description, int pointsCost, RewardType type,
-      double? discountValue, String? discountType, int? maxRedemptions) onCreateReward;
-  final Function(String rewardId, String? name, String? description, int? pointsCost,
-      RewardType? type, double? discountValue, String? discountType, bool? isActive,
+  final Function(
+      String name,
+      String description,
+      int pointsCost,
+      RewardType type,
+      double? discountValue,
+      String? discountType,
+      int? maxRedemptions) onCreateReward;
+  final Function(
+      String rewardId,
+      String? name,
+      String? description,
+      int? pointsCost,
+      RewardType? type,
+      double? discountValue,
+      String? discountType,
+      bool? isActive,
       int? maxRedemptions) onUpdateReward;
   final Function(String rewardId) onDeleteReward;
 
@@ -22,7 +35,8 @@ class RewardsManagementDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<RewardsManagementDialog> createState() => _RewardsManagementDialogState();
+  State<RewardsManagementDialog> createState() =>
+      _RewardsManagementDialogState();
 }
 
 class _RewardsManagementDialogState extends State<RewardsManagementDialog>
@@ -82,9 +96,7 @@ class _RewardsManagementDialogState extends State<RewardsManagementDialog>
             // Tabs
             Container(
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.gray800.withOpacity(0.5)
-                    : Colors.white.withOpacity(0.8),
+                color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
                 borderRadius: AppRadius.radiusMD,
                 border: Border.all(
                   color: isDark
@@ -200,7 +212,8 @@ class _RewardsManagementDialogState extends State<RewardsManagementDialog>
                   ? GlassButtonVariant.success
                   : GlassButtonVariant.secondary,
               size: GlassButtonSize.small,
-              onPressed: () => setState(() => _showActiveOnly = !_showActiveOnly),
+              onPressed: () =>
+                  setState(() => _showActiveOnly = !_showActiveOnly),
             ),
           ],
         ),
@@ -411,8 +424,12 @@ class _RewardsManagementDialogState extends State<RewardsManagementDialog>
                   child: Row(
                     children: [
                       Icon(
-                        reward.isActive ? Icons.visibility_off : Icons.visibility,
-                        color: reward.isActive ? AppColors.warning : AppColors.success,
+                        reward.isActive
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: reward.isActive
+                            ? AppColors.warning
+                            : AppColors.success,
                       ),
                       SizedBox(width: AppSpacing.sm),
                       Text(reward.isActive ? 'Désactiver' : 'Activer'),
@@ -439,8 +456,10 @@ class _RewardsManagementDialogState extends State<RewardsManagementDialog>
 
   Widget _buildCreateRewardForm(BuildContext context, bool isDark) {
     return _RewardForm(
-      onSubmit: (name, description, pointsCost, type, discountValue, discountType, maxRedemptions) {
-        widget.onCreateReward(name, description, pointsCost, type, discountValue, discountType, maxRedemptions);
+      onSubmit: (name, description, pointsCost, type, discountValue,
+          discountType, maxRedemptions) {
+        widget.onCreateReward(name, description, pointsCost, type,
+            discountValue, discountType, maxRedemptions);
         _tabController.animateTo(0); // Switch back to list tab
       },
     );
@@ -452,14 +471,17 @@ class _RewardsManagementDialogState extends State<RewardsManagementDialog>
     // Filter by search query
     if (_searchController.text.isNotEmpty) {
       final query = _searchController.text.toLowerCase();
-      filtered = filtered.where((reward) =>
-          reward.name.toLowerCase().contains(query) ||
-          reward.description.toLowerCase().contains(query)).toList();
+      filtered = filtered
+          .where((reward) =>
+              reward.name.toLowerCase().contains(query) ||
+              reward.description.toLowerCase().contains(query))
+          .toList();
     }
 
     // Filter by type
     if (_filterType != null) {
-      filtered = filtered.where((reward) => reward.type == _filterType).toList();
+      filtered =
+          filtered.where((reward) => reward.type == _filterType).toList();
     }
 
     // Filter by active status
@@ -512,7 +534,8 @@ class _RewardsManagementDialogState extends State<RewardsManagementDialog>
               Expanded(
                 child: _RewardForm(
                   reward: reward,
-                  onSubmit: (name, description, pointsCost, type, discountValue, discountType, maxRedemptions) {
+                  onSubmit: (name, description, pointsCost, type, discountValue,
+                      discountType, maxRedemptions) {
                     widget.onUpdateReward(
                       reward.id,
                       name,
@@ -604,8 +627,14 @@ class _RewardsManagementDialogState extends State<RewardsManagementDialog>
 
 class _RewardForm extends StatefulWidget {
   final Reward? reward;
-  final Function(String name, String description, int pointsCost, RewardType type,
-      double? discountValue, String? discountType, int? maxRedemptions) onSubmit;
+  final Function(
+      String name,
+      String description,
+      int pointsCost,
+      RewardType type,
+      double? discountValue,
+      String? discountType,
+      int? maxRedemptions) onSubmit;
 
   const _RewardForm({
     Key? key,
@@ -631,10 +660,14 @@ class _RewardFormState extends State<_RewardForm> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.reward?.name ?? '');
-    _descriptionController = TextEditingController(text: widget.reward?.description ?? '');
-    _pointsCostController = TextEditingController(text: widget.reward?.pointsCost.toString() ?? '');
-    _discountValueController = TextEditingController(text: widget.reward?.discountValue?.toString() ?? '');
-    _maxRedemptionsController = TextEditingController(text: widget.reward?.maxRedemptions?.toString() ?? '');
+    _descriptionController =
+        TextEditingController(text: widget.reward?.description ?? '');
+    _pointsCostController =
+        TextEditingController(text: widget.reward?.pointsCost.toString() ?? '');
+    _discountValueController = TextEditingController(
+        text: widget.reward?.discountValue?.toString() ?? '');
+    _maxRedemptionsController = TextEditingController(
+        text: widget.reward?.maxRedemptions?.toString() ?? '');
     _selectedType = widget.reward?.type ?? RewardType.DISCOUNT;
     _discountType = widget.reward?.discountType;
   }
@@ -729,21 +762,24 @@ class _RewardFormState extends State<_RewardForm> {
                   borderRadius: AppRadius.radiusSM,
                 ),
               ),
-              items: RewardType.values.map((type) => DropdownMenuItem(
-                value: type,
-                child: Row(
-                  children: [
-                    Icon(type.icon, size: 16, color: type.color),
-                    SizedBox(width: AppSpacing.sm),
-                    Text(_getRewardTypeLabel(type)),
-                  ],
-                ),
-              )).toList(),
+              items: RewardType.values
+                  .map((type) => DropdownMenuItem(
+                        value: type,
+                        child: Row(
+                          children: [
+                            Icon(type.icon, size: 16, color: type.color),
+                            SizedBox(width: AppSpacing.sm),
+                            Text(_getRewardTypeLabel(type)),
+                          ],
+                        ),
+                      ))
+                  .toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedType = value!;
                   // Reset discount fields when type changes
-                  if (value != RewardType.DISCOUNT && value != RewardType.CASHBACK) {
+                  if (value != RewardType.DISCOUNT &&
+                      value != RewardType.CASHBACK) {
                     _discountValueController.clear();
                     _discountType = null;
                   }
@@ -753,7 +789,8 @@ class _RewardFormState extends State<_RewardForm> {
             SizedBox(height: AppSpacing.md),
 
             // Discount fields (only for DISCOUNT and CASHBACK types)
-            if (_selectedType == RewardType.DISCOUNT || _selectedType == RewardType.CASHBACK) ...[
+            if (_selectedType == RewardType.DISCOUNT ||
+                _selectedType == RewardType.CASHBACK) ...[
               Row(
                 children: [
                   Expanded(

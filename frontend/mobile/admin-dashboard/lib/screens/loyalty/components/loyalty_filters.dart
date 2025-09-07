@@ -55,9 +55,8 @@ class LoyaltyFilters extends StatelessWidget {
                         ),
                       ),
                       filled: true,
-                      fillColor: isDark
-                          ? AppColors.gray800.withOpacity(0.5)
-                          : Colors.white.withOpacity(0.8),
+                      fillColor:
+                          isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
                     ),
                   ),
                 ),
@@ -74,7 +73,8 @@ class LoyaltyFilters extends StatelessWidget {
                           icon: Icons.stars_outlined,
                           variant: GlassButtonVariant.success,
                           size: GlassButtonSize.small,
-                          onPressed: () => _filterByPointsBalance(controller, true),
+                          onPressed: () =>
+                              _filterByPointsBalance(controller, true),
                         ),
                       ),
                       SizedBox(width: AppSpacing.sm),
@@ -84,7 +84,8 @@ class LoyaltyFilters extends StatelessWidget {
                           icon: Icons.star_border_outlined,
                           variant: GlassButtonVariant.secondary,
                           size: GlassButtonSize.small,
-                          onPressed: () => _filterByPointsBalance(controller, false),
+                          onPressed: () =>
+                              _filterByPointsBalance(controller, false),
                         ),
                       ),
                     ],

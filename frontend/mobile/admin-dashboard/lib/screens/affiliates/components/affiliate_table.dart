@@ -32,12 +32,12 @@ class AffiliateTable extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: isDark 
+              color: isDark
                   ? AppColors.gray800.withOpacity(0.8)
                   : Colors.white.withOpacity(0.9),
               borderRadius: AppRadius.radiusMD,
               border: Border.all(
-                color: isDark 
+                color: isDark
                     ? AppColors.gray700.withOpacity(0.3)
                     : AppColors.gray200.withOpacity(0.5),
                 width: 1,
@@ -48,18 +48,20 @@ class AffiliateTable extends StatelessWidget {
                 _buildTableHeader(context, isDark, controller),
                 Expanded(
                   child: Obx(() => ListView.separated(
-                    itemCount: controller.filteredAffiliates.length,
-                    separatorBuilder: (context, index) => Divider(
-                      height: 1,
-                      color: isDark 
-                          ? AppColors.gray700.withOpacity(0.3)
-                          : AppColors.gray200.withOpacity(0.5),
-                    ),
-                    itemBuilder: (context, index) {
-                      final affiliate = controller.filteredAffiliates[index];
-                      return _buildTableRow(context, isDark, affiliate, controller);
-                    },
-                  )),
+                        itemCount: controller.filteredAffiliates.length,
+                        separatorBuilder: (context, index) => Divider(
+                          height: 1,
+                          color: isDark
+                              ? AppColors.gray700.withOpacity(0.3)
+                              : AppColors.gray200.withOpacity(0.5),
+                        ),
+                        itemBuilder: (context, index) {
+                          final affiliate =
+                              controller.filteredAffiliates[index];
+                          return _buildTableRow(
+                              context, isDark, affiliate, controller);
+                        },
+                      )),
                 ),
               ],
             ),
@@ -69,11 +71,12 @@ class AffiliateTable extends StatelessWidget {
     );
   }
 
-  Widget _buildTableHeader(BuildContext context, bool isDark, AffiliatesController controller) {
+  Widget _buildTableHeader(
+      BuildContext context, bool isDark, AffiliatesController controller) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? AppColors.gray900.withOpacity(0.3)
             : AppColors.gray50.withOpacity(0.8),
         borderRadius: BorderRadius.only(
@@ -95,7 +98,8 @@ class AffiliateTable extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderCell(String title, {required int flex, required bool isDark}) {
+  Widget _buildHeaderCell(String title,
+      {required int flex, required bool isDark}) {
     return Expanded(
       flex: flex,
       child: Text(
@@ -109,9 +113,9 @@ class AffiliateTable extends StatelessWidget {
   }
 
   Widget _buildTableRow(
-    BuildContext context, 
-    bool isDark, 
-    AffiliateProfile affiliate, 
+    BuildContext context,
+    bool isDark,
+    AffiliateProfile affiliate,
     AffiliatesController controller,
   ) {
     return InkWell(
@@ -129,7 +133,8 @@ class AffiliateTable extends StatelessWidget {
                   Text(
                     affiliate.fullName,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -137,13 +142,14 @@ class AffiliateTable extends StatelessWidget {
                   Text(
                     affiliate.email,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                      color:
+                          isDark ? AppColors.gray300 : AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             // Code d'affiliation
             Expanded(
               flex: 2,
@@ -169,13 +175,13 @@ class AffiliateTable extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Statut
             Expanded(
               flex: 2,
               child: _buildStatusBadge(affiliate.status, isDark),
             ),
-            
+
             // Commission
             Expanded(
               flex: 2,
@@ -185,7 +191,8 @@ class AffiliateTable extends StatelessWidget {
                   Text(
                     affiliate.formattedCommissionRate,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -200,7 +207,7 @@ class AffiliateTable extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // Total gagné
             Expanded(
               flex: 2,
@@ -212,7 +219,7 @@ class AffiliateTable extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Nombre de filleuls
             Expanded(
               flex: 1,
@@ -235,7 +242,7 @@ class AffiliateTable extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Actions
             Expanded(
               flex: 2,
@@ -252,20 +259,23 @@ class AffiliateTable extends StatelessWidget {
                   GlassButton(
                     label: '',
                     icon: affiliate.isActive ? Icons.block : Icons.check_circle,
-                    variant: affiliate.isActive 
-                        ? GlassButtonVariant.warning 
+                    variant: affiliate.isActive
+                        ? GlassButtonVariant.warning
                         : GlassButtonVariant.success,
                     size: GlassButtonSize.small,
-                    onPressed: () => _toggleAffiliateStatus(affiliate, controller),
+                    onPressed: () =>
+                        _toggleAffiliateStatus(affiliate, controller),
                   ),
                   SizedBox(width: AppSpacing.xs),
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert,
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                       size: 18,
                     ),
-                    onSelected: (value) => _handleMenuAction(value, affiliate, controller),
+                    onSelected: (value) =>
+                        _handleMenuAction(value, affiliate, controller),
                     itemBuilder: (context) => [
                       PopupMenuItem(
                         value: 'details',
@@ -281,7 +291,8 @@ class AffiliateTable extends StatelessWidget {
                         value: 'commissions',
                         child: Row(
                           children: [
-                            Icon(Icons.account_balance_wallet_outlined, size: 16),
+                            Icon(Icons.account_balance_wallet_outlined,
+                                size: 16),
                             SizedBox(width: AppSpacing.sm),
                             Text('Commissions'),
                           ],
@@ -302,9 +313,11 @@ class AffiliateTable extends StatelessWidget {
                           value: 'approve',
                           child: Row(
                             children: [
-                              Icon(Icons.check, size: 16, color: AppColors.success),
+                              Icon(Icons.check,
+                                  size: 16, color: AppColors.success),
                               SizedBox(width: AppSpacing.sm),
-                              Text('Approuver', style: TextStyle(color: AppColors.success)),
+                              Text('Approuver',
+                                  style: TextStyle(color: AppColors.success)),
                             ],
                           ),
                         ),
@@ -313,9 +326,11 @@ class AffiliateTable extends StatelessWidget {
                           value: 'suspend',
                           child: Row(
                             children: [
-                              Icon(Icons.block, size: 16, color: AppColors.warning),
+                              Icon(Icons.block,
+                                  size: 16, color: AppColors.warning),
                               SizedBox(width: AppSpacing.sm),
-                              Text('Suspendre', style: TextStyle(color: AppColors.warning)),
+                              Text('Suspendre',
+                                  style: TextStyle(color: AppColors.warning)),
                             ],
                           ),
                         ),
@@ -371,12 +386,16 @@ class AffiliateTable extends StatelessWidget {
     );
   }
 
-  void _toggleAffiliateStatus(AffiliateProfile affiliate, AffiliatesController controller) {
-    final newStatus = affiliate.isActive ? AffiliateStatus.SUSPENDED : AffiliateStatus.ACTIVE;
-    controller.updateAffiliateStatus(affiliate.id, newStatus, !affiliate.isActive);
+  void _toggleAffiliateStatus(
+      AffiliateProfile affiliate, AffiliatesController controller) {
+    final newStatus =
+        affiliate.isActive ? AffiliateStatus.SUSPENDED : AffiliateStatus.ACTIVE;
+    controller.updateAffiliateStatus(
+        affiliate.id, newStatus, !affiliate.isActive);
   }
 
-  void _handleMenuAction(String action, AffiliateProfile affiliate, AffiliatesController controller) {
+  void _handleMenuAction(String action, AffiliateProfile affiliate,
+      AffiliatesController controller) {
     switch (action) {
       case 'details':
         _showAffiliateDetails(Get.context!, affiliate);
@@ -390,10 +409,12 @@ class AffiliateTable extends StatelessWidget {
         // TODO: Ouvrir un dialog spécifique pour les filleuls
         break;
       case 'approve':
-        controller.updateAffiliateStatus(affiliate.id, AffiliateStatus.ACTIVE, true);
+        controller.updateAffiliateStatus(
+            affiliate.id, AffiliateStatus.ACTIVE, true);
         break;
       case 'suspend':
-        controller.updateAffiliateStatus(affiliate.id, AffiliateStatus.SUSPENDED, false);
+        controller.updateAffiliateStatus(
+            affiliate.id, AffiliateStatus.SUSPENDED, false);
         break;
     }
   }

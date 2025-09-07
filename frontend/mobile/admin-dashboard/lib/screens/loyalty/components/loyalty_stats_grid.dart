@@ -162,7 +162,8 @@ class LoyaltyStatsGrid extends StatelessWidget {
                   child: Text(
                     title,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                      color:
+                          isDark ? AppColors.gray300 : AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                     maxLines: 2,

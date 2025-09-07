@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/loyalty_controller.dart';
 import '../../models/loyalty.dart';
 import '../../widgets/shared/glass_button.dart';
+import '../../widgets/shared/glass_container.dart';
 import '../../utils/date_utils.dart';
 import 'components/loyalty_stats_grid.dart';
 import 'components/loyalty_points_table.dart';
@@ -161,22 +163,13 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
   }
 
   Widget _buildTabBar(BuildContext context, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.5)
-            : Colors.white.withOpacity(0.8),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark
-              ? AppColors.gray700.withOpacity(0.3)
-              : AppColors.gray200.withOpacity(0.5),
-        ),
-      ),
+    return _glassCard(
+      context,
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: TabBar(
         controller: _tabController,
         indicator: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
+          color: AppColors.primary.withOpacity(0.12),
           borderRadius: AppRadius.radiusMD,
         ),
         labelColor: AppColors.primary,
@@ -425,19 +418,9 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
   }
 
   Widget _buildTransactionFilters(BuildContext context, bool isDark) {
-    return Container(
+    return _glassCard(
+      context,
       padding: EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.5)
-            : Colors.white.withOpacity(0.8),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark
-              ? AppColors.gray700.withOpacity(0.3)
-              : AppColors.gray200.withOpacity(0.5),
-        ),
-      ),
       child: Row(
         children: [
           Expanded(
@@ -510,19 +493,9 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
   }
 
   Widget _buildRewardFilters(BuildContext context, bool isDark) {
-    return Container(
+    return _glassCard(
+      context,
       padding: EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.5)
-            : Colors.white.withOpacity(0.8),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark
-              ? AppColors.gray700.withOpacity(0.3)
-              : AppColors.gray200.withOpacity(0.5),
-        ),
-      ),
       child: Row(
         children: [
           Expanded(
@@ -579,19 +552,9 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
   }
 
   Widget _buildClaimFilters(BuildContext context, bool isDark) {
-    return Container(
+    return _glassCard(
+      context,
       padding: EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.5)
-            : Colors.white.withOpacity(0.8),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark
-              ? AppColors.gray700.withOpacity(0.3)
-              : AppColors.gray200.withOpacity(0.5),
-        ),
-      ),
       child: Row(
         children: [
           Expanded(
@@ -636,18 +599,9 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
   }
 
   Widget _buildTransactionsList(BuildContext context, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.5)
-            : Colors.white.withOpacity(0.8),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark
-              ? AppColors.gray700.withOpacity(0.3)
-              : AppColors.gray200.withOpacity(0.5),
-        ),
-      ),
+    return _glassCard(
+      context,
+      padding: EdgeInsets.zero,
       child: Obx(() => ListView.builder(
             itemCount: controller.filteredPointTransactions.length,
             itemBuilder: (context, index) {
@@ -723,18 +677,9 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
   }
 
   Widget _buildRewardsList(BuildContext context, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.5)
-            : Colors.white.withOpacity(0.8),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark
-              ? AppColors.gray700.withOpacity(0.3)
-              : AppColors.gray200.withOpacity(0.5),
-        ),
-      ),
+    return _glassCard(
+      context,
+      padding: EdgeInsets.zero,
       child: Obx(() => ListView.builder(
             itemCount: controller.filteredRewards.length,
             itemBuilder: (context, index) {
@@ -834,18 +779,9 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
   }
 
   Widget _buildClaimsList(BuildContext context, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.5)
-            : Colors.white.withOpacity(0.8),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark
-              ? AppColors.gray700.withOpacity(0.3)
-              : AppColors.gray200.withOpacity(0.5),
-        ),
-      ),
+    return _glassCard(
+      context,
+      padding: EdgeInsets.zero,
       child: Obx(() => ListView.builder(
             itemCount: controller.filteredRewardClaims.length,
             itemBuilder: (context, index) {
@@ -999,19 +935,9 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
     return Obx(() {
       if (controller.totalPages.value <= 1) return SizedBox.shrink();
 
-      return Container(
+      return _glassCard(
+        context,
         padding: EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.gray800.withOpacity(0.5)
-              : Colors.white.withOpacity(0.8),
-          borderRadius: AppRadius.radiusMD,
-          border: Border.all(
-            color: isDark
-                ? AppColors.gray700.withOpacity(0.3)
-                : AppColors.gray200.withOpacity(0.5),
-          ),
-        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -1049,6 +975,18 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
         ),
       );
     });
+  }
+
+  // Generic glass card wrapper to unify glassmorphism styles across the screen
+  Widget _glassCard(BuildContext context,
+      {required Widget child, EdgeInsets? padding}) {
+    // Delegate to the centralized GlassContainer so all cards share the same
+    // tokens (background, border, blur, shadows, etc.). This removes subtle
+    // visual drift between screens.
+    return GlassContainer(
+      padding: padding,
+      child: child,
+    );
   }
 
   void _showAddPointsDialog(BuildContext context) {

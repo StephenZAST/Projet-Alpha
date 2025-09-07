@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'dart:ui';
 import '../../../constants.dart';
 import '../../../controllers/affiliates_controller.dart';
+import '../../../widgets/shared/glass_container.dart';
 
 class AffiliateStatsGrid extends StatelessWidget {
   const AffiliateStatsGrid({Key? key}) : super(key: key);
@@ -38,7 +39,8 @@ class AffiliateStatsGrid extends StatelessWidget {
             subtitle: '${stats.activeAffiliates} actifs',
             icon: Icons.handshake_outlined,
             color: AppColors.primary,
-            trend: stats.totalAffiliates > 0 ? '+${stats.totalAffiliates}' : '0',
+            trend:
+                stats.totalAffiliates > 0 ? '+${stats.totalAffiliates}' : '0',
           ),
           _buildStatCard(
             context,
@@ -85,98 +87,70 @@ class AffiliateStatsGrid extends StatelessWidget {
     required Color color,
     required String trend,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: AppRadius.radiusMD,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: AppRadius.radiusMD,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark 
-                  ? AppColors.gray800.withOpacity(0.8)
-                  : Colors.white.withOpacity(0.9),
-              borderRadius: AppRadius.radiusMD,
-              border: Border.all(
-                color: color.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: AppRadius.radiusSM,
-                        ),
-                        child: Icon(
-                          icon,
-                          color: color,
-                          size: 24,
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: AppRadius.radiusXS,
-                        ),
-                        child: Text(
-                          trend,
-                          style: AppTextStyles.caption.copyWith(
-                            color: color,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+    return GlassContainer(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: AppRadius.radiusSM,
                   ),
-                  SizedBox(height: AppSpacing.md),
-                  Text(
-                    value,
-                    style: AppTextStyles.h2.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 24,
                   ),
-                  SizedBox(height: AppSpacing.xs),
-                  Text(
-                    title,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: AppRadius.radiusXS,
+                  ),
+                  child: Text(
+                    trend,
+                    style: AppTextStyles.caption.copyWith(
+                      color: color,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(height: AppSpacing.xs),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: isDark ? AppColors.gray400 : AppColors.textMuted,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            Text(
+              value,
+              style: AppTextStyles.h2.copyWith(
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
+            SizedBox(height: AppSpacing.xs),
+            Text(
+              title,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Text(
+              subtitle,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? AppColors.gray400 : AppColors.textMuted,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -197,12 +171,12 @@ class AffiliateStatsGrid extends StatelessWidget {
   Widget _buildLoadingCard(bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? AppColors.gray800.withOpacity(0.5)
             : Colors.white.withOpacity(0.8),
         borderRadius: AppRadius.radiusMD,
         border: Border.all(
-          color: isDark 
+          color: isDark
               ? AppColors.gray700.withOpacity(0.3)
               : AppColors.gray200.withOpacity(0.5),
         ),
@@ -270,7 +244,7 @@ class AffiliateStatsGrid extends StatelessWidget {
     return Container(
       height: 200,
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? AppColors.gray800.withOpacity(0.5)
             : Colors.white.withOpacity(0.8),
         borderRadius: AppRadius.radiusMD,
@@ -296,7 +270,8 @@ class AffiliateStatsGrid extends StatelessWidget {
             ),
             SizedBox(height: AppSpacing.sm),
             TextButton(
-              onPressed: () => Get.find<AffiliatesController>().fetchAffiliateStats(),
+              onPressed: () =>
+                  Get.find<AffiliatesController>().fetchAffiliateStats(),
               child: Text('Réessayer'),
             ),
           ],

@@ -71,6 +71,28 @@ class AppColors {
   static const Color cardBg = Color(0xFFFFFFFF); // White
   static const Color darkBg = Color(0xFF1E293B); // Dark mode background
 
+  // Glass / design tokens
+  // card backgrounds tuned for better contrast while keeping glass effect
+  // Use runtime Color expressions to match Affiliates exact opacities
+  static final Color cardBgLight = Colors.white.withOpacity(0.9);
+  static final Color cardBgDark = AppColors.gray800.withOpacity(0.8);
+
+  // Header background tokens for section headers (exact values used in Affiliates)
+  static final Color headerBgLight = AppColors.gray50.withOpacity(0.8);
+  static final Color headerBgDark = AppColors.gray900.withOpacity(0.3);
+
+  // Glass border opacities (used with gray colors)
+  static const double glassBorderLightOpacity = 0.65;
+  static const double glassBorderDarkOpacity = 0.34;
+
+  // Default blur used for backdrop filters (glass effect)
+  // Tuned to match the visual pattern used in `affiliate_stats_grid.dart`.
+  static const double glassBlurSigma = 10.0;
+
+  // Stat card gradient tokens
+  static const Color statGradientStart = AppColors.primaryLight;
+  static const Color statGradientEnd = AppColors.accent;
+
   // Text Colors
   static const Color textPrimary = Color(0xFF0F172A); // Very dark blue gray
   static const Color textSecondary = Color(0xFF475569); // Slate gray
@@ -239,9 +261,9 @@ class MenuIndices {
   static const int articles = 4;
   static const int serviceTypes = 5;
   static const int users = 6;
-  static const int affiliates = 7;        // 🤝 Nouvelle page Affiliés
-  static const int loyalty = 8;           // ⭐ Nouvelle page Loyalty & Rewards
-  static const int delivery = 9;          // 🚚 Nouvelle page Gestion Livreurs
+  static const int affiliates = 7; // 🤝 Nouvelle page Affiliés
+  static const int loyalty = 8; // ⭐ Nouvelle page Loyalty & Rewards
+  static const int delivery = 9; // 🚚 Nouvelle page Gestion Livreurs
   static const int profile = 10;
   static const int notifications = 11;
   static const int serviceArticleCouples = 12;

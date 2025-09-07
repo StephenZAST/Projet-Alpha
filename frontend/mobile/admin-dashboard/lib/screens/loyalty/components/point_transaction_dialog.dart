@@ -5,8 +5,12 @@ import '../../../models/loyalty.dart';
 import '../../../widgets/shared/glass_button.dart';
 
 class PointTransactionDialog extends StatefulWidget {
-  final Function(String userId, int points, PointSource source, String referenceId) onAddPoints;
-  final Function(String userId, int points, PointSource source, String referenceId) onDeductPoints;
+  final Function(
+          String userId, int points, PointSource source, String referenceId)
+      onAddPoints;
+  final Function(
+          String userId, int points, PointSource source, String referenceId)
+      onDeductPoints;
 
   const PointTransactionDialog({
     Key? key,
@@ -79,9 +83,7 @@ class _PointTransactionDialogState extends State<PointTransactionDialog>
             // Tabs
             Container(
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.gray800.withOpacity(0.5)
-                    : Colors.white.withOpacity(0.8),
+                color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
                 borderRadius: AppRadius.radiusMD,
                 border: Border.all(
                   color: isDark
@@ -234,16 +236,18 @@ class _PointTransactionDialogState extends State<PointTransactionDialog>
                 borderRadius: AppRadius.radiusSM,
               ),
             ),
-            items: PointSource.values.map((source) => DropdownMenuItem(
-              value: source,
-              child: Row(
-                children: [
-                  Icon(source.icon, size: 16, color: source.color),
-                  SizedBox(width: AppSpacing.sm),
-                  Text(_getSourceLabel(source)),
-                ],
-              ),
-            )).toList(),
+            items: PointSource.values
+                .map((source) => DropdownMenuItem(
+                      value: source,
+                      child: Row(
+                        children: [
+                          Icon(source.icon, size: 16, color: source.color),
+                          SizedBox(width: AppSpacing.sm),
+                          Text(_getSourceLabel(source)),
+                        ],
+                      ),
+                    ))
+                .toList(),
             onChanged: (value) {
               setState(() {
                 _selectedSource = value!;
@@ -383,16 +387,18 @@ class _PointTransactionDialogState extends State<PointTransactionDialog>
                 borderRadius: AppRadius.radiusSM,
               ),
             ),
-            items: PointSource.values.map((source) => DropdownMenuItem(
-              value: source,
-              child: Row(
-                children: [
-                  Icon(source.icon, size: 16, color: source.color),
-                  SizedBox(width: AppSpacing.sm),
-                  Text(_getSourceLabel(source)),
-                ],
-              ),
-            )).toList(),
+            items: PointSource.values
+                .map((source) => DropdownMenuItem(
+                      value: source,
+                      child: Row(
+                        children: [
+                          Icon(source.icon, size: 16, color: source.color),
+                          SizedBox(width: AppSpacing.sm),
+                          Text(_getSourceLabel(source)),
+                        ],
+                      ),
+                    ))
+                .toList(),
             onChanged: (value) {
               setState(() {
                 _selectedSource = value!;
@@ -515,7 +521,8 @@ class _PointTransactionDialogState extends State<PointTransactionDialog>
                     ? _referenceController.text.trim()
                     : 'MANUAL_DEDUCT_${DateTime.now().millisecondsSinceEpoch}';
 
-                widget.onDeductPoints(userId, points, _selectedSource, reference);
+                widget.onDeductPoints(
+                    userId, points, _selectedSource, reference);
                 Get.back(); // Close confirmation dialog
                 Get.back(); // Close main dialog
               },

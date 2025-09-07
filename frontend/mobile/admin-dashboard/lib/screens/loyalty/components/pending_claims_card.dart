@@ -115,9 +115,7 @@ class PendingClaimsCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: AppSpacing.sm),
       padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.3)
-            : AppColors.gray50.withOpacity(0.5),
+        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
         borderRadius: AppRadius.radiusMD,
         border: Border.all(
           color: isDark

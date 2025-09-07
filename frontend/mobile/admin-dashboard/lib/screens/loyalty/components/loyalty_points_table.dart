@@ -47,9 +47,7 @@ class LoyaltyPointsTable extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray700.withOpacity(0.3)
-            : AppColors.gray100.withOpacity(0.5),
+        color: isDark ? AppColors.headerBgDark : AppColors.headerBgLight,
         borderRadius: BorderRadius.only(
           topLeft: AppRadius.radiusMD.topLeft,
           topRight: AppRadius.radiusMD.topRight,
@@ -179,6 +177,7 @@ class LoyaltyPointsTable extends StatelessWidget {
             width: 1,
           ),
         ),
+        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
       ),
       child: Row(
         children: [

@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../constants.dart';
 
-enum GlassContainerVariant { 
-  primary, 
-  secondary, 
-  success, 
-  warning, 
-  error, 
+enum GlassContainerVariant {
+  primary,
+  secondary,
+  success,
+  warning,
+  error,
   info,
-  neutral 
+  neutral
 }
 
 class GlassContainer extends StatelessWidget {
@@ -36,13 +36,13 @@ class GlassContainer extends StatelessWidget {
     this.borderRadius = 12.0,
     this.hasBorder = true,
     this.hasShadow = true,
-    this.blurIntensity = 5.0,
+    this.blurIntensity = AppColors.glassBlurSigma,
     this.onTap,
   }) : super(key: key);
 
   Color _getBaseColor(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     switch (variant) {
       case GlassContainerVariant.primary:
         return AppColors.primary;
@@ -65,34 +65,32 @@ class GlassContainer extends StatelessWidget {
   Color _getBackgroundColor(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseColor = _getBaseColor(context);
-    
+
     if (variant == GlassContainerVariant.neutral) {
-      return isDark 
-          ? AppColors.gray800.withOpacity(0.5)
-          : Colors.white.withOpacity(0.8);
+      return isDark ? AppColors.cardBgDark : AppColors.cardBgLight;
     }
-    
+
     return baseColor.withOpacity(0.1);
   }
 
   Color _getBorderColor(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseColor = _getBaseColor(context);
-    
+
     if (variant == GlassContainerVariant.neutral) {
-      return isDark 
-          ? AppColors.gray700.withOpacity(0.3)
-          : AppColors.gray200.withOpacity(0.5);
+      return isDark
+          ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
+          : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity);
     }
-    
+
     return baseColor.withOpacity(0.3);
   }
 
   List<BoxShadow> _getShadows(BuildContext context) {
     if (!hasShadow) return [];
-    
+
     final baseColor = _getBaseColor(context);
-    
+
     return [
       BoxShadow(
         color: baseColor.withOpacity(0.1),
@@ -115,41 +113,34 @@ class GlassContainer extends StatelessWidget {
     final borderColor = _getBorderColor(context);
     final shadows = _getShadows(context);
 
-    Widget container = Container(
-      width: width,
-      height: height,
-      margin: margin,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        color: backgroundColor,
-        border: hasBorder ? Border.all(
-          color: borderColor,
-          width: 1,
-        ) : null,
-        boxShadow: shadows,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: blurIntensity, 
-            sigmaY: blurIntensity,
+    // Match the Affiliate card pattern: ClipRRect -> BackdropFilter -> Container
+    // with BoxDecoration (background, border, boxShadow). This makes
+    // `GlassContainer` visually identical to the manual cards used in
+    // `affiliate_stats_grid.dart` while still using centralized tokens.
+    Widget container = ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: blurIntensity,
+          sigmaY: blurIntensity,
+        ),
+        child: Container(
+          width: width,
+          height: height,
+          margin: margin,
+          padding: padding ?? EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(borderRadius),
+            color: backgroundColor,
+            border: hasBorder
+                ? Border.all(
+                    color: borderColor,
+                    width: 1,
+                  )
+                : null,
+            boxShadow: hasShadow ? shadows : [],
           ),
-          child: Container(
-            padding: padding ?? EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(borderRadius),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05),
-                ],
-              ),
-            ),
-            child: child,
-          ),
+          child: child,
         ),
       ),
     );
@@ -213,14 +204,30 @@ class GlassStatsCard extends StatelessWidget {
                 ),
               ),
               Container(
+                width: 44,
+                height: 44,
                 padding: EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
                   borderRadius: AppRadius.radiusSM,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.statGradientStart,
+                      AppColors.statGradientEnd
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: iconColor.withOpacity(0.06),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Icon(
                   icon,
-                  color: iconColor,
+                  color: Colors.white,
                   size: 20,
                 ),
               ),
@@ -286,9 +293,7 @@ class GlassSectionContainer extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.gray700.withOpacity(0.3)
-                  : AppColors.gray100.withOpacity(0.5),
+              color: isDark ? AppColors.headerBgDark : AppColors.headerBgLight,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -342,7 +347,7 @@ class GlassSectionContainer extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Content
           Padding(
             padding: EdgeInsets.all(AppSpacing.lg),
@@ -374,7 +379,7 @@ class GlassAlertContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     Color getVariantColor() {
       switch (variant) {
         case GlassContainerVariant.success:
