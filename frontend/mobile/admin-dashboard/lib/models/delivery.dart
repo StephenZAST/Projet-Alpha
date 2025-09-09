@@ -73,6 +73,7 @@ class DeliveryUser {
   bool get isActive => deliveryProfile?.isActive ?? false;
   String get statusLabel => isActive ? 'Actif' : 'Inactif';
   Color get statusColor => isActive ? AppColors.success : AppColors.error;
+  int? get deliveriesToday => deliveryProfile?.deliveriesToday;
 }
 
 // Profil spécifique au livreur (extension future)
@@ -85,6 +86,7 @@ class DeliveryProfile {
   final String? licenseNumber;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final int? deliveriesToday;
 
   const DeliveryProfile({
     required this.id,
@@ -95,24 +97,22 @@ class DeliveryProfile {
     this.licenseNumber,
     required this.createdAt,
     required this.updatedAt,
+    this.deliveriesToday,
   });
 
   factory DeliveryProfile.fromJson(Map<String, dynamic> json) {
     return DeliveryProfile(
       id: json['id'] as String,
-      userId: json['userId'] as String? ?? json['user_id'] as String? ?? '',
-      isActive: json['isActive'] as bool? ?? json['is_active'] as bool? ?? true,
+      userId: json['userId'] as String,
+      isActive: json['isActive'] as bool? ?? false,
       zone: json['zone'] as String?,
-      vehicleType:
-          json['vehicleType'] as String? ?? json['vehicle_type'] as String?,
-      licenseNumber:
-          json['licenseNumber'] as String? ?? json['license_number'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String? ??
-          json['created_at'] as String? ??
-          DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] as String? ??
-          json['updated_at'] as String? ??
-          DateTime.now().toIso8601String()),
+      vehicleType: json['vehicleType'] as String?,
+      licenseNumber: json['licenseNumber'] as String?,
+      createdAt: DateTime.parse(
+          json['createdAt'] as String? ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(
+          json['updatedAt'] as String? ?? DateTime.now().toIso8601String()),
+      deliveriesToday: json['deliveriesToday'] as int?,
     );
   }
 
@@ -126,6 +126,7 @@ class DeliveryProfile {
       'licenseNumber': licenseNumber,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'deliveriesToday': deliveriesToday,
     };
   }
 }

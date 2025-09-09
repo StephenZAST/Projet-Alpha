@@ -8,6 +8,7 @@ class GlassListItem extends StatelessWidget {
   final Widget? subtitle;
   final List<Widget>? trailingWidgets;
   final VoidCallback? onTap;
+  final bool isHeader;
 
   const GlassListItem({
     Key? key,
@@ -16,14 +17,25 @@ class GlassListItem extends StatelessWidget {
     this.subtitle,
     this.trailingWidgets,
     this.onTap,
+    this.isHeader = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleStyle = isHeader
+        ? AppTextStyles.bodyLarge.copyWith(
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.gray300 : AppColors.gray700,
+          )
+        : AppTextStyles.bodyLarge;
+
     return GlassContainer(
       onTap: onTap,
       padding: EdgeInsets.symmetric(
-          vertical: AppSpacing.sm, horizontal: AppSpacing.md),
+        vertical: AppSpacing.sm,
+        horizontal: AppSpacing.md,
+      ),
       child: Row(
         children: [
           leading,
@@ -33,7 +45,7 @@ class GlassListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DefaultTextStyle.merge(
-                  style: AppTextStyles.bodyLarge,
+                  style: titleStyle,
                   child: title,
                 ),
                 if (subtitle != null) ...[
