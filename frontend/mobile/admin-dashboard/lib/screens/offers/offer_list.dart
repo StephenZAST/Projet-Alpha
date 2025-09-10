@@ -1,6 +1,7 @@
+import 'package:admin/screens/delivery/components/glass_list_item.dart';
 import 'package:flutter/material.dart';
 import '../../constants.dart';
-import '../../widgets/shared/glass_button.dart';
+import '../../widgets/shared/glass_container.dart';
 
 class OfferList extends StatelessWidget {
   final List<Map<String, dynamic>> offers;
@@ -18,79 +19,141 @@ class OfferList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (offers.isEmpty) {
       return Center(
-        child: Text(
-          "Aucune offre disponible.",
-          style: AppTextStyles.bodyMedium,
-        ),
-      );
-    }
-    return ListView.separated(
-      itemCount: offers.length,
-      separatorBuilder: (_, __) => SizedBox(height: AppSpacing.sm),
-      itemBuilder: (context, index) {
-        final offer = offers[index];
-        return Card(
-          elevation: 4,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ExpansionTile(
-            title: Text(
-              offer['name'] ?? '',
-              style: AppTextStyles.bodyBold.copyWith(color: Colors.white),
-            ),
+        child: GlassContainer(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(offer['description'] ?? '',
-                        style: AppTextStyles.bodyMedium),
-                    SizedBox(height: 8),
-                    Row(
-                      children: [
-                        GlassButton(
-                          icon: Icons.edit,
-                          label: '',
-                          variant: GlassButtonVariant.info,
-                          size: GlassButtonSize.small,
-                          onPressed: () {
-                            // Appeler directement onEdit avec l'offre complète
-                            // au lieu d'ouvrir un dialog ici
-                            onEdit(offer);
-                          },
-                        ),
-                        SizedBox(width: 8),
-                        GlassButton(
-                          icon: Icons.delete,
-                          label: '',
-                          variant: GlassButtonVariant.error,
-                          size: GlassButtonSize.small,
-                          onPressed: () => onDelete(offer),
-                        ),
-                        SizedBox(width: 8),
-                        GlassButton(
-                          icon: offer['isActive'] == true
-                              ? Icons.toggle_on
-                              : Icons.toggle_off,
-                          label: '',
-                          variant: offer['isActive'] == true
-                              ? GlassButtonVariant.success
-                              : GlassButtonVariant.warning,
-                          size: GlassButtonSize.small,
-                          onPressed: () => onToggleStatus(offer),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              Icon(Icons.local_offer_outlined,
+                  size: 48, color: AppColors.gray400),
+              SizedBox(height: AppSpacing.md),
+              Text(
+                "Aucune offre disponible.",
+                style: AppTextStyles.bodyLarge,
               ),
             ],
           ),
+        ),
+      );
+    }
+    return ListView.builder(
+      itemCount: offers.length,
+      itemBuilder: (context, index) {
+        final offer = offers[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+          child: _buildOfferItem(context, offer, isDark),
         );
       },
+    );
+  }
+
+  Widget _buildOfferItem(
+      BuildContext context, Map<String, dynamic> offer, bool isDark) {
+    final bool isActive = offer['isActive'] ?? offer['is_active'] ?? false;
+    final String discountType = offer['discountType'] ?? 'PERCENTAGE';
+
+    IconData getOfferIcon() {
+      switch (discountType) {
+        case 'PERCENTAGE':
+          return Icons.percent_outlined;
+        case 'FIXED_AMOUNT':
+          return Icons.attach_money_outlined;
+        case 'POINTS_EXCHANGE':
+          return Icons.star_outline;
+        default:
+          return Icons.local_offer_outlined;
+      }
+    }
+
+    return GlassListItem(
+      onTap: () => onEdit(offer),
+      leading: CircleAvatar(
+        backgroundColor: AppColors.primary.withOpacity(0.15),
+        child: Icon(
+          getOfferIcon(),
+          color: AppColors.primary,
+          size: 20,
+        ),
+      ),
+      title: Text(offer['name'] ?? 'Offre sans nom',
+          style: AppTextStyles.bodyLarge),
+      subtitle: Text(
+        offer['description'] ?? 'Aucune description',
+        style: AppTextStyles.bodySmallSecondary,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailingWidgets: [
+        _buildStatusBadge(isActive, isDark),
+        SizedBox(width: AppSpacing.md),
+        PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'edit') {
+              onEdit(offer);
+            } else if (value == 'toggle') {
+              onToggleStatus(offer);
+            } else if (value == 'delete') {
+              onDelete(offer);
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'edit',
+              child: ListTile(
+                leading: Icon(Icons.edit_outlined),
+                title: Text('Modifier'),
+              ),
+            ),
+            PopupMenuItem<String>(
+              value: 'toggle',
+              child: ListTile(
+                leading: Icon(isActive
+                    ? Icons.toggle_off_outlined
+                    : Icons.toggle_on_outlined),
+                title: Text(isActive ? 'Désactiver' : 'Activer'),
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: 'delete',
+              child: ListTile(
+                leading: Icon(Icons.delete_outline, color: AppColors.error),
+                title:
+                    Text('Supprimer', style: TextStyle(color: AppColors.error)),
+              ),
+            ),
+          ],
+          icon: Icon(Icons.more_vert,
+              color: isDark ? AppColors.gray300 : AppColors.gray600),
+          color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.radiusMD,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusBadge(bool isActive, bool isDark) {
+    final color = isActive ? AppColors.success : AppColors.warning;
+    final text = isActive ? 'Actif' : 'Inactif';
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: AppRadius.radiusSM,
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        text,
+        style: AppTextStyles.bodySmall.copyWith(color: color),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 }

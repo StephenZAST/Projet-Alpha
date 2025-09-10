@@ -60,7 +60,7 @@ class GlassListItem extends StatelessWidget {
           ),
           if (trailingWidgets != null) ...[
             SizedBox(width: AppSpacing.md),
-            Row(children: trailingWidgets!),
+            Row(mainAxisSize: MainAxisSize.min, children: trailingWidgets!),
           ]
         ],
       ),

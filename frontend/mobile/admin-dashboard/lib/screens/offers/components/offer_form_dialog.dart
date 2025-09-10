@@ -1,7 +1,10 @@
+import 'package:admin/widgets/shared/glass_container.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../constants.dart';
 import '../../../widgets/shared/glass_button.dart';
 import '../../../services/article_service.dart' as article_service;
+import '../../../models/article.dart';
 
 class OfferFormDialog extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -26,8 +29,8 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
   late TextEditingController _pointsController;
   late bool _isCumulative;
   late bool _isActive;
-  List<dynamic> _selectedArticles = [];
-  List<dynamic> _allArticles = [];
+  List<Article> _selectedArticles = [];
+  List<Article> _allArticles = [];
   bool _articlesLoading = false;
   String discountType = 'PERCENTAGE';
 
@@ -75,17 +78,16 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
       final articles = await article_service.ArticleService.getAllArticles();
       setState(() {
         _allArticles = articles;
-        // Pré-sélection si édition
         if (widget.initialData?['articles'] != null) {
           final initialIds = widget.initialData!['articles']
               .map((a) => a is String ? a : a['id'])
-              .toList();
+              .toSet();
           _selectedArticles =
               articles.where((a) => initialIds.contains(a.id)).toList();
         }
       });
     } catch (e) {
-      // Optionnel: afficher une erreur
+      // Gérer l'erreur
     } finally {
       setState(() => _articlesLoading = false);
     }
@@ -93,7 +95,6 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
 
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
-      // Préparer les données avec validation
       final submitData = <String, dynamic>{
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
@@ -103,43 +104,33 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
         'startDate': _startDateController.text,
         'endDate': _endDateController.text,
         'isActive': _isActive,
+        'articles': _selectedArticles.map((a) => a.id).toList(),
       };
 
-      // Ajouter les champs optionnels seulement s'ils ont une valeur
       final minPurchase = double.tryParse(_minPurchaseController.text);
-      if (minPurchase != null && minPurchase > 0) {
-        submitData['minPurchaseAmount'] = minPurchase;
-      }
+      if (minPurchase != null) submitData['minPurchaseAmount'] = minPurchase;
 
       final maxDiscount = double.tryParse(_maxDiscountController.text);
-      if (maxDiscount != null && maxDiscount > 0) {
-        submitData['maxDiscountAmount'] = maxDiscount;
-      }
+      if (maxDiscount != null) submitData['maxDiscountAmount'] = maxDiscount;
 
       final points = int.tryParse(_pointsController.text);
-      if (points != null && points > 0) {
-        submitData['pointsRequired'] = points;
-      }
+      if (points != null) submitData['pointsRequired'] = points;
 
-      // Ajouter les articles sélectionnés
-      if (_selectedArticles.isNotEmpty) {
-        submitData['articles'] = _selectedArticles.map((article) => article.id).toList();
-      }
-
-      // Fermer le dialog AVANT d'appeler le callback
       Navigator.of(context).pop();
-      
-      // Appeler le callback parent
       widget.onSubmit(submitData);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return AlertDialog(
+      backgroundColor: Colors.transparent,
+      contentPadding: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusLG),
+      content: GlassContainer(
+        width: MediaQuery.of(context).size.width * 0.6,
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -151,332 +142,263 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
                   widget.initialData == null
                       ? 'Créer une offre'
                       : 'Modifier l\'offre',
-                  style: AppTextStyles.bodyBold,
+                  style: AppTextStyles.h3,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nameController,
-                  decoration:
-                      const InputDecoration(labelText: 'Nom de l\'offre'),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Champ requis' : null,
-                ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: _startDateController.text.isNotEmpty
-                          ? DateTime.tryParse(_startDateController.text) ??
-                              DateTime.now()
-                          : DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
-                    );
-                    if (picked != null) {
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(picked),
-                      );
-                      final dateTime = DateTime(picked.year, picked.month,
-                          picked.day, time?.hour ?? 0, time?.minute ?? 0);
-                      setState(() {
-                        _startDateController.text = dateTime.toIso8601String();
-                      });
-                    }
-                  },
-                  child: AbsorbPointer(
-                    child: TextFormField(
-                      controller: _startDateController,
-                      decoration: const InputDecoration(
-                          labelText: 'Date de début (YYYY-MM-DD HH:mm)'),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Champ requis' : null,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: _endDateController.text.isNotEmpty
-                          ? DateTime.tryParse(_endDateController.text) ??
-                              DateTime.now()
-                          : DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
-                    );
-                    if (picked != null) {
-                      final time = await showTimePicker(
-                        context: context,
-                        initialTime: TimeOfDay.fromDateTime(picked),
-                      );
-                      final dateTime = DateTime(picked.year, picked.month,
-                          picked.day, time?.hour ?? 0, time?.minute ?? 0);
-                      setState(() {
-                        _endDateController.text = dateTime.toIso8601String();
-                      });
-                    }
-                  },
-                  child: AbsorbPointer(
-                    child: TextFormField(
-                      controller: _endDateController,
-                      decoration: const InputDecoration(
-                          labelText: 'Date de fin (YYYY-MM-DD HH:mm)'),
-                      validator: (v) =>
-                          v == null || v.isEmpty ? 'Champ requis' : null,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Remplace la sélection directe par un bouton qui ouvre un modal
+                SizedBox(height: AppSpacing.lg),
+                _buildTextField(_nameController, 'Nom de l\'offre', isDark),
+                SizedBox(height: AppSpacing.md),
+                _buildTextField(_descriptionController, 'Description', isDark,
+                    maxLines: 3),
+                SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
                     Expanded(
-                      child:
-                          Text('Articles liés', style: AppTextStyles.bodyBold),
-                    ),
-                    TextButton(
-                      onPressed: _articlesLoading
-                          ? null
-                          : () async {
-                              await showDialog(
-                                context: context,
-                                builder: (ctx) {
-                                  return Dialog(
-                                    shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(16)),
-                                    child: Container(
-                                      constraints: BoxConstraints(
-                                          maxWidth: 400, maxHeight: 500),
-                                      padding: const EdgeInsets.all(24),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text('Sélectionner les articles',
-                                                  style:
-                                                      AppTextStyles.bodyBold),
-                                              TextButton(
-                                                onPressed: () {
-                                                  setState(() {
-                                                    if (_selectedArticles
-                                                            .length ==
-                                                        _allArticles.length) {
-                                                      _selectedArticles.clear();
-                                                    } else {
-                                                      _selectedArticles =
-                                                          List.from(
-                                                              _allArticles);
-                                                    }
-                                                  });
-                                                },
-                                                child: Text(
-                                                    _selectedArticles.length ==
-                                                            _allArticles.length
-                                                        ? 'Tout désélectionner'
-                                                        : 'Tout sélectionner'),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Expanded(
-                                            child: ListView.builder(
-                                              itemCount: _allArticles.length,
-                                              itemBuilder: (context, index) {
-                                                final article =
-                                                    _allArticles[index];
-                                                final selected =
-                                                    _selectedArticles.any((a) =>
-                                                        a.id == article.id);
-                                                return CheckboxListTile(
-                                                  value: selected,
-                                                  title: Text(article.name),
-                                                  onChanged: (checked) {
-                                                    setState(() {
-                                                      if (checked == true) {
-                                                        _selectedArticles
-                                                            .add(article);
-                                                      } else {
-                                                        _selectedArticles
-                                                            .removeWhere((a) =>
-                                                                a.id ==
-                                                                article.id);
-                                                      }
-                                                    });
-                                                  },
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 16),
-                                            child: GlassButton(
-                                              label: 'Valider la sélection',
-                                              icon: Icons.check,
-                                              variant:
-                                                  GlassButtonVariant.primary,
-                                              fullWidth: true,
-                                              onPressed: () =>
-                                                  Navigator.of(ctx).pop(),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                      child: Text('Sélectionner les articles'),
-                    ),
+                        child: _buildDatePicker(context, _startDateController,
+                            'Date de début', isDark)),
+                    SizedBox(width: AppSpacing.md),
+                    Expanded(
+                        child: _buildDatePicker(context, _endDateController,
+                            'Date de fin', isDark)),
                   ],
                 ),
-                if (_selectedArticles.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Wrap(
-                      spacing: 8,
-                      children: _selectedArticles
-                          .map((a) => Chip(
-                                label: Text(a.name),
-                                onDeleted: () {
-                                  setState(() {
-                                    _selectedArticles
-                                        .removeWhere((art) => art.id == a.id);
-                                  });
-                                },
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Champ requis' : null,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _discountValueController,
-                  decoration:
-                      const InputDecoration(labelText: 'Valeur de la remise'),
-                  keyboardType: TextInputType.number,
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Champ requis' : null,
-                ),
-                const SizedBox(height: 8),
+                SizedBox(height: AppSpacing.md),
+                _buildDropdown(isDark),
+                SizedBox(height: AppSpacing.md),
+                _buildConditionalFields(isDark),
+                SizedBox(height: AppSpacing.md),
+                _buildArticleSelector(context, isDark),
+                SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: discountType,
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'PERCENTAGE', child: Text('Pourcentage')),
-                          DropdownMenuItem(
-                              value: 'FIXED_AMOUNT',
-                              child: Text('Montant fixe')),
-                          DropdownMenuItem(
-                              value: 'POINTS_EXCHANGE',
-                              child: Text('Échange de points')),
-                        ],
-                        onChanged: (v) =>
-                            setState(() => discountType = v ?? 'PERCENTAGE'),
-                        decoration:
-                            const InputDecoration(labelText: 'Type de remise'),
-                      ),
-                    ),
+                    _buildToggle('Cumulative', _isCumulative,
+                        (v) => setState(() => _isCumulative = v)),
+                    SizedBox(width: AppSpacing.lg),
+                    _buildToggle('Active', _isActive,
+                        (v) => setState(() => _isActive = v)),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _minPurchaseController,
-                        decoration: const InputDecoration(
-                            labelText: "Montant minimum d'achat"),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _maxDiscountController,
-                        decoration: const InputDecoration(
-                            labelText: 'Montant max de remise'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _pointsController,
-                        decoration:
-                            const InputDecoration(labelText: 'Points requis'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: SwitchListTile(
-                        title: const Text('Cumulable'),
-                        value: _isCumulative,
-                        onChanged: (v) => setState(() => _isCumulative = v),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: SwitchListTile(
-                        title: const Text('Active'),
-                        value: _isActive,
-                        onChanged: (v) => setState(() => _isActive = v),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GlassButton(
-                        label:
-                            widget.initialData == null ? 'Créer' : 'Modifier',
-                        icon:
-                            widget.initialData == null ? Icons.add : Icons.edit,
-                        variant: GlassButtonVariant.primary,
-                        fullWidth: true,
-                        onPressed: _submit,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: GlassButton(
-                        label: 'Annuler',
-                        icon: Icons.close,
-                        variant: GlassButtonVariant.secondary,
-                        fullWidth: true,
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  ],
-                ),
+                SizedBox(height: AppSpacing.xl),
+                _buildActionButtons(),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      TextEditingController controller, String label, bool isDark,
+      {int maxLines = 1,
+      TextInputType? keyboardType,
+      bool isOptional = false}) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      decoration: _inputDecoration(label, isDark: isDark),
+      validator: (v) {
+        if (!isOptional && (v == null || v.isEmpty)) {
+          return 'Champ requis';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildDatePicker(BuildContext context,
+      TextEditingController controller, String label, bool isDark) {
+    return GestureDetector(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now(),
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2030),
+        );
+        if (picked != null) {
+          controller.text = DateFormat('yyyy-MM-dd').format(picked);
+        }
+      },
+      child: AbsorbPointer(
+        child: TextFormField(
+          controller: controller,
+          decoration: _inputDecoration(label,
+              isDark: isDark, suffixIcon: Icons.calendar_today_outlined),
+          validator: (v) => v == null || v.isEmpty ? 'Champ requis' : null,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown(bool isDark) {
+    return DropdownButtonFormField<String>(
+      value: discountType,
+      items: [
+        DropdownMenuItem(value: 'PERCENTAGE', child: Text('Pourcentage')),
+        DropdownMenuItem(value: 'FIXED_AMOUNT', child: Text('Montant Fixe')),
+        DropdownMenuItem(
+            value: 'POINTS_EXCHANGE', child: Text('Échange de Points')),
+      ],
+      onChanged: (v) => setState(() => discountType = v ?? 'PERCENTAGE'),
+      decoration: _inputDecoration('Type de remise', isDark: isDark),
+    );
+  }
+
+  Widget _buildConditionalFields(bool isDark) {
+    if (discountType == 'POINTS_EXCHANGE') {
+      return _buildTextField(_pointsController, 'Points requis', isDark,
+          keyboardType: TextInputType.number);
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+            child: _buildTextField(
+                _discountValueController, 'Valeur de la remise', isDark,
+                keyboardType: TextInputType.number)),
+        SizedBox(width: AppSpacing.md),
+        Expanded(
+            child: _buildTextField(
+                _minPurchaseController, 'Achat minimum', isDark,
+                keyboardType: TextInputType.number, isOptional: true)),
+        SizedBox(width: AppSpacing.md),
+        Expanded(
+            child: _buildTextField(_maxDiscountController, 'Remise max', isDark,
+                keyboardType: TextInputType.number, isOptional: true)),
+      ],
+    );
+  }
+
+  Widget _buildArticleSelector(BuildContext context, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GlassButton(
+          label: 'Sélectionner des articles',
+          icon: Icons.add_shopping_cart,
+          variant: GlassButtonVariant.secondary,
+          onPressed: () => _showArticleSelectionDialog(context, isDark),
+        ),
+        if (_selectedArticles.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: _selectedArticles
+                  .map((article) => Chip(
+                        label: Text(article.name),
+                        onDeleted: () => setState(() => _selectedArticles
+                            .removeWhere((a) => a.id == article.id)),
+                      ))
+                  .toList(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _showArticleSelectionDialog(BuildContext context, bool isDark) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor:
+              isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+          title: Text('Sélectionner des articles'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Container(
+                width: double.maxFinite,
+                child: _articlesLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        itemCount: _allArticles.length,
+                        itemBuilder: (context, index) {
+                          final article = _allArticles[index];
+                          final isSelected =
+                              _selectedArticles.any((a) => a.id == article.id);
+                          return CheckboxListTile(
+                            title: Text(article.name),
+                            value: isSelected,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedArticles.add(article);
+                                } else {
+                                  _selectedArticles
+                                      .removeWhere((a) => a.id == article.id);
+                                }
+                                // Met à jour l'UI du formulaire principal
+                                this.setState(() {});
+                              });
+                            },
+                          );
+                        },
+                      ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildToggle(String label, bool value, ValueChanged<bool> onChanged) {
+    return Row(
+      children: [
+        Switch(
+            value: value, onChanged: onChanged, activeColor: AppColors.primary),
+        SizedBox(width: AppSpacing.sm),
+        Text(label),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        GlassButton(
+          label: 'Annuler',
+          variant: GlassButtonVariant.secondary,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        SizedBox(width: AppSpacing.md),
+        GlassButton(
+          label: widget.initialData == null ? 'Créer' : 'Modifier',
+          variant: GlassButtonVariant.primary,
+          onPressed: _submit,
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(String label,
+      {bool isDark = false, IconData? suffixIcon}) {
+    return InputDecoration(
+      labelText: label,
+      suffixIcon: suffixIcon != null ? Icon(suffixIcon) : null,
+      labelStyle:
+          TextStyle(color: isDark ? AppColors.gray300 : AppColors.gray700),
+      filled: true,
+      fillColor: isDark
+          ? AppColors.gray800.withOpacity(0.5)
+          : AppColors.white.withOpacity(0.5),
+      border: OutlineInputBorder(
+        borderRadius: AppRadius.radiusMD,
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppRadius.radiusMD,
+        borderSide: BorderSide(color: AppColors.primary, width: 1),
       ),
     );
   }
