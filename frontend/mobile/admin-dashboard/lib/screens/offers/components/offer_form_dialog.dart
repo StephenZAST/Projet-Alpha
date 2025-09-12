@@ -124,65 +124,236 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return AlertDialog(
+    return Dialog(
       backgroundColor: Colors.transparent,
-      contentPadding: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.radiusLG),
-      content: GlassContainer(
-        width: MediaQuery.of(context).size.width * 0.6,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.7,
+        constraints: BoxConstraints(
+          maxWidth: 800,
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        child: GlassContainer(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Form(
+            key: _formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.initialData == null
-                      ? 'Créer une offre'
-                      : 'Modifier l\'offre',
-                  style: AppTextStyles.h3,
-                ),
-                SizedBox(height: AppSpacing.lg),
-                _buildTextField(_nameController, 'Nom de l\'offre', isDark),
-                SizedBox(height: AppSpacing.md),
-                _buildTextField(_descriptionController, 'Description', isDark,
-                    maxLines: 3),
-                SizedBox(height: AppSpacing.md),
+                // En-tête avec icône
                 Row(
                   children: [
-                    Expanded(
-                        child: _buildDatePicker(context, _startDateController,
-                            'Date de début', isDark)),
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.15),
+                        borderRadius: AppRadius.radiusMD,
+                      ),
+                      child: Icon(
+                        widget.initialData == null
+                            ? Icons.add_circle_outline
+                            : Icons.edit_outlined,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    ),
                     SizedBox(width: AppSpacing.md),
                     Expanded(
-                        child: _buildDatePicker(context, _endDateController,
-                            'Date de fin', isDark)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.initialData == null
+                                ? 'Créer une nouvelle offre'
+                                : 'Modifier l\'offre',
+                            style: AppTextStyles.h3.copyWith(
+                              color: isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            widget.initialData == null
+                                ? 'Configurez les détails de votre nouvelle offre'
+                                : 'Modifiez les paramètres de l\'offre existante',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: isDark
+                                  ? AppColors.gray300
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-                SizedBox(height: AppSpacing.md),
-                _buildDropdown(isDark),
-                SizedBox(height: AppSpacing.md),
-                _buildConditionalFields(isDark),
-                SizedBox(height: AppSpacing.md),
-                _buildArticleSelector(context, isDark),
-                SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    _buildToggle('Cumulative', _isCumulative,
-                        (v) => setState(() => _isCumulative = v)),
-                    SizedBox(width: AppSpacing.lg),
-                    _buildToggle('Active', _isActive,
-                        (v) => setState(() => _isActive = v)),
-                  ],
+                
+                SizedBox(height: AppSpacing.xl),
+                
+                // Contenu scrollable
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Section Informations générales
+                        _buildSectionHeader('Informations générales', Icons.info_outline, isDark),
+                        SizedBox(height: AppSpacing.md),
+                        _buildTextField(_nameController, 'Nom de l\'offre', isDark),
+                        SizedBox(height: AppSpacing.md),
+                        _buildTextField(_descriptionController, 'Description', isDark,
+                            maxLines: 3),
+                        
+                        SizedBox(height: AppSpacing.xl),
+                        
+                        // Section Période de validité
+                        _buildSectionHeader('Période de validité', Icons.schedule_outlined, isDark),
+                        SizedBox(height: AppSpacing.md),
+                        Row(
+                          children: [
+                            Expanded(
+                                child: _buildDatePicker(context, _startDateController,
+                                    'Date de début', isDark)),
+                            SizedBox(width: AppSpacing.md),
+                            Expanded(
+                                child: _buildDatePicker(context, _endDateController,
+                                    'Date de fin', isDark)),
+                          ],
+                        ),
+                        
+                        SizedBox(height: AppSpacing.xl),
+                        
+                        // Section Configuration de la remise
+                        _buildSectionHeader('Configuration de la remise', Icons.local_offer_outlined, isDark),
+                        SizedBox(height: AppSpacing.md),
+                        _buildDropdown(isDark),
+                        SizedBox(height: AppSpacing.md),
+                        _buildConditionalFields(isDark),
+                        
+                        SizedBox(height: AppSpacing.xl),
+                        
+                        // Section Articles applicables
+                        _buildSectionHeader('Articles applicables', Icons.shopping_cart_outlined, isDark),
+                        SizedBox(height: AppSpacing.md),
+                        _buildArticleSelector(context, isDark),
+                        
+                        SizedBox(height: AppSpacing.xl),
+                        
+                        // Section Options avancées
+                        _buildSectionHeader('Options avancées', Icons.tune_outlined, isDark),
+                        SizedBox(height: AppSpacing.md),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildToggleCard('Cumulative', 
+                                  'Cette offre peut être combinée avec d\'autres offres',
+                                  _isCumulative,
+                                  (v) => setState(() => _isCumulative = v),
+                                  isDark),
+                            ),
+                            SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: _buildToggleCard('Active', 
+                                  'L\'offre est immédiatement disponible',
+                                  _isActive,
+                                  (v) => setState(() => _isActive = v),
+                                  isDark),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+                
                 SizedBox(height: AppSpacing.xl),
                 _buildActionButtons(),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, bool isDark) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: AppColors.primary,
+        ),
+        SizedBox(width: AppSpacing.sm),
+        Text(
+          title,
+          style: AppTextStyles.h4.copyWith(
+            color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Expanded(
+          child: Container(
+            margin: EdgeInsets.only(left: AppSpacing.md),
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withOpacity(0.3),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToggleCard(String title, String description, bool value, ValueChanged<bool> onChanged, bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.gray800.withOpacity(0.3)
+            : AppColors.white.withOpacity(0.5),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: value
+              ? AppColors.primary.withOpacity(0.5)
+              : isDark
+                  ? AppColors.gray700.withOpacity(0.3)
+                  : AppColors.gray200.withOpacity(0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                ),
+              ),
+              Switch(
+                value: value,
+                onChanged: onChanged,
+                activeColor: AppColors.primary,
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.xs),
+          Text(
+            description,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }
