@@ -73,101 +73,226 @@ class _CategoryDialogState extends State<CategoryDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isEdit = widget.category != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Dialog(
       backgroundColor: Colors.transparent,
-      child: ClipRRect(
-        borderRadius: AppRadius.radiusLG,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            width: 480,
-            padding: EdgeInsets.all(defaultPadding * 1.5),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor.withOpacity(0.85),
-              borderRadius: AppRadius.radiusLG,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 24,
-                  offset: Offset(0, 8),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.5,
+        constraints: BoxConstraints(
+          maxWidth: 600,
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: ClipRRect(
+          borderRadius: AppRadius.radiusLG,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              padding: EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.cardBgDark
+                    : AppColors.cardBgLight,
+                borderRadius: AppRadius.radiusLG,
+                border: Border.all(
+                  color: isDark
+                      ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
+                      : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity),
                 ),
-              ],
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.category != null
-                        ? 'Modifier la catégorie'
-                        : 'Nouvelle catégorie',
-                    style:
-                        AppTextStyles.h2.copyWith(fontWeight: FontWeight.bold),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 24,
+                    offset: Offset(0, 8),
                   ),
-                  SizedBox(height: AppSpacing.lg),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Nom',
-                      border:
-                          OutlineInputBorder(borderRadius: AppRadius.radiusSM),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.12),
+                ],
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // En-tête avec icône
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.15),
+                            borderRadius: AppRadius.radiusMD,
+                          ),
+                          child: Icon(
+                            isEdit ? Icons.edit_outlined : Icons.add_circle_outline,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isEdit ? 'Modifier la catégorie' : 'Créer une nouvelle catégorie',
+                                style: AppTextStyles.h3.copyWith(
+                                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                isEdit 
+                                    ? 'Modifiez les informations de la catégorie'
+                                    : 'Organisez vos articles avec une nouvelle catégorie',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Le nom est requis';
-                      }
-                      return null;
-                    },
-                    enabled: !_isSubmitting,
-                  ),
-                  SizedBox(height: AppSpacing.md),
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: InputDecoration(
-                      labelText: 'Description',
-                      border:
-                          OutlineInputBorder(borderRadius: AppRadius.radiusSM),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.12),
+                    
+                    SizedBox(height: AppSpacing.xl),
+                    
+                    // Section Informations générales
+                    _buildSectionHeader('Informations générales', Icons.info_outline, isDark),
+                    SizedBox(height: AppSpacing.md),
+                    
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: _inputDecoration('Nom de la catégorie', isDark: isDark),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Le nom est requis';
+                        }
+                        return null;
+                      },
+                      enabled: !_isSubmitting,
                     ),
-                    enabled: !_isSubmitting,
-                    maxLines: 2,
-                  ),
-                  if (_errorText != null) ...[
-                    SizedBox(height: 12),
-                    Text(_errorText!, style: TextStyle(color: AppColors.error)),
-                  ],
-                  SizedBox(height: AppSpacing.xl),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      GlassButton(
-                        label: 'Annuler',
-                        variant: GlassButtonVariant.secondary,
-                        onPressed: () => Get.back(),
-                      ),
-                      SizedBox(width: AppSpacing.md),
-                      GlassButton(
-                        label: _isSubmitting
-                            ? 'Enregistrement...'
-                            : (widget.category != null
-                                ? 'Enregistrer'
-                                : 'Créer'),
-                        onPressed: _isSubmitting ? null : _handleSubmit,
-                        variant: GlassButtonVariant.primary,
-                        isLoading: _isSubmitting,
+                    SizedBox(height: AppSpacing.md),
+                    
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: _inputDecoration('Description (optionnelle)', isDark: isDark),
+                      enabled: !_isSubmitting,
+                      maxLines: 3,
+                    ),
+                    
+                    if (_errorText != null) ...[
+                      SizedBox(height: AppSpacing.md),
+                      Container(
+                        padding: EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.1),
+                          borderRadius: AppRadius.radiusMD,
+                          border: Border.all(
+                            color: AppColors.error.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline, 
+                                color: AppColors.error, size: 20),
+                            SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                _errorText!,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
-                  ),
+                    
+                    SizedBox(height: AppSpacing.xl),
+                    
+                    // Actions
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        GlassButton(
+                          label: 'Annuler',
+                          variant: GlassButtonVariant.secondary,
+                          onPressed: _isSubmitting ? null : () => Get.back(),
+                        ),
+                        SizedBox(width: AppSpacing.md),
+                        GlassButton(
+                          label: _isSubmitting
+                              ? 'Enregistrement...'
+                              : (isEdit ? 'Enregistrer' : 'Créer la catégorie'),
+                          onPressed: _isSubmitting ? null : _handleSubmit,
+                          variant: GlassButtonVariant.primary,
+                          isLoading: _isSubmitting,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, bool isDark) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: AppColors.primary,
+        ),
+        SizedBox(width: AppSpacing.sm),
+        Text(
+          title,
+          style: AppTextStyles.h4.copyWith(
+            color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Expanded(
+          child: Container(
+            margin: EdgeInsets.only(left: AppSpacing.md),
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withOpacity(0.3),
+                  Colors.transparent,
                 ],
               ),
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, {bool isDark = false}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(
+        color: isDark ? AppColors.gray300 : AppColors.gray700,
+      ),
+      filled: true,
+      fillColor: isDark
+          ? AppColors.gray800.withOpacity(0.5)
+          : AppColors.white.withOpacity(0.5),
+      border: OutlineInputBorder(
+        borderRadius: AppRadius.radiusMD,
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: AppRadius.radiusMD,
+        borderSide: BorderSide(color: AppColors.primary, width: 1),
       ),
     );
   }
