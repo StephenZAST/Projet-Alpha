@@ -1,0 +1,194 @@
+import 'package:flutter/material.dart';
+import 'dart:ui';
+import '../../../constants.dart';
+import '../../../widgets/shared/glass_container.dart';
+
+class SubscriptionStatsGrid extends StatelessWidget {
+  const SubscriptionStatsGrid({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Responsive grid: 4 colonnes sur desktop, 2 sur tablette, 1 sur mobile
+        int crossAxisCount = 4;
+        if (constraints.maxWidth < 1200) crossAxisCount = 2;
+        if (constraints.maxWidth < 600) crossAxisCount = 1;
+
+        return GridView.count(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: AppSpacing.md,
+          mainAxisSpacing: AppSpacing.md,
+          childAspectRatio: 1.8,
+          children: [
+            _buildStatCard(
+              context,
+              isDark,
+              'Plans Actifs',
+              '12', // TODO: Récupérer depuis l'API
+              Icons.subscriptions_outlined,
+              AppColors.primary,
+              AppColors.primaryLight,
+              '+2 ce mois',
+            ),
+            _buildStatCard(
+              context,
+              isDark,
+              'Abonnés Actifs',
+              '1,247', // TODO: Récupérer depuis l'API
+              Icons.people_outline,
+              AppColors.success,
+              AppColors.successLight,
+              '+15% ce mois',
+            ),
+            _buildStatCard(
+              context,
+              isDark,
+              'Revenus Mensuels',
+              '45,230 FCFA', // TODO: Récupérer depuis l'API
+              Icons.monetization_on_outlined,
+              AppColors.warning,
+              AppColors.warningLight,
+              '+8% ce mois',
+            ),
+            _buildStatCard(
+              context,
+              isDark,
+              'Taux de Rétention',
+              '87%', // TODO: Récupérer depuis l'API
+              Icons.trending_up_outlined,
+              AppColors.info,
+              AppColors.infoLight,
+              '+3% ce mois',
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStatCard(
+    BuildContext context,
+    bool isDark,
+    String title,
+    String value,
+    IconData icon,
+    Color primaryColor,
+    Color lightColor,
+    String trend,
+  ) {
+    return GlassContainer(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      child: Stack(
+        children: [
+          // Gradient background
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    primaryColor.withOpacity(0.1),
+                    lightColor.withOpacity(0.05),
+                  ],
+                ),
+                borderRadius: AppRadius.radiusMD,
+              ),
+            ),
+          ),
+          
+          // Content
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.15),
+                      borderRadius: AppRadius.radiusSM,
+                    ),
+                    child: Icon(
+                      icon,
+                      color: primaryColor,
+                      size: 24,
+                    ),
+                  ),
+                  // Trend indicator
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.1),
+                      borderRadius: AppRadius.radiusSM,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.trending_up,
+                          size: 12,
+                          color: AppColors.success,
+                        ),
+                        SizedBox(width: 2),
+                        Text(
+                          trend.split(' ')[0], // Prend juste le pourcentage
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              
+              SizedBox(height: AppSpacing.sm),
+              
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: AppTextStyles.h2.copyWith(
+                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 28,
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.xs),
+                  Text(
+                    title,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    trend,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

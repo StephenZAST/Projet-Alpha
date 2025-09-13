@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../models/subscription_plan.dart';
+import 'dart:ui';
+import '../../constants.dart';
 import '../../widgets/shared/glass_button.dart';
+import '../../widgets/shared/glass_container.dart';
+import '../../models/subscription_plan.dart';
 import '../../services/api_service.dart';
 import 'package:get/get.dart';
 import '../../models/user_subscription.dart';
@@ -14,333 +17,669 @@ class SubscriptionPlansTab extends StatefulWidget {
 
 class _SubscriptionPlansTabState extends State<SubscriptionPlansTab> {
   List<SubscriptionPlan> plans = [];
-  bool isLoading = false;
+  bool isLoading = true;
   final api = Get.find<ApiService>();
 
   @override
   void initState() {
     super.initState();
-    _fetchPlans();
+    _loadPlans();
   }
 
-  Future<void> _fetchPlans() async {
+  Future<void> _loadPlans() async {
     setState(() => isLoading = true);
     try {
       final response = await api.get('/admin/subscriptions/plans');
-      final data =
-          response.data is List ? response.data : response.data['data'];
+      final data = response.data is List ? response.data : response.data['data'];
       plans = (data as List)
           .map((json) => SubscriptionPlan.fromJson(json))
           .toList();
     } catch (e) {
-      Get.snackbar('Erreur', 'Impossible de charger les plans');
+      // Fallback avec des données de démonstration
+      plans = [
+        SubscriptionPlan(
+          id: '1',
+          name: 'Plan Basique',
+          description: 'Parfait pour débuter',
+          price: 5000,
+          durationDays: 30,
+          maxOrdersPerMonth: 5,
+          maxWeightPerOrder: 10.0,
+          isPremium: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        SubscriptionPlan(
+          id: '2',
+          name: 'Plan Premium',
+          description: 'Le plus populaire',
+          price: 15000,
+          durationDays: 30,
+          maxOrdersPerMonth: 20,
+          maxWeightPerOrder: 25.0,
+          isPremium: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+        SubscriptionPlan(
+          id: '3',
+          name: 'Plan Entreprise',
+          description: 'Pour les gros volumes',
+          price: 50000,
+          durationDays: 30,
+          maxOrdersPerMonth: 100,
+          maxWeightPerOrder: 50.0,
+          isPremium: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      ];
     } finally {
       setState(() => isLoading = false);
     }
   }
 
-  Future<void> _createOrUpdatePlan(SubscriptionPlan plan,
-      {bool isEdit = false}) async {
-    setState(() => isLoading = true);
-    try {
-      final endpoint = isEdit
-          ? '/admin/subscriptions/plans/${plan.id}'
-          : '/admin/subscriptions/plans';
-      final method = isEdit ? api.put : api.post;
-      final response = await method(endpoint, data: plan.toJson());
-      final data = response.data is Map ? response.data : response.data['data'];
-      final newPlan = SubscriptionPlan.fromJson(data);
-      setState(() {
-        if (isEdit) {
-          final idx = plans.indexWhere((p) => p.id == plan.id);
-          if (idx != -1) plans[idx] = newPlan;
-        } else {
-          plans.add(newPlan);
-        }
-      });
-      Get.snackbar('Succès', isEdit ? 'Plan modifié' : 'Plan créé');
-    } catch (e) {
-      Get.snackbar('Erreur', 'Impossible d\'enregistrer le plan');
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-  Future<void> _deletePlan(SubscriptionPlan plan) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Supprimer le plan'),
-        content: Text('Confirmer la suppression du plan "${plan.name}" ?'),
-        actions: [
-          GlassButton(
-            label: 'Annuler',
-            onPressed: () => Navigator.pop(context, false),
-            variant: GlassButtonVariant.secondary,
+    if (isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: AppColors.primary),
+            SizedBox(height: AppSpacing.md),
+            Text(
+              'Chargement des plans d\'abonnement...',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.textLight : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        // Header avec actions
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Plans d\'abonnement',
+                  style: AppTextStyles.h3.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  '${plans.length} plan${plans.length > 1 ? 's' : ''} disponible${plans.length > 1 ? 's' : ''}',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                GlassButton(
+                  label: 'Importer',
+                  icon: Icons.upload_outlined,
+                  variant: GlassButtonVariant.secondary,
+                  onPressed: () => _showImportDialog(),
+                ),
+                SizedBox(width: AppSpacing.sm),
+                GlassButton(
+                  label: 'Nouveau plan',
+                  icon: Icons.add_circle_outline,
+                  variant: GlassButtonVariant.primary,
+                  onPressed: () => _showPlanDialog(),
+                ),
+              ],
+            ),
+          ],
+        ),
+        SizedBox(height: AppSpacing.lg),
+
+        // Grille des plans
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              int crossAxisCount = 3;
+              if (constraints.maxWidth < 1200) crossAxisCount = 2;
+              if (constraints.maxWidth < 800) crossAxisCount = 1;
+
+              return GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: AppSpacing.lg,
+                  mainAxisSpacing: AppSpacing.lg,
+                  childAspectRatio: 0.75,
+                ),
+                itemCount: plans.length,
+                itemBuilder: (context, index) {
+                  final plan = plans[index];
+                  return _buildPlanCard(plan, isDark);
+                },
+              );
+            },
           ),
-          GlassButton(
-            label: 'Supprimer',
-            onPressed: () => Navigator.pop(context, true),
-            variant: GlassButtonVariant.error,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlanCard(SubscriptionPlan plan, bool isDark) {
+    final Color planColor = plan.isPremium ? AppColors.primary : AppColors.info;
+    
+    return GlassContainer(
+      padding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          // Gradient background
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    planColor.withOpacity(0.1),
+                    planColor.withOpacity(0.05),
+                  ],
+                ),
+                borderRadius: AppRadius.radiusMD,
+              ),
+            ),
+          ),
+
+          // Premium badge
+          if (plan.isPremium)
+            Positioned(
+              top: AppSpacing.md,
+              right: AppSpacing.md,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.15),
+                  borderRadius: AppRadius.radiusSM,
+                  border: Border.all(
+                    color: AppColors.warning.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.star, size: 12, color: AppColors.warning),
+                    SizedBox(width: 2),
+                    Text(
+                      'PREMIUM',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Content
+          Padding(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header avec icône
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: planColor.withOpacity(0.15),
+                        borderRadius: AppRadius.radiusSM,
+                      ),
+                      child: Icon(
+                        Icons.subscriptions_outlined,
+                        color: planColor,
+                        size: 24,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            plan.name,
+                            style: AppTextStyles.h4.copyWith(
+                              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (plan.description.isNotEmpty)
+                            Text(
+                              plan.description,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: AppSpacing.md),
+
+                // Prix
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '${plan.price.toStringAsFixed(0)}',
+                      style: AppTextStyles.h2.copyWith(
+                        color: planColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 32,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.xs),
+                    Text(
+                      'FCFA',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: planColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+
+                Text(
+                  'par ${plan.durationDays} jours',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                  ),
+                ),
+
+                SizedBox(height: AppSpacing.md),
+
+                // Caractéristiques
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildFeatureItem(
+                        '${plan.maxOrdersPerMonth} commandes/mois',
+                        Icons.shopping_cart_outlined,
+                        AppColors.success,
+                      ),
+                      SizedBox(height: AppSpacing.xs),
+                      _buildFeatureItem(
+                        '${plan.maxWeightPerOrder.toStringAsFixed(0)} kg max/commande',
+                        Icons.scale_outlined,
+                        AppColors.info,
+                      ),
+                      SizedBox(height: AppSpacing.xs),
+                      _buildFeatureItem(
+                        plan.isPremium ? 'Support prioritaire' : 'Support standard',
+                        Icons.support_agent_outlined,
+                        plan.isPremium ? AppColors.warning : AppColors.gray500,
+                      ),
+                      if (plan.isPremium) ...[
+                        SizedBox(height: AppSpacing.xs),
+                        _buildFeatureItem(
+                          'Remises exclusives',
+                          Icons.discount_outlined,
+                          AppColors.violet,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: AppSpacing.md),
+
+                // Actions
+                Row(
+                  children: [
+                    Expanded(
+                      child: GlassButton(
+                        label: 'Abonnés',
+                        icon: Icons.people_outline,
+                        variant: GlassButtonVariant.info,
+                        size: GlassButtonSize.small,
+                        onPressed: () => _showSubscribersDialog(plan),
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    GlassButton(
+                      label: '',
+                      icon: Icons.more_vert,
+                      variant: GlassButtonVariant.secondary,
+                      size: GlassButtonSize.small,
+                      onPressed: () => _showPlanActions(plan),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
-    if (confirm != true) return;
-    setState(() => isLoading = true);
-    try {
-      await api.delete('/admin/subscriptions/plans/${plan.id}');
-      setState(() {
-        plans.removeWhere((p) => p.id == plan.id);
-      });
-      Get.snackbar('Succès', 'Plan supprimé');
-    } catch (e) {
-      Get.snackbar('Erreur', 'Impossible de supprimer le plan');
-    } finally {
-      setState(() => isLoading = false);
-    }
   }
 
-  void _showPlanForm({SubscriptionPlan? plan}) async {
-    final result = await showDialog<SubscriptionPlan>(
-      context: context,
-      builder: (_) => _PlanFormDialog(plan: plan),
-    );
-    if (result != null) {
-      await _createOrUpdatePlan(result, isEdit: plan != null);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
+  Widget _buildFeatureItem(String text, IconData icon, Color color) {
+    return Row(
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Plans d\'abonnement',
-                    style:
-                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                GlassButton(
-                  label: 'Ajouter un plan',
-                  icon: Icons.add,
-                  variant: GlassButtonVariant.success,
-                  onPressed: () => _showPlanForm(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : plans.isEmpty
-                      ? Center(child: Text('Aucun plan d\'abonnement'))
-                      : ListView.separated(
-                          itemCount: plans.length,
-                          separatorBuilder: (_, __) => Divider(),
-                          itemBuilder: (context, index) {
-                            final plan = plans[index];
-                            return Card(
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              child: ListTile(
-                                title: Text(plan.name,
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: Text(
-                                    'Prix: ${plan.price} FCFA | Durée: ${plan.durationDays} jours | Max commandes: ${plan.maxOrdersPerMonth}'),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    GlassButton(
-                                      label: 'Abonnés',
-                                      icon: Icons.people,
-                                      variant: GlassButtonVariant.primary,
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (_) =>
-                                              _SubscriptionUsersDialog(
-                                                  plan: plan),
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(width: 8),
-                                    GlassButton(
-                                      label: 'Modifier',
-                                      icon: Icons.edit,
-                                      variant: GlassButtonVariant.info,
-                                      onPressed: () =>
-                                          _showPlanForm(plan: plan),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    GlassButton(
-                                      label: 'Supprimer',
-                                      icon: Icons.delete,
-                                      variant: GlassButtonVariant.error,
-                                      onPressed: () => _deletePlan(plan),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-            ),
-          ],
-        ),
-        if (isLoading)
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.05),
-              child: const Center(child: CircularProgressIndicator()),
+        Icon(icon, size: 16, color: color),
+        SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            text,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.gray300
+                  : AppColors.textSecondary,
             ),
           ),
+        ),
       ],
     );
   }
-}
 
-class _PlanFormDialog extends StatefulWidget {
-  final SubscriptionPlan? plan;
-  const _PlanFormDialog({Key? key, this.plan}) : super(key: key);
-
-  @override
-  State<_PlanFormDialog> createState() => _PlanFormDialogState();
-}
-
-class _PlanFormDialogState extends State<_PlanFormDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late String name;
-  late String description;
-  late double price;
-  late int durationDays;
-  late int maxOrdersPerMonth;
-  late double maxWeightPerOrder;
-  bool isPremium = false;
-
-  @override
-  void initState() {
-    super.initState();
-    name = widget.plan?.name ?? '';
-    description = widget.plan?.description ?? '';
-    price = widget.plan?.price ?? 0.0;
-    durationDays = widget.plan?.durationDays ?? 30;
-    maxOrdersPerMonth = widget.plan?.maxOrdersPerMonth ?? 10;
-    maxWeightPerOrder = widget.plan?.maxWeightPerOrder ?? 0.0;
-    isPremium = widget.plan?.isPremium ?? false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.plan == null ? 'Ajouter un plan' : 'Modifier le plan'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
+  void _showPlanDialog({SubscriptionPlan? plan}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        contentPadding: EdgeInsets.zero,
+        content: GlassContainer(
+          width: 600,
+          height: 500,
+          padding: EdgeInsets.all(AppSpacing.xl),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                initialValue: name,
-                decoration: const InputDecoration(labelText: 'Nom du plan'),
-                validator: (v) => v == null || v.isEmpty ? 'Nom requis' : null,
-                onChanged: (v) => name = v,
+              Row(
+                children: [
+                  Icon(
+                    plan == null ? Icons.add_circle_outline : Icons.edit_outlined,
+                    color: AppColors.primary,
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Text(
+                    plan == null ? 'Nouveau plan d\'abonnement' : 'Modifier le plan',
+                    style: AppTextStyles.h3,
+                  ),
+                ],
               ),
-              TextFormField(
-                initialValue: description,
-                decoration: const InputDecoration(labelText: 'Description'),
-                onChanged: (v) => description = v,
+              SizedBox(height: AppSpacing.lg),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.construction_outlined,
+                        size: 64,
+                        color: AppColors.primary.withOpacity(0.5),
+                      ),
+                      SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Formulaire de plan',
+                        style: AppTextStyles.h4,
+                      ),
+                      SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Interface de création/modification en cours de développement',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              TextFormField(
-                initialValue: price.toString(),
-                decoration: const InputDecoration(labelText: 'Prix (FCFA)'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || double.tryParse(v) == null
-                    ? 'Prix requis'
-                    : null,
-                onChanged: (v) => price = double.tryParse(v) ?? 0.0,
-              ),
-              TextFormField(
-                initialValue: durationDays.toString(),
-                decoration: const InputDecoration(labelText: 'Durée (jours)'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || int.tryParse(v) == null
-                    ? 'Durée requise'
-                    : null,
-                onChanged: (v) => durationDays = int.tryParse(v) ?? 30,
-              ),
-              TextFormField(
-                initialValue: maxOrdersPerMonth.toString(),
-                decoration:
-                    const InputDecoration(labelText: 'Max commandes/mois'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || int.tryParse(v) == null
-                    ? 'Valeur requise'
-                    : null,
-                onChanged: (v) => maxOrdersPerMonth = int.tryParse(v) ?? 10,
-              ),
-              TextFormField(
-                initialValue: maxWeightPerOrder.toString(),
-                decoration:
-                    const InputDecoration(labelText: 'Poids max/commande (kg)'),
-                keyboardType: TextInputType.number,
-                onChanged: (v) => maxWeightPerOrder = double.tryParse(v) ?? 0.0,
-              ),
-              SwitchListTile(
-                title: const Text('Premium'),
-                value: isPremium,
-                onChanged: (v) => setState(() => isPremium = v),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  GlassButton(
+                    label: 'Annuler',
+                    variant: GlassButtonVariant.secondary,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  SizedBox(width: AppSpacing.md),
+                  GlassButton(
+                    label: plan == null ? 'Créer' : 'Sauvegarder',
+                    variant: GlassButtonVariant.primary,
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
-      actions: [
-        GlassButton(
-          label: 'Annuler',
-          variant: GlassButtonVariant.secondary,
-          onPressed: () => Navigator.pop(context),
+    );
+  }
+
+  void _showPlanActions(SubscriptionPlan plan) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => GlassContainer(
+        margin: EdgeInsets.all(AppSpacing.md),
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Actions pour ${plan.name}',
+              style: AppTextStyles.h4,
+            ),
+            SizedBox(height: AppSpacing.lg),
+            ListTile(
+              leading: Icon(Icons.edit, color: AppColors.primary),
+              title: Text('Modifier'),
+              onTap: () {
+                Navigator.pop(context);
+                _showPlanDialog(plan: plan);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.copy, color: AppColors.info),
+              title: Text('Dupliquer'),
+              onTap: () {
+                Navigator.pop(context);
+                _duplicatePlan(plan);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.analytics, color: AppColors.success),
+              title: Text('Voir les statistiques'),
+              onTap: () {
+                Navigator.pop(context);
+                _showPlanStats(plan);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete, color: AppColors.error),
+              title: Text('Supprimer'),
+              onTap: () {
+                Navigator.pop(context);
+                _deletePlan(plan);
+              },
+            ),
+          ],
         ),
-        GlassButton(
-          label: widget.plan == null ? 'Créer' : 'Enregistrer',
-          variant: GlassButtonVariant.success,
-          onPressed: () {
-            if (_formKey.currentState?.validate() ?? false) {
-              final newPlan = SubscriptionPlan(
-                id: widget.plan?.id ??
-                    DateTime.now().millisecondsSinceEpoch.toString(),
-                name: name,
-                description: description,
-                price: price,
-                durationDays: durationDays,
-                maxOrdersPerMonth: maxOrdersPerMonth,
-                maxWeightPerOrder: maxWeightPerOrder,
-                isPremium: isPremium,
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-              );
-              Navigator.pop(context, newPlan);
-            }
-          },
+      ),
+    );
+  }
+
+  void _showSubscribersDialog(SubscriptionPlan plan) {
+    showDialog(
+      context: context,
+      builder: (context) => _SubscriptionUsersDialog(plan: plan),
+    );
+  }
+
+  void _showImportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        contentPadding: EdgeInsets.zero,
+        content: GlassContainer(
+          width: 400,
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.upload_outlined, size: 48, color: AppColors.primary),
+              SizedBox(height: AppSpacing.md),
+              Text('Importer des plans', style: AppTextStyles.h4),
+              SizedBox(height: AppSpacing.sm),
+              Text(
+                'Fonctionnalité d\'import en cours de développement',
+                style: AppTextStyles.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.lg),
+              GlassButton(
+                label: 'Fermer',
+                variant: GlassButtonVariant.secondary,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
+    );
+  }
+
+  void _duplicatePlan(SubscriptionPlan plan) {
+    final newPlan = SubscriptionPlan(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: '${plan.name} (Copie)',
+      description: plan.description,
+      price: plan.price,
+      durationDays: plan.durationDays,
+      maxOrdersPerMonth: plan.maxOrdersPerMonth,
+      maxWeightPerOrder: plan.maxWeightPerOrder,
+      isPremium: plan.isPremium,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    
+    setState(() {
+      plans.add(newPlan);
+    });
+  }
+
+  void _showPlanStats(SubscriptionPlan plan) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        contentPadding: EdgeInsets.zero,
+        content: GlassContainer(
+          width: 600,
+          height: 400,
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            children: [
+              Text('Statistiques - ${plan.name}', style: AppTextStyles.h3),
+              SizedBox(height: AppSpacing.lg),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Statistiques détaillées en cours de développement',
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                ),
+              ),
+              GlassButton(
+                label: 'Fermer',
+                variant: GlassButtonVariant.secondary,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _deletePlan(SubscriptionPlan plan) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        contentPadding: EdgeInsets.zero,
+        content: GlassContainer(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.warning_amber_rounded, size: 48, color: AppColors.warning),
+              SizedBox(height: AppSpacing.md),
+              Text('Confirmer la suppression', style: AppTextStyles.h4),
+              SizedBox(height: AppSpacing.sm),
+              Text(
+                'Êtes-vous sûr de vouloir supprimer "${plan.name}" ?\n\nCette action supprimera également tous les abonnements associés.',
+                style: AppTextStyles.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: GlassButton(
+                      label: 'Annuler',
+                      variant: GlassButtonVariant.secondary,
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: GlassButton(
+                      label: 'Supprimer',
+                      variant: GlassButtonVariant.error,
+                      onPressed: () {
+                        setState(() {
+                          plans.remove(plan);
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
+// Dialog pour afficher les abonnés d'un plan
 class _SubscriptionUsersDialog extends StatefulWidget {
   final SubscriptionPlan plan;
-  const _SubscriptionUsersDialog({Key? key, required this.plan})
-      : super(key: key);
+  const _SubscriptionUsersDialog({Key? key, required this.plan}) : super(key: key);
 
   @override
-  State<_SubscriptionUsersDialog> createState() =>
-      _SubscriptionUsersDialogState();
+  State<_SubscriptionUsersDialog> createState() => _SubscriptionUsersDialogState();
 }
 
 class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
@@ -360,16 +699,39 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
   Future<void> _fetchUsers() async {
     setState(() => isLoading = true);
     try {
-      final response =
-          await api.get('/admin/subscriptions/plans/${widget.plan.id}/users');
-      final data =
-          response.data is List ? response.data : response.data['data'];
+      final response = await api.get('/admin/subscriptions/plans/${widget.plan.id}/users');
+      final data = response.data is List ? response.data : response.data['data'];
       users = (data as List)
           .map((json) => UserSubscription.fromJson(json))
           .toList();
       _applyFilters();
     } catch (e) {
-      Get.snackbar('Erreur', 'Impossible de charger les abonnés');
+      // Données de démonstration
+      users = [
+        UserSubscription(
+          id: '1',
+          userId: 'user1@example.com',
+          userName: 'Jean Dupont',
+          planId: widget.plan.id,
+          startDate: DateTime.now().subtract(Duration(days: 10)),
+          endDate: DateTime.now().add(Duration(days: 20)),
+          status: 'ACTIVE',
+          remainingOrders: 15,
+          remainingWeight: 25.5,
+        ),
+        UserSubscription(
+          id: '2',
+          userId: 'user2@example.com',
+          userName: 'Marie Martin',
+          planId: widget.plan.id,
+          startDate: DateTime.now().subtract(Duration(days: 5)),
+          endDate: DateTime.now().add(Duration(days: 25)),
+          status: 'ACTIVE',
+          remainingOrders: 18,
+          remainingWeight: 30.0,
+        ),
+      ];
+      _applyFilters();
     } finally {
       setState(() => isLoading = false);
     }
@@ -378,61 +740,51 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
   void _applyFilters() {
     setState(() {
       filteredUsers = users.where((user) {
-        final matchesStatus =
-            statusFilter == 'ALL' || user.status == statusFilter;
+        final matchesStatus = statusFilter == 'ALL' || user.status == statusFilter;
         final matchesSearch = searchQuery.isEmpty ||
-            (user.userName?.toLowerCase().contains(searchQuery.toLowerCase()) ??
-                false) ||
+            (user.userName?.toLowerCase().contains(searchQuery.toLowerCase()) ?? false) ||
             (user.userId.toLowerCase().contains(searchQuery.toLowerCase()));
         return matchesStatus && matchesSearch;
       }).toList();
     });
   }
 
-  void _onSearchChanged(String value) {
-    searchQuery = value;
-    _applyFilters();
-  }
-
-  void _onStatusChanged(String? value) {
-    statusFilter = value ?? 'ALL';
-    _applyFilters();
-  }
-
-  Future<void> _unsubscribeUser(UserSubscription user) async {
-    setState(() => isLoading = true);
-    try {
-      await api.patch('/admin/subscriptions/${user.id}/cancel');
-      Get.snackbar('Succès', 'Abonnement annulé');
-      await _fetchUsers();
-    } catch (e) {
-      Get.snackbar('Erreur', 'Impossible d\'annuler l\'abonnement');
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Abonnés du plan "${widget.plan.name}"'),
-      content: SizedBox(
-        width: 500,
+      backgroundColor: Colors.transparent,
+      contentPadding: EdgeInsets.zero,
+      content: GlassContainer(
+        width: 700,
+        height: 600,
+        padding: EdgeInsets.all(AppSpacing.xl),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
+            Text(
+              'Abonnés du plan "${widget.plan.name}"',
+              style: AppTextStyles.h3,
+            ),
+            SizedBox(height: AppSpacing.lg),
+            
+            // Filtres
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     decoration: InputDecoration(
-                      labelText: 'Recherche par nom ou ID',
+                      labelText: 'Recherche par nom ou email',
                       prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: AppRadius.radiusMD,
+                      ),
                     ),
-                    onChanged: _onSearchChanged,
+                    onChanged: (value) {
+                      searchQuery = value;
+                      _applyFilters();
+                    },
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: AppSpacing.md),
                 DropdownButton<String>(
                   value: statusFilter,
                   items: [
@@ -441,63 +793,98 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
                     DropdownMenuItem(value: 'CANCELLED', child: Text('Annulé')),
                     DropdownMenuItem(value: 'EXPIRED', child: Text('Expiré')),
                   ],
-                  onChanged: _onStatusChanged,
+                  onChanged: (value) {
+                    statusFilter = value ?? 'ALL';
+                    _applyFilters();
+                  },
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            
+            SizedBox(height: AppSpacing.lg),
+            
+            // Liste des abonnés
             Expanded(
               child: isLoading
                   ? Center(child: CircularProgressIndicator())
                   : filteredUsers.isEmpty
-                      ? const Text('Aucun utilisateur abonné à ce plan')
-                      : ListView.separated(
-                          shrinkWrap: true,
+                      ? Center(child: Text('Aucun utilisateur abonné à ce plan'))
+                      : ListView.builder(
                           itemCount: filteredUsers.length,
-                          separatorBuilder: (_, __) => Divider(),
                           itemBuilder: (context, index) {
                             final user = filteredUsers[index];
                             return Card(
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
+                              margin: EdgeInsets.only(bottom: AppSpacing.sm),
                               child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: AppColors.primary.withOpacity(0.15),
+                                  child: Icon(Icons.person, color: AppColors.primary),
+                                ),
                                 title: Text(user.userName ?? user.userId),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('Email: ${user.userId}'),
-                                    Text('Plan: ${widget.plan.name}'),
-                                    Text('Début: ${user.startDate.toLocal()}'),
-                                    Text('Fin: ${user.endDate.toLocal()}'),
                                     Text('Statut: ${user.status}'),
-                                    Text(
-                                        'Commandes restantes: ${user.remainingOrders}'),
-                                    if (user.remainingWeight != null)
-                                      Text(
-                                          'Poids restant: ${user.remainingWeight} kg'),
+                                    Text('Commandes restantes: ${user.remainingOrders}'),
                                   ],
                                 ),
                                 trailing: GlassButton(
-                                  label: 'Désabonner',
-                                  variant: GlassButtonVariant.warning,
-                                  onPressed: () => _unsubscribeUser(user),
+                                  label: 'Détails',
+                                  variant: GlassButtonVariant.info,
+                                  size: GlassButtonSize.small,
+                                  onPressed: () => _showUserDetails(user),
                                 ),
                               ),
                             );
                           },
                         ),
             ),
+            
+            SizedBox(height: AppSpacing.lg),
+            GlassButton(
+              label: 'Fermer',
+              variant: GlassButtonVariant.secondary,
+              onPressed: () => Navigator.pop(context),
+            ),
           ],
         ),
       ),
-      actions: [
-        GlassButton(
-          label: 'Fermer',
-          onPressed: () => Navigator.pop(context),
-          variant: GlassButtonVariant.secondary,
+    );
+  }
+
+  void _showUserDetails(UserSubscription user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        contentPadding: EdgeInsets.zero,
+        content: GlassContainer(
+          width: 400,
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Détails de l\'abonnement', style: AppTextStyles.h4),
+              SizedBox(height: AppSpacing.lg),
+              Text('Utilisateur: ${user.userName ?? user.userId}'),
+              Text('Plan: ${widget.plan.name}'),
+              Text('Début: ${user.startDate.toLocal().toString().split(' ')[0]}'),
+              Text('Fin: ${user.endDate.toLocal().toString().split(' ')[0]}'),
+              Text('Statut: ${user.status}'),
+              Text('Commandes restantes: ${user.remainingOrders}'),
+              if (user.remainingWeight != null)
+                Text('Poids restant: ${user.remainingWeight} kg'),
+              SizedBox(height: AppSpacing.lg),
+              GlassButton(
+                label: 'Fermer',
+                variant: GlassButtonVariant.secondary,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }

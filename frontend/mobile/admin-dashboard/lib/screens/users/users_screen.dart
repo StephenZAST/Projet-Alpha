@@ -1,12 +1,13 @@
 import 'package:admin/screens/users/components/users_table.dart';
-import 'package:admin/widgets/pagination_controls.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/users_controller.dart';
 import 'components/user_stats_grid.dart';
-import 'components/active_filter_indicator.dart';
+import 'components/user_filters.dart';
 import '../../widgets/shared/glass_button.dart';
+import '../../widgets/shared/glass_container.dart';
 import 'components/user_create_dialog.dart';
 import 'components/user_details_dialog.dart';
 import 'components/user_edit_dialog.dart';
@@ -38,144 +39,332 @@ class _UsersScreenState extends State<UsersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     print('[UsersScreen] build: Début de la construction');
 
     return Scaffold(
-      body: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        padding: EdgeInsets.all(defaultPadding),
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(defaultPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header uniformisé
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Utilisateurs',
-                        style: AppTextStyles.h1.copyWith(
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
+      backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context, isDark),
+              SizedBox(height: AppSpacing.lg),
+
+              // Statistiques
+              UserStatsGrid(),
+              SizedBox(height: AppSpacing.lg),
+
+              // Filtres et recherche
+              UserFilters(),
+              SizedBox(height: AppSpacing.md),
+
+              // Table des utilisateurs
+              Expanded(
+                child: GetX<UsersController>(
+                  builder: (controller) {
+                    print('[UsersScreen] GetX builder: UsersTable');
+                    print('[UsersScreen] Users count: ${controller.users.length}');
+
+                    if (controller.isLoading.value) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(color: AppColors.primary),
+                            SizedBox(height: AppSpacing.md),
+                            Text(
+                              'Chargement des utilisateurs...',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: isDark ? AppColors.textLight : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Row(
-                        children: [
-                          GlassButton(
-                            label: 'Nouvel utilisateur',
-                            icon: Icons.person_add_alt_1,
-                            variant: GlassButtonVariant.primary,
-                            onPressed: () {
-                              print(
-                                  '[UsersScreen] Bouton Nouvel utilisateur cliqué');
-                              Get.dialog(UserCreateDialog(),
-                                  barrierDismissible: false);
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          GlassButton(
-                            label: 'Rafraîchir',
-                            icon: Icons.refresh,
-                            variant: GlassButtonVariant.secondary,
-                            size: GlassButtonSize.small,
-                            onPressed: () {
-                              print('[UsersScreen] Bouton Rafraîchir cliqué');
-                              controller.fetchUsers();
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
+                      );
+                    }
+
+                    if (controller.hasError.value) {
+                      return _buildErrorState(context, isDark);
+                    }
+
+                    if (controller.users.isEmpty) {
+                      return _buildEmptyState(context, isDark);
+                    }
+
+                    return UsersTable(
+                      users: controller.users,
+                      onUserSelect: (id) => _showUserDetails(id),
+                      onEdit: (id) => _editUser(id),
+                      onDelete: (id) => _deleteUser(id),
+                    );
+                  },
+                ),
+              ),
+
+              // Pagination
+              SizedBox(height: AppSpacing.md),
+              _buildPagination(context, isDark),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, bool isDark) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Gestion des Utilisateurs',
+              style: AppTextStyles.h1.copyWith(
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Obx(() => Text(
+                  controller.isLoading.value
+                      ? 'Chargement...'
+                      : '${controller.totalUsers.value} utilisateur${controller.totalUsers.value > 1 ? 's' : ''}',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
                   ),
-                  SizedBox(height: 24),
-                ],
-              ),
+                )),
+          ],
+        ),
+        Row(
+          children: [
+            GlassButton(
+              label: 'Exporter',
+              icon: Icons.download_outlined,
+              variant: GlassButtonVariant.info,
+              onPressed: () => _showExportDialog(),
             ),
-            SizedBox(height: 16),
-            // Indicateur de filtre actif
-            ActiveFilterIndicator(),
-            SizedBox(height: 16),
-            // Stats cards
-            UserStatsGrid(),
-            SizedBox(height: 16),
-            // Tableau des utilisateurs centralisé
-            Expanded(
-              child: GetX<UsersController>(
-                builder: (controller) {
-                  print('[UsersScreen] GetX builder: UsersTable');
-                  print(
-                      '[UsersScreen] Users count: ${controller.users.length}');
-
-                  if (controller.isLoading.value) {
-                    return Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-
-                  if (controller.hasError.value) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error_outline,
-                              size: 64, color: AppColors.error),
-                          SizedBox(height: 16),
-                          Text(
-                            'Erreur de chargement',
-                            style: AppTextStyles.h3,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            controller.errorMessage.value,
-                            style: AppTextStyles.bodyMedium,
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () => controller.fetchUsers(),
-                            child: Text('Réessayer'),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return UsersTable(
-                    users: controller.users,
-                    onUserSelect: (id) => _showUserDetails(id),
-                    onEdit: (id) => _editUser(id),
-                    onDelete: (id) => _deleteUser(id),
-                  );
-                },
-              ),
+            SizedBox(width: AppSpacing.sm),
+            GlassButton(
+              label: 'Nouvel utilisateur',
+              icon: Icons.person_add_alt_1,
+              variant: GlassButtonVariant.primary,
+              onPressed: () {
+                print('[UsersScreen] Bouton Nouvel utilisateur cliqué');
+                Get.dialog(UserCreateDialog(), barrierDismissible: false);
+              },
             ),
-            SizedBox(height: 12),
-            // Pagination en dehors de l'Expanded
-            GetX<UsersController>(
-              builder: (controller) {
-                print('[UsersScreen] GetX builder: PaginationControls');
-                return controller.totalPages.value > 1
-                    ? PaginationControls(
-                        currentPage: controller.currentPage.value,
-                        totalPages: controller.totalPages.value,
-                        onPrevious: controller.previousPage,
-                        onNext: controller.nextPage,
-                        itemCount: controller.users.length,
-                        totalItems: controller.totalUsers.value,
-                        itemsPerPage: controller.itemsPerPage.value,
-                        onItemsPerPageChanged: (itemsPerPage) =>
-                            controller.setItemsPerPage(
-                                itemsPerPage ?? controller.itemsPerPage.value),
-                      )
-                    : SizedBox.shrink();
+            SizedBox(width: AppSpacing.sm),
+            GlassButton(
+              label: 'Actualiser',
+              icon: Icons.refresh_outlined,
+              variant: GlassButtonVariant.secondary,
+              size: GlassButtonSize.small,
+              onPressed: () {
+                print('[UsersScreen] Bouton Actualiser cliqué');
+                controller.fetchUsers();
               },
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.1),
+              borderRadius: AppRadius.radiusXL,
+            ),
+            child: Icon(
+              Icons.error_outline,
+              size: 60,
+              color: AppColors.error.withOpacity(0.7),
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          Text(
+            'Erreur de chargement',
+            style: AppTextStyles.h3.copyWith(
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm),
+          Text(
+            controller.errorMessage.value,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppSpacing.lg),
+          GlassButton(
+            label: 'Réessayer',
+            icon: Icons.refresh_outlined,
+            variant: GlassButtonVariant.primary,
+            onPressed: () => controller.fetchUsers(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: AppRadius.radiusXL,
+            ),
+            child: Icon(
+              Icons.people_outline,
+              size: 60,
+              color: AppColors.primary.withOpacity(0.7),
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          Text(
+            'Aucun utilisateur trouvé',
+            style: AppTextStyles.h3.copyWith(
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm),
+          Text(
+            controller.searchQuery.value.isNotEmpty || controller.selectedRole.value != null
+                ? 'Aucun utilisateur ne correspond à vos critères de recherche'
+                : 'Aucun utilisateur n\'est encore enregistré dans le système',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppSpacing.lg),
+          if (controller.searchQuery.value.isNotEmpty || controller.selectedRole.value != null)
+            GlassButton(
+              label: 'Effacer les filtres',
+              icon: Icons.clear_all,
+              variant: GlassButtonVariant.secondary,
+              onPressed: () {
+                controller.searchQuery.value = '';
+                controller.selectedRole.value = null;
+                controller.fetchUsers();
+              },
+            )
+          else
+            GlassButton(
+              label: 'Créer le premier utilisateur',
+              icon: Icons.person_add_alt_1,
+              variant: GlassButtonVariant.primary,
+              onPressed: () => Get.dialog(UserCreateDialog(), barrierDismissible: false),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPagination(BuildContext context, bool isDark) {
+    return Obx(() {
+      if (controller.totalPages.value <= 1) return SizedBox.shrink();
+
+      return Container(
+        padding: EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.gray800.withOpacity(0.5)
+              : Colors.white.withOpacity(0.8),
+          borderRadius: AppRadius.radiusMD,
+          border: Border.all(
+            color: isDark
+                ? AppColors.gray700.withOpacity(0.3)
+                : AppColors.gray200.withOpacity(0.5),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Page ${controller.currentPage.value} sur ${controller.totalPages.value}',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              ),
+            ),
+            Row(
+              children: [
+                GlassButton(
+                  label: '',
+                  icon: Icons.chevron_left,
+                  variant: GlassButtonVariant.secondary,
+                  size: GlassButtonSize.small,
+                  onPressed: controller.currentPage.value > 1
+                      ? controller.previousPage
+                      : null,
+                ),
+                SizedBox(width: AppSpacing.sm),
+                GlassButton(
+                  label: '',
+                  icon: Icons.chevron_right,
+                  variant: GlassButtonVariant.secondary,
+                  size: GlassButtonSize.small,
+                  onPressed:
+                      controller.currentPage.value < controller.totalPages.value
+                          ? controller.nextPage
+                          : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  void _showExportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.transparent,
+        contentPadding: EdgeInsets.zero,
+        content: GlassContainer(
+          width: 400,
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.download_outlined, size: 48, color: AppColors.primary),
+              SizedBox(height: AppSpacing.md),
+              Text('Exporter les utilisateurs', style: AppTextStyles.h4),
+              SizedBox(height: AppSpacing.sm),
+              Text(
+                'Fonctionnalité d\'export en cours de développement',
+                style: AppTextStyles.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.lg),
+              GlassButton(
+                label: 'Fermer',
+                variant: GlassButtonVariant.secondary,
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
       ),
     );

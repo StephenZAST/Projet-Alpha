@@ -1,131 +1,91 @@
 import 'package:admin/controllers/service_type_controller.dart';
 import 'package:admin/models/service_type.dart';
-import 'package:admin/screens/services/components/service_expansion_card.dart';
 import 'package:admin/screens/services/components/service_form_screen.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/service_controller.dart';
 import '../../widgets/shared/glass_button.dart';
+import '../../widgets/shared/glass_container.dart';
+import 'components/service_stats_grid.dart';
+import 'components/service_table.dart';
+import 'components/service_filters.dart';
 
 class ServicesScreen extends GetView<ServiceController> {
   @override
   Widget build(BuildContext context) {
     // S'assure que le ServiceTypeController est bien initialisé
     Get.put(ServiceTypeController());
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(defaultPadding),
+          padding: EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header moderne avec titre, bouton glassy et refresh
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Services',
-                    style: AppTextStyles.h1.copyWith(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      GlassButton(
-                        label: 'Nouveau service',
-                        icon: Icons.add,
-                        variant: GlassButtonVariant.primary,
-                        onPressed: () => Get.dialog(ServiceFormScreen()),
-                      ),
-                      const SizedBox(width: 8),
-                      GlassButton(
-                        icon: Icons.refresh,
-                        label: '',
-                        variant: GlassButtonVariant.secondary,
-                        size: GlassButtonSize.small,
-                        onPressed: controller.fetchServices,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+              _buildHeader(context, isDark),
+              SizedBox(height: AppSpacing.lg),
 
-              // Barre de recherche modernisée
-              Center(
-                child: Container(
-                  constraints: BoxConstraints(maxWidth: 400),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor.withOpacity(0.7),
-                    borderRadius: AppRadius.radiusSM,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    onChanged: controller.searchServices,
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher un service...',
-                      prefixIcon: Icon(Icons.search),
-                      border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
+              // Statistiques
+              Obx(() => ServiceStatsGrid(
+                totalServices: controller.services.length,
+                activeServices: controller.services.length,
+                serviceTypesCount: _getServiceTypesCount(),
+                averagePrice: _getAveragePrice(),
+              )),
+              SizedBox(height: AppSpacing.lg),
 
-              // Liste des services
+              // Filtres et recherche
+              ServiceFilters(
+                onSearchChanged: controller.searchServices,
+                onTypeChanged: (typeId) {
+                  // TODO: Implémenter le filtre par type
+                },
+                onPriceRangeChanged: (min, max) {
+                  // TODO: Implémenter le filtre par prix
+                },
+                onClearFilters: () {
+                  controller.searchServices('');
+                },
+              ),
+              SizedBox(height: AppSpacing.md),
+
+              // Table des services
               Expanded(
                 child: Obx(() {
                   if (controller.isLoading.value) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-
-                  if (controller.services.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.cleaning_services_outlined,
-                              size: 64, color: AppColors.textSecondary),
+                          CircularProgressIndicator(color: AppColors.primary),
                           SizedBox(height: AppSpacing.md),
-                          Text('Aucun service disponible',
-                              style: AppTextStyles.bodyLarge),
+                          Text(
+                            'Chargement des services...',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
                         ],
                       ),
                     );
                   }
 
-                  // Affichage uniforme en ListView avec ServiceExpansionCard
-                  return ListView.builder(
-                    itemCount: controller.services.length,
-                    itemBuilder: (context, index) {
-                      final service = controller.services[index];
-                      // Recherche du type de service associé
-                      final serviceTypeController =
-                          Get.find<ServiceTypeController>();
-                      ServiceType? serviceType;
-                      try {
-                        serviceType = serviceTypeController.serviceTypes
-                            .firstWhere((t) => t.id == service.serviceTypeId);
-                      } catch (_) {
-                        serviceType = null;
-                      }
-                      return ServiceExpansionCard(
-                        service: service,
-                        serviceType: serviceType,
-                      );
-                    },
+                  if (controller.services.isEmpty) {
+                    return _buildEmptyState(context, isDark);
+                  }
+
+                  return ServiceTable(
+                    services: controller.services,
+                    onEdit: (service) => Get.dialog(ServiceFormScreen(service: service)),
+                    onDelete: _showDeleteDialog,
+                    onDuplicate: (service) => _duplicateService(service),
                   );
                 }),
               ),
@@ -136,5 +96,224 @@ class ServicesScreen extends GetView<ServiceController> {
     );
   }
 
-  // Méthode de grille supprimée, affichage en ListView expansible
+  Widget _buildHeader(BuildContext context, bool isDark) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Gestion des Services',
+              style: AppTextStyles.h1.copyWith(
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Obx(() => Text(
+              controller.isLoading.value
+                  ? 'Chargement...'
+                  : '${controller.services.length} service${controller.services.length > 1 ? 's' : ''} • ${_getServiceTypesCount()} type${_getServiceTypesCount() > 1 ? 's' : ''}',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+              ),
+            )),
+          ],
+        ),
+        Row(
+          children: [
+            GlassButton(
+              label: 'Types de Service',
+              icon: Icons.category_outlined,
+              variant: GlassButtonVariant.info,
+              onPressed: () => Get.toNamed('/service-types'),
+            ),
+            SizedBox(width: AppSpacing.sm),
+            GlassButton(
+              label: 'Couples Service/Article',
+              icon: Icons.link_outlined,
+              variant: GlassButtonVariant.secondary,
+              onPressed: () => Get.toNamed('/service-article-couples'),
+            ),
+            SizedBox(width: AppSpacing.sm),
+            GlassButton(
+              label: 'Nouveau Service',
+              icon: Icons.add_circle_outline,
+              variant: GlassButtonVariant.primary,
+              onPressed: () => Get.dialog(ServiceFormScreen()),
+            ),
+            SizedBox(width: AppSpacing.sm),
+            GlassButton(
+              label: 'Actualiser',
+              icon: Icons.refresh_outlined,
+              variant: GlassButtonVariant.secondary,
+              size: GlassButtonSize.small,
+              onPressed: controller.fetchServices,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: AppRadius.radiusXL,
+            ),
+            child: Icon(
+              Icons.cleaning_services_outlined,
+              size: 60,
+              color: AppColors.primary.withOpacity(0.7),
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          Text(
+            'Aucun service trouvé',
+            style: AppTextStyles.h3.copyWith(
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm),
+          Text(
+            'Créez votre premier service pour commencer',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppSpacing.lg),
+          GlassButton(
+            label: 'Créer un service',
+            icon: Icons.add_circle_outline,
+            variant: GlassButtonVariant.primary,
+            onPressed: () => Get.dialog(ServiceFormScreen()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog(service) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: Colors.transparent,
+        contentPadding: EdgeInsets.zero,
+        content: GlassContainer(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.warning_amber_rounded,
+                  size: 48, color: AppColors.warning),
+              SizedBox(height: AppSpacing.md),
+              Text(
+                'Confirmer la suppression',
+                style: AppTextStyles.h4,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.sm),
+              Text(
+                'Êtes-vous sûr de vouloir supprimer le service "${service.name}" ?',
+                style: AppTextStyles.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: GlassButton(
+                      label: 'Annuler',
+                      variant: GlassButtonVariant.secondary,
+                      onPressed: () => Get.back(),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: GlassButton(
+                      label: 'Supprimer',
+                      variant: GlassButtonVariant.error,
+                      onPressed: () {
+                        Get.back();
+                        controller.deleteService(service.id);
+                        _showSuccessSnackbar('Service supprimé avec succès');
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _duplicateService(service) {
+    Get.dialog(
+      ServiceFormScreen(
+        service: service, // Le formulaire gérera la duplication
+      ),
+    );
+  }
+
+  int _getServiceTypesCount() {
+    if (!Get.isRegistered<ServiceTypeController>()) return 0;
+    final serviceTypeController = Get.find<ServiceTypeController>();
+    return serviceTypeController.serviceTypes.length;
+  }
+
+  double _getAveragePrice() {
+    if (controller.services.isEmpty) return 0.0;
+    final total = controller.services.fold<double>(
+      0.0,
+      (sum, service) => sum + service.price,
+    );
+    return total / controller.services.length;
+  }
+
+  void _showSuccessSnackbar(String message) {
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.white, size: 22),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: AppColors.success.withOpacity(0.85),
+      borderRadius: 16,
+      margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      snackPosition: SnackPosition.TOP,
+      duration: Duration(seconds: 2),
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black26,
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+      isDismissible: true,
+      overlayBlur: 2.5,
+    );
+  }
 }

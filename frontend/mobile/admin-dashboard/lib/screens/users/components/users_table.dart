@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../../../constants.dart';
 import '../../../models/user.dart';
+import '../../../widgets/shared/glass_container.dart';
+import '../../../widgets/shared/glass_button.dart';
 
 class UsersTable extends StatelessWidget {
   final List<User> users;
@@ -20,78 +23,111 @@ class UsersTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     print('[UsersTable] build: users.length = ${users.length}');
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: AppRadius.radiusMD,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
+    
+    return GlassContainer(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           // Header row
           Container(
-            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.lg),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
+              color: isDark 
+                  ? AppColors.headerBgDark
+                  : AppColors.headerBgLight,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(AppRadius.md),
+                topRight: Radius.circular(AppRadius.md),
+              ),
               border: Border(
-                bottom: BorderSide(color: Theme.of(context).dividerColor),
+                bottom: BorderSide(
+                  color: isDark 
+                      ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
+                      : AppColors.gray300.withOpacity(AppColors.glassBorderLightOpacity),
+                ),
               ),
             ),
             child: Row(
               children: [
-                _headerCell('ID', flex: 2),
-                _headerCell('Nom', flex: 3),
-                _headerCell('Prénom', flex: 3),
-                _headerCell('Téléphone', flex: 3),
-                _headerCell('Email', flex: 4),
-                _headerCell('Rôle', flex: 2),
-                _headerCell('Actions', flex: 3),
+                _headerCell('Avatar', flex: 1, isDark: isDark),
+                _headerCell('Nom complet', flex: 3, isDark: isDark),
+                _headerCell('Email', flex: 3, isDark: isDark),
+                _headerCell('Téléphone', flex: 2, isDark: isDark),
+                _headerCell('Rôle', flex: 2, isDark: isDark),
+                _headerCell('Statut', flex: 1, isDark: isDark),
+                _headerCell('Actions', flex: 2, isDark: isDark),
               ],
             ),
           ),
+          
           // Data rows
           if (users.isEmpty)
             Container(
-              height: 120,
+              height: 200,
               alignment: Alignment.center,
-              child: Text('Aucun utilisateur trouvé',
-                  style: AppTextStyles.bodyMedium),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 48,
+                    color: isDark ? AppColors.gray400 : AppColors.gray500,
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Aucun utilisateur trouvé',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             )
           else
-            SizedBox(
-              height:
-                  420, // hauteur fixe pour le scroll, à ajuster selon besoin
-              child: ListView.separated(
+            Expanded(
+              child: ListView.builder(
                 itemCount: users.length,
-                separatorBuilder: (_, __) => Divider(height: 1),
                 itemBuilder: (context, index) {
                   final user = users[index];
-                  return InkWell(
-                    onTap: () => onUserSelect(user.id),
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: index % 2 == 0
-                            ? (isDark ? AppColors.gray900 : AppColors.gray50)
-                            : Colors.transparent,
-                      ),
-                      child: Row(
-                        children: [
-                          _dataCell(user.id, flex: 2),
-                          _dataCell(user.firstName, flex: 3),
-                          _dataCell(user.lastName, flex: 3),
-                          _dataCell(user.phone ?? '-', flex: 3),
-                          _dataCell(user.email, flex: 4),
-                          _roleCell(user.role, flex: 2),
-                          _actionsCell(context, user.id, flex: 3),
-                        ],
+                  final isEven = index % 2 == 0;
+                  
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => onUserSelect(user.id),
+                      hoverColor: _getRoleColor(user.role).withOpacity(0.05),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          vertical: AppSpacing.md, 
+                          horizontal: AppSpacing.lg,
+                        ),
+                        decoration: BoxDecoration(
+                          // Effet zébrage amélioré
+                          color: isEven
+                              ? (isDark 
+                                  ? AppColors.gray800.withOpacity(0.3)
+                                  : AppColors.gray50.withOpacity(0.8))
+                              : Colors.transparent,
+                          border: Border(
+                            bottom: BorderSide(
+                              color: isDark 
+                                  ? AppColors.gray700.withOpacity(0.2)
+                                  : AppColors.gray200.withOpacity(0.5),
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            _avatarCell(user, flex: 1),
+                            _nameCell(user, isDark: isDark, flex: 3),
+                            _emailCell(user.email, isDark: isDark, flex: 3),
+                            _phoneCell(user.phone ?? '-', isDark: isDark, flex: 2),
+                            _roleCell(user.role, isDark: isDark, flex: 2),
+                            _statusCell(user.isActive, isDark: isDark, flex: 1),
+                            _actionsCell(context, user, isDark: isDark, flex: 2),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -103,63 +139,236 @@ class UsersTable extends StatelessWidget {
     );
   }
 
-  Widget _headerCell(String label, {int flex = 1}) {
+  Widget _headerCell(String label, {int flex = 1, required bool isDark}) {
     return Expanded(
       flex: flex,
       child: Text(
         label,
-        style: AppTextStyles.bodyBold,
+        style: AppTextStyles.bodyMedium.copyWith(
+          fontWeight: FontWeight.w700,
+          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
 
-  Widget _dataCell(String value, {int flex = 1}) {
+  Widget _avatarCell(User user, {int flex = 1}) {
+    final roleColor = _getRoleColor(user.role);
+    final initials = '${user.firstName.substring(0, 1)}${user.lastName.substring(0, 1)}';
+    
     return Expanded(
       flex: flex,
-      child: Text(
-        value,
-        style: AppTextStyles.bodySmall,
-        overflow: TextOverflow.ellipsis,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              roleColor.withOpacity(0.2),
+              roleColor.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: AppRadius.radiusSM,
+          border: Border.all(
+            color: roleColor.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            initials,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: roleColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _roleCell(UserRole role, {int flex = 1}) {
-    final color = _getRoleColor(role);
-    final icon = _getRoleIcon(role);
-    final label = _getRoleLabel(role);
+  Widget _nameCell(User user, {int flex = 1, required bool isDark}) {
     return Expanded(
       flex: flex,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 18),
-          SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+          Text(
+            '${user.firstName} ${user.lastName}',
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (user.id.isNotEmpty)
+            Text(
+              'ID: ${user.id.length > 8 ? user.id.substring(0, 8) + '...' : user.id}',
+              style: AppTextStyles.caption.copyWith(
+                color: isDark ? AppColors.gray400 : AppColors.textMuted,
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _actionsCell(BuildContext context, String userId, {int flex = 1}) {
+  Widget _emailCell(String email, {int flex = 1, required bool isDark}) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        email,
+        style: AppTextStyles.bodySmall.copyWith(
+          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+        ),
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _phoneCell(String phone, {int flex = 1, required bool isDark}) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        phone,
+        style: AppTextStyles.bodySmall.copyWith(
+          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+        ),
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _roleCell(UserRole role, {int flex = 1, required bool isDark}) {
+    final color = _getRoleColor(role);
+    final icon = _getRoleIcon(role);
+    final label = _getRoleLabel(role);
+    
+    return Expanded(
+      flex: flex,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: AppRadius.radiusXS,
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 14),
+            SizedBox(width: AppSpacing.xs),
+            Flexible(
+              child: Text(
+                label,
+                style: AppTextStyles.caption.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statusCell(bool isActive, {int flex = 1, required bool isDark}) {
+    final color = isActive ? AppColors.success : AppColors.error;
+    final icon = isActive ? Icons.check_circle : Icons.cancel;
+    
+    return Expanded(
+      flex: flex,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: AppRadius.radiusXS,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 12),
+            SizedBox(width: 4),
+            Text(
+              isActive ? 'Actif' : 'Inactif',
+              style: AppTextStyles.caption.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _actionsCell(BuildContext context, User user, {int flex = 1, required bool isDark}) {
     return Expanded(
       flex: flex,
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            icon: Icon(Icons.visibility, color: AppColors.primary),
+          GlassButton(
+            label: '',
+            icon: Icons.visibility_outlined,
+            variant: GlassButtonVariant.info,
+            size: GlassButtonSize.small,
+            onPressed: () => onUserSelect(user.id),
             tooltip: 'Voir détails',
-            onPressed: () => onUserSelect(userId),
           ),
-          IconButton(
-            icon: Icon(Icons.edit, color: AppColors.accent),
-            tooltip: 'Éditer',
-            onPressed: () => onEdit(userId),
-          ),
-          IconButton(
-            icon: Icon(Icons.delete, color: AppColors.error),
-            tooltip: 'Supprimer',
-            onPressed: () => onDelete(userId),
+          SizedBox(width: AppSpacing.xs),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'edit':
+                  onEdit(user.id);
+                  break;
+                case 'delete':
+                  onDelete(user.id);
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: 'edit',
+                child: ListTile(
+                  leading: Icon(Icons.edit_outlined, size: 18),
+                  title: Text('Modifier'),
+                  dense: true,
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'delete',
+                child: ListTile(
+                  leading: Icon(Icons.delete_outline, 
+                      size: 18, color: AppColors.error),
+                  title: Text('Supprimer', 
+                      style: TextStyle(color: AppColors.error)),
+                  dense: true,
+                ),
+              ),
+            ],
+            icon: Icon(
+              Icons.more_vert,
+              color: isDark ? AppColors.gray300 : AppColors.gray600,
+              size: 18,
+            ),
+            color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+            shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.radiusMD,
+            ),
           ),
         ],
       ),
@@ -169,17 +378,17 @@ class UsersTable extends StatelessWidget {
   Color _getRoleColor(UserRole role) {
     switch (role) {
       case UserRole.SUPER_ADMIN:
-        return Colors.deepPurple;
+        return AppColors.violet;
       case UserRole.ADMIN:
-        return Colors.blue;
+        return AppColors.primary;
       case UserRole.AFFILIATE:
-        return Colors.orange;
+        return AppColors.orange;
       case UserRole.CLIENT:
-        return Colors.green;
+        return AppColors.success;
       case UserRole.DELIVERY:
-        return Colors.teal;
+        return AppColors.teal;
       default:
-        return Colors.grey;
+        return AppColors.gray500;
     }
   }
 
@@ -190,11 +399,11 @@ class UsersTable extends StatelessWidget {
       case UserRole.ADMIN:
         return Icons.admin_panel_settings;
       case UserRole.AFFILIATE:
-        return Icons.handshake;
+        return Icons.handshake_outlined;
       case UserRole.CLIENT:
-        return Icons.person;
+        return Icons.person_outline;
       case UserRole.DELIVERY:
-        return Icons.delivery_dining;
+        return Icons.delivery_dining_outlined;
       default:
         return Icons.help_outline;
     }
