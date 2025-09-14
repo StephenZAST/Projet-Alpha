@@ -79,15 +79,13 @@ class _ServiceFiltersState extends State<ServiceFilters> {
           Row(
             children: [
               Expanded(
-                child: _buildTypeFilter(context, isDark),
-              ),
-              SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: _buildPriceRangeToggle(context, isDark),
-              ),
-              SizedBox(width: AppSpacing.md),
-              Expanded(
+                flex: 2,
                 child: _buildSortFilter(context, isDark),
+              ),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                flex: 1,
+                child: Container(), // Espace vide pour équilibrer le layout
               ),
             ],
           ),

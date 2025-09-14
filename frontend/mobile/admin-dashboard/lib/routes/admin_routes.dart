@@ -16,6 +16,10 @@ import '../controllers/notification_controller.dart';
 import '../controllers/orders_controller.dart';
 import '../controllers/service_controller.dart';
 import '../controllers/category_controller.dart';
+import '../controllers/service_type_controller.dart';
+import '../controllers/article_service_controller.dart';
+import '../screens/services/service_types_screen.dart';
+import '../screens/services/service_article_couples_screen.dart';
 import '../middleware/auth_middleware.dart';
 
 class AdminBinding extends Bindings {
@@ -202,6 +206,25 @@ class AdminRoutes {
         if (!Get.isRegistered<OrdersController>()) {
           Get.put(OrdersController());
         }
+      }),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.fadeIn,
+    ),
+    // Routes pour les services
+    GetPage(
+      name: '/service-types',
+      page: () => ServiceTypesScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(ServiceTypeController());
+      }),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: '/service-article-couples',
+      page: () => ServiceArticleCouplesScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(ArticleServiceController());
       }),
       middlewares: [AuthMiddleware()],
       transition: Transition.fadeIn,

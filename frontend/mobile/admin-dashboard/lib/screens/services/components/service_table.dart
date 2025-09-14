@@ -69,7 +69,7 @@ class ServiceTable extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            flex: 3,
+            flex: 4,
             child: Text(
               'Service',
               style: AppTextStyles.bodyMedium.copyWith(
@@ -82,16 +82,6 @@ class ServiceTable extends StatelessWidget {
             flex: 2,
             child: Text(
               'Type',
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textLight : AppColors.textPrimary,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              'Prix',
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppColors.textLight : AppColors.textPrimary,
@@ -117,168 +107,152 @@ class ServiceTable extends StatelessWidget {
   Widget _buildTableRow(
       BuildContext context, bool isDark, Service service, int index) {
     return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? AppColors.gray700.withOpacity(0.2)
-                : AppColors.gray200.withOpacity(0.3),
-            width: 0.5,
+      // Effet de zébrage
+      color: index % 2 == 0
+          ? (isDark ? AppColors.gray900 : AppColors.gray50)
+          : Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isDark
+                  ? AppColors.gray700.withOpacity(0.2)
+                  : AppColors.gray200.withOpacity(0.3),
+              width: 0.5,
+            ),
           ),
         ),
-      ),
-      child: InkWell(
-        onTap: () => onEdit(service),
-        hoverColor: isDark
-            ? AppColors.gray800.withOpacity(0.3)
-            : AppColors.gray50.withOpacity(0.5),
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              // Service (nom + description)
-              Expanded(
-                flex: 3,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.15),
-                        borderRadius: AppRadius.radiusSM,
+        child: InkWell(
+          onTap: () => onEdit(service),
+          hoverColor: isDark
+              ? AppColors.gray800.withOpacity(0.3)
+              : AppColors.gray50.withOpacity(0.5),
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                // Service (nom + description)
+                Expanded(
+                  flex: 4,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.15),
+                          borderRadius: AppRadius.radiusSM,
+                        ),
+                        child: Icon(
+                          Icons.cleaning_services_outlined,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.cleaning_services_outlined,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            service.name,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (service.description != null && service.description!.isNotEmpty)
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              service.description!,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark ? AppColors.gray300 : AppColors.gray600,
+                              service.name,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textPrimary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            if (service.description != null && service.description!.isNotEmpty)
+                              Text(
+                                service.description!,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark ? AppColors.gray300 : AppColors.gray600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Type de service
+                Expanded(
+                  flex: 2,
+                  child: _buildTypeChip(service.serviceTypeId, isDark),
+                ),
+
+                // Statut
+                Expanded(
+                  flex: 1,
+                  child: _buildStatusBadge(true, isDark), // Tous les services sont actifs pour l'instant
+                ),
+
+                // Actions
+                SizedBox(
+                  width: 120,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.content_copy,
+                          color: AppColors.info,
+                          size: 18,
+                        ),
+                        onPressed: () => onDuplicate(service),
+                        tooltip: 'Dupliquer',
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (value) {
+                          switch (value) {
+                            case 'edit':
+                              onEdit(service);
+                              break;
+                            case 'delete':
+                              onDelete(service);
+                              break;
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => [
+                          PopupMenuItem<String>(
+                            value: 'edit',
+                            child: ListTile(
+                              leading: Icon(Icons.edit_outlined, size: 18),
+                              title: Text('Modifier'),
+                              dense: true,
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'delete',
+                            child: ListTile(
+                              leading: Icon(Icons.delete_outline,
+                                  size: 18, color: AppColors.error),
+                              title: Text('Supprimer',
+                                  style: TextStyle(color: AppColors.error)),
+                              dense: true,
+                            ),
+                          ),
                         ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Type de service
-              Expanded(
-                flex: 2,
-                child: _buildTypeChip(service.serviceTypeId, isDark),
-              ),
-
-              // Prix
-              Expanded(
-                flex: 2,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: AppRadius.radiusSM,
-                  ),
-                  child: Text(
-                    '${service.price.toStringAsFixed(0)} FCFA',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Statut
-              Expanded(
-                flex: 1,
-                child: _buildStatusBadge(true, isDark), // Tous les services sont actifs pour l'instant
-              ),
-
-              // Actions
-              SizedBox(
-                width: 120,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.content_copy,
-                        color: AppColors.info,
-                        size: 18,
-                      ),
-                      onPressed: () => onDuplicate(service),
-                      tooltip: 'Dupliquer',
-                    ),
-                    PopupMenuButton<String>(
-                      onSelected: (value) {
-                        switch (value) {
-                          case 'edit':
-                            onEdit(service);
-                            break;
-                          case 'delete':
-                            onDelete(service);
-                            break;
-                        }
-                      },
-                      itemBuilder: (BuildContext context) => [
-                        PopupMenuItem<String>(
-                          value: 'edit',
-                          child: ListTile(
-                            leading: Icon(Icons.edit_outlined, size: 18),
-                            title: Text('Modifier'),
-                            dense: true,
-                          ),
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: isDark ? AppColors.gray300 : AppColors.gray600,
                         ),
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: ListTile(
-                            leading: Icon(Icons.delete_outline,
-                                size: 18, color: AppColors.error),
-                            title: Text('Supprimer',
-                                style: TextStyle(color: AppColors.error)),
-                            dense: true,
-                          ),
+                        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusMD,
                         ),
-                      ],
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: isDark ? AppColors.gray300 : AppColors.gray600,
                       ),
-                      color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.radiusMD,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
