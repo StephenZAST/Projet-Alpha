@@ -222,73 +222,88 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark, unreadCount, totalCount),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              NotificationStatsGrid(
-                totalNotifications: totalCount,
-                unreadNotifications: unreadCount,
-                highPriorityNotifications:
-                    notifications.where((n) => n['priority'] == 'high').length,
-                todayNotifications: notifications
-                    .where((n) =>
-                        DateTime.now()
-                            .difference(n['createdAt'] as DateTime)
-                            .inDays ==
-                        0)
-                    .length,
-              ),
-              SizedBox(height: AppSpacing.lg),
-
-              // Filtres
-              NotificationFilters(
-                selectedType: selectedType,
-                selectedStatus: selectedStatus,
-                onTypeChanged: (type) {
-                  selectedType = type;
-                  _applyFilters();
-                },
-                onStatusChanged: (status) {
-                  selectedStatus = status;
-                  _applyFilters();
-                },
-                onSearchChanged: (query) {
-                  searchQuery = query;
-                  _applyFilters();
-                },
-                onClearFilters: () {
-                  selectedType = 'ALL';
-                  selectedStatus = 'ALL';
-                  searchQuery = '';
-                  _applyFilters();
-                },
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark, unreadCount, totalCount),
               ),
               SizedBox(height: AppSpacing.md),
 
-              // Liste des notifications
+              // Contenu principal scrollable
               Expanded(
-                child: isLoading
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(color: AppColors.primary),
-                            SizedBox(height: AppSpacing.md),
-                            Text(
-                              'Chargement des notifications...',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: isDark
-                                    ? AppColors.textLight
-                                    : AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : filteredNotifications.isEmpty
-                        ? _buildEmptyState(context, isDark)
-                        : _buildNotificationsList(isDark),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiques
+                      NotificationStatsGrid(
+                        totalNotifications: totalCount,
+                        unreadNotifications: unreadCount,
+                        highPriorityNotifications:
+                            notifications.where((n) => n['priority'] == 'high').length,
+                        todayNotifications: notifications
+                            .where((n) =>
+                                DateTime.now()
+                                    .difference(n['createdAt'] as DateTime)
+                                    .inDays ==
+                                0)
+                            .length,
+                      ),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Filtres
+                      NotificationFilters(
+                        selectedType: selectedType,
+                        selectedStatus: selectedStatus,
+                        onTypeChanged: (type) {
+                          selectedType = type;
+                          _applyFilters();
+                        },
+                        onStatusChanged: (status) {
+                          selectedStatus = status;
+                          _applyFilters();
+                        },
+                        onSearchChanged: (query) {
+                          searchQuery = query;
+                          _applyFilters();
+                        },
+                        onClearFilters: () {
+                          selectedType = 'ALL';
+                          selectedStatus = 'ALL';
+                          searchQuery = '';
+                          _applyFilters();
+                        },
+                      ),
+                      SizedBox(height: AppSpacing.md),
+
+                      // Liste des notifications avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: isLoading
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(color: AppColors.primary),
+                                    SizedBox(height: AppSpacing.md),
+                                    Text(
+                                      'Chargement des notifications...',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: isDark
+                                            ? AppColors.textLight
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : filteredNotifications.isEmpty
+                                ? _buildEmptyState(context, isDark)
+                                : _buildNotificationsList(isDark),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

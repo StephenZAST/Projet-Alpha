@@ -25,77 +25,109 @@ class CategoriesScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark, controller),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              Obx(() => CategoryStatsGrid(
-                    totalCategories: controller.categories.length,
-                    activeCategories:
-                        controller.categories.where((c) => c.isActive).length,
-                    totalArticles: controller.categories
-                        .fold<int>(0, (sum, c) => sum + (c.articlesCount)),
-                    averageArticlesPerCategory: controller.categories.isEmpty
-                        ? 0.0
-                        : controller.categories.fold<int>(
-                                0, (sum, c) => sum + (c.articlesCount)) /
-                            controller.categories.length,
-                  )),
-              SizedBox(height: AppSpacing.lg),
-
-              // Filtres et recherche
-              CategoryFilters(
-                onSearchChanged: controller.searchCategories,
-                onStatusChanged: (status) {
-                  // TODO: Implémenter le filtre par statut
-                },
-                onClearFilters: () {
-                  controller.searchCategories('');
-                },
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark, controller),
               ),
               SizedBox(height: AppSpacing.md),
 
-              // Table des catégories
+              // Contenu principal scrollable
               Expanded(
-                child: Obx(() {
-                  if (controller.isLoading.value) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: AppColors.primary),
-                          SizedBox(height: AppSpacing.md),
-                          Text(
-                            'Chargement des catégories...',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Titre de la section
+                      Text(
+                        'Catégories et Articles',
+                        style: AppTextStyles.h2.copyWith(
+                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    );
-                  }
+                      SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Gérez vos catégories et visualisez les articles associ��s',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.lg),
 
-                  if (controller.hasError.value) {
-                    return _buildErrorState(context, isDark, controller);
-                  }
+                      // Statistiques
+                      Obx(() => CategoryStatsGrid(
+                            totalCategories: controller.categories.length,
+                            activeCategories:
+                                controller.categories.where((c) => c.isActive).length,
+                            totalArticles: controller.categories
+                                .fold<int>(0, (sum, c) => sum + (c.articlesCount)),
+                            averageArticlesPerCategory: controller.categories.isEmpty
+                                ? 0.0
+                                : controller.categories.fold<int>(
+                                        0, (sum, c) => sum + (c.articlesCount)) /
+                                    controller.categories.length,
+                          )),
+                      SizedBox(height: AppSpacing.lg),
 
-                  if (controller.categories.isEmpty) {
-                    return _buildEmptyState(context, isDark);
-                  }
+                      // Filtres et recherche
+                      CategoryFilters(
+                        onSearchChanged: controller.searchCategories,
+                        onStatusChanged: (status) {
+                          // TODO: Implémenter le filtre par statut
+                        },
+                        onClearFilters: () {
+                          controller.searchCategories('');
+                        },
+                      ),
+                      SizedBox(height: AppSpacing.md),
 
-                  return CategoryTable(
-                    categories: controller.categories,
-                    onEdit: (category) =>
-                        Get.dialog(CategoryDialog(category: category)),
-                    onDelete: (category) =>
-                        _showDeleteDialog(context, category, controller),
-                    onToggleStatus: (category) =>
-                        _toggleCategoryStatus(category, controller),
-                  );
-                }),
+                      // Table des catégories avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: Obx(() {
+                          if (controller.isLoading.value) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(color: AppColors.primary),
+                                  SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    'Chargement des catégories...',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: isDark
+                                          ? AppColors.textLight
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          if (controller.hasError.value) {
+                            return _buildErrorState(context, isDark, controller);
+                          }
+
+                          if (controller.categories.isEmpty) {
+                            return _buildEmptyState(context, isDark);
+                          }
+
+                          return CategoryTable(
+                            categories: controller.categories,
+                            onEdit: (category) =>
+                                Get.dialog(CategoryDialog(category: category)),
+                            onDelete: (category) =>
+                                _showDeleteDialog(context, category, controller),
+                            onToggleStatus: (category) =>
+                                _toggleCategoryStatus(category, controller),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

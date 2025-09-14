@@ -26,68 +26,83 @@ class ServicesScreen extends GetView<ServiceController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              Obx(() => ServiceStatsGrid(
-                    totalServices: controller.services.length,
-                    activeServices: controller.services.length,
-                    serviceTypesCount: _getServiceTypesCount(),
-                    averagePrice: _getAveragePrice(),
-                  )),
-              SizedBox(height: AppSpacing.lg),
-
-              // Filtres et recherche
-              ServiceFilters(
-                onSearchChanged: controller.searchServices,
-                onTypeChanged: (typeId) {
-                  // TODO: Implémenter le filtre par type
-                },
-                onPriceRangeChanged: (min) {
-                  // TODO: Implémenter le filtre par prix
-                },
-                onClearFilters: () {
-                  controller.searchServices('');
-                },
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
               ),
               SizedBox(height: AppSpacing.md),
 
-              // Table des services
+              // Contenu principal scrollable
               Expanded(
-                child: Obx(() {
-                  if (controller.isLoading.value) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: AppColors.primary),
-                          SizedBox(height: AppSpacing.md),
-                          Text(
-                            'Chargement des services...',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiques
+                      Obx(() => ServiceStatsGrid(
+                            totalServices: controller.services.length,
+                            activeServices: controller.services.length,
+                            serviceTypesCount: _getServiceTypesCount(),
+                            averagePrice: _getAveragePrice(),
+                          )),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Filtres et recherche
+                      ServiceFilters(
+                        onSearchChanged: controller.searchServices,
+                        onTypeChanged: (typeId) {
+                          // TODO: Implémenter le filtre par type
+                        },
+                        onPriceRangeChanged: (min) {
+                          // TODO: Implémenter le filtre par prix
+                        },
+                        onClearFilters: () {
+                          controller.searchServices('');
+                        },
                       ),
-                    );
-                  }
+                      SizedBox(height: AppSpacing.md),
 
-                  if (controller.services.isEmpty) {
-                    return _buildEmptyState(context, isDark);
-                  }
+                      // Table des services avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: Obx(() {
+                          if (controller.isLoading.value) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(color: AppColors.primary),
+                                  SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    'Chargement des services...',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: isDark
+                                          ? AppColors.textLight
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
 
-                  return ServiceTable(
-                    services: controller.services,
-                    onEdit: (service) =>
-                        Get.dialog(ServiceFormScreen(service: service)),
-                    onDelete: _showDeleteDialog,
-                    onDuplicate: (service) => _duplicateService(service),
-                  );
-                }),
+                          if (controller.services.isEmpty) {
+                            return _buildEmptyState(context, isDark);
+                          }
+
+                          return ServiceTable(
+                            services: controller.services,
+                            onEdit: (service) =>
+                                Get.dialog(ServiceFormScreen(service: service)),
+                            onDelete: _showDeleteDialog,
+                            onDuplicate: (service) => _duplicateService(service),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

@@ -39,49 +39,114 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Gestion Livreurs', style: AppTextStyles.h1),
-              SizedBox(height: AppSpacing.lg),
-              // Tabs
-              DefaultTabController(
-                length: 3,
-                child: Expanded(
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Gestion des Livreurs',
+                      style: AppTextStyles.h1.copyWith(
+                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Gérez vos livreurs et suivez les livraisons en cours',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: AppSpacing.md),
+
+              // Contenu principal avec tabs
+              Expanded(
+                child: DefaultTabController(
+                  length: 3,
                   child: Column(
                     children: [
-                      TabBar(tabs: [
-                        Tab(text: 'Livreurs'),
-                        Tab(text: 'Livraisons Actives'),
-                        Tab(text: 'Statistiques'),
-                      ]),
+                      TabBar(
+                        labelColor: AppColors.primary,
+                        unselectedLabelColor: isDark ? AppColors.gray400 : AppColors.gray600,
+                        indicatorColor: AppColors.primary,
+                        tabs: [
+                          Tab(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.delivery_dining, size: 18),
+                                SizedBox(width: AppSpacing.xs),
+                                Text('Livreurs'),
+                              ],
+                            ),
+                          ),
+                          Tab(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.local_shipping, size: 18),
+                                SizedBox(width: AppSpacing.xs),
+                                Text('Livraisons'),
+                              ],
+                            ),
+                          ),
+                          Tab(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.analytics, size: 18),
+                                SizedBox(width: AppSpacing.xs),
+                                Text('Statistiques'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: AppSpacing.md),
                       Expanded(
-                        child: TabBarView(children: [
-                          // Livreurs
-                          SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                DeliverersTable(),
-                              ],
+                        child: TabBarView(
+                          children: [
+                            // Livreurs
+                            SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: MediaQuery.of(context).size.height * 0.6,
+                                    child: DeliverersTable(),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
 
-                          // Livraisons actives
-                          SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                DeliveryList(),
-                              ],
+                            // Livraisons actives
+                            SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: MediaQuery.of(context).size.height * 0.6,
+                                    child: DeliveryList(),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
 
-                          // Statistiques
-                          SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                DeliveryStatsCard(),
-                              ],
+                            // Statistiques
+                            SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  DeliveryStatsCard(),
+                                ],
+                              ),
                             ),
-                          ),
-                        ]),
-                      )
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),

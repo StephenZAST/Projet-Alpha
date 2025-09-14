@@ -50,63 +50,78 @@ class _UsersScreenState extends State<UsersScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              UserStatsGrid(),
-              SizedBox(height: AppSpacing.lg),
-
-              // Filtres et recherche
-              UserFilters(),
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
+              ),
               SizedBox(height: AppSpacing.md),
 
-              // Table des utilisateurs
+              // Contenu principal scrollable
               Expanded(
-                child: GetX<UsersController>(
-                  builder: (controller) {
-                    print('[UsersScreen] GetX builder: UsersTable');
-                    print('[UsersScreen] Users count: ${controller.users.length}');
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiques
+                      UserStatsGrid(),
+                      SizedBox(height: AppSpacing.lg),
 
-                    if (controller.isLoading.value) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(color: AppColors.primary),
-                            SizedBox(height: AppSpacing.md),
-                            Text(
-                              'Chargement des utilisateurs...',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: isDark ? AppColors.textLight : AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
+                      // Filtres et recherche
+                      UserFilters(),
+                      SizedBox(height: AppSpacing.md),
+
+                      // Table des utilisateurs avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: GetX<UsersController>(
+                          builder: (controller) {
+                            print('[UsersScreen] GetX builder: UsersTable');
+                            print('[UsersScreen] Users count: ${controller.users.length}');
+
+                            if (controller.isLoading.value) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(color: AppColors.primary),
+                                    SizedBox(height: AppSpacing.md),
+                                    Text(
+                                      'Chargement des utilisateurs...',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: isDark ? AppColors.textLight : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            if (controller.hasError.value) {
+                              return _buildErrorState(context, isDark);
+                            }
+
+                            if (controller.users.isEmpty) {
+                              return _buildEmptyState(context, isDark);
+                            }
+
+                            return UsersTable(
+                              users: controller.users,
+                              onUserSelect: (id) => _showUserDetails(id),
+                              onEdit: (id) => _editUser(id),
+                              onDelete: (id) => _deleteUser(id),
+                            );
+                          },
                         ),
-                      );
-                    }
+                      ),
 
-                    if (controller.hasError.value) {
-                      return _buildErrorState(context, isDark);
-                    }
-
-                    if (controller.users.isEmpty) {
-                      return _buildEmptyState(context, isDark);
-                    }
-
-                    return UsersTable(
-                      users: controller.users,
-                      onUserSelect: (id) => _showUserDetails(id),
-                      onEdit: (id) => _editUser(id),
-                      onDelete: (id) => _deleteUser(id),
-                    );
-                  },
+                      // Pagination
+                      SizedBox(height: AppSpacing.md),
+                      _buildPagination(context, isDark),
+                    ],
+                  ),
                 ),
               ),
-
-              // Pagination
-              SizedBox(height: AppSpacing.md),
-              _buildPagination(context, isDark),
             ],
           ),
         ),

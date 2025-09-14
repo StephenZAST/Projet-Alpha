@@ -42,25 +42,40 @@ class _SubscriptionManagementPageState extends State<SubscriptionManagementPage>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques globales
-              SubscriptionStatsGrid(),
-              SizedBox(height: AppSpacing.lg),
-
-              // Onglets avec design moderne
-              _buildModernTabBar(context, isDark),
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
+              ),
               SizedBox(height: AppSpacing.md),
 
-              // Contenu des onglets
+              // Contenu principal scrollable
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    SubscriptionPlansTab(),
-                    SubscribedUsersTab(),
-                  ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiques globales
+                      SubscriptionStatsGrid(),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Onglets avec design moderne
+                      _buildModernTabBar(context, isDark),
+                      SizedBox(height: AppSpacing.md),
+
+                      // Contenu des onglets avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            SubscriptionPlansTab(),
+                            SubscribedUsersTab(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

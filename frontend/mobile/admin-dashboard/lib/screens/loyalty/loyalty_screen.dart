@@ -60,40 +60,55 @@ class _LoyaltyScreenState extends State<LoyaltyScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              LoyaltyStatsGrid(),
-              SizedBox(height: AppSpacing.lg),
-
-              // Demandes de récompenses en attente (si il y en a)
-              Obx(() {
-                if (controller.pendingRewardClaims.isNotEmpty) {
-                  return Column(
-                    children: [
-                      PendingClaimsCard(),
-                      SizedBox(height: AppSpacing.lg),
-                    ],
-                  );
-                }
-                return SizedBox.shrink();
-              }),
-
-              // Onglets
-              _buildTabBar(context, isDark),
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
+              ),
               SizedBox(height: AppSpacing.md),
 
-              // Contenu des onglets
+              // Contenu principal scrollable
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildLoyaltyPointsTab(context, isDark),
-                    _buildTransactionsTab(context, isDark),
-                    _buildRewardsTab(context, isDark),
-                    _buildClaimsTab(context, isDark),
-                  ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiques
+                      LoyaltyStatsGrid(),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Demandes de récompenses en attente (si il y en a)
+                      Obx(() {
+                        if (controller.pendingRewardClaims.isNotEmpty) {
+                          return Column(
+                            children: [
+                              PendingClaimsCard(),
+                              SizedBox(height: AppSpacing.lg),
+                            ],
+                          );
+                        }
+                        return SizedBox.shrink();
+                      }),
+
+                      // Onglets
+                      _buildTabBar(context, isDark),
+                      SizedBox(height: AppSpacing.md),
+
+                      // Contenu des onglets avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildLoyaltyPointsTab(context, isDark),
+                            _buildTransactionsTab(context, isDark),
+                            _buildRewardsTab(context, isDark),
+                            _buildClaimsTab(context, isDark),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

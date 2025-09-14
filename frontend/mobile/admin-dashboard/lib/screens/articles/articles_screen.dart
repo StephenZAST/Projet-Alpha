@@ -25,68 +25,83 @@ class ArticlesScreen extends GetView<ArticleController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              Obx(() => ArticleStatsGrid(
-                    totalArticles: controller.articles.length,
-                    activeArticles: controller.articles.length,
-                    categoriesCount: _getCategoriesCount(),
-                    averagePrice: _getAveragePrice(),
-                  )),
-              SizedBox(height: AppSpacing.lg),
-
-              // Filtres et recherche
-              ArticleFilters(
-                onSearchChanged: controller.searchArticles,
-                onCategoryChanged: (categoryId) {
-                  controller.setSelectedCategory(categoryId);
-                },
-                onClearFilters: () {
-                  controller.setSelectedCategory(null);
-                  controller.searchArticles('');
-                },
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
               ),
               SizedBox(height: AppSpacing.md),
 
-              // Table des articles
+              // Contenu principal scrollable
               Expanded(
-                child: Obx(() {
-                  if (controller.isLoading.value) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: AppColors.primary),
-                          SizedBox(height: AppSpacing.md),
-                          Text(
-                            'Chargement des articles...',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiques
+                      Obx(() => ArticleStatsGrid(
+                            totalArticles: controller.articles.length,
+                            activeArticles: controller.articles.length,
+                            categoriesCount: _getCategoriesCount(),
+                            averagePrice: _getAveragePrice(),
+                          )),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Filtres et recherche
+                      ArticleFilters(
+                        onSearchChanged: controller.searchArticles,
+                        onCategoryChanged: (categoryId) {
+                          controller.setSelectedCategory(categoryId);
+                        },
+                        onClearFilters: () {
+                          controller.setSelectedCategory(null);
+                          controller.searchArticles('');
+                        },
                       ),
-                    );
-                  }
+                      SizedBox(height: AppSpacing.md),
 
-                  if (controller.articles.isEmpty) {
-                    return _buildEmptyState(context, isDark);
-                  }
+                      // Table des articles avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: Obx(() {
+                          if (controller.isLoading.value) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(color: AppColors.primary),
+                                  SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    'Chargement des articles...',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: isDark
+                                          ? AppColors.textLight
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
 
-                  return ArticleTable(
-                    articles: controller.articles,
-                    onEdit: (article) => Get.dialog(
-                      ArticleFormDialog(article: article),
-                      barrierDismissible: false,
-                    ),
-                    onDelete: _showDeleteDialog,
-                    onDuplicate: (article) => _duplicateArticle(article),
-                  );
-                }),
+                          if (controller.articles.isEmpty) {
+                            return _buildEmptyState(context, isDark);
+                          }
+
+                          return ArticleTable(
+                            articles: controller.articles,
+                            onEdit: (article) => Get.dialog(
+                              ArticleFormDialog(article: article),
+                              barrierDismissible: false,
+                            ),
+                            onDelete: _showDeleteDialog,
+                            onDuplicate: (article) => _duplicateArticle(article),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

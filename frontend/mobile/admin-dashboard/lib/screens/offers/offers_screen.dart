@@ -326,31 +326,46 @@ class _OffersScreenState extends State<OffersScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              OfferStatsGrid(
-                totalOffers: totalOffers,
-                activeOffers: activeOffers,
-                expiredOffers: expiredOffers,
-                totalDiscountValue: totalDiscountValue,
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
               ),
-              SizedBox(height: AppSpacing.lg),
-
-              // Onglets
-              _buildTabBar(context, isDark),
               SizedBox(height: AppSpacing.md),
 
-              // Contenu des onglets
+              // Contenu principal scrollable
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildOffersTab(context, isDark),
-                    _buildAnalyticsTab(context, isDark),
-                    _buildSettingsTab(context, isDark),
-                  ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiques
+                      OfferStatsGrid(
+                        totalOffers: totalOffers,
+                        activeOffers: activeOffers,
+                        expiredOffers: expiredOffers,
+                        totalDiscountValue: totalDiscountValue,
+                      ),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Onglets
+                      _buildTabBar(context, isDark),
+                      SizedBox(height: AppSpacing.md),
+
+                      // Contenu des onglets avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.6,
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildOffersTab(context, isDark),
+                            _buildAnalyticsTab(context, isDark),
+                            _buildSettingsTab(context, isDark),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

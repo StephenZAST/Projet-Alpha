@@ -9,12 +9,29 @@ import 'components/preferences_section.dart';
 import '../../constants.dart';
 import '../../widgets/shared/glass_button.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late AdminProfileController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialiser le contrôleur de manière sécurisée
+    if (Get.isRegistered<AdminProfileController>()) {
+      controller = Get.find<AdminProfileController>();
+    } else {
+      controller = Get.put(AdminProfileController(), permanent: true);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    Get.put(AdminProfileController());
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -25,27 +42,104 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
+              ),
+              SizedBox(height: AppSpacing.md),
+
+              // Contenu principal scrollable
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      ProfileHeader(),
-                      SizedBox(height: AppSpacing.lg),
-                      ProfileForm(),
-                      SizedBox(height: AppSpacing.lg),
-                      PasswordChangeSection(),
-                      SizedBox(height: AppSpacing.lg),
-                      PreferencesSection(),
-                      SizedBox(height: AppSpacing.xl),
-                    ],
-                  ),
-                ),
+                child: Obx(() {
+                  if (controller.isLoading.value) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(color: AppColors.primary),
+                          SizedBox(height: AppSpacing.md),
+                          Text(
+                            'Chargement du profil...',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  if (controller.errorMessage.value.isNotEmpty) {
+                    return _buildErrorState(context, isDark);
+                  }
+
+                  return SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        ProfileHeader(),
+                        SizedBox(height: AppSpacing.lg),
+                        ProfileForm(),
+                        SizedBox(height: AppSpacing.lg),
+                        PasswordChangeSection(),
+                        SizedBox(height: AppSpacing.lg),
+                        PreferencesSection(),
+                        SizedBox(height: AppSpacing.xl),
+                      ],
+                    ),
+                  );
+                }),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.1),
+              borderRadius: AppRadius.radiusXL,
+            ),
+            child: Icon(
+              Icons.error_outline,
+              size: 60,
+              color: AppColors.error.withOpacity(0.7),
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          Text(
+            'Erreur de chargement',
+            style: AppTextStyles.h3.copyWith(
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm),
+          Text(
+            controller.errorMessage.value,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.error,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: AppSpacing.lg),
+          GlassButton(
+            label: 'Réessayer',
+            icon: Icons.refresh_outlined,
+            variant: GlassButtonVariant.primary,
+            onPressed: () => controller.loadProfile(),
+          ),
+        ],
       ),
     );
   }
