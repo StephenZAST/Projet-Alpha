@@ -162,6 +162,28 @@ Pour chaque composant, produire un court contrat (inputs/outputs/states/edge cas
 - Skeletons pour les états loading.
 - Préserver la hauteur réservée pour images/avatars (prévenir CLS).
 
+
+utiliser pour les lissview des tableau 
+L’effet d’alternance de couleur sur les lignes d’un tableau s’appelle : « zébrage » ou « row striping » (en anglais : striped rows). Il améliore la lisibilité en différenciant visuellement chaque ligne.
+
+Dans ton code Flutter (users_table.dart), l’alternance est gérée ainsi :
+
+color: index % 2 == 0
+  ? (isDark ? AppColors.gray900 : AppColors.gray50)
+  : Colors.transparent,
+
+
+Si la ligne est paire (index % 2 == 0), elle prend une couleur de fond :
+En dark theme : AppColors.gray900 (gris très foncé)
+En light theme : AppColors.gray50 (gris très clair)
+Si la ligne est impaire, le fond est transparent (donc couleur par défaut du conteneur).
+Description des couleurs utilisées :
+
+Dark theme : Gris très foncé (gray900) pour les lignes paires, fond par défaut (souvent gris foncé ou noir) pour les impaires.
+Light theme : Gris très clair (gray50) pour les lignes paires, fond par défaut (blanc ou gris très pâle) pour les impaires.
+
+
+
 ---
 
 ## Scaffold Flutter recommandé (pattern)
@@ -190,8 +212,12 @@ Pour chaque nouveau screen `X` :
 - Toujours lire `constants.dart` et `glass_container.dart` avant tout changement visuel.
 - Ne jamais hardcoder une couleur/opacité : ajouter un token dans `constants.dart` si nécessaire.
 - Pour chaque proposition UI, inclure :
-  1) "Pourquoi" (UX), 2) "Impact technique" (perf/access), 3) 1–2 fichiers à modifier.
-- Fournir tests minimaux (controller + widget smoke) lors de changements non-triviaux.
+Pour toute question ou besoin de compréhension sur une feature du projet Alpha, réfère-toi aux fichiers suivants :
+
+REFERENCE_FEATURES.md : Documentation progressive, cartographie complète des features principales (auth, user, order, address, etc.) avec liens backend/frontend, schémas d’interaction et conseils de navigation.
+REFERENCE_ARTICLE_SERVICE.md : Référence détaillée pour les features Article, Service, Admin, OrderItem, Affiliate, Delivery, Notification, Subscription, Offer, avec explications sur la logique métier, les endpoints, et la structure des fichiers.
+Lis la section correspondante à la feature recherchée dans ces fichiers pour obtenir une vue d’ensemble, la liste des fichiers impliqués, et les points d’attention pour naviguer rapidement dans le code.
+
 
 ---
 
