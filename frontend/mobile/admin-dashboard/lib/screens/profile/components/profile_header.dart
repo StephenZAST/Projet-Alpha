@@ -56,11 +56,11 @@ class ProfileHeader extends StatelessWidget {
           ),
           child: CircleAvatar(
             radius: 47,
-            backgroundImage: controller.profile.value?.profileImage != null
-                ? NetworkImage(controller.profile.value!.profileImage!)
+            backgroundImage: controller.profile.value?.profileImageUrl != null
+                ? NetworkImage(controller.profile.value!.profileImageUrl!)
                 : null,
             backgroundColor: Colors.transparent,
-            child: controller.profile.value?.profileImage == null
+            child: controller.profile.value?.profileImageUrl == null
                 ? Icon(
                     Icons.person_outline,
                     size: 50,
@@ -94,7 +94,8 @@ class ProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildUserInfo(BuildContext context, AdminProfileController controller, bool isDark) {
+  Widget _buildUserInfo(
+      BuildContext context, AdminProfileController controller, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -235,7 +236,8 @@ class ProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, bool isDark) {
+  Widget _buildStatItem(
+      String label, String value, IconData icon, bool isDark) {
     return Row(
       children: [
         Icon(
@@ -266,7 +268,8 @@ class ProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BuildContext context, AdminProfileController controller) {
+  Widget _buildActions(
+      BuildContext context, AdminProfileController controller) {
     return Column(
       children: [
         GlassButton(
@@ -291,7 +294,8 @@ class ProfileHeader extends StatelessWidget {
   void _showImagePicker(BuildContext context) {
     // TODO: Implémenter le sélecteur d'image
     Get.rawSnackbar(
-      message: 'Fonctionnalité de changement de photo en cours de développement',
+      message:
+          'Fonctionnalité de changement de photo en cours de développement',
       backgroundColor: AppColors.info,
       snackPosition: SnackPosition.TOP,
       duration: Duration(seconds: 2),

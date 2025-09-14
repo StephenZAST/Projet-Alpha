@@ -75,5 +75,4 @@ Lors de la création d'une commande, le prix réellement pris en compte pour cha
 - Le frontend doit afficher le même prix que le backend pour éviter toute confusion utilisateur.
 
 ---
-**Auteur :** GitHub Copilot
-**Date :** 21/08/2025
+
