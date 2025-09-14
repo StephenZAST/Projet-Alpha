@@ -32,7 +32,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
     setState(() => isLoading = true);
     try {
       final response = await api.get('/admin/subscriptions');
-      final data = response.data is List ? response.data : response.data['data'];
+      final data =
+          response.data is List ? response.data : response.data['data'];
       subscriptions = (data as List)
           .map((json) => UserSubscription.fromJson(json))
           .toList();
@@ -50,6 +51,9 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
           status: 'ACTIVE',
           remainingOrders: 12,
           remainingWeight: 18.5,
+          expired: false,
+          createdAt: DateTime.now().subtract(Duration(days: 15)),
+          updatedAt: DateTime.now(),
         ),
         UserSubscription(
           id: '2',
@@ -61,6 +65,9 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
           status: 'ACTIVE',
           remainingOrders: 4,
           remainingWeight: 8.0,
+          expired: false,
+          createdAt: DateTime.now().subtract(Duration(days: 5)),
+          updatedAt: DateTime.now(),
         ),
         UserSubscription(
           id: '3',
@@ -72,6 +79,9 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
           status: 'EXPIRED',
           remainingOrders: 0,
           remainingWeight: 0.0,
+          expired: true,
+          createdAt: DateTime.now().subtract(Duration(days: 45)),
+          updatedAt: DateTime.now().subtract(Duration(days: 5)),
         ),
         UserSubscription(
           id: '4',
@@ -83,6 +93,9 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
           status: 'CANCELLED',
           remainingOrders: 8,
           remainingWeight: 12.0,
+          expired: false,
+          createdAt: DateTime.now().subtract(Duration(days: 10)),
+          updatedAt: DateTime.now(),
         ),
       ];
       _applyFilters();
@@ -94,9 +107,11 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
   void _applyFilters() {
     setState(() {
       filteredSubscriptions = subscriptions.where((sub) {
-        final matchesStatus = statusFilter == 'ALL' || sub.status == statusFilter;
+        final matchesStatus =
+            statusFilter == 'ALL' || sub.status == statusFilter;
         final matchesSearch = searchQuery.isEmpty ||
-            (sub.userName?.toLowerCase().contains(searchQuery.toLowerCase()) ?? false) ||
+            (sub.userName?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+                false) ||
             (sub.userId.toLowerCase().contains(searchQuery.toLowerCase()));
         return matchesStatus && matchesSearch;
       }).toList();
@@ -125,7 +140,9 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
                       Text(
                         'Chargement des abonnements...',
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: isDark ? AppColors.textLight : AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -154,13 +171,15 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
                   Text(
                     'Utilisateurs abonnés',
                     style: AppTextStyles.h3.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                     ),
                   ),
                   Text(
                     '${filteredSubscriptions.length} abonnement${filteredSubscriptions.length > 1 ? 's' : ''} trouvé${filteredSubscriptions.length > 1 ? 's' : ''}',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                      color:
+                          isDark ? AppColors.gray300 : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -185,9 +204,9 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
               ),
             ],
           ),
-          
+
           SizedBox(height: AppSpacing.md),
-          
+
           // Filtres
           Row(
             children: [
@@ -233,12 +252,14 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
                     ),
                     dropdownColor: isDark ? AppColors.gray800 : AppColors.white,
                     items: [
-                      DropdownMenuItem(value: 'ALL', child: Text('Tous les statuts')),
+                      DropdownMenuItem(
+                          value: 'ALL', child: Text('Tous les statuts')),
                       DropdownMenuItem(
                         value: 'ACTIVE',
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle, size: 16, color: AppColors.success),
+                            Icon(Icons.check_circle,
+                                size: 16, color: AppColors.success),
                             SizedBox(width: AppSpacing.xs),
                             Text('Actifs'),
                           ],
@@ -248,7 +269,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
                         value: 'CANCELLED',
                         child: Row(
                           children: [
-                            Icon(Icons.cancel, size: 16, color: AppColors.warning),
+                            Icon(Icons.cancel,
+                                size: 16, color: AppColors.warning),
                             SizedBox(width: AppSpacing.xs),
                             Text('Annulés'),
                           ],
@@ -258,7 +280,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
                         value: 'EXPIRED',
                         child: Row(
                           children: [
-                            Icon(Icons.schedule, size: 16, color: AppColors.error),
+                            Icon(Icons.schedule,
+                                size: 16, color: AppColors.error),
                             SizedBox(width: AppSpacing.xs),
                             Text('Expirés'),
                           ],
@@ -349,8 +372,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
     final Color statusColor = _getStatusColor(subscription.status);
     final IconData statusIcon = _getStatusIcon(subscription.status);
     final bool isActive = subscription.status == 'ACTIVE';
-    final bool isExpiringSoon = isActive && 
-        subscription.endDate.difference(DateTime.now()).inDays <= 7;
+    final bool isExpiringSoon =
+        isActive && subscription.endDate.difference(DateTime.now()).inDays <= 7;
 
     return GlassContainer(
       padding: EdgeInsets.all(AppSpacing.lg),
@@ -363,7 +386,9 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
                 radius: 24,
                 backgroundColor: AppColors.primary.withOpacity(0.15),
                 child: Text(
-                  (subscription.userName ?? subscription.userId).substring(0, 1).toUpperCase(),
+                  (subscription.userName ?? subscription.userId)
+                      .substring(0, 1)
+                      .toUpperCase(),
                   style: AppTextStyles.h4.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -379,13 +404,17 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
                       subscription.userName ?? 'Utilisateur',
                       style: AppTextStyles.bodyLarge.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary,
                       ),
                     ),
                     Text(
                       subscription.userId,
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                        color: isDark
+                            ? AppColors.gray300
+                            : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -487,8 +516,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.warning_amber_outlined, 
-                       size: 16, color: AppColors.warning),
+                  Icon(Icons.warning_amber_outlined,
+                      size: 16, color: AppColors.warning),
                   SizedBox(width: AppSpacing.xs),
                   Text(
                     'Expire dans ${subscription.endDate.difference(DateTime.now()).inDays} jour(s)',
@@ -555,7 +584,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
     );
   }
 
-  Widget _buildInfoItem(String label, String value, IconData icon, Color color) {
+  Widget _buildInfoItem(
+      String label, String value, IconData icon, Color color) {
     return Column(
       children: [
         Icon(icon, color: color, size: 20),
@@ -581,7 +611,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
     );
   }
 
-  Widget _buildDateInfo(String label, DateTime date, IconData icon, Color color) {
+  Widget _buildDateInfo(
+      String label, DateTime date, IconData icon, Color color) {
     return Column(
       children: [
         Icon(icon, color: color, size: 20),
@@ -680,7 +711,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
 
   void _renewSubscription(UserSubscription subscription) {
     // TODO: Implémenter le renouvellement
-    Get.snackbar('Info', 'Fonctionnalité de renouvellement en cours de développement');
+    Get.snackbar(
+        'Info', 'Fonctionnalité de renouvellement en cours de développement');
   }
 
   void _cancelSubscription(UserSubscription subscription) {
@@ -694,7 +726,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.warning_amber_rounded, size: 48, color: AppColors.warning),
+              Icon(Icons.warning_amber_rounded,
+                  size: 48, color: AppColors.warning),
               SizedBox(height: AppSpacing.md),
               Text('Confirmer l\'annulation', style: AppTextStyles.h4),
               SizedBox(height: AppSpacing.sm),
@@ -736,7 +769,8 @@ class _SubscribedUsersTabState extends State<SubscribedUsersTab> {
 
   void _reactivateSubscription(UserSubscription subscription) {
     // TODO: Implémenter la réactivation
-    Get.snackbar('Info', 'Fonctionnalité de réactivation en cours de développement');
+    Get.snackbar(
+        'Info', 'Fonctionnalité de réactivation en cours de développement');
   }
 
   void _showExportDialog() {

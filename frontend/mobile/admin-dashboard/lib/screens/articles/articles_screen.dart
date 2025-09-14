@@ -30,11 +30,11 @@ class ArticlesScreen extends GetView<ArticleController> {
 
               // Statistiques
               Obx(() => ArticleStatsGrid(
-                totalArticles: controller.articles.length,
-                activeArticles: controller.articles.length,
-                categoriesCount: _getCategoriesCount(),
-                averagePrice: _getAveragePrice(),
-              )),
+                    totalArticles: controller.articles.length,
+                    activeArticles: controller.articles.length,
+                    categoriesCount: _getCategoriesCount(),
+                    averagePrice: _getAveragePrice(),
+                  )),
               SizedBox(height: AppSpacing.lg),
 
               // Filtres et recherche
@@ -42,9 +42,6 @@ class ArticlesScreen extends GetView<ArticleController> {
                 onSearchChanged: controller.searchArticles,
                 onCategoryChanged: (categoryId) {
                   controller.setSelectedCategory(categoryId);
-                },
-                onPriceRangeChanged: (min, max) {
-                  // TODO: Implémenter le filtre par prix
                 },
                 onClearFilters: () {
                   controller.setSelectedCategory(null);
@@ -116,13 +113,13 @@ class ArticlesScreen extends GetView<ArticleController> {
             ),
             SizedBox(height: AppSpacing.xs),
             Obx(() => Text(
-              controller.isLoading.value
-                  ? 'Chargement...'
-                  : '${controller.articles.length} article${controller.articles.length > 1 ? 's' : ''} • ${_getCategoriesCount()} catégorie${_getCategoriesCount() > 1 ? 's' : ''}',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.gray300 : AppColors.textSecondary,
-              ),
-            )),
+                  controller.isLoading.value
+                      ? 'Chargement...'
+                      : '${controller.articles.length} article${controller.articles.length > 1 ? 's' : ''} • ${_getCategoriesCount()} catégorie${_getCategoriesCount() > 1 ? 's' : ''}',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                  ),
+                )),
           ],
         ),
         Row(

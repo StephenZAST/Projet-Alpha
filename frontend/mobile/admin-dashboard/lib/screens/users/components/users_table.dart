@@ -23,27 +23,28 @@ class UsersTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     print('[UsersTable] build: users.length = ${users.length}');
-    
+
     return GlassContainer(
       padding: EdgeInsets.zero,
       child: Column(
         children: [
           // Header row
           Container(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.lg),
+            padding: EdgeInsets.symmetric(
+                vertical: AppSpacing.md, horizontal: AppSpacing.lg),
             decoration: BoxDecoration(
-              color: isDark 
-                  ? AppColors.headerBgDark
-                  : AppColors.headerBgLight,
+              color: isDark ? AppColors.headerBgDark : AppColors.headerBgLight,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(AppRadius.md),
                 topRight: Radius.circular(AppRadius.md),
               ),
               border: Border(
                 bottom: BorderSide(
-                  color: isDark 
-                      ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
-                      : AppColors.gray300.withOpacity(AppColors.glassBorderLightOpacity),
+                  color: isDark
+                      ? AppColors.gray700
+                          .withOpacity(AppColors.glassBorderDarkOpacity)
+                      : AppColors.gray300
+                          .withOpacity(AppColors.glassBorderLightOpacity),
                 ),
               ),
             ),
@@ -59,7 +60,7 @@ class UsersTable extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Data rows
           if (users.isEmpty)
             Container(
@@ -77,7 +78,8 @@ class UsersTable extends StatelessWidget {
                   Text(
                     'Aucun utilisateur trouvé',
                     style: AppTextStyles.bodyLarge.copyWith(
-                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                      color:
+                          isDark ? AppColors.gray300 : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -90,7 +92,7 @@ class UsersTable extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final user = users[index];
                   final isEven = index % 2 == 0;
-                  
+
                   return Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -98,19 +100,19 @@ class UsersTable extends StatelessWidget {
                       hoverColor: _getRoleColor(user.role).withOpacity(0.05),
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                          vertical: AppSpacing.md, 
+                          vertical: AppSpacing.md,
                           horizontal: AppSpacing.lg,
                         ),
                         decoration: BoxDecoration(
                           // Effet zébrage amélioré
                           color: isEven
-                              ? (isDark 
+                              ? (isDark
                                   ? AppColors.gray800.withOpacity(0.3)
                                   : AppColors.gray50.withOpacity(0.8))
                               : Colors.transparent,
                           border: Border(
                             bottom: BorderSide(
-                              color: isDark 
+                              color: isDark
                                   ? AppColors.gray700.withOpacity(0.2)
                                   : AppColors.gray200.withOpacity(0.5),
                               width: 0.5,
@@ -122,10 +124,12 @@ class UsersTable extends StatelessWidget {
                             _avatarCell(user, flex: 1),
                             _nameCell(user, isDark: isDark, flex: 3),
                             _emailCell(user.email, isDark: isDark, flex: 3),
-                            _phoneCell(user.phone ?? '-', isDark: isDark, flex: 2),
+                            _phoneCell(user.phone ?? '-',
+                                isDark: isDark, flex: 2),
                             _roleCell(user.role, isDark: isDark, flex: 2),
                             _statusCell(user.isActive, isDark: isDark, flex: 1),
-                            _actionsCell(context, user, isDark: isDark, flex: 2),
+                            _actionsCell(context, user,
+                                isDark: isDark, flex: 2),
                           ],
                         ),
                       ),
@@ -155,8 +159,9 @@ class UsersTable extends StatelessWidget {
 
   Widget _avatarCell(User user, {int flex = 1}) {
     final roleColor = _getRoleColor(user.role);
-    final initials = '${user.firstName.substring(0, 1)}${user.lastName.substring(0, 1)}';
-    
+    final initials =
+        '${user.firstName.substring(0, 1)}${user.lastName.substring(0, 1)}';
+
     return Expanded(
       flex: flex,
       child: Container(
@@ -244,7 +249,7 @@ class UsersTable extends StatelessWidget {
     final color = _getRoleColor(role);
     final icon = _getRoleIcon(role);
     final label = _getRoleLabel(role);
-    
+
     return Expanded(
       flex: flex,
       child: Container(
@@ -284,7 +289,7 @@ class UsersTable extends StatelessWidget {
   Widget _statusCell(bool isActive, {int flex = 1, required bool isDark}) {
     final color = isActive ? AppColors.success : AppColors.error;
     final icon = isActive ? Icons.check_circle : Icons.cancel;
-    
+
     return Expanded(
       flex: flex,
       child: Container(
@@ -314,7 +319,8 @@ class UsersTable extends StatelessWidget {
     );
   }
 
-  Widget _actionsCell(BuildContext context, User user, {int flex = 1, required bool isDark}) {
+  Widget _actionsCell(BuildContext context, User user,
+      {int flex = 1, required bool isDark}) {
     return Expanded(
       flex: flex,
       child: Row(
@@ -326,7 +332,6 @@ class UsersTable extends StatelessWidget {
             variant: GlassButtonVariant.info,
             size: GlassButtonSize.small,
             onPressed: () => onUserSelect(user.id),
-            tooltip: 'Voir détails',
           ),
           SizedBox(width: AppSpacing.xs),
           PopupMenuButton<String>(
@@ -352,9 +357,9 @@ class UsersTable extends StatelessWidget {
               PopupMenuItem<String>(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(Icons.delete_outline, 
+                  leading: Icon(Icons.delete_outline,
                       size: 18, color: AppColors.error),
-                  title: Text('Supprimer', 
+                  title: Text('Supprimer',
                       style: TextStyle(color: AppColors.error)),
                   dense: true,
                 ),

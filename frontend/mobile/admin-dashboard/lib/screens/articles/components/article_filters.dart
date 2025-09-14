@@ -9,14 +9,14 @@ import '../../../controllers/category_controller.dart';
 class ArticleFilters extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String?> onCategoryChanged;
-  final ValueChanged<double?> onPriceRangeChanged;
+  final ValueChanged<double?>? onPriceRangeChanged;
   final VoidCallback onClearFilters;
 
   const ArticleFilters({
     Key? key,
     required this.onSearchChanged,
     required this.onCategoryChanged,
-    required this.onPriceRangeChanged,
+    this.onPriceRangeChanged,
     required this.onClearFilters,
   }) : super(key: key);
 
@@ -52,8 +52,8 @@ class _ArticleFiltersState extends State<ArticleFilters> {
                 child: _buildSearchField(context, isDark),
               ),
               SizedBox(width: AppSpacing.md),
-              if (_searchController.text.isNotEmpty || 
-                  _selectedCategoryId != null || 
+              if (_searchController.text.isNotEmpty ||
+                  _selectedCategoryId != null ||
                   _showPriceFilter)
                 GlassButton(
                   label: 'Effacer',
@@ -72,9 +72,9 @@ class _ArticleFiltersState extends State<ArticleFilters> {
                 ),
             ],
           ),
-          
+
           SizedBox(height: AppSpacing.md),
-          
+
           // Deuxième ligne : Filtres
           Row(
             children: [
@@ -91,7 +91,7 @@ class _ArticleFiltersState extends State<ArticleFilters> {
               ),
             ],
           ),
-          
+
           // Filtre de prix (conditionnel)
           if (_showPriceFilter) ...[
             SizedBox(height: AppSpacing.md),
@@ -267,7 +267,8 @@ class _ArticleFiltersState extends State<ArticleFilters> {
                           ? AppColors.gray300
                           : AppColors.gray600,
                   fontSize: 16,
-                  fontWeight: _showPriceFilter ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight:
+                      _showPriceFilter ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
               Spacer(),
@@ -412,7 +413,9 @@ class _ArticleFiltersState extends State<ArticleFilters> {
               });
             },
             onChangeEnd: (RangeValues values) {
-              widget.onPriceRangeChanged(values.start);
+              if (widget.onPriceRangeChanged != null) {
+                widget.onPriceRangeChanged!(values.start);
+              }
             },
           ),
         ],

@@ -9,14 +9,14 @@ import '../../../controllers/service_type_controller.dart';
 class ServiceFilters extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String?> onTypeChanged;
-  final ValueChanged<double?> onPriceRangeChanged;
+  final ValueChanged<double?>? onPriceRangeChanged;
   final VoidCallback onClearFilters;
 
   const ServiceFilters({
     Key? key,
     required this.onSearchChanged,
     required this.onTypeChanged,
-    required this.onPriceRangeChanged,
+    this.onPriceRangeChanged,
     required this.onClearFilters,
   }) : super(key: key);
 
@@ -52,8 +52,8 @@ class _ServiceFiltersState extends State<ServiceFilters> {
                 child: _buildSearchField(context, isDark),
               ),
               SizedBox(width: AppSpacing.md),
-              if (_searchController.text.isNotEmpty || 
-                  _selectedTypeId != null || 
+              if (_searchController.text.isNotEmpty ||
+                  _selectedTypeId != null ||
                   _showPriceFilter)
                 GlassButton(
                   label: 'Effacer',
@@ -72,9 +72,9 @@ class _ServiceFiltersState extends State<ServiceFilters> {
                 ),
             ],
           ),
-          
+
           SizedBox(height: AppSpacing.md),
-          
+
           // Deuxième ligne : Filtres
           Row(
             children: [
@@ -91,7 +91,7 @@ class _ServiceFiltersState extends State<ServiceFilters> {
               ),
             ],
           ),
-          
+
           // Filtre de prix (conditionnel)
           if (_showPriceFilter) ...[
             SizedBox(height: AppSpacing.md),
@@ -267,7 +267,8 @@ class _ServiceFiltersState extends State<ServiceFilters> {
                           ? AppColors.gray300
                           : AppColors.gray600,
                   fontSize: 16,
-                  fontWeight: _showPriceFilter ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight:
+                      _showPriceFilter ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
               Spacer(),
@@ -422,7 +423,9 @@ class _ServiceFiltersState extends State<ServiceFilters> {
               });
             },
             onChangeEnd: (RangeValues values) {
-              widget.onPriceRangeChanged(values.start);
+              if (widget.onPriceRangeChanged != null) {
+                widget.onPriceRangeChanged!(values.start);
+              }
             },
           ),
         ],

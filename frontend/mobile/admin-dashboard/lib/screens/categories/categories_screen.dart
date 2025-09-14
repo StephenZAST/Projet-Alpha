@@ -30,13 +30,17 @@ class CategoriesScreen extends StatelessWidget {
 
               // Statistiques
               Obx(() => CategoryStatsGrid(
-                totalCategories: controller.categories.length,
-                activeCategories: controller.categories.where((c) => c.isActive).length,
-                totalArticles: controller.categories.fold(0, (sum, c) => sum + c.articlesCount),
-                averageArticlesPerCategory: controller.categories.isEmpty 
-                    ? 0.0 
-                    : controller.categories.fold(0, (sum, c) => sum + c.articlesCount) / controller.categories.length,
-              )),
+                    totalCategories: controller.categories.length,
+                    activeCategories:
+                        controller.categories.where((c) => c.isActive).length,
+                    totalArticles: controller.categories
+                        .fold<int>(0, (sum, c) => sum + (c.articlesCount)),
+                    averageArticlesPerCategory: controller.categories.isEmpty
+                        ? 0.0
+                        : controller.categories.fold<int>(
+                                0, (sum, c) => sum + (c.articlesCount)) /
+                            controller.categories.length,
+                  )),
               SizedBox(height: AppSpacing.lg),
 
               // Filtres et recherche
@@ -84,9 +88,12 @@ class CategoriesScreen extends StatelessWidget {
 
                   return CategoryTable(
                     categories: controller.categories,
-                    onEdit: (category) => Get.dialog(CategoryDialog(category: category)),
-                    onDelete: (category) => _showDeleteDialog(context, category, controller),
-                    onToggleStatus: (category) => _toggleCategoryStatus(category, controller),
+                    onEdit: (category) =>
+                        Get.dialog(CategoryDialog(category: category)),
+                    onDelete: (category) =>
+                        _showDeleteDialog(context, category, controller),
+                    onToggleStatus: (category) =>
+                        _toggleCategoryStatus(category, controller),
                   );
                 }),
               ),
@@ -97,7 +104,8 @@ class CategoriesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark, CategoryController controller) {
+  Widget _buildHeader(
+      BuildContext context, bool isDark, CategoryController controller) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -115,13 +123,13 @@ class CategoriesScreen extends StatelessWidget {
             ),
             SizedBox(height: AppSpacing.xs),
             Obx(() => Text(
-              controller.isLoading.value
-                  ? 'Chargement...'
-                  : '${controller.categories.length} catégorie${controller.categories.length > 1 ? 's' : ''} • ${controller.categories.where((c) => c.isActive).length} active${controller.categories.where((c) => c.isActive).length > 1 ? 's' : ''}',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.gray300 : AppColors.textSecondary,
-              ),
-            )),
+                  controller.isLoading.value
+                      ? 'Chargement...'
+                      : '${controller.categories.length} catégorie${controller.categories.length > 1 ? 's' : ''} • ${controller.categories.where((c) => c.isActive).length} active${controller.categories.where((c) => c.isActive).length > 1 ? 's' : ''}',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                  ),
+                )),
           ],
         ),
         Row(
@@ -153,7 +161,8 @@ class CategoriesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorState(BuildContext context, bool isDark, CategoryController controller) {
+  Widget _buildErrorState(
+      BuildContext context, bool isDark, CategoryController controller) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -284,7 +293,7 @@ class CategoriesScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, 
+                      Icon(Icons.info_outline,
                           color: AppColors.warning, size: 20),
                       SizedBox(width: AppSpacing.sm),
                       Expanded(

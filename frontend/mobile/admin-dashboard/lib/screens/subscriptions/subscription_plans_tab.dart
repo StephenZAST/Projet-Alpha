@@ -30,7 +30,8 @@ class _SubscriptionPlansTabState extends State<SubscriptionPlansTab> {
     setState(() => isLoading = true);
     try {
       final response = await api.get('/admin/subscriptions/plans');
-      final data = response.data is List ? response.data : response.data['data'];
+      final data =
+          response.data is List ? response.data : response.data['data'];
       plans = (data as List)
           .map((json) => SubscriptionPlan.fromJson(json))
           .toList();
@@ -175,7 +176,7 @@ class _SubscriptionPlansTabState extends State<SubscriptionPlansTab> {
 
   Widget _buildPlanCard(SubscriptionPlan plan, bool isDark) {
     final Color planColor = plan.isPremium ? AppColors.primary : AppColors.info;
-    
+
     return GlassContainer(
       padding: EdgeInsets.zero,
       child: Stack(
@@ -260,15 +261,20 @@ class _SubscriptionPlansTabState extends State<SubscriptionPlansTab> {
                           Text(
                             plan.name,
                             style: AppTextStyles.h4.copyWith(
-                              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                              color: isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          if (plan.description.isNotEmpty)
+                          if (plan.description != null &&
+                              plan.description!.isNotEmpty)
                             Text(
-                              plan.description,
+                              plan.description!,
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                                color: isDark
+                                    ? AppColors.gray300
+                                    : AppColors.textSecondary,
                               ),
                             ),
                         ],
@@ -324,13 +330,15 @@ class _SubscriptionPlansTabState extends State<SubscriptionPlansTab> {
                       ),
                       SizedBox(height: AppSpacing.xs),
                       _buildFeatureItem(
-                        '${plan.maxWeightPerOrder.toStringAsFixed(0)} kg max/commande',
+                        '${plan.maxWeightPerOrder != null ? plan.maxWeightPerOrder!.toStringAsFixed(0) : '0'} kg max/commande',
                         Icons.scale_outlined,
                         AppColors.info,
                       ),
                       SizedBox(height: AppSpacing.xs),
                       _buildFeatureItem(
-                        plan.isPremium ? 'Support prioritaire' : 'Support standard',
+                        plan.isPremium
+                            ? 'Support prioritaire'
+                            : 'Support standard',
                         Icons.support_agent_outlined,
                         plan.isPremium ? AppColors.warning : AppColors.gray500,
                       ),
@@ -412,12 +420,16 @@ class _SubscriptionPlansTabState extends State<SubscriptionPlansTab> {
               Row(
                 children: [
                   Icon(
-                    plan == null ? Icons.add_circle_outline : Icons.edit_outlined,
+                    plan == null
+                        ? Icons.add_circle_outline
+                        : Icons.edit_outlined,
                     color: AppColors.primary,
                   ),
                   SizedBox(width: AppSpacing.sm),
                   Text(
-                    plan == null ? 'Nouveau plan d\'abonnement' : 'Modifier le plan',
+                    plan == null
+                        ? 'Nouveau plan d\'abonnement'
+                        : 'Modifier le plan',
                     style: AppTextStyles.h3,
                   ),
                 ],
@@ -580,7 +592,7 @@ class _SubscriptionPlansTabState extends State<SubscriptionPlansTab> {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    
+
     setState(() {
       plans.add(newPlan);
     });
@@ -631,7 +643,8 @@ class _SubscriptionPlansTabState extends State<SubscriptionPlansTab> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.warning_amber_rounded, size: 48, color: AppColors.warning),
+              Icon(Icons.warning_amber_rounded,
+                  size: 48, color: AppColors.warning),
               SizedBox(height: AppSpacing.md),
               Text('Confirmer la suppression', style: AppTextStyles.h4),
               SizedBox(height: AppSpacing.sm),
@@ -676,10 +689,12 @@ class _SubscriptionPlansTabState extends State<SubscriptionPlansTab> {
 // Dialog pour afficher les abonnés d'un plan
 class _SubscriptionUsersDialog extends StatefulWidget {
   final SubscriptionPlan plan;
-  const _SubscriptionUsersDialog({Key? key, required this.plan}) : super(key: key);
+  const _SubscriptionUsersDialog({Key? key, required this.plan})
+      : super(key: key);
 
   @override
-  State<_SubscriptionUsersDialog> createState() => _SubscriptionUsersDialogState();
+  State<_SubscriptionUsersDialog> createState() =>
+      _SubscriptionUsersDialogState();
 }
 
 class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
@@ -699,8 +714,10 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
   Future<void> _fetchUsers() async {
     setState(() => isLoading = true);
     try {
-      final response = await api.get('/admin/subscriptions/plans/${widget.plan.id}/users');
-      final data = response.data is List ? response.data : response.data['data'];
+      final response =
+          await api.get('/admin/subscriptions/plans/${widget.plan.id}/users');
+      final data =
+          response.data is List ? response.data : response.data['data'];
       users = (data as List)
           .map((json) => UserSubscription.fromJson(json))
           .toList();
@@ -718,6 +735,9 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
           status: 'ACTIVE',
           remainingOrders: 15,
           remainingWeight: 25.5,
+          expired: false,
+          createdAt: DateTime.now().subtract(Duration(days: 10)),
+          updatedAt: DateTime.now(),
         ),
         UserSubscription(
           id: '2',
@@ -729,6 +749,9 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
           status: 'ACTIVE',
           remainingOrders: 18,
           remainingWeight: 30.0,
+          expired: false,
+          createdAt: DateTime.now().subtract(Duration(days: 5)),
+          updatedAt: DateTime.now(),
         ),
       ];
       _applyFilters();
@@ -740,9 +763,11 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
   void _applyFilters() {
     setState(() {
       filteredUsers = users.where((user) {
-        final matchesStatus = statusFilter == 'ALL' || user.status == statusFilter;
+        final matchesStatus =
+            statusFilter == 'ALL' || user.status == statusFilter;
         final matchesSearch = searchQuery.isEmpty ||
-            (user.userName?.toLowerCase().contains(searchQuery.toLowerCase()) ?? false) ||
+            (user.userName?.toLowerCase().contains(searchQuery.toLowerCase()) ??
+                false) ||
             (user.userId.toLowerCase().contains(searchQuery.toLowerCase()));
         return matchesStatus && matchesSearch;
       }).toList();
@@ -765,7 +790,7 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
               style: AppTextStyles.h3,
             ),
             SizedBox(height: AppSpacing.lg),
-            
+
             // Filtres
             Row(
               children: [
@@ -800,15 +825,16 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
                 ),
               ],
             ),
-            
+
             SizedBox(height: AppSpacing.lg),
-            
+
             // Liste des abonnés
             Expanded(
               child: isLoading
                   ? Center(child: CircularProgressIndicator())
                   : filteredUsers.isEmpty
-                      ? Center(child: Text('Aucun utilisateur abonné à ce plan'))
+                      ? Center(
+                          child: Text('Aucun utilisateur abonné à ce plan'))
                       : ListView.builder(
                           itemCount: filteredUsers.length,
                           itemBuilder: (context, index) {
@@ -817,8 +843,10 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
                               margin: EdgeInsets.only(bottom: AppSpacing.sm),
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: AppColors.primary.withOpacity(0.15),
-                                  child: Icon(Icons.person, color: AppColors.primary),
+                                  backgroundColor:
+                                      AppColors.primary.withOpacity(0.15),
+                                  child: Icon(Icons.person,
+                                      color: AppColors.primary),
                                 ),
                                 title: Text(user.userName ?? user.userId),
                                 subtitle: Column(
@@ -826,7 +854,8 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
                                   children: [
                                     Text('Email: ${user.userId}'),
                                     Text('Statut: ${user.status}'),
-                                    Text('Commandes restantes: ${user.remainingOrders}'),
+                                    Text(
+                                        'Commandes restantes: ${user.remainingOrders}'),
                                   ],
                                 ),
                                 trailing: GlassButton(
@@ -840,7 +869,7 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
                           },
                         ),
             ),
-            
+
             SizedBox(height: AppSpacing.lg),
             GlassButton(
               label: 'Fermer',
@@ -869,7 +898,8 @@ class _SubscriptionUsersDialogState extends State<_SubscriptionUsersDialog> {
               SizedBox(height: AppSpacing.lg),
               Text('Utilisateur: ${user.userName ?? user.userId}'),
               Text('Plan: ${widget.plan.name}'),
-              Text('Début: ${user.startDate.toLocal().toString().split(' ')[0]}'),
+              Text(
+                  'Début: ${user.startDate.toLocal().toString().split(' ')[0]}'),
               Text('Fin: ${user.endDate.toLocal().toString().split(' ')[0]}'),
               Text('Statut: ${user.status}'),
               Text('Commandes restantes: ${user.remainingOrders}'),

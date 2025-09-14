@@ -61,7 +61,8 @@ class NotificationTile extends StatelessWidget {
                             color: AppColors.error,
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: isDark ? AppColors.gray800 : AppColors.white,
+                              color:
+                                  isDark ? AppColors.gray800 : AppColors.white,
                               width: 2,
                             ),
                           ),
@@ -69,9 +70,9 @@ class NotificationTile extends StatelessWidget {
                       ),
                   ],
                 ),
-                
+
                 SizedBox(width: AppSpacing.md),
-                
+
                 // Contenu principal
                 Expanded(
                   child: Column(
@@ -83,10 +84,15 @@ class NotificationTile extends StatelessWidget {
                             child: Text(
                               notification['title'] ?? 'Notification',
                               style: AppTextStyles.bodyLarge.copyWith(
-                                fontWeight: isRead ? FontWeight.w500 : FontWeight.w700,
+                                fontWeight:
+                                    isRead ? FontWeight.w500 : FontWeight.w700,
                                 color: isRead
-                                    ? (isDark ? AppColors.gray300 : AppColors.textSecondary)
-                                    : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                                    ? (isDark
+                                        ? AppColors.gray300
+                                        : AppColors.textSecondary)
+                                    : (isDark
+                                        ? AppColors.textLight
+                                        : AppColors.textPrimary),
                               ),
                             ),
                           ),
@@ -114,13 +120,13 @@ class NotificationTile extends StatelessWidget {
                             ),
                         ],
                       ),
-                      
                       SizedBox(height: AppSpacing.xs),
-                      
                       Text(
                         notification['message'] ?? '',
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.gray300
+                              : AppColors.textSecondary,
                           height: 1.4,
                         ),
                         maxLines: 3,
@@ -129,7 +135,7 @@ class NotificationTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 // Indicateur non lu
                 if (!isRead)
                   Container(
@@ -143,9 +149,9 @@ class NotificationTile extends StatelessWidget {
                   ),
               ],
             ),
-            
+
             SizedBox(height: AppSpacing.md),
-            
+
             // Footer avec métadonnées et actions
             Row(
               children: [
@@ -181,9 +187,9 @@ class NotificationTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 SizedBox(width: AppSpacing.sm),
-                
+
                 // Date
                 Text(
                   _formatDate(createdAt),
@@ -191,9 +197,9 @@ class NotificationTile extends StatelessWidget {
                     color: isDark ? AppColors.gray400 : AppColors.gray600,
                   ),
                 ),
-                
+
                 Spacer(),
-                
+
                 // Actions
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -205,7 +211,6 @@ class NotificationTile extends StatelessWidget {
                         variant: GlassButtonVariant.success,
                         size: GlassButtonSize.small,
                         onPressed: onTap,
-                        tooltip: 'Marquer comme lu',
                       ),
                     SizedBox(width: AppSpacing.xs),
                     PopupMenuButton<String>(
@@ -244,7 +249,8 @@ class NotificationTile extends StatelessWidget {
                         color: isDark ? AppColors.gray300 : AppColors.gray600,
                         size: 18,
                       ),
-                      color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                      color:
+                          isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
                       shape: RoundedRectangleBorder(
                         borderRadius: AppRadius.radiusMD,
                       ),
@@ -360,7 +366,6 @@ class NotificationTile extends StatelessWidget {
                 ],
               ),
               SizedBox(height: AppSpacing.lg),
-              
               Text(
                 'Titre:',
                 style: AppTextStyles.bodyMedium.copyWith(
@@ -372,9 +377,7 @@ class NotificationTile extends StatelessWidget {
                 notification['title'] ?? 'Sans titre',
                 style: AppTextStyles.bodyMedium,
               ),
-              
               SizedBox(height: AppSpacing.md),
-              
               Text(
                 'Message:',
                 style: AppTextStyles.bodyMedium.copyWith(
@@ -386,9 +389,7 @@ class NotificationTile extends StatelessWidget {
                 notification['message'] ?? 'Aucun message',
                 style: AppTextStyles.bodyMedium,
               ),
-              
               SizedBox(height: AppSpacing.md),
-              
               Row(
                 children: [
                   Expanded(
@@ -427,9 +428,7 @@ class NotificationTile extends StatelessWidget {
                   ),
                 ],
               ),
-              
               SizedBox(height: AppSpacing.md),
-              
               Text(
                 'Date:',
                 style: AppTextStyles.bodySmall.copyWith(
@@ -440,9 +439,7 @@ class NotificationTile extends StatelessWidget {
                 _formatDate(notification['createdAt'] ?? DateTime.now()),
                 style: AppTextStyles.bodySmall,
               ),
-              
               SizedBox(height: AppSpacing.xl),
-              
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [

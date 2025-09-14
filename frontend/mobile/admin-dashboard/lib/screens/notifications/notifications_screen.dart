@@ -37,24 +37,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       // Essayer de charger depuis le contrôleur
       await controller.fetchNotifications();
       if (controller.notifications.isNotEmpty) {
-        notifications = controller.notifications.map((n) => {
-          'id': n.id,
-          'title': n.title,
-          'message': n.message,
-          'type': n.type,
-          'priority': n.priority ?? 'medium',
-          'isRead': n.isRead,
-          'createdAt': n.createdAt,
-          'userId': n.userId,
-          'orderId': n.data?['orderId'],
-        }).toList();
+        notifications = controller.notifications
+            .map((n) => {
+                  'id': n.id,
+                  'title': n.title,
+                  'message': n.message,
+                  'type': n.type,
+                  'priority': n.priority,
+                  'isRead': n.isRead,
+                  'createdAt': n.createdAt,
+                })
+            .toList();
       } else {
         // Données de démonstration
         notifications = [
           {
             'id': '1',
             'title': 'Nouvelle commande reçue',
-            'message': 'Une nouvelle commande a été passée par Jean Dupont pour un montant de 25,000 FCFA',
+            'message':
+                'Une nouvelle commande a été passée par Jean Dupont pour un montant de 25,000 FCFA',
             'type': 'order',
             'priority': 'high',
             'isRead': false,
@@ -65,7 +66,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           {
             'id': '2',
             'title': 'Paiement confirmé',
-            'message': 'Paiement de 15,000 FCFA reçu pour la commande #12345 via Mobile Money',
+            'message':
+                'Paiement de 15,000 FCFA reçu pour la commande #12345 via Mobile Money',
             'type': 'payment',
             'priority': 'medium',
             'isRead': false,
@@ -75,7 +77,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           {
             'id': '3',
             'title': 'Nouvel utilisateur inscrit',
-            'message': 'Marie Martin s\'est inscrite sur la plateforme et a complété son profil',
+            'message':
+                'Marie Martin s\'est inscrite sur la plateforme et a complété son profil',
             'type': 'user',
             'priority': 'low',
             'isRead': true,
@@ -85,7 +88,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           {
             'id': '4',
             'title': 'Commande livrée avec succès',
-            'message': 'La commande #12344 a été livrée avec succès à l\'adresse indiquée',
+            'message':
+                'La commande #12344 a été livrée avec succès à l\'adresse indiquée',
             'type': 'delivery',
             'priority': 'medium',
             'isRead': true,
@@ -95,7 +99,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           {
             'id': '5',
             'title': 'Problème de livraison',
-            'message': 'Échec de livraison pour la commande #12346. Client non disponible.',
+            'message':
+                'Échec de livraison pour la commande #12346. Client non disponible.',
             'type': 'delivery',
             'priority': 'high',
             'isRead': false,
@@ -105,7 +110,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           {
             'id': '6',
             'title': 'Nouveau message support',
-            'message': 'Un client a envoyé un message concernant sa commande en cours',
+            'message':
+                'Un client a envoyé un message concernant sa commande en cours',
             'type': 'support',
             'priority': 'medium',
             'isRead': false,
@@ -115,7 +121,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           {
             'id': '7',
             'title': 'Maintenance système',
-            'message': 'Maintenance programmée du système prévue demain de 2h à 4h du matin',
+            'message':
+                'Maintenance programmée du système prévue demain de 2h à 4h du matin',
             'type': 'system',
             'priority': 'low',
             'isRead': true,
@@ -146,19 +153,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void _applyFilters() {
     setState(() {
       filteredNotifications = notifications.where((notification) {
-        final matchesType = selectedType == 'ALL' || notification['type'] == selectedType;
-        final matchesStatus = selectedStatus == 'ALL' || 
+        final matchesType =
+            selectedType == 'ALL' || notification['type'] == selectedType;
+        final matchesStatus = selectedStatus == 'ALL' ||
             (selectedStatus == 'read' && notification['isRead']) ||
             (selectedStatus == 'unread' && !notification['isRead']);
         final matchesSearch = searchQuery.isEmpty ||
-            notification['title'].toLowerCase().contains(searchQuery.toLowerCase()) ||
-            notification['message'].toLowerCase().contains(searchQuery.toLowerCase());
-        
+            notification['title']
+                .toLowerCase()
+                .contains(searchQuery.toLowerCase()) ||
+            notification['message']
+                .toLowerCase()
+                .contains(searchQuery.toLowerCase());
+
         return matchesType && matchesStatus && matchesSearch;
       }).toList();
-      
+
       // Trier par date (plus récent en premier)
-      filteredNotifications.sort((a, b) => 
+      filteredNotifications.sort((a, b) =>
           (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime));
     });
   }
@@ -217,9 +229,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               NotificationStatsGrid(
                 totalNotifications: totalCount,
                 unreadNotifications: unreadCount,
-                highPriorityNotifications: notifications.where((n) => n['priority'] == 'high').length,
-                todayNotifications: notifications.where((n) => 
-                    DateTime.now().difference(n['createdAt'] as DateTime).inDays == 0).length,
+                highPriorityNotifications:
+                    notifications.where((n) => n['priority'] == 'high').length,
+                todayNotifications: notifications
+                    .where((n) =>
+                        DateTime.now()
+                            .difference(n['createdAt'] as DateTime)
+                            .inDays ==
+                        0)
+                    .length,
               ),
               SizedBox(height: AppSpacing.lg),
 
@@ -260,7 +278,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             Text(
                               'Chargement des notifications...',
                               style: AppTextStyles.bodyMedium.copyWith(
-                                color: isDark ? AppColors.textLight : AppColors.textSecondary,
+                                color: isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textSecondary,
                               ),
                             ),
                           ],
@@ -277,7 +297,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark, int unreadCount, int totalCount) {
+  Widget _buildHeader(
+      BuildContext context, bool isDark, int unreadCount, int totalCount) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -303,9 +324,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                 ),
                 if (unreadCount > 0) ...[
-                  Text(' • ', style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
-                  )),
+                  Text(' • ',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark
+                            ? AppColors.gray300
+                            : AppColors.textSecondary,
+                      )),
                   Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: AppSpacing.xs,
@@ -374,7 +398,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               borderRadius: AppRadius.radiusXL,
             ),
             child: Icon(
-              searchQuery.isNotEmpty || selectedType != 'ALL' || selectedStatus != 'ALL'
+              searchQuery.isNotEmpty ||
+                      selectedType != 'ALL' ||
+                      selectedStatus != 'ALL'
                   ? Icons.search_off_outlined
                   : Icons.notifications_none_outlined,
               size: 60,
@@ -383,7 +409,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           SizedBox(height: AppSpacing.lg),
           Text(
-            searchQuery.isNotEmpty || selectedType != 'ALL' || selectedStatus != 'ALL'
+            searchQuery.isNotEmpty ||
+                    selectedType != 'ALL' ||
+                    selectedStatus != 'ALL'
                 ? 'Aucune notification trouvée'
                 : 'Aucune notification',
             style: AppTextStyles.h3.copyWith(
@@ -392,7 +420,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           SizedBox(height: AppSpacing.sm),
           Text(
-            searchQuery.isNotEmpty || selectedType != 'ALL' || selectedStatus != 'ALL'
+            searchQuery.isNotEmpty ||
+                    selectedType != 'ALL' ||
+                    selectedStatus != 'ALL'
                 ? 'Aucune notification ne correspond à vos critères de recherche'
                 : 'Vous n\'avez aucune notification pour le moment',
             style: AppTextStyles.bodyMedium.copyWith(
@@ -400,7 +430,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
             textAlign: TextAlign.center,
           ),
-          if (searchQuery.isNotEmpty || selectedType != 'ALL' || selectedStatus != 'ALL') ...[
+          if (searchQuery.isNotEmpty ||
+              selectedType != 'ALL' ||
+              selectedStatus != 'ALL') ...[
             SizedBox(height: AppSpacing.lg),
             GlassButton(
               label: 'Effacer les filtres',
@@ -438,7 +470,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _showDeleteAllReadDialog() {
     final readCount = notifications.where((n) => n['isRead']).length;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -449,7 +481,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.warning_amber_rounded, size: 48, color: AppColors.warning),
+              Icon(Icons.warning_amber_rounded,
+                  size: 48, color: AppColors.warning),
               SizedBox(height: AppSpacing.md),
               Text('Supprimer les notifications lues', style: AppTextStyles.h4),
               SizedBox(height: AppSpacing.sm),

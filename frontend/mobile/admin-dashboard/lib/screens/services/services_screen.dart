@@ -1,5 +1,4 @@
 import 'package:admin/controllers/service_type_controller.dart';
-import 'package:admin/models/service_type.dart';
 import 'package:admin/screens/services/components/service_form_screen.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
@@ -32,11 +31,11 @@ class ServicesScreen extends GetView<ServiceController> {
 
               // Statistiques
               Obx(() => ServiceStatsGrid(
-                totalServices: controller.services.length,
-                activeServices: controller.services.length,
-                serviceTypesCount: _getServiceTypesCount(),
-                averagePrice: _getAveragePrice(),
-              )),
+                    totalServices: controller.services.length,
+                    activeServices: controller.services.length,
+                    serviceTypesCount: _getServiceTypesCount(),
+                    averagePrice: _getAveragePrice(),
+                  )),
               SizedBox(height: AppSpacing.lg),
 
               // Filtres et recherche
@@ -45,7 +44,7 @@ class ServicesScreen extends GetView<ServiceController> {
                 onTypeChanged: (typeId) {
                   // TODO: Implémenter le filtre par type
                 },
-                onPriceRangeChanged: (min, max) {
+                onPriceRangeChanged: (min) {
                   // TODO: Implémenter le filtre par prix
                 },
                 onClearFilters: () {
@@ -83,7 +82,8 @@ class ServicesScreen extends GetView<ServiceController> {
 
                   return ServiceTable(
                     services: controller.services,
-                    onEdit: (service) => Get.dialog(ServiceFormScreen(service: service)),
+                    onEdit: (service) =>
+                        Get.dialog(ServiceFormScreen(service: service)),
                     onDelete: _showDeleteDialog,
                     onDuplicate: (service) => _duplicateService(service),
                   );
@@ -114,13 +114,13 @@ class ServicesScreen extends GetView<ServiceController> {
             ),
             SizedBox(height: AppSpacing.xs),
             Obx(() => Text(
-              controller.isLoading.value
-                  ? 'Chargement...'
-                  : '${controller.services.length} service${controller.services.length > 1 ? 's' : ''} • ${_getServiceTypesCount()} type${_getServiceTypesCount() > 1 ? 's' : ''}',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.gray300 : AppColors.textSecondary,
-              ),
-            )),
+                  controller.isLoading.value
+                      ? 'Chargement...'
+                      : '${controller.services.length} service${controller.services.length > 1 ? 's' : ''} • ${_getServiceTypesCount()} type${_getServiceTypesCount() > 1 ? 's' : ''}',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                  ),
+                )),
           ],
         ),
         Row(
