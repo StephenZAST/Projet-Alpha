@@ -90,63 +90,78 @@ class _ServiceArticleCouplesScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              CoupleStatsGrid(
-                totalCouples: couples.length,
-                availableCouples: couples.where((c) => c.isAvailable).length,
-                fixedPriceCouples: couples.where((c) => c.serviceTypePricingType == 'FIXED').length,
-                weightBasedCouples: couples.where((c) => c.serviceTypePricingType == 'WEIGHT_BASED').length,
-              ),
-              SizedBox(height: AppSpacing.lg),
-
-              // Filtres et recherche
-              CoupleFilters(
-                onSearchChanged: (query) {
-                  // TODO: Implémenter la recherche
-                },
-                onServiceTypeChanged: (typeId) {
-                  // TODO: Implémenter le filtre par type de service
-                },
-                onAvailabilityChanged: (available) {
-                  // TODO: Implémenter le filtre par disponibilité
-                },
-                onClearFilters: () {
-                  // TODO: Effacer les filtres
-                },
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
               ),
               SizedBox(height: AppSpacing.md),
 
-              // Table des couples
+              // Contenu principal scrollable
               Expanded(
-                child: isLoading
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(color: AppColors.primary),
-                            SizedBox(height: AppSpacing.md),
-                            Text(
-                              'Chargement des couples service/article...',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: isDark
-                                    ? AppColors.textLight
-                                    : AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : couples.isEmpty
-                        ? _buildEmptyState(context, isDark)
-                        : CoupleTable(
-                            couples: couples,
-                            onEdit: (couple) => _openEditCoupleDialog(couple),
-                            onDelete: _showDeleteDialog,
-                            onToggleAvailability: (couple) => _toggleAvailability(couple),
-                          ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiques
+                      CoupleStatsGrid(
+                        totalCouples: couples.length,
+                        availableCouples: couples.where((c) => c.isAvailable).length,
+                        fixedPriceCouples: couples.where((c) => c.serviceTypePricingType == 'FIXED').length,
+                        weightBasedCouples: couples.where((c) => c.serviceTypePricingType == 'WEIGHT_BASED').length,
+                      ),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Filtres et recherche
+                      CoupleFilters(
+                        onSearchChanged: (query) {
+                          // TODO: Implémenter la recherche
+                        },
+                        onServiceTypeChanged: (typeId) {
+                          // TODO: Implémenter le filtre par type de service
+                        },
+                        onAvailabilityChanged: (available) {
+                          // TODO: Implémenter le filtre par disponibilité
+                        },
+                        onClearFilters: () {
+                          // TODO: Effacer les filtres
+                        },
+                      ),
+                      SizedBox(height: AppSpacing.md),
+
+                      // Table des couples avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: isLoading
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(color: AppColors.primary),
+                                    SizedBox(height: AppSpacing.md),
+                                    Text(
+                                      'Chargement des couples service/article...',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: isDark
+                                            ? AppColors.textLight
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : couples.isEmpty
+                                ? _buildEmptyState(context, isDark)
+                                : CoupleTable(
+                                    couples: couples,
+                                    onEdit: (couple) => _openEditCoupleDialog(couple),
+                                    onDelete: _showDeleteDialog,
+                                    onToggleAvailability: (couple) => _toggleAvailability(couple),
+                                  ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

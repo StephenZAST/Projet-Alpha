@@ -18,9 +18,6 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final controller = Get.find<NotificationController>();
-  List<Map<String, dynamic>> notifications = [];
-  List<Map<String, dynamic>> filteredNotifications = [];
-  bool isLoading = true;
   String selectedType = 'ALL';
   String selectedStatus = 'ALL';
   String searchQuery = '';
@@ -28,125 +25,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
+    print('[NotificationsScreen] initState: Initialisation');
     _loadNotifications();
   }
 
   Future<void> _loadNotifications() async {
-    setState(() => isLoading = true);
+    print('[NotificationsScreen] Chargement des notifications');
     try {
-      // Essayer de charger depuis le contrôleur
-      await controller.fetchNotifications();
-      if (controller.notifications.isNotEmpty) {
-        notifications = controller.notifications
-            .map((n) => {
-                  'id': n.id,
-                  'title': n.title,
-                  'message': n.message,
-                  'type': n.type,
-                  'priority': n.priority,
-                  'isRead': n.isRead,
-                  'createdAt': n.createdAt,
-                })
-            .toList();
-      } else {
-        // Données de démonstration
-        notifications = [
-          {
-            'id': '1',
-            'title': 'Nouvelle commande reçue',
-            'message':
-                'Une nouvelle commande a été passée par Jean Dupont pour un montant de 25,000 FCFA',
-            'type': 'order',
-            'priority': 'high',
-            'isRead': false,
-            'createdAt': DateTime.now().subtract(Duration(minutes: 5)),
-            'userId': 'user123',
-            'orderId': 'order456',
-          },
-          {
-            'id': '2',
-            'title': 'Paiement confirmé',
-            'message':
-                'Paiement de 15,000 FCFA reçu pour la commande #12345 via Mobile Money',
-            'type': 'payment',
-            'priority': 'medium',
-            'isRead': false,
-            'createdAt': DateTime.now().subtract(Duration(hours: 1)),
-            'orderId': 'order12345',
-          },
-          {
-            'id': '3',
-            'title': 'Nouvel utilisateur inscrit',
-            'message':
-                'Marie Martin s\'est inscrite sur la plateforme et a complété son profil',
-            'type': 'user',
-            'priority': 'low',
-            'isRead': true,
-            'createdAt': DateTime.now().subtract(Duration(hours: 2)),
-            'userId': 'user789',
-          },
-          {
-            'id': '4',
-            'title': 'Commande livrée avec succès',
-            'message':
-                'La commande #12344 a été livrée avec succès à l\'adresse indiquée',
-            'type': 'delivery',
-            'priority': 'medium',
-            'isRead': true,
-            'createdAt': DateTime.now().subtract(Duration(days: 1)),
-            'orderId': 'order12344',
-          },
-          {
-            'id': '5',
-            'title': 'Problème de livraison',
-            'message':
-                'Échec de livraison pour la commande #12346. Client non disponible.',
-            'type': 'delivery',
-            'priority': 'high',
-            'isRead': false,
-            'createdAt': DateTime.now().subtract(Duration(hours: 3)),
-            'orderId': 'order12346',
-          },
-          {
-            'id': '6',
-            'title': 'Nouveau message support',
-            'message':
-                'Un client a envoyé un message concernant sa commande en cours',
-            'type': 'support',
-            'priority': 'medium',
-            'isRead': false,
-            'createdAt': DateTime.now().subtract(Duration(hours: 4)),
-            'userId': 'user456',
-          },
-          {
-            'id': '7',
-            'title': 'Maintenance système',
-            'message':
-                'Maintenance programmée du système prévue demain de 2h à 4h du matin',
-            'type': 'system',
-            'priority': 'low',
-            'isRead': true,
-            'createdAt': DateTime.now().subtract(Duration(days: 2)),
-          },
-        ];
-      }
-      _applyFilters();
+      await controller.fetchNotifications(refresh: true);
     } catch (e) {
-      // En cas d'erreur, utiliser les données de démonstration
-      notifications = [
-        {
-          'id': '1',
-          'title': 'Nouvelle commande reçue',
-          'message': 'Une nouvelle commande a été passée par Jean Dupont',
-          'type': 'order',
-          'priority': 'high',
-          'isRead': false,
-          'createdAt': DateTime.now().subtract(Duration(minutes: 5)),
-        },
-      ];
-      _applyFilters();
-    } finally {
-      setState(() => isLoading = false);
+      print('[NotificationsScreen] Erreur lors du chargement: $e');
     }
   }
 
@@ -211,8 +99,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final unreadCount = notifications.where((n) => !n['isRead']).length;
-    final totalCount = notifications.length;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
@@ -225,7 +111,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               // Header avec hauteur flexible
               Flexible(
                 flex: 0,
-                child: _buildHeader(context, isDark, unreadCount, totalCount),
+                child: Obx(() => _buildHeader(context, isDark)),
               ),
               SizedBox(height: AppSpacing.md),
 
@@ -236,70 +122,45 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Statistiques
-                      NotificationStatsGrid(
-                        totalNotifications: totalCount,
-                        unreadNotifications: unreadCount,
-                        highPriorityNotifications:
-                            notifications.where((n) => n['priority'] == 'high').length,
-                        todayNotifications: notifications
-                            .where((n) =>
-                                DateTime.now()
-                                    .difference(n['createdAt'] as DateTime)
-                                    .inDays ==
-                                0)
-                            .length,
-                      ),
+                      Obx(() => _buildStatsGrid(context, isDark)),
                       SizedBox(height: AppSpacing.lg),
 
                       // Filtres
-                      NotificationFilters(
-                        selectedType: selectedType,
-                        selectedStatus: selectedStatus,
-                        onTypeChanged: (type) {
-                          selectedType = type;
-                          _applyFilters();
-                        },
-                        onStatusChanged: (status) {
-                          selectedStatus = status;
-                          _applyFilters();
-                        },
-                        onSearchChanged: (query) {
-                          searchQuery = query;
-                          _applyFilters();
-                        },
-                        onClearFilters: () {
-                          selectedType = 'ALL';
-                          selectedStatus = 'ALL';
-                          searchQuery = '';
-                          _applyFilters();
-                        },
-                      ),
+                      _buildFilters(context, isDark),
                       SizedBox(height: AppSpacing.md),
 
                       // Liste des notifications avec hauteur contrainte
                       Container(
                         height: MediaQuery.of(context).size.height * 0.5,
-                        child: isLoading
-                            ? Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    CircularProgressIndicator(color: AppColors.primary),
-                                    SizedBox(height: AppSpacing.md),
-                                    Text(
-                                      'Chargement des notifications...',
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color: isDark
-                                            ? AppColors.textLight
-                                            : AppColors.textSecondary,
-                                      ),
+                        child: Obx(() {
+                          if (controller.isLoading.value) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(color: AppColors.primary),
+                                  SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    'Chargement des notifications...',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: isDark
+                                          ? AppColors.textLight
+                                          : AppColors.textSecondary,
                                     ),
-                                  ],
-                                ),
-                              )
-                            : filteredNotifications.isEmpty
-                                ? _buildEmptyState(context, isDark)
-                                : _buildNotificationsList(isDark),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          final filteredNotifications = _getFilteredNotifications();
+                          
+                          if (filteredNotifications.isEmpty) {
+                            return _buildEmptyState(context, isDark);
+                          }
+
+                          return _buildNotificationsList(isDark, filteredNotifications);
+                        }),
                       ),
                     ],
                   ),
@@ -312,8 +173,46 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildHeader(
-      BuildContext context, bool isDark, int unreadCount, int totalCount) {
+  List<Map<String, dynamic>> _getFilteredNotifications() {
+    final notifications = controller.notifications.map((n) => {
+      'id': n.id,
+      'title': n.title,
+      'message': n.message,
+      'type': n.type.toString().split('.').last.toLowerCase(),
+      'priority': n.priority.toString().split('.').last.toLowerCase(),
+      'isRead': n.isRead,
+      'createdAt': n.createdAt,
+      'referenceId': n.referenceId,
+    }).toList();
+
+    final filtered = notifications.where((notification) {
+      final matchesType = selectedType == 'ALL' || 
+          notification['type'] == selectedType.toLowerCase();
+      final matchesStatus = selectedStatus == 'ALL' ||
+          (selectedStatus == 'read' && notification['isRead']) ||
+          (selectedStatus == 'unread' && !notification['isRead']);
+      final matchesSearch = searchQuery.isEmpty ||
+          notification['title']
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase()) ||
+          notification['message']
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase());
+
+      return matchesType && matchesStatus && matchesSearch;
+    }).toList();
+
+    // Trier par date (plus récent en premier)
+    filtered.sort((a, b) =>
+        (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime));
+
+    return filtered;
+  }
+
+  Widget _buildHeader(BuildContext context, bool isDark) {
+    final totalCount = controller.notifications.length;
+    final unreadCount = controller.unreadCount.value;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -333,7 +232,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Row(
               children: [
                 Text(
-                  '$totalCount notification${totalCount > 1 ? 's' : ''}',
+                  controller.isLoading.value
+                      ? 'Chargement...'
+                      : '$totalCount notification${totalCount > 1 ? 's' : ''}',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: isDark ? AppColors.gray300 : AppColors.textSecondary,
                   ),
@@ -374,16 +275,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 label: 'Tout marquer lu',
                 icon: Icons.done_all_outlined,
                 variant: GlassButtonVariant.success,
-                onPressed: _markAllAsRead,
-              ),
-              SizedBox(width: AppSpacing.sm),
-            ],
-            if (notifications.where((n) => n['isRead']).isNotEmpty) ...[
-              GlassButton(
-                label: 'Supprimer lues',
-                icon: Icons.delete_sweep_outlined,
-                variant: GlassButtonVariant.warning,
-                onPressed: () => _showDeleteAllReadDialog(),
+                onPressed: () => controller.markAllAsRead(),
               ),
               SizedBox(width: AppSpacing.sm),
             ],
@@ -397,6 +289,55 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildStatsGrid(BuildContext context, bool isDark) {
+    final notifications = controller.notifications;
+    final totalCount = notifications.length;
+    final unreadCount = controller.unreadCount.value;
+    final highPriorityCount = notifications
+        .where((n) => n.priority.toString().contains('HIGH') || 
+                     n.priority.toString().contains('URGENT'))
+        .length;
+    final todayCount = notifications
+        .where((n) => DateTime.now().difference(n.createdAt).inDays == 0)
+        .length;
+
+    return NotificationStatsGrid(
+      totalNotifications: totalCount,
+      unreadNotifications: unreadCount,
+      highPriorityNotifications: highPriorityCount,
+      todayNotifications: todayCount,
+    );
+  }
+
+  Widget _buildFilters(BuildContext context, bool isDark) {
+    return NotificationFilters(
+      selectedType: selectedType,
+      selectedStatus: selectedStatus,
+      onTypeChanged: (type) {
+        setState(() {
+          selectedType = type;
+        });
+      },
+      onStatusChanged: (status) {
+        setState(() {
+          selectedStatus = status;
+        });
+      },
+      onSearchChanged: (query) {
+        setState(() {
+          searchQuery = query;
+        });
+      },
+      onClearFilters: () {
+        setState(() {
+          selectedType = 'ALL';
+          selectedStatus = 'ALL';
+          searchQuery = '';
+        });
+      },
     );
   }
 
@@ -466,7 +407,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationsList(bool isDark) {
+  Widget _buildNotificationsList(bool isDark, List<Map<String, dynamic>> filteredNotifications) {
     return ListView.builder(
       itemCount: filteredNotifications.length,
       itemBuilder: (context, index) {
@@ -475,12 +416,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           padding: EdgeInsets.only(bottom: AppSpacing.md),
           child: NotificationTile(
             notification: notification,
-            onTap: () => _markAsRead(notification['id']),
-            onDelete: () => _deleteNotification(notification['id']),
+            onTap: () => _handleNotificationTap(notification),
+            onDelete: () => _handleNotificationDelete(notification['id']),
           ),
         );
       },
     );
+  }
+
+  void _handleNotificationTap(Map<String, dynamic> notification) {
+    // Marquer comme lu si pas encore lu
+    if (!notification['isRead']) {
+      final adminNotification = controller.notifications.firstWhere(
+        (n) => n.id == notification['id'],
+        orElse: () => controller.notifications.first,
+      );
+      controller.markAsRead(adminNotification);
+    }
+
+    // Gérer l'action de navigation
+    controller.handleNotificationAction(
+      controller.notifications.firstWhere((n) => n.id == notification['id']),
+    );
+  }
+
+  void _handleNotificationDelete(String id) {
+    // TODO: Implémenter la suppression via le contrôleur
+    // Pour l'instant, on peut juste rafraîchir la liste
+    _loadNotifications();
   }
 
   void _showDeleteAllReadDialog() {

@@ -1,27 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:ui';
-import '../../../models/user.dart';
-import '../../../models/address.dart';
+import '../../../models/delivery.dart';
 import '../../../constants.dart';
-import '../../../controllers/users_controller.dart';
+import '../../../controllers/delivery_controller.dart';
 import '../../../widgets/shared/glass_button.dart';
-import 'user_edit_dialog.dart';
 
-class UserDetailsDialog extends StatelessWidget {
-  final User user;
-  final List<Address> addresses;
+class DelivererDetailsDialog extends StatelessWidget {
+  final DeliveryUser deliverer;
 
-  const UserDetailsDialog({
+  const DelivererDetailsDialog({
     Key? key,
-    required this.user,
-    required this.addresses,
+    required this.deliverer,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final controller = Get.find<UsersController>();
+    final controller = Get.find<DeliveryController>();
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -66,11 +62,11 @@ class UserDetailsDialog extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildUserInfoCard(context, isDark),
+                          _buildDelivererInfoCard(context, isDark),
                           SizedBox(height: AppSpacing.lg),
-                          _buildAddressesCard(context, isDark),
+                          _buildPerformanceCard(context, isDark, controller),
                           SizedBox(height: AppSpacing.lg),
-                          _buildSubscriptionsCard(context, isDark),
+                          _buildVehicleInfoCard(context, isDark),
                           SizedBox(height: AppSpacing.xl),
                           _buildActions(context, controller),
                         ],
@@ -92,8 +88,8 @@ class UserDetailsDialog extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _getRoleColor(user.role).withOpacity(0.1),
-            _getRoleColor(user.role).withOpacity(0.05),
+            AppColors.teal.withOpacity(0.1),
+            AppColors.teal.withOpacity(0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -109,22 +105,22 @@ class UserDetailsDialog extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
+              shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [
-                  _getRoleColor(user.role).withOpacity(0.2),
-                  _getRoleColor(user.role).withOpacity(0.1),
+                  AppColors.teal.withOpacity(0.2),
+                  AppColors.teal.withOpacity(0.1),
                 ],
               ),
-              shape: BoxShape.circle, // Changé pour un avatar full rounded
               border: Border.all(
-                color: _getRoleColor(user.role).withOpacity(0.3),
+                color: AppColors.teal.withOpacity(0.3),
                 width: 2,
               ),
             ),
             child: Icon(
-              _getRoleIcon(user.role),
+              Icons.delivery_dining_outlined,
               size: 40,
-              color: _getRoleColor(user.role),
+              color: AppColors.teal,
             ),
           ),
           SizedBox(width: AppSpacing.lg),
@@ -133,27 +129,27 @@ class UserDetailsDialog extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${user.firstName} ${user.lastName}',
+                  deliverer.fullName,
                   style: AppTextStyles.h2.copyWith(
                     color: isDark ? AppColors.textLight : AppColors.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 SizedBox(height: AppSpacing.xs),
-                _buildRoleBadge(user.role),
+                _buildStatusBadge(deliverer.isActive),
                 SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
                     Icon(
-                      user.isActive ? Icons.check_circle : Icons.cancel,
-                      color: user.isActive ? AppColors.success : AppColors.error,
+                      Icons.local_shipping_outlined,
+                      color: AppColors.info,
                       size: 16,
                     ),
                     SizedBox(width: AppSpacing.xs),
                     Text(
-                      user.isActive ? 'Actif' : 'Inactif',
+                      '${deliverer.deliveriesToday ?? 0} livraisons aujourd\'hui',
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: user.isActive ? AppColors.success : AppColors.error,
+                        color: AppColors.info,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -182,7 +178,7 @@ class UserDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildUserInfoCard(BuildContext context, bool isDark) {
+  Widget _buildDelivererInfoCard(BuildContext context, bool isDark) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -224,12 +220,12 @@ class UserDetailsDialog extends StatelessWidget {
 
   Widget _buildInfoGrid(BuildContext context, bool isDark) {
     final infoItems = [
-      {'label': 'ID', 'value': user.id, 'icon': Icons.fingerprint},
-      {'label': 'Email', 'value': user.email, 'icon': Icons.email_outlined},
-      {'label': 'Téléphone', 'value': user.phone ?? 'Non renseigné', 'icon': Icons.phone_outlined},
-      {'label': 'Code de parrainage', 'value': user.referralCode ?? 'Aucun', 'icon': Icons.share_outlined},
-      {'label': 'Points de fidélité', 'value': '${user.loyaltyPoints} pts', 'icon': Icons.stars_outlined},
-      {'label': 'Créé le', 'value': _formatDate(user.createdAt), 'icon': Icons.calendar_today_outlined},
+      {'label': 'ID', 'value': deliverer.id, 'icon': Icons.fingerprint},
+      {'label': 'Email', 'value': deliverer.email, 'icon': Icons.email_outlined},
+      {'label': 'Téléphone', 'value': deliverer.phone ?? 'Non renseigné', 'icon': Icons.phone_outlined},
+      {'label': 'Zone', 'value': deliverer.deliveryProfile?.zone ?? 'Non assignée', 'icon': Icons.location_on_outlined},
+      {'label': 'Statut', 'value': deliverer.statusLabel, 'icon': Icons.info_outlined},
+      {'label': 'Créé le', 'value': _formatDate(deliverer.createdAt), 'icon': Icons.calendar_today_outlined},
     ];
 
     return GridView.builder(
@@ -306,7 +302,7 @@ class UserDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildAddressesCard(BuildContext context, bool isDark) {
+  Widget _buildPerformanceCard(BuildContext context, bool isDark, DeliveryController controller) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -326,13 +322,13 @@ class UserDetailsDialog extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.location_on_outlined,
-                color: AppColors.accent,
+                Icons.analytics_outlined,
+                color: AppColors.success,
                 size: 20,
               ),
               SizedBox(width: AppSpacing.sm),
               Text(
-                'Adresses (${addresses.length})',
+                'Performances',
                 style: AppTextStyles.h4.copyWith(
                   color: isDark ? AppColors.textLight : AppColors.textPrimary,
                 ),
@@ -340,128 +336,113 @@ class UserDetailsDialog extends StatelessWidget {
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          if (addresses.isEmpty)
-            Container(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? AppColors.gray900.withOpacity(0.3)
-                    : Colors.white.withOpacity(0.6),
-                borderRadius: AppRadius.radiusSM,
-                border: Border.all(
+          Obx(() {
+            final stats = controller.selectedDelivererStats.value;
+            if (stats == null) {
+              return Container(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
                   color: isDark 
-                      ? AppColors.gray600.withOpacity(0.2)
-                      : AppColors.gray300.withOpacity(0.3),
+                      ? AppColors.gray900.withOpacity(0.3)
+                      : Colors.white.withOpacity(0.6),
+                  borderRadius: AppRadius.radiusSM,
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.location_off_outlined,
-                    color: AppColors.textMuted,
-                    size: 24,
-                  ),
-                  SizedBox(width: AppSpacing.sm),
-                  Text(
-                    'Aucune adresse enregistrée',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textMuted,
-                      fontStyle: FontStyle.italic,
+                child: Row(
+                  children: [
+                    CircularProgressIndicator(
+                      color: AppColors.primary,
+                      strokeWidth: 2,
                     ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Column(
-              children: addresses.map((address) => _buildAddressItem(context, isDark, address)).toList(),
-            ),
-        ],
-      ),
-    );
-  }
+                    SizedBox(width: AppSpacing.md),
+                    Text(
+                      'Chargement des statistiques...',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-  Widget _buildAddressItem(BuildContext context, bool isDark, Address address) {
-    return Container(
-      margin: EdgeInsets.only(bottom: AppSpacing.sm),
-      padding: EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: isDark 
-            ? AppColors.gray900.withOpacity(0.3)
-            : Colors.white.withOpacity(0.6),
-        borderRadius: AppRadius.radiusSM,
-        border: Border.all(
-          color: address.isDefault 
-              ? AppColors.primary.withOpacity(0.3)
-              : (isDark 
-                  ? AppColors.gray600.withOpacity(0.2)
-                  : AppColors.gray300.withOpacity(0.3)),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(AppSpacing.xs),
-            decoration: BoxDecoration(
-              color: address.isDefault 
-                  ? AppColors.primary.withOpacity(0.1)
-                  : AppColors.accent.withOpacity(0.1),
-              borderRadius: AppRadius.radiusXS,
-            ),
-            child: Icon(
-              address.isDefault ? Icons.home : Icons.location_on,
-              color: address.isDefault ? AppColors.primary : AppColors.accent,
-              size: 16,
-            ),
-          ),
-          SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            return Row(
               children: [
-                if (address.name != null && address.name!.isNotEmpty) ...[
-                  Text(
-                    address.name!,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                Expanded(
+                  child: _buildStatItem(
+                    'Total livraisons',
+                    '${stats.totalDeliveries}',
+                    Icons.local_shipping_outlined,
+                    AppColors.info,
+                    isDark,
                   ),
-                  SizedBox(height: 2),
-                ],
-                Text(
-                  address.fullAddress,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _buildStatItem(
+                    'Taux de réussite',
+                    '${stats.completionRate.toStringAsFixed(1)}%',
+                    Icons.check_circle_outline,
+                    AppColors.success,
+                    isDark,
+                  ),
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _buildStatItem(
+                    'Temps moyen',
+                    stats.formattedAverageTime,
+                    Icons.timer_outlined,
+                    AppColors.warning,
+                    isDark,
                   ),
                 ),
               ],
-            ),
-          ),
-          if (address.isDefault)
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm,
-                vertical: AppSpacing.xs,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: AppRadius.radiusXS,
-              ),
-              child: Text(
-                'Défaut',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            );
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildSubscriptionsCard(BuildContext context, bool isDark) {
+  Widget _buildStatItem(String label, String value, IconData icon, Color color, bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: AppRadius.radiusSM,
+        border: Border.all(
+          color: color.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
+          SizedBox(height: AppSpacing.sm),
+          Text(
+            value,
+            style: AppTextStyles.h3.copyWith(
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: AppSpacing.xs),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVehicleInfoCard(BuildContext context, bool isDark) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -481,13 +462,13 @@ class UserDetailsDialog extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.local_offer_outlined,
-                color: AppColors.orange,
+                Icons.directions_car_outlined,
+                color: AppColors.accent,
                 size: 20,
               ),
               SizedBox(width: AppSpacing.sm),
               Text(
-                'Offres & Abonnements',
+                'Informations véhicule',
                 style: AppTextStyles.h4.copyWith(
                   color: isDark ? AppColors.textLight : AppColors.textPrimary,
                 ),
@@ -518,7 +499,7 @@ class UserDetailsDialog extends StatelessWidget {
                 SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    'Aucune offre ou abonnement actif pour le moment.',
+                    'Les informations détaillées du véhicule seront disponibles prochainement.',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: isDark ? AppColors.gray300 : AppColors.textSecondary,
                       fontStyle: FontStyle.italic,
@@ -533,7 +514,7 @@ class UserDetailsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(BuildContext context, UsersController controller) {
+  Widget _buildActions(BuildContext context, DeliveryController controller) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -543,39 +524,35 @@ class UserDetailsDialog extends StatelessWidget {
           variant: GlassButtonVariant.secondary,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        if (controller.canManageUser(user)) ...[
-          SizedBox(width: AppSpacing.md),
-          GlassButton(
-            label: 'Éditer',
-            icon: Icons.edit_outlined,
-            variant: GlassButtonVariant.info,
-            onPressed: () {
-              Navigator.of(context).pop();
-              Get.dialog(
-                UserEditDialog(user: user),
-                barrierDismissible: false,
-              );
-            },
-          ),
-          SizedBox(width: AppSpacing.md),
-          GlassButton(
-            label: 'Supprimer',
-            icon: Icons.delete_outline,
-            variant: GlassButtonVariant.error,
-            onPressed: () {
-              Navigator.of(context).pop();
-              controller.deleteUser(user.id, '${user.firstName} ${user.lastName}');
-            },
-          ),
-        ],
+        SizedBox(width: AppSpacing.md),
+        GlassButton(
+          label: 'Voir Commandes',
+          icon: Icons.local_shipping_outlined,
+          variant: GlassButtonVariant.info,
+          onPressed: () {
+            controller.selectDeliverer(deliverer);
+            Navigator.of(context).pop();
+            // TODO: Ouvrir la vue des commandes du livreur
+          },
+        ),
+        SizedBox(width: AppSpacing.md),
+        GlassButton(
+          label: deliverer.isActive ? 'Désactiver' : 'Activer',
+          icon: deliverer.isActive ? Icons.pause_circle_outline : Icons.play_circle_outline,
+          variant: deliverer.isActive ? GlassButtonVariant.warning : GlassButtonVariant.success,
+          onPressed: () {
+            controller.toggleDelivererStatus(deliverer.id, !deliverer.isActive);
+            Navigator.of(context).pop();
+          },
+        ),
       ],
     );
   }
 
-  Widget _buildRoleBadge(UserRole role) {
-    final color = _getRoleColor(role);
-    final icon = _getRoleIcon(role);
-    final label = _getRoleLabel(role);
+  Widget _buildStatusBadge(bool isActive) {
+    final color = isActive ? AppColors.success : AppColors.warning;
+    final text = isActive ? 'Actif' : 'Inactif';
+    final icon = isActive ? Icons.check_circle : Icons.pause_circle;
     
     return Container(
       padding: EdgeInsets.symmetric(
@@ -601,7 +578,7 @@ class UserDetailsDialog extends StatelessWidget {
           Icon(icon, color: color, size: 14),
           SizedBox(width: AppSpacing.xs),
           Text(
-            label,
+            text,
             style: AppTextStyles.caption.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
@@ -610,57 +587,6 @@ class UserDetailsDialog extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _getRoleColor(UserRole role) {
-    switch (role) {
-      case UserRole.SUPER_ADMIN:
-        return AppColors.violet;
-      case UserRole.ADMIN:
-        return AppColors.primary;
-      case UserRole.AFFILIATE:
-        return AppColors.orange;
-      case UserRole.CLIENT:
-        return AppColors.success;
-      case UserRole.DELIVERY:
-        return AppColors.teal;
-      default:
-        return AppColors.gray500;
-    }
-  }
-
-  IconData _getRoleIcon(UserRole role) {
-    switch (role) {
-      case UserRole.SUPER_ADMIN:
-        return Icons.security;
-      case UserRole.ADMIN:
-        return Icons.admin_panel_settings;
-      case UserRole.AFFILIATE:
-        return Icons.handshake_outlined;
-      case UserRole.CLIENT:
-        return Icons.person_outline;
-      case UserRole.DELIVERY:
-        return Icons.delivery_dining_outlined;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  String _getRoleLabel(UserRole role) {
-    switch (role) {
-      case UserRole.SUPER_ADMIN:
-        return 'Super Admin';
-      case UserRole.ADMIN:
-        return 'Admin';
-      case UserRole.AFFILIATE:
-        return 'Affilié';
-      case UserRole.CLIENT:
-        return 'Client';
-      case UserRole.DELIVERY:
-        return 'Livreur';
-      default:
-        return 'Inconnu';
-    }
   }
 
   String _formatDate(DateTime date) {

@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Routes publiques
 router.get('/', asyncHandler(ArticleController.getAllArticles));
+router.get('/category/:categoryId', asyncHandler(ArticleController.getArticlesByCategory));
 router.get('/:articleId', asyncHandler(ArticleController.getArticleById));
 
 // Routes protégées - nécessitent authentification

@@ -319,37 +319,7 @@ class CategoryTable extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(bool isActive, bool isDark) {
-    Color color = isActive ? AppColors.success : AppColors.error;
-    String text = isActive ? 'Active' : 'Inactive';
-    IconData icon = isActive ? Icons.check_circle : Icons.cancel;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: AppRadius.radiusSM,
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          SizedBox(width: AppSpacing.xs),
-          Text(
-            text,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Méthode _buildStatusBadge supprimée car les catégories n'ont pas de champ isActive
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';

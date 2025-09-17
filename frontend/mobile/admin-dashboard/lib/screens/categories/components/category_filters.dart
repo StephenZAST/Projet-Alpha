@@ -6,13 +6,11 @@ import '../../../widgets/shared/glass_button.dart';
 
 class CategoryFilters extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
-  final ValueChanged<String?> onStatusChanged;
   final VoidCallback onClearFilters;
 
   const CategoryFilters({
     Key? key,
     required this.onSearchChanged,
-    required this.onStatusChanged,
     required this.onClearFilters,
   }) : super(key: key);
 
@@ -22,7 +20,6 @@ class CategoryFilters extends StatefulWidget {
 
 class _CategoryFiltersState extends State<CategoryFilters> {
   final TextEditingController _searchController = TextEditingController();
-  String? _selectedStatus;
 
   @override
   void dispose() {
@@ -46,7 +43,7 @@ class _CategoryFiltersState extends State<CategoryFilters> {
                 child: _buildSearchField(context, isDark),
               ),
               SizedBox(width: AppSpacing.md),
-              if (_searchController.text.isNotEmpty || _selectedStatus != null)
+              if (_searchController.text.isNotEmpty)
                 GlassButton(
                   label: 'Effacer',
                   icon: Icons.clear_all,
@@ -54,9 +51,7 @@ class _CategoryFiltersState extends State<CategoryFilters> {
                   size: GlassButtonSize.small,
                   onPressed: () {
                     _searchController.clear();
-                    _selectedStatus = null;
                     widget.onSearchChanged('');
-                    widget.onStatusChanged(null);
                     widget.onClearFilters();
                     setState(() {});
                   },
@@ -69,10 +64,6 @@ class _CategoryFiltersState extends State<CategoryFilters> {
           // Deuxième ligne : Filtres
           Row(
             children: [
-              Expanded(
-                child: _buildStatusFilter(context, isDark),
-              ),
-              SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _buildSortFilter(context, isDark),
               ),
@@ -137,72 +128,7 @@ class _CategoryFiltersState extends State<CategoryFilters> {
     );
   }
 
-  Widget _buildStatusFilter(BuildContext context, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.5)
-            : AppColors.white.withOpacity(0.7),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark
-              ? AppColors.gray700.withOpacity(0.3)
-              : AppColors.gray200.withOpacity(0.5),
-        ),
-      ),
-      child: DropdownButtonFormField<String>(
-        value: _selectedStatus,
-        decoration: InputDecoration(
-          labelText: 'Statut',
-          labelStyle: TextStyle(
-            color: isDark ? AppColors.gray300 : AppColors.gray600,
-          ),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-        ),
-        dropdownColor: isDark ? AppColors.gray800 : AppColors.white,
-        style: TextStyle(
-          color: isDark ? AppColors.textLight : AppColors.textPrimary,
-        ),
-        items: [
-          DropdownMenuItem(
-            value: null,
-            child: Text('Tous les statuts'),
-          ),
-          DropdownMenuItem(
-            value: 'active',
-            child: Row(
-              children: [
-                Icon(Icons.check_circle, size: 16, color: AppColors.success),
-                SizedBox(width: AppSpacing.xs),
-                Text('Actives'),
-              ],
-            ),
-          ),
-          DropdownMenuItem(
-            value: 'inactive',
-            child: Row(
-              children: [
-                Icon(Icons.cancel, size: 16, color: AppColors.error),
-                SizedBox(width: AppSpacing.xs),
-                Text('Inactives'),
-              ],
-            ),
-          ),
-        ],
-        onChanged: (value) {
-          setState(() {
-            _selectedStatus = value;
-          });
-          widget.onStatusChanged(value);
-        },
-      ),
-    );
-  }
-
+  
   Widget _buildSortFilter(BuildContext context, bool isDark) {
     return Container(
       decoration: BoxDecoration(

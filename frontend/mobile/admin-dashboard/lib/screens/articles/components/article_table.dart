@@ -69,7 +69,7 @@ class ArticleTable extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            flex: 3,
+            flex: 4,
             child: Text(
               'Article',
               style: AppTextStyles.bodyMedium.copyWith(
@@ -79,7 +79,7 @@ class ArticleTable extends StatelessWidget {
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 3,
             child: Text(
               'Catégorie',
               style: AppTextStyles.bodyMedium.copyWith(
@@ -91,7 +91,7 @@ class ArticleTable extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(
-              'Prix de base',
+              'Date de création',
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppColors.textLight : AppColors.textPrimary,
@@ -100,16 +100,6 @@ class ArticleTable extends StatelessWidget {
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              'Prix premium',
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textLight : AppColors.textPrimary,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 1,
             child: Text(
               'Statut',
               style: AppTextStyles.bodyMedium.copyWith(
@@ -127,197 +117,163 @@ class ArticleTable extends StatelessWidget {
   Widget _buildTableRow(
       BuildContext context, bool isDark, Article article, int index) {
     return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? AppColors.gray700.withOpacity(0.2)
-                : AppColors.gray200.withOpacity(0.3),
-            width: 0.5,
+      // Effet de zébrage
+      color: index % 2 == 0
+          ? (isDark ? AppColors.gray900 : AppColors.gray50)
+          : Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isDark
+                  ? AppColors.gray700.withOpacity(0.2)
+                  : AppColors.gray200.withOpacity(0.3),
+              width: 0.5,
+            ),
           ),
         ),
-      ),
-      child: InkWell(
-        onTap: () => onEdit(article),
-        hoverColor: isDark
-            ? AppColors.gray800.withOpacity(0.3)
-            : AppColors.gray50.withOpacity(0.5),
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              // Article (nom + description)
-              Expanded(
-                flex: 3,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.15),
-                        borderRadius: AppRadius.radiusSM,
+        child: InkWell(
+          onTap: () => onEdit(article),
+          hoverColor: isDark
+              ? AppColors.gray800.withOpacity(0.3)
+              : AppColors.gray50.withOpacity(0.5),
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                // Article (nom + description)
+                Expanded(
+                  flex: 4,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.15),
+                          borderRadius: AppRadius.radiusSM,
+                        ),
+                        child: Icon(
+                          Icons.article_outlined,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.article_outlined,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            article.name,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (article.description != null && article.description!.isNotEmpty)
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              article.description!,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark ? AppColors.gray300 : AppColors.gray600,
+                              article.name,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textPrimary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                        ],
+                            if (article.description != null && article.description!.isNotEmpty)
+                              Text(
+                                article.description!,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark ? AppColors.gray300 : AppColors.gray600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              // Catégorie
-              Expanded(
-                flex: 2,
-                child: _buildCategoryChip(article.categoryId, isDark),
-              ),
+                // Catégorie
+                Expanded(
+                  flex: 3,
+                  child: _buildCategoryChip(article.categoryId, isDark),
+                ),
 
-              // Prix de base
-              Expanded(
-                flex: 2,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: AppRadius.radiusSM,
-                  ),
+                // Date de création
+                Expanded(
+                  flex: 2,
                   child: Text(
-                    '${article.basePrice.toStringAsFixed(0)} FCFA',
+                    _formatDate(article.createdAt),
                     style: AppTextStyles.bodySmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
+                      color: isDark ? AppColors.gray300 : AppColors.gray600,
                     ),
                   ),
                 ),
-              ),
 
-              // Prix premium
-              Expanded(
-                flex: 2,
-                child: article.premiumPrice != null && article.premiumPrice! > 0
-                    ? Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withOpacity(0.1),
-                          borderRadius: AppRadius.radiusSM,
-                        ),
-                        child: Text(
-                          '${article.premiumPrice!.toStringAsFixed(0)} FCFA',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.warning,
-                          ),
-                        ),
-                      )
-                    : Text(
-                        'N/A',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark ? AppColors.gray400 : AppColors.gray600,
-                        ),
-                      ),
-              ),
-
-              // Statut
-              Expanded(
-                flex: 1,
-                child: _buildStatusBadge(true, isDark), // Tous les articles sont actifs pour l'instant
-              ),
-
-              // Actions
-              SizedBox(
-                width: 120,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.content_copy,
-                        color: AppColors.info,
-                        size: 18,
-                      ),
-                      onPressed: () => onDuplicate(article),
-                      tooltip: 'Dupliquer',
-                    ),
-                    PopupMenuButton<String>(
-                      onSelected: (value) {
-                        switch (value) {
-                          case 'edit':
-                            onEdit(article);
-                            break;
-                          case 'delete':
-                            onDelete(article);
-                            break;
-                        }
-                      },
-                      itemBuilder: (BuildContext context) => [
-                        PopupMenuItem<String>(
-                          value: 'edit',
-                          child: ListTile(
-                            leading: Icon(Icons.edit_outlined, size: 18),
-                            title: Text('Modifier'),
-                            dense: true,
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: ListTile(
-                            leading: Icon(Icons.delete_outline,
-                                size: 18, color: AppColors.error),
-                            title: Text('Supprimer',
-                                style: TextStyle(color: AppColors.error)),
-                            dense: true,
-                          ),
-                        ),
-                      ],
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: isDark ? AppColors.gray300 : AppColors.gray600,
-                      ),
-                      color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.radiusMD,
-                      ),
-                    ),
-                  ],
+                // Statut
+                Expanded(
+                  flex: 2,
+                  child: _buildStatusBadge(true, isDark), // Tous les articles sont actifs pour l'instant
                 ),
-              ),
-            ],
+
+                // Actions
+                SizedBox(
+                  width: 120,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.content_copy,
+                          color: AppColors.info,
+                          size: 18,
+                        ),
+                        onPressed: () => onDuplicate(article),
+                        tooltip: 'Dupliquer',
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (value) {
+                          switch (value) {
+                            case 'edit':
+                              onEdit(article);
+                              break;
+                            case 'delete':
+                              onDelete(article);
+                              break;
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => [
+                          PopupMenuItem<String>(
+                            value: 'edit',
+                            child: ListTile(
+                              leading: Icon(Icons.edit_outlined, size: 18),
+                              title: Text('Modifier'),
+                              dense: true,
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'delete',
+                            child: ListTile(
+                              leading: Icon(Icons.delete_outline,
+                                  size: 18, color: AppColors.error),
+                              title: Text('Supprimer',
+                                  style: TextStyle(color: AppColors.error)),
+                              dense: true,
+                            ),
+                          ),
+                        ],
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: isDark ? AppColors.gray300 : AppColors.gray600,
+                        ),
+                        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusMD,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -418,5 +374,9 @@ class ArticleTable extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 }

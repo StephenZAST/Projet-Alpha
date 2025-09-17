@@ -38,15 +38,14 @@ class NotificationService {
 
   static Future<int> getUnreadCount() async {
     try {
-      final response =
-          await _api.get('$_baseUrl/unread/count'); // Modifier le chemin
+      final response = await _api.get('$_baseUrl/unread');
 
       if (response.statusCode == 404) {
         return 0;
       }
 
-      if (response.data != null && response.data['data'] != null) {
-        return response.data['data']['count'] ?? 0;
+      if (response.data != null && response.data['count'] != null) {
+        return response.data['count'] ?? 0;
       }
       return 0;
     } catch (e) {

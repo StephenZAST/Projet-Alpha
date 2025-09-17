@@ -115,151 +115,156 @@ class ServiceTypeTable extends StatelessWidget {
   Widget _buildTableRow(
       BuildContext context, bool isDark, ServiceType serviceType, int index) {
     return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? AppColors.gray700.withOpacity(0.2)
-                : AppColors.gray200.withOpacity(0.3),
-            width: 0.5,
+      // Effet de zébrage
+      color: index % 2 == 0
+          ? (isDark ? AppColors.gray900 : AppColors.gray50)
+          : Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isDark
+                  ? AppColors.gray700.withOpacity(0.2)
+                  : AppColors.gray200.withOpacity(0.3),
+              width: 0.5,
+            ),
           ),
         ),
-      ),
-      child: InkWell(
-        onTap: () => onEdit(serviceType),
-        hoverColor: isDark
-            ? AppColors.gray800.withOpacity(0.3)
-            : AppColors.gray50.withOpacity(0.5),
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              // Type de service (nom + description)
-              Expanded(
-                flex: 3,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: _getPricingTypeColor(serviceType.pricingType).withOpacity(0.15),
-                        borderRadius: AppRadius.radiusSM,
+        child: InkWell(
+          onTap: () => onEdit(serviceType),
+          hoverColor: isDark
+              ? AppColors.gray800.withOpacity(0.3)
+              : AppColors.gray50.withOpacity(0.5),
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                // Type de service (nom + description)
+                Expanded(
+                  flex: 3,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _getPricingTypeColor(serviceType.pricingType).withOpacity(0.15),
+                          borderRadius: AppRadius.radiusSM,
+                        ),
+                        child: Icon(
+                          _getPricingTypeIcon(serviceType.pricingType),
+                          color: _getPricingTypeColor(serviceType.pricingType),
+                          size: 20,
+                        ),
                       ),
-                      child: Icon(
-                        _getPricingTypeIcon(serviceType.pricingType),
-                        color: _getPricingTypeColor(serviceType.pricingType),
-                        size: 20,
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            serviceType.name,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (serviceType.description != null && serviceType.description!.isNotEmpty)
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              serviceType.description!,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark ? AppColors.gray300 : AppColors.gray600,
+                              serviceType.name,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textPrimary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            if (serviceType.description != null && serviceType.description!.isNotEmpty)
+                              Text(
+                                serviceType.description!,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark ? AppColors.gray300 : AppColors.gray600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Type de tarification
+                Expanded(
+                  flex: 2,
+                  child: _buildPricingTypeChip(serviceType.pricingType, isDark),
+                ),
+
+                // Caractéristiques
+                Expanded(
+                  flex: 2,
+                  child: _buildCharacteristicsChips(serviceType, isDark),
+                ),
+
+                // Statut
+                Expanded(
+                  flex: 1,
+                  child: _buildStatusBadge(serviceType.isActive ?? true, isDark),
+                ),
+
+                // Actions
+                SizedBox(
+                  width: 120,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          serviceType.isActive == true ? Icons.toggle_on : Icons.toggle_off,
+                          color: serviceType.isActive == true ? AppColors.success : AppColors.gray400,
+                          size: 28,
+                        ),
+                        onPressed: () => onToggleStatus(serviceType),
+                        tooltip: serviceType.isActive == true ? 'Désactiver' : 'Activer',
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (value) {
+                          switch (value) {
+                            case 'edit':
+                              onEdit(serviceType);
+                              break;
+                            case 'delete':
+                              onDelete(serviceType);
+                              break;
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => [
+                          PopupMenuItem<String>(
+                            value: 'edit',
+                            child: ListTile(
+                              leading: Icon(Icons.edit_outlined, size: 18),
+                              title: Text('Modifier'),
+                              dense: true,
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'delete',
+                            child: ListTile(
+                              leading: Icon(Icons.delete_outline,
+                                  size: 18, color: AppColors.error),
+                              title: Text('Supprimer',
+                                  style: TextStyle(color: AppColors.error)),
+                              dense: true,
+                            ),
+                          ),
                         ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Type de tarification
-              Expanded(
-                flex: 2,
-                child: _buildPricingTypeChip(serviceType.pricingType, isDark),
-              ),
-
-              // Caractéristiques
-              Expanded(
-                flex: 2,
-                child: _buildCharacteristicsChips(serviceType, isDark),
-              ),
-
-              // Statut
-              Expanded(
-                flex: 1,
-                child: _buildStatusBadge(serviceType.isActive ?? true, isDark),
-              ),
-
-              // Actions
-              SizedBox(
-                width: 120,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        serviceType.isActive == true ? Icons.toggle_on : Icons.toggle_off,
-                        color: serviceType.isActive == true ? AppColors.success : AppColors.gray400,
-                        size: 28,
-                      ),
-                      onPressed: () => onToggleStatus(serviceType),
-                      tooltip: serviceType.isActive == true ? 'Désactiver' : 'Activer',
-                    ),
-                    PopupMenuButton<String>(
-                      onSelected: (value) {
-                        switch (value) {
-                          case 'edit':
-                            onEdit(serviceType);
-                            break;
-                          case 'delete':
-                            onDelete(serviceType);
-                            break;
-                        }
-                      },
-                      itemBuilder: (BuildContext context) => [
-                        PopupMenuItem<String>(
-                          value: 'edit',
-                          child: ListTile(
-                            leading: Icon(Icons.edit_outlined, size: 18),
-                            title: Text('Modifier'),
-                            dense: true,
-                          ),
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: isDark ? AppColors.gray300 : AppColors.gray600,
                         ),
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: ListTile(
-                            leading: Icon(Icons.delete_outline,
-                                size: 18, color: AppColors.error),
-                            title: Text('Supprimer',
-                                style: TextStyle(color: AppColors.error)),
-                            dense: true,
-                          ),
+                        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusMD,
                         ),
-                      ],
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: isDark ? AppColors.gray300 : AppColors.gray600,
                       ),
-                      color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.radiusMD,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),

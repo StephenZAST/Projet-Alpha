@@ -44,64 +44,96 @@ class _AffiliatesScreenState extends State<AffiliatesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              AffiliateStatsGrid(),
-              SizedBox(height: AppSpacing.lg),
-
-              // Demandes de retrait en attente (si il y en a)
-              Obx(() {
-                if (controller.pendingWithdrawals.isNotEmpty) {
-                  return Column(
-                    children: [
-                      PendingWithdrawalsCard(),
-                      SizedBox(height: AppSpacing.lg),
-                    ],
-                  );
-                }
-                return SizedBox.shrink();
-              }),
-
-              // Filtres et recherche
-              AffiliateFilters(),
-              SizedBox(height: AppSpacing.md),
-
-              // Table des affiliés
-              Expanded(
-                child: Obx(() {
-                  if (controller.isLoading.value) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: AppColors.primary),
-                          SizedBox(height: AppSpacing.md),
-                          Text(
-                            'Chargement des affiliés...',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (controller.filteredAffiliates.isEmpty) {
-                    return _buildEmptyState(context, isDark);
-                  }
-
-                  return AffiliateTable();
-                }),
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
               ),
-
-              // Pagination
               SizedBox(height: AppSpacing.md),
-              _buildPagination(context, isDark),
+
+              // Contenu principal scrollable
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Titre de la section
+                      Text(
+                        'Affiliés et Commissions',
+                        style: AppTextStyles.h2.copyWith(
+                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Gérez vos affiliés et suivez leurs performances',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Statistiques
+                      AffiliateStatsGrid(),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Demandes de retrait en attente (si il y en a)
+                      Obx(() {
+                        if (controller.pendingWithdrawals.isNotEmpty) {
+                          return Column(
+                            children: [
+                              PendingWithdrawalsCard(),
+                              SizedBox(height: AppSpacing.lg),
+                            ],
+                          );
+                        }
+                        return SizedBox.shrink();
+                      }),
+
+                      // Filtres et recherche
+                      AffiliateFilters(),
+                      SizedBox(height: AppSpacing.md),
+
+                      // Table des affiliés avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: Obx(() {
+                          if (controller.isLoading.value) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(color: AppColors.primary),
+                                  SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    'Chargement des affiliés...',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: isDark
+                                          ? AppColors.textLight
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          if (controller.filteredAffiliates.isEmpty) {
+                            return _buildEmptyState(context, isDark);
+                          }
+
+                          return AffiliateTable();
+                        }),
+                      ),
+
+                      // Pagination
+                      SizedBox(height: AppSpacing.md),
+                      _buildPagination(context, isDark),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

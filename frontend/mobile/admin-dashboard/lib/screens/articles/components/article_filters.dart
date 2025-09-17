@@ -9,14 +9,12 @@ import '../../../controllers/category_controller.dart';
 class ArticleFilters extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String?> onCategoryChanged;
-  final ValueChanged<double?>? onPriceRangeChanged;
   final VoidCallback onClearFilters;
 
   const ArticleFilters({
     Key? key,
     required this.onSearchChanged,
     required this.onCategoryChanged,
-    this.onPriceRangeChanged,
     required this.onClearFilters,
   }) : super(key: key);
 
@@ -27,8 +25,6 @@ class ArticleFilters extends StatefulWidget {
 class _ArticleFiltersState extends State<ArticleFilters> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedCategoryId;
-  RangeValues _priceRange = RangeValues(0, 100000);
-  bool _showPriceFilter = false;
 
   @override
   void dispose() {
@@ -53,8 +49,7 @@ class _ArticleFiltersState extends State<ArticleFilters> {
               ),
               SizedBox(width: AppSpacing.md),
               if (_searchController.text.isNotEmpty ||
-                  _selectedCategoryId != null ||
-                  _showPriceFilter)
+                  _selectedCategoryId != null)
                 GlassButton(
                   label: 'Effacer',
                   icon: Icons.clear_all,
@@ -63,7 +58,6 @@ class _ArticleFiltersState extends State<ArticleFilters> {
                   onPressed: () {
                     _searchController.clear();
                     _selectedCategoryId = null;
-                    _showPriceFilter = false;
                     widget.onSearchChanged('');
                     widget.onCategoryChanged(null);
                     widget.onClearFilters();
@@ -83,20 +77,10 @@ class _ArticleFiltersState extends State<ArticleFilters> {
               ),
               SizedBox(width: AppSpacing.md),
               Expanded(
-                child: _buildPriceRangeToggle(context, isDark),
-              ),
-              SizedBox(width: AppSpacing.md),
-              Expanded(
                 child: _buildSortFilter(context, isDark),
               ),
             ],
           ),
-
-          // Filtre de prix (conditionnel)
-          if (_showPriceFilter) ...[
-            SizedBox(height: AppSpacing.md),
-            _buildPriceRangeSlider(context, isDark),
-          ],
         ],
       ),
     );
@@ -219,74 +203,6 @@ class _ArticleFiltersState extends State<ArticleFilters> {
     );
   }
 
-  Widget _buildPriceRangeToggle(BuildContext context, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.5)
-            : AppColors.white.withOpacity(0.7),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: _showPriceFilter
-              ? AppColors.primary.withOpacity(0.5)
-              : isDark
-                  ? AppColors.gray700.withOpacity(0.3)
-                  : AppColors.gray200.withOpacity(0.5),
-        ),
-      ),
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _showPriceFilter = !_showPriceFilter;
-          });
-        },
-        borderRadius: AppRadius.radiusMD,
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.md + 2,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.tune_outlined,
-                color: _showPriceFilter
-                    ? AppColors.primary
-                    : isDark
-                        ? AppColors.gray400
-                        : AppColors.gray500,
-                size: 20,
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Text(
-                'Prix',
-                style: TextStyle(
-                  color: _showPriceFilter
-                      ? AppColors.primary
-                      : isDark
-                          ? AppColors.gray300
-                          : AppColors.gray600,
-                  fontSize: 16,
-                  fontWeight:
-                      _showPriceFilter ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-              Spacer(),
-              Icon(
-                _showPriceFilter ? Icons.expand_less : Icons.expand_more,
-                color: _showPriceFilter
-                    ? AppColors.primary
-                    : isDark
-                        ? AppColors.gray400
-                        : AppColors.gray500,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildSortFilter(BuildContext context, bool isDark) {
     return Container(
       decoration: BoxDecoration(
@@ -338,22 +254,22 @@ class _ArticleFiltersState extends State<ArticleFilters> {
             ),
           ),
           DropdownMenuItem(
-            value: 'price_asc',
+            value: 'date_desc',
             child: Row(
               children: [
-                Icon(Icons.trending_up, size: 16, color: AppColors.success),
+                Icon(Icons.access_time, size: 16, color: AppColors.info),
                 SizedBox(width: AppSpacing.xs),
-                Text('Prix croissant'),
+                Text('Plus récents'),
               ],
             ),
           ),
           DropdownMenuItem(
-            value: 'price_desc',
+            value: 'date_asc',
             child: Row(
               children: [
-                Icon(Icons.trending_down, size: 16, color: AppColors.error),
+                Icon(Icons.history, size: 16, color: AppColors.warning),
                 SizedBox(width: AppSpacing.xs),
-                Text('Prix décroissant'),
+                Text('Plus anciens'),
               ],
             ),
           ),
@@ -361,64 +277,6 @@ class _ArticleFiltersState extends State<ArticleFilters> {
         onChanged: (value) {
           // TODO: Implémenter le tri
         },
-      ),
-    );
-  }
-
-  Widget _buildPriceRangeSlider(BuildContext context, bool isDark) {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.gray800.withOpacity(0.3)
-            : AppColors.white.withOpacity(0.5),
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Fourchette de prix',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                '${_priceRange.start.toInt()} - ${_priceRange.end.toInt()} FCFA',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.sm),
-          RangeSlider(
-            values: _priceRange,
-            min: 0,
-            max: 100000,
-            divisions: 100,
-            activeColor: AppColors.primary,
-            inactiveColor: AppColors.primary.withOpacity(0.3),
-            onChanged: (RangeValues values) {
-              setState(() {
-                _priceRange = values;
-              });
-            },
-            onChangeEnd: (RangeValues values) {
-              if (widget.onPriceRangeChanged != null) {
-                widget.onPriceRangeChanged!(values.start);
-              }
-            },
-          ),
-        ],
       ),
     );
   }

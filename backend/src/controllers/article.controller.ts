@@ -150,6 +150,35 @@ export class ArticleController {
     }
   }
 
+  static async getArticlesByCategory(req: Request, res: Response) {
+    try {
+      const categoryId = req.params.categoryId;
+      
+      if (!categoryId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Category ID is required'
+        });
+      }
+
+      const articles = await ArticleService.getArticlesByCategory(categoryId);
+      
+      return res.status(200).json({
+        success: true,
+        data: articles,
+        message: 'Articles retrieved successfully'
+      });
+    } catch (error) {
+      console.error('[ArticleController] Get articles by category error:', error);
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve articles',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
   static async archiveArticle(req: Request, res: Response) {
     try {
       const articleId = req.params.articleId;

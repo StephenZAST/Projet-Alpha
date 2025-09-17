@@ -39,69 +39,84 @@ class _ServiceTypesScreenState extends State<ServiceTypesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, isDark),
-              SizedBox(height: AppSpacing.lg),
-
-              // Statistiques
-              Obx(() => ServiceTypeStatsGrid(
-                totalTypes: controller.serviceTypes.length,
-                activeTypes: controller.serviceTypes.where((t) => t.isActive == true).length,
-                fixedPricingTypes: controller.serviceTypes.where((t) => t.pricingType == 'FIXED').length,
-                weightBasedTypes: controller.serviceTypes.where((t) => t.pricingType == 'WEIGHT_BASED').length,
-              )),
-              SizedBox(height: AppSpacing.lg),
-
-              // Filtres et recherche
-              ServiceTypeFilters(
-                onSearchChanged: (query) {
-                  // TODO: Implémenter la recherche
-                },
-                onPricingTypeChanged: (type) {
-                  // TODO: Implémenter le filtre par type de tarification
-                },
-                onStatusChanged: (status) {
-                  // TODO: Implémenter le filtre par statut
-                },
-                onClearFilters: () {
-                  // TODO: Effacer les filtres
-                },
+              // Header avec hauteur flexible
+              Flexible(
+                flex: 0,
+                child: _buildHeader(context, isDark),
               ),
               SizedBox(height: AppSpacing.md),
 
-              // Table des types de service
+              // Contenu principal scrollable
               Expanded(
-                child: Obx(() {
-                  if (controller.isLoading.value) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: AppColors.primary),
-                          SizedBox(height: AppSpacing.md),
-                          Text(
-                            'Chargement des types de service...',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Statistiques
+                      Obx(() => ServiceTypeStatsGrid(
+                        totalTypes: controller.serviceTypes.length,
+                        activeTypes: controller.serviceTypes.where((t) => t.isActive == true).length,
+                        fixedPricingTypes: controller.serviceTypes.where((t) => t.pricingType == 'FIXED').length,
+                        weightBasedTypes: controller.serviceTypes.where((t) => t.pricingType == 'WEIGHT_BASED').length,
+                      )),
+                      SizedBox(height: AppSpacing.lg),
+
+                      // Filtres et recherche
+                      ServiceTypeFilters(
+                        onSearchChanged: (query) {
+                          // TODO: Implémenter la recherche
+                        },
+                        onPricingTypeChanged: (type) {
+                          // TODO: Implémenter le filtre par type de tarification
+                        },
+                        onStatusChanged: (status) {
+                          // TODO: Implémenter le filtre par statut
+                        },
+                        onClearFilters: () {
+                          // TODO: Effacer les filtres
+                        },
                       ),
-                    );
-                  }
+                      SizedBox(height: AppSpacing.md),
 
-                  if (controller.serviceTypes.isEmpty) {
-                    return _buildEmptyState(context, isDark);
-                  }
+                      // Table des types de service avec hauteur contrainte
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: Obx(() {
+                          if (controller.isLoading.value) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(color: AppColors.primary),
+                                  SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    'Chargement des types de service...',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: isDark
+                                          ? AppColors.textLight
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
 
-                  return ServiceTypeTable(
-                    serviceTypes: controller.serviceTypes,
-                    onEdit: (type) => _showTypeDialog(type),
-                    onDelete: _showDeleteDialog,
-                    onToggleStatus: (type) => _toggleTypeStatus(type),
-                  );
-                }),
+                          if (controller.serviceTypes.isEmpty) {
+                            return _buildEmptyState(context, isDark);
+                          }
+
+                          return ServiceTypeTable(
+                            serviceTypes: controller.serviceTypes,
+                            onEdit: (type) => _showTypeDialog(type),
+                            onDelete: _showDeleteDialog,
+                            onToggleStatus: (type) => _toggleTypeStatus(type),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

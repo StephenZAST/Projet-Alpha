@@ -33,9 +33,9 @@ class CategoryExpansionTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // Statut au centre
-            if (!category.isActive)
-              Expanded(
+            // Statut au centre - Supprimé car les catégories n'ont pas de champ isActive
+            // if (!category.isActive)
+            //   Expanded(
                 flex: 2,
                 child: Center(
                   child: Container(

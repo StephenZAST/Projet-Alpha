@@ -251,6 +251,36 @@ export class ArticleService {
     }
   }
 
+  static async getArticlesByCategory(categoryId: string): Promise<Article[]> {
+    try {
+      const data = await prisma.articles.findMany({
+        where: { 
+          categoryId: categoryId,
+          isDeleted: false 
+        },
+        include: {
+          article_categories: { select: { name: true } }
+        },
+        orderBy: { name: 'asc' }
+      });
+
+      return data.map(article => ({
+        id: article.id,
+        name: article.name,
+        categoryId: article.categoryId || '',
+        description: article.description || '',
+        basePrice: Number(article.basePrice),
+        premiumPrice: article.premiumPrice ? Number(article.premiumPrice) : 0,
+        createdAt: article.createdAt || new Date(),
+        updatedAt: article.updatedAt || new Date(),
+        category: article.article_categories?.name || 'Uncategorized'
+      }));
+    } catch (error) {
+      console.error('[ArticleService] Error getting articles by category:', error);
+      throw error;
+    }
+  }
+
   static async archiveArticle(articleId: string, reason: string): Promise<void> {
     try {
       await prisma.article_archives.create({

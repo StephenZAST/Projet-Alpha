@@ -58,8 +58,7 @@ class CategoriesScreen extends StatelessWidget {
                       // Statistiques
                       Obx(() => CategoryStatsGrid(
                             totalCategories: controller.categories.length,
-                            activeCategories:
-                                controller.categories.where((c) => c.isActive).length,
+                            activeCategories: controller.categories.length, // Toutes les catégories sont considérées comme actives
                             totalArticles: controller.categories
                                 .fold<int>(0, (sum, c) => sum + (c.articlesCount)),
                             averageArticlesPerCategory: controller.categories.isEmpty
@@ -73,9 +72,6 @@ class CategoriesScreen extends StatelessWidget {
                       // Filtres et recherche
                       CategoryFilters(
                         onSearchChanged: controller.searchCategories,
-                        onStatusChanged: (status) {
-                          // TODO: Implémenter le filtre par statut
-                        },
                         onClearFilters: () {
                           controller.searchCategories('');
                         },
@@ -120,8 +116,9 @@ class CategoriesScreen extends StatelessWidget {
                                 Get.dialog(CategoryDialog(category: category)),
                             onDelete: (category) =>
                                 _showDeleteDialog(context, category, controller),
-                            onToggleStatus: (category) =>
-                                _toggleCategoryStatus(category, controller),
+                            onToggleStatus: (category) {
+                              // Méthode supprimée car les catégories n'ont pas de champ isActive
+                            },
                           );
                         }),
                       ),
@@ -157,7 +154,7 @@ class CategoriesScreen extends StatelessWidget {
             Obx(() => Text(
                   controller.isLoading.value
                       ? 'Chargement...'
-                      : '${controller.categories.length} catégorie${controller.categories.length > 1 ? 's' : ''} • ${controller.categories.where((c) => c.isActive).length} active${controller.categories.where((c) => c.isActive).length > 1 ? 's' : ''}',
+                      : '${controller.categories.length} catégorie${controller.categories.length > 1 ? 's' : ''} • ${controller.categories.fold<int>(0, (sum, c) => sum + c.articlesCount)} articles',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: isDark ? AppColors.gray300 : AppColors.textSecondary,
                   ),
@@ -371,10 +368,7 @@ class CategoriesScreen extends StatelessWidget {
     );
   }
 
-  void _toggleCategoryStatus(Category category, CategoryController controller) {
-    // TODO: Implémenter le toggle du statut
-    _showSuccessSnackbar('Statut de la catégorie modifié');
-  }
+  // Méthode _toggleCategoryStatus supprimée car les catégories n'ont pas de champ isActive
 
   void _showSuccessSnackbar(String message) {
     Get.closeAllSnackbars();

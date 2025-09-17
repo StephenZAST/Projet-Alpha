@@ -174,7 +174,7 @@ class UsersTable extends StatelessWidget {
               roleColor.withOpacity(0.1),
             ],
           ),
-          borderRadius: AppRadius.radiusSM,
+          shape: BoxShape.circle, // Changé pour un avatar full rounded
           border: Border.all(
             color: roleColor.withOpacity(0.3),
             width: 1,

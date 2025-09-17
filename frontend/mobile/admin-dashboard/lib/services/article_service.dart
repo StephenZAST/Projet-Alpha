@@ -69,6 +69,16 @@ class ArticleService {
     }
   }
 
+  static Future<List<Article>> getArticlesByCategory(String categoryId) async {
+    try {
+      final response = await _api.get('$_baseUrl/category/$categoryId');
+      return _parseArticleList(response.data);
+    } catch (e) {
+      print('[ArticleService] Error getting articles by category: $e');
+      rethrow;
+    }
+  }
+
   static Future<List<Article>> searchArticles(String query) async {
     try {
       final response = await _api.get(_baseUrl, queryParameters: {

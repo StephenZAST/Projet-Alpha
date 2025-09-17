@@ -115,60 +115,106 @@ class CoupleTable extends StatelessWidget {
   Widget _buildTableRow(
       BuildContext context, bool isDark, ArticleServiceCouple couple, int index) {
     return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? AppColors.gray700.withOpacity(0.2)
-                : AppColors.gray200.withOpacity(0.3),
-            width: 0.5,
+      // Effet de zébrage
+      color: index % 2 == 0
+          ? (isDark ? AppColors.gray900 : AppColors.gray50)
+          : Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isDark
+                  ? AppColors.gray700.withOpacity(0.2)
+                  : AppColors.gray200.withOpacity(0.3),
+              width: 0.5,
+            ),
           ),
         ),
-      ),
-      child: InkWell(
-        onTap: () => onEdit(couple),
-        hoverColor: isDark
-            ? AppColors.gray800.withOpacity(0.3)
-            : AppColors.gray50.withOpacity(0.5),
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              // Service (type + nom)
-              Expanded(
-                flex: 2,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: _getPricingTypeColor(couple.serviceTypePricingType).withOpacity(0.15),
-                        borderRadius: AppRadius.radiusSM,
+        child: InkWell(
+          onTap: () => onEdit(couple),
+          hoverColor: isDark
+              ? AppColors.gray800.withOpacity(0.3)
+              : AppColors.gray50.withOpacity(0.5),
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                // Service (type + nom)
+                Expanded(
+                  flex: 2,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _getPricingTypeColor(couple.serviceTypePricingType).withOpacity(0.15),
+                          borderRadius: AppRadius.radiusSM,
+                        ),
+                        child: Icon(
+                          _getPricingTypeIcon(couple.serviceTypePricingType),
+                          color: _getPricingTypeColor(couple.serviceTypePricingType),
+                          size: 20,
+                        ),
                       ),
-                      child: Icon(
-                        _getPricingTypeIcon(couple.serviceTypePricingType),
-                        color: _getPricingTypeColor(couple.serviceTypePricingType),
-                        size: 20,
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            couple.serviceTypeName,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (couple.serviceName.isNotEmpty)
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              couple.serviceName,
+                              couple.serviceTypeName,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (couple.serviceName.isNotEmpty)
+                              Text(
+                                couple.serviceName,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.textLight
+                                      : AppColors.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Article
+                Expanded(
+                  flex: 2,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.15),
+                          borderRadius: AppRadius.radiusSM,
+                        ),
+                        child: Icon(
+                          Icons.inventory_2_outlined,
+                          color: AppColors.success,
+                          size: 16,
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              couple.articleName.isNotEmpty ? couple.articleName : 'Article non défini',
                               style: AppTextStyles.bodyMedium.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: isDark
@@ -178,133 +224,92 @@ class CoupleTable extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Article
-              Expanded(
-                flex: 2,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.15),
-                        borderRadius: AppRadius.radiusSM,
-                      ),
-                      child: Icon(
-                        Icons.inventory_2_outlined,
-                        color: AppColors.success,
-                        size: 16,
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            couple.articleName.isNotEmpty ? couple.articleName : 'Article non défini',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (couple.articleDescription.isNotEmpty)
-                            Text(
-                              couple.articleDescription,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark ? AppColors.gray300 : AppColors.gray600,
+                            if (couple.articleDescription.isNotEmpty)
+                              Text(
+                                couple.articleDescription,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark ? AppColors.gray300 : AppColors.gray600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Tarification
+                Expanded(
+                  flex: 2,
+                  child: _buildPricingInfo(couple, isDark),
+                ),
+
+                // Statut
+                Expanded(
+                  flex: 1,
+                  child: _buildStatusBadge(couple.isAvailable, isDark),
+                ),
+
+                // Actions
+                SizedBox(
+                  width: 120,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          couple.isAvailable ? Icons.toggle_on : Icons.toggle_off,
+                          color: couple.isAvailable ? AppColors.success : AppColors.gray400,
+                          size: 28,
+                        ),
+                        onPressed: () => onToggleAvailability(couple),
+                        tooltip: couple.isAvailable ? 'Désactiver' : 'Activer',
+                      ),
+                      PopupMenuButton<String>(
+                        onSelected: (value) {
+                          switch (value) {
+                            case 'edit':
+                              onEdit(couple);
+                              break;
+                            case 'delete':
+                              onDelete(couple);
+                              break;
+                          }
+                        },
+                        itemBuilder: (BuildContext context) => [
+                          PopupMenuItem<String>(
+                            value: 'edit',
+                            child: ListTile(
+                              leading: Icon(Icons.edit_outlined, size: 18),
+                              title: Text('Modifier'),
+                              dense: true,
                             ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'delete',
+                            child: ListTile(
+                              leading: Icon(Icons.delete_outline,
+                                  size: 18, color: AppColors.error),
+                              title: Text('Supprimer',
+                                  style: TextStyle(color: AppColors.error)),
+                              dense: true,
+                            ),
+                          ),
                         ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Tarification
-              Expanded(
-                flex: 2,
-                child: _buildPricingInfo(couple, isDark),
-              ),
-
-              // Statut
-              Expanded(
-                flex: 1,
-                child: _buildStatusBadge(couple.isAvailable, isDark),
-              ),
-
-              // Actions
-              SizedBox(
-                width: 120,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        couple.isAvailable ? Icons.toggle_on : Icons.toggle_off,
-                        color: couple.isAvailable ? AppColors.success : AppColors.gray400,
-                        size: 28,
-                      ),
-                      onPressed: () => onToggleAvailability(couple),
-                      tooltip: couple.isAvailable ? 'Désactiver' : 'Activer',
-                    ),
-                    PopupMenuButton<String>(
-                      onSelected: (value) {
-                        switch (value) {
-                          case 'edit':
-                            onEdit(couple);
-                            break;
-                          case 'delete':
-                            onDelete(couple);
-                            break;
-                        }
-                      },
-                      itemBuilder: (BuildContext context) => [
-                        PopupMenuItem<String>(
-                          value: 'edit',
-                          child: ListTile(
-                            leading: Icon(Icons.edit_outlined, size: 18),
-                            title: Text('Modifier'),
-                            dense: true,
-                          ),
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: isDark ? AppColors.gray300 : AppColors.gray600,
                         ),
-                        PopupMenuItem<String>(
-                          value: 'delete',
-                          child: ListTile(
-                            leading: Icon(Icons.delete_outline,
-                                size: 18, color: AppColors.error),
-                            title: Text('Supprimer',
-                                style: TextStyle(color: AppColors.error)),
-                            dense: true,
-                          ),
+                        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.radiusMD,
                         ),
-                      ],
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: isDark ? AppColors.gray300 : AppColors.gray600,
                       ),
-                      color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.radiusMD,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),

@@ -59,7 +59,7 @@ class AffiliateTable extends StatelessWidget {
                           final affiliate =
                               controller.filteredAffiliates[index];
                           return _buildTableRow(
-                              context, isDark, affiliate, controller);
+                              context, isDark, affiliate, controller, index);
                         },
                       )),
                 ),
@@ -117,10 +117,15 @@ class AffiliateTable extends StatelessWidget {
     bool isDark,
     AffiliateProfile affiliate,
     AffiliatesController controller,
+    int index,
   ) {
     return InkWell(
       onTap: () => _showAffiliateDetails(context, affiliate),
       child: Container(
+        // Effet de zébrage
+        color: index % 2 == 0
+            ? (isDark ? AppColors.gray900 : AppColors.gray50)
+            : Colors.transparent,
         padding: EdgeInsets.all(AppSpacing.md),
         child: Row(
           children: [
