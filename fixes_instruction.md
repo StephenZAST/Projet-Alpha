@@ -354,3 +354,47 @@ les different page tableau de bord et commande eut il faudra refaire une refonte
 pour toutes ces fixe je propose un patche etape par etape que lon prenne le temps pour chaque partie de faire une implkementation entiere et complete fonctionnelle avant de passer au suivant tu compren 
 
 
+Contexte
+
+Nous travaillons sur la fonctionnalité "categories". Le travail a été commencé mais pas terminé : nous nous sommes arrêtés pendant l’implémentation des catégories.
+Le modèle Prisma Category n’a pas de champ isActive (d’après le schéma). Les corrections demandées doivent prendre en compte cette contrainte.
+Les fichiers de référence sont : IMPLEMENTATION_PROGRESS.md et fixes_instruction.md — lis-les attentivement avant d’appliquer les changements.
+Objectif principal
+
+Reprendre l’implémentation des catégories, appliquer les corrections listées dans fixes_instruction.md et avancer l’état d’implémentation jusqu’à pouvoir continuer sur d’autres features.
+Mettre à jour le fichier IMPLEMENTATION_PROGRESS.md pour documenter où nous nous sommes arrêtés et quelles actions ont été faites.
+Étapes détaillées (ordre recommandé)
+
+Lecture et compréhension
+Ouvrir et lire fixes_instruction.md et IMPLEMENTATION_PROGRESS.md.
+Lister (ici même) les corrections et le statut actuel selon ces fichiers.
+Analyse du code
+Trouver les fichiers édités précédemment liés aux categories (frontend et backend).
+Revoir les composants React/TSX, services API, routes backend, et modèles Prisma impliqués.
+Vérifier le schéma Prisma et confirmer qu’il n’y a pas de champ isActive dans le modèle Category.
+Ajustements fonctionnels (si isActive absent)
+Retirer toute UI (boutons, radios, filtres) qui supposent un champ isActive pour Category.
+Par exemple : bouton radio activer/désactiver, filtre de statut actif/inactif.
+Corriger toute logique backend ou requêtes qui attendent isActive pour Category.
+Fonctionnalités à ajouter / corriger
+Ajouter la fonctionnalité permettant de voir les articles associés à chaque catégorie.
+Frontend : lien/bouton “Articles” dans la ligne de chaque catégorie qui ouvre la liste des articles ou navigue vers la page d’articles filtrée par catégorie.
+Backend : endpoint pour récupérer les articles par categoryId, ou adapter l’endpoint d’articles existant pour gérer le filtre par catégorie.
+Corriger la navigation du bouton "Articles" (s’assurer que l’URL et les paramètres sont corrects).
+Appliquer l’effet de zébrage (alternance de background des lignes) dans la vue de liste des catégories.
+
+
+backend\prisma\schema.prisma
+backend\src\app.ts
+
+backend\docs\REFERENCE_FEATURES.md
+backend\docs\REFERENCE_ARTICLE_SERVICE.md
+backend\docs\pricing-system.md
+
+frontend\mobile\admin-dashboard\AI_DESIGN_INSTRUCTIONS.md
+frontend\mobile\admin-dashboard\DESIGN_SYSTEM.md
+fixes_instruction.md
+IMPLEMENTATION_PROGRESS.md
+notes.md
+OVERFLOW_FIXES_SUMMARY.md
+DIAGNOSTIC_STEPS.md
