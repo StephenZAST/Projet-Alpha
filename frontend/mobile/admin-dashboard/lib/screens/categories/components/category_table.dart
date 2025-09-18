@@ -5,21 +5,18 @@ import '../../../constants.dart';
 import '../../../widgets/shared/glass_container.dart';
 import '../../../widgets/shared/glass_button.dart';
 import '../../../models/category.dart';
-import '../../../models/article.dart';
 import '../../../services/article_service.dart';
 
 class CategoryTable extends StatelessWidget {
   final List<Category> categories;
   final void Function(Category) onEdit;
   final void Function(Category) onDelete;
-  final void Function(Category) onToggleStatus;
 
   const CategoryTable({
     Key? key,
     required this.categories,
     required this.onEdit,
     required this.onDelete,
-    required this.onToggleStatus,
   }) : super(key: key);
 
   @override
@@ -32,7 +29,7 @@ class CategoryTable extends StatelessWidget {
         children: [
           // En-tête du tableau
           _buildTableHeader(context, isDark),
-          
+
           // Divider
           Divider(
             height: 1,
@@ -40,7 +37,7 @@ class CategoryTable extends StatelessWidget {
                 ? AppColors.gray700.withOpacity(0.3)
                 : AppColors.gray200.withOpacity(0.5),
           ),
-          
+
           // Corps du tableau
           Expanded(
             child: ListView.builder(
@@ -232,7 +229,8 @@ class CategoryTable extends StatelessWidget {
                             size: 18,
                             color: AppColors.info,
                           ),
-                          onPressed: () => _showArticlesDialog(context, category, isDark),
+                          onPressed: () =>
+                              _showArticlesDialog(context, category, isDark),
                           tooltip: 'Voir les articles',
                         ),
                       ],
@@ -275,7 +273,8 @@ class CategoryTable extends StatelessWidget {
                           PopupMenuItem<String>(
                             value: 'view_articles',
                             child: ListTile(
-                              leading: Icon(Icons.article_outlined, size: 18, color: AppColors.info),
+                              leading: Icon(Icons.article_outlined,
+                                  size: 18, color: AppColors.info),
                               title: Text('Voir les articles'),
                               dense: true,
                             ),
@@ -303,7 +302,9 @@ class CategoryTable extends StatelessWidget {
                           Icons.more_vert,
                           color: isDark ? AppColors.gray300 : AppColors.gray600,
                         ),
-                        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                        color: isDark
+                            ? AppColors.cardBgDark
+                            : AppColors.cardBgLight,
                         shape: RoundedRectangleBorder(
                           borderRadius: AppRadius.radiusMD,
                         ),
@@ -325,7 +326,8 @@ class CategoryTable extends StatelessWidget {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  void _showArticlesDialog(BuildContext context, Category category, bool isDark) async {
+  void _showArticlesDialog(
+      BuildContext context, Category category, bool isDark) async {
     // Afficher un dialogue de chargement
     Get.dialog(
       Center(
@@ -352,10 +354,10 @@ class CategoryTable extends StatelessWidget {
     try {
       // Récupérer les articles de cette catégorie
       final articles = await ArticleService.getArticlesByCategory(category.id);
-      
+
       // Fermer le dialogue de chargement
       Get.back();
-      
+
       // Afficher le dialogue avec les articles
       Get.dialog(
         Dialog(
@@ -395,14 +397,18 @@ class CategoryTable extends StatelessWidget {
                                 Text(
                                   'Articles de "${category.name}"',
                                   style: AppTextStyles.h3.copyWith(
-                                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                                    color: isDark
+                                        ? AppColors.textLight
+                                        : AppColors.textPrimary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
                                   '${articles.length} article${articles.length > 1 ? 's' : ''} trouvé${articles.length > 1 ? 's' : ''}',
                                   style: AppTextStyles.bodyMedium.copyWith(
-                                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                                    color: isDark
+                                        ? AppColors.gray300
+                                        : AppColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -412,14 +418,16 @@ class CategoryTable extends StatelessWidget {
                             onPressed: () => Get.back(),
                             icon: Icon(
                               Icons.close,
-                              color: isDark ? AppColors.gray300 : AppColors.gray600,
+                              color: isDark
+                                  ? AppColors.gray300
+                                  : AppColors.gray600,
                             ),
                           ),
                         ],
                       ),
-                      
+
                       SizedBox(height: AppSpacing.xl),
-                      
+
                       // Liste des articles
                       Expanded(
                         child: articles.isEmpty
@@ -447,16 +455,22 @@ class CategoryTable extends StatelessWidget {
                                 itemBuilder: (context, index) {
                                   final article = articles[index];
                                   return Container(
-                                    margin: EdgeInsets.only(bottom: AppSpacing.sm),
+                                    margin:
+                                        EdgeInsets.only(bottom: AppSpacing.sm),
                                     decoration: BoxDecoration(
                                       color: index % 2 == 0
-                                          ? (isDark ? AppColors.gray800.withOpacity(0.3) : AppColors.gray50.withOpacity(0.5))
+                                          ? (isDark
+                                              ? AppColors.gray800
+                                                  .withOpacity(0.3)
+                                              : AppColors.gray50
+                                                  .withOpacity(0.5))
                                           : Colors.transparent,
                                       borderRadius: AppRadius.radiusMD,
                                       border: Border.all(
-                                        color: isDark 
+                                        color: isDark
                                             ? AppColors.gray700.withOpacity(0.3)
-                                            : AppColors.gray200.withOpacity(0.5),
+                                            : AppColors.gray200
+                                                .withOpacity(0.5),
                                       ),
                                     ),
                                     child: ListTile(
@@ -464,7 +478,8 @@ class CategoryTable extends StatelessWidget {
                                         width: 40,
                                         height: 40,
                                         decoration: BoxDecoration(
-                                          color: AppColors.success.withOpacity(0.15),
+                                          color: AppColors.success
+                                              .withOpacity(0.15),
                                           borderRadius: AppRadius.radiusSM,
                                         ),
                                         child: Icon(
@@ -475,16 +490,23 @@ class CategoryTable extends StatelessWidget {
                                       ),
                                       title: Text(
                                         article.name,
-                                        style: AppTextStyles.bodyMedium.copyWith(
+                                        style:
+                                            AppTextStyles.bodyMedium.copyWith(
                                           fontWeight: FontWeight.w600,
-                                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                                          color: isDark
+                                              ? AppColors.textLight
+                                              : AppColors.textPrimary,
                                         ),
                                       ),
-                                      subtitle: article.description != null && article.description!.isNotEmpty
+                                      subtitle: article.description != null &&
+                                              article.description!.isNotEmpty
                                           ? Text(
                                               article.description!,
-                                              style: AppTextStyles.bodySmall.copyWith(
-                                                color: isDark ? AppColors.gray300 : AppColors.gray600,
+                                              style: AppTextStyles.bodySmall
+                                                  .copyWith(
+                                                color: isDark
+                                                    ? AppColors.gray300
+                                                    : AppColors.gray600,
                                               ),
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
@@ -499,12 +521,14 @@ class CategoryTable extends StatelessWidget {
                                               vertical: AppSpacing.xs,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: AppColors.info.withOpacity(0.1),
+                                              color: AppColors.info
+                                                  .withOpacity(0.1),
                                               borderRadius: AppRadius.radiusSM,
                                             ),
                                             child: Text(
                                               'ID: ${article.id.substring(0, 8)}...',
-                                              style: AppTextStyles.bodySmall.copyWith(
+                                              style: AppTextStyles.bodySmall
+                                                  .copyWith(
                                                 color: AppColors.info,
                                                 fontWeight: FontWeight.w500,
                                               ),
@@ -517,9 +541,9 @@ class CategoryTable extends StatelessWidget {
                                 },
                               ),
                       ),
-                      
+
                       SizedBox(height: AppSpacing.lg),
-                      
+
                       // Actions
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -530,7 +554,8 @@ class CategoryTable extends StatelessWidget {
                             variant: GlassButtonVariant.primary,
                             onPressed: () {
                               Get.back();
-                              Get.toNamed('/articles', arguments: {'categoryId': category.id});
+                              Get.toNamed('/articles',
+                                  arguments: {'categoryId': category.id});
                             },
                           ),
                           SizedBox(width: AppSpacing.md),
@@ -552,7 +577,7 @@ class CategoryTable extends StatelessWidget {
     } catch (e) {
       // Fermer le dialogue de chargement en cas d'erreur
       Get.back();
-      
+
       // Afficher un dialogue d'erreur
       Get.dialog(
         AlertDialog(

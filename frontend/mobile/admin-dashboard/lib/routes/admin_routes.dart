@@ -125,6 +125,8 @@ class AdminRoutes {
         return MenuIndices.articles;
       case '/service-types':
         return MenuIndices.serviceTypes;
+      case '/service-article-couples':
+        return MenuIndices.serviceArticleCouples;
       case users:
         return MenuIndices.users;
       case loyalty:

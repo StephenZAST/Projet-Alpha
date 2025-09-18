@@ -28,7 +28,7 @@ class CoupleTable extends StatelessWidget {
         children: [
           // En-tête du tableau
           _buildTableHeader(context, isDark),
-          
+
           // Divider
           Divider(
             height: 1,
@@ -36,7 +36,7 @@ class CoupleTable extends StatelessWidget {
                 ? AppColors.gray700.withOpacity(0.3)
                 : AppColors.gray200.withOpacity(0.5),
           ),
-          
+
           // Corps du tableau
           Expanded(
             child: ListView.builder(
@@ -112,8 +112,8 @@ class CoupleTable extends StatelessWidget {
     );
   }
 
-  Widget _buildTableRow(
-      BuildContext context, bool isDark, ArticleServiceCouple couple, int index) {
+  Widget _buildTableRow(BuildContext context, bool isDark,
+      ArticleServiceCouple couple, int index) {
     return Container(
       // Effet de zébrage
       color: index % 2 == 0
@@ -148,12 +148,15 @@ class CoupleTable extends StatelessWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: _getPricingTypeColor(couple.serviceTypePricingType).withOpacity(0.15),
+                          color: _getPricingTypeColor(
+                                  couple.serviceTypePricingType)
+                              .withOpacity(0.15),
                           borderRadius: AppRadius.radiusSM,
                         ),
                         child: Icon(
                           _getPricingTypeIcon(couple.serviceTypePricingType),
-                          color: _getPricingTypeColor(couple.serviceTypePricingType),
+                          color: _getPricingTypeColor(
+                              couple.serviceTypePricingType),
                           size: 20,
                         ),
                       ),
@@ -214,7 +217,9 @@ class CoupleTable extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              couple.articleName.isNotEmpty ? couple.articleName : 'Article non défini',
+                              couple.articleName.isNotEmpty
+                                  ? couple.articleName
+                                  : 'Article non défini',
                               style: AppTextStyles.bodyMedium.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: isDark
@@ -228,7 +233,9 @@ class CoupleTable extends StatelessWidget {
                               Text(
                                 couple.articleDescription,
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: isDark ? AppColors.gray300 : AppColors.gray600,
+                                  color: isDark
+                                      ? AppColors.gray300
+                                      : AppColors.gray600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -260,8 +267,12 @@ class CoupleTable extends StatelessWidget {
                     children: [
                       IconButton(
                         icon: Icon(
-                          couple.isAvailable ? Icons.toggle_on : Icons.toggle_off,
-                          color: couple.isAvailable ? AppColors.success : AppColors.gray400,
+                          couple.isAvailable
+                              ? Icons.toggle_on
+                              : Icons.toggle_off,
+                          color: couple.isAvailable
+                              ? AppColors.success
+                              : AppColors.gray400,
                           size: 28,
                         ),
                         onPressed: () => onToggleAvailability(couple),
@@ -302,7 +313,9 @@ class CoupleTable extends StatelessWidget {
                           Icons.more_vert,
                           color: isDark ? AppColors.gray300 : AppColors.gray600,
                         ),
-                        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                        color: isDark
+                            ? AppColors.cardBgDark
+                            : AppColors.cardBgLight,
                         shape: RoundedRectangleBorder(
                           borderRadius: AppRadius.radiusMD,
                         ),
@@ -310,7 +323,8 @@ class CoupleTable extends StatelessWidget {
                     ],
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -356,7 +370,9 @@ class CoupleTable extends StatelessWidget {
     return Wrap(
       spacing: AppSpacing.xs,
       runSpacing: AppSpacing.xs,
-      children: priceChips.take(2).toList(), // Limite à 2 chips pour éviter le débordement
+      children: priceChips
+          .take(2)
+          .toList(), // Limite à 2 chips pour éviter le débordement
     );
   }
 

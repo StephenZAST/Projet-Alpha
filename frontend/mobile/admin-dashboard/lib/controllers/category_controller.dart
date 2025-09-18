@@ -244,6 +244,50 @@ class CategoryController extends GetxController {
         return;
       }
 
+      // Support simple date filter payload from the UI: date:YYYY-MM-DD|YYYY-MM-DD
+      if (query.startsWith('date:')) {
+        final payload = query.substring(5);
+        final parts = payload.split('|');
+        if (parts.length != 2) {
+          Get.snackbar('Filtre date', 'Format de date invalide',
+              backgroundColor: AppColors.error, colorText: AppColors.textLight);
+          return;
+        }
+
+        final from = DateTime.tryParse(parts[0]);
+        final to = DateTime.tryParse(parts[1]);
+        if (from == null || to == null) {
+          Get.snackbar('Filtre date', 'Dates non reconnues',
+              backgroundColor: AppColors.error, colorText: AppColors.textLight);
+          return;
+        }
+
+        isLoading.value = true;
+        hasError.value = false;
+        errorMessage.value = '';
+
+        // Use cached categories if available, otherwise fetch
+        List<Category> source = categories.isNotEmpty
+            ? categories.toList()
+            : await CategoryService.getAllCategories();
+
+        final filtered = source.where((c) {
+          final created = c.createdAt;
+          // Compare only dates (ignore time)
+          final createdDate =
+              DateTime(created.year, created.month, created.day);
+          final fromDate = DateTime(from.year, from.month, from.day);
+          final toDate = DateTime(to.year, to.month, to.day);
+          return (createdDate.isAtSameMomentAs(fromDate) ||
+                  createdDate.isAfter(fromDate)) &&
+              (createdDate.isAtSameMomentAs(toDate) ||
+                  createdDate.isBefore(toDate));
+        }).toList();
+
+        categories.value = filtered;
+        return;
+      }
+
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import '../../../constants.dart';
 import '../../../widgets/shared/glass_container.dart';
 import '../../../widgets/shared/glass_button.dart';
@@ -49,8 +48,8 @@ class _CoupleFiltersState extends State<CoupleFilters> {
                 child: _buildSearchField(context, isDark),
               ),
               SizedBox(width: AppSpacing.md),
-              if (_searchController.text.isNotEmpty || 
-                  _selectedServiceType != null || 
+              if (_searchController.text.isNotEmpty ||
+                  _selectedServiceType != null ||
                   _selectedAvailability != null)
                 GlassButton(
                   label: 'Effacer',
@@ -70,9 +69,9 @@ class _CoupleFiltersState extends State<CoupleFilters> {
                 ),
             ],
           ),
-          
+
           SizedBox(height: AppSpacing.md),
-          
+
           // Deuxième ligne : Filtres
           Row(
             children: [

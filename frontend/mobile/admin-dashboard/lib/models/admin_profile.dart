@@ -1,8 +1,9 @@
 class AdminProfile {
   final String id;
   final String email;
-  final String fullName;
-  final String? phoneNumber;
+  final String firstName;
+  final String lastName;
+  final String? phone;
   final String? profileImageUrl;
   final String role;
   final Map<String, dynamic> preferences;
@@ -12,8 +13,9 @@ class AdminProfile {
   AdminProfile({
     required this.id,
     required this.email,
-    required this.fullName,
-    this.phoneNumber,
+    required this.firstName,
+    required this.lastName,
+    this.phone,
     this.profileImageUrl,
     required this.role,
     this.preferences = const {},
@@ -21,12 +23,15 @@ class AdminProfile {
     required this.updatedAt,
   });
 
+  String get fullName => '$firstName $lastName'.trim();
+
   factory AdminProfile.fromJson(Map<String, dynamic> json) {
     return AdminProfile(
       id: json['id'] ?? '',
       email: json['email'] ?? '',
-      fullName: json['fullName'] ?? json['firstName'] ?? '',
-      phoneNumber: json['phoneNumber'],
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      phone: json['phone'],
       profileImageUrl: json['profileImageUrl'],
       role: json['role'] ?? 'ADMIN',
       preferences: Map<String, dynamic>.from(json['preferences'] ?? {}),
@@ -39,8 +44,9 @@ class AdminProfile {
     return {
       'id': id,
       'email': email,
-      'fullName': fullName,
-      'phoneNumber': phoneNumber,
+      'firstName': firstName,
+      'lastName': lastName,
+      'phone': phone,
       'profileImageUrl': profileImageUrl,
       'role': role,
       'preferences': preferences,
@@ -52,8 +58,9 @@ class AdminProfile {
   AdminProfile copyWith({
     String? id,
     String? email,
-    String? fullName,
-    String? phoneNumber,
+    String? firstName,
+    String? lastName,
+    String? phone,
     String? profileImageUrl,
     String? role,
     Map<String, dynamic>? preferences,
@@ -63,8 +70,9 @@ class AdminProfile {
     return AdminProfile(
       id: id ?? this.id,
       email: email ?? this.email,
-      fullName: fullName ?? this.fullName,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      phone: phone ?? this.phone,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       role: role ?? this.role,
       preferences: preferences ?? this.preferences,
@@ -91,8 +99,9 @@ class AdminProfile {
     return other is AdminProfile &&
         other.id == id &&
         other.email == email &&
-        other.fullName == fullName &&
-        other.phoneNumber == phoneNumber &&
+        other.firstName == firstName &&
+        other.lastName == lastName &&
+        other.phone == phone &&
         other.profileImageUrl == profileImageUrl &&
         other.role == role;
   }
@@ -101,8 +110,9 @@ class AdminProfile {
   int get hashCode {
     return id.hashCode ^
         email.hashCode ^
-        fullName.hashCode ^
-        phoneNumber.hashCode ^
+        firstName.hashCode ^
+        lastName.hashCode ^
+        phone.hashCode ^
         profileImageUrl.hashCode ^
         role.hashCode;
   }

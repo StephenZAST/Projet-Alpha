@@ -1,3 +1,4 @@
+import 'package:admin/controllers/menu_app_controller.dart';
 import 'package:admin/controllers/service_type_controller.dart';
 import 'package:admin/screens/services/components/service_form_screen.dart';
 import 'package:flutter/material.dart';
@@ -51,12 +52,6 @@ class ServicesScreen extends GetView<ServiceController> {
                       // Filtres et recherche
                       ServiceFilters(
                         onSearchChanged: controller.searchServices,
-                        onTypeChanged: (typeId) {
-                          // TODO: Implémenter le filtre par type
-                        },
-                        onPriceRangeChanged: (min) {
-                          // TODO: Implémenter le filtre par prix
-                        },
                         onClearFilters: () {
                           controller.searchServices('');
                         },
@@ -72,7 +67,8 @@ class ServicesScreen extends GetView<ServiceController> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  CircularProgressIndicator(color: AppColors.primary),
+                                  CircularProgressIndicator(
+                                      color: AppColors.primary),
                                   SizedBox(height: AppSpacing.md),
                                   Text(
                                     'Chargement des services...',
@@ -96,7 +92,8 @@ class ServicesScreen extends GetView<ServiceController> {
                             onEdit: (service) =>
                                 Get.dialog(ServiceFormScreen(service: service)),
                             onDelete: _showDeleteDialog,
-                            onDuplicate: (service) => _duplicateService(service),
+                            onDuplicate: (service) =>
+                                _duplicateService(service),
                           );
                         }),
                       ),
@@ -144,14 +141,22 @@ class ServicesScreen extends GetView<ServiceController> {
               label: 'Types de Service',
               icon: Icons.category_outlined,
               variant: GlassButtonVariant.info,
-              onPressed: () => Get.toNamed('/service-types'),
+              onPressed: () {
+                final menuController = Get.find<MenuAppController>();
+                menuController.updateIndex(MenuIndices.serviceTypes);
+                Get.toNamed('/service-types');
+              },
             ),
             SizedBox(width: AppSpacing.sm),
             GlassButton(
               label: 'Couples Service/Article',
               icon: Icons.link_outlined,
               variant: GlassButtonVariant.secondary,
-              onPressed: () => Get.toNamed('/service-article-couples'),
+              onPressed: () {
+                final menuController = Get.find<MenuAppController>();
+                menuController.updateIndex(MenuIndices.serviceArticleCouples);
+                Get.toNamed('/service-article-couples');
+              },
             ),
             SizedBox(width: AppSpacing.sm),
             GlassButton(

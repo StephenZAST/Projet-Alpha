@@ -42,7 +42,9 @@ class CategoriesScreen extends StatelessWidget {
                       Text(
                         'Catégories et Articles',
                         style: AppTextStyles.h2.copyWith(
-                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -50,7 +52,9 @@ class CategoriesScreen extends StatelessWidget {
                       Text(
                         'Gérez vos catégories et visualisez les articles associ��s',
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.gray300
+                              : AppColors.textSecondary,
                         ),
                       ),
                       SizedBox(height: AppSpacing.lg),
@@ -58,13 +62,15 @@ class CategoriesScreen extends StatelessWidget {
                       // Statistiques
                       Obx(() => CategoryStatsGrid(
                             totalCategories: controller.categories.length,
-                            activeCategories: controller.categories.length, // Toutes les catégories sont considérées comme actives
-                            totalArticles: controller.categories
-                                .fold<int>(0, (sum, c) => sum + (c.articlesCount)),
-                            averageArticlesPerCategory: controller.categories.isEmpty
+                            activeCategories: controller.categories
+                                .length, // Toutes les catégories sont considérées comme actives
+                            totalArticles: controller.categories.fold<int>(
+                                0, (sum, c) => sum + (c.articlesCount)),
+                            averageArticlesPerCategory: controller
+                                    .categories.isEmpty
                                 ? 0.0
-                                : controller.categories.fold<int>(
-                                        0, (sum, c) => sum + (c.articlesCount)) /
+                                : controller.categories.fold<int>(0,
+                                        (sum, c) => sum + (c.articlesCount)) /
                                     controller.categories.length,
                           )),
                       SizedBox(height: AppSpacing.lg),
@@ -87,7 +93,8 @@ class CategoriesScreen extends StatelessWidget {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  CircularProgressIndicator(color: AppColors.primary),
+                                  CircularProgressIndicator(
+                                      color: AppColors.primary),
                                   SizedBox(height: AppSpacing.md),
                                   Text(
                                     'Chargement des catégories...',
@@ -103,7 +110,8 @@ class CategoriesScreen extends StatelessWidget {
                           }
 
                           if (controller.hasError.value) {
-                            return _buildErrorState(context, isDark, controller);
+                            return _buildErrorState(
+                                context, isDark, controller);
                           }
 
                           if (controller.categories.isEmpty) {
@@ -114,11 +122,8 @@ class CategoriesScreen extends StatelessWidget {
                             categories: controller.categories,
                             onEdit: (category) =>
                                 Get.dialog(CategoryDialog(category: category)),
-                            onDelete: (category) =>
-                                _showDeleteDialog(context, category, controller),
-                            onToggleStatus: (category) {
-                              // Méthode supprimée car les catégories n'ont pas de champ isActive
-                            },
+                            onDelete: (category) => _showDeleteDialog(
+                                context, category, controller),
                           );
                         }),
                       ),

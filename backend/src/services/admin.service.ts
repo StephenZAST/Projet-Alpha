@@ -594,4 +594,139 @@ export class AdminService {
       ordersByStatus: statusCounts
     };
   }
+
+  static async getAdminProfile(adminId: string) {
+    try {
+      const admin = await prisma.users.findUnique({
+        where: { 
+          id: adminId,
+          role: 'ADMIN'
+        },
+        select: {
+          id: true,
+          email: true,
+          first_name: true,
+          last_name: true,
+          phone: true,
+          role: true,
+          created_at: true,
+          updated_at: true
+        }
+      });
+
+      if (!admin) {
+        throw new Error('Admin not found');
+      }
+
+      return {
+        id: admin.id,
+        email: admin.email,
+        firstName: admin.first_name || '',
+        lastName: admin.last_name || '',
+        phone: admin.phone || '',
+        role: admin.role,
+        createdAt: admin.created_at || new Date(),
+        updatedAt: admin.updated_at || new Date()
+      };
+    } catch (error) {
+      console.error('[AdminService] Get admin profile error:', error);
+      throw error;
+    }
+  }
+
+  static async updateAdminProfile(adminId: string, data: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    email?: string;
+  }) {
+    try {
+      const updateData: any = {
+        updated_at: new Date()
+      };
+
+      if (data.firstName !== undefined) updateData.first_name = data.firstName;
+      if (data.lastName !== undefined) updateData.last_name = data.lastName;
+      if (data.phone !== undefined) updateData.phone = data.phone;
+      if (data.email !== undefined) updateData.email = data.email;
+
+      const admin = await prisma.users.update({
+        where: { 
+          id: adminId,
+          role: 'ADMIN'
+        },
+        data: updateData,
+        select: {
+          id: true,
+          email: true,
+          first_name: true,
+          last_name: true,
+          phone: true,
+          role: true,
+          created_at: true,
+          updated_at: true
+        }
+      });
+
+      return {
+        id: admin.id,
+        email: admin.email,
+        firstName: admin.first_name || '',
+        lastName: admin.last_name || '',
+        phone: admin.phone || '',
+        role: admin.role,
+        createdAt: admin.created_at || new Date(),
+        updatedAt: admin.updated_at || new Date()
+      };
+    } catch (error) {
+      console.error('[AdminService] Update admin profile error:', error);
+      throw error;
+    }
+  }
+
+  static async updateAdminPassword(adminId: string, currentPassword: string, newPassword: string) {
+    try {
+      // First verify current password
+      const admin = await prisma.users.findUnique({
+        where: { 
+          id: adminId,
+          role: 'ADMIN'
+        },
+        select: {
+          id: true,
+          password: true
+        }
+      });
+
+      if (!admin) {
+        throw new Error('Admin not found');
+      }
+
+      // Import bcrypt for password verification
+      const bcrypt = require('bcrypt');
+      
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, admin.password);
+      if (!isCurrentPasswordValid) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // Hash new password
+      const saltRounds = 10;
+      const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      // Update password
+      await prisma.users.update({
+        where: { id: adminId },
+        data: {
+          password: hashedNewPassword,
+          updated_at: new Date()
+        }
+      });
+
+      return { success: true, message: 'Password updated successfully' };
+    } catch (error) {
+      console.error('[AdminService] Update admin password error:', error);
+      throw error;
+    }
+  }
 }

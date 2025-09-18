@@ -11,7 +11,8 @@ class AdminProfileController extends GetxController {
   final isEditing = false.obs;
 
   final formKey = GlobalKey<FormState>();
-  final fullNameController = TextEditingController();
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
   final phoneController = TextEditingController();
   final currentPasswordController = TextEditingController();
   final newPasswordController = TextEditingController();
@@ -38,7 +39,8 @@ class AdminProfileController extends GetxController {
 
   @override
   void onClose() {
-    fullNameController.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
     phoneController.dispose();
     currentPasswordController.dispose();
     newPasswordController.dispose();
@@ -48,14 +50,51 @@ class AdminProfileController extends GetxController {
 
   void startEditing() {
     isEditing.value = true;
-    fullNameController.text = profile.value?.fullName ?? '';
-    phoneController.text = profile.value?.phoneNumber ?? '';
+    firstNameController.text = profile.value?.firstName ?? '';
+    lastNameController.text = profile.value?.lastName ?? '';
+    phoneController.text = profile.value?.phone ?? '';
   }
 
   void cancelEditing() {
     isEditing.value = false;
-    fullNameController.clear();
+    firstNameController.clear();
+    lastNameController.clear();
     phoneController.clear();
+  }
+
+  Future<void> updateProfile() async {
+    try {
+      if (!formKey.currentState!.validate()) return;
+
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      await AdminProfileService.updateProfile({
+        'firstName': firstNameController.text,
+        'lastName': lastNameController.text,
+        'phone': phoneController.text,
+      });
+
+      await loadProfile();
+      cancelEditing();
+
+      Get.snackbar(
+        'Succès',
+        'Profil mis à jour avec succès',
+        backgroundColor: AppColors.success,
+        colorText: AppColors.white,
+      );
+    } catch (e) {
+      errorMessage.value = e.toString();
+      Get.snackbar(
+        'Erreur',
+        errorMessage.value,
+        backgroundColor: AppColors.error,
+        colorText: AppColors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   Future<void> changePassword() async {

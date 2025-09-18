@@ -243,4 +243,23 @@ router.put(
   asyncHandler(ServiceManagementController.updateArticleServices)
 );
 
+// Routes de gestion du profil admin
+router.get(
+  '/profile',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(AdminController.getProfile)
+);
+
+router.put(
+  '/profile',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(AdminController.updateProfile)
+);
+
+router.post(
+  '/profile/password',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(AdminController.updatePassword)
+);
+
 export default router;

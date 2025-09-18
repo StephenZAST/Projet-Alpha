@@ -5,6 +5,93 @@ import supabase from '../config/database';
 import prisma from '../config/prisma';
 
 export class AdminController {
+  // Profile management methods
+  static async getProfile(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Unauthorized' 
+        });
+      }
+
+      const profile = await AdminService.getAdminProfile(userId);
+      res.json({ 
+        success: true, 
+        data: profile 
+      });
+    } catch (error: any) {
+      console.error('[AdminController] Error getting profile:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Internal Server Error',
+        message: error.message 
+      });
+    }
+  }
+
+  static async updateProfile(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Unauthorized' 
+        });
+      }
+
+      const updateData = req.body;
+      const updatedProfile = await AdminService.updateAdminProfile(userId, updateData);
+      
+      res.json({ 
+        success: true, 
+        data: updatedProfile,
+        message: 'Profile updated successfully'
+      });
+    } catch (error: any) {
+      console.error('[AdminController] Error updating profile:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Internal Server Error',
+        message: error.message 
+      });
+    }
+  }
+
+  static async updatePassword(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'Unauthorized' 
+        });
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Current password and new password are required' 
+        });
+      }
+
+      await AdminService.updateAdminPassword(userId, currentPassword, newPassword);
+      
+      res.json({ 
+        success: true, 
+        message: 'Password updated successfully'
+      });
+    } catch (error: any) {
+      console.error('[AdminController] Error updating password:', error);
+      res.status(400).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+  }
   static async configureCommissions(req: Request, res: Response) {
     try {
       const { commissionRate, rewardPoints } = req.body;

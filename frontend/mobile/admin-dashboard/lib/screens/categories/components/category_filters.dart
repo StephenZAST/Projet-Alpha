@@ -58,9 +58,9 @@ class _CategoryFiltersState extends State<CategoryFilters> {
                 ),
             ],
           ),
-          
+
           SizedBox(height: AppSpacing.md),
-          
+
           // Deuxième ligne : Filtres
           Row(
             children: [
@@ -128,7 +128,6 @@ class _CategoryFiltersState extends State<CategoryFilters> {
     );
   }
 
-  
   Widget _buildSortFilter(BuildContext context, bool isDark) {
     return Container(
       decoration: BoxDecoration(
@@ -231,11 +230,21 @@ class _CategoryFiltersState extends State<CategoryFilters> {
         ),
       ),
       child: InkWell(
-        onTap: () {
-          // TODO: Implémenter le sélecteur de plage de dates
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Filtre par date - À implémenter')),
+        onTap: () async {
+          // Utiliser le sélecteur natif pour choisir une plage de dates
+          final picked = await showDateRangePicker(
+            context: context,
+            firstDate: DateTime(2000),
+            lastDate: DateTime.now().add(Duration(days: 365)),
+            initialDateRange: null,
           );
+
+          if (picked != null) {
+            final from = picked.start.toIso8601String().split('T').first;
+            final to = picked.end.toIso8601String().split('T').first;
+            // Pour l'instant, on transmet une simple string au callback de recherche
+            widget.onSearchChanged('date:$from|$to');
+          }
         },
         borderRadius: AppRadius.radiusMD,
         child: Container(

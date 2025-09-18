@@ -28,7 +28,7 @@ class ServiceTypeTable extends StatelessWidget {
         children: [
           // En-tête du tableau
           _buildTableHeader(context, isDark),
-          
+
           // Divider
           Divider(
             height: 1,
@@ -36,7 +36,7 @@ class ServiceTypeTable extends StatelessWidget {
                 ? AppColors.gray700.withOpacity(0.3)
                 : AppColors.gray200.withOpacity(0.5),
           ),
-          
+
           // Corps du tableau
           Expanded(
             child: ListView.builder(
@@ -148,7 +148,8 @@ class ServiceTypeTable extends StatelessWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: _getPricingTypeColor(serviceType.pricingType).withOpacity(0.15),
+                          color: _getPricingTypeColor(serviceType.pricingType)
+                              .withOpacity(0.15),
                           borderRadius: AppRadius.radiusSM,
                         ),
                         child: Icon(
@@ -173,11 +174,14 @@ class ServiceTypeTable extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            if (serviceType.description != null && serviceType.description!.isNotEmpty)
+                            if (serviceType.description != null &&
+                                serviceType.description!.isNotEmpty)
                               Text(
                                 serviceType.description!,
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: isDark ? AppColors.gray300 : AppColors.gray600,
+                                  color: isDark
+                                      ? AppColors.gray300
+                                      : AppColors.gray600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -204,7 +208,8 @@ class ServiceTypeTable extends StatelessWidget {
                 // Statut
                 Expanded(
                   flex: 1,
-                  child: _buildStatusBadge(serviceType.isActive ?? true, isDark),
+                  child:
+                      _buildStatusBadge(serviceType.isActive ?? true, isDark),
                 ),
 
                 // Actions
@@ -215,12 +220,18 @@ class ServiceTypeTable extends StatelessWidget {
                     children: [
                       IconButton(
                         icon: Icon(
-                          serviceType.isActive == true ? Icons.toggle_on : Icons.toggle_off,
-                          color: serviceType.isActive == true ? AppColors.success : AppColors.gray400,
+                          serviceType.isActive == true
+                              ? Icons.toggle_on
+                              : Icons.toggle_off,
+                          color: serviceType.isActive == true
+                              ? AppColors.success
+                              : AppColors.gray400,
                           size: 28,
                         ),
                         onPressed: () => onToggleStatus(serviceType),
-                        tooltip: serviceType.isActive == true ? 'Désactiver' : 'Activer',
+                        tooltip: serviceType.isActive == true
+                            ? 'Désactiver'
+                            : 'Activer',
                       ),
                       PopupMenuButton<String>(
                         onSelected: (value) {
@@ -257,7 +268,9 @@ class ServiceTypeTable extends StatelessWidget {
                           Icons.more_vert,
                           color: isDark ? AppColors.gray300 : AppColors.gray600,
                         ),
-                        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                        color: isDark
+                            ? AppColors.cardBgDark
+                            : AppColors.cardBgLight,
                         shape: RoundedRectangleBorder(
                           borderRadius: AppRadius.radiusMD,
                         ),
@@ -265,7 +278,8 @@ class ServiceTypeTable extends StatelessWidget {
                     ],
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -311,15 +325,18 @@ class ServiceTypeTable extends StatelessWidget {
     List<Widget> chips = [];
 
     if (serviceType.requiresWeight == true) {
-      chips.add(_buildFeatureChip('Poids', Icons.scale, AppColors.warning, isDark));
+      chips.add(
+          _buildFeatureChip('Poids', Icons.scale, AppColors.warning, isDark));
     }
 
     if (serviceType.supportsPremium == true) {
-      chips.add(_buildFeatureChip('Premium', Icons.star, AppColors.violet, isDark));
+      chips.add(
+          _buildFeatureChip('Premium', Icons.star, AppColors.violet, isDark));
     }
 
     if (serviceType.isDefault == true) {
-      chips.add(_buildFeatureChip('Défaut', Icons.flag, AppColors.info, isDark));
+      chips
+          .add(_buildFeatureChip('Défaut', Icons.flag, AppColors.info, isDark));
     }
 
     if (chips.isEmpty) {
@@ -334,11 +351,13 @@ class ServiceTypeTable extends StatelessWidget {
     return Wrap(
       spacing: AppSpacing.xs,
       runSpacing: AppSpacing.xs,
-      children: chips.take(2).toList(), // Limite à 2 chips pour éviter le débordement
+      children:
+          chips.take(2).toList(), // Limite à 2 chips pour éviter le débordement
     );
   }
 
-  Widget _buildFeatureChip(String label, IconData icon, Color color, bool isDark) {
+  Widget _buildFeatureChip(
+      String label, IconData icon, Color color, bool isDark) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.xs,
