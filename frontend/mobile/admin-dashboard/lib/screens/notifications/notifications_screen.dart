@@ -38,62 +38,44 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  void _applyFilters() {
-    setState(() {
-      filteredNotifications = notifications.where((notification) {
-        final matchesType =
-            selectedType == 'ALL' || notification['type'] == selectedType;
-        final matchesStatus = selectedStatus == 'ALL' ||
-            (selectedStatus == 'read' && notification['isRead']) ||
-            (selectedStatus == 'unread' && !notification['isRead']);
-        final matchesSearch = searchQuery.isEmpty ||
-            notification['title']
-                .toLowerCase()
-                .contains(searchQuery.toLowerCase()) ||
-            notification['message']
-                .toLowerCase()
-                .contains(searchQuery.toLowerCase());
+  List<Map<String, dynamic>> _getFilteredNotifications() {
+    final notifications = controller.notifications
+        .map((n) => {
+              'id': n.id,
+              'title': n.title,
+              'message': n.message,
+              'type': n.type.toString().split('.').last.toLowerCase(),
+              'priority': n.priority.toString().split('.').last.toLowerCase(),
+              'isRead': n.isRead,
+              'createdAt': n.createdAt,
+              'referenceId': n.referenceId,
+            })
+        .toList();
 
-        return matchesType && matchesStatus && matchesSearch;
-      }).toList();
+    final filtered = notifications.where((notification) {
+      final matchesType = selectedType == 'ALL' ||
+          (notification['type'] != null &&
+              notification['type'] == selectedType.toLowerCase());
+      final matchesStatus = selectedStatus == 'ALL' ||
+          (selectedStatus == 'read' && notification['isRead'] == true) ||
+          (selectedStatus == 'unread' && notification['isRead'] == false);
+      final matchesSearch = searchQuery.isEmpty ||
+          ((notification['title'] ?? '')
+              .toString()
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase())) ||
+          ((notification['message'] ?? '')
+              .toString()
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase()));
+      return matchesType && matchesStatus && matchesSearch;
+    }).toList();
 
-      // Trier par date (plus récent en premier)
-      filteredNotifications.sort((a, b) =>
-          (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime));
-    });
-  }
+    // Trier par date (plus récent en premier)
+    filtered.sort((a, b) =>
+        (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime));
 
-  void _markAsRead(String id) {
-    setState(() {
-      final index = notifications.indexWhere((n) => n['id'] == id);
-      if (index != -1) {
-        notifications[index]['isRead'] = true;
-        _applyFilters();
-      }
-    });
-  }
-
-  void _markAllAsRead() {
-    setState(() {
-      for (var notification in notifications) {
-        notification['isRead'] = true;
-      }
-      _applyFilters();
-    });
-  }
-
-  void _deleteNotification(String id) {
-    setState(() {
-      notifications.removeWhere((n) => n['id'] == id);
-      _applyFilters();
-    });
-  }
-
-  void _deleteAllRead() {
-    setState(() {
-      notifications.removeWhere((n) => n['isRead']);
-      _applyFilters();
-    });
+    return filtered;
   }
 
   @override
@@ -138,7 +120,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  CircularProgressIndicator(color: AppColors.primary),
+                                  CircularProgressIndicator(
+                                      color: AppColors.primary),
                                   SizedBox(height: AppSpacing.md),
                                   Text(
                                     'Chargement des notifications...',
@@ -153,13 +136,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             );
                           }
 
-                          final filteredNotifications = _getFilteredNotifications();
-                          
+                          final filteredNotifications =
+                              _getFilteredNotifications();
+
                           if (filteredNotifications.isEmpty) {
                             return _buildEmptyState(context, isDark);
                           }
 
-                          return _buildNotificationsList(isDark, filteredNotifications);
+                          return _buildNotificationsList(isDark);
                         }),
                       ),
                     ],
@@ -173,41 +157,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  List<Map<String, dynamic>> _getFilteredNotifications() {
-    final notifications = controller.notifications.map((n) => {
-      'id': n.id,
-      'title': n.title,
-      'message': n.message,
-      'type': n.type.toString().split('.').last.toLowerCase(),
-      'priority': n.priority.toString().split('.').last.toLowerCase(),
-      'isRead': n.isRead,
-      'createdAt': n.createdAt,
-      'referenceId': n.referenceId,
-    }).toList();
-
-    final filtered = notifications.where((notification) {
-      final matchesType = selectedType == 'ALL' || 
-          notification['type'] == selectedType.toLowerCase();
-      final matchesStatus = selectedStatus == 'ALL' ||
-          (selectedStatus == 'read' && notification['isRead']) ||
-          (selectedStatus == 'unread' && !notification['isRead']);
-      final matchesSearch = searchQuery.isEmpty ||
-          notification['title']
-              .toLowerCase()
-              .contains(searchQuery.toLowerCase()) ||
-          notification['message']
-              .toLowerCase()
-              .contains(searchQuery.toLowerCase());
-
-      return matchesType && matchesStatus && matchesSearch;
-    }).toList();
-
-    // Trier par date (plus récent en premier)
-    filtered.sort((a, b) =>
-        (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime));
-
-    return filtered;
-  }
+  // Suppression de la deuxième définition de _getFilteredNotifications (doublon)
 
   Widget _buildHeader(BuildContext context, bool isDark) {
     final totalCount = controller.notifications.length;
@@ -297,8 +247,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final totalCount = notifications.length;
     final unreadCount = controller.unreadCount.value;
     final highPriorityCount = notifications
-        .where((n) => n.priority.toString().contains('HIGH') || 
-                     n.priority.toString().contains('URGENT'))
+        .where((n) =>
+            n.priority.toString().contains('HIGH') ||
+            n.priority.toString().contains('URGENT'))
         .length;
     final todayCount = notifications
         .where((n) => DateTime.now().difference(n.createdAt).inDays == 0)
@@ -398,7 +349,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 selectedType = 'ALL';
                 selectedStatus = 'ALL';
                 searchQuery = '';
-                _applyFilters();
+                setState(() {});
               },
             ),
           ],
@@ -407,7 +358,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationsList(bool isDark, List<Map<String, dynamic>> filteredNotifications) {
+  Widget _buildNotificationsList(bool isDark) {
+    final filteredNotifications = _getFilteredNotifications();
     return ListView.builder(
       itemCount: filteredNotifications.length,
       itemBuilder: (context, index) {
@@ -426,7 +378,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _handleNotificationTap(Map<String, dynamic> notification) {
     // Marquer comme lu si pas encore lu
-    if (!notification['isRead']) {
+    if (notification['isRead'] == false) {
       final adminNotification = controller.notifications.firstWhere(
         (n) => n.id == notification['id'],
         orElse: () => controller.notifications.first,
@@ -446,56 +398,5 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _loadNotifications();
   }
 
-  void _showDeleteAllReadDialog() {
-    final readCount = notifications.where((n) => n['isRead']).length;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.transparent,
-        contentPadding: EdgeInsets.zero,
-        content: GlassContainer(
-          padding: EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.warning_amber_rounded,
-                  size: 48, color: AppColors.warning),
-              SizedBox(height: AppSpacing.md),
-              Text('Supprimer les notifications lues', style: AppTextStyles.h4),
-              SizedBox(height: AppSpacing.sm),
-              Text(
-                'Êtes-vous sûr de vouloir supprimer les $readCount notification${readCount > 1 ? 's' : ''} lue${readCount > 1 ? 's' : ''} ?',
-                style: AppTextStyles.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: AppSpacing.lg),
-              Row(
-                children: [
-                  Expanded(
-                    child: GlassButton(
-                      label: 'Annuler',
-                      variant: GlassButtonVariant.secondary,
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: GlassButton(
-                      label: 'Supprimer',
-                      variant: GlassButtonVariant.warning,
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _deleteAllRead();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // Suppression de _showDeleteAllReadDialog car notifications n'est pas défini localement et la méthode _deleteAllRead n'existe pas
 }

@@ -14,98 +14,89 @@ class UserStatsGrid extends StatelessWidget {
     final controller = Get.find<UsersController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Responsive grid: 4 colonnes sur desktop, 2 sur tablette, 1 sur mobile
-        int crossAxisCount = 4;
-        if (constraints.maxWidth < 1200) crossAxisCount = 2;
-        if (constraints.maxWidth < 600) crossAxisCount = 1;
-
-        return Obx(() => GridView.count(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: AppSpacing.md,
-              mainAxisSpacing: AppSpacing.md,
-              childAspectRatio: 1.8,
-              children: [
-                _buildStatCard(
-                  context,
-                  isDark,
-                  title: 'Clients',
-                  count: controller.selectedRoleString.value == 'CLIENT'
-                      ? controller.totalUsers.value
-                      : controller.totalClientCount.value,
-                  currentCount: controller.selectedRoleString.value == 'CLIENT'
-                      ? controller.users.length
-                      : controller.clientCount.value,
-                  icon: Icons.people_outline,
-                  color: AppColors.primary,
-                  lightColor: AppColors.primaryLight,
-                  isSelected: controller.selectedRoleString.value == 'CLIENT',
-                  onTap: () {
-                    final isSelected = controller.selectedRoleString.value == 'CLIENT';
-                    controller.filterByRole(isSelected ? null : UserRole.CLIENT);
-                  },
-                ),
-                _buildStatCard(
-                  context,
-                  isDark,
-                  title: 'Affiliés',
-                  count: controller.selectedRoleString.value == 'AFFILIATE'
-                      ? controller.totalUsers.value
-                      : controller.totalAffiliateCount.value,
-                  currentCount: controller.selectedRoleString.value == 'AFFILIATE'
-                      ? controller.users.length
-                      : controller.affiliateCount.value,
-                  icon: Icons.handshake_outlined,
-                  color: AppColors.orange,
-                  lightColor: AppColors.orangeLight,
-                  isSelected: controller.selectedRoleString.value == 'AFFILIATE',
-                  onTap: () {
-                    final isSelected = controller.selectedRoleString.value == 'AFFILIATE';
-                    controller.filterByRole(isSelected ? null : UserRole.AFFILIATE);
-                  },
-                ),
-                _buildStatCard(
-                  context,
-                  isDark,
-                  title: 'Administrateurs',
-                  count: controller.selectedRoleString.value == 'ADMIN'
-                      ? controller.totalUsers.value
-                      : controller.totalAdminCount.value,
-                  currentCount: controller.selectedRoleString.value == 'ADMIN'
-                      ? controller.users.length
-                      : controller.adminCount.value,
-                  icon: Icons.admin_panel_settings_outlined,
-                  color: AppColors.violet,
-                  lightColor: AppColors.violetLight,
-                  isSelected: controller.selectedRoleString.value == 'ADMIN',
-                  onTap: () {
-                    final isSelected = controller.selectedRoleString.value == 'ADMIN';
-                    controller.filterByRole(isSelected ? null : UserRole.ADMIN);
-                  },
-                ),
-                _buildStatCard(
-                  context,
-                  isDark,
-                  title: 'Total',
-                  count: controller.selectedRoleString.value == 'ALL'
-                      ? controller.totalUsers.value
-                      : controller.totalUsersCount.value,
-                  currentCount: controller.users.length,
-                  icon: Icons.groups_outlined,
-                  color: AppColors.success,
-                  lightColor: AppColors.successLight,
-                  isSelected: controller.selectedRoleString.value == 'ALL',
-                  onTap: () {
-                    controller.filterByRole(null);
-                  },
-                ),
-              ],
-            ));
-      },
-    );
+    return Obx(() => GridView.count(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          crossAxisCount: 4,
+          crossAxisSpacing: AppSpacing.md,
+          mainAxisSpacing: AppSpacing.md,
+          childAspectRatio: 1.2,
+          children: [
+            _buildStatCard(
+              context,
+              isDark,
+              title: 'Clients',
+              count: controller.selectedRoleString.value == 'CLIENT'
+                  ? controller.totalUsers.value
+                  : controller.totalClientCount.value,
+              currentCount: controller.selectedRoleString.value == 'CLIENT'
+                  ? controller.users.length
+                  : controller.clientCount.value,
+              icon: Icons.people_outline,
+              color: AppColors.primary,
+              lightColor: AppColors.primaryLight,
+              isSelected: controller.selectedRoleString.value == 'CLIENT',
+              onTap: () {
+                final isSelected =
+                    controller.selectedRoleString.value == 'CLIENT';
+                controller.filterByRole(isSelected ? null : UserRole.CLIENT);
+              },
+            ),
+            _buildStatCard(
+              context,
+              isDark,
+              title: 'Affiliés',
+              count: controller.selectedRoleString.value == 'AFFILIATE'
+                  ? controller.totalUsers.value
+                  : controller.totalAffiliateCount.value,
+              currentCount: controller.selectedRoleString.value == 'AFFILIATE'
+                  ? controller.users.length
+                  : controller.affiliateCount.value,
+              icon: Icons.handshake_outlined,
+              color: AppColors.orange,
+              lightColor: AppColors.orangeLight,
+              isSelected: controller.selectedRoleString.value == 'AFFILIATE',
+              onTap: () {
+                final isSelected =
+                    controller.selectedRoleString.value == 'AFFILIATE';
+                controller.filterByRole(isSelected ? null : UserRole.AFFILIATE);
+              },
+            ),
+            _buildStatCard(
+              context,
+              isDark,
+              title: 'Administrateurs',
+              count: controller.selectedRoleString.value == 'ADMIN'
+                  ? controller.totalUsers.value
+                  : controller.totalAdminCount.value,
+              currentCount: controller.selectedRoleString.value == 'ADMIN'
+                  ? controller.users.length
+                  : controller.adminCount.value,
+              icon: Icons.admin_panel_settings_outlined,
+              color: AppColors.violet,
+              lightColor: AppColors.violetLight,
+              isSelected: controller.selectedRoleString.value == 'ADMIN',
+              onTap: () {
+                final isSelected =
+                    controller.selectedRoleString.value == 'ADMIN';
+                controller.filterByRole(isSelected ? null : UserRole.ADMIN);
+              },
+            ),
+            _buildStatCard(context, isDark,
+                title: 'Total',
+                count: controller.selectedRoleString.value == 'ALL'
+                    ? controller.totalUsers.value
+                    : controller.totalUsersCount.value,
+                currentCount: controller.users.length,
+                icon: Icons.groups_outlined,
+                color: AppColors.success,
+                lightColor: AppColors.successLight,
+                isSelected: controller.selectedRoleString.value == 'ALL',
+                onTap: () {
+              controller.filterByRole(null);
+            }),
+          ],
+        ));
   }
 
   Widget _buildStatCard(
@@ -186,9 +177,7 @@ class UserStatsGrid extends StatelessWidget {
                           ),
                       ],
                     ),
-
                     SizedBox(height: AppSpacing.sm),
-
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -197,7 +186,9 @@ class UserStatsGrid extends StatelessWidget {
                             Text(
                               currentCount.toString(),
                               style: AppTextStyles.h2.copyWith(
-                                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                                color: isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textPrimary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 28,
                               ),
@@ -206,7 +197,9 @@ class UserStatsGrid extends StatelessWidget {
                               Text(
                                 ' / $count',
                                 style: AppTextStyles.bodyMedium.copyWith(
-                                  color: isDark ? AppColors.gray400 : AppColors.textMuted,
+                                  color: isDark
+                                      ? AppColors.gray400
+                                      : AppColors.textMuted,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -217,7 +210,9 @@ class UserStatsGrid extends StatelessWidget {
                         Text(
                           title,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                            color: isDark
+                                ? AppColors.gray300
+                                : AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

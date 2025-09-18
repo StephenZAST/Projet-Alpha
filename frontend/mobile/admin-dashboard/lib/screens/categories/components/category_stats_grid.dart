@@ -8,6 +8,7 @@ class CategoryStatsGrid extends StatelessWidget {
   final int activeCategories;
   final int totalArticles;
   final double averageArticlesPerCategory;
+  final bool isLoading;
 
   const CategoryStatsGrid({
     Key? key,
@@ -15,177 +16,218 @@ class CategoryStatsGrid extends StatelessWidget {
     required this.activeCategories,
     required this.totalArticles,
     required this.averageArticlesPerCategory,
+    this.isLoading = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Responsive grid: 4 colonnes sur desktop, 2 sur tablette, 1 sur mobile
-        int crossAxisCount = 4;
-        if (constraints.maxWidth < 1200) crossAxisCount = 2;
-        if (constraints.maxWidth < 600) crossAxisCount = 1;
+    if (isLoading) {
+      return _buildLoadingGrid(isDark);
+    }
 
-        return GridView.count(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: AppSpacing.md,
-          mainAxisSpacing: AppSpacing.md,
-          childAspectRatio: 1.8,
-          children: [
-            _buildStatCard(
-              context,
-              isDark,
-              'Total Catégories',
-              totalCategories.toString(),
-              Icons.category_outlined,
-              AppColors.primary,
-              AppColors.primaryLight,
-            ),
-            _buildStatCard(
-              context,
-              isDark,
-              'Catégories Actives',
-              activeCategories.toString(),
-              Icons.check_circle_outline,
-              AppColors.success,
-              AppColors.successLight,
-            ),
-            _buildStatCard(
-              context,
-              isDark,
-              'Total Articles',
-              totalArticles.toString(),
-              Icons.article_outlined,
-              AppColors.info,
-              AppColors.infoLight,
-            ),
-            _buildStatCard(
-              context,
-              isDark,
-              'Moyenne/Catégorie',
-              averageArticlesPerCategory.toStringAsFixed(1),
-              Icons.analytics_outlined,
-              AppColors.warning,
-              AppColors.warningLight,
-            ),
-          ],
-        );
-      },
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      crossAxisSpacing: AppSpacing.md,
+      mainAxisSpacing: AppSpacing.md,
+      childAspectRatio: 1.2,
+      children: [
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Total Catégories',
+          value: totalCategories.toString(),
+          subtitle: 'Toutes les catégories',
+          icon: Icons.category_outlined,
+          color: AppColors.primary,
+          trend: '+$totalCategories',
+        ),
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Catégories Actives',
+          value: activeCategories.toString(),
+          subtitle: 'Disponibles',
+          icon: Icons.check_circle_outline,
+          color: AppColors.success,
+          trend: '+$activeCategories',
+        ),
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Total Articles',
+          value: totalArticles.toString(),
+          subtitle: 'Articles dans catégories',
+          icon: Icons.article_outlined,
+          color: AppColors.info,
+          trend: '+$totalArticles',
+        ),
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Moyenne/Catégorie',
+          value: averageArticlesPerCategory.toStringAsFixed(1),
+          subtitle: 'Articles par catégorie',
+          icon: Icons.analytics_outlined,
+          color: AppColors.warning,
+          trend: '${averageArticlesPerCategory.toStringAsFixed(1)}',
+        ),
+      ],
     );
   }
 
   Widget _buildStatCard(
     BuildContext context,
-    bool isDark,
-    String title,
-    String value,
-    IconData icon,
-    Color primaryColor,
-    Color lightColor,
-  ) {
+    bool isDark, {
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required String trend,
+  }) {
     return GlassContainer(
-      padding: EdgeInsets.all(AppSpacing.lg),
-      child: Stack(
-        children: [
-          // Gradient background
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    primaryColor.withOpacity(0.1),
-                    lightColor.withOpacity(0.05),
-                  ],
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: AppRadius.radiusSM,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 20,
+                  ),
                 ),
-                borderRadius: AppRadius.radiusMD,
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.1),
+                    borderRadius: AppRadius.radiusXS,
+                  ),
+                  child: Text(
+                    trend,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            Text(
+              value,
+              style: AppTextStyles.h3.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          
-          // Content
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.15),
-                      borderRadius: AppRadius.radiusSM,
-                    ),
-                    child: Icon(
-                      icon,
-                      color: primaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  // Trend indicator (placeholder for future implementation)
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
-                      borderRadius: AppRadius.radiusSM,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.trending_up,
-                          size: 12,
-                          color: AppColors.success,
-                        ),
-                        SizedBox(width: 2),
-                        Text(
-                          '+2%',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.success,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            SizedBox(height: AppSpacing.xs),
+            Text(
+              subtitle,
+              style: AppTextStyles.caption.copyWith(
+                color: isDark ? AppColors.gray400 : AppColors.gray600,
               ),
-              
-              SizedBox(height: AppSpacing.sm),
-              
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: AppTextStyles.h2.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingGrid(bool isDark) {
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      crossAxisSpacing: AppSpacing.md,
+      mainAxisSpacing: AppSpacing.md,
+      childAspectRatio: 1.2,
+      children: List.generate(4, (index) => _buildLoadingCard(isDark)),
+    );
+  }
+
+  Widget _buildLoadingCard(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.gray800.withOpacity(0.5)
+            : Colors.white.withOpacity(0.8),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: isDark
+              ? AppColors.gray700.withOpacity(0.5)
+              : AppColors.gray200.withOpacity(0.5),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.gray700.withOpacity(0.3)
+                        : AppColors.gray300.withOpacity(0.3),
+                    borderRadius: AppRadius.radiusSM,
                   ),
-                  SizedBox(height: AppSpacing.xs),
-                  Text(
-                    title,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                ),
+                Container(
+                  width: 50,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.gray700.withOpacity(0.3)
+                        : AppColors.gray300.withOpacity(0.3),
+                    borderRadius: AppRadius.radiusXS,
                   ),
-                ],
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            Container(
+              width: 60,
+              height: 24,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.gray700.withOpacity(0.3)
+                    : AppColors.gray300.withOpacity(0.3),
+                borderRadius: AppRadius.radiusXS,
               ),
-            ],
-          ),
-        ],
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Container(
+              width: 80,
+              height: 16,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.gray700.withOpacity(0.3)
+                    : AppColors.gray300.withOpacity(0.3),
+                borderRadius: AppRadius.radiusXS,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

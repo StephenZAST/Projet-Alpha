@@ -28,12 +28,12 @@ class LoyaltyStatsGrid extends StatelessWidget {
 
   Widget _buildLoadingGrid(BuildContext context, bool isDark) {
     return GridView.count(
-      crossAxisCount: _getCrossAxisCount(context),
+      crossAxisCount: 4,
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       crossAxisSpacing: AppSpacing.md,
       mainAxisSpacing: AppSpacing.md,
-      childAspectRatio: 1.8,
+      childAspectRatio: 1.2,
       children: List.generate(
         6,
         (index) => GlassContainer(
@@ -74,12 +74,12 @@ class LoyaltyStatsGrid extends StatelessWidget {
 
   Widget _buildStatsGrid(BuildContext context, bool isDark, stats) {
     return GridView.count(
-      crossAxisCount: _getCrossAxisCount(context),
+      crossAxisCount: 4,
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       crossAxisSpacing: AppSpacing.md,
       mainAxisSpacing: AppSpacing.md,
-      childAspectRatio: 1.8,
+      childAspectRatio: 1.2,
       children: [
         _buildStatCard(
           context,
@@ -210,12 +210,5 @@ class LoyaltyStatsGrid extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  int _getCrossAxisCount(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width > 1200) return 3;
-    if (width > 800) return 2;
-    return 1;
   }
 }

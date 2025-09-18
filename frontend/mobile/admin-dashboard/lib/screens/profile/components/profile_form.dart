@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../constants.dart';
 import '../../../controllers/admin_profile_controller.dart';
+import '../../../widgets/shared/glass_button.dart';
 
 class ProfileForm extends StatefulWidget {
   @override
@@ -99,9 +100,53 @@ class _ProfileFormState extends State<ProfileForm> {
             Expanded(
               child: TextFormField(
                 controller: controller.firstNameController,
+                style: TextStyle(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Prénom',
                   hintText: 'Entrez votre prénom',
+                  labelStyle: TextStyle(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                  ),
+                  hintStyle: TextStyle(
+                    color: isDark ? AppColors.gray400 : AppColors.textMuted,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? AppColors.gray700
+                              .withOpacity(AppColors.glassBorderDarkOpacity)
+                          : AppColors.gray200
+                              .withOpacity(AppColors.glassBorderLightOpacity),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? AppColors.gray700
+                              .withOpacity(AppColors.glassBorderDarkOpacity)
+                          : AppColors.gray200
+                              .withOpacity(AppColors.glassBorderLightOpacity),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: BorderSide(
+                      color: AppColors.primary.withOpacity(0.8),
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: isDark
+                      ? AppColors.cardBgDark.withOpacity(0.6)
+                      : AppColors.cardBgLight.withOpacity(0.6),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.md,
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -115,9 +160,53 @@ class _ProfileFormState extends State<ProfileForm> {
             Expanded(
               child: TextFormField(
                 controller: controller.lastNameController,
+                style: TextStyle(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Nom',
                   hintText: 'Entrez votre nom',
+                  labelStyle: TextStyle(
+                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                  ),
+                  hintStyle: TextStyle(
+                    color: isDark ? AppColors.gray400 : AppColors.textMuted,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? AppColors.gray700
+                              .withOpacity(AppColors.glassBorderDarkOpacity)
+                          : AppColors.gray200
+                              .withOpacity(AppColors.glassBorderLightOpacity),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: BorderSide(
+                      color: isDark
+                          ? AppColors.gray700
+                              .withOpacity(AppColors.glassBorderDarkOpacity)
+                          : AppColors.gray200
+                              .withOpacity(AppColors.glassBorderLightOpacity),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderSide: BorderSide(
+                      color: AppColors.primary.withOpacity(0.8),
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: isDark
+                      ? AppColors.cardBgDark.withOpacity(0.6)
+                      : AppColors.cardBgLight.withOpacity(0.6),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.md,
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -133,17 +222,87 @@ class _ProfileFormState extends State<ProfileForm> {
         TextFormField(
           initialValue: controller.profile.value?.email ?? '',
           enabled: false,
+          style: TextStyle(
+            color: isDark ? AppColors.gray400 : AppColors.textMuted,
+          ),
           decoration: InputDecoration(
             labelText: 'Email',
             hintText: 'Entrez votre email',
+            labelStyle: TextStyle(
+              color: isDark ? AppColors.gray400 : AppColors.textMuted,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.gray700 : AppColors.gray300,
+              ),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: BorderSide(
+                color: isDark ? AppColors.gray700 : AppColors.gray300,
+              ),
+            ),
+            filled: true,
+            fillColor: isDark
+                ? AppColors.gray800.withOpacity(0.5)
+                : AppColors.gray100.withOpacity(0.5),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
           ),
         ),
         SizedBox(height: AppSpacing.md),
         TextFormField(
           controller: controller.phoneController,
+          style: TextStyle(
+            color: isDark ? AppColors.textLight : AppColors.textPrimary,
+          ),
           decoration: InputDecoration(
             labelText: 'Téléphone',
             hintText: 'Entrez votre numéro de téléphone',
+            labelStyle: TextStyle(
+              color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+            ),
+            hintStyle: TextStyle(
+              color: isDark ? AppColors.gray400 : AppColors.textMuted,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: BorderSide(
+                color: isDark
+                    ? AppColors.gray700
+                        .withOpacity(AppColors.glassBorderDarkOpacity)
+                    : AppColors.gray200
+                        .withOpacity(AppColors.glassBorderLightOpacity),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: BorderSide(
+                color: isDark
+                    ? AppColors.gray700
+                        .withOpacity(AppColors.glassBorderDarkOpacity)
+                    : AppColors.gray200
+                        .withOpacity(AppColors.glassBorderLightOpacity),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: BorderSide(
+                color: AppColors.primary.withOpacity(0.8),
+                width: 2,
+              ),
+            ),
+            filled: true,
+            fillColor: isDark
+                ? AppColors.cardBgDark.withOpacity(0.6)
+                : AppColors.cardBgLight.withOpacity(0.6),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
           ),
           validator: (value) {
             if (value != null && value.isNotEmpty) {
@@ -163,17 +322,26 @@ class _ProfileFormState extends State<ProfileForm> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         if (!controller.isEditing.value) ...[
-          ElevatedButton(
+          GlassButton(
+            label: 'Modifier',
+            icon: Icons.edit_outlined,
+            variant: GlassButtonVariant.primary,
             onPressed: controller.startEditing,
-            child: Text('Modifier'),
           ),
         ] else ...[
-          TextButton(
+          GlassButton(
+            label: 'Annuler',
+            icon: Icons.close_outlined,
+            variant: GlassButtonVariant.secondary,
+            isOutlined: true,
             onPressed: controller.cancelEditing,
-            child: Text('Annuler'),
           ),
           SizedBox(width: AppSpacing.md),
-          ElevatedButton(
+          GlassButton(
+            label: 'Enregistrer',
+            icon: Icons.save_outlined,
+            variant: GlassButtonVariant.success,
+            isLoading: controller.isLoading.value,
             onPressed: controller.isLoading.value
                 ? null
                 : () {
@@ -181,16 +349,6 @@ class _ProfileFormState extends State<ProfileForm> {
                       controller.updateProfile();
                     }
                   },
-            child: controller.isLoading.value
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text('Enregistrer'),
           ),
         ],
       ],

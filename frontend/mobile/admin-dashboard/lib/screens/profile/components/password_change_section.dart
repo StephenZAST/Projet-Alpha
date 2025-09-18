@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/admin_profile_controller.dart';
 import '../../../constants.dart';
+import '../../../widgets/shared/glass_button.dart';
 
 class PasswordChangeSection extends StatelessWidget {
   const PasswordChangeSection({Key? key}) : super(key: key);
@@ -68,11 +69,49 @@ class PasswordChangeSection extends StatelessWidget {
     return TextFormField(
       controller: controller,
       obscureText: true,
+      style: TextStyle(
+        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+      ),
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(borderRadius: AppRadius.radiusSM),
+        labelStyle: TextStyle(
+          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(
+            color: isDark
+                ? AppColors.gray700
+                    .withOpacity(AppColors.glassBorderDarkOpacity)
+                : AppColors.gray200
+                    .withOpacity(AppColors.glassBorderLightOpacity),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(
+            color: isDark
+                ? AppColors.gray700
+                    .withOpacity(AppColors.glassBorderDarkOpacity)
+                : AppColors.gray200
+                    .withOpacity(AppColors.glassBorderLightOpacity),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: BorderSide(
+            color: AppColors.primary.withOpacity(0.8),
+            width: 2,
+          ),
+        ),
         filled: true,
-        fillColor: isDark ? AppColors.gray800 : AppColors.gray50,
+        fillColor: isDark
+            ? AppColors.cardBgDark.withOpacity(0.6)
+            : AppColors.cardBgLight.withOpacity(0.6),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
       ),
     );
   }
@@ -81,18 +120,11 @@ class PasswordChangeSection extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        ElevatedButton.icon(
+        GlassButton(
+          label: 'Mettre à jour le mot de passe',
+          icon: Icons.lock_outline,
+          variant: GlassButtonVariant.warning,
           onPressed: controller.changePassword,
-          icon: Icon(Icons.lock_outline),
-          label: Text('Mettre à jour le mot de passe'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.white,
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
-            ),
-          ),
         ),
       ],
     );

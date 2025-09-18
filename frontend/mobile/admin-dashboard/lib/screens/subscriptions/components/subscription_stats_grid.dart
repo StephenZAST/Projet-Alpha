@@ -4,190 +4,222 @@ import '../../../constants.dart';
 import '../../../widgets/shared/glass_container.dart';
 
 class SubscriptionStatsGrid extends StatelessWidget {
-  const SubscriptionStatsGrid({Key? key}) : super(key: key);
+  final bool isLoading;
+
+  const SubscriptionStatsGrid({
+    Key? key,
+    this.isLoading = false,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Responsive grid: 4 colonnes sur desktop, 2 sur tablette, 1 sur mobile
-        int crossAxisCount = 4;
-        if (constraints.maxWidth < 1200) crossAxisCount = 2;
-        if (constraints.maxWidth < 600) crossAxisCount = 1;
+    if (isLoading) {
+      return _buildLoadingGrid(isDark);
+    }
 
-        return GridView.count(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: AppSpacing.md,
-          mainAxisSpacing: AppSpacing.md,
-          childAspectRatio: 1.8,
-          children: [
-            _buildStatCard(
-              context,
-              isDark,
-              'Plans Actifs',
-              '12', // TODO: Récupérer depuis l'API
-              Icons.subscriptions_outlined,
-              AppColors.primary,
-              AppColors.primaryLight,
-              '+2 ce mois',
-            ),
-            _buildStatCard(
-              context,
-              isDark,
-              'Abonnés Actifs',
-              '1,247', // TODO: Récupérer depuis l'API
-              Icons.people_outline,
-              AppColors.success,
-              AppColors.successLight,
-              '+15% ce mois',
-            ),
-            _buildStatCard(
-              context,
-              isDark,
-              'Revenus Mensuels',
-              '45,230 FCFA', // TODO: Récupérer depuis l'API
-              Icons.monetization_on_outlined,
-              AppColors.warning,
-              AppColors.warningLight,
-              '+8% ce mois',
-            ),
-            _buildStatCard(
-              context,
-              isDark,
-              'Taux de Rétention',
-              '87%', // TODO: Récupérer depuis l'API
-              Icons.trending_up_outlined,
-              AppColors.info,
-              AppColors.infoLight,
-              '+3% ce mois',
-            ),
-          ],
-        );
-      },
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      crossAxisSpacing: AppSpacing.md,
+      mainAxisSpacing: AppSpacing.md,
+      childAspectRatio: 1.2,
+      children: [
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Plans Actifs',
+          value: '12', // TODO: Récupérer depuis l'API
+          subtitle: 'Plans disponibles',
+          icon: Icons.subscriptions_outlined,
+          color: AppColors.primary,
+          trend: '+2 ce mois',
+        ),
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Abonnés Actifs',
+          value: '1,247', // TODO: Récupérer depuis l'API
+          subtitle: 'Utilisateurs abonnés',
+          icon: Icons.people_outline,
+          color: AppColors.success,
+          trend: '+15% ce mois',
+        ),
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Revenus Mensuels',
+          value: '45,230 FCFA', // TODO: Récupérer depuis l'API
+          subtitle: 'Revenus ce mois',
+          icon: Icons.monetization_on_outlined,
+          color: AppColors.warning,
+          trend: '+8% ce mois',
+        ),
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Taux de Rétention',
+          value: '87%', // TODO: Récupérer depuis l'API
+          subtitle: 'Fidélité clients',
+          icon: Icons.trending_up_outlined,
+          color: AppColors.info,
+          trend: '+3% ce mois',
+        ),
+      ],
     );
   }
 
   Widget _buildStatCard(
     BuildContext context,
-    bool isDark,
-    String title,
-    String value,
-    IconData icon,
-    Color primaryColor,
-    Color lightColor,
-    String trend,
-  ) {
+    bool isDark, {
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required String trend,
+  }) {
     return GlassContainer(
-      padding: EdgeInsets.all(AppSpacing.lg),
-      child: Stack(
-        children: [
-          // Gradient background
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    primaryColor.withOpacity(0.1),
-                    lightColor.withOpacity(0.05),
-                  ],
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: AppRadius.radiusSM,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 20,
+                  ),
                 ),
-                borderRadius: AppRadius.radiusMD,
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.1),
+                    borderRadius: AppRadius.radiusXS,
+                  ),
+                  child: Text(
+                    trend,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            Text(
+              value,
+              style: AppTextStyles.h3.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          
-          // Content
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.15),
-                      borderRadius: AppRadius.radiusSM,
-                    ),
-                    child: Icon(
-                      icon,
-                      color: primaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  // Trend indicator
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
-                      borderRadius: AppRadius.radiusSM,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.trending_up,
-                          size: 12,
-                          color: AppColors.success,
-                        ),
-                        SizedBox(width: 2),
-                        Text(
-                          trend.split(' ')[0], // Prend juste le pourcentage
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.success,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            SizedBox(height: AppSpacing.xs),
+            Text(
+              subtitle,
+              style: AppTextStyles.caption.copyWith(
+                color: isDark ? AppColors.gray400 : AppColors.gray600,
               ),
-              
-              SizedBox(height: AppSpacing.sm),
-              
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: AppTextStyles.h2.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingGrid(bool isDark) {
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      crossAxisSpacing: AppSpacing.md,
+      mainAxisSpacing: AppSpacing.md,
+      childAspectRatio: 1.2,
+      children: List.generate(4, (index) => _buildLoadingCard(isDark)),
+    );
+  }
+
+  Widget _buildLoadingCard(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.gray800.withOpacity(0.5)
+            : Colors.white.withOpacity(0.8),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: isDark
+              ? AppColors.gray700.withOpacity(0.5)
+              : AppColors.gray200.withOpacity(0.5),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.gray700.withOpacity(0.3)
+                        : AppColors.gray300.withOpacity(0.3),
+                    borderRadius: AppRadius.radiusSM,
                   ),
-                  SizedBox(height: AppSpacing.xs),
-                  Text(
-                    title,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                ),
+                Container(
+                  width: 50,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.gray700.withOpacity(0.3)
+                        : AppColors.gray300.withOpacity(0.3),
+                    borderRadius: AppRadius.radiusXS,
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    trend,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            Container(
+              width: 60,
+              height: 24,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.gray700.withOpacity(0.3)
+                    : AppColors.gray300.withOpacity(0.3),
+                borderRadius: AppRadius.radiusXS,
               ),
-            ],
-          ),
-        ],
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Container(
+              width: 80,
+              height: 16,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.gray700.withOpacity(0.3)
+                    : AppColors.gray300.withOpacity(0.3),
+                borderRadius: AppRadius.radiusXS,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

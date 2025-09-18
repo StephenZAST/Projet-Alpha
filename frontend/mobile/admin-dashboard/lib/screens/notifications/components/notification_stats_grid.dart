@@ -8,6 +8,7 @@ class NotificationStatsGrid extends StatelessWidget {
   final int unreadNotifications;
   final int highPriorityNotifications;
   final int todayNotifications;
+  final bool isLoading;
 
   const NotificationStatsGrid({
     Key? key,
@@ -15,166 +16,240 @@ class NotificationStatsGrid extends StatelessWidget {
     required this.unreadNotifications,
     required this.highPriorityNotifications,
     required this.todayNotifications,
+    this.isLoading = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Responsive grid: 4 colonnes sur desktop, 2 sur tablette, 1 sur mobile
-        int crossAxisCount = 4;
-        if (constraints.maxWidth < 1200) crossAxisCount = 2;
-        if (constraints.maxWidth < 600) crossAxisCount = 1;
+    if (isLoading) {
+      return _buildLoadingGrid(isDark);
+    }
 
-        return GridView.count(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: AppSpacing.md,
-          mainAxisSpacing: AppSpacing.md,
-          childAspectRatio: 1.8,
-          children: [
-            _buildStatCard(
-              context,
-              isDark,
-              'Total',
-              totalNotifications.toString(),
-              Icons.notifications_outlined,
-              AppColors.primary,
-              AppColors.primaryLight,
-            ),
-            _buildStatCard(
-              context,
-              isDark,
-              'Non lues',
-              unreadNotifications.toString(),
-              Icons.mark_email_unread_outlined,
-              AppColors.error,
-              AppColors.errorLight,
-            ),
-            _buildStatCard(
-              context,
-              isDark,
-              'Priorité haute',
-              highPriorityNotifications.toString(),
-              Icons.priority_high_outlined,
-              AppColors.warning,
-              AppColors.warningLight,
-            ),
-            _buildStatCard(
-              context,
-              isDark,
-              'Aujourd\'hui',
-              todayNotifications.toString(),
-              Icons.today_outlined,
-              AppColors.success,
-              AppColors.successLight,
-            ),
-          ],
-        );
-      },
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      crossAxisSpacing: AppSpacing.md,
+      mainAxisSpacing: AppSpacing.md,
+      childAspectRatio: 1.2,
+      children: [
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Total',
+          value: totalNotifications.toString(),
+          subtitle: 'Toutes notifications',
+          icon: Icons.notifications_outlined,
+          color: AppColors.primary,
+          trend: '+$totalNotifications',
+        ),
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Non lues',
+          value: unreadNotifications.toString(),
+          subtitle: 'À traiter',
+          icon: Icons.mark_email_unread_outlined,
+          color: AppColors.error,
+          trend: unreadNotifications > 0 ? '$unreadNotifications' : '0',
+        ),
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Priorité haute',
+          value: highPriorityNotifications.toString(),
+          subtitle: 'Urgentes',
+          icon: Icons.priority_high_outlined,
+          color: AppColors.warning,
+          trend: highPriorityNotifications > 0
+              ? '$highPriorityNotifications'
+              : '0',
+        ),
+        _buildStatCard(
+          context,
+          isDark,
+          title: 'Aujourd\'hui',
+          value: todayNotifications.toString(),
+          subtitle: 'Nouvelles aujourd\'hui',
+          icon: Icons.today_outlined,
+          color: AppColors.success,
+          trend: '+$todayNotifications',
+        ),
+      ],
     );
   }
 
   Widget _buildStatCard(
     BuildContext context,
-    bool isDark,
-    String title,
-    String value,
-    IconData icon,
-    Color primaryColor,
-    Color lightColor,
-  ) {
+    bool isDark, {
+    required String title,
+    required String value,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required String trend,
+  }) {
     return GlassContainer(
-      padding: EdgeInsets.all(AppSpacing.lg),
-      child: Stack(
-        children: [
-          // Gradient background
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    primaryColor.withOpacity(0.1),
-                    lightColor.withOpacity(0.05),
-                  ],
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: AppRadius.radiusSM,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 20,
+                  ),
                 ),
-                borderRadius: AppRadius.radiusMD,
+                // Pulse animation pour les notifications non lues
+                if (title == 'Non lues' && int.parse(value) > 0)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      borderRadius: AppRadius.radiusXS,
+                    ),
+                    child: Text(
+                      'Urgent',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.1),
+                      borderRadius: AppRadius.radiusXS,
+                    ),
+                    child: Text(
+                      trend,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            Text(
+              value,
+              style: AppTextStyles.h3.copyWith(
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          
-          // Content
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.15),
-                      borderRadius: AppRadius.radiusSM,
-                    ),
-                    child: Icon(
-                      icon,
-                      color: primaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  // Pulse animation pour les notifications non lues
-                  if (title == 'Non lues' && int.parse(value) > 0)
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: AnimatedContainer(
-                        duration: Duration(seconds: 1),
-                        curve: Curves.easeInOut,
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                ],
+            SizedBox(height: AppSpacing.xs),
+            Text(
+              subtitle,
+              style: AppTextStyles.caption.copyWith(
+                color: isDark ? AppColors.gray400 : AppColors.gray600,
               ),
-              
-              SizedBox(height: AppSpacing.sm),
-              
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: AppTextStyles.h2.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingGrid(bool isDark) {
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      crossAxisSpacing: AppSpacing.md,
+      mainAxisSpacing: AppSpacing.md,
+      childAspectRatio: 1.2,
+      children: List.generate(4, (index) => _buildLoadingCard(isDark)),
+    );
+  }
+
+  Widget _buildLoadingCard(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.gray800.withOpacity(0.5)
+            : Colors.white.withOpacity(0.8),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: isDark
+              ? AppColors.gray700.withOpacity(0.5)
+              : AppColors.gray200.withOpacity(0.5),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.gray700.withOpacity(0.3)
+                        : AppColors.gray300.withOpacity(0.3),
+                    borderRadius: AppRadius.radiusSM,
                   ),
-                  SizedBox(height: AppSpacing.xs),
-                  Text(
-                    title,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.gray300 : AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                ),
+                Container(
+                  width: 50,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.gray700.withOpacity(0.3)
+                        : AppColors.gray300.withOpacity(0.3),
+                    borderRadius: AppRadius.radiusXS,
                   ),
-                ],
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            Container(
+              width: 60,
+              height: 24,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.gray700.withOpacity(0.3)
+                    : AppColors.gray300.withOpacity(0.3),
+                borderRadius: AppRadius.radiusXS,
               ),
-            ],
-          ),
-        ],
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Container(
+              width: 80,
+              height: 16,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.gray700.withOpacity(0.3)
+                    : AppColors.gray300.withOpacity(0.3),
+                borderRadius: AppRadius.radiusXS,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

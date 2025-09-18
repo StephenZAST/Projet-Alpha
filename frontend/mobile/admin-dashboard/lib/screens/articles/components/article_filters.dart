@@ -151,6 +151,32 @@ class _ArticleFiltersState extends State<ArticleFilters> {
       ),
       child: GetBuilder<CategoryController>(
         builder: (categoryController) {
+          // Protection contre null/état non initialisé
+          if (categoryController.categories.isEmpty &&
+              categoryController.isLoading.value) {
+            return DropdownButtonFormField<String>(
+              value: null,
+              decoration: InputDecoration(
+                labelText: 'Catégorie',
+                labelStyle: TextStyle(
+                  color: isDark ? AppColors.gray300 : AppColors.gray600,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: null,
+                  child: Text('Chargement...'),
+                ),
+              ],
+              onChanged: null,
+            );
+          }
+
           return DropdownButtonFormField<String>(
             value: _selectedCategoryId,
             decoration: InputDecoration(
@@ -176,17 +202,21 @@ class _ArticleFiltersState extends State<ArticleFilters> {
               ...categoryController.categories.map((category) {
                 return DropdownMenuItem(
                   value: category.id,
-                  child: Row(
-                    children: [
-                      Icon(Icons.folder, size: 16, color: AppColors.primary),
-                      SizedBox(width: AppSpacing.xs),
-                      Expanded(
-                        child: Text(
-                          category.name,
-                          overflow: TextOverflow.ellipsis,
+                  child: Container(
+                    width: double.infinity,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.folder, size: 16, color: AppColors.primary),
+                        SizedBox(width: AppSpacing.xs),
+                        Flexible(
+                          child: Text(
+                            category.name,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               }),
@@ -236,6 +266,7 @@ class _ArticleFiltersState extends State<ArticleFilters> {
           DropdownMenuItem(
             value: 'name_asc',
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.sort_by_alpha, size: 16, color: AppColors.primary),
                 SizedBox(width: AppSpacing.xs),
@@ -246,6 +277,7 @@ class _ArticleFiltersState extends State<ArticleFilters> {
           DropdownMenuItem(
             value: 'name_desc',
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.sort_by_alpha, size: 16, color: AppColors.primary),
                 SizedBox(width: AppSpacing.xs),
@@ -256,6 +288,7 @@ class _ArticleFiltersState extends State<ArticleFilters> {
           DropdownMenuItem(
             value: 'date_desc',
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.access_time, size: 16, color: AppColors.info),
                 SizedBox(width: AppSpacing.xs),
@@ -266,6 +299,7 @@ class _ArticleFiltersState extends State<ArticleFilters> {
           DropdownMenuItem(
             value: 'date_asc',
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.history, size: 16, color: AppColors.warning),
                 SizedBox(width: AppSpacing.xs),

@@ -597,11 +597,11 @@ export class AdminService {
 
   static async getAdminProfile(adminId: string) {
     try {
-      const admin = await prisma.users.findUnique({
-        where: { 
-          id: adminId,
-          role: 'ADMIN'
-        },
+      console.log('[AdminService] Looking for user with ID:', adminId);
+      
+      // Chercher l'utilisateur sans restriction de rôle d'abord
+      const user = await prisma.users.findUnique({
+        where: { id: adminId },
         select: {
           id: true,
           email: true,
@@ -613,20 +613,31 @@ export class AdminService {
           updated_at: true
         }
       });
-
-      if (!admin) {
-        throw new Error('Admin not found');
+      
+      console.log('[AdminService] User found:', user);
+      
+      if (!user) {
+        throw new Error(`User with ID ${adminId} not found`);
+      }
+      
+      // Vérifier que l'utilisateur a un rôle d'administration (plus flexible)
+      const adminRoles = ['ADMIN', 'SUPER_ADMIN']; // On peut ajouter d'autres rôles si nécessaire
+      if (!adminRoles.includes(user.role as string)) {
+        console.log(`[AdminService] User ${user.email} has role ${user.role}, which is not an admin role`);
+        throw new Error(`User ${user.email} does not have admin privileges`);
       }
 
+      console.log('[AdminService] Admin profile loaded successfully for:', user.email);
+
       return {
-        id: admin.id,
-        email: admin.email,
-        firstName: admin.first_name || '',
-        lastName: admin.last_name || '',
-        phone: admin.phone || '',
-        role: admin.role,
-        createdAt: admin.created_at || new Date(),
-        updatedAt: admin.updated_at || new Date()
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
+        phone: user.phone || '',
+        role: user.role,
+        createdAt: user.created_at || new Date(),
+        updatedAt: user.updated_at || new Date()
       };
     } catch (error) {
       console.error('[AdminService] Get admin profile error:', error);
@@ -652,8 +663,8 @@ export class AdminService {
 
       const admin = await prisma.users.update({
         where: { 
-          id: adminId,
-          role: 'ADMIN'
+          id: adminId
+          // Pas de restriction de rôle ici - la validation est faite au niveau du middleware d'autorisation
         },
         data: updateData,
         select: {
@@ -689,8 +700,8 @@ export class AdminService {
       // First verify current password
       const admin = await prisma.users.findUnique({
         where: { 
-          id: adminId,
-          role: 'ADMIN'
+          id: adminId
+          // Pas de restriction de rôle ici - la validation est faite au niveau du middleware d'autorisation
         },
         select: {
           id: true,
