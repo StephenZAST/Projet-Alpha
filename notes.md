@@ -143,3 +143,24 @@ ________________
 
 
 
+ok parait en te basant sur le design pattern et la qualite du design vouleu et l'experience utilisateur des utilisateur qui exploiteron cette admin je propose que lon fasse une mise a jours du dashboard cela pourrait etre une mini refonte des partie qui on besoint de mise a jours pour offrir une meilleure experience utilisateur et un meilleure design  sans focement creer des nouelle feature qui creerait peut etre des erreure liee avec la shynchronisation du backend je propose de la mise en place du systmen soit frontend pas besoin de repasser pour ajuster des feature dans le backend pour faire cette ajustement du dashbord je tasoujoute toutes les differente fcichier et composant constitutif du dashboard 
+
+ceux avec le side menu aussi une fois que le dashboard est finie on peut revenir au sidemenu pour une ajusterment de design pour le rendre mangnifique et meilleure design moderne possbile
+
+
+je te propsoe de faire un planning precis de toutes les differente implementation qu'il faut faire selon ce que lon voudrais a la fin afin de part le planning voir exactement ce que lon a vraiment besoin avant de commencer l'implementation tu comprend il sagis pas seulement de la page des dashboard qu'il fait mettre a niveau et creer une meilleure design meilleur qque ceux eut en page affiliate par exemple mais une meilleure design et surtout une meilleure exepplerience utilisateur plus aboutie et optimum et tres moderne
+
+je te rpopsoe de faire l'ajustment de la page order screen tupiquement les page qui compose cette page order qui est complexe et constituer de beaucoup de composant pour cela il faudrais bien analyser toutes ces partie et faire une repartition sous etpae des implementation dans cette page order mettre a niveau les different button les servition filtre les idfferente dialog de la page les differente etpae des etapper refactorer toutes les design de ces partie la tu comprend tout en s'assurant que ce qui fonctionne deja c'est a dire les focntionnalite fonctionnelle qui marche dans ces page soit concerver les autre qui seront par exemple perce comme complet superflux et qui peut etre etre simplifier ou ameliorer avec u edesign moderne et robuste avec une experence utilisateur des plus optimum et mieux pense soit par exemple fait a locuurence mis en clair icie dnas cette implementation du planningn globale et precis dans ce fichier son consigne tot ce qui doit etre mis en place dans une planning tres precis lie leu et utilise comme ref de progression pour continuer avec la suite de nos implementation jusqua toutes les accomplir
+
+
+
+_____________
+
+
+
+
+Pour toute question ou besoin de compréhension sur une feature du projet Alpha, réfère-toi aux fichiers suivants :
+
+REFERENCE_FEATURES.md : Documentation progressive, cartographie complète des features principales (auth, user, order, address, etc.) avec liens backend/frontend, schémas d’interaction et conseils de navigation.
+REFERENCE_ARTICLE_SERVICE.md : Référence détaillée pour les features Article, Service, Admin, OrderItem, Affiliate, Delivery, Notification, Subscription, Offer, avec explications sur la logique métier, les endpoints, et la structure des fichiers.
+Lis la section correspondante à la feature recherchée dans ces fichiers pour obtenir une vue d’ensemble, la liste des fichiers impliqués, et les points d’attention pour naviguer rapidement dans le code.
