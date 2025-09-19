@@ -1,10 +1,14 @@
 import 'package:admin/controllers/orders_controller.dart';
 import 'package:admin/widgets/glass_button.dart';
+import 'package:admin/widgets/shared/glass_container.dart';
+import 'package:admin/constants.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:admin/models/address.dart';
 import 'package:admin/screens/orders/components/address_selection_map.dart';
 import 'package:admin/screens/orders/components/client_addresses_tab.dart';
+import 'order_address_components.dart';
+import 'dart:ui';
 
 class OrderAddressDialog extends StatefulWidget {
   final Address initialAddress;
@@ -23,146 +27,442 @@ class OrderAddressDialog extends StatefulWidget {
 }
 
 class _OrderAddressDialogState extends State<OrderAddressDialog>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late AnimationController _tabAnimationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
   late TabController _tabController;
+  int _selectedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() => _selectedTabIndex = _tabController.index);
+      }
+    });
+    
     final OrdersController controller = Get.find<OrdersController>();
     if (controller.orderAddressEditForm.isEmpty) {
       controller.loadOrderAddressEditForm(widget.initialAddress);
     }
   }
 
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _tabAnimationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+    ));
+
+    _animationController.forward();
+  }
+
   @override
   void dispose() {
+    _animationController.dispose();
+    _tabAnimationController.dispose();
     _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final OrdersController controller = Get.find<OrdersController>();
-    return Dialog(
-      child: Container(
-        width: 700,
-        height: 500,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'Détails'),
-                Tab(text: 'Carte'),
-                Tab(text: 'Adresses du client'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildAddressForm(controller),
-                  AddressSelectionMap(
-                    initialAddress: widget.initialAddress,
-                    onAddressSelected: (address) {
-                      controller.loadOrderAddressEditForm(address);
-                      controller.setOrderAddressEditField('isDefault', true);
-                    },
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                width: 800,
+                height: MediaQuery.of(context).size.height * 0.85,
+                child: GlassContainer(
+                  variant: GlassContainerVariant.neutral,
+                  padding: EdgeInsets.zero,
+                  borderRadius: AppRadius.xl,
+                  child: Column(
+                    children: [
+                      _buildDialogHeader(isDark),
+                      _buildTabBar(isDark),
+                      Expanded(
+                        child: _buildTabContent(isDark),
+                      ),
+                      _buildDialogActions(isDark),
+                    ],
                   ),
-                  ClientAddressesTab(
-                    userId: widget.initialAddress.userId,
-                    selectedAddress: _addressFromForm(controller),
-                    onAddressSelected: (address) {
-                      controller.loadOrderAddressEditForm(address);
-                      controller.setOrderAddressEditField('isDefault', true);
-                      _tabController.animateTo(0);
-                    },
-                    onAddNewAddress: () {
-                      controller.clearOrderAddressEditForm();
-                      controller.setOrderAddressEditField('isDefault', true);
-                      _tabController.animateTo(0);
-                    },
-                  ),
-                ],
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                GlassButton(
-                  label: 'Enregistrer',
-                  variant: GlassButtonVariant.primary,
-                  onPressed: () async {
-                    await _onSavePressed(context, controller);
-                  },
-                ),
-                const SizedBox(width: 12),
-                GlassButton(
-                  label: 'Retour',
-                  variant: GlassButtonVariant.secondary,
-                  onPressed: () => Navigator.of(context).pop(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDialogHeader(bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.info.withOpacity(0.1),
+            AppColors.primary.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          topLeft: AppRadius.xl.topLeft,
+          topRight: AppRadius.xl.topRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.info, AppColors.info.withOpacity(0.8)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.info.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
               ],
             ),
-          ],
-        ),
+            child: Icon(
+              Icons.location_on,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Modifier l\'Adresse',
+                  style: AppTextStyles.h2.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Gestion de l\'adresse de livraison',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _ModernCloseButton(
+            onPressed: () => Get.back(),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildAddressForm(OrdersController controller) {
-    return Obx(() => SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                decoration: const InputDecoration(labelText: 'Nom'),
-                onChanged: (v) =>
-                    controller.setOrderAddressEditField('name', v),
-                controller: TextEditingController(
-                  text: controller.orderAddressEditForm['name'] ?? '',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Rue'),
-                onChanged: (v) =>
-                    controller.setOrderAddressEditField('street', v),
-                controller: TextEditingController(
-                  text: controller.orderAddressEditForm['street'] ?? '',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Ville'),
-                onChanged: (v) =>
-                    controller.setOrderAddressEditField('city', v),
-                controller: TextEditingController(
-                  text: controller.orderAddressEditForm['city'] ?? '',
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: const InputDecoration(labelText: 'Code postal'),
-                onChanged: (v) =>
-                    controller.setOrderAddressEditField('postalCode', v),
-                controller: TextEditingController(
-                  text: controller.orderAddressEditForm['postalCode'] ?? '',
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                  'Latitude: ${controller.orderAddressEditForm['gpsLatitude'] ?? ''}'),
-              Text(
-                  'Longitude: ${controller.orderAddressEditForm['gpsLongitude'] ?? ''}'),
-            ],
+  Widget _buildTabBar(bool isDark) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Row(
+        children: [
+          _ModernTabButton(
+            label: 'Détails',
+            icon: Icons.edit_location,
+            isSelected: _selectedTabIndex == 0,
+            onPressed: () => _tabController.animateTo(0),
+            isDark: isDark,
           ),
-        ));
+          SizedBox(width: AppSpacing.sm),
+          _ModernTabButton(
+            label: 'Carte',
+            icon: Icons.map,
+            isSelected: _selectedTabIndex == 1,
+            onPressed: () => _tabController.animateTo(1),
+            isDark: isDark,
+          ),
+          SizedBox(width: AppSpacing.sm),
+          _ModernTabButton(
+            label: 'Adresses Client',
+            icon: Icons.list_alt,
+            isSelected: _selectedTabIndex == 2,
+            onPressed: () => _tabController.animateTo(2),
+            isDark: isDark,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabContent(bool isDark) {
+    final OrdersController controller = Get.find<OrdersController>();
+    
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      child: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildAddressForm(controller, isDark),
+          _buildMapTab(isDark),
+          _buildClientAddressesTab(isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogActions(bool isDark) {
+    final OrdersController controller = Get.find<OrdersController>();
+    
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.3),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ModernActionButton(
+              icon: Icons.close,
+              label: 'Annuler',
+              onPressed: () => Get.back(),
+              variant: _AddressActionVariant.secondary,
+            ),
+          ),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Obx(() => _ModernActionButton(
+              icon: Icons.save,
+              label: 'Enregistrer',
+              onPressed: () => _onSavePressed(context, controller),
+              variant: _AddressActionVariant.primary,
+              isLoading: controller.isLoading.value,
+            )),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressForm(OrdersController controller, bool isDark) {
+    return Obx(() => SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section informations de base
+          GlassContainer(
+            variant: GlassContainerVariant.neutral,
+            padding: EdgeInsets.all(AppSpacing.lg),
+            borderRadius: AppRadius.lg,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.edit_location,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Informations de l\'Adresse',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppSpacing.lg),
+                
+                _ModernAddressField(
+                  label: 'Nom de l\'adresse',
+                  icon: Icons.label,
+                  value: controller.orderAddressEditForm['name'] ?? '',
+                  onChanged: (v) => controller.setOrderAddressEditField('name', v),
+                  isDark: isDark,
+                  hint: 'Ex: Domicile, Bureau...',
+                ),
+                SizedBox(height: AppSpacing.md),
+                
+                _ModernAddressField(
+                  label: 'Rue et numéro',
+                  icon: Icons.home,
+                  value: controller.orderAddressEditForm['street'] ?? '',
+                  onChanged: (v) => controller.setOrderAddressEditField('street', v),
+                  isDark: isDark,
+                  hint: 'Adresse complète',
+                  isRequired: true,
+                ),
+                SizedBox(height: AppSpacing.md),
+                
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _ModernAddressField(
+                        label: 'Ville',
+                        icon: Icons.location_city,
+                        value: controller.orderAddressEditForm['city'] ?? '',
+                        onChanged: (v) => controller.setOrderAddressEditField('city', v),
+                        isDark: isDark,
+                        hint: 'Ville',
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _ModernAddressField(
+                        label: 'Code postal',
+                        icon: Icons.markunread_mailbox,
+                        value: controller.orderAddressEditForm['postalCode'] ?? '',
+                        onChanged: (v) => controller.setOrderAddressEditField('postalCode', v),
+                        isDark: isDark,
+                        hint: 'CP',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          SizedBox(height: AppSpacing.lg),
+          
+          // Section coordonnées GPS
+          if (controller.orderAddressEditForm['gpsLatitude'] != null ||
+              controller.orderAddressEditForm['gpsLongitude'] != null)
+            GlassContainer(
+              variant: GlassContainerVariant.info,
+              padding: EdgeInsets.all(AppSpacing.lg),
+              borderRadius: AppRadius.lg,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.gps_fixed,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Coordonnées GPS',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _GPSInfoCard(
+                          label: 'Latitude',
+                          value: controller.orderAddressEditForm['gpsLatitude']?.toString() ?? 'Non définie',
+                          icon: Icons.north,
+                        ),
+                      ),
+                      SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: _GPSInfoCard(
+                          label: 'Longitude',
+                          value: controller.orderAddressEditForm['gpsLongitude']?.toString() ?? 'Non définie',
+                          icon: Icons.east,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    ));
+  }
+
+  Widget _buildMapTab(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.md),
+      borderRadius: AppRadius.lg,
+      child: AddressSelectionMap(
+        initialAddress: widget.initialAddress,
+        onAddressSelected: (address) {
+          final controller = Get.find<OrdersController>();
+          controller.loadOrderAddressEditForm(address);
+          controller.setOrderAddressEditField('isDefault', true);
+        },
+      ),
+    );
+  }
+
+  Widget _buildClientAddressesTab(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.md),
+      borderRadius: AppRadius.lg,
+      child: ClientAddressesTab(
+        userId: widget.initialAddress.userId,
+        selectedAddress: _addressFromForm(Get.find<OrdersController>()),
+        onAddressSelected: (address) {
+          final controller = Get.find<OrdersController>();
+          controller.loadOrderAddressEditForm(address);
+          controller.setOrderAddressEditField('isDefault', true);
+          _tabController.animateTo(0);
+        },
+        onAddNewAddress: () {
+          final controller = Get.find<OrdersController>();
+          controller.clearOrderAddressEditForm();
+          controller.setOrderAddressEditField('isDefault', true);
+          _tabController.animateTo(0);
+        },
+      ),
+    );
   }
 
   Address _addressFromForm(OrdersController controller) {

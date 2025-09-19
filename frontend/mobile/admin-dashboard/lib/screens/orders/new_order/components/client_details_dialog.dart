@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:admin/widgets/shared/glass_button.dart';
+import 'package:admin/widgets/shared/glass_container.dart';
 import '../../../../../models/user.dart';
 import '../../../../../models/address.dart';
 import '../../../../../services/address_service.dart';
 import '../../../users/components/address_edit_dialog.dart';
 import '../../../../constants.dart';
+import 'client_details_components.dart';
+import 'dart:ui';
 
 class ClientDetailsDialog extends StatefulWidget {
   final User client;
@@ -17,7 +20,12 @@ class ClientDetailsDialog extends StatefulWidget {
   State<ClientDetailsDialog> createState() => _ClientDetailsDialogState();
 }
 
-class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
+class _ClientDetailsDialogState extends State<ClientDetailsDialog>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late AnimationController _tabController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
   late TextEditingController firstNameController;
   late TextEditingController lastNameController;
   late TextEditingController emailController;
@@ -29,6 +37,7 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
     firstNameController = TextEditingController(text: widget.client.firstName);
     lastNameController = TextEditingController(text: widget.client.lastName);
     emailController = TextEditingController(text: widget.client.email);
@@ -36,8 +45,40 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
     _loadAddresses();
   }
 
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _tabController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+    ));
+
+    _animationController.forward();
+  }
+
   @override
   void dispose() {
+    _animationController.dispose();
+    _tabController.dispose();
     firstNameController.dispose();
     lastNameController.dispose();
     emailController.dispose();
@@ -64,7 +105,7 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
       final data = await UserService.adminResetUserPassword(widget.client.id);
       final user = data['user'];
       final tempPassword = data['tempPassword'];
-      await Get.dialog(_PasswordResetResultDialog(
+      await Get.dialog(_ModernPasswordResetDialog(
         user: user,
         tempPassword: tempPassword,
       ));
@@ -79,69 +120,307 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Container(
-        width: 500,
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Détails du client',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              _buildEditForm(),
-              const SizedBox(height: 16),
-              _buildAddressesSection(),
-              const SizedBox(height: 16),
-              _buildActionsSection(),
-              const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Get.back(),
-                  child: const Text('Fermer'),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                width: 600,
+                height: MediaQuery.of(context).size.height * 0.8,
+                child: GlassContainer(
+                  variant: GlassContainerVariant.neutral,
+                  padding: EdgeInsets.zero,
+                  borderRadius: AppRadius.xl,
+                  child: Column(
+                    children: [
+                      _buildDialogHeader(isDark),
+                      Expanded(
+                        child: _buildDialogContent(isDark),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDialogHeader(bool isDark) {
+    final fullName = ((widget.client.firstName ?? '') + ' ' + (widget.client.lastName ?? ''))
+        .trim()
+        .isEmpty
+        ? 'Client'
+        : ((widget.client.firstName ?? '') + ' ' + (widget.client.lastName ?? '')).trim();
+
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withOpacity(0.1),
+            AppColors.accent.withOpacity(0.05),
+          ],
         ),
+        borderRadius: BorderRadius.only(
+          topLeft: AppRadius.xl.topLeft,
+          topRight: AppRadius.xl.topRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Avatar du client
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.accent],
+              ),
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                fullName[0].toUpperCase(),
+                style: AppTextStyles.h3.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Détails Client',
+                  style: AppTextStyles.h2.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  fullName,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _ModernCloseButton(
+            onPressed: () => Get.back(),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildEditForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: firstNameController,
-          decoration: InputDecoration(labelText: 'Prénom'),
-        ),
-        TextField(
-          controller: lastNameController,
-          decoration: InputDecoration(labelText: 'Nom'),
-        ),
-        TextField(
-          controller: emailController,
-          decoration: InputDecoration(labelText: 'Email'),
-        ),
-        TextField(
-          controller: phoneController,
-          decoration: InputDecoration(labelText: 'Téléphone'),
-        ),
-        const SizedBox(height: 12),
-        GlassButton(
-          label: 'Enregistrer les modifications',
-          variant: GlassButtonVariant.primary,
-          isLoading: isSaving,
-          onPressed: isSaving ? null : _saveClientInfo,
-        ),
-      ],
+  Widget _buildDialogContent(bool isDark) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section informations personnelles
+          _buildPersonalInfoSection(isDark),
+          SizedBox(height: AppSpacing.xl),
+          
+          // Section adresses
+          _buildAddressesSection(isDark),
+          SizedBox(height: AppSpacing.xl),
+          
+          // Section actions
+          _buildActionsSection(isDark),
+        ],
+      ),
     );
   }
 
+  Widget _buildPersonalInfoSection(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.person_outline,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Informations Personnelles',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.lg),
+          
+          // Champs de saisie modernes
+          _ModernTextField(
+            controller: firstNameController,
+            label: 'Prénom',
+            icon: Icons.person,
+            isDark: isDark,
+          ),
+          SizedBox(height: AppSpacing.md),
+          
+          _ModernTextField(
+            controller: lastNameController,
+            label: 'Nom de famille',
+            icon: Icons.person_outline,
+            isDark: isDark,
+          ),
+          SizedBox(height: AppSpacing.md),
+          
+          _ModernTextField(
+            controller: emailController,
+            label: 'Adresse email',
+            icon: Icons.email,
+            keyboardType: TextInputType.emailAddress,
+            isDark: isDark,
+          ),
+          SizedBox(height: AppSpacing.md),
+          
+          _ModernTextField(
+            controller: phoneController,
+            label: 'Numéro de téléphone',
+            icon: Icons.phone,
+            keyboardType: TextInputType.phone,
+            isDark: isDark,
+          ),
+          SizedBox(height: AppSpacing.lg),
+          
+          // Bouton de sauvegarde
+          _ModernSaveButton(
+            isLoading: isSaving,
+            onPressed: isSaving ? null : _saveClientInfo,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressesSection(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.location_on,
+                color: AppColors.info,
+                size: 20,
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Adresses du Client',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              _ModernActionButton(
+                icon: Icons.add_location_alt,
+                label: 'Ajouter',
+                onPressed: () => _addNewAddress(),
+                variant: _ClientActionVariant.info,
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.lg),
+          
+          if (isLoadingAddresses)
+            _buildLoadingAddresses(isDark)
+          else if (_addresses.isEmpty)
+            _buildEmptyAddresses(isDark)
+          else
+            _buildAddressList(isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionsSection(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.warning,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.admin_panel_settings,
+                color: Colors.white,
+                size: 20,
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Actions Administrateur',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+          Text(
+            'Actions sensibles nécessitant des privilèges administrateur',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          
+          _ModernActionButton(
+            icon: Icons.lock_reset,
+            label: 'Réinitialiser le mot de passe',
+            onPressed: _resetUserPassword,
+            variant: _ClientActionVariant.warning,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Méthodes utilitaires
   Future<void> _saveClientInfo() async {
     setState(() => isSaving = true);
     // TODO: Appeler le service pour mettre à jour le client
@@ -153,109 +432,116 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog> {
         color: AppColors.success);
   }
 
-  Widget _buildAddressesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  void _addNewAddress() async {
+    await Get.dialog(AddressEditDialog(
+      userId: widget.client.id,
+      onAddressSaved: (address) => _loadAddresses(),
+    ));
+  }
+
+  Widget _buildLoadingAddresses(bool isDark) {
+    return Center(
+      child: Container(
+        padding: EdgeInsets.all(AppSpacing.xl),
+        child: Column(
           children: [
-            Text('Adresses', style: Theme.of(context).textTheme.titleMedium),
-            GlassButton(
-              label: 'Ajouter',
-              icon: Icons.add_location_alt,
-              variant: GlassButtonVariant.info,
-              size: GlassButtonSize.small,
-              onPressed: () async {
-                await Get.dialog(AddressEditDialog(
-                  userId: widget.client.id,
-                  onAddressSaved: (address) => _loadAddresses(),
-                ));
-              },
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
+            ),
+            SizedBox(height: AppSpacing.md),
+            Text(
+              'Chargement des adresses...',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.gray400 : AppColors.gray600,
+              ),
             ),
           ],
         ),
-        isLoadingAddresses
-            ? Center(child: CircularProgressIndicator())
-            : _addresses.isEmpty
-                ? Text('Aucune adresse enregistrée')
-                : Column(
-                    children: _addresses
-                        .map((address) => ListTile(
-                              title: Text(address.fullAddress),
-                              subtitle: Text(address.name ?? ''),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.edit),
-                                    onPressed: () async {
-                                      await Get.dialog(AddressEditDialog(
-                                        userId: widget.client.id,
-                                        initialAddress: address,
-                                        onAddressSaved: (a) => _loadAddresses(),
-                                      ));
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.delete),
-                                    onPressed: () async {
-                                      final confirm = await Get.dialog<bool>(
-                                        AlertDialog(
-                                          title:
-                                              Text('Confirmer la suppression'),
-                                          content: Text(
-                                              'Voulez-vous vraiment supprimer cette adresse ?'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Get.back(result: false),
-                                              child: Text('Annuler'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Get.back(result: true),
-                                              child: Text('Supprimer',
-                                                  style: TextStyle(
-                                                      color: Colors.red)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                      if (confirm == true) {
-                                        await AddressService.deleteAddress(
-                                            address.id);
-                                        _showGlassySnackbar(
-                                          message:
-                                              'Adresse supprimée avec succès',
-                                          icon: Icons.delete,
-                                          color: AppColors.success,
-                                        );
-                                        _loadAddresses();
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ))
-                        .toList(),
-                  ),
-      ],
+      ),
     );
   }
 
-  Widget _buildActionsSection() {
-    return Row(
-      children: [
-        GlassButton(
-          label: 'Réinitialiser le mot de passe',
-          icon: Icons.lock_reset,
-          variant: GlassButtonVariant.warning,
-          onPressed: _resetUserPassword,
-        ),
-        // ...autres actions rapides à venir...
-      ],
+  Widget _buildEmptyAddresses(bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.xl),
+      decoration: BoxDecoration(
+        color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
+        borderRadius: AppRadius.md,
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.location_off,
+            size: 48,
+            color: isDark ? AppColors.gray400 : AppColors.gray500,
+          ),
+          SizedBox(height: AppSpacing.md),
+          Text(
+            'Aucune adresse enregistrée',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: isDark ? AppColors.gray300 : AppColors.gray700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm),
+          Text(
+            'Ajoutez une adresse pour ce client',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? AppColors.gray400 : AppColors.gray600,
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildAddressList(bool isDark) {
+    return Column(
+      children: _addresses.map((address) => _AddressCard(
+        address: address,
+        isDark: isDark,
+        onEdit: () => _editAddress(address),
+        onDelete: () => _deleteAddress(address),
+      )).toList(),
+    );
+  }
+
+  void _editAddress(Address address) async {
+    await Get.dialog(AddressEditDialog(
+      userId: widget.client.id,
+      initialAddress: address,
+      onAddressSaved: (a) => _loadAddresses(),
+    ));
+  }
+
+  void _deleteAddress(Address address) async {
+    final confirm = await Get.dialog<bool>(
+      _ModernConfirmDialog(
+        title: 'Supprimer l\'adresse',
+        message: 'Voulez-vous vraiment supprimer cette adresse ?',
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler',
+        isDestructive: true,
+      ),
+    );
+    
+    if (confirm == true) {
+      try {
+        await AddressService.deleteAddress(address.id);
+        _showGlassySnackbar(
+          message: 'Adresse supprimée avec succès',
+          icon: Icons.delete,
+          color: AppColors.success,
+        );
+        _loadAddresses();
+      } catch (e) {
+        _showGlassySnackbar(
+          message: 'Erreur lors de la suppression',
+          icon: Icons.error,
+          color: AppColors.error,
+        );
+      }
+    }
   }
 
   void _showGlassySnackbar(

@@ -1,4 +1,5 @@
 import 'package:admin/widgets/shared/glass_button.dart';
+import 'package:admin/widgets/shared/glass_container.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../constants.dart';
@@ -6,99 +7,292 @@ import '../../../../../controllers/orders_controller.dart';
 import '../../../../../models/user.dart';
 import '../create_client_dialog.dart';
 import '../client_details_dialog.dart';
+import 'client_selection_components.dart';
+import 'dart:ui';
 
 class ClientSelectionStep extends StatefulWidget {
   @override
   State<ClientSelectionStep> createState() => _ClientSelectionStepState();
 }
 
-class _ClientSelectionStepState extends State<ClientSelectionStep> {
+class _ClientSelectionStepState extends State<ClientSelectionStep>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late AnimationController _searchController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _searchPulseAnimation;
+
   final searchController = TextEditingController();
-  String selectedFilter = 'all'; // Modification ici pour avoir 'all' par défaut
-  late final OrdersController controller; // Déclaration du controller
+  String selectedFilter = 'all';
+  late final OrdersController controller;
 
   @override
   void initState() {
     super.initState();
-    controller = Get.find<OrdersController>(); // Initialisation du controller
-    // Charger tous les clients au démarrage
+    _setupAnimations();
+    controller = Get.find<OrdersController>();
     controller.loadClients();
+  }
+
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _searchController = AnimationController(
+      duration: Duration(milliseconds: 2000),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+    ));
+
+    _searchPulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(
+      parent: _searchController,
+      curve: Curves.easeInOut,
+    ));
+
+    _animationController.forward();
+    _searchController.repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    searchController.dispose(); // Cleanup du TextEditingController
+    _animationController.dispose();
+    _searchController.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Container(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStepHeader(isDark),
+                  SizedBox(height: AppSpacing.xl),
+                  _buildSearchSection(isDark),
+                  SizedBox(height: AppSpacing.lg),
+                  Expanded(child: _buildClientList(isDark)),
+                  SizedBox(height: AppSpacing.lg),
+                  _buildCreateClientSection(isDark),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStepHeader(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Row(
         children: [
-          Text('Sélectionner un client', style: AppTextStyles.h3),
-          SizedBox(height: AppSpacing.md),
-          _buildSearchSection(),
-          SizedBox(height: AppSpacing.md),
-          Expanded(child: _buildClientList()),
-          SizedBox(height: AppSpacing.md),
-          _buildCreateClientButton(),
+          Container(
+            padding: EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.person_search,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Sélection du Client',
+                  style: AppTextStyles.h2.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Choisissez le client pour cette commande',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Obx(() {
+            if (controller.selectedClientId.value.isNotEmpty) {
+              return Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                  ),
+                  borderRadius: AppRadius.md,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Client sélectionné',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return SizedBox.shrink();
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildSearchSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.gray800 : AppColors.gray50,
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
+  Widget _buildSearchSection(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(
-                child: TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: "Rechercher un client...",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              SizedBox(width: AppSpacing.md),
-              _buildFilterDropdown(),
-            ],
-          ),
-          SizedBox(height: AppSpacing.sm),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              GlassButton(
-                label: 'Réinitialiser',
-                variant: GlassButtonVariant.secondary,
-                onPressed: () {
-                  searchController.clear();
-                  controller.filteredClients.clear();
+              AnimatedBuilder(
+                animation: _searchPulseAnimation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _searchPulseAnimation.value,
+                    child: Icon(
+                      Icons.search,
+                      color: AppColors.info,
+                      size: 20,
+                    ),
+                  );
                 },
               ),
               SizedBox(width: AppSpacing.sm),
-              Obx(() => GlassButton(
-                    label: 'Rechercher',
-                    icon: Icons.search,
-                    variant: GlassButtonVariant.primary,
-                    isLoading: controller.isLoadingClients.value,
-                    onPressed: () => _performSearch(),
-                  )),
+              Text(
+                'Recherche de Client',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.lg),
+          
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: _ModernSearchField(
+                  controller: searchController,
+                  onChanged: (value) => _performSearch(),
+                  isDark: isDark,
+                ),
+              ),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: _ModernFilterDropdown(
+                  value: selectedFilter,
+                  onChanged: (value) {
+                    setState(() {
+                      selectedFilter = value;
+                      searchController.clear();
+                      if (value == 'all') {
+                        controller.loadClients();
+                      }
+                    });
+                  },
+                  isDark: isDark,
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: AppSpacing.md),
+          
+          Row(
+            children: [
+              Expanded(
+                child: _ModernActionButton(
+                  icon: Icons.refresh,
+                  label: 'Réinitialiser',
+                  onPressed: () {
+                    searchController.clear();
+                    setState(() => selectedFilter = 'all');
+                    controller.loadClients();
+                  },
+                  variant: _ClientActionVariant.secondary,
+                ),
+              ),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Obx(() => _ModernActionButton(
+                  icon: Icons.search,
+                  label: 'Rechercher',
+                  onPressed: _performSearch,
+                  variant: _ClientActionVariant.primary,
+                  isLoading: controller.isLoadingClients.value,
+                )),
+              ),
             ],
           ),
         ],
@@ -106,49 +300,194 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
     );
   }
 
-  Widget _buildFilterDropdown() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.borderLight),
-        borderRadius: AppRadius.radiusSM,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (selectedFilter != 'all') ...[
-            Text(
-              'Type de recherche :',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+  Widget _buildClientList(bool isDark) {
+    return Obx(() {
+      if (controller.isLoadingClients.value) {
+        return _buildLoadingState(isDark);
+      }
+
+      final clientsToShow = controller.filteredClients.isEmpty && searchController.text.isEmpty
+          ? controller.clients
+          : controller.filteredClients;
+
+      if (clientsToShow.isEmpty) {
+        return _buildEmptyState(isDark);
+      }
+
+      return GlassContainer(
+        variant: GlassContainerVariant.neutral,
+        padding: EdgeInsets.all(AppSpacing.md),
+        borderRadius: AppRadius.lg,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.people,
+                  color: AppColors.accent,
+                  size: 20,
+                ),
+                SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Clients Disponibles (${clientsToShow.length})',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppSpacing.md),
+            
+            Expanded(
+              child: ListView.separated(
+                itemCount: clientsToShow.length,
+                separatorBuilder: (_, __) => SizedBox(height: AppSpacing.sm),
+                itemBuilder: (context, index) {
+                  return _ClientCard(
+                    client: clientsToShow[index],
+                    isSelected: controller.selectedClientId.value == clientsToShow[index].id,
+                    onSelect: () {
+                      controller.selectClient(clientsToShow[index].id);
+                      controller.setSelectedClient(clientsToShow[index].id);
+                    },
+                    onViewDetails: () => Get.dialog(
+                      ClientDetailsDialog(client: clientsToShow[index]),
+                    ),
+                    isDark: isDark,
+                  );
+                },
               ),
             ),
-            SizedBox(height: 4),
           ],
-          DropdownButton<String>(
-            value: selectedFilter,
-            underline: SizedBox(),
-            hint: Text('Type de recherche'),
-            items: [
-              DropdownMenuItem(value: 'all', child: Text('Tous les clients')),
-              DropdownMenuItem(value: 'name', child: Text('Recherche par nom')),
-              DropdownMenuItem(
-                  value: 'email', child: Text('Recherche par email')),
-              DropdownMenuItem(
-                  value: 'phone', child: Text('Recherche par téléphone')),
-            ],
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  selectedFilter = value;
-                  searchController
-                      .clear(); // Vider la recherche lors du changement de filtre
-                  if (value == 'all') {
-                    controller.loadClients();
-                  }
-                });
-              }
-            },
+        ),
+      );
+    });
+  }
+
+  Widget _buildLoadingState(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.xl),
+      borderRadius: AppRadius.lg,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.6)],
+                ),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 3,
+                ),
+              ),
+            ),
+            SizedBox(height: AppSpacing.lg),
+            Text(
+              'Chargement des clients...',
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.xl),
+      borderRadius: AppRadius.lg,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_search,
+              size: 64,
+              color: isDark ? AppColors.gray400 : AppColors.gray500,
+            ),
+            SizedBox(height: AppSpacing.lg),
+            Text(
+              'Aucun client trouvé',
+              style: AppTextStyles.h3.copyWith(
+                color: isDark ? AppColors.gray300 : AppColors.gray700,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              searchController.text.isNotEmpty
+                  ? 'Essayez avec d\'autres critères de recherche'
+                  : 'Créez un nouveau client pour commencer',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.gray400 : AppColors.gray600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreateClientSection(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.info,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.person_add,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Client introuvable ?',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Créez un nouveau client rapidement',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _ModernActionButton(
+            icon: Icons.add,
+            label: 'Nouveau Client',
+            onPressed: () => Get.dialog(CreateClientDialog()),
+            variant: _ClientActionVariant.info,
           ),
         ],
       ),
@@ -161,19 +500,21 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
       controller.loadClients();
     } else if (query.isNotEmpty) {
       controller.searchClients(query, selectedFilter);
-    } else {
+    } else if (query.isEmpty && selectedFilter != 'all') {
       _showGlassySnackbar(
-          message: 'Veuillez entrer un terme de recherche',
-          icon: Icons.warning,
-          color: AppColors.warning);
+        message: 'Veuillez entrer un terme de recherche',
+        icon: Icons.warning,
+        color: AppColors.warning,
+      );
     }
   }
 
-  void _showGlassySnackbar(
-      {required String message,
-      IconData icon = Icons.warning,
-      Color? color,
-      Duration? duration}) {
+  void _showGlassySnackbar({
+    required String message,
+    IconData icon = Icons.warning,
+    Color? color,
+    Duration? duration,
+  }) {
     Get.closeAllSnackbars();
     Get.rawSnackbar(
       messageText: Row(
@@ -184,9 +525,10 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
             child: Text(
               message,
               style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16),
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
             ),
           ),
         ],
@@ -195,7 +537,7 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
       borderRadius: 16,
       margin: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       snackPosition: SnackPosition.TOP,
-      duration: duration ?? Duration(seconds: 2),
+      duration: duration ?? Duration(seconds: 3),
       boxShadows: [
         BoxShadow(
           color: Colors.black26,
@@ -205,117 +547,6 @@ class _ClientSelectionStepState extends State<ClientSelectionStep> {
       ],
       isDismissible: true,
       overlayBlur: 2.5,
-    );
-  }
-
-  Widget _buildClientList() {
-    final isDark = Get.isDarkMode;
-
-    return Obx(() {
-      if (controller.isLoadingClients.value) {
-        return Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
-        );
-      }
-
-      final clientsToShow =
-          controller.filteredClients.isEmpty && searchController.text.isEmpty
-              ? controller.clients
-              : controller.filteredClients;
-
-      if (clientsToShow.isEmpty) {
-        return _buildEmptyState();
-      }
-
-      return Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.gray800 : AppColors.white,
-          borderRadius: AppRadius.radiusMD,
-          border: Border.all(
-            color: isDark ? AppColors.gray700 : AppColors.gray200,
-          ),
-        ),
-        child: ListView.separated(
-          itemCount: clientsToShow.length,
-          separatorBuilder: (_, __) => Divider(
-            color: isDark ? AppColors.gray700 : AppColors.gray200,
-          ),
-          itemBuilder: (context, index) {
-            return _buildClientCard(context, clientsToShow[index]);
-          },
-        ),
-      );
-    });
-  }
-
-  Widget _buildClientCard(BuildContext context, User client) {
-    return Obx(() {
-      final isSelected = controller.selectedClientId.value == client.id;
-      return Card(
-        color: isSelected ? AppColors.primary.withOpacity(0.08) : null,
-        shape: RoundedRectangleBorder(
-          side: isSelected
-              ? BorderSide(color: AppColors.primary, width: 2)
-              : BorderSide(color: Colors.transparent),
-          borderRadius: AppRadius.radiusMD,
-        ),
-        child: ListTile(
-          leading: CircleAvatar(
-            child: Text(
-              '${client.firstName[0]}${client.lastName[0]}'.toUpperCase(),
-              style: TextStyle(color: Colors.white),
-            ),
-            backgroundColor: AppColors.primary,
-          ),
-          title: Text('${client.firstName} ${client.lastName}'),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(client.email),
-              Text(client.phone ?? 'Pas de téléphone'),
-            ],
-          ),
-          trailing: IconButton(
-            icon: Icon(
-              isSelected ? Icons.check_circle : Icons.check_circle_outline,
-              color: isSelected ? AppColors.primary : AppColors.gray400,
-            ),
-            onPressed: () {
-              controller.selectClient(client.id);
-              controller.setSelectedClient(client.id); // MAJ OrderDraft
-            },
-          ),
-          onTap: () => Get.dialog(ClientDetailsDialog(client: client)),
-        ),
-      );
-    });
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.person_search, size: 48, color: AppColors.gray400),
-          SizedBox(height: AppSpacing.sm),
-          Text(
-            'Aucun client trouvé',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCreateClientButton() {
-    return TextButton.icon(
-      icon: Icon(Icons.person_add),
-      label: Text('Créer un nouveau client'),
-      onPressed: () => Get.dialog(CreateClientDialog()),
     );
   }
 }

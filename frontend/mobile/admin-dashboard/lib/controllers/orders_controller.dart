@@ -737,6 +737,10 @@ class OrdersController extends GetxController {
   // Ajouter cette propriété pour l'étape courante
   final currentStep = 0.obs;
 
+  // Nouvelles propriétés pour le header modernisé
+  final currentView = OrderView.table.obs;
+  final quickStats = <String, int>{}.obs;
+
   // Ajout des propriétés et méthodes pour la recherche par ID indépendante et réinitialisable.
   final isOrderIdSearchActive = false.obs;
   final orderIdResult = Rxn<Order>();
@@ -1387,4 +1391,39 @@ class OrdersController extends GetxController {
       overlayBlur: 2.5,
     );
   }
+
+  // Nouvelles méthodes pour le header modernisé
+  void setView(OrderView view) {
+    currentView.value = view;
+  }
+
+  void updateQuickStats() {
+    final total = orders.length;
+    final processing = orders.where((o) => 
+        o.status == 'PROCESSING' || 
+        o.status == 'COLLECTING' || 
+        o.status == 'COLLECTED' ||
+        o.status == 'READY' ||
+        o.status == 'DELIVERING'
+    ).length;
+    final delivered = orders.where((o) => o.status == 'DELIVERED').length;
+    final flash = orders.where((o) => o.isFlashOrder).length;
+
+    quickStats.value = {
+      'total': total,
+      'processing': processing,
+      'delivered': delivered,
+      'flash': flash,
+    };
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    // Mettre à jour les stats quand les données sont chargées
+    ever(orders, (_) => updateQuickStats());
+  }
 }
+
+// Enum pour les vues des commandes
+enum OrderView { table, map, cards }

@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:admin/widgets/shared/glass_button.dart';
 import 'package:admin/controllers/service_type_controller.dart';
+import 'dart:ui';
+import '../../../constants.dart';
 import '../../../models/enums.dart';
+import '../../../widgets/shared/glass_container.dart';
 import 'copy_order_id_row.dart';
 
 // Helpers pour l'affichage des remises
@@ -33,56 +36,141 @@ String discountTotal(Map discounts) {
   }
 }
 
-class OrderDetailsDialog extends StatelessWidget {
-  Widget _buildClientSection(order) {
+class OrderDetailsDialog extends StatefulWidget {
+  final String orderId;
+  
+  const OrderDetailsDialog({Key? key, required this.orderId}) : super(key: key);
+
+  @override
+  _OrderDetailsDialogState createState() => _OrderDetailsDialogState();
+}
+
+class _OrderDetailsDialogState extends State<OrderDetailsDialog>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late AnimationController _tabController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  int _selectedTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAnimations();
+  }
+
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _tabController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+    ));
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildClientSection(order, bool isDark) {
     final user = order.user;
-    // final OrdersController controller = Get.find<OrdersController>();
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
+    
+    return GlassContainer(
+      variant: GlassContainerVariant.primary,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.person, color: Colors.blue, size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Client', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text(
-                  user == null
-                      ? 'Aucun client'
-                      : ((user.firstName ?? '') + ' ' + (user.lastName ?? ''))
-                              .trim()
-                              .isEmpty
-                          ? 'Aucun client'
-                          : ((user.firstName ?? '') +
-                                  ' ' +
-                                  (user.lastName ?? ''))
-                              .trim(),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withOpacity(0.8),
+                      AppColors.primary,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
-                Text(user?.phone ?? ''),
-                Text(user?.email ?? ''),
-              ],
-            ),
+                child: Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Informations Client',
+                      style: AppTextStyles.h3.copyWith(
+                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Détails du client et coordonnées',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? AppColors.gray400 : AppColors.gray600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _ModernActionButton(
+                icon: Icons.edit,
+                label: 'Modifier',
+                onPressed: user == null ? null : () async {
+                  await showDialog(
+                    context: context,
+                    builder: (_) => ClientDetailsDialog(client: user),
+                  );
+                },
+                variant: _ActionVariant.primary,
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          GlassButton(
-            label: 'Voir / Modifier',
-            variant: GlassButtonVariant.info,
-            onPressed: user == null
-                ? null
-                : () async {
-                    await showDialog(
-                      context: Get.context!,
-                      builder: (_) => ClientDetailsDialog(client: user),
-                    );
-                  },
+          SizedBox(height: AppSpacing.lg),
+          _ClientInfoCard(
+            user: user,
+            isDark: isDark,
           ),
         ],
       ),
@@ -363,9 +451,6 @@ class OrderDetailsDialog extends StatelessWidget {
     );
   }
 
-  final String orderId;
-  const OrderDetailsDialog({Key? key, required this.orderId}) : super(key: key);
-
   String _formatDateTime(DateTime? dt) {
     if (dt == null) return '';
     return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
@@ -375,9 +460,118 @@ class OrderDetailsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final OrdersController controller = Get.find<OrdersController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                width: 900,
+                height: MediaQuery.of(context).size.height * 0.9,
+                child: GlassContainer(
+                  variant: GlassContainerVariant.neutral,
+                  padding: EdgeInsets.zero,
+                  borderRadius: AppRadius.xl,
+                  child: Column(
+                    children: [
+                      _buildDialogHeader(isDark),
+                      Expanded(
+                        child: _buildDialogContent(controller, isDark),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDialogHeader(bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withOpacity(0.1),
+            AppColors.accent.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.only(
+          topLeft: AppRadius.xl.topLeft,
+          topRight: AppRadius.xl.topRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.accent],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.receipt_long,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Détails de la Commande',
+                  style: AppTextStyles.h2.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Gestion complète de la commande',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _ModernCloseButton(
+            onPressed: () {
+              final controller = Get.find<OrdersController>();
+              controller.clearOrderEditForm();
+              Get.back();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogContent(OrdersController controller, bool isDark) {
     return Obx(() {
       final order = controller.selectedOrder.value;
-      if (controller.isLoading.value || order == null || order.id != orderId) {
+      if (controller.isLoading.value || order == null || order.id != widget.orderId) {
         return SizedBox(
           width: 700,
           height: 400,
@@ -736,5 +930,372 @@ class OrderDetailsDialog extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+// Composants modernes pour le dialog des détails de commande
+enum _ActionVariant { primary, secondary, success, warning, error }
+
+class _ModernActionButton extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final _ActionVariant variant;
+
+  const _ModernActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    required this.variant,
+  });
+
+  @override
+  _ModernActionButtonState createState() => _ModernActionButtonState();
+}
+
+class _ModernActionButtonState extends State<_ModernActionButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Color _getVariantColor() {
+    switch (widget.variant) {
+      case _ActionVariant.primary:
+        return AppColors.primary;
+      case _ActionVariant.secondary:
+        return AppColors.gray600;
+      case _ActionVariant.success:
+        return AppColors.success;
+      case _ActionVariant.warning:
+        return AppColors.warning;
+      case _ActionVariant.error:
+        return AppColors.error;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final variantColor = _getVariantColor();
+
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() => _isHovered = true);
+        _controller.forward();
+      },
+      onExit: (_) {
+        setState(() => _isHovered = false);
+        _controller.reverse();
+      },
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: GlassContainer(
+              variant: GlassContainerVariant.primary,
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              borderRadius: AppRadius.lg,
+              onTap: widget.onPressed,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    widget.icon,
+                    color: variantColor,
+                    size: 18,
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Text(
+                    widget.label,
+                    style: AppTextStyles.buttonMedium.copyWith(
+                      color: variantColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ModernCloseButton extends StatefulWidget {
+  final VoidCallback onPressed;
+
+  const _ModernCloseButton({required this.onPressed});
+
+  @override
+  _ModernCloseButtonState createState() => _ModernCloseButtonState();
+}
+
+class _ModernCloseButtonState extends State<_ModernCloseButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.1,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() => _isHovered = true);
+        _controller.forward();
+      },
+      onExit: (_) {
+        setState(() => _isHovered = false);
+        _controller.reverse();
+      },
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _isHovered
+                    ? AppColors.error.withOpacity(0.1)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: _isHovered
+                      ? AppColors.error.withOpacity(0.3)
+                      : (isDark ? AppColors.gray600 : AppColors.gray400),
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: widget.onPressed,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Center(
+                    child: Icon(
+                      Icons.close,
+                      color: _isHovered
+                          ? AppColors.error
+                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ClientInfoCard extends StatelessWidget {
+  final dynamic user;
+  final bool isDark;
+
+  const _ClientInfoCard({
+    required this.user,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (user == null) {
+      return _buildEmptyClientCard();
+    }
+
+    final fullName = ((user.firstName ?? '') + ' ' + (user.lastName ?? ''))
+        .trim()
+        .isEmpty
+        ? 'Nom non défini'
+        : ((user.firstName ?? '') + ' ' + (user.lastName ?? '')).trim();
+
+    return Row(
+      children: [
+        // Avatar du client
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary.withOpacity(0.8),
+                AppColors.primary,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.3),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              fullName[0].toUpperCase(),
+              style: AppTextStyles.h3.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: AppSpacing.lg),
+        
+        // Informations du client
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                fullName,
+                style: AppTextStyles.h3.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: AppSpacing.xs),
+              if (user.phone != null && user.phone.isNotEmpty) ...[
+                Row(
+                  children: [
+                    Icon(
+                      Icons.phone,
+                      size: 16,
+                      color: isDark ? AppColors.gray400 : AppColors.gray600,
+                    ),
+                    SizedBox(width: AppSpacing.xs),
+                    Text(
+                      user.phone,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark ? AppColors.gray300 : AppColors.gray700,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppSpacing.xs),
+              ],
+              if (user.email != null && user.email.isNotEmpty) ...[
+                Row(
+                  children: [
+                    Icon(
+                      Icons.email,
+                      size: 16,
+                      color: isDark ? AppColors.gray400 : AppColors.gray600,
+                    ),
+                    SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        user.email,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark ? AppColors.gray300 : AppColors.gray700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyClientCard() {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: (isDark ? AppColors.gray700 : AppColors.gray200).withOpacity(0.3),
+        borderRadius: AppRadius.md,
+        border: Border.all(
+          color: (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.person_off,
+            size: 32,
+            color: isDark ? AppColors.gray400 : AppColors.gray500,
+          ),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Aucun client associé',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: isDark ? AppColors.gray300 : AppColors.gray700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Cette commande n\'a pas de client défini',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

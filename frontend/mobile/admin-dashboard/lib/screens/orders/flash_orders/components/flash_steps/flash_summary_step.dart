@@ -10,8 +10,11 @@ import 'package:admin/services/address_service.dart';
 import 'package:admin/services/service_service.dart';
 import 'package:admin/services/service_type_service.dart';
 import 'package:admin/models/enums.dart';
+import 'package:admin/constants.dart';
+import 'package:admin/widgets/shared/glass_container.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'dart:ui';
 
 class FlashSummaryStep extends StatefulWidget {
   final FlashOrderStepperController controller;
@@ -22,7 +25,13 @@ class FlashSummaryStep extends StatefulWidget {
   State<FlashSummaryStep> createState() => _FlashSummaryStepState();
 }
 
-class _FlashSummaryStepState extends State<FlashSummaryStep> {
+class _FlashSummaryStepState extends State<FlashSummaryStep>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late AnimationController _pulseController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _pulseAnimation;
   User? user;
   Address? address;
   List<Address> addresses = [];
@@ -33,7 +42,54 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
     _fetchAllInfos();
+  }
+
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _pulseController = AnimationController(
+      duration: Duration(milliseconds: 2000),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+    ));
+
+    _pulseAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+
+    _animationController.forward();
+    _pulseController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _pulseController.dispose();
+    super.dispose();
   }
 
   @override
@@ -43,18 +99,20 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
   }
 
   List<Map<String, dynamic>> couples = [];
+  
   Future<void> _fetchAllInfos() async {
     final draft = widget.controller.draft.value;
     setState(() => isLoading = true);
+    
     try {
       if (draft.userId != null) {
         user = await UserService.getUserById(draft.userId!);
       }
-      // Récupérer toutes les adresses de l'utilisateur une seule fois
+      
       if (draft.userId != null) {
         addresses = await AddressService.getAddressesByUser(draft.userId!);
       }
-      // Sélectionner l'adresse à partir de la liste locale
+      
       if (draft.addressId != null && addresses.isNotEmpty) {
         address = addresses.firstWhere(
           (a) => a.id == draft.addressId,
@@ -63,6 +121,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
       } else {
         address = null;
       }
+      
       if (draft.serviceId != null) {
         final services = await ServiceService.getAllServices();
         service = services.isNotEmpty
@@ -70,6 +129,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
                 orElse: () => services.first)
             : null;
       }
+      
       if (draft.serviceTypeId != null) {
         final types = await ServiceTypeService.getAllServiceTypes();
         serviceType = types.isNotEmpty
@@ -77,19 +137,19 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
                 orElse: () => types.first)
             : null;
       }
-      // Récupérer les couples pour le calcul du total
+      
       if (draft.serviceTypeId != null && draft.serviceId != null) {
         couples = await ArticleServiceCoupleService.getCouplesForServiceType(
           serviceTypeId: draft.serviceTypeId!,
           serviceId: draft.serviceId!,
         );
-        // Synchronise les articles avec les couples de prix
         widget.controller.syncSelectedItemsFrom(couples: couples);
-        setState(() {}); // Forcer le rafraîchissement après la synchro
+        setState(() {});
       }
     } catch (e) {
-      // TODO: Afficher un snackbar d'erreur
+      print('[FlashSummaryStep] Erreur lors du chargement: $e');
     }
+    
     setState(() => isLoading = false);
   }
 
@@ -104,33 +164,155 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
 
   @override
   Widget build(BuildContext context) {
-    final draft = widget.controller.draft.value;
-    return isLoading
-        ? Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Récapitulatif de la commande',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                SizedBox(height: 20),
-                _buildSection('Informations client', _buildClientSummary()),
-                _buildDivider(),
-                _buildSection('Adresse', _buildAddressSummary()),
-                _buildDivider(),
-                _buildSection('Service', _buildServiceSummary()),
-                _buildDivider(),
-                _buildSection('Articles', _buildArticlesSummary(draft)),
-                _buildDivider(),
-                _buildSection('Informations complémentaires',
-                    _buildExtraFieldsSummary(draft)),
-                SizedBox(height: 16),
-                _buildTotalSection(),
-              ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Container(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStepHeader(isDark),
+                  SizedBox(height: AppSpacing.xl),
+                  if (isLoading)
+                    _buildLoadingState(isDark)
+                  else
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Obx(() => _buildSummaryContent(isDark)),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          );
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStepHeader(bool isDark) {
+    return Row(
+      children: [
+        AnimatedBuilder(
+          animation: _pulseAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _pulseAnimation.value,
+              child: Container(
+                padding: EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.success.withOpacity(0.4),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.transform,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            );
+          },
+        ),
+        SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Validation Conversion',
+                style: AppTextStyles.h3.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                'Vérifiez et convertissez',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.gray400 : AppColors.gray600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingState(bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.success, AppColors.success.withOpacity(0.6)],
+              ),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 3,
+              ),
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          Text(
+            'Préparation du récapitulatif...',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryContent(bool isDark) {
+    final draft = widget.controller.draft.value;
+
+    return Column(
+      children: [
+        // Section Client
+        _buildClientSection(isDark),
+        SizedBox(height: AppSpacing.lg),
+        
+        // Section Service & Articles
+        _buildServiceSection(isDark, draft),
+        SizedBox(height: AppSpacing.lg),
+        
+        // Section Adresse
+        _buildAddressSection(isDark),
+        SizedBox(height: AppSpacing.lg),
+        
+        // Section Options & Dates
+        _buildOptionsSection(isDark, draft),
+        SizedBox(height: AppSpacing.lg),
+        
+        // Section Total
+        _buildTotalSection(isDark),
+      ],
+    );
   }
 
   Widget _buildSection(String title, Widget content) {
@@ -318,24 +500,662 @@ class _FlashSummaryStepState extends State<FlashSummaryStep> {
     );
   }
 
-  Widget _buildTotalSection() {
+  Widget _buildClientSection(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.person,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Informations Client',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+          
+          if (user != null) ...[
+            _SummaryInfoRow(
+              icon: Icons.badge,
+              label: 'Nom complet',
+              value: '${user!.firstName} ${user!.lastName}',
+              isDark: isDark,
+            ),
+            _SummaryInfoRow(
+              icon: Icons.email,
+              label: 'Email',
+              value: user!.email,
+              isDark: isDark,
+            ),
+            if (user!.phone != null)
+              _SummaryInfoRow(
+                icon: Icons.phone,
+                label: 'Téléphone',
+                value: user!.phone!,
+                isDark: isDark,
+              ),
+          ] else ...[
+            _EmptyStateInfo(
+              message: 'Aucun client sélectionné',
+              isDark: isDark,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceSection(bool isDark, FlashOrderDraft draft) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.design_services,
+                color: AppColors.accent,
+                size: 20,
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Service & Articles',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+          
+          // Informations service
+          if (serviceType != null)
+            _SummaryInfoRow(
+              icon: Icons.category,
+              label: 'Type de service',
+              value: serviceType!.name,
+              isDark: isDark,
+            ),
+          if (service != null)
+            _SummaryInfoRow(
+              icon: Icons.room_service,
+              label: 'Service',
+              value: service!.name,
+              isDark: isDark,
+            ),
+          
+          SizedBox(height: AppSpacing.md),
+          
+          // Articles sélectionnés
+          if (draft.items.isNotEmpty) ...[
+            Text(
+              'Articles sélectionnés',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: AppSpacing.sm),
+            ...draft.items.map((item) => _ArticleItem(
+              item: item,
+              isDark: isDark,
+            )),
+          ] else ...[
+            _EmptyStateInfo(
+              message: 'Aucun article sélectionné',
+              isDark: isDark,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressSection(bool isDark) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.location_on,
+                color: AppColors.info,
+                size: 20,
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Adresse de Livraison',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+          
+          if (address != null) ...[
+            if (address!.name.isNotEmpty)
+              _SummaryInfoRow(
+                icon: Icons.label,
+                label: 'Nom',
+                value: address!.name,
+                isDark: isDark,
+              ),
+            _SummaryInfoRow(
+              icon: Icons.home,
+              label: 'Adresse',
+              value: address!.street,
+              isDark: isDark,
+            ),
+            _SummaryInfoRow(
+              icon: Icons.location_city,
+              label: 'Ville',
+              value: '${address!.city} ${address!.postalCode}',
+              isDark: isDark,
+            ),
+          ] else ...[
+            _EmptyStateInfo(
+              message: 'Aucune adresse sélectionnée',
+              isDark: isDark,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOptionsSection(bool isDark, FlashOrderDraft draft) {
+    return GlassContainer(
+      variant: GlassContainerVariant.neutral,
+      padding: EdgeInsets.all(AppSpacing.lg),
+      borderRadius: AppRadius.lg,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.settings,
+                color: AppColors.warning,
+                size: 20,
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Options & Planning',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+          
+          // Dates
+          if (draft.collectionDate != null)
+            _SummaryInfoRow(
+              icon: Icons.calendar_today,
+              label: 'Date de collecte',
+              value: _formatDate(draft.collectionDate!),
+              isDark: isDark,
+            ),
+          if (draft.deliveryDate != null)
+            _SummaryInfoRow(
+              icon: Icons.local_shipping,
+              label: 'Date de livraison',
+              value: _formatDate(draft.deliveryDate!),
+              isDark: isDark,
+            ),
+          
+          // Options spéciales
+          if (draft.isUrgent == true)
+            _OptionBadge(
+              label: 'Commande Urgente',
+              icon: Icons.priority_high,
+              color: AppColors.error,
+            ),
+          if (draft.isExpress == true)
+            _OptionBadge(
+              label: 'Livraison Express',
+              icon: Icons.flash_on,
+              color: AppColors.warning,
+            ),
+          if (draft.isEcoFriendly == true)
+            _OptionBadge(
+              label: 'Éco-Responsable',
+              icon: Icons.eco,
+              color: AppColors.success,
+            ),
+          
+          // Note
+          if (draft.note != null && draft.note!.trim().isNotEmpty) ...[
+            SizedBox(height: AppSpacing.md),
+            Container(
+              padding: EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
+                borderRadius: AppRadius.md,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.note,
+                        color: AppColors.info,
+                        size: 16,
+                      ),
+                      SizedBox(width: AppSpacing.sm),
+                      Text(
+                        'Note de commande',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.gray300 : AppColors.gray700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppSpacing.sm),
+                  Text(
+                    draft.note!,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalSection(bool isDark) {
     final total = _calculateTotal();
+    
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: 1.0 + (_pulseAnimation.value - 1.0) * 0.02,
+          child: GlassContainer(
+            variant: GlassContainerVariant.success,
+            padding: EdgeInsets.all(AppSpacing.xl),
+            borderRadius: AppRadius.lg,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.calculate,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total Estimé',
+                            style: AppTextStyles.h3.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Prix final de la conversion',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Colors.white.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${total.toStringAsFixed(0)} FCFA',
+                      style: AppTextStyles.h2.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                if (total > 0) ...[
+                  SizedBox(height: AppSpacing.lg),
+                  Container(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: AppRadius.md,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.white.withOpacity(0.8),
+                          size: 16,
+                        ),
+                        SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            'Ce montant est une estimation basée sur les articles sélectionnés',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: Colors.white.withOpacity(0.8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
+      'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+}
+
+// Composants modernes pour l'étape de résumé
+class _SummaryInfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool isDark;
+
+  const _SummaryInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            color: isDark ? AppColors.gray400 : AppColors.gray600,
+            size: 16,
+          ),
+          SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.xs),
+                Text(
+                  value,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ArticleItem extends StatelessWidget {
+  final dynamic item;
+  final bool isDark;
+
+  const _ArticleItem({
+    required this.item,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final name = item.articleName ?? item.articleId;
+    final price = item.unitPrice;
+    final quantity = item.quantity;
+    final total = price * quantity;
+    final isPremium = item.isPremium ?? false;
+
     return Container(
-      padding: EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.blueAccent.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.accent.withOpacity(0.1),
+            AppColors.accent.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: AppRadius.md,
+        border: Border.all(
+          color: AppColors.accent.withOpacity(0.2),
+        ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Total estimé',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          Text('$total F CFA',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.orange)),
+          Container(
+            padding: EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.checkroom,
+              color: AppColors.accent,
+              size: 16,
+            ),
+          ),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (isPremium) ...[
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withOpacity(0.2),
+                          borderRadius: AppRadius.radiusXS,
+                        ),
+                        child: Text(
+                          'PREMIUM',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.warning,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                SizedBox(height: AppSpacing.xs),
+                Row(
+                  children: [
+                    Text(
+                      'Qté: $quantity',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? AppColors.gray400 : AppColors.gray600,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.md),
+                    Text(
+                      '${price.toStringAsFixed(0)} FCFA/u',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? AppColors.gray400 : AppColors.gray600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${total.toStringAsFixed(0)} FCFA',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.accent,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OptionBadge extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const _OptionBadge({
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(top: AppSpacing.sm),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.2),
+            color.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: AppRadius.md,
+        border: Border.all(
+          color: color.withOpacity(0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 16,
+          ),
+          SizedBox(width: AppSpacing.sm),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyStateInfo extends StatelessWidget {
+  final String message;
+  final bool isDark;
+
+  const _EmptyStateInfo({
+    required this.message,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
+        borderRadius: AppRadius.md,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: isDark ? AppColors.gray400 : AppColors.gray600,
+            size: 20,
+          ),
+          SizedBox(width: AppSpacing.md),
+          Text(
+            message,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? AppColors.gray400 : AppColors.gray600,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
         ],
       ),
     );
