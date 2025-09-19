@@ -151,8 +151,9 @@ class _OrdersTableState extends State<OrdersTable>
       children: [
         _buildTableHeader(isDark),
         SizedBox(height: AppSpacing.sm),
-        Expanded(
+        Flexible(
           child: ListView.separated(
+            shrinkWrap: true,
             itemCount: widget.orders.length,
             separatorBuilder: (context, index) => Container(
               height: 1,
