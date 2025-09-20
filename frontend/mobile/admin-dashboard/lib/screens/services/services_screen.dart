@@ -142,9 +142,9 @@ class ServicesScreen extends GetView<ServiceController> {
               icon: Icons.category_outlined,
               variant: GlassButtonVariant.info,
               onPressed: () {
+                // Utiliser le MenuAppController pour une navigation centralisée
                 final menuController = Get.find<MenuAppController>();
                 menuController.updateIndex(MenuIndices.serviceTypes);
-                Get.toNamed('/service-types');
               },
             ),
             SizedBox(width: AppSpacing.sm),
@@ -153,9 +153,9 @@ class ServicesScreen extends GetView<ServiceController> {
               icon: Icons.link_outlined,
               variant: GlassButtonVariant.secondary,
               onPressed: () {
+                // Utiliser le MenuAppController pour une navigation centralisée
                 final menuController = Get.find<MenuAppController>();
                 menuController.updateIndex(MenuIndices.serviceArticleCouples);
-                Get.toNamed('/service-article-couples');
               },
             ),
             SizedBox(width: AppSpacing.sm),

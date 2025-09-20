@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/article_controller.dart';
 import '../../controllers/category_controller.dart';
+import '../../controllers/menu_app_controller.dart';
 import '../../widgets/shared/glass_button.dart';
 import '../../widgets/shared/glass_container.dart';
 import '../../utils/controller_manager.dart';
@@ -209,7 +210,11 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
               label: 'Catégories',
               icon: Icons.category_outlined,
               variant: GlassButtonVariant.info,
-              onPressed: () => Get.toNamed('/categories'),
+              onPressed: () {
+                // Utiliser le MenuAppController pour une navigation centralisée
+                final menuController = Get.find<MenuAppController>();
+                menuController.goToCategories();
+              },
             ),
             SizedBox(width: AppSpacing.sm),
             GlassButton(

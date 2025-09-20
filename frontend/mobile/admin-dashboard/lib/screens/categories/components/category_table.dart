@@ -6,6 +6,7 @@ import '../../../widgets/shared/glass_container.dart';
 import '../../../widgets/shared/glass_button.dart';
 import '../../../models/category.dart';
 import '../../../services/article_service.dart';
+import '../../../controllers/menu_app_controller.dart';
 
 class CategoryTable extends StatelessWidget {
   final List<Category> categories;
@@ -554,8 +555,12 @@ class CategoryTable extends StatelessWidget {
                             variant: GlassButtonVariant.primary,
                             onPressed: () {
                               Get.back();
-                              Get.toNamed('/articles',
-                                  arguments: {'categoryId': category.id});
+                              // Utiliser le MenuAppController pour une navigation centralisée
+                              final menuController = Get.find<MenuAppController>();
+                              menuController.goToArticles();
+                              
+                              // TODO: Implémenter le filtrage par catégorie dans ArticlesScreen
+                              // Pour l'instant, on navigue vers Articles sans filtre spécifique
                             },
                           ),
                           SizedBox(width: AppSpacing.md),

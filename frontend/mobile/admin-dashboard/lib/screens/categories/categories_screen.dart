@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/category_controller.dart';
+import '../../controllers/menu_app_controller.dart';
 import '../../models/category.dart';
 import '../../widgets/shared/glass_button.dart';
 import '../../widgets/shared/glass_container.dart';
@@ -172,7 +173,11 @@ class CategoriesScreen extends StatelessWidget {
               label: 'Articles',
               icon: Icons.article_outlined,
               variant: GlassButtonVariant.info,
-              onPressed: () => Get.toNamed('/articles'),
+              onPressed: () {
+                // Utiliser le MenuAppController pour une navigation centralisée
+                final menuController = Get.find<MenuAppController>();
+                menuController.goToArticles();
+              },
             ),
             SizedBox(width: AppSpacing.sm),
             GlassButton(

@@ -115,7 +115,11 @@ class _OrdersHeaderState extends State<OrdersHeader>
                 _ModernActionButton(
                   label: "Nouvelle",
                   icon: Icons.add,
-                  onPressed: () => Get.toNamed('/orders/create'),
+                  onPressed: () {
+                    // Navigation vers la création de commande
+                    // TODO: Implémenter la navigation centralisée pour les sous-routes
+                    Get.toNamed('/orders/create');
+                  },
                   variant: _ActionButtonVariant.primary,
                 ),
               ],

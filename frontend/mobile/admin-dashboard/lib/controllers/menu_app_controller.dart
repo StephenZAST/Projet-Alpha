@@ -1,26 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../constants.dart'; // Ajout de l'import pour MenuIndices
-import '../screens/articles/articles_screen.dart';
-import '../screens/categories/categories_screen.dart';
-import '../screens/dashboard/dashboard_screen.dart';
-import '../screens/notifications/notifications_screen.dart';
-import '../screens/orders/orders_screen.dart';
-import '../screens/services/services_screen.dart';
-import '../screens/services/service_types_screen.dart';
-import '../screens/users/users_screen.dart';
-import '../screens/profile/profile_screen.dart';
+import '../constants.dart';
 import '../routes/admin_routes.dart';
 import '../controllers/users_controller.dart';
-import '../screens/services/service_article_couples_screen.dart';
-import '../screens/subscriptions/subscription_management_page.dart';
-import '../screens/offers/offers_screen.dart';
-import '../screens/affiliates/affiliates_screen.dart';
 import '../controllers/affiliates_controller.dart';
-import '../screens/loyalty/loyalty_screen.dart';
 import '../controllers/loyalty_controller.dart';
-import '../screens/delivery/delivery_screen.dart';
 import '../controllers/delivery_controller.dart';
+import '../controllers/screen_manager.dart';
+import '../utils/controller_manager.dart';
 
 class MenuAppController extends GetxController {
   // Singleton pattern
@@ -205,56 +192,56 @@ class MenuAppController extends GetxController {
     final index = selectedIndex.value;
     print('[MenuAppController] getScreen called with index: $index');
 
-    // Correction du switch statement
+    try {
+      // Initialiser tous les contrôleurs nécessaires
+      ControllerManager.initializeAllControllers();
+      
+      // Initialiser le ScreenManager s'il n'existe pas
+      if (!Get.isRegistered<ScreenManager>()) {
+        Get.put(ScreenManager(), permanent: true);
+      }
+      
+      final screenManager = Get.find<ScreenManager>();
+      
+      // Initialiser les contrôleurs spécifiques selon l'écran
+      _initializeScreenControllers(index);
+      
+      // Obtenir l'écran via le ScreenManager
+      return screenManager.getScreen(index);
+      
+    } catch (e) {
+      print('[MenuAppController] Error getting screen: $e');
+      // Fallback vers le dashboard en cas d'erreur
+      return Container(
+        child: Center(
+          child: Text('Erreur de chargement de l\'écran'),
+        ),
+      );
+    }
+  }
+
+  void _initializeScreenControllers(int index) {
     switch (index) {
-      case MenuIndices.dashboard:
-        return DashboardScreen();
-      case MenuIndices.orders:
-        return OrdersScreen();
-      case MenuIndices.services:
-        return ServicesScreen();
-      case MenuIndices.categories:
-        return CategoriesScreen();
-      case MenuIndices.articles:
-        return ArticlesScreen();
-      case MenuIndices.serviceTypes:
-        return ServiceTypesScreen();
-      case MenuIndices.serviceArticleCouples:
-        return ServiceArticleCouplesScreen();
       case MenuIndices.users:
-        // S'assurer que le UsersController est enregistré
         if (!Get.isRegistered<UsersController>()) {
           Get.put(UsersController(), permanent: true);
         }
-        return UsersScreen();
-      case MenuIndices.profile:
-        return const ProfileScreen();
-      case MenuIndices.notifications:
-        return NotificationsScreen();
-      case MenuIndices.subscriptions:
-        return SubscriptionManagementPage();
-      case MenuIndices.offers:
-        return OffersScreen();
+        break;
       case MenuIndices.affiliates:
-        // S'assurer que le AffiliatesController est enregistré
         if (!Get.isRegistered<AffiliatesController>()) {
           Get.put(AffiliatesController(), permanent: true);
         }
-        return AffiliatesScreen();
+        break;
       case MenuIndices.loyalty:
-        // S'assurer que le LoyaltyController est enregistré
         if (!Get.isRegistered<LoyaltyController>()) {
           Get.put(LoyaltyController(), permanent: true);
         }
-        return LoyaltyScreen();
+        break;
       case MenuIndices.delivery:
-        // S'assurer que le DeliveryController est enregistré
         if (!Get.isRegistered<DeliveryController>()) {
           Get.put(DeliveryController(), permanent: true);
         }
-        return DeliveryScreen();
-      default:
-        return DashboardScreen();
+        break;
     }
   }
 
