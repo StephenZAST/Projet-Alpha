@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui';
 import '../../../constants.dart';
 import '../../../models/order.dart';
 import '../../../models/enums.dart';
 import '../../../utils/safe_extensions.dart';
+import '../../../widgets/shared/glass_button.dart';
 
-/// Table simple et robuste pour les commandes
-/// Évite tous les problèmes de layout complexes
+/// Table moderne pour les commandes avec effet glassmorphism et zébrage
 class SimpleOrdersTable extends StatelessWidget {
   final List<Order> orders;
   final Function(String, OrderStatus) onStatusUpdate;
@@ -23,38 +24,59 @@ class SimpleOrdersTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (orders.isEmpty) {
-      return _buildEmptyState(isDark);
-    }
-
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.gray800 : AppColors.white,
         borderRadius: AppRadius.radiusMD,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
+            blurRadius: 10,
             offset: Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Header
-          _buildHeader(isDark),
-          
-          // Body - Liste simple sans problèmes de layout
-          Container(
-            height: 400, // Hauteur fixe pour éviter les problèmes
-            child: ListView.builder(
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                return _buildOrderRow(orders[index], index, isDark);
-              },
+      child: ClipRRect(
+        borderRadius: AppRadius.radiusMD,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.gray800.withOpacity(0.8)
+                  : Colors.white.withOpacity(0.9),
+              borderRadius: AppRadius.radiusMD,
+              border: Border.all(
+                color: isDark
+                    ? AppColors.gray700.withOpacity(0.3)
+                    : AppColors.gray200.withOpacity(0.5),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildHeader(isDark),
+                if (orders.isEmpty)
+                  _buildEmptyState(isDark)
+                else
+                  Container(
+                    height: 400,
+                    child: ListView.separated(
+                      itemCount: orders.length,
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        color: isDark
+                            ? AppColors.gray700.withOpacity(0.3)
+                            : AppColors.gray200.withOpacity(0.5),
+                      ),
+                      itemBuilder: (context, index) {
+                        return _buildOrderRow(orders[index], index, isDark);
+                      },
+                    ),
+                  ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -99,9 +121,9 @@ class SimpleOrdersTable extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark 
-            ? AppColors.gray700.withOpacity(0.5)
-            : AppColors.gray100.withOpacity(0.5),
+        color: isDark
+            ? AppColors.gray900.withOpacity(0.3)
+            : AppColors.gray50.withOpacity(0.8),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(AppRadius.md),
           topRight: Radius.circular(AppRadius.md),
@@ -109,22 +131,26 @@ class SimpleOrdersTable extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(flex: 2, child: _headerText('ID', isDark)),
-          Expanded(flex: 3, child: _headerText('Client', isDark)),
-          Expanded(flex: 2, child: _headerText('Date', isDark)),
-          Expanded(flex: 2, child: _headerText('Montant', isDark)),
-          Expanded(flex: 2, child: _headerText('Statut', isDark)),
-          Expanded(flex: 2, child: _headerText('Actions', isDark)),
+          _buildHeaderCell('ID', flex: 2, isDark: isDark),
+          _buildHeaderCell('Client', flex: 3, isDark: isDark),
+          _buildHeaderCell('Date', flex: 2, isDark: isDark),
+          _buildHeaderCell('Montant', flex: 2, isDark: isDark),
+          _buildHeaderCell('Statut', flex: 2, isDark: isDark),
+          _buildHeaderCell('Actions', flex: 2, isDark: isDark),
         ],
       ),
     );
   }
 
-  Widget _headerText(String text, bool isDark) {
-    return Text(
-      text,
-      style: AppTextStyles.bodyBold.copyWith(
-        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+  Widget _buildHeaderCell(String title, {required int flex, required bool isDark}) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        title,
+        style: AppTextStyles.bodyBold.copyWith(
+          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+          fontSize: 13,
+        ),
       ),
     );
   }
@@ -140,25 +166,20 @@ class SimpleOrdersTable extends StatelessWidget {
     final customerName = _getCustomerName(order);
     final orderStatus = _getOrderStatus(order);
 
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: isDark 
-                ? AppColors.gray700.withOpacity(0.3)
-                : AppColors.gray200.withOpacity(0.5),
-          ),
-        ),
-      ),
-      child: InkWell(
-        onTap: () => onOrderSelect(order.id),
+    return InkWell(
+      onTap: () => onOrderSelect(order.id),
+      child: Container(
+        // Effet de zébrage
+        color: index % 2 == 0
+            ? (isDark ? AppColors.gray900 : AppColors.gray50)
+            : Colors.transparent,
+        padding: EdgeInsets.all(AppSpacing.md),
         child: Row(
           children: [
-            // ID
+            // ID - Version simple avec pointillés
             Expanded(
               flex: 2,
-              child: _buildIdChip(order.id, order.isFlashOrder, isDark),
+              child: _buildIdCell(order.id, order.isFlashOrder, isDark),
             ),
             
             // Client
@@ -216,44 +237,43 @@ class SimpleOrdersTable extends StatelessWidget {
     }
   }
 
-  Widget _buildIdChip(String orderId, bool isFlash, bool isDark) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: isFlash 
-            ? AppColors.warning.withOpacity(0.1)
-            : AppColors.primary.withOpacity(0.1),
-        borderRadius: AppRadius.radiusSM,
-        border: Border.all(
-          color: isFlash 
-              ? AppColors.warning.withOpacity(0.3)
-              : AppColors.primary.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isFlash) ...[
-            Icon(
-              Icons.flash_on,
-              size: 12,
-              color: AppColors.warning,
+  Widget _buildIdCell(String orderId, bool isFlash, bool isDark) {
+    // Affichage simple avec pointillés comme dans users_table
+    final displayId = orderId.length > 8 ? orderId.substring(0, 8) + '...' : orderId;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            if (isFlash) ...[
+              Icon(
+                Icons.flash_on,
+                size: 14,
+                color: AppColors.warning,
+              ),
+              SizedBox(width: 4),
+            ],
+            Text(
+              '#$displayId',
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                fontFamily: 'monospace',
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(width: 4),
           ],
+        ),
+        if (isFlash)
           Text(
-            '#${orderId.length > 8 ? orderId.substring(0, 8) : orderId}',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isFlash ? AppColors.warning : AppColors.primary,
+            'Flash Order',
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.warning,
               fontWeight: FontWeight.w600,
-              fontFamily: 'monospace',
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 

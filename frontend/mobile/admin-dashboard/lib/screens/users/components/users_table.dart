@@ -104,16 +104,14 @@ class UsersTable extends StatelessWidget {
                           horizontal: AppSpacing.lg,
                         ),
                         decoration: BoxDecoration(
-                          // Effet zébrage amélioré
+                          // Effet zébrage cohérent avec les autres tables
                           color: isEven
-                              ? (isDark
-                                  ? AppColors.gray800.withOpacity(0.3)
-                                  : AppColors.gray50.withOpacity(0.8))
+                              ? (isDark ? AppColors.gray900 : AppColors.gray50)
                               : Colors.transparent,
                           border: Border(
                             bottom: BorderSide(
                               color: isDark
-                                  ? AppColors.gray700.withOpacity(0.2)
+                                  ? AppColors.gray700.withOpacity(0.3)
                                   : AppColors.gray200.withOpacity(0.5),
                               width: 0.5,
                             ),
