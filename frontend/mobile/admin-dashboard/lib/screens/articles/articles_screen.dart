@@ -8,6 +8,7 @@ import '../../controllers/article_controller.dart';
 import '../../controllers/category_controller.dart';
 import '../../widgets/shared/glass_button.dart';
 import '../../widgets/shared/glass_container.dart';
+import '../../utils/controller_manager.dart';
 import 'components/article_stats_grid.dart';
 import 'components/article_table.dart';
 import 'components/article_filters.dart';
@@ -26,18 +27,56 @@ class _ArticlesScreenState extends State<ArticlesScreen> {
   void initState() {
     super.initState();
     print('[ArticlesScreen] initState: Initialisation');
+    _initializeControllers();
+  }
 
-    // S'assurer que le contrôleur existe et est unique
-    if (Get.isRegistered<ArticleController>()) {
-      controller = Get.find<ArticleController>();
-    } else {
-      controller = Get.put(ArticleController(), permanent: true);
-    }
+  void _initializeControllers() {
+    try {
+      // Utiliser le gestionnaire centralisé
+      ControllerManager.initializeAllControllers();
+      
+      // Récupérer le contrôleur de manière sécurisée
+      controller = ControllerManager.safeGet<ArticleController>();
+      print('[ArticlesScreen] ArticleController récupéré via ControllerManager');
 
-    // S'assurer que le CategoryController existe aussi
-    if (!Get.isRegistered<CategoryController>()) {
-      Get.put(CategoryController(), permanent: true);
+      // Vérifier l'état des contrôleurs
+      ControllerManager.checkControllersStatus();
+
+      // Forcer le rechargement des données si nécessaire
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && controller.articles.isEmpty) {
+          controller.fetchArticles();
+        }
+      });
+    } catch (e) {
+      print('[ArticlesScreen] Erreur lors de l\'initialisation des contrôleurs: $e');
+      // Fallback vers l'ancienne méthode en cas d'erreur
+      _fallbackInitialization();
     }
+  }
+
+  void _fallbackInitialization() {
+    try {
+      if (Get.isRegistered<ArticleController>()) {
+        controller = Get.find<ArticleController>();
+      } else {
+        controller = Get.put(ArticleController(), permanent: true);
+      }
+      
+      if (!Get.isRegistered<CategoryController>()) {
+        Get.put(CategoryController(), permanent: true);
+      }
+      
+      print('[ArticlesScreen] Fallback initialization completed');
+    } catch (e) {
+      print('[ArticlesScreen] Fallback initialization failed: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    print('[ArticlesScreen] dispose');
+    super.dispose();
   }
 
   @override

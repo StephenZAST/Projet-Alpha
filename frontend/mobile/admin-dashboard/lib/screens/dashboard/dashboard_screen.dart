@@ -116,7 +116,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ],
                 ),
               ),
-              _buildAnimatedComponent(5, _buildModernFAB(controller)),
+              // FAB directement dans le Stack sans animation wrapper
+              _buildModernFAB(controller),
             ],
           );
         }),

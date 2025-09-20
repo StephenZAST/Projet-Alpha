@@ -24,32 +24,69 @@ class ArticleTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GlassContainer(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          // En-tête du tableau
-          _buildTableHeader(context, isDark),
-          
-          // Divider
-          Divider(
-            height: 1,
-            color: isDark
-                ? AppColors.gray700.withOpacity(0.3)
-                : AppColors.gray200.withOpacity(0.5),
-          ),
-          
-          // Corps du tableau
-          Expanded(
-            child: ListView.builder(
-              itemCount: articles.length,
-              itemBuilder: (context, index) {
-                final article = articles[index];
-                return _buildTableRow(context, isDark, article, index);
-              },
+    // Wrapper sécurisé pour éviter les problèmes de layout
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: GlassContainer(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                // En-tête du tableau
+                _buildTableHeader(context, isDark),
+                
+                // Divider
+                Divider(
+                  height: 1,
+                  color: isDark
+                      ? AppColors.gray700.withOpacity(0.3)
+                      : AppColors.gray200.withOpacity(0.5),
+                ),
+                
+                // Corps du tableau avec contraintes sécurisées
+                Expanded(
+                  child: articles.isEmpty
+                      ? _buildEmptyTableState(isDark)
+                      : ListView.builder(
+                          physics: AlwaysScrollableScrollPhysics(),
+                          itemCount: articles.length,
+                          itemBuilder: (context, index) {
+                            final article = articles[index];
+                            return _buildTableRow(context, isDark, article, index);
+                          },
+                        ),
+                ),
+              ],
             ),
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyTableState(bool isDark) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.article_outlined,
+              size: 48,
+              color: isDark ? AppColors.gray400 : AppColors.gray500,
+            ),
+            SizedBox(height: AppSpacing.md),
+            Text(
+              'Aucun article à afficher',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
