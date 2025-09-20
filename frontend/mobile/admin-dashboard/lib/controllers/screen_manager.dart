@@ -50,40 +50,50 @@ class ScreenManager extends GetxController {
 
   /// Crée un nouvel écran basé sur l'index
   Widget _createScreen(int index) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    
     switch (index) {
       case MenuIndices.dashboard:
-        return DashboardScreenNew(key: Key('dashboard_${DateTime.now().millisecondsSinceEpoch}'));
+        return DashboardScreenNew(key: Key('dashboard_$timestamp'));
       case MenuIndices.orders:
-        return OrdersScreen(key: Key('orders_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(OrdersScreen(), 'orders_$timestamp');
       case MenuIndices.services:
-        return ServicesScreen(key: Key('services_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(ServicesScreen(), 'services_$timestamp');
       case MenuIndices.categories:
-        return CategoriesScreen(key: Key('categories_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(CategoriesScreen(), 'categories_$timestamp');
       case MenuIndices.articles:
-        return ArticlesScreen(key: Key('articles_${DateTime.now().millisecondsSinceEpoch}'));
+        return ArticlesScreen(key: Key('articles_$timestamp'));
       case MenuIndices.serviceTypes:
-        return ServiceTypesScreen(key: Key('service_types_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(ServiceTypesScreen(), 'service_types_$timestamp');
       case MenuIndices.serviceArticleCouples:
-        return ServiceArticleCouplesScreen(key: Key('service_couples_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(ServiceArticleCouplesScreen(), 'service_couples_$timestamp');
       case MenuIndices.users:
-        return UsersScreen(key: Key('users_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(UsersScreen(), 'users_$timestamp');
       case MenuIndices.profile:
-        return ProfileScreen(key: Key('profile_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(ProfileScreen(), 'profile_$timestamp');
       case MenuIndices.notifications:
-        return NotificationsScreen(key: Key('notifications_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(NotificationsScreen(), 'notifications_$timestamp');
       case MenuIndices.subscriptions:
-        return SubscriptionManagementPage(key: Key('subscriptions_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(SubscriptionManagementPage(), 'subscriptions_$timestamp');
       case MenuIndices.offers:
-        return OffersScreen(key: Key('offers_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(OffersScreen(), 'offers_$timestamp');
       case MenuIndices.affiliates:
-        return AffiliatesScreen(key: Key('affiliates_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(AffiliatesScreen(), 'affiliates_$timestamp');
       case MenuIndices.loyalty:
-        return LoyaltyScreen(key: Key('loyalty_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(LoyaltyScreen(), 'loyalty_$timestamp');
       case MenuIndices.delivery:
-        return DeliveryScreen(key: Key('delivery_${DateTime.now().millisecondsSinceEpoch}'));
+        return _wrapWithKey(DeliveryScreen(), 'delivery_$timestamp');
       default:
-        return DashboardScreenNew(key: Key('dashboard_default_${DateTime.now().millisecondsSinceEpoch}'));
+        return DashboardScreenNew(key: Key('dashboard_default_$timestamp'));
     }
+  }
+
+  /// Enveloppe un écran dans un Container avec une clé unique
+  Widget _wrapWithKey(Widget screen, String keyName) {
+    return Container(
+      key: Key(keyName),
+      child: screen,
+    );
   }
 
   /// Force la recréation d'un écran spécifique
