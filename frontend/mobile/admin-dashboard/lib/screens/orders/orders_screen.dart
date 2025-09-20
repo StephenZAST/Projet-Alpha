@@ -8,7 +8,7 @@ import '../../models/enums.dart' hide AppButtonVariant;
 import '../../widgets/shared/app_button.dart';
 import 'components/order_filters.dart';
 import 'components/orders_header.dart';
-import 'components/orders_table.dart';
+import 'components/simple_orders_table.dart';
 import 'components/order_details_dialog.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -230,13 +230,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           // Afficher le tableau avec les données
                           return Column(
                             children: [
-                              // Tableau avec hauteur flexible
-                              Expanded(
-                                child: OrdersTable(
-                                  orders: ordersToShow,
-                                  onStatusUpdate: _updateStatus,
-                                  onOrderSelect: _handleOrderSelect,
-                                ),
+                              // Tableau simple et robuste
+                              SimpleOrdersTable(
+                                orders: ordersToShow,
+                                onStatusUpdate: _updateStatus,
+                                onOrderSelect: _handleOrderSelect,
                               ),
                               
                               // Pagination fixe en bas (seulement si pas de recherche par ID)
