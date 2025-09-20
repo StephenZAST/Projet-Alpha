@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../screens/dashboard/dashboard_screen_new.dart';
-import '../screens/articles/articles_screen.dart';
+import '../screens/articles/articles_screen_safe.dart';
 import '../screens/categories/categories_screen.dart';
 import '../screens/orders/orders_screen.dart';
 import '../screens/services/services_screen.dart';
@@ -34,7 +34,13 @@ class ScreenManager extends GetxController {
     // Mettre à jour l'index actuel
     currentScreenIndex.value = index;
     
-    // Vérifier le cache d'abord
+    // Pour ArticlesScreen, toujours créer une nouvelle instance pour éviter les problèmes
+    if (index == MenuIndices.articles) {
+      print('[ScreenManager] Creating fresh ArticlesScreen instance');
+      return _createScreen(index);
+    }
+    
+    // Vérifier le cache d'abord pour les autres écrans
     if (_screenCache.containsKey(index)) {
       print('[ScreenManager] Returning cached screen for index: $index');
       return _screenCache[index]!;
@@ -62,7 +68,7 @@ class ScreenManager extends GetxController {
       case MenuIndices.categories:
         return _wrapWithKey(CategoriesScreen(), 'categories_$timestamp');
       case MenuIndices.articles:
-        return ArticlesScreen(key: Key('articles_$timestamp'));
+        return ArticlesScreenSafe(key: Key('articles_$timestamp'));
       case MenuIndices.serviceTypes:
         return _wrapWithKey(ServiceTypesScreen(), 'service_types_$timestamp');
       case MenuIndices.serviceArticleCouples:
