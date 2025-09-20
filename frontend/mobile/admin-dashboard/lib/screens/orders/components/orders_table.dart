@@ -5,7 +5,6 @@ import '../../../constants.dart';
 import '../../../models/order.dart';
 import '../../../models/enums.dart';
 import '../../../widgets/shared/glass_container.dart';
-import '../../../widgets/shared/performance_list_view.dart';
 
 class OrdersTable extends StatefulWidget {
   final List<Order> orders;
@@ -153,7 +152,7 @@ class _OrdersTableState extends State<OrdersTable>
         _buildTableHeader(isDark),
         SizedBox(height: AppSpacing.sm),
         Expanded(
-          child: widget.orders.length <= 20 
+          child: widget.orders.length <= 20
               ? ListView.separated(
                   // Pour les petites listes, utiliser ListView normal
                   itemCount: widget.orders.length,
@@ -387,7 +386,7 @@ class _ModernOrderRowState extends State<_ModernOrderRow>
       duration: Duration(milliseconds: 200),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 1.02,
@@ -395,7 +394,7 @@ class _ModernOrderRowState extends State<_ModernOrderRow>
       parent: _controller,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _elevationAnimation = Tween<double>(
       begin: 0.0,
       end: 8.0,
@@ -628,7 +627,7 @@ class _DateInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     String timeAgo;
     if (difference.inDays > 0) {
       timeAgo = '${difference.inDays}j';

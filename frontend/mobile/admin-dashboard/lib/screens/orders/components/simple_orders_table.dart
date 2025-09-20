@@ -4,8 +4,6 @@ import 'dart:ui';
 import '../../../constants.dart';
 import '../../../models/order.dart';
 import '../../../models/enums.dart';
-import '../../../utils/safe_extensions.dart';
-import '../../../widgets/shared/glass_button.dart';
 
 /// Table moderne pour les commandes avec effet glassmorphism et zébrage
 class SimpleOrdersTable extends StatelessWidget {
@@ -142,7 +140,8 @@ class SimpleOrdersTable extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderCell(String title, {required int flex, required bool isDark}) {
+  Widget _buildHeaderCell(String title,
+      {required int flex, required bool isDark}) {
     return Expanded(
       flex: flex,
       child: Text(
@@ -181,31 +180,32 @@ class SimpleOrdersTable extends StatelessWidget {
               flex: 2,
               child: _buildIdCell(order.id, order.isFlashOrder, isDark),
             ),
-            
+
             // Client
             Expanded(
               flex: 3,
               child: _buildCustomerInfo(customerName, isDark),
             ),
-            
+
             // Date
             Expanded(
               flex: 2,
               child: _buildDateInfo(order.createdAt, isDark),
             ),
-            
+
             // Montant
             Expanded(
               flex: 2,
-              child: _buildAmountChip(order.totalAmount, currencyFormat, isDark),
+              child:
+                  _buildAmountChip(order.totalAmount, currencyFormat, isDark),
             ),
-            
+
             // Statut
             Expanded(
               flex: 2,
               child: _buildStatusBadge(orderStatus, isDark),
             ),
-            
+
             // Actions
             Expanded(
               flex: 2,
@@ -220,8 +220,8 @@ class SimpleOrdersTable extends StatelessWidget {
   String _getCustomerName(Order order) {
     // Gestion sécurisée du nom client
     if (order.user != null) {
-      final firstName = order.user!.firstName ?? '';
-      final lastName = order.user!.lastName ?? '';
+      final firstName = order.user!.firstName;
+      final lastName = order.user!.lastName;
       if (firstName.isNotEmpty || lastName.isNotEmpty) {
         return '$firstName $lastName'.trim();
       }
@@ -239,8 +239,9 @@ class SimpleOrdersTable extends StatelessWidget {
 
   Widget _buildIdCell(String orderId, bool isFlash, bool isDark) {
     // Affichage simple avec pointillés comme dans users_table
-    final displayId = orderId.length > 8 ? orderId.substring(0, 8) + '...' : orderId;
-    
+    final displayId =
+        orderId.length > 8 ? orderId.substring(0, 8) + '...' : orderId;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -395,7 +396,7 @@ class SimpleOrdersTable extends StatelessWidget {
 
   Widget _buildActions(Order order, OrderStatus status, bool isDark) {
     final nextStatus = _getNextStatus(status);
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

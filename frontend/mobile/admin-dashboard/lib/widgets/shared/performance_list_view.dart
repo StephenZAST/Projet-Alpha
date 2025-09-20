@@ -32,7 +32,7 @@ class PerformanceListView<T> extends StatelessWidget {
     if (items.length <= (maxItemsBeforeOptimization ?? 20)) {
       return _buildSmallList();
     }
-    
+
     // Pour les grandes listes, utiliser ListView.builder optimisé
     return _buildOptimizedList();
   }
@@ -46,7 +46,8 @@ class PerformanceListView<T> extends StatelessWidget {
         physics: physics,
         itemCount: items.length,
         separatorBuilder: separatorBuilder!,
-        itemBuilder: (context, index) => itemBuilder(context, items[index], index),
+        itemBuilder: (context, index) =>
+            itemBuilder(context, items[index], index),
       );
     }
 
@@ -57,7 +58,8 @@ class PerformanceListView<T> extends StatelessWidget {
       physics: physics,
       itemCount: items.length,
       itemExtent: itemExtent,
-      itemBuilder: (context, index) => itemBuilder(context, items[index], index),
+      itemBuilder: (context, index) =>
+          itemBuilder(context, items[index], index),
     );
   }
 
@@ -68,7 +70,8 @@ class PerformanceListView<T> extends StatelessWidget {
       shrinkWrap: shrinkWrap,
       physics: physics,
       itemCount: items.length,
-      itemExtent: itemExtent ?? 80, // Hauteur fixe pour de meilleures performances
+      itemExtent:
+          itemExtent ?? 80, // Hauteur fixe pour de meilleures performances
       cacheExtent: 500, // Cache plus d'éléments pour un scroll fluide
       itemBuilder: (context, index) {
         return Container(
@@ -93,20 +96,18 @@ class PerformanceIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: isOptimized 
+        color: isOptimized
             ? AppColors.success.withOpacity(0.1)
             : AppColors.warning.withOpacity(0.1),
         borderRadius: AppRadius.radiusSM,
         border: Border.all(
-          color: isOptimized 
+          color: isOptimized
               ? AppColors.success.withOpacity(0.3)
               : AppColors.warning.withOpacity(0.3),
         ),
@@ -121,7 +122,7 @@ class PerformanceIndicator extends StatelessWidget {
           ),
           SizedBox(width: AppSpacing.xs),
           Text(
-            isOptimized 
+            isOptimized
                 ? 'Mode optimisé ($itemCount éléments)'
                 : 'Mode standard ($itemCount éléments)',
             style: AppTextStyles.caption.copyWith(

@@ -186,6 +186,7 @@ class _ModernDropdownState<T> extends State<_ModernDropdown<T>> {
   }
 }
 
+// ignore: unused_element
 class _CategoryHeader extends StatelessWidget {
   final String name;
   final bool isDark;
@@ -258,7 +259,6 @@ class _ArticleCardState extends State<_ArticleCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -296,11 +296,9 @@ class _ArticleCardState extends State<_ArticleCard>
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _controller.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -802,6 +800,7 @@ class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
   }
 }
 
+// ignore: unused_element
 class _PriceDisplay extends StatelessWidget {
   final double price;
   final bool isDark;
@@ -878,7 +877,6 @@ class _ModernActionButtonState extends State<_ModernActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -925,12 +923,10 @@ class _ModernActionButtonState extends State<_ModernActionButton>
     return MouseRegion(
       onEnter: (_) {
         if (isEnabled) {
-          setState(() => _isHovered = true);
           _controller.forward();
         }
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(

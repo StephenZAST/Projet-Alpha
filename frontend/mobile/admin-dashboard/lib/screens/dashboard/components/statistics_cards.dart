@@ -80,20 +80,6 @@ class StatisticsCards extends StatelessWidget {
       children: List.generate(4, (index) => _SkeletonStatCard(index: index)),
     );
   }
-
-  int _getCrossAxisCount(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width > 1200) return 4;
-    if (width > 800) return 2;
-    return 1;
-  }
-
-  double _getChildAspectRatio(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width > 1200) return 1.5;
-    if (width > 800) return 1.8;
-    return 1.6;
-  }
 }
 
 // Composants modernes pour les statistiques
@@ -177,9 +163,7 @@ class _ModernStatCard extends StatefulWidget {
 class _ModernStatCardState extends State<_ModernStatCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _hoverController;
-  late Animation<double> _elevationAnimation;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -188,14 +172,6 @@ class _ModernStatCardState extends State<_ModernStatCard>
       duration: Duration(milliseconds: 200),
       vsync: this,
     );
-
-    _elevationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 8.0,
-    ).animate(CurvedAnimation(
-      parent: _hoverController,
-      curve: Curves.easeOutCubic,
-    ));
 
     _scaleAnimation = Tween<double>(
       begin: 1.0,
@@ -214,15 +190,11 @@ class _ModernStatCardState extends State<_ModernStatCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _hoverController.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _hoverController.reverse();
       },
       child: AnimatedBuilder(

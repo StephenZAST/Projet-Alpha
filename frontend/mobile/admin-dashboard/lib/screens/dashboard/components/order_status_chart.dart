@@ -237,8 +237,8 @@ class _OrderStatusChartState extends State<OrderStatusChart>
                         innerRadius: '65%',
                         radius: '85%',
                         strokeWidth: 2,
-                        strokeColor: isDark 
-                            ? AppColors.cardBgDark 
+                        strokeColor: isDark
+                            ? AppColors.cardBgDark
                             : AppColors.cardBgLight,
                         dataLabelSettings: DataLabelSettings(
                           isVisible: false,
@@ -248,12 +248,16 @@ class _OrderStatusChartState extends State<OrderStatusChart>
                     ],
                     tooltipBehavior: TooltipBehavior(
                       enable: true,
-                      color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                      color:
+                          isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
                       textStyle: AppTextStyles.bodySmall.copyWith(
-                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
-                      borderColor: isDark ? AppColors.gray600 : AppColors.gray300,
+                      borderColor:
+                          isDark ? AppColors.gray600 : AppColors.gray300,
                       borderWidth: 1,
                       elevation: 8,
                       duration: 1000,
@@ -302,13 +306,15 @@ class _OrderStatusChartState extends State<OrderStatusChart>
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
       alignment: WrapAlignment.center,
-      children: data.map((item) => _ModernLegendItem(
-        color: item.color,
-        label: item.label,
-        value: item.value.toInt(),
-        total: total,
-        isDark: isDark,
-      )).toList(),
+      children: data
+          .map((item) => _ModernLegendItem(
+                color: item.color,
+                label: item.label,
+                value: item.value.toInt(),
+                total: total,
+                isDark: isDark,
+              ))
+          .toList(),
     );
   }
 
@@ -543,7 +549,6 @@ class _ModernLegendItemState extends State<_ModernLegendItem>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -573,11 +578,9 @@ class _ModernLegendItemState extends State<_ModernLegendItem>
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _controller.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -618,8 +621,8 @@ class _ModernLegendItemState extends State<_ModernLegendItem>
                       Text(
                         widget.label,
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: widget.isDark 
-                              ? AppColors.textLight 
+                          color: widget.isDark
+                              ? AppColors.textLight
                               : AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -627,8 +630,8 @@ class _ModernLegendItemState extends State<_ModernLegendItem>
                       Text(
                         '${widget.value} · $percentage%',
                         style: AppTextStyles.caption.copyWith(
-                          color: widget.isDark 
-                              ? AppColors.gray400 
+                          color: widget.isDark
+                              ? AppColors.gray400
                               : AppColors.gray600,
                           fontWeight: FontWeight.w500,
                         ),
@@ -646,6 +649,7 @@ class _ModernLegendItemState extends State<_ModernLegendItem>
 }
 
 // Ancien composant conservé pour compatibilité
+// ignore: unused_element
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;

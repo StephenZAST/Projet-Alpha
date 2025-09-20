@@ -546,7 +546,6 @@ class _FloatingRefreshButtonState extends State<_FloatingRefreshButton>
   late AnimationController _scaleController;
   late Animation<double> _rotationAnimation;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -590,11 +589,9 @@ class _FloatingRefreshButtonState extends State<_FloatingRefreshButton>
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _scaleController.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _scaleController.reverse();
       },
       child: AnimatedBuilder(

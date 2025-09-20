@@ -187,9 +187,9 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
                     ),
                   ],
                 ),
-                
+
                 SizedBox(height: AppSpacing.xl),
-                
+
                 // Contenu scrollable
                 Flexible(
                   child: SingleChildScrollView(
@@ -197,55 +197,66 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Section Informations générales
-                        _buildSectionHeader('Informations générales', Icons.info_outline, isDark),
+                        _buildSectionHeader('Informations générales',
+                            Icons.info_outline, isDark),
                         SizedBox(height: AppSpacing.md),
-                        _buildTextField(_nameController, 'Nom de l\'offre', isDark),
+                        _buildTextField(
+                            _nameController, 'Nom de l\'offre', isDark),
                         SizedBox(height: AppSpacing.md),
-                        _buildTextField(_descriptionController, 'Description', isDark,
+                        _buildTextField(
+                            _descriptionController, 'Description', isDark,
                             maxLines: 3),
-                        
+
                         SizedBox(height: AppSpacing.xl),
-                        
+
                         // Section Période de validité
-                        _buildSectionHeader('Période de validité', Icons.schedule_outlined, isDark),
+                        _buildSectionHeader('Période de validité',
+                            Icons.schedule_outlined, isDark),
                         SizedBox(height: AppSpacing.md),
                         Row(
                           children: [
                             Expanded(
-                                child: _buildDatePicker(context, _startDateController,
-                                    'Date de début', isDark)),
+                                child: _buildDatePicker(
+                                    context,
+                                    _startDateController,
+                                    'Date de début',
+                                    isDark)),
                             SizedBox(width: AppSpacing.md),
                             Expanded(
-                                child: _buildDatePicker(context, _endDateController,
-                                    'Date de fin', isDark)),
+                                child: _buildDatePicker(context,
+                                    _endDateController, 'Date de fin', isDark)),
                           ],
                         ),
-                        
+
                         SizedBox(height: AppSpacing.xl),
-                        
+
                         // Section Configuration de la remise
-                        _buildSectionHeader('Configuration de la remise', Icons.local_offer_outlined, isDark),
+                        _buildSectionHeader('Configuration de la remise',
+                            Icons.local_offer_outlined, isDark),
                         SizedBox(height: AppSpacing.md),
                         _buildDropdown(isDark),
                         SizedBox(height: AppSpacing.md),
                         _buildConditionalFields(isDark),
-                        
+
                         SizedBox(height: AppSpacing.xl),
-                        
+
                         // Section Articles applicables
-                        _buildSectionHeader('Articles applicables', Icons.shopping_cart_outlined, isDark),
+                        _buildSectionHeader('Articles applicables',
+                            Icons.shopping_cart_outlined, isDark),
                         SizedBox(height: AppSpacing.md),
                         _buildArticleSelector(context, isDark),
-                        
+
                         SizedBox(height: AppSpacing.xl),
-                        
+
                         // Section Options avancées
-                        _buildSectionHeader('Options avancées', Icons.tune_outlined, isDark),
+                        _buildSectionHeader(
+                            'Options avancées', Icons.tune_outlined, isDark),
                         SizedBox(height: AppSpacing.md),
                         Row(
                           children: [
                             Expanded(
-                              child: _buildToggleCard('Cumulative', 
+                              child: _buildToggleCard(
+                                  'Cumulative',
                                   'Cette offre peut être combinée avec d\'autres offres',
                                   _isCumulative,
                                   (v) => setState(() => _isCumulative = v),
@@ -253,7 +264,8 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
                             ),
                             SizedBox(width: AppSpacing.md),
                             Expanded(
-                              child: _buildToggleCard('Active', 
+                              child: _buildToggleCard(
+                                  'Active',
                                   'L\'offre est immédiatement disponible',
                                   _isActive,
                                   (v) => setState(() => _isActive = v),
@@ -265,7 +277,7 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(height: AppSpacing.xl),
                 _buildActionButtons(),
               ],
@@ -310,7 +322,8 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
     );
   }
 
-  Widget _buildToggleCard(String title, String description, bool value, ValueChanged<bool> onChanged, bool isDark) {
+  Widget _buildToggleCard(String title, String description, bool value,
+      ValueChanged<bool> onChanged, bool isDark) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -519,17 +532,6 @@ class _OfferFormDialogState extends State<OfferFormDialog> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildToggle(String label, bool value, ValueChanged<bool> onChanged) {
-    return Row(
-      children: [
-        Switch(
-            value: value, onChanged: onChanged, activeColor: AppColors.primary),
-        SizedBox(width: AppSpacing.sm),
-        Text(label),
-      ],
     );
   }
 

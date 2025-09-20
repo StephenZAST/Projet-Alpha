@@ -584,6 +584,7 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
   }
 }
 
+// ignore: unused_element
 class _PasswordResetResultDialog extends StatelessWidget {
   final dynamic user;
   final String tempPassword;

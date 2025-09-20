@@ -198,7 +198,8 @@ class _RecentOrdersState extends State<RecentOrders>
             gradient: LinearGradient(
               colors: [
                 Colors.transparent,
-                (isDark ? AppColors.gray700 : AppColors.gray200).withOpacity(0.5),
+                (isDark ? AppColors.gray700 : AppColors.gray200)
+                    .withOpacity(0.5),
                 Colors.transparent,
               ],
             ),
@@ -410,8 +411,6 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _elevationAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -420,18 +419,10 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
       duration: Duration(milliseconds: 200),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 1.02,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _elevationAnimation = Tween<double>(
-      begin: 0.0,
-      end: 8.0,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
@@ -447,15 +438,14 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
   @override
   Widget build(BuildContext context) {
     final status = widget.order.status.toOrderStatus();
-    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(widget.order.createdAt);
+    final formattedDate =
+        DateFormat('dd MMM yyyy, HH:mm').format(widget.order.createdAt);
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _controller.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -467,7 +457,8 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
               variant: GlassContainerVariant.neutral,
               padding: EdgeInsets.all(AppSpacing.md),
               margin: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              onTap: () => Get.toNamed('${AdminRoutes.orders}/${widget.order.id}'),
+              onTap: () =>
+                  Get.toNamed('${AdminRoutes.orders}/${widget.order.id}'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -506,7 +497,7 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
                         ),
                       ),
                       SizedBox(width: AppSpacing.md),
-                      
+
                       // Informations de la commande
                       Expanded(
                         child: Column(
@@ -527,16 +518,16 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
                                 Icon(
                                   Icons.receipt,
                                   size: 14,
-                                  color: widget.isDark 
-                                      ? AppColors.gray400 
+                                  color: widget.isDark
+                                      ? AppColors.gray400
                                       : AppColors.gray600,
                                 ),
                                 SizedBox(width: AppSpacing.xs),
                                 Text(
                                   '#${widget.order.id.substring(0, 8)}',
                                   style: AppTextStyles.bodySmall.copyWith(
-                                    color: widget.isDark 
-                                        ? AppColors.gray400 
+                                    color: widget.isDark
+                                        ? AppColors.gray400
                                         : AppColors.gray600,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -546,7 +537,7 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
                           ],
                         ),
                       ),
-                      
+
                       // Badge de statut
                       _ModernStatusBadge(
                         status: status,
@@ -554,9 +545,9 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
                       ),
                     ],
                   ),
-                  
+
                   SizedBox(height: AppSpacing.md),
-                  
+
                   // Informations supplémentaires
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -566,16 +557,16 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
                           Icon(
                             Icons.access_time,
                             size: 14,
-                            color: widget.isDark 
-                                ? AppColors.gray400 
+                            color: widget.isDark
+                                ? AppColors.gray400
                                 : AppColors.gray600,
                           ),
                           SizedBox(width: AppSpacing.xs),
                           Text(
                             formattedDate,
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: widget.isDark 
-                                  ? AppColors.gray400 
+                              color: widget.isDark
+                                  ? AppColors.gray400
                                   : AppColors.gray600,
                             ),
                           ),
@@ -600,7 +591,8 @@ class _ModernOrderListItemState extends State<_ModernOrderListItem>
                           ),
                         ),
                         child: Text(
-                          widget.currencyFormat.format(widget.order.totalAmount),
+                          widget.currencyFormat
+                              .format(widget.order.totalAmount),
                           style: AppTextStyles.bodyMedium.copyWith(
                             fontWeight: FontWeight.bold,
                             color: AppColors.success,
@@ -690,6 +682,7 @@ class _ModernStatusBadge extends StatelessWidget {
 }
 
 // Ancien composant conservé pour compatibilité
+// ignore: unused_element
 class _OrderListItem extends StatelessWidget {
   final Order order;
   final NumberFormat currencyFormat;

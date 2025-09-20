@@ -123,7 +123,6 @@ class _ModernTabButtonState extends State<_ModernTabButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -151,11 +150,9 @@ class _ModernTabButtonState extends State<_ModernTabButton>
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _controller.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -487,6 +484,7 @@ class _ModernAddressFieldState extends State<_ModernAddressField> {
   }
 }
 
+// ignore: unused_element
 class _GPSInfoCard extends StatelessWidget {
   final String label;
   final String value;
