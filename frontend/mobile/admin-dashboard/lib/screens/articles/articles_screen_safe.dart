@@ -12,7 +12,7 @@ import '../../widgets/shared/glass_container.dart';
 import '../../utils/controller_manager.dart';
 import 'components/article_stats_grid.dart';
 import 'components/article_table.dart';
-import 'components/article_filters.dart';
+import 'components/article_filters_safe.dart';
 
 class ArticlesScreenSafe extends StatefulWidget {
   const ArticlesScreenSafe({Key? key}) : super(key: key);
@@ -270,7 +270,7 @@ class _ArticlesScreenSafeState extends State<ArticlesScreenSafe> {
 
   Widget _buildFiltersSection() {
     try {
-      return ArticleFilters(
+      return ArticleFiltersSafe(
         onSearchChanged: controller?.searchArticles ?? (String value) {},
         onCategoryChanged: (categoryId) {
           controller?.setSelectedCategory(categoryId);

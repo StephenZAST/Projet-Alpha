@@ -6,12 +6,12 @@ import '../../../widgets/shared/glass_container.dart';
 import '../../../widgets/shared/glass_button.dart';
 import '../../../controllers/category_controller.dart';
 
-class ArticleFilters extends StatefulWidget {
+class ArticleFiltersSafe extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String?> onCategoryChanged;
   final VoidCallback onClearFilters;
 
-  const ArticleFilters({
+  const ArticleFiltersSafe({
     Key? key,
     required this.onSearchChanged,
     required this.onCategoryChanged,
@@ -19,10 +19,10 @@ class ArticleFilters extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ArticleFilters> createState() => _ArticleFiltersState();
+  State<ArticleFiltersSafe> createState() => _ArticleFiltersSafeState();
 }
 
-class _ArticleFiltersState extends State<ArticleFilters> {
+class _ArticleFiltersSafeState extends State<ArticleFiltersSafe> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedCategoryId;
 
@@ -149,13 +149,73 @@ class _ArticleFiltersState extends State<ArticleFilters> {
               : AppColors.gray200.withOpacity(0.5),
         ),
       ),
-      child: GetBuilder<CategoryController>(
+      child: _buildSafeCategoryDropdown(isDark),
+    );
+  }
+
+  Widget _buildSafeCategoryDropdown(bool isDark) {
+    try {
+      // Vérifier si le CategoryController est disponible
+      if (!Get.isRegistered<CategoryController>()) {
+        return _buildFallbackDropdown(isDark, 'Catégorie', 'Contrôleur non disponible');
+      }
+
+      return GetBuilder<CategoryController>(
         builder: (categoryController) {
-          // Protection contre null/état non initialisé
-          if (categoryController.categories.isEmpty &&
-              categoryController.isLoading.value) {
-            return DropdownButtonFormField<String>(
+          try {
+            // Protection contre null/état non initialisé
+            if (categoryController.isLoading.value) {
+              return _buildFallbackDropdown(isDark, 'Catégorie', 'Chargement...');
+            }
+
+            if (categoryController.hasError.value) {
+              return _buildFallbackDropdown(isDark, 'Catégorie', 'Erreur de chargement');
+            }
+
+            // Construire les items de manière sécurisée
+            List<DropdownMenuItem<String>> items = [];
+            
+            // Item par défaut
+            items.add(DropdownMenuItem(
               value: null,
+              child: Text(
+                'Toutes les catégories',
+                style: TextStyle(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                ),
+              ),
+            ));
+
+            // Ajouter les catégories si disponibles
+            if (categoryController.categories.isNotEmpty) {
+              for (var category in categoryController.categories) {
+                items.add(DropdownMenuItem(
+                  value: category.id,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 200), // Contrainte de largeur fixe
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.folder, size: 16, color: AppColors.primary),
+                        SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            category.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ));
+              }
+            }
+
+            return DropdownButtonFormField<String>(
+              value: _selectedCategoryId,
               decoration: InputDecoration(
                 labelText: 'Catégorie',
                 labelStyle: TextStyle(
@@ -167,66 +227,56 @@ class _ArticleFiltersState extends State<ArticleFilters> {
                   vertical: AppSpacing.sm,
                 ),
               ),
-              items: [
-                DropdownMenuItem(
-                  value: null,
-                  child: Text('Chargement...'),
-                ),
-              ],
-              onChanged: null,
+              dropdownColor: isDark ? AppColors.gray800 : AppColors.white,
+              style: TextStyle(
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              ),
+              items: items,
+              onChanged: (value) {
+                setState(() {
+                  _selectedCategoryId = value;
+                });
+                widget.onCategoryChanged(value);
+              },
             );
+          } catch (e) {
+            print('[ArticleFiltersSafe] Error in category dropdown: $e');
+            return _buildFallbackDropdown(isDark, 'Catégorie', 'Erreur');
           }
-
-          return DropdownButtonFormField<String>(
-            value: _selectedCategoryId,
-            decoration: InputDecoration(
-              labelText: 'Catégorie',
-              labelStyle: TextStyle(
-                color: isDark ? AppColors.gray300 : AppColors.gray600,
-              ),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-            ),
-            dropdownColor: isDark ? AppColors.gray800 : AppColors.white,
-            style: TextStyle(
-              color: isDark ? AppColors.textLight : AppColors.textPrimary,
-            ),
-            items: [
-              DropdownMenuItem(
-                value: null,
-                child: Text('Toutes les catégories'),
-              ),
-              ...categoryController.categories.map((category) {
-                return DropdownMenuItem(
-                  value: category.id,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.folder, size: 16, color: AppColors.primary),
-                      SizedBox(width: AppSpacing.xs),
-                      Flexible(
-                        child: Text(
-                          category.name,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-            onChanged: (value) {
-              setState(() {
-                _selectedCategoryId = value;
-              });
-              widget.onCategoryChanged(value);
-            },
-          );
         },
+      );
+    } catch (e) {
+      print('[ArticleFiltersSafe] Error building category filter: $e');
+      return _buildFallbackDropdown(isDark, 'Catégorie', 'Erreur système');
+    }
+  }
+
+  Widget _buildFallbackDropdown(bool isDark, String label, String message) {
+    return DropdownButtonFormField<String>(
+      value: null,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          color: isDark ? AppColors.gray300 : AppColors.gray600,
+        ),
+        border: InputBorder.none,
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
       ),
+      items: [
+        DropdownMenuItem(
+          value: null,
+          child: Text(
+            message,
+            style: TextStyle(
+              color: isDark ? AppColors.gray400 : AppColors.gray500,
+            ),
+          ),
+        ),
+      ],
+      onChanged: null,
     );
   }
 
@@ -262,51 +312,84 @@ class _ArticleFiltersState extends State<ArticleFilters> {
         items: [
           DropdownMenuItem(
             value: 'name_asc',
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.sort_by_alpha, size: 16, color: AppColors.primary),
-                SizedBox(width: AppSpacing.xs),
-                Text('Nom (A-Z)'),
-              ],
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 150),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.sort_by_alpha, size: 16, color: AppColors.primary),
+                  SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      'Nom (A-Z)',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           DropdownMenuItem(
             value: 'name_desc',
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.sort_by_alpha, size: 16, color: AppColors.primary),
-                SizedBox(width: AppSpacing.xs),
-                Text('Nom (Z-A)'),
-              ],
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 150),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.sort_by_alpha, size: 16, color: AppColors.primary),
+                  SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      'Nom (Z-A)',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           DropdownMenuItem(
             value: 'date_desc',
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.access_time, size: 16, color: AppColors.info),
-                SizedBox(width: AppSpacing.xs),
-                Text('Plus récents'),
-              ],
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 150),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.access_time, size: 16, color: AppColors.info),
+                  SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      'Plus récents',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           DropdownMenuItem(
             value: 'date_asc',
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.history, size: 16, color: AppColors.warning),
-                SizedBox(width: AppSpacing.xs),
-                Text('Plus anciens'),
-              ],
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 150),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history, size: 16, color: AppColors.warning),
+                  SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      'Plus anciens',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
         onChanged: (value) {
           // TODO: Implémenter le tri
+          print('[ArticleFiltersSafe] Sort changed to: $value');
         },
       ),
     );
