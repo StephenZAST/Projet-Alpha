@@ -93,6 +93,19 @@ class _OrdersHeaderState extends State<OrdersHeader>
                 ),
                 SizedBox(width: AppSpacing.md),
                 _ModernActionButton(
+                  label: "Actualiser",
+                  icon: Icons.refresh,
+                  onPressed: () {
+                    controller.isLoading.value = true;
+                    controller.loadOrdersPage(
+                      page: 1,
+                      limit: controller.itemsPerPage.value,
+                    );
+                  },
+                  variant: _ActionButtonVariant.secondary,
+                ),
+                SizedBox(width: AppSpacing.sm),
+                _ModernActionButton(
                   label: "Flash",
                   icon: Icons.flash_on,
                   onPressed: () => AdminRoutes.goToFlashOrders(),
@@ -166,7 +179,7 @@ class _OrdersHeaderState extends State<OrdersHeader>
 }
 
 // Composants modernes pour le header des commandes
-enum _ActionButtonVariant { primary, warning, success, error }
+enum _ActionButtonVariant { primary, secondary, warning, success, error }
 
 class _ModernActionButton extends StatefulWidget {
   final String label;
@@ -218,6 +231,8 @@ class _ModernActionButtonState extends State<_ModernActionButton>
     switch (widget.variant) {
       case _ActionButtonVariant.primary:
         return AppColors.primary;
+      case _ActionButtonVariant.secondary:
+        return AppColors.gray600;
       case _ActionButtonVariant.warning:
         return AppColors.warning;
       case _ActionButtonVariant.success:

@@ -22,7 +22,35 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
-    controller.loadOrdersPage(status: controller.filterStatus.value);
+    // Force le rechargement des données au démarrage
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _forceReloadData();
+    });
+  }
+
+  void _forceReloadData() async {
+    print('[OrdersScreen] Force reload data...');
+    try {
+      // Reset des états
+      controller.isLoading.value = true;
+      controller.hasError.value = false;
+      controller.errorMessage.value = '';
+      
+      // Chargement des données
+      await controller.loadOrdersPage(
+        page: 1,
+        limit: controller.itemsPerPage.value,
+        status: controller.filterStatus.value,
+      );
+      
+      print('[OrdersScreen] Data loaded successfully. Orders count: ${controller.orders.length}');
+    } catch (e) {
+      print('[OrdersScreen] Error loading data: $e');
+      controller.hasError.value = true;
+      controller.errorMessage.value = 'Erreur lors du chargement: $e';
+    } finally {
+      controller.isLoading.value = false;
+    }
   }
 
   void _updateStatus(String orderId, OrderStatus newStatus) {
@@ -89,129 +117,166 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         elevation: 0,
                         color: Colors.transparent,
                         child: Obx(() {
+                          // Debug: Afficher l'état du controller
+                          print('[OrdersScreen] isLoading: ${controller.isLoading.value}');
+                          print('[OrdersScreen] hasError: ${controller.hasError.value}');
+                          print('[OrdersScreen] orders.length: ${controller.orders.length}');
+                          print('[OrdersScreen] isOrderIdSearchActive: ${controller.isOrderIdSearchActive.value}');
+                          
                           if (controller.isLoading.value) {
-                            return Center(
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.primary),
+                            return Container(
+                              height: 400,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          AppColors.primary),
+                                    ),
+                                    SizedBox(height: AppSpacing.md),
+                                    Text(
+                                      'Chargement des commandes...',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: isDark
+                                            ? AppColors.textLight
+                                            : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }
 
                           if (controller.hasError.value) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.error_outline,
-                                    size: 48,
-                                    color: AppColors.error,
-                                  ),
-                                  SizedBox(height: AppSpacing.md),
-                                  Text(
-                                    controller.errorMessage.value,
-                                    style: AppTextStyles.bodyMedium.copyWith(
+                            return Container(
+                              height: 400,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      size: 48,
                                       color: AppColors.error,
                                     ),
-                                  ),
-                                  SizedBox(height: AppSpacing.md),
-                                  AppButton(
-                                    label: 'Réessayer',
-                                    icon: Icons.refresh_outlined,
-                                    onPressed: controller.loadOrdersPage,
-                                    variant: AppButtonVariant.primary,
-                                  ),
-                                ],
+                                    SizedBox(height: AppSpacing.md),
+                                    Text(
+                                      controller.errorMessage.value,
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: AppColors.error,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    SizedBox(height: AppSpacing.md),
+                                    AppButton(
+                                      label: 'Réessayer',
+                                      icon: Icons.refresh_outlined,
+                                      onPressed: () => controller.loadOrdersPage(),
+                                      variant: AppButtonVariant.primary,
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }
 
-                          if (controller.orders.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.inbox,
-                                    size: 48,
-                                    color: isDark
-                                        ? AppColors.textLight
-                                        : AppColors.textSecondary,
-                                  ),
-                                  SizedBox(height: AppSpacing.md),
-                                  Text(
-                                    'Aucune commande trouvée',
-                                    style: AppTextStyles.bodyMedium.copyWith(
+                          // Vérifier si on a des données à afficher
+                          final ordersToShow = controller.isOrderIdSearchActive.value &&
+                                  controller.orderIdResult.value != null
+                              ? [controller.orderIdResult.value!]
+                              : controller.orders;
+
+                          if (ordersToShow.isEmpty) {
+                            return Container(
+                              height: 400,
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.inbox,
+                                      size: 48,
                                       color: isDark
                                           ? AppColors.textLight
                                           : AppColors.textSecondary,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(height: AppSpacing.md),
+                                    Text(
+                                      'Aucune commande trouvée',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: isDark
+                                            ? AppColors.textLight
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                    SizedBox(height: AppSpacing.sm),
+                                    Text(
+                                      'Essayez de modifier vos filtres ou créez une nouvelle commande',
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: isDark
+                                            ? AppColors.gray400
+                                            : AppColors.gray600,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }
 
+                          // Afficher le tableau avec les données
                           return Column(
                             children: [
                               // Tableau avec hauteur flexible
                               Expanded(
-                                child: Obx(() {
-                                  if (controller.isOrderIdSearchActive.value &&
-                                      controller.orderIdResult.value != null) {
-                                    return OrdersTable(
-                                      orders: [controller.orderIdResult.value!],
-                                      onStatusUpdate: _updateStatus,
-                                      onOrderSelect: _handleOrderSelect,
-                                    );
-                                  } else {
-                                    return OrdersTable(
-                                      orders: controller.orders,
-                                      onStatusUpdate: _updateStatus,
-                                      onOrderSelect: _handleOrderSelect,
-                                    );
-                                  }
-                                }),
+                                child: OrdersTable(
+                                  orders: ordersToShow,
+                                  onStatusUpdate: _updateStatus,
+                                  onOrderSelect: _handleOrderSelect,
+                                ),
                               ),
                               
-                              // Pagination fixe en bas
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: AppSpacing.sm,
-                                  horizontal: AppSpacing.md,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isDark 
-                                      ? AppColors.gray800.withOpacity(0.5)
-                                      : AppColors.white.withOpacity(0.8),
-                                  borderRadius: BorderRadius.only(
-                                    bottomLeft: Radius.circular(AppRadius.md),
-                                    bottomRight: Radius.circular(AppRadius.md),
+                              // Pagination fixe en bas (seulement si pas de recherche par ID)
+                              if (!controller.isOrderIdSearchActive.value)
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: AppSpacing.sm,
+                                    horizontal: AppSpacing.md,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark 
+                                        ? AppColors.gray800.withOpacity(0.5)
+                                        : AppColors.white.withOpacity(0.8),
+                                    borderRadius: BorderRadius.only(
+                                      bottomLeft: Radius.circular(AppRadius.md),
+                                      bottomRight: Radius.circular(AppRadius.md),
+                                    ),
+                                  ),
+                                  child: PaginationControls(
+                                    currentPage: controller.currentPage.value,
+                                    totalPages: controller.totalPages.value,
+                                    itemCount: controller.orders.length,
+                                    totalItems: controller.totalOrders.value,
+                                    itemsPerPage: controller.itemsPerPage.value,
+                                    onPrevious: controller.previousPage,
+                                    onNext: controller.nextPage,
+                                    onItemsPerPageChanged: (value) {
+                                      if (value != null && value > 0) {
+                                        controller.setItemsPerPage(value);
+                                      }
+                                    },
+                                    onPageChanged: (page) {
+                                      if (page != null &&
+                                          page != controller.currentPage.value) {
+                                        controller.currentPage.value = page;
+                                        controller.loadOrdersPage(page: page);
+                                      }
+                                    },
                                   ),
                                 ),
-                                child: Obx(() => PaginationControls(
-                                  currentPage: controller.currentPage.value,
-                                  totalPages: controller.totalPages.value,
-                                  itemCount: controller.orders.length,
-                                  totalItems: controller.totalOrders.value,
-                                  itemsPerPage: controller.itemsPerPage.value,
-                                  onPrevious: controller.previousPage,
-                                  onNext: controller.nextPage,
-                                  onItemsPerPageChanged: (value) {
-                                    if (value != null && value > 0) {
-                                      controller.setItemsPerPage(value);
-                                    }
-                                  },
-                                  onPageChanged: (page) {
-                                    if (page != null &&
-                                        page != controller.currentPage.value) {
-                                      controller.currentPage.value = page;
-                                      controller.loadOrdersPage(page: page);
-                                    }
-                                  },
-                                )),
-                              ),
                             ],
                           );
                         }),
