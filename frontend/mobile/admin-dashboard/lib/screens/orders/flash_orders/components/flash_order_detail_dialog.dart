@@ -7,11 +7,10 @@ import '../../../../controllers/flash_order_stepper_controller.dart';
 import '../../../../widgets/shared/glass_container.dart';
 import 'flash_order_stepper.dart';
 import 'copy_text_icon.dart';
-import '../../../../widgets/shared/glass_button.dart';
 
 class FlashOrderDetailDialog extends StatefulWidget {
   final Order order;
-  
+
   const FlashOrderDetailDialog({Key? key, required this.order})
       : super(key: key);
 
@@ -119,8 +118,8 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
           ],
         ),
         borderRadius: BorderRadius.only(
-          topLeft: AppRadius.xl.topLeft,
-          topRight: AppRadius.xl.topRight,
+          topLeft: Radius.circular(AppRadius.xl),
+          topRight: Radius.circular(AppRadius.xl),
         ),
       ),
       child: Row(
@@ -156,7 +155,9 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
                     Text(
                       'Commande Flash',
                       style: AppTextStyles.h3.copyWith(
-                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -250,8 +251,8 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
-          if (widget.order.customerName != null && widget.order.customerName!.isNotEmpty) ...[
+          if (widget.order.customerName != null &&
+              widget.order.customerName!.isNotEmpty) ...[
             _buildInfoRow(
               'Nom',
               widget.order.customerName!,
@@ -260,8 +261,8 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
               copyable: true,
             ),
           ],
-          
-          if (widget.order.customerPhone != null && widget.order.customerPhone!.isNotEmpty) ...[
+          if (widget.order.customerPhone != null &&
+              widget.order.customerPhone!.isNotEmpty) ...[
             _buildInfoRow(
               'Téléphone',
               widget.order.customerPhone!,
@@ -270,8 +271,8 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
               copyable: true,
             ),
           ],
-          
-          if (widget.order.user != null && widget.order.user!.email.isNotEmpty) ...[
+          if (widget.order.user != null &&
+              widget.order.user!.email.isNotEmpty) ...[
             _buildInfoRow(
               'Email',
               widget.order.user!.email,
@@ -280,7 +281,6 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
               copyable: true,
             ),
           ],
-          
           if (widget.order.deliveryAddress != null) ...[
             _buildInfoRow(
               'Adresse',
@@ -320,14 +320,12 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
           _buildInfoRow(
             'Statut',
             widget.order.status,
             Icons.info,
             isDark,
           ),
-          
           if (widget.order.totalAmount != null) ...[
             _buildInfoRow(
               'Montant Total',
@@ -337,7 +335,6 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
               highlight: true,
             ),
           ],
-          
           if (widget.order.createdAt != null) ...[
             _buildInfoRow(
               'Date de création',
@@ -377,48 +374,53 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
           ...widget.order.items!.map((item) => Container(
-            margin: EdgeInsets.only(bottom: AppSpacing.sm),
-            padding: EdgeInsets.all(AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-              borderRadius: AppRadius.radiusSM,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.info.withOpacity(0.2), AppColors.info.withOpacity(0.1)],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${item.quantity}',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.info,
-                        fontWeight: FontWeight.bold,
+                margin: EdgeInsets.only(bottom: AppSpacing.sm),
+                padding: EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: (isDark ? AppColors.gray700 : AppColors.gray100)
+                      .withOpacity(0.5),
+                  borderRadius: AppRadius.radiusSM,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.info.withOpacity(0.2),
+                            AppColors.info.withOpacity(0.1)
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${item.quantity}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.info,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    item.article?.name ?? item.articleId,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                      fontWeight: FontWeight.w500,
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        item.article?.name ?? item.articleId,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          )),
+              )),
         ],
       ),
     );
@@ -454,7 +456,8 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
             width: double.infinity,
             padding: EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
+              color: (isDark ? AppColors.gray700 : AppColors.gray100)
+                  .withOpacity(0.5),
               borderRadius: AppRadius.radiusSM,
             ),
             child: Text(
@@ -506,7 +509,9 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: highlight
                         ? AppColors.success
-                        : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                        : (isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary),
                     fontWeight: highlight ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
@@ -539,12 +544,13 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
         ),
         border: Border(
           top: BorderSide(
-            color: (isDark ? AppColors.gray700 : AppColors.gray200).withOpacity(0.5),
+            color: (isDark ? AppColors.gray700 : AppColors.gray200)
+                .withOpacity(0.5),
           ),
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: AppRadius.xl.bottomLeft,
-          bottomRight: AppRadius.xl.bottomRight,
+          bottomLeft: Radius.circular(AppRadius.xl),
+          bottomRight: Radius.circular(AppRadius.xl),
         ),
       ),
       child: Row(
@@ -574,10 +580,10 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
 
   void _handleConversion() {
     Navigator.of(context).pop(); // Ferme le dialog de détails
-    
+
     final stepperController = Get.put(FlashOrderStepperController());
     stepperController.initDraftFromFlashOrder(widget.order);
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -684,7 +690,9 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
                       Icons.close,
                       color: _isHovered
                           ? AppColors.error
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       size: 20,
                     ),
                   ),
@@ -775,7 +783,9 @@ class _ModernActionButtonState extends State<_ModernActionButton>
                     widget.icon,
                     color: widget.variant == _FlashDetailActionVariant.primary
                         ? Colors.white
-                        : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                        : (isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary),
                     size: 20,
                   ),
                   SizedBox(width: AppSpacing.sm),
@@ -784,7 +794,9 @@ class _ModernActionButtonState extends State<_ModernActionButton>
                     style: AppTextStyles.buttonMedium.copyWith(
                       color: widget.variant == _FlashDetailActionVariant.primary
                           ? Colors.white
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       fontWeight: FontWeight.w600,
                     ),
                   ),

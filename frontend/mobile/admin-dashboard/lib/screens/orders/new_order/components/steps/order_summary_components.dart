@@ -4,14 +4,14 @@ import 'package:admin/widgets/shared/glass_container.dart';
 
 // Composants modernes pour OrderSummaryStep
 
-class _SummarySection extends StatelessWidget {
+class SummarySection extends StatelessWidget {
   final String title;
   final IconData icon;
   final Color color;
   final Widget child;
   final bool isDark;
 
-  const _SummarySection({
+  const SummarySection({
     required this.title,
     required this.icon,
     required this.color,
@@ -71,7 +71,7 @@ class _SummarySection extends StatelessWidget {
   }
 }
 
-class _SummaryInfoRow extends StatelessWidget {
+class SummaryInfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
@@ -79,7 +79,7 @@ class _SummaryInfoRow extends StatelessWidget {
   final bool isDark;
   final bool isMultiline;
 
-  const _SummaryInfoRow({
+  const SummaryInfoRow({
     required this.icon,
     required this.label,
     required this.value,
@@ -93,7 +93,8 @@ class _SummaryInfoRow extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
-        crossAxisAlignment: isMultiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        crossAxisAlignment:
+            isMultiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
           Icon(
             icon,
@@ -117,7 +118,8 @@ class _SummaryInfoRow extends StatelessWidget {
             child: Text(
               value,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: valueColor ?? (isDark ? AppColors.textLight : AppColors.textPrimary),
+                color: valueColor ??
+                    (isDark ? AppColors.textLight : AppColors.textPrimary),
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.right,
@@ -131,20 +133,20 @@ class _SummaryInfoRow extends StatelessWidget {
   }
 }
 
-class _ModernArticleCard extends StatefulWidget {
+class ModernArticleCard extends StatefulWidget {
   final Map<String, dynamic> item;
   final bool isDark;
 
-  const _ModernArticleCard({
+  const ModernArticleCard({
     required this.item,
     required this.isDark,
   });
 
   @override
-  _ModernArticleCardState createState() => _ModernArticleCardState();
+  ModernArticleCardState createState() => ModernArticleCardState();
 }
 
-class _ModernArticleCardState extends State<_ModernArticleCard>
+class ModernArticleCardState extends State<ModernArticleCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -198,10 +200,12 @@ class _ModernArticleCardState extends State<_ModernArticleCard>
             child: Container(
               padding: EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-                borderRadius: AppRadius.md,
+                color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                    .withOpacity(0.5),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
-                  color: (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                  color: (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                      .withOpacity(0.5),
                 ),
                 boxShadow: _isHovered
                     ? [
@@ -222,13 +226,21 @@ class _ModernArticleCardState extends State<_ModernArticleCard>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: isPremium
-                            ? [AppColors.warning, AppColors.warning.withOpacity(0.8)]
-                            : [AppColors.accent, AppColors.accent.withOpacity(0.8)],
+                            ? [
+                                AppColors.warning,
+                                AppColors.warning.withOpacity(0.8)
+                              ]
+                            : [
+                                AppColors.accent,
+                                AppColors.accent.withOpacity(0.8)
+                              ],
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: (isPremium ? AppColors.warning : AppColors.accent).withOpacity(0.3),
+                          color:
+                              (isPremium ? AppColors.warning : AppColors.accent)
+                                  .withOpacity(0.3),
                           blurRadius: 6,
                           offset: Offset(0, 2),
                         ),
@@ -243,7 +255,7 @@ class _ModernArticleCardState extends State<_ModernArticleCard>
                     ),
                   ),
                   SizedBox(width: AppSpacing.md),
-                  
+
                   // Informations article
                   Expanded(
                     child: Column(
@@ -255,7 +267,9 @@ class _ModernArticleCardState extends State<_ModernArticleCard>
                               child: Text(
                                 articleName,
                                 style: AppTextStyles.bodyMedium.copyWith(
-                                  color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+                                  color: widget.isDark
+                                      ? AppColors.textLight
+                                      : AppColors.textPrimary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -268,9 +282,13 @@ class _ModernArticleCardState extends State<_ModernArticleCard>
                                 ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                                    colors: [
+                                      AppColors.warning,
+                                      AppColors.warning.withOpacity(0.8)
+                                    ],
                                   ),
-                                  borderRadius: AppRadius.sm,
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.sm),
                                 ),
                                 child: Text(
                                   'PREMIUM',
@@ -288,12 +306,13 @@ class _ModernArticleCardState extends State<_ModernArticleCard>
                           Text(
                             categoryName,
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                              color: widget.isDark
+                                  ? AppColors.gray400
+                                  : AppColors.gray600,
                             ),
                           ),
                         ],
                         SizedBox(height: AppSpacing.sm),
-                        
                         Row(
                           children: [
                             // Quantité
@@ -304,7 +323,8 @@ class _ModernArticleCardState extends State<_ModernArticleCard>
                               ),
                               decoration: BoxDecoration(
                                 color: AppColors.info.withOpacity(0.1),
-                                borderRadius: AppRadius.sm,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.sm),
                                 border: Border.all(
                                   color: AppColors.info.withOpacity(0.3),
                                 ),
@@ -329,17 +349,19 @@ class _ModernArticleCardState extends State<_ModernArticleCard>
                               ),
                             ),
                             SizedBox(width: AppSpacing.sm),
-                            
+
                             // Prix unitaire
                             Text(
                               '${unitPrice.toStringAsFixed(0)} FCFA',
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                                color: widget.isDark
+                                    ? AppColors.gray400
+                                    : AppColors.gray600,
                               ),
                             ),
-                            
+
                             Spacer(),
-                            
+
                             // Total ligne
                             Text(
                               '${lineTotal.toStringAsFixed(0)} FCFA',
@@ -363,22 +385,22 @@ class _ModernArticleCardState extends State<_ModernArticleCard>
   }
 }
 
-class _TotalCard extends StatefulWidget {
+class TotalCard extends StatefulWidget {
   final double total;
   final int itemCount;
   final bool isDark;
 
-  const _TotalCard({
+  const TotalCard({
     required this.total,
     required this.itemCount,
     required this.isDark,
   });
 
   @override
-  _TotalCardState createState() => _TotalCardState();
+  TotalCardState createState() => TotalCardState();
 }
 
-class _TotalCardState extends State<_TotalCard>
+class TotalCardState extends State<TotalCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _pulseAnimation;
@@ -476,15 +498,13 @@ class _TotalCardState extends State<_TotalCard>
                     ),
                   ],
                 ),
-                
                 SizedBox(height: AppSpacing.lg),
-                
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.1),
-                    borderRadius: AppRadius.md,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(
                       color: Colors.white.withOpacity(0.2),
                     ),
@@ -517,12 +537,12 @@ class _TotalCardState extends State<_TotalCard>
   }
 }
 
-class _EmptyState extends StatelessWidget {
+class EmptyState extends StatelessWidget {
   final IconData icon;
   final String message;
   final bool isDark;
 
-  const _EmptyState({
+  const EmptyState({
     required this.icon,
     required this.message,
     required this.isDark,

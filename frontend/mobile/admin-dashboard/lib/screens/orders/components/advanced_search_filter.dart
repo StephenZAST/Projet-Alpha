@@ -1,4 +1,3 @@
-import 'package:admin/widgets/glass_button.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:ui';
@@ -19,7 +18,7 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _expandAnimation;
-  
+
   bool _isExpanded = false;
   int _activeSection = 0;
 
@@ -151,7 +150,8 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
             label: 'Recherche globale',
             hint: 'ID, nom client, téléphone, email...',
             icon: Icons.search,
-            controller: TextEditingController(text: controller.searchQuery.value),
+            controller:
+                TextEditingController(text: controller.searchQuery.value),
             onChanged: (value) => controller.searchQuery.value = value,
             onClear: () {
               controller.searchQuery.value = '';
@@ -167,14 +167,16 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
             label: 'Recherche par ID',
             hint: 'ID exact de la commande',
             icon: Icons.tag,
-            controller: TextEditingController(text: controller.orderIdSearch.value),
+            controller:
+                TextEditingController(text: controller.orderIdSearch.value),
             onChanged: (value) => controller.orderIdSearch.value = value,
             onClear: controller.resetOrderIdSearch,
             isDark: isDark,
             suffixAction: _ModernSearchButton(
               onPressed: () async {
                 if (controller.orderIdSearch.value.isNotEmpty) {
-                  await controller.fetchOrderDetails(controller.orderIdSearch.value);
+                  await controller
+                      .fetchOrderDetails(controller.orderIdSearch.value);
                 }
               },
             ),
@@ -186,10 +188,22 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
 
   Widget _buildSearchTabs(bool isDark) {
     final tabs = [
-      {'icon': Icons.filter_list, 'label': 'Filtres', 'color': AppColors.primary},
+      {
+        'icon': Icons.filter_list,
+        'label': 'Filtres',
+        'color': AppColors.primary
+      },
       {'icon': Icons.date_range, 'label': 'Dates', 'color': AppColors.accent},
-      {'icon': Icons.attach_money, 'label': 'Montants', 'color': AppColors.success},
-      {'icon': Icons.location_on, 'label': 'Localisation', 'color': AppColors.info},
+      {
+        'icon': Icons.attach_money,
+        'label': 'Montants',
+        'color': AppColors.success
+      },
+      {
+        'icon': Icons.location_on,
+        'label': 'Localisation',
+        'color': AppColors.info
+      },
     ];
 
     return Row(
@@ -252,7 +266,8 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
                         'label': type.name,
                       }),
                 ],
-                onChanged: (value) => controller.selectedServiceType.value = value,
+                onChanged: (value) =>
+                    controller.selectedServiceType.value = value,
                 icon: Icons.design_services,
                 isDark: isDark,
               ),
@@ -262,11 +277,15 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
               child: _ModernDropdownField(
                 label: 'Méthode de paiement',
                 value: controller.selectedPaymentMethod.value,
-                items: controller.paymentMethods.map((method) => {
-                      'value': method,
-                      'label': method == 'CASH' ? 'Espèces' : 'Orange Money',
-                    }).toList(),
-                onChanged: (value) => controller.selectedPaymentMethod.value = value,
+                items: controller.paymentMethods
+                    .map((method) => {
+                          'value': method,
+                          'label':
+                              method == 'CASH' ? 'Espèces' : 'Orange Money',
+                        })
+                    .toList(),
+                onChanged: (value) =>
+                    controller.selectedPaymentMethod.value = value,
                 icon: Icons.payment,
                 isDark: isDark,
               ),
@@ -281,7 +300,8 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
                 label: 'Code affilié',
                 hint: 'Code de parrainage',
                 icon: Icons.code,
-                controller: TextEditingController(text: controller.affiliateCode.value),
+                controller:
+                    TextEditingController(text: controller.affiliateCode.value),
                 onChanged: (value) => controller.affiliateCode.value = value,
                 isDark: isDark,
               ),
@@ -291,11 +311,14 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
               child: _ModernDropdownField(
                 label: 'Type de récurrence',
                 value: controller.selectedRecurrenceType.value,
-                items: controller.recurrenceTypes.map((type) => {
-                      'value': type,
-                      'label': type,
-                    }).toList(),
-                onChanged: (value) => controller.selectedRecurrenceType.value = value,
+                items: controller.recurrenceTypes
+                    .map((type) => {
+                          'value': type,
+                          'label': type,
+                        })
+                    .toList(),
+                onChanged: (value) =>
+                    controller.selectedRecurrenceType.value = value,
                 icon: Icons.repeat,
                 isDark: isDark,
               ),
@@ -434,7 +457,8 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
                 label: 'Code postal',
                 hint: 'Code postal',
                 icon: Icons.markunread_mailbox,
-                controller: TextEditingController(text: controller.postalCode.value),
+                controller:
+                    TextEditingController(text: controller.postalCode.value),
                 onChanged: (value) => controller.postalCode.value = value,
                 isDark: isDark,
               ),
@@ -722,7 +746,7 @@ class _ModernResetButtonState extends State<_ModernResetButton>
                   SizedBox(width: AppSpacing.xs),
                   Text(
                     'Reset',
-                    style: AppTextStyles.buttonSmall.copyWith(
+                    style: AppTextStyles.buttonMedium.copyWith(
                       color: AppColors.error,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1021,7 +1045,7 @@ class _ModernSearchTabState extends State<_ModernSearchTab>
                               ? AppColors.gray700.withOpacity(0.5)
                               : AppColors.gray100.withOpacity(0.8))
                           : Colors.transparent),
-                  borderRadius: AppRadius.md,
+                  borderRadius: AppRadius.radiusMD,
                   border: Border.all(
                     color: widget.isActive
                         ? widget.color.withOpacity(0.4)
@@ -1059,9 +1083,8 @@ class _ModernSearchTabState extends State<_ModernSearchTab>
                             : (widget.isDark
                                 ? AppColors.gray400
                                 : AppColors.gray600),
-                        fontWeight: widget.isActive
-                            ? FontWeight.w600
-                            : FontWeight.w500,
+                        fontWeight:
+                            widget.isActive ? FontWeight.w600 : FontWeight.w500,
                       ),
                     ),
                   ],
@@ -1266,8 +1289,8 @@ class _ModernDateField extends StatelessWidget {
           vertical: AppSpacing.md,
         ),
         decoration: BoxDecoration(
-          color: (isDark ? AppColors.gray700 : AppColors.gray100)
-              .withOpacity(0.5),
+          color:
+              (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
           borderRadius: AppRadius.radiusSM,
           border: Border.all(
             color: (isDark ? AppColors.gray600 : AppColors.gray300)

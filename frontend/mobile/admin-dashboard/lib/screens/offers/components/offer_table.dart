@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../../constants.dart';
 import '../../../widgets/shared/glass_container.dart';
-import '../../../widgets/shared/glass_button.dart';
 
 class OfferTable extends StatelessWidget {
   final List<Map<String, dynamic>> offers;
@@ -28,7 +27,7 @@ class OfferTable extends StatelessWidget {
         children: [
           // En-tête du tableau
           _buildTableHeader(context, isDark),
-          
+
           // Divider
           Divider(
             height: 1,
@@ -36,7 +35,7 @@ class OfferTable extends StatelessWidget {
                 ? AppColors.gray700.withOpacity(0.3)
                 : AppColors.gray200.withOpacity(0.5),
           ),
-          
+
           // Corps du tableau
           Expanded(
             child: ListView.builder(
@@ -122,8 +121,8 @@ class OfferTable extends StatelessWidget {
     );
   }
 
-  Widget _buildTableRow(
-      BuildContext context, bool isDark, Map<String, dynamic> offer, int index) {
+  Widget _buildTableRow(BuildContext context, bool isDark,
+      Map<String, dynamic> offer, int index) {
     final bool isActive = offer['isActive'] ?? offer['is_active'] ?? false;
     final String discountType = offer['discountType'] ?? 'PERCENTAGE';
     final bool isExpired = _isOfferExpired(offer);
@@ -224,7 +223,9 @@ class OfferTable extends StatelessWidget {
                     Text(
                       _formatDate(offer['startDate']),
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary,
                       ),
                     ),
                     Text(
@@ -292,7 +293,8 @@ class OfferTable extends StatelessWidget {
                         Icons.more_vert,
                         color: isDark ? AppColors.gray300 : AppColors.gray600,
                       ),
-                      color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                      color:
+                          isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
                       shape: RoundedRectangleBorder(
                         borderRadius: AppRadius.radiusMD,
                       ),

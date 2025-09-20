@@ -4,36 +4,36 @@ import 'package:admin/widgets/shared/glass_container.dart';
 import '../../../../../models/user.dart';
 
 // Composants modernes pour ClientSelectionStep
-enum _ClientActionVariant { primary, secondary, info, warning, error }
+enum ClientActionVariant { primary, secondary, info, warning, error }
 
-class _ModernSearchField extends StatefulWidget {
+class ModernSearchField extends StatefulWidget {
   final TextEditingController controller;
-  final ValueChanged<String>? onChanged;
   final bool isDark;
 
-  const _ModernSearchField({
+  const ModernSearchField({
     required this.controller,
-    this.onChanged,
     required this.isDark,
   });
 
   @override
-  _ModernSearchFieldState createState() => _ModernSearchFieldState();
+  ModernSearchFieldState createState() => ModernSearchFieldState();
 }
 
-class _ModernSearchFieldState extends State<_ModernSearchField> {
+class ModernSearchFieldState extends State<ModernSearchField> {
   bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+            .withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: _isFocused
               ? AppColors.primary.withOpacity(0.5)
-              : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+              : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                  .withOpacity(0.5),
         ),
       ),
       child: TextFormField(
@@ -41,7 +41,7 @@ class _ModernSearchFieldState extends State<_ModernSearchField> {
         style: AppTextStyles.bodyMedium.copyWith(
           color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
         ),
-        onChanged: widget.onChanged,
+        // onChanged removed (unused parameter)
         onTap: () => setState(() => _isFocused = true),
         onEditingComplete: () => setState(() => _isFocused = false),
         decoration: InputDecoration(
@@ -60,14 +60,12 @@ class _ModernSearchFieldState extends State<_ModernSearchField> {
               ? IconButton(
                   icon: Icon(
                     Icons.clear,
-                    color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                    color:
+                        widget.isDark ? AppColors.gray400 : AppColors.gray600,
                     size: 20,
                   ),
                   onPressed: () {
                     widget.controller.clear();
-                    if (widget.onChanged != null) {
-                      widget.onChanged!('');
-                    }
                   },
                 )
               : null,
@@ -79,22 +77,22 @@ class _ModernSearchFieldState extends State<_ModernSearchField> {
   }
 }
 
-class _ModernFilterDropdown extends StatefulWidget {
+class ModernFilterDropdown extends StatefulWidget {
   final String value;
   final ValueChanged<String> onChanged;
   final bool isDark;
 
-  const _ModernFilterDropdown({
+  const ModernFilterDropdown({
     required this.value,
     required this.onChanged,
     required this.isDark,
   });
 
   @override
-  _ModernFilterDropdownState createState() => _ModernFilterDropdownState();
+  ModernFilterDropdownState createState() => ModernFilterDropdownState();
 }
 
-class _ModernFilterDropdownState extends State<_ModernFilterDropdown> {
+class ModernFilterDropdownState extends State<ModernFilterDropdown> {
   bool _isFocused = false;
 
   final Map<String, Map<String, dynamic>> _filterOptions = {
@@ -108,12 +106,14 @@ class _ModernFilterDropdownState extends State<_ModernFilterDropdown> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+            .withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: _isFocused
               ? AppColors.primary.withOpacity(0.5)
-              : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+              : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                  .withOpacity(0.5),
         ),
       ),
       child: DropdownButtonFormField<String>(
@@ -160,30 +160,28 @@ class _ModernFilterDropdownState extends State<_ModernFilterDropdown> {
   }
 }
 
-class _ModernActionButton extends StatefulWidget {
+class ModernActionButton extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;
-  final _ClientActionVariant variant;
-  final bool isLoading;
+  final ClientActionVariant variant;
 
-  const _ModernActionButton({
+  const ModernActionButton({
     required this.icon,
     required this.label,
     required this.onPressed,
     required this.variant,
-    this.isLoading = false,
   });
 
   @override
-  _ModernActionButtonState createState() => _ModernActionButtonState();
+  ModernActionButtonState createState() => ModernActionButtonState();
 }
 
-class _ModernActionButtonState extends State<_ModernActionButton>
+class ModernActionButtonState extends State<ModernActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
+  // _isHovered removed (unused field)
 
   @override
   void initState() {
@@ -209,15 +207,15 @@ class _ModernActionButtonState extends State<_ModernActionButton>
 
   Color _getVariantColor() {
     switch (widget.variant) {
-      case _ClientActionVariant.primary:
+      case ClientActionVariant.primary:
         return AppColors.primary;
-      case _ClientActionVariant.secondary:
+      case ClientActionVariant.secondary:
         return AppColors.gray600;
-      case _ClientActionVariant.info:
+      case ClientActionVariant.info:
         return AppColors.info;
-      case _ClientActionVariant.warning:
+      case ClientActionVariant.warning:
         return AppColors.warning;
-      case _ClientActionVariant.error:
+      case ClientActionVariant.error:
         return AppColors.error;
     }
   }
@@ -225,17 +223,15 @@ class _ModernActionButtonState extends State<_ModernActionButton>
   @override
   Widget build(BuildContext context) {
     final variantColor = _getVariantColor();
-    final isEnabled = widget.onPressed != null && !widget.isLoading;
+    final isEnabled = widget.onPressed != null;
 
     return MouseRegion(
       onEnter: (_) {
         if (isEnabled) {
-          setState(() => _isHovered = true);
           _controller.forward();
         }
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -244,9 +240,9 @@ class _ModernActionButtonState extends State<_ModernActionButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: GlassContainer(
-              variant: widget.variant == _ClientActionVariant.primary
+              variant: widget.variant == ClientActionVariant.primary
                   ? GlassContainerVariant.primary
-                  : widget.variant == _ClientActionVariant.info
+                  : widget.variant == ClientActionVariant.info
                       ? GlassContainerVariant.info
                       : GlassContainerVariant.neutral,
               padding: EdgeInsets.symmetric(
@@ -258,37 +254,20 @@ class _ModernActionButtonState extends State<_ModernActionButton>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (widget.isLoading) ...[
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          widget.variant == _ClientActionVariant.primary ||
-                                  widget.variant == _ClientActionVariant.info
-                              ? Colors.white
-                              : variantColor,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                  ] else ...[
-                    Icon(
-                      widget.icon,
-                      color: widget.variant == _ClientActionVariant.primary ||
-                              widget.variant == _ClientActionVariant.info
-                          ? Colors.white
-                          : variantColor,
-                      size: 18,
-                    ),
-                    SizedBox(width: AppSpacing.sm),
-                  ],
+                  Icon(
+                    widget.icon,
+                    color: widget.variant == ClientActionVariant.primary ||
+                            widget.variant == ClientActionVariant.info
+                        ? Colors.white
+                        : variantColor,
+                    size: 18,
+                  ),
+                  SizedBox(width: AppSpacing.sm),
                   Text(
-                    widget.isLoading ? 'Chargement...' : widget.label,
+                    widget.label,
                     style: AppTextStyles.buttonMedium.copyWith(
-                      color: widget.variant == _ClientActionVariant.primary ||
-                              widget.variant == _ClientActionVariant.info
+                      color: widget.variant == ClientActionVariant.primary ||
+                              widget.variant == ClientActionVariant.info
                           ? Colors.white
                           : variantColor,
                       fontWeight: FontWeight.w600,
@@ -304,14 +283,14 @@ class _ModernActionButtonState extends State<_ModernActionButton>
   }
 }
 
-class _ClientCard extends StatefulWidget {
+class ClientCard extends StatefulWidget {
   final User client;
   final bool isSelected;
   final VoidCallback onSelect;
   final VoidCallback onViewDetails;
   final bool isDark;
 
-  const _ClientCard({
+  const ClientCard({
     required this.client,
     required this.isSelected,
     required this.onSelect,
@@ -320,14 +299,14 @@ class _ClientCard extends StatefulWidget {
   });
 
   @override
-  _ClientCardState createState() => _ClientCardState();
+  ClientCardState createState() => ClientCardState();
 }
 
-class _ClientCardState extends State<_ClientCard>
+class ClientCardState extends State<ClientCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
+  // _isHovered removed (unused field)
 
   @override
   void initState() {
@@ -355,11 +334,9 @@ class _ClientCardState extends State<_ClientCard>
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _controller.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -382,13 +359,21 @@ class _ClientCardState extends State<_ClientCard>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: widget.isSelected
-                            ? [Colors.white.withOpacity(0.9), Colors.white.withOpacity(0.7)]
-                            : [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                            ? [
+                                Colors.white.withOpacity(0.9),
+                                Colors.white.withOpacity(0.7)
+                              ]
+                            : [
+                                AppColors.primary,
+                                AppColors.primary.withOpacity(0.8)
+                              ],
                       ),
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
-                          color: (widget.isSelected ? Colors.white : AppColors.primary)
+                          color: (widget.isSelected
+                                  ? Colors.white
+                                  : AppColors.primary)
                               .withOpacity(0.3),
                           blurRadius: 8,
                           offset: Offset(0, 2),
@@ -397,16 +382,19 @@ class _ClientCardState extends State<_ClientCard>
                     ),
                     child: Center(
                       child: Text(
-                        '${widget.client.firstName[0]}${widget.client.lastName[0]}'.toUpperCase(),
+                        '${widget.client.firstName[0]}${widget.client.lastName[0]}'
+                            .toUpperCase(),
                         style: AppTextStyles.bodyLarge.copyWith(
-                          color: widget.isSelected ? AppColors.primary : Colors.white,
+                          color: widget.isSelected
+                              ? AppColors.primary
+                              : Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
                   SizedBox(width: AppSpacing.md),
-                  
+
                   // Informations client
                   Expanded(
                     child: Column(
@@ -417,7 +405,9 @@ class _ClientCardState extends State<_ClientCard>
                           style: AppTextStyles.bodyLarge.copyWith(
                             color: widget.isSelected
                                 ? Colors.white
-                                : (widget.isDark ? AppColors.textLight : AppColors.textPrimary),
+                                : (widget.isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textPrimary),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -429,7 +419,9 @@ class _ClientCardState extends State<_ClientCard>
                               size: 14,
                               color: widget.isSelected
                                   ? Colors.white.withOpacity(0.8)
-                                  : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
+                                  : (widget.isDark
+                                      ? AppColors.gray400
+                                      : AppColors.gray600),
                             ),
                             SizedBox(width: AppSpacing.xs),
                             Expanded(
@@ -438,7 +430,9 @@ class _ClientCardState extends State<_ClientCard>
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: widget.isSelected
                                       ? Colors.white.withOpacity(0.9)
-                                      : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
+                                      : (widget.isDark
+                                          ? AppColors.gray400
+                                          : AppColors.gray600),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -453,7 +447,9 @@ class _ClientCardState extends State<_ClientCard>
                               size: 14,
                               color: widget.isSelected
                                   ? Colors.white.withOpacity(0.8)
-                                  : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
+                                  : (widget.isDark
+                                      ? AppColors.gray400
+                                      : AppColors.gray600),
                             ),
                             SizedBox(width: AppSpacing.xs),
                             Text(
@@ -461,7 +457,9 @@ class _ClientCardState extends State<_ClientCard>
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: widget.isSelected
                                     ? Colors.white.withOpacity(0.9)
-                                    : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
+                                    : (widget.isDark
+                                        ? AppColors.gray400
+                                        : AppColors.gray600),
                               ),
                             ),
                           ],
@@ -469,18 +467,22 @@ class _ClientCardState extends State<_ClientCard>
                       ],
                     ),
                   ),
-                  
+
                   // Actions
                   Column(
                     children: [
-                      _ClientActionButton(
-                        icon: widget.isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                      ClientActionButton(
+                        icon: widget.isSelected
+                            ? Icons.check_circle
+                            : Icons.radio_button_unchecked,
                         onPressed: widget.onSelect,
-                        color: widget.isSelected ? Colors.white : AppColors.primary,
+                        color: widget.isSelected
+                            ? Colors.white
+                            : AppColors.primary,
                         isSelected: widget.isSelected,
                       ),
                       SizedBox(height: AppSpacing.sm),
-                      _ClientActionButton(
+                      ClientActionButton(
                         icon: Icons.visibility,
                         onPressed: widget.onViewDetails,
                         color: widget.isSelected
@@ -500,13 +502,13 @@ class _ClientCardState extends State<_ClientCard>
   }
 }
 
-class _ClientActionButton extends StatefulWidget {
+class ClientActionButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback onPressed;
   final Color color;
   final bool isSelected;
 
-  const _ClientActionButton({
+  const ClientActionButton({
     required this.icon,
     required this.onPressed,
     required this.color,
@@ -514,10 +516,10 @@ class _ClientActionButton extends StatefulWidget {
   });
 
   @override
-  _ClientActionButtonState createState() => _ClientActionButtonState();
+  ClientActionButtonState createState() => ClientActionButtonState();
 }
 
-class _ClientActionButtonState extends State<_ClientActionButton>
+class ClientActionButtonState extends State<ClientActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;

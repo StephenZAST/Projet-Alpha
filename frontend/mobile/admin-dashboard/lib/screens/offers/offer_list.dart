@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../constants.dart';
 import '../../widgets/shared/glass_container.dart';
-import '../../widgets/shared/glass_button.dart';
 
 class OfferList extends StatelessWidget {
   final List<Map<String, dynamic>> offers;
@@ -263,7 +262,8 @@ class OfferList extends StatelessWidget {
                         Icons.more_vert,
                         color: isDark ? AppColors.gray300 : AppColors.gray600,
                       ),
-                      color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                      color:
+                          isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
                       shape: RoundedRectangleBorder(
                         borderRadius: AppRadius.radiusMD,
                       ),

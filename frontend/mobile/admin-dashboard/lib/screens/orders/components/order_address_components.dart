@@ -84,7 +84,9 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
                       Icons.close,
                       color: _isHovered
                           ? AppColors.error
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       size: 20,
                     ),
                   ),
@@ -171,17 +173,24 @@ class _ModernTabButtonState extends State<_ModernTabButton>
                 decoration: BoxDecoration(
                   gradient: widget.isSelected
                       ? LinearGradient(
-                          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.8)
+                          ],
                         )
                       : null,
                   color: !widget.isSelected
-                      ? (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5)
+                      ? (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                          .withOpacity(0.5)
                       : null,
-                  borderRadius: AppRadius.md,
+                  borderRadius: AppRadius.radiusMD,
                   border: Border.all(
                     color: widget.isSelected
                         ? AppColors.primary.withOpacity(0.5)
-                        : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                        : (widget.isDark
+                                ? AppColors.gray600
+                                : AppColors.gray300)
+                            .withOpacity(0.5),
                   ),
                 ),
                 child: Row(
@@ -191,7 +200,9 @@ class _ModernTabButtonState extends State<_ModernTabButton>
                       widget.icon,
                       color: widget.isSelected
                           ? Colors.white
-                          : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
+                          : (widget.isDark
+                              ? AppColors.gray400
+                              : AppColors.gray600),
                       size: 18,
                     ),
                     SizedBox(width: AppSpacing.sm),
@@ -200,7 +211,9 @@ class _ModernTabButtonState extends State<_ModernTabButton>
                       style: AppTextStyles.buttonMedium.copyWith(
                         color: widget.isSelected
                             ? Colors.white
-                            : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
+                            : (widget.isDark
+                                ? AppColors.gray400
+                                : AppColors.gray600),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -411,7 +424,8 @@ class _ModernAddressFieldState extends State<_ModernAddressField> {
             Text(
               widget.label,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+                color:
+                    widget.isDark ? AppColors.textLight : AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -430,20 +444,23 @@ class _ModernAddressFieldState extends State<_ModernAddressField> {
         SizedBox(height: AppSpacing.sm),
         Container(
           decoration: BoxDecoration(
-            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-            borderRadius: AppRadius.md,
+            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                .withOpacity(0.5),
+            borderRadius: AppRadius.radiusMD,
             border: Border.all(
               color: _isFocused
                   ? AppColors.primary.withOpacity(0.5)
                   : widget.isRequired && widget.value.isEmpty
                       ? AppColors.error.withOpacity(0.5)
-                      : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                      : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                          .withOpacity(0.5),
             ),
           ),
           child: TextFormField(
             controller: _controller,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+              color:
+                  widget.isDark ? AppColors.textLight : AppColors.textPrimary,
             ),
             onChanged: widget.onChanged,
             onTap: () => setState(() => _isFocused = true),
@@ -487,7 +504,7 @@ class _GPSInfoCard extends StatelessWidget {
       padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
-        borderRadius: AppRadius.md,
+        borderRadius: AppRadius.radiusMD,
         border: Border.all(
           color: Colors.white.withOpacity(0.2),
         ),

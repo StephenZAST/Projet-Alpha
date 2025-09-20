@@ -165,7 +165,7 @@ class _OrderFiltersState extends State<OrderFilters>
                   final count = controller.orders
                       .where((o) => o.status.toUpperCase() == status.name)
                       .length;
-                  
+
                   return _ModernFilterChip(
                     label: status.label,
                     isSelected: isSelected,
@@ -212,7 +212,9 @@ class _OrderFiltersState extends State<OrderFilters>
                     Text(
                       'Commandes Flash',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -301,7 +303,8 @@ class _OrderFiltersState extends State<OrderFilters>
                         'label': type.name,
                       }),
                 ],
-                onChanged: (value) => controller.selectedServiceType.value = value,
+                onChanged: (value) =>
+                    controller.selectedServiceType.value = value,
                 isDark: isDark,
               ),
             ),
@@ -317,7 +320,8 @@ class _OrderFiltersState extends State<OrderFilters>
                         'label': method == 'CASH' ? 'Espèces' : 'Orange Money',
                       }),
                 ],
-                onChanged: (value) => controller.selectedPaymentMethod.value = value,
+                onChanged: (value) =>
+                    controller.selectedPaymentMethod.value = value,
                 isDark: isDark,
               ),
             ),
@@ -506,7 +510,7 @@ class _ModernClearButtonState extends State<_ModernClearButton>
                   SizedBox(width: AppSpacing.xs),
                   Text(
                     'Effacer',
-                    style: AppTextStyles.buttonSmall.copyWith(
+                    style: AppTextStyles.buttonMedium.copyWith(
                       color: AppColors.error,
                       fontWeight: FontWeight.w600,
                     ),
@@ -603,9 +607,8 @@ class _ModernFilterChipState extends State<_ModernFilterChip>
                           ],
                         )
                       : null,
-                  color: widget.isSelected
-                      ? null
-                      : widget.color.withOpacity(0.1),
+                  color:
+                      widget.isSelected ? null : widget.color.withOpacity(0.1),
                   borderRadius: AppRadius.radiusMD,
                   border: Border.all(
                     color: widget.isSelected
@@ -629,9 +632,7 @@ class _ModernFilterChipState extends State<_ModernFilterChip>
                     if (widget.icon != null) ...[
                       Icon(
                         widget.icon,
-                        color: widget.isSelected
-                            ? Colors.white
-                            : widget.color,
+                        color: widget.isSelected ? Colors.white : widget.color,
                         size: 16,
                       ),
                       SizedBox(width: AppSpacing.xs),
@@ -639,9 +640,7 @@ class _ModernFilterChipState extends State<_ModernFilterChip>
                     Text(
                       widget.label,
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: widget.isSelected
-                            ? Colors.white
-                            : widget.color,
+                        color: widget.isSelected ? Colors.white : widget.color,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -661,9 +660,8 @@ class _ModernFilterChipState extends State<_ModernFilterChip>
                         child: Text(
                           widget.count.toString(),
                           style: AppTextStyles.caption.copyWith(
-                            color: widget.isSelected
-                                ? Colors.white
-                                : widget.color,
+                            color:
+                                widget.isSelected ? Colors.white : widget.color,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -758,11 +756,15 @@ class _ModernDatePicker extends StatelessWidget {
                   SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      controller.text.isEmpty ? 'Sélectionner' : controller.text,
+                      controller.text.isEmpty
+                          ? 'Sélectionner'
+                          : controller.text,
                       style: AppTextStyles.bodySmall.copyWith(
                         color: controller.text.isEmpty
                             ? (isDark ? AppColors.gray400 : AppColors.gray600)
-                            : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                            : (isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary),
                       ),
                     ),
                   ),

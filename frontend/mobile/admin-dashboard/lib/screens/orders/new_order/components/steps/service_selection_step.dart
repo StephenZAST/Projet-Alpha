@@ -29,7 +29,7 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
   List<ServiceType> serviceTypes = [];
   List<Service> services = [];
   List<Map<String, dynamic>> couples = [];
-  
+
   ServiceType? selectedServiceType;
   Service? selectedService;
   bool isLoading = false;
@@ -114,7 +114,7 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
       couples = [];
       weight = null;
       isPremium = false;
-      
+
       if (type != null) {
         controller.orderDraft.update((draft) {
           draft?.serviceTypeId = type.id;
@@ -122,7 +122,7 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
         controller.update();
       }
     });
-    
+
     if (type != null) {
       setState(() => isLoading = true);
       try {
@@ -143,16 +143,16 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
       selectedService = service;
       controller.selectedService.value = service;
       controller.selectedServiceId.value = service?.id;
-      
+
       if (service != null) {
         controller.setSelectedService(service.id);
       }
-      
+
       couples = [];
       weight = null;
       isPremium = false;
     });
-    
+
     if (service != null && selectedServiceType != null) {
       setState(() => isLoading = true);
       try {
@@ -221,13 +221,11 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
                 children: [
                   _buildStepHeader(isDark),
                   SizedBox(height: AppSpacing.xl),
-                  
                   if (isLoading)
                     _buildLoadingState(isDark)
                   else ...[
                     _buildServiceConfiguration(isDark),
                     SizedBox(height: AppSpacing.lg),
-                    
                     if (selectedServiceType != null)
                       Expanded(child: _buildServiceContent(isDark)),
                   ],
@@ -256,7 +254,10 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
                   padding: EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.accent, AppColors.accent.withOpacity(0.8)],
+                      colors: [
+                        AppColors.accent,
+                        AppColors.accent.withOpacity(0.8)
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
@@ -305,9 +306,12 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
               ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                  colors: [
+                    AppColors.success,
+                    AppColors.success.withOpacity(0.8)
+                  ],
                 ),
-                borderRadius: AppRadius.md,
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -395,17 +399,14 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
-          _ModernServiceTypeDropdown(
+          ModernServiceTypeDropdown(
             value: selectedServiceType,
             items: serviceTypes,
             onChanged: _onServiceTypeChanged,
             isDark: isDark,
           ),
-          
           SizedBox(height: AppSpacing.md),
-          
-          _ModernServiceDropdown(
+          ModernServiceDropdown(
             value: selectedService,
             items: services,
             onChanged: _onServiceChanged,
@@ -427,7 +428,7 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
     } else if (selectedService != null && couples.isEmpty) {
       return _buildEmptyArticles(isDark);
     }
-    
+
     return _buildServiceTypeInfo(isDark);
   }
 
@@ -457,27 +458,27 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
+
           // Options premium
           if (showPremiumSwitch) ...[
-            _ModernPremiumSwitch(
+            ModernPremiumSwitch(
               value: isPremium,
               onChanged: (value) => setState(() => isPremium = value),
               isDark: isDark,
             ),
             SizedBox(height: AppSpacing.lg),
           ],
-          
+
           Expanded(
             child: SingleChildScrollView(
               child: Obx(() => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ..._buildArticlesByCategory(isDark),
-                  SizedBox(height: AppSpacing.lg),
-                  _buildTotalEstimation(isDark),
-                ],
-              )),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ..._buildArticlesByCategory(isDark),
+                      SizedBox(height: AppSpacing.lg),
+                      _buildTotalEstimation(isDark),
+                    ],
+                  )),
             ),
           ),
         ],
@@ -487,36 +488,37 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
 
   List<Widget> _buildArticlesByCategory(bool isDark) {
     Map<String, List<Map<String, dynamic>>> couplesByCategory = {};
-    
+
     for (var couple in couples) {
       final catId = couple['article_category_id'] ?? 'Autres';
       couplesByCategory.putIfAbsent(catId, () => []).add(couple);
     }
 
     List<Widget> widgets = [];
-    
+
     couplesByCategory.forEach((catId, couplesList) {
       String? categoryName = couplesList.isNotEmpty
           ? couplesList.first['article_category_name']
           : null;
-      
-      widgets.add(_CategoryHeader(
+
+      widgets.add(CategoryHeader(
         name: categoryName ?? catId,
         isDark: isDark,
       ));
-      
+
       widgets.add(SizedBox(height: AppSpacing.md));
-      
+
       for (var couple in couplesList) {
-        widgets.add(_ArticleCard(
+        widgets.add(ArticleCard(
           couple: couple,
           quantity: controller.orderDraft.value.items
                   .firstWhereOrNull((i) => i.articleId == couple['article_id'])
-                  ?.quantity ?? 0,
+                  ?.quantity ??
+              0,
           isPremium: isPremium,
           onQuantityChanged: (articleId, quantity) {
             controller.updateDraftItemQuantity(
-              articleId, 
+              articleId,
               quantity,
               isPremium: showPremiumSwitch && isPremium,
             );
@@ -525,7 +527,7 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
         ));
         widgets.add(SizedBox(height: AppSpacing.sm));
       }
-      
+
       widgets.add(SizedBox(height: AppSpacing.md));
     });
 
@@ -620,16 +622,14 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
             ),
           ),
           SizedBox(height: AppSpacing.lg),
-          
-          _ModernWeightField(
+          ModernWeightField(
             value: weight,
             onChanged: (value) => setState(() => weight = value),
             isDark: isDark,
           ),
-          
           if (showPremiumSwitch) ...[
             SizedBox(height: AppSpacing.lg),
-            _ModernPremiumSwitch(
+            ModernPremiumSwitch(
               value: isPremium,
               onChanged: (value) => setState(() => isPremium = value),
               isDark: isDark,

@@ -99,20 +99,20 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
   }
 
   List<Map<String, dynamic>> couples = [];
-  
+
   Future<void> _fetchAllInfos() async {
     final draft = widget.controller.draft.value;
     setState(() => isLoading = true);
-    
+
     try {
       if (draft.userId != null) {
         user = await UserService.getUserById(draft.userId!);
       }
-      
+
       if (draft.userId != null) {
         addresses = await AddressService.getAddressesByUser(draft.userId!);
       }
-      
+
       if (draft.addressId != null && addresses.isNotEmpty) {
         address = addresses.firstWhere(
           (a) => a.id == draft.addressId,
@@ -121,7 +121,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
       } else {
         address = null;
       }
-      
+
       if (draft.serviceId != null) {
         final services = await ServiceService.getAllServices();
         service = services.isNotEmpty
@@ -129,7 +129,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
                 orElse: () => services.first)
             : null;
       }
-      
+
       if (draft.serviceTypeId != null) {
         final types = await ServiceTypeService.getAllServiceTypes();
         serviceType = types.isNotEmpty
@@ -137,7 +137,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
                 orElse: () => types.first)
             : null;
       }
-      
+
       if (draft.serviceTypeId != null && draft.serviceId != null) {
         couples = await ArticleServiceCoupleService.getCouplesForServiceType(
           serviceTypeId: draft.serviceTypeId!,
@@ -149,7 +149,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
     } catch (e) {
       print('[FlashSummaryStep] Erreur lors du chargement: $e');
     }
-    
+
     setState(() => isLoading = false);
   }
 
@@ -209,7 +209,10 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
                 padding: EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                    colors: [
+                      AppColors.success,
+                      AppColors.success.withOpacity(0.8)
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
@@ -296,19 +299,19 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
         // Section Client
         _buildClientSection(isDark),
         SizedBox(height: AppSpacing.lg),
-        
+
         // Section Service & Articles
         _buildServiceSection(isDark, draft),
         SizedBox(height: AppSpacing.lg),
-        
+
         // Section Adresse
         _buildAddressSection(isDark),
         SizedBox(height: AppSpacing.lg),
-        
+
         // Section Options & Dates
         _buildOptionsSection(isDark, draft),
         SizedBox(height: AppSpacing.lg),
-        
+
         // Section Total
         _buildTotalSection(isDark),
       ],
@@ -526,7 +529,6 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
           if (user != null) ...[
             _SummaryInfoRow(
               icon: Icons.badge,
@@ -584,7 +586,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
+
           // Informations service
           if (serviceType != null)
             _SummaryInfoRow(
@@ -600,9 +602,9 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
               value: service!.name,
               isDark: isDark,
             ),
-          
+
           SizedBox(height: AppSpacing.md),
-          
+
           // Articles sélectionnés
           if (draft.items.isNotEmpty) ...[
             Text(
@@ -614,9 +616,9 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
             ),
             SizedBox(height: AppSpacing.sm),
             ...draft.items.map((item) => _ArticleItem(
-              item: item,
-              isDark: isDark,
-            )),
+                  item: item,
+                  isDark: isDark,
+                )),
           ] else ...[
             _EmptyStateInfo(
               message: 'Aucun article sélectionné',
@@ -654,13 +656,12 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
           if (address != null) ...[
-            if (address!.name.isNotEmpty)
+            if (address!.name?.isNotEmpty == true)
               _SummaryInfoRow(
                 icon: Icons.label,
                 label: 'Nom',
-                value: address!.name,
+                value: address!.name ?? '',
                 isDark: isDark,
               ),
             _SummaryInfoRow(
@@ -712,7 +713,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
+
           // Dates
           if (draft.collectionDate != null)
             _SummaryInfoRow(
@@ -728,35 +729,24 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
               value: _formatDate(draft.deliveryDate!),
               isDark: isDark,
             ),
-          
-          // Options spéciales
-          if (draft.isUrgent == true)
+
+          // Options spéciales disponibles dans le modèle
+          if (draft.status != null && draft.status!.isNotEmpty)
             _OptionBadge(
-              label: 'Commande Urgente',
-              icon: Icons.priority_high,
-              color: AppColors.error,
+              label: 'Statut: ${draft.status}',
+              icon: Icons.info,
+              color: AppColors.info,
             ),
-          if (draft.isExpress == true)
-            _OptionBadge(
-              label: 'Livraison Express',
-              icon: Icons.flash_on,
-              color: AppColors.warning,
-            ),
-          if (draft.isEcoFriendly == true)
-            _OptionBadge(
-              label: 'Éco-Responsable',
-              icon: Icons.eco,
-              color: AppColors.success,
-            ),
-          
+
           // Note
           if (draft.note != null && draft.note!.trim().isNotEmpty) ...[
             SizedBox(height: AppSpacing.md),
             Container(
               padding: EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-                borderRadius: AppRadius.md,
+                color: (isDark ? AppColors.gray700 : AppColors.gray100)
+                    .withOpacity(0.5),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -782,7 +772,8 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
                   Text(
                     draft.note!,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -796,7 +787,7 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
 
   Widget _buildTotalSection(bool isDark) {
     final total = _calculateTotal();
-    
+
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {
@@ -852,14 +843,13 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
                     ),
                   ],
                 ),
-                
                 if (total > 0) ...[
                   SizedBox(height: AppSpacing.lg),
                   Container(
                     padding: EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
-                      borderRadius: AppRadius.md,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Row(
                       children: [
@@ -891,8 +881,18 @@ class _FlashSummaryStepState extends State<FlashSummaryStep>
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
-      'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'
+      'Jan',
+      'Fév',
+      'Mar',
+      'Avr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Aoû',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Déc'
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -980,7 +980,7 @@ class _ArticleItem extends StatelessWidget {
             AppColors.accent.withOpacity(0.05),
           ],
         ),
-        borderRadius: AppRadius.md,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: AppColors.accent.withOpacity(0.2),
         ),
@@ -1010,7 +1010,9 @@ class _ArticleItem extends StatelessWidget {
                       child: Text(
                         name,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1097,7 +1099,7 @@ class _OptionBadge extends StatelessWidget {
             color.withOpacity(0.1),
           ],
         ),
-        borderRadius: AppRadius.md,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: color.withOpacity(0.3),
         ),
@@ -1138,8 +1140,9 @@ class _EmptyStateInfo extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color:
+            (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [

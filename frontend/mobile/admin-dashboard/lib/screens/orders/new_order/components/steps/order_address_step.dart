@@ -1,4 +1,3 @@
-import 'package:admin/widgets/glass_button.dart';
 import 'package:admin/widgets/shared/glass_container.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -187,9 +186,12 @@ class _OrderAddressStepState extends State<OrderAddressStep>
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                    colors: [
+                      AppColors.success,
+                      AppColors.success.withOpacity(0.8)
+                    ],
                   ),
-                  borderRadius: AppRadius.md,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -234,9 +236,7 @@ class _OrderAddressStepState extends State<OrderAddressStep>
           _buildSelectedAddress(selectedAddress, isDark),
           SizedBox(height: AppSpacing.lg),
         ],
-        
         Expanded(child: _buildAddressList(addresses, isDark)),
-        
         SizedBox(height: AppSpacing.lg),
         _buildAddressActions(selectedAddress, isDark),
       ],
@@ -269,11 +269,9 @@ class _OrderAddressStepState extends State<OrderAddressStep>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
-          _AddressInfoCard(
+          AddressInfoCard(
             address: address,
             isSelected: true,
-            showActions: false,
           ),
         ],
       ),
@@ -306,16 +304,16 @@ class _OrderAddressStepState extends State<OrderAddressStep>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
           Expanded(
             child: ListView.separated(
               itemCount: addresses.length,
               separatorBuilder: (_, __) => SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, index) {
                 final address = addresses[index];
-                final isSelected = controller.selectedAddressId.value == address.id;
-                
-                return _AddressCard(
+                final isSelected =
+                    controller.selectedAddressId.value == address.id;
+
+                return AddressCard(
                   address: address,
                   isSelected: isSelected,
                   onSelect: () {
@@ -364,12 +362,11 @@ class _OrderAddressStepState extends State<OrderAddressStep>
               textAlign: TextAlign.center,
             ),
             SizedBox(height: AppSpacing.lg),
-            
-            _ModernActionButton(
+            ModernActionButton(
               icon: Icons.add_location,
               label: 'Créer une adresse',
               onPressed: () => _createNewAddress(),
-              variant: _AddressActionVariant.primary,
+              variant: AddressActionVariant.primary,
             ),
           ],
         ),
@@ -381,22 +378,22 @@ class _OrderAddressStepState extends State<OrderAddressStep>
     return Row(
       children: [
         Expanded(
-          child: _ModernActionButton(
+          child: ModernActionButton(
             icon: Icons.add_location,
             label: 'Nouvelle Adresse',
             onPressed: () => _createNewAddress(),
-            variant: _AddressActionVariant.info,
+            variant: AddressActionVariant.info,
           ),
         ),
         SizedBox(width: AppSpacing.md),
         Expanded(
-          child: _ModernActionButton(
+          child: ModernActionButton(
             icon: Icons.edit_location,
             label: selectedAddress != null ? 'Modifier' : 'Choisir',
             onPressed: selectedAddress != null
                 ? () => _openAddressDialog(selectedAddress)
                 : () => _chooseAddress(),
-            variant: _AddressActionVariant.primary,
+            variant: AddressActionVariant.primary,
           ),
         ),
       ],

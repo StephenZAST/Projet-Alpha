@@ -1,6 +1,5 @@
 import 'package:admin/constants.dart';
 import 'package:admin/controllers/flash_order_stepper_controller.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:ui';
@@ -89,7 +88,8 @@ class _FlashServiceStepState extends State<FlashServiceStep>
     try {
       serviceTypes = await ServiceTypeService.getAllServiceTypes();
     } catch (e) {
-      print('[FlashServiceStep] Erreur lors du chargement des types de service: $e');
+      print(
+          '[FlashServiceStep] Erreur lors du chargement des types de service: $e');
     }
     setState(() => isLoading = false);
   }
@@ -134,121 +134,7 @@ class _FlashServiceStepState extends State<FlashServiceStep>
   String? get pricingType => selectedServiceType?.pricingType;
 
   List<Widget> _buildArticleCatalog() {
-    Map<String, List<Map<String, dynamic>>> couplesByCategory = {};
-    for (var couple in couples) {
-      final catId = couple['article_category_id'] ?? 'Autres';
-      couplesByCategory.putIfAbsent(catId, () => []).add(couple);
-    }
-    List<Widget> widgets = [];
-    couplesByCategory.forEach((catId, couplesList) {
-      String? categoryName = couplesList.isNotEmpty
-          ? couplesList.first['article_category_name']
-          : null;
-      widgets.add(Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Text(
-          categoryName ?? catId,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-      ));
-      for (var couple in couplesList) {
-        final articleId = couple['article_id'];
-        final articleName = couple['article_name'] ?? '';
-        final articleDescription = couple['article_description'] ?? '';
-        final basePrice =
-            double.tryParse(couple['base_price'].toString()) ?? 0.0;
-        final premiumPrice =
-            double.tryParse(couple['premium_price'].toString()) ?? 0.0;
-        final displayPrice =
-            showPremiumSwitch && isPremium ? premiumPrice : basePrice;
-        widgets.add(Card(
-          margin: EdgeInsets.symmetric(vertical: 4),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(articleName,
-                          style: TextStyle(fontWeight: FontWeight.w600)),
-                      if (articleDescription.isNotEmpty)
-                        Text(articleDescription,
-                            style: TextStyle(
-                                color: Colors.grey[600], fontSize: 13)),
-                      Text('Prix: ${displayPrice} F CFA',
-                          style: TextStyle(color: Colors.blueAccent)),
-                    ],
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.remove_circle_outline),
-                      onPressed: () {
-                        final currentQty = widget.controller.draft.value.items
-                                .firstWhereOrNull(
-                                    (i) => i.articleId == articleId)
-                                ?.quantity ??
-                            0;
-                        final newQty = (currentQty - 1).clamp(0, 999);
-                        _onQuantityChanged(articleId, newQty,
-                            isPremium: showPremiumSwitch ? isPremium : null,
-                            serviceId: couple['service_id']);
-                      },
-                    ),
-                    Text(
-                        '${widget.controller.draft.value.items.firstWhereOrNull((i) => i.articleId == articleId)?.quantity ?? 0}',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    IconButton(
-                      icon: Icon(Icons.add_circle_outline),
-                      onPressed: () {
-                        final currentQty = widget.controller.draft.value.items
-                                .firstWhereOrNull(
-                                    (i) => i.articleId == articleId)
-                                ?.quantity ??
-                            0;
-                        final newQty = (currentQty + 1).clamp(0, 999);
-                        _onQuantityChanged(articleId, newQty,
-                            isPremium: showPremiumSwitch ? isPremium : null,
-                            serviceId: couple['service_id']);
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ));
-      }
-    });
-    // Estimation du total avec les bons prix
-    int sum = 0;
-    for (var item in widget.controller.draft.value.items) {
-      final couple =
-          couples.firstWhereOrNull((c) => c['article_id'] == item.articleId);
-      if (couple != null) {
-        final basePrice =
-            double.tryParse(couple['base_price'].toString()) ?? 0.0;
-        final premiumPrice =
-            double.tryParse(couple['premium_price'].toString()) ?? 0.0;
-        final displayPrice =
-            showPremiumSwitch && isPremium ? premiumPrice : basePrice;
-        sum += item.quantity * displayPrice.toInt();
-      }
-    }
-    widgets.add(Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Text(
-        'Estimation totale : ${sum.toStringAsFixed(2)} F CFA',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: AppColors.orange,
-        ),
-      ),
-    ));
-    return widgets;
+    return []; // Méthode obsolète - remplacée par _buildModernArticleCatalog
   }
 
   @override
@@ -369,22 +255,22 @@ class _FlashServiceStepState extends State<FlashServiceStep>
         // Sélection du type de service
         _buildServiceTypeSelection(isDark),
         SizedBox(height: AppSpacing.lg),
-        
+
         // Sélection du service
         if (selectedServiceType != null) ...[
           _buildServiceSelection(isDark),
           SizedBox(height: AppSpacing.lg),
         ],
-        
+
         // Options premium et poids
         if (selectedServiceType != null) ...[
           _buildServiceOptions(isDark),
           SizedBox(height: AppSpacing.lg),
         ],
-        
+
         // Catalogue d'articles
-        if (selectedServiceType != null && 
-            pricingType == 'FIXED' && 
+        if (selectedServiceType != null &&
+            pricingType == 'FIXED' &&
             couples.isNotEmpty) ...[
           _buildArticlesCatalog(isDark),
         ],
@@ -421,11 +307,13 @@ class _FlashServiceStepState extends State<FlashServiceStep>
           _ModernDropdown<ServiceType>(
             value: selectedServiceType,
             hint: 'Sélectionner le type de service',
-            items: serviceTypes.map((type) => _DropdownItem(
-              value: type,
-              label: type.name,
-              subtitle: type.description,
-            )).toList(),
+            items: serviceTypes
+                .map((type) => _DropdownItem(
+                      value: type,
+                      label: type.name,
+                      subtitle: type.description,
+                    ))
+                .toList(),
             onChanged: _onServiceTypeChanged,
             isDark: isDark,
           ),
@@ -463,11 +351,13 @@ class _FlashServiceStepState extends State<FlashServiceStep>
           _ModernDropdown<Service>(
             value: selectedService,
             hint: 'Sélectionner le service',
-            items: services.map((service) => _DropdownItem(
-              value: service,
-              label: service.name,
-              subtitle: service.description,
-            )).toList(),
+            items: services
+                .map((service) => _DropdownItem(
+                      value: service,
+                      label: service.name,
+                      subtitle: service.description,
+                    ))
+                .toList(),
             onChanged: _onServiceChanged,
             isDark: isDark,
           ),
@@ -526,7 +416,7 @@ class _FlashServiceStepState extends State<FlashServiceStep>
           ),
           SizedBox(height: AppSpacing.md),
         ],
-        
+
         // Champ poids
         if (showWeightField) ...[
           GlassContainer(
@@ -547,7 +437,9 @@ class _FlashServiceStepState extends State<FlashServiceStep>
                     Text(
                       'Poids du Linge',
                       style: AppTextStyles.bodyLarge.copyWith(
-                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -613,12 +505,12 @@ class _FlashServiceStepState extends State<FlashServiceStep>
     }
 
     List<Widget> widgets = [];
-    
+
     couplesByCategory.forEach((catId, couplesList) {
       String? categoryName = couplesList.isNotEmpty
           ? couplesList.first['article_category_name']
           : null;
-      
+
       // Header de catégorie
       widgets.add(
         Container(
@@ -663,17 +555,21 @@ class _FlashServiceStepState extends State<FlashServiceStep>
     final articleName = couple['article_name'] ?? '';
     final articleDescription = couple['article_description'] ?? '';
     final basePrice = double.tryParse(couple['base_price'].toString()) ?? 0.0;
-    final premiumPrice = double.tryParse(couple['premium_price'].toString()) ?? 0.0;
-    final displayPrice = showPremiumSwitch && isPremium ? premiumPrice : basePrice;
-    
+    final premiumPrice =
+        double.tryParse(couple['premium_price'].toString()) ?? 0.0;
+    final displayPrice =
+        showPremiumSwitch && isPremium ? premiumPrice : basePrice;
+
     final currentQty = widget.controller.draft.value.items
-        .firstWhereOrNull((i) => i.articleId == articleId)?.quantity ?? 0;
+            .firstWhereOrNull((i) => i.articleId == articleId)
+            ?.quantity ??
+        0;
 
     return Container(
       margin: EdgeInsets.only(bottom: AppSpacing.sm),
       child: GlassContainer(
-        variant: currentQty > 0 
-            ? GlassContainerVariant.success 
+        variant: currentQty > 0
+            ? GlassContainerVariant.success
             : GlassContainerVariant.neutral,
         padding: EdgeInsets.all(AppSpacing.md),
         borderRadius: AppRadius.md,
@@ -698,7 +594,7 @@ class _FlashServiceStepState extends State<FlashServiceStep>
               ),
             ),
             SizedBox(width: AppSpacing.md),
-            
+
             // Informations article
             Expanded(
               child: Column(
@@ -707,7 +603,8 @@ class _FlashServiceStepState extends State<FlashServiceStep>
                   Text(
                     articleName,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -761,14 +658,14 @@ class _FlashServiceStepState extends State<FlashServiceStep>
                 ],
               ),
             ),
-            
+
             // Contrôles quantité
             _QuantityControls(
               quantity: currentQty,
               onDecrease: () {
                 final newQty = (currentQty - 1).clamp(0, 999);
                 _onQuantityChanged(
-                  articleId, 
+                  articleId,
                   newQty,
                   isPremium: showPremiumSwitch ? isPremium : null,
                   serviceId: couple['service_id'],
@@ -777,7 +674,7 @@ class _FlashServiceStepState extends State<FlashServiceStep>
               onIncrease: () {
                 final newQty = (currentQty + 1).clamp(0, 999);
                 _onQuantityChanged(
-                  articleId, 
+                  articleId,
                   newQty,
                   isPremium: showPremiumSwitch ? isPremium : null,
                   serviceId: couple['service_id'],
@@ -793,11 +690,15 @@ class _FlashServiceStepState extends State<FlashServiceStep>
   Widget _buildTotalEstimation(bool isDark) {
     int sum = 0;
     for (var item in widget.controller.draft.value.items) {
-      final couple = couples.firstWhereOrNull((c) => c['article_id'] == item.articleId);
+      final couple =
+          couples.firstWhereOrNull((c) => c['article_id'] == item.articleId);
       if (couple != null) {
-        final basePrice = double.tryParse(couple['base_price'].toString()) ?? 0.0;
-        final premiumPrice = double.tryParse(couple['premium_price'].toString()) ?? 0.0;
-        final displayPrice = showPremiumSwitch && isPremium ? premiumPrice : basePrice;
+        final basePrice =
+            double.tryParse(couple['base_price'].toString()) ?? 0.0;
+        final premiumPrice =
+            double.tryParse(couple['premium_price'].toString()) ?? 0.0;
+        final displayPrice =
+            showPremiumSwitch && isPremium ? premiumPrice : basePrice;
         sum += item.quantity * displayPrice.toInt();
       }
     }
@@ -888,10 +789,12 @@ class _ModernDropdownState<T> extends State<_ModernDropdown<T>> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
-        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+            .withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+          color: (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+              .withOpacity(0.5),
         ),
       ),
       child: DropdownButtonHideUnderline(
@@ -914,7 +817,9 @@ class _ModernDropdownState<T> extends State<_ModernDropdown<T>> {
                   Text(
                     item.label,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color: widget.isDark
+                          ? AppColors.textLight
+                          : AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -923,7 +828,9 @@ class _ModernDropdownState<T> extends State<_ModernDropdown<T>> {
                     Text(
                       item.subtitle!,
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                        color: widget.isDark
+                            ? AppColors.gray400
+                            : AppColors.gray600,
                       ),
                     ),
                   ],
@@ -1023,10 +930,12 @@ class _ModernTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color:
+            (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+          color:
+              (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
         ),
       ),
       child: TextFormField(
@@ -1082,8 +991,10 @@ class _QuantityControlsState extends State<_QuantityControls>
       duration: Duration(milliseconds: 150),
       vsync: this,
     );
-    _decreaseScale = Tween<double>(begin: 1.0, end: 0.9).animate(_decreaseController);
-    _increaseScale = Tween<double>(begin: 1.0, end: 0.9).animate(_increaseController);
+    _decreaseScale =
+        Tween<double>(begin: 1.0, end: 0.9).animate(_decreaseController);
+    _increaseScale =
+        Tween<double>(begin: 1.0, end: 0.9).animate(_increaseController);
   }
 
   @override
@@ -1132,7 +1043,7 @@ class _QuantityControlsState extends State<_QuantityControls>
             );
           },
         ),
-        
+
         // Affichage quantité
         Container(
           width: 40,
@@ -1141,12 +1052,13 @@ class _QuantityControlsState extends State<_QuantityControls>
               '${widget.quantity}',
               style: AppTextStyles.bodyLarge.copyWith(
                 fontWeight: FontWeight.bold,
-                color: widget.quantity > 0 ? AppColors.success : AppColors.gray500,
+                color:
+                    widget.quantity > 0 ? AppColors.success : AppColors.gray500,
               ),
             ),
           ),
         ),
-        
+
         // Bouton augmenter
         AnimatedBuilder(
           animation: _increaseScale,
@@ -1165,7 +1077,10 @@ class _QuantityControlsState extends State<_QuantityControls>
                   height: 32,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                      colors: [
+                        AppColors.success,
+                        AppColors.success.withOpacity(0.8)
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                   ),

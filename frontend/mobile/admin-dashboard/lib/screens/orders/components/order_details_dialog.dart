@@ -38,7 +38,7 @@ String discountTotal(Map discounts) {
 
 class OrderDetailsDialog extends StatefulWidget {
   final String orderId;
-  
+
   const OrderDetailsDialog({Key? key, required this.orderId}) : super(key: key);
 
   @override
@@ -51,7 +51,6 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog>
   late AnimationController _tabController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  int _selectedTabIndex = 0;
 
   @override
   void initState() {
@@ -98,7 +97,7 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog>
 
   Widget _buildClientSection(order, bool isDark) {
     final user = order.user;
-    
+
     return GlassContainer(
       variant: GlassContainerVariant.primary,
       padding: EdgeInsets.all(AppSpacing.lg),
@@ -140,7 +139,9 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog>
                     Text(
                       'Informations Client',
                       style: AppTextStyles.h3.copyWith(
-                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -157,12 +158,14 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog>
               _ModernActionButton(
                 icon: Icons.edit,
                 label: 'Modifier',
-                onPressed: user == null ? null : () async {
-                  await showDialog(
-                    context: context,
-                    builder: (_) => ClientDetailsDialog(client: user),
-                  );
-                },
+                onPressed: user == null
+                    ? null
+                    : () async {
+                        await showDialog(
+                          context: context,
+                          builder: (_) => ClientDetailsDialog(client: user),
+                        );
+                      },
                 variant: _ActionVariant.primary,
               ),
             ],
@@ -508,8 +511,8 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog>
           ],
         ),
         borderRadius: BorderRadius.only(
-          topLeft: AppRadius.xl.topLeft,
-          topRight: AppRadius.xl.topRight,
+          topLeft: Radius.circular(AppRadius.xl),
+          topRight: Radius.circular(AppRadius.xl),
         ),
       ),
       child: Row(
@@ -571,7 +574,9 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog>
   Widget _buildDialogContent(OrdersController controller, bool isDark) {
     return Obx(() {
       final order = controller.selectedOrder.value;
-      if (controller.isLoading.value || order == null || order.id != widget.orderId) {
+      if (controller.isLoading.value ||
+          order == null ||
+          order.id != widget.orderId) {
         return SizedBox(
           width: 700,
           height: 400,
@@ -918,7 +923,7 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog>
                 ],
               ),
               const SizedBox(height: 24),
-              _buildClientSection(controller.selectedOrder.value),
+              _buildClientSection(controller.selectedOrder.value, isDark),
               const SizedBox(height: 24),
               _buildAddressSection(controller.selectedOrder.value),
               const SizedBox(height: 24),
@@ -957,7 +962,6 @@ class _ModernActionButtonState extends State<_ModernActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -1002,11 +1006,9 @@ class _ModernActionButtonState extends State<_ModernActionButton>
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _controller.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -1061,7 +1063,6 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -1087,15 +1088,11 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _controller.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -1107,14 +1104,10 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: _isHovered
-                    ? AppColors.error.withOpacity(0.1)
-                    : Colors.transparent,
+                color: AppColors.error.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _isHovered
-                      ? AppColors.error.withOpacity(0.3)
-                      : (isDark ? AppColors.gray600 : AppColors.gray400),
+                  color: AppColors.error.withOpacity(0.3),
                 ),
               ),
               child: Material(
@@ -1125,9 +1118,7 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
                   child: Center(
                     child: Icon(
                       Icons.close,
-                      color: _isHovered
-                          ? AppColors.error
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                      color: AppColors.error,
                       size: 20,
                     ),
                   ),
@@ -1156,11 +1147,10 @@ class _ClientInfoCard extends StatelessWidget {
       return _buildEmptyClientCard();
     }
 
-    final fullName = ((user.firstName ?? '') + ' ' + (user.lastName ?? ''))
-        .trim()
-        .isEmpty
-        ? 'Nom non défini'
-        : ((user.firstName ?? '') + ' ' + (user.lastName ?? '')).trim();
+    final fullName =
+        ((user.firstName ?? '') + ' ' + (user.lastName ?? '')).trim().isEmpty
+            ? 'Nom non défini'
+            : ((user.firstName ?? '') + ' ' + (user.lastName ?? '')).trim();
 
     return Row(
       children: [
@@ -1195,7 +1185,7 @@ class _ClientInfoCard extends StatelessWidget {
           ),
         ),
         SizedBox(width: AppSpacing.lg),
-        
+
         // Informations du client
         Expanded(
           child: Column(
@@ -1260,10 +1250,12 @@ class _ClientInfoCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: (isDark ? AppColors.gray700 : AppColors.gray200).withOpacity(0.3),
-        borderRadius: AppRadius.md,
+        color:
+            (isDark ? AppColors.gray700 : AppColors.gray200).withOpacity(0.3),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+          color:
+              (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
         ),
       ),
       child: Row(

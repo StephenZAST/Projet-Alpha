@@ -6,13 +6,13 @@ import '../../../../../models/service_type.dart';
 
 // Composants modernes pour ServiceSelectionStep
 
-class _ModernServiceTypeDropdown extends StatefulWidget {
+class ModernServiceTypeDropdown extends StatefulWidget {
   final ServiceType? value;
   final List<ServiceType> items;
   final ValueChanged<ServiceType?> onChanged;
   final bool isDark;
 
-  const _ModernServiceTypeDropdown({
+  const ModernServiceTypeDropdown({
     required this.value,
     required this.items,
     required this.onChanged,
@@ -20,10 +20,11 @@ class _ModernServiceTypeDropdown extends StatefulWidget {
   });
 
   @override
-  _ModernServiceTypeDropdownState createState() => _ModernServiceTypeDropdownState();
+  ModernServiceTypeDropdownState createState() =>
+      ModernServiceTypeDropdownState();
 }
 
-class _ModernServiceTypeDropdownState extends State<_ModernServiceTypeDropdown> {
+class ModernServiceTypeDropdownState extends State<ModernServiceTypeDropdown> {
   bool _isFocused = false;
 
   @override
@@ -41,18 +42,21 @@ class _ModernServiceTypeDropdownState extends State<_ModernServiceTypeDropdown> 
         SizedBox(height: AppSpacing.sm),
         Container(
           decoration: BoxDecoration(
-            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-            borderRadius: AppRadius.md,
+            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                .withOpacity(0.5),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: _isFocused
                   ? AppColors.primary.withOpacity(0.5)
-                  : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                  : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                      .withOpacity(0.5),
             ),
           ),
           child: DropdownButtonFormField<ServiceType>(
             value: widget.value,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+              color:
+                  widget.isDark ? AppColors.textLight : AppColors.textPrimary,
             ),
             decoration: InputDecoration(
               hintText: 'Sélectionner le type de service',
@@ -78,7 +82,10 @@ class _ModernServiceTypeDropdownState extends State<_ModernServiceTypeDropdown> 
                       padding: EdgeInsets.all(AppSpacing.xs),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withOpacity(0.8)
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(6),
                       ),
@@ -102,7 +109,9 @@ class _ModernServiceTypeDropdownState extends State<_ModernServiceTypeDropdown> 
                           Text(
                             _getServiceTypeDescription(type.pricingType),
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                              color: widget.isDark
+                                  ? AppColors.gray400
+                                  : AppColors.gray600,
                             ),
                           ),
                         ],
@@ -152,14 +161,14 @@ class _ModernServiceTypeDropdownState extends State<_ModernServiceTypeDropdown> 
   }
 }
 
-class _ModernServiceDropdown extends StatefulWidget {
+class ModernServiceDropdown extends StatefulWidget {
   final Service? value;
   final List<Service> items;
   final ValueChanged<Service?> onChanged;
   final bool isDark;
   final bool enabled;
 
-  const _ModernServiceDropdown({
+  const ModernServiceDropdown({
     required this.value,
     required this.items,
     required this.onChanged,
@@ -168,10 +177,10 @@ class _ModernServiceDropdown extends StatefulWidget {
   });
 
   @override
-  _ModernServiceDropdownState createState() => _ModernServiceDropdownState();
+  ModernServiceDropdownState createState() => ModernServiceDropdownState();
 }
 
-class _ModernServiceDropdownState extends State<_ModernServiceDropdown> {
+class ModernServiceDropdownState extends State<ModernServiceDropdown> {
   bool _isFocused = false;
 
   @override
@@ -189,21 +198,25 @@ class _ModernServiceDropdownState extends State<_ModernServiceDropdown> {
         SizedBox(height: AppSpacing.sm),
         Container(
           decoration: BoxDecoration(
-            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(
+            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                .withOpacity(
               widget.enabled ? 0.5 : 0.3,
             ),
-            borderRadius: AppRadius.md,
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: _isFocused && widget.enabled
                   ? AppColors.primary.withOpacity(0.5)
-                  : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                  : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                      .withOpacity(0.5),
             ),
           ),
           child: DropdownButtonFormField<Service>(
             value: widget.value,
             style: AppTextStyles.bodyMedium.copyWith(
               color: widget.enabled
-                  ? (widget.isDark ? AppColors.textLight : AppColors.textPrimary)
+                  ? (widget.isDark
+                      ? AppColors.textLight
+                      : AppColors.textPrimary)
                   : (widget.isDark ? AppColors.gray500 : AppColors.gray400),
             ),
             decoration: InputDecoration(
@@ -233,7 +246,10 @@ class _ModernServiceDropdownState extends State<_ModernServiceDropdown> {
                             padding: EdgeInsets.all(AppSpacing.xs),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [AppColors.accent, AppColors.accent.withOpacity(0.8)],
+                                colors: [
+                                  AppColors.accent,
+                                  AppColors.accent.withOpacity(0.8)
+                                ],
                               ),
                               borderRadius: BorderRadius.circular(6),
                             ),
@@ -258,7 +274,9 @@ class _ModernServiceDropdownState extends State<_ModernServiceDropdown> {
                                   Text(
                                     service.description!,
                                     style: AppTextStyles.bodySmall.copyWith(
-                                      color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                                      color: widget.isDark
+                                          ? AppColors.gray400
+                                          : AppColors.gray600,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -273,7 +291,8 @@ class _ModernServiceDropdownState extends State<_ModernServiceDropdown> {
                   }).toList()
                 : [],
             onChanged: widget.enabled ? widget.onChanged : null,
-            onTap: widget.enabled ? () => setState(() => _isFocused = true) : null,
+            onTap:
+                widget.enabled ? () => setState(() => _isFocused = true) : null,
             dropdownColor: widget.isDark ? AppColors.gray800 : Colors.white,
           ),
         ),
@@ -282,11 +301,11 @@ class _ModernServiceDropdownState extends State<_ModernServiceDropdown> {
   }
 }
 
-class _CategoryHeader extends StatelessWidget {
+class CategoryHeader extends StatelessWidget {
   final String name;
   final bool isDark;
 
-  const _CategoryHeader({
+  const CategoryHeader({
     required this.name,
     required this.isDark,
   });
@@ -305,7 +324,7 @@ class _CategoryHeader extends StatelessWidget {
             AppColors.accent.withOpacity(0.1),
           ],
         ),
-        borderRadius: AppRadius.md,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: AppColors.accent.withOpacity(0.3),
         ),
@@ -331,14 +350,14 @@ class _CategoryHeader extends StatelessWidget {
   }
 }
 
-class _ArticleCard extends StatefulWidget {
+class ArticleCard extends StatefulWidget {
   final Map<String, dynamic> couple;
   final int quantity;
   final bool isPremium;
   final Function(String, int) onQuantityChanged;
   final bool isDark;
 
-  const _ArticleCard({
+  const ArticleCard({
     required this.couple,
     required this.quantity,
     required this.isPremium,
@@ -347,10 +366,10 @@ class _ArticleCard extends StatefulWidget {
   });
 
   @override
-  _ArticleCardState createState() => _ArticleCardState();
+  ArticleCardState createState() => ArticleCardState();
 }
 
-class _ArticleCardState extends State<_ArticleCard>
+class ArticleCardState extends State<ArticleCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -383,8 +402,10 @@ class _ArticleCardState extends State<_ArticleCard>
     final articleId = widget.couple['article_id'];
     final articleName = widget.couple['article_name'] ?? '';
     final articleDescription = widget.couple['article_description'] ?? '';
-    final basePrice = double.tryParse(widget.couple['base_price'].toString()) ?? 0.0;
-    final premiumPrice = double.tryParse(widget.couple['premium_price'].toString()) ?? 0.0;
+    final basePrice =
+        double.tryParse(widget.couple['base_price'].toString()) ?? 0.0;
+    final premiumPrice =
+        double.tryParse(widget.couple['premium_price'].toString()) ?? 0.0;
     final displayPrice = widget.isPremium ? premiumPrice : basePrice;
     final totalPrice = displayPrice * widget.quantity;
 
@@ -416,7 +437,10 @@ class _ArticleCardState extends State<_ArticleCard>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: widget.quantity > 0
-                            ? [AppColors.success, AppColors.success.withOpacity(0.8)]
+                            ? [
+                                AppColors.success,
+                                AppColors.success.withOpacity(0.8)
+                              ]
                             : [AppColors.gray500, AppColors.gray400],
                       ),
                       borderRadius: BorderRadius.circular(8),
@@ -428,7 +452,7 @@ class _ArticleCardState extends State<_ArticleCard>
                     ),
                   ),
                   SizedBox(width: AppSpacing.md),
-                  
+
                   // Informations article
                   Expanded(
                     child: Column(
@@ -439,7 +463,9 @@ class _ArticleCardState extends State<_ArticleCard>
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: widget.quantity > 0
                                 ? Colors.white
-                                : (widget.isDark ? AppColors.textLight : AppColors.textPrimary),
+                                : (widget.isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textPrimary),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -450,7 +476,9 @@ class _ArticleCardState extends State<_ArticleCard>
                             style: AppTextStyles.bodySmall.copyWith(
                               color: widget.quantity > 0
                                   ? Colors.white.withOpacity(0.8)
-                                  : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
+                                  : (widget.isDark
+                                      ? AppColors.gray400
+                                      : AppColors.gray600),
                             ),
                           ),
                         ],
@@ -471,7 +499,9 @@ class _ArticleCardState extends State<_ArticleCard>
                               child: Text(
                                 widget.isPremium ? 'PREMIUM' : 'STANDARD',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: widget.isPremium ? AppColors.warning : AppColors.info,
+                                  color: widget.isPremium
+                                      ? AppColors.warning
+                                      : AppColors.info,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 10,
                                 ),
@@ -502,9 +532,9 @@ class _ArticleCardState extends State<_ArticleCard>
                       ],
                     ),
                   ),
-                  
+
                   // Contrôles quantité
-                  _QuantityControls(
+                  QuantityControls(
                     quantity: widget.quantity,
                     onChanged: (newQuantity) {
                       widget.onQuantityChanged(articleId, newQuantity);
@@ -521,22 +551,22 @@ class _ArticleCardState extends State<_ArticleCard>
   }
 }
 
-class _QuantityControls extends StatefulWidget {
+class QuantityControls extends StatefulWidget {
   final int quantity;
   final ValueChanged<int> onChanged;
   final bool isSelected;
 
-  const _QuantityControls({
+  const QuantityControls({
     required this.quantity,
     required this.onChanged,
     this.isSelected = false,
   });
 
   @override
-  _QuantityControlsState createState() => _QuantityControlsState();
+  QuantityControlsState createState() => QuantityControlsState();
 }
 
-class _QuantityControlsState extends State<_QuantityControls>
+class QuantityControlsState extends State<QuantityControls>
     with TickerProviderStateMixin {
   late AnimationController _minusController;
   late AnimationController _plusController;
@@ -554,7 +584,7 @@ class _QuantityControlsState extends State<_QuantityControls>
       duration: Duration(milliseconds: 150),
       vsync: this,
     );
-    
+
     _minusScale = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _minusController, curve: Curves.easeOutCubic),
     );
@@ -596,7 +626,10 @@ class _QuantityControlsState extends State<_QuantityControls>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: widget.isSelected
-                          ? [Colors.white.withOpacity(0.3), Colors.white.withOpacity(0.2)]
+                          ? [
+                              Colors.white.withOpacity(0.3),
+                              Colors.white.withOpacity(0.2)
+                            ]
                           : [AppColors.error, AppColors.error.withOpacity(0.8)],
                     ),
                     borderRadius: BorderRadius.circular(16),
@@ -611,7 +644,7 @@ class _QuantityControlsState extends State<_QuantityControls>
             },
           ),
         ),
-        
+
         // Affichage quantité
         Container(
           width: 50,
@@ -622,12 +655,14 @@ class _QuantityControlsState extends State<_QuantityControls>
                 fontWeight: FontWeight.bold,
                 color: widget.isSelected
                     ? Colors.white
-                    : (widget.quantity > 0 ? AppColors.success : AppColors.gray600),
+                    : (widget.quantity > 0
+                        ? AppColors.success
+                        : AppColors.gray600),
               ),
             ),
           ),
         ),
-        
+
         // Bouton plus
         GestureDetector(
           onTapDown: (_) => _plusController.forward(),
@@ -647,8 +682,14 @@ class _QuantityControlsState extends State<_QuantityControls>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: widget.isSelected
-                          ? [Colors.white.withOpacity(0.3), Colors.white.withOpacity(0.2)]
-                          : [AppColors.success, AppColors.success.withOpacity(0.8)],
+                          ? [
+                              Colors.white.withOpacity(0.3),
+                              Colors.white.withOpacity(0.2)
+                            ]
+                          : [
+                              AppColors.success,
+                              AppColors.success.withOpacity(0.8)
+                            ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -667,22 +708,22 @@ class _QuantityControlsState extends State<_QuantityControls>
   }
 }
 
-class _ModernWeightField extends StatefulWidget {
+class ModernWeightField extends StatefulWidget {
   final double? value;
   final ValueChanged<double?> onChanged;
   final bool isDark;
 
-  const _ModernWeightField({
+  const ModernWeightField({
     required this.value,
     required this.onChanged,
     required this.isDark,
   });
 
   @override
-  _ModernWeightFieldState createState() => _ModernWeightFieldState();
+  ModernWeightFieldState createState() => ModernWeightFieldState();
 }
 
-class _ModernWeightFieldState extends State<_ModernWeightField> {
+class ModernWeightFieldState extends State<ModernWeightField> {
   late TextEditingController _controller;
   bool _isFocused = false;
 
@@ -695,7 +736,7 @@ class _ModernWeightFieldState extends State<_ModernWeightField> {
   }
 
   @override
-  void didUpdateWidget(_ModernWeightField oldWidget) {
+  void didUpdateWidget(ModernWeightField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.value != widget.value) {
       _controller.text = widget.value?.toString() ?? '';
@@ -713,7 +754,7 @@ class _ModernWeightFieldState extends State<_ModernWeightField> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
-        borderRadius: AppRadius.md,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: _isFocused
               ? Colors.white.withOpacity(0.5)
@@ -738,9 +779,7 @@ class _ModernWeightFieldState extends State<_ModernWeightField> {
           ),
           prefixIcon: Icon(
             Icons.scale,
-            color: _isFocused
-                ? Colors.white
-                : Colors.white.withOpacity(0.7),
+            color: _isFocused ? Colors.white : Colors.white.withOpacity(0.7),
             size: 20,
           ),
           suffixText: 'kg',
@@ -755,22 +794,22 @@ class _ModernWeightFieldState extends State<_ModernWeightField> {
   }
 }
 
-class _ModernPremiumSwitch extends StatefulWidget {
+class ModernPremiumSwitch extends StatefulWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
   final bool isDark;
 
-  const _ModernPremiumSwitch({
+  const ModernPremiumSwitch({
     required this.value,
     required this.onChanged,
     required this.isDark,
   });
 
   @override
-  _ModernPremiumSwitchState createState() => _ModernPremiumSwitchState();
+  ModernPremiumSwitchState createState() => ModernPremiumSwitchState();
 }
 
-class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
+class ModernPremiumSwitchState extends State<ModernPremiumSwitch>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -821,13 +860,15 @@ class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
                       )
                     : null,
                 color: !widget.value
-                    ? (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5)
+                    ? (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                        .withOpacity(0.5)
                     : null,
-                borderRadius: AppRadius.md,
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: widget.value
                       ? AppColors.warning.withOpacity(0.5)
-                      : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                      : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                          .withOpacity(0.5),
                 ),
               ),
               child: Row(
@@ -837,11 +878,16 @@ class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
                     decoration: BoxDecoration(
                       gradient: widget.value
                           ? LinearGradient(
-                              colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                              colors: [
+                                AppColors.warning,
+                                AppColors.warning.withOpacity(0.8)
+                              ],
                             )
                           : null,
                       color: !widget.value
-                          ? (widget.isDark ? AppColors.gray600 : AppColors.gray400)
+                          ? (widget.isDark
+                              ? AppColors.gray600
+                              : AppColors.gray400)
                           : null,
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -859,7 +905,9 @@ class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
                         Text(
                           'Service Premium',
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+                            color: widget.isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -867,7 +915,9 @@ class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
                         Text(
                           'Qualité supérieure et traitement prioritaire',
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                            color: widget.isDark
+                                ? AppColors.gray400
+                                : AppColors.gray600,
                           ),
                         ),
                       ],

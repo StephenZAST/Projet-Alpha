@@ -5,14 +5,14 @@ import 'package:intl/intl.dart';
 
 // Composants modernes pour OrderExtraFieldsStep
 
-class _ModernDateField extends StatefulWidget {
+class ModernDateField extends StatefulWidget {
   final String label;
   final IconData icon;
   final DateTime? value;
   final ValueChanged<DateTime?> onChanged;
   final bool isDark;
 
-  const _ModernDateField({
+  const ModernDateField({
     required this.label,
     required this.icon,
     required this.value,
@@ -21,10 +21,10 @@ class _ModernDateField extends StatefulWidget {
   });
 
   @override
-  _ModernDateFieldState createState() => _ModernDateFieldState();
+  ModernDateFieldState createState() => ModernDateFieldState();
 }
 
-class _ModernDateFieldState extends State<_ModernDateField>
+class ModernDateFieldState extends State<ModernDateField>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -80,14 +80,18 @@ class _ModernDateFieldState extends State<_ModernDateField>
                     children: [
                       Icon(
                         widget.icon,
-                        color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                        color: widget.isDark
+                            ? AppColors.gray400
+                            : AppColors.gray600,
                         size: 18,
                       ),
                       SizedBox(width: AppSpacing.sm),
                       Text(
                         widget.label,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                          color: widget.isDark
+                              ? AppColors.gray400
+                              : AppColors.gray600,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -103,8 +107,12 @@ class _ModernDateFieldState extends State<_ModernDateField>
                               : 'Sélectionner une date',
                           style: AppTextStyles.bodyLarge.copyWith(
                             color: widget.value != null
-                                ? (widget.isDark ? AppColors.textLight : AppColors.textPrimary)
-                                : (widget.isDark ? AppColors.gray500 : AppColors.gray400),
+                                ? (widget.isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textPrimary)
+                                : (widget.isDark
+                                    ? AppColors.gray500
+                                    : AppColors.gray400),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -135,11 +143,13 @@ class _ModernDateFieldState extends State<_ModernDateField>
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: widget.isDark ? AppColors.gray800 : Colors.white,
-              onSurface: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
-            ),
+                  primary: AppColors.primary,
+                  onPrimary: Colors.white,
+                  surface: widget.isDark ? AppColors.gray800 : Colors.white,
+                  onSurface: widget.isDark
+                      ? AppColors.textLight
+                      : AppColors.textPrimary,
+                ),
           ),
           child: child!,
         );
@@ -151,7 +161,7 @@ class _ModernDateFieldState extends State<_ModernDateField>
   }
 }
 
-class _ModernDropdown<T> extends StatefulWidget {
+class ModernDropdown<T> extends StatefulWidget {
   final String label;
   final IconData icon;
   final T? value;
@@ -159,7 +169,7 @@ class _ModernDropdown<T> extends StatefulWidget {
   final ValueChanged<T?> onChanged;
   final bool isDark;
 
-  const _ModernDropdown({
+  const ModernDropdown({
     required this.label,
     required this.icon,
     required this.value,
@@ -169,22 +179,24 @@ class _ModernDropdown<T> extends StatefulWidget {
   });
 
   @override
-  _ModernDropdownState<T> createState() => _ModernDropdownState<T>();
+  ModernDropdownState<T> createState() => ModernDropdownState<T>();
 }
 
-class _ModernDropdownState<T> extends State<_ModernDropdown<T>> {
+class ModernDropdownState<T> extends State<ModernDropdown<T>> {
   bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+            .withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: _isFocused
               ? AppColors.primary.withOpacity(0.5)
-              : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+              : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                  .withOpacity(0.5),
         ),
       ),
       child: Column(
@@ -209,7 +221,8 @@ class _ModernDropdownState<T> extends State<_ModernDropdown<T>> {
                 Text(
                   widget.label,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                    color:
+                        widget.isDark ? AppColors.gray400 : AppColors.gray600,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -219,7 +232,8 @@ class _ModernDropdownState<T> extends State<_ModernDropdown<T>> {
           DropdownButtonFormField<T>(
             value: widget.value,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+              color:
+                  widget.isDark ? AppColors.textLight : AppColors.textPrimary,
             ),
             decoration: InputDecoration(
               border: InputBorder.none,
@@ -245,14 +259,14 @@ class _ModernDropdownState<T> extends State<_ModernDropdown<T>> {
   }
 }
 
-class _ModernTextField extends StatefulWidget {
+class ModernTextField extends StatefulWidget {
   final String label;
   final IconData icon;
   final String initialValue;
   final ValueChanged<String> onChanged;
   final bool isDark;
 
-  const _ModernTextField({
+  const ModernTextField({
     required this.label,
     required this.icon,
     required this.initialValue,
@@ -261,10 +275,10 @@ class _ModernTextField extends StatefulWidget {
   });
 
   @override
-  _ModernTextFieldState createState() => _ModernTextFieldState();
+  ModernTextFieldState createState() => ModernTextFieldState();
 }
 
-class _ModernTextFieldState extends State<_ModernTextField> {
+class ModernTextFieldState extends State<ModernTextField> {
   late TextEditingController _controller;
   bool _isFocused = false;
 
@@ -284,12 +298,14 @@ class _ModernTextFieldState extends State<_ModernTextField> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+            .withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: _isFocused
               ? AppColors.primary.withOpacity(0.5)
-              : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+              : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                  .withOpacity(0.5),
         ),
       ),
       child: TextFormField(
@@ -322,14 +338,14 @@ class _ModernTextFieldState extends State<_ModernTextField> {
   }
 }
 
-class _ModernTextArea extends StatefulWidget {
+class ModernTextArea extends StatefulWidget {
   final String label;
   final String placeholder;
   final String initialValue;
   final ValueChanged<String> onChanged;
   final bool isDark;
 
-  const _ModernTextArea({
+  const ModernTextArea({
     required this.label,
     required this.placeholder,
     required this.initialValue,
@@ -338,10 +354,10 @@ class _ModernTextArea extends StatefulWidget {
   });
 
   @override
-  _ModernTextAreaState createState() => _ModernTextAreaState();
+  ModernTextAreaState createState() => ModernTextAreaState();
 }
 
-class _ModernTextAreaState extends State<_ModernTextArea> {
+class ModernTextAreaState extends State<ModernTextArea> {
   late TextEditingController _controller;
   bool _isFocused = false;
 
@@ -361,12 +377,14 @@ class _ModernTextAreaState extends State<_ModernTextArea> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+            .withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: _isFocused
               ? AppColors.primary.withOpacity(0.5)
-              : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+              : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                  .withOpacity(0.5),
         ),
       ),
       child: TextFormField(
@@ -398,14 +416,14 @@ class _ModernTextAreaState extends State<_ModernTextArea> {
   }
 }
 
-class _ModernOptionChip extends StatefulWidget {
+class ModernOptionChip extends StatefulWidget {
   final String label;
   final IconData icon;
   final bool isSelected;
   final Color color;
   final VoidCallback onSelected;
 
-  const _ModernOptionChip({
+  const ModernOptionChip({
     required this.label,
     required this.icon,
     required this.isSelected,
@@ -414,10 +432,10 @@ class _ModernOptionChip extends StatefulWidget {
   });
 
   @override
-  _ModernOptionChipState createState() => _ModernOptionChipState();
+  ModernOptionChipState createState() => ModernOptionChipState();
 }
 
-class _ModernOptionChipState extends State<_ModernOptionChip>
+class ModernOptionChipState extends State<ModernOptionChip>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -470,7 +488,7 @@ class _ModernOptionChipState extends State<_ModernOptionChip>
                       )
                     : null,
                 color: widget.isSelected ? null : widget.color.withOpacity(0.1),
-                borderRadius: AppRadius.md,
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: widget.isSelected
                       ? widget.color
@@ -513,12 +531,12 @@ class _ModernOptionChipState extends State<_ModernOptionChip>
   }
 }
 
-class _NextRecurrenceCard extends StatelessWidget {
+class NextRecurrenceCard extends StatelessWidget {
   final DateTime? nextDate;
   final String recurrenceType;
   final bool isDark;
 
-  const _NextRecurrenceCard({
+  const NextRecurrenceCard({
     required this.nextDate,
     required this.recurrenceType,
     required this.isDark,

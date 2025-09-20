@@ -84,7 +84,9 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
                       Icons.close,
                       color: _isHovered
                           ? AppColors.error
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       size: 20,
                     ),
                   ),
@@ -141,18 +143,21 @@ class _ModernDropdownState<T> extends State<_ModernDropdown<T>> {
         SizedBox(height: AppSpacing.sm),
         Container(
           decoration: BoxDecoration(
-            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-            borderRadius: AppRadius.md,
+            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                .withOpacity(0.5),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: _isFocused
                   ? AppColors.primary.withOpacity(0.5)
-                  : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                  : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                      .withOpacity(0.5),
             ),
           ),
           child: DropdownButtonFormField<T>(
             value: widget.value,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+              color:
+                  widget.isDark ? AppColors.textLight : AppColors.textPrimary,
             ),
             decoration: InputDecoration(
               prefixIcon: Icon(
@@ -204,7 +209,7 @@ class _CategoryHeader extends StatelessWidget {
             AppColors.accent.withOpacity(0.1),
           ],
         ),
-        borderRadius: AppRadius.md,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: AppColors.accent.withOpacity(0.3),
         ),
@@ -282,8 +287,10 @@ class _ArticleCardState extends State<_ArticleCard>
     final articleId = widget.couple['article_id'];
     final articleName = widget.couple['article_name'] ?? '';
     final articleDescription = widget.couple['article_description'] ?? '';
-    final basePrice = double.tryParse(widget.couple['base_price'].toString()) ?? 0.0;
-    final premiumPrice = double.tryParse(widget.couple['premium_price'].toString()) ?? 0.0;
+    final basePrice =
+        double.tryParse(widget.couple['base_price'].toString()) ?? 0.0;
+    final premiumPrice =
+        double.tryParse(widget.couple['premium_price'].toString()) ?? 0.0;
     final displayPrice = widget.isPremium ? premiumPrice : basePrice;
     final totalPrice = displayPrice * widget.quantity;
 
@@ -315,7 +322,10 @@ class _ArticleCardState extends State<_ArticleCard>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: widget.quantity > 0
-                            ? [AppColors.success, AppColors.success.withOpacity(0.8)]
+                            ? [
+                                AppColors.success,
+                                AppColors.success.withOpacity(0.8)
+                              ]
                             : [AppColors.gray500, AppColors.gray400],
                       ),
                       borderRadius: BorderRadius.circular(8),
@@ -327,7 +337,7 @@ class _ArticleCardState extends State<_ArticleCard>
                     ),
                   ),
                   SizedBox(width: AppSpacing.md),
-                  
+
                   // Informations article
                   Expanded(
                     child: Column(
@@ -336,7 +346,9 @@ class _ArticleCardState extends State<_ArticleCard>
                         Text(
                           articleName,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+                            color: widget.isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -345,7 +357,9 @@ class _ArticleCardState extends State<_ArticleCard>
                           Text(
                             articleDescription,
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                              color: widget.isDark
+                                  ? AppColors.gray400
+                                  : AppColors.gray600,
                             ),
                           ),
                         ],
@@ -374,7 +388,7 @@ class _ArticleCardState extends State<_ArticleCard>
                       ],
                     ),
                   ),
-                  
+
                   // Contrôles quantité
                   _QuantityControls(
                     quantity: widget.quantity,
@@ -423,7 +437,7 @@ class _QuantityControlsState extends State<_QuantityControls>
       duration: Duration(milliseconds: 150),
       vsync: this,
     );
-    
+
     _minusScale = Tween<double>(begin: 1.0, end: 1.2).animate(
       CurvedAnimation(parent: _minusController, curve: Curves.easeOutCubic),
     );
@@ -464,7 +478,10 @@ class _QuantityControlsState extends State<_QuantityControls>
                   height: 36,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.error, AppColors.error.withOpacity(0.8)],
+                      colors: [
+                        AppColors.error,
+                        AppColors.error.withOpacity(0.8)
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -478,7 +495,7 @@ class _QuantityControlsState extends State<_QuantityControls>
             },
           ),
         ),
-        
+
         // Affichage quantité
         Container(
           width: 60,
@@ -487,12 +504,13 @@ class _QuantityControlsState extends State<_QuantityControls>
               '${widget.quantity}',
               style: AppTextStyles.h3.copyWith(
                 fontWeight: FontWeight.bold,
-                color: widget.quantity > 0 ? AppColors.success : AppColors.gray600,
+                color:
+                    widget.quantity > 0 ? AppColors.success : AppColors.gray600,
               ),
             ),
           ),
         ),
-        
+
         // Bouton plus
         GestureDetector(
           onTapDown: (_) => _plusController.forward(),
@@ -511,7 +529,10 @@ class _QuantityControlsState extends State<_QuantityControls>
                   height: 36,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                      colors: [
+                        AppColors.success,
+                        AppColors.success.withOpacity(0.8)
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -586,19 +607,22 @@ class _ModernWeightFieldState extends State<_ModernWeightField> {
         SizedBox(height: AppSpacing.sm),
         Container(
           decoration: BoxDecoration(
-            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-            borderRadius: AppRadius.md,
+            color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                .withOpacity(0.5),
+            borderRadius: AppRadius.radiusMD,
             border: Border.all(
               color: _isFocused
                   ? AppColors.primary.withOpacity(0.5)
-                  : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                  : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                      .withOpacity(0.5),
             ),
           ),
           child: TextFormField(
             controller: _controller,
             keyboardType: TextInputType.numberWithOptions(decimal: true),
             style: AppTextStyles.bodyMedium.copyWith(
-              color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+              color:
+                  widget.isDark ? AppColors.textLight : AppColors.textPrimary,
             ),
             onChanged: (value) {
               widget.onChanged(double.tryParse(value));
@@ -697,13 +721,15 @@ class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
                       )
                     : null,
                 color: !widget.value
-                    ? (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5)
+                    ? (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                        .withOpacity(0.5)
                     : null,
-                borderRadius: AppRadius.md,
+                borderRadius: AppRadius.radiusMD,
                 border: Border.all(
                   color: widget.value
                       ? AppColors.warning.withOpacity(0.5)
-                      : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                      : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                          .withOpacity(0.5),
                 ),
               ),
               child: Row(
@@ -713,11 +739,16 @@ class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
                     decoration: BoxDecoration(
                       gradient: widget.value
                           ? LinearGradient(
-                              colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                              colors: [
+                                AppColors.warning,
+                                AppColors.warning.withOpacity(0.8)
+                              ],
                             )
                           : null,
                       color: !widget.value
-                          ? (widget.isDark ? AppColors.gray600 : AppColors.gray400)
+                          ? (widget.isDark
+                              ? AppColors.gray600
+                              : AppColors.gray400)
                           : null,
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -735,7 +766,9 @@ class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
                         Text(
                           'Service Premium',
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+                            color: widget.isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -743,7 +776,9 @@ class _ModernPremiumSwitchState extends State<_ModernPremiumSwitch>
                         Text(
                           'Qualité supérieure et traitement prioritaire',
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                            color: widget.isDark
+                                ? AppColors.gray400
+                                : AppColors.gray600,
                           ),
                         ),
                       ],
@@ -787,7 +822,7 @@ class _PriceDisplay extends StatelessWidget {
             AppColors.info.withOpacity(0.1),
           ],
         ),
-        borderRadius: AppRadius.md,
+        borderRadius: AppRadius.radiusMD,
         border: Border.all(
           color: AppColors.info.withOpacity(0.3),
         ),

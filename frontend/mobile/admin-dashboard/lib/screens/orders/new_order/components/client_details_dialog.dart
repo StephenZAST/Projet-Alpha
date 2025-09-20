@@ -105,7 +105,7 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
       final data = await UserService.adminResetUserPassword(widget.client.id);
       final user = data['user'];
       final tempPassword = data['tempPassword'];
-      await Get.dialog(_ModernPasswordResetDialog(
+      await Get.dialog(ModernPasswordResetDialog(
         user: user,
         tempPassword: tempPassword,
       ));
@@ -156,11 +156,10 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
   }
 
   Widget _buildDialogHeader(bool isDark) {
-    final fullName = ((widget.client.firstName ?? '') + ' ' + (widget.client.lastName ?? ''))
-        .trim()
-        .isEmpty
-        ? 'Client'
-        : ((widget.client.firstName ?? '') + ' ' + (widget.client.lastName ?? '')).trim();
+    final first = widget.client.firstName;
+    final last = widget.client.lastName;
+    final combined = ('$first $last').trim();
+    final fullName = combined.isEmpty ? 'Client' : combined;
 
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),
@@ -174,8 +173,8 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
           ],
         ),
         borderRadius: BorderRadius.only(
-          topLeft: AppRadius.xl.topLeft,
-          topRight: AppRadius.xl.topRight,
+          topLeft: AppRadius.radiusXL.topLeft,
+          topRight: AppRadius.radiusXL.topRight,
         ),
       ),
       child: Row(
@@ -228,7 +227,7 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
               ],
             ),
           ),
-          _ModernCloseButton(
+          ModernCloseButton(
             onPressed: () => Get.back(),
           ),
         ],
@@ -245,11 +244,11 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
           // Section informations personnelles
           _buildPersonalInfoSection(isDark),
           SizedBox(height: AppSpacing.xl),
-          
+
           // Section adresses
           _buildAddressesSection(isDark),
           SizedBox(height: AppSpacing.xl),
-          
+
           // Section actions
           _buildActionsSection(isDark),
         ],
@@ -283,25 +282,25 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
+
           // Champs de saisie modernes
-          _ModernTextField(
+          ModernTextField(
             controller: firstNameController,
             label: 'Prénom',
             icon: Icons.person,
             isDark: isDark,
           ),
           SizedBox(height: AppSpacing.md),
-          
-          _ModernTextField(
+
+          ModernTextField(
             controller: lastNameController,
             label: 'Nom de famille',
             icon: Icons.person_outline,
             isDark: isDark,
           ),
           SizedBox(height: AppSpacing.md),
-          
-          _ModernTextField(
+
+          ModernTextField(
             controller: emailController,
             label: 'Adresse email',
             icon: Icons.email,
@@ -309,8 +308,8 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
             isDark: isDark,
           ),
           SizedBox(height: AppSpacing.md),
-          
-          _ModernTextField(
+
+          ModernTextField(
             controller: phoneController,
             label: 'Numéro de téléphone',
             icon: Icons.phone,
@@ -318,9 +317,9 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
             isDark: isDark,
           ),
           SizedBox(height: AppSpacing.lg),
-          
+
           // Bouton de sauvegarde
-          _ModernSaveButton(
+          ModernSaveButton(
             isLoading: isSaving,
             onPressed: isSaving ? null : _saveClientInfo,
           ),
@@ -354,16 +353,15 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
                   ),
                 ),
               ),
-              _ModernActionButton(
+              ModernActionButton(
                 icon: Icons.add_location_alt,
                 label: 'Ajouter',
                 onPressed: () => _addNewAddress(),
-                variant: _ClientActionVariant.info,
+                variant: ClientActionVariant.info,
               ),
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
           if (isLoadingAddresses)
             _buildLoadingAddresses(isDark)
           else if (_addresses.isEmpty)
@@ -408,12 +406,11 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
             ),
           ),
           SizedBox(height: AppSpacing.lg),
-          
-          _ModernActionButton(
+          ModernActionButton(
             icon: Icons.lock_reset,
             label: 'Réinitialiser le mot de passe',
             onPressed: _resetUserPassword,
-            variant: _ClientActionVariant.warning,
+            variant: ClientActionVariant.warning,
           ),
         ],
       ),
@@ -465,8 +462,9 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
     return Container(
       padding: EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color:
+            (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         children: [
@@ -497,12 +495,14 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
 
   Widget _buildAddressList(bool isDark) {
     return Column(
-      children: _addresses.map((address) => _AddressCard(
-        address: address,
-        isDark: isDark,
-        onEdit: () => _editAddress(address),
-        onDelete: () => _deleteAddress(address),
-      )).toList(),
+      children: _addresses
+          .map((address) => AddressCard(
+                address: address,
+                isDark: isDark,
+                onEdit: () => _editAddress(address),
+                onDelete: () => _deleteAddress(address),
+              ))
+          .toList(),
     );
   }
 
@@ -516,7 +516,7 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
 
   void _deleteAddress(Address address) async {
     final confirm = await Get.dialog<bool>(
-      _ModernConfirmDialog(
+      ModernConfirmDialog(
         title: 'Supprimer l\'adresse',
         message: 'Voulez-vous vraiment supprimer cette adresse ?',
         confirmText: 'Supprimer',
@@ -524,7 +524,7 @@ class _ClientDetailsDialogState extends State<ClientDetailsDialog>
         isDestructive: true,
       ),
     );
-    
+
     if (confirm == true) {
       try {
         await AddressService.deleteAddress(address.id);

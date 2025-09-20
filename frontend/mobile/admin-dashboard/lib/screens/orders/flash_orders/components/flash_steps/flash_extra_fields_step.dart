@@ -59,13 +59,15 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
   void _initializeDefaults() {
     final draft = widget.controller.draft.value;
     final now = DateTime.now();
-    
+
     if (draft.collectionDate == null) {
-      widget.controller.setDraftField('collectionDate', now.add(Duration(days: 1)));
+      widget.controller
+          .setDraftField('collectionDate', now.add(Duration(days: 1)));
     }
     if (draft.deliveryDate == null) {
       final collect = draft.collectionDate ?? now.add(Duration(days: 1));
-      widget.controller.setDraftField('deliveryDate', collect.add(Duration(days: 3)));
+      widget.controller
+          .setDraftField('deliveryDate', collect.add(Duration(days: 3)));
     }
   }
 
@@ -158,11 +160,11 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
         // Section Dates
         _buildDatesSection(isDark, draft),
         SizedBox(height: AppSpacing.lg),
-        
+
         // Section Options
         _buildOptionsSection(isDark, draft),
         SizedBox(height: AppSpacing.lg),
-        
+
         // Section Note
         _buildNoteSection(isDark, draft),
       ],
@@ -195,7 +197,7 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
+
           // Date de collecte
           _ModernDateField(
             label: 'Date de Collecte',
@@ -204,16 +206,18 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
             onDateSelected: (date) {
               widget.controller.setDraftField('collectionDate', date);
               // Auto-ajuster la date de livraison si nécessaire
-              if (draft.deliveryDate != null && draft.deliveryDate!.isBefore(date)) {
-                widget.controller.setDraftField('deliveryDate', date.add(Duration(days: 3)));
+              if (draft.deliveryDate != null &&
+                  draft.deliveryDate!.isBefore(date)) {
+                widget.controller
+                    .setDraftField('deliveryDate', date.add(Duration(days: 3)));
               }
             },
             isDark: isDark,
             color: AppColors.info,
           ),
-          
+
           SizedBox(height: AppSpacing.md),
-          
+
           // Date de livraison
           _ModernDateField(
             label: 'Date de Livraison',
@@ -257,7 +261,7 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
+
           // Option urgente
           _ModernOptionTile(
             title: 'Commande Urgente',
@@ -270,9 +274,9 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
             color: AppColors.error,
             isDark: isDark,
           ),
-          
+
           SizedBox(height: AppSpacing.md),
-          
+
           // Option livraison express
           _ModernOptionTile(
             title: 'Livraison Express',
@@ -285,9 +289,9 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
             color: AppColors.warning,
             isDark: isDark,
           ),
-          
+
           SizedBox(height: AppSpacing.md),
-          
+
           // Option éco-responsable
           _ModernOptionTile(
             title: 'Service Éco-Responsable',
@@ -331,10 +335,10 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          
           _ModernTextArea(
             controller: _noteController,
-            hint: 'Ajoutez des instructions spéciales, préférences ou remarques...',
+            hint:
+                'Ajoutez des instructions spéciales, préférences ou remarques...',
             onChanged: (value) {
               widget.controller.setDraftField('note', value);
             },
@@ -374,7 +378,6 @@ class _ModernDateFieldState extends State<_ModernDateField>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -401,14 +404,8 @@ class _ModernDateFieldState extends State<_ModernDateField>
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      onEnter: (_) {
-        setState(() => _isHovered = true);
-        _controller.forward();
-      },
-      onExit: (_) {
-        setState(() => _isHovered = false);
-        _controller.reverse();
-      },
+      onEnter: (_) => _controller.forward(),
+      onExit: (_) => _controller.reverse(),
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
@@ -425,7 +422,7 @@ class _ModernDateFieldState extends State<_ModernDateField>
                       widget.color.withOpacity(0.05),
                     ],
                   ),
-                  borderRadius: AppRadius.md,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(
                     color: widget.color.withOpacity(0.3),
                   ),
@@ -452,7 +449,9 @@ class _ModernDateFieldState extends State<_ModernDateField>
                           Text(
                             widget.label,
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+                              color: widget.isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -464,8 +463,12 @@ class _ModernDateFieldState extends State<_ModernDateField>
                             style: AppTextStyles.bodySmall.copyWith(
                               color: widget.date != null
                                   ? widget.color
-                                  : (widget.isDark ? AppColors.gray400 : AppColors.gray600),
-                              fontWeight: widget.date != null ? FontWeight.bold : FontWeight.normal,
+                                  : (widget.isDark
+                                      ? AppColors.gray400
+                                      : AppColors.gray600),
+                              fontWeight: widget.date != null
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           ),
                         ],
@@ -496,14 +499,14 @@ class _ModernDateFieldState extends State<_ModernDateField>
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: widget.color,
-            ),
+                  primary: widget.color,
+                ),
           ),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null) {
       widget.onDateSelected(picked);
     }
@@ -511,8 +514,18 @@ class _ModernDateFieldState extends State<_ModernDateField>
 
   String _formatDate(DateTime date) {
     final months = [
-      'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
-      'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'
+      'Jan',
+      'Fév',
+      'Mar',
+      'Avr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Aoû',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Déc'
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -592,13 +605,15 @@ class _ModernOptionTileState extends State<_ModernOptionTile>
                       )
                     : null,
                 color: !widget.value
-                    ? (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5)
+                    ? (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+                        .withOpacity(0.5)
                     : null,
-                borderRadius: AppRadius.md,
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: widget.value
                       ? widget.color.withOpacity(0.5)
-                      : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                      : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                          .withOpacity(0.5),
                 ),
               ),
               child: Row(
@@ -608,11 +623,16 @@ class _ModernOptionTileState extends State<_ModernOptionTile>
                     decoration: BoxDecoration(
                       gradient: widget.value
                           ? LinearGradient(
-                              colors: [widget.color, widget.color.withOpacity(0.8)],
+                              colors: [
+                                widget.color,
+                                widget.color.withOpacity(0.8)
+                              ],
                             )
                           : null,
                       color: !widget.value
-                          ? (widget.isDark ? AppColors.gray600 : AppColors.gray400)
+                          ? (widget.isDark
+                              ? AppColors.gray600
+                              : AppColors.gray400)
                           : null,
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -630,7 +650,9 @@ class _ModernOptionTileState extends State<_ModernOptionTile>
                         Text(
                           widget.title,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+                            color: widget.isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -638,7 +660,9 @@ class _ModernOptionTileState extends State<_ModernOptionTile>
                         Text(
                           widget.subtitle,
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                            color: widget.isDark
+                                ? AppColors.gray400
+                                : AppColors.gray600,
                           ),
                         ),
                       ],
@@ -744,10 +768,12 @@ class _ModernTextArea extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color:
+            (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+          color:
+              (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
         ),
       ),
       child: TextFormField(

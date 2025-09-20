@@ -18,7 +18,6 @@ class _OrdersHeaderState extends State<OrdersHeader>
   late AnimationController _titleController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _titleAnimation;
 
   @override
   void initState() {
@@ -51,14 +50,6 @@ class _OrdersHeaderState extends State<OrdersHeader>
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: Interval(0.2, 1.0, curve: Curves.easeOutCubic),
-    ));
-
-    _titleAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _titleController,
-      curve: Curves.easeOutCubic,
     ));
 
     _animationController.forward();
@@ -126,7 +117,7 @@ class _OrdersHeaderState extends State<OrdersHeader>
   Widget _buildQuickStats(OrdersController controller, bool isDark) {
     return Obx(() {
       final stats = controller.quickStats;
-      
+
       return Row(
         children: [
           Expanded(
@@ -198,7 +189,6 @@ class _ModernActionButtonState extends State<_ModernActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _glowAnimation;
   bool _isHovered = false;
 
   @override
@@ -208,18 +198,10 @@ class _ModernActionButtonState extends State<_ModernActionButton>
       duration: Duration(milliseconds: 200),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _glowAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
@@ -279,13 +261,15 @@ class _ModernActionButtonState extends State<_ModernActionButton>
                     decoration: BoxDecoration(
                       color: variantColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(6),
-                      boxShadow: _isHovered ? [
-                        BoxShadow(
-                          color: variantColor.withOpacity(0.4),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ] : null,
+                      boxShadow: _isHovered
+                          ? [
+                              BoxShadow(
+                                color: variantColor.withOpacity(0.4),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Icon(
                       widget.icon,
@@ -337,7 +321,7 @@ class _ModernSearchBarState extends State<_ModernSearchBar>
       duration: Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     _widthAnimation = Tween<double>(
       begin: 40.0,
       end: 250.0,
@@ -392,7 +376,8 @@ class _ModernSearchBarState extends State<_ModernSearchBar>
                     controller: widget.controller,
                     onChanged: widget.onChanged,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Rechercher...',
@@ -413,11 +398,9 @@ class _ModernSearchBarState extends State<_ModernSearchBar>
   }
 }
 
-enum OrderView { table, map, cards }
-
 class _ModernViewToggle extends StatelessWidget {
   final Rx<OrderView> currentView;
-  final Function(OrderView) onViewChanged;
+  final void Function(OrderView) onViewChanged;
 
   const _ModernViewToggle({
     required this.currentView,
@@ -441,15 +424,15 @@ class _ModernViewToggle extends StatelessWidget {
                 duration: Duration(milliseconds: 200),
                 padding: EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: isSelected 
+                  color: isSelected
                       ? AppColors.primary.withOpacity(0.2)
                       : Colors.transparent,
-                  borderRadius: AppRadius.sm,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Icon(
                   _getViewIcon(view),
-                  color: isSelected 
-                      ? AppColors.primary 
+                  color: isSelected
+                      ? AppColors.primary
                       : (Theme.of(context).brightness == Brightness.dark
                           ? AppColors.gray400
                           : AppColors.gray600),
@@ -553,13 +536,15 @@ class _QuickStatCardState extends State<_QuickStatCard>
                         decoration: BoxDecoration(
                           color: widget.color.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
-                          boxShadow: _isHovered ? [
-                            BoxShadow(
-                              color: widget.color.withOpacity(0.3),
-                              blurRadius: 8,
-                              spreadRadius: 1,
-                            ),
-                          ] : null,
+                          boxShadow: _isHovered
+                              ? [
+                                  BoxShadow(
+                                    color: widget.color.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                ]
+                              : null,
                         ),
                         child: Icon(
                           widget.icon,
@@ -570,8 +555,8 @@ class _QuickStatCardState extends State<_QuickStatCard>
                       Text(
                         widget.value,
                         style: AppTextStyles.h3.copyWith(
-                          color: widget.isDark 
-                              ? AppColors.textLight 
+                          color: widget.isDark
+                              ? AppColors.textLight
                               : AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                         ),
@@ -582,9 +567,8 @@ class _QuickStatCardState extends State<_QuickStatCard>
                   Text(
                     widget.title,
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: widget.isDark 
-                          ? AppColors.gray400 
-                          : AppColors.gray600,
+                      color:
+                          widget.isDark ? AppColors.gray400 : AppColors.gray600,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

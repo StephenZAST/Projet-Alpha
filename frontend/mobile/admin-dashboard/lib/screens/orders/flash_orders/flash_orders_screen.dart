@@ -8,6 +8,7 @@ import 'components/flash_order_card.dart';
 import 'components/flash_order_stepper.dart';
 import '../../../controllers/flash_order_stepper_controller.dart';
 import '../../../routes/admin_routes.dart';
+import '../../../models/order.dart';
 
 class FlashOrdersScreen extends StatefulWidget {
   @override
@@ -80,7 +81,7 @@ class _FlashOrdersScreenState extends State<FlashOrdersScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.bgColor,
       body: Column(
         children: [
           _buildModernAppBar(isDark),
@@ -142,7 +143,10 @@ class _FlashOrdersScreenState extends State<FlashOrdersScreen>
                             padding: EdgeInsets.all(AppSpacing.xs),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                                colors: [
+                                  AppColors.warning,
+                                  AppColors.warning.withOpacity(0.8)
+                                ],
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -156,7 +160,9 @@ class _FlashOrdersScreenState extends State<FlashOrdersScreen>
                           Text(
                             'Commandes Flash',
                             style: AppTextStyles.h2.copyWith(
-                              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                              color: isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -381,7 +387,7 @@ class _FlashOrdersScreenState extends State<FlashOrdersScreen>
   void _showConversionDialog(Order order) {
     final stepperController = Get.put(FlashOrderStepperController());
     stepperController.initDraftFromFlashOrder(order);
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -418,7 +424,6 @@ class _ModernBackButtonState extends State<_ModernBackButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -448,12 +453,10 @@ class _ModernBackButtonState extends State<_ModernBackButton>
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
-        _controller.forward();
+        setState(() => _controller.forward());
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
-        _controller.reverse();
+        setState(() => _controller.reverse());
       },
       child: AnimatedBuilder(
         animation: _scaleAnimation,
@@ -464,9 +467,7 @@ class _ModernBackButtonState extends State<_ModernBackButton>
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: _isHovered
-                    ? (isDark ? AppColors.gray700 : AppColors.gray100)
-                    : Colors.transparent,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isDark ? AppColors.gray600 : AppColors.gray300,
@@ -481,7 +482,8 @@ class _ModernBackButtonState extends State<_ModernBackButton>
                   child: Center(
                     child: Icon(
                       Icons.arrow_back,
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                       size: 24,
                     ),
                   ),
@@ -508,7 +510,7 @@ class _ModernStatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final count = controller.draftOrders.length;
-      
+
       return GlassContainer(
         variant: GlassContainerVariant.warning,
         padding: EdgeInsets.symmetric(
@@ -581,7 +583,6 @@ class _ModernRefreshButtonState extends State<_ModernRefreshButton>
   late AnimationController _controller;
   late Animation<double> _rotationAnimation;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -616,12 +617,10 @@ class _ModernRefreshButtonState extends State<_ModernRefreshButton>
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
-        _controller.forward();
+        setState(() => _controller.forward());
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
-        _controller.reverse();
+        setState(() => _controller.reverse());
       },
       child: AnimatedBuilder(
         animation: _controller,
@@ -629,7 +628,7 @@ class _ModernRefreshButtonState extends State<_ModernRefreshButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: GlassContainer(
-              variant: GlassContainerVariant.accent,
+              variant: GlassContainerVariant.info,
               padding: EdgeInsets.all(AppSpacing.md),
               borderRadius: AppRadius.lg,
               onTap: widget.onPressed,
@@ -642,7 +641,8 @@ class _ModernRefreshButtonState extends State<_ModernRefreshButton>
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : Transform.rotate(
@@ -684,7 +684,6 @@ class _ModernActionButtonState extends State<_ModernActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -723,12 +722,10 @@ class _ModernActionButtonState extends State<_ModernActionButton>
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
-        _controller.forward();
+        setState(() => _controller.forward());
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
-        _controller.reverse();
+        setState(() => _controller.reverse());
       },
       child: AnimatedBuilder(
         animation: _scaleAnimation,
@@ -746,22 +743,18 @@ class _ModernActionButtonState extends State<_ModernActionButton>
               borderRadius: AppRadius.lg,
               onTap: widget.onPressed,
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     widget.icon,
-                    color: widget.variant == _FlashActionVariant.primary
-                        ? Colors.white
-                        : variantColor,
+                    color: variantColor,
                     size: 20,
                   ),
                   SizedBox(width: AppSpacing.sm),
                   Text(
                     widget.label,
                     style: AppTextStyles.buttonMedium.copyWith(
-                      color: widget.variant == _FlashActionVariant.primary
-                          ? Colors.white
-                          : variantColor,
+                      color: variantColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

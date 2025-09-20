@@ -9,7 +9,6 @@ import 'flash_steps/flash_service_step.dart';
 import 'flash_steps/flash_address_step.dart';
 import 'flash_steps/flash_extra_fields_step.dart';
 import 'flash_steps/flash_summary_step.dart';
-import '../../../../widgets/shared/glass_button.dart';
 
 class FlashOrderStepper extends StatefulWidget {
   @override
@@ -138,7 +137,7 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) _animateStepChange();
             });
-            
+
             return AnimatedBuilder(
               animation: _stepAnimationController,
               builder: (context, child) {
@@ -176,8 +175,8 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                 ],
               ),
               borderRadius: BorderRadius.only(
-                topLeft: AppRadius.xl.topLeft,
-                topRight: AppRadius.xl.topRight,
+                topLeft: Radius.circular(AppRadius.xl),
+                topRight: Radius.circular(AppRadius.xl),
               ),
             ),
             child: Row(
@@ -186,7 +185,10 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                   padding: EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                      colors: [
+                        AppColors.warning,
+                        AppColors.warning.withOpacity(0.8)
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
@@ -211,7 +213,9 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                       Text(
                         'Conversion Flash Order',
                         style: AppTextStyles.h2.copyWith(
-                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -243,7 +247,7 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
       ),
       child: Obx(() {
         final currentStep = controller.currentStep.value;
-        
+
         return Column(
           children: [
             // Progress bar avec gradient flash
@@ -274,7 +278,7 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
               ),
             ),
             SizedBox(height: AppSpacing.md),
-            
+
             // Step info avec design flash
             Row(
               children: [
@@ -291,7 +295,8 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
-                        color: (steps[currentStep]['color'] as Color).withOpacity(0.4),
+                        color: (steps[currentStep]['color'] as Color)
+                            .withOpacity(0.4),
                         blurRadius: 12,
                         offset: Offset(0, 4),
                       ),
@@ -338,7 +343,9 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                       Text(
                         steps[currentStep]['title'] as String,
                         style: AppTextStyles.h3.copyWith(
-                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -356,7 +363,7 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                   children: List.generate(steps.length, (index) {
                     final isActive = index == currentStep;
                     final isCompleted = index < currentStep;
-                    
+
                     return Container(
                       margin: EdgeInsets.symmetric(horizontal: 3),
                       width: isActive ? 16 : 12,
@@ -366,7 +373,8 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                             ? LinearGradient(
                                 colors: [
                                   steps[index]['color'] as Color,
-                                  (steps[index]['color'] as Color).withOpacity(0.8),
+                                  (steps[index]['color'] as Color)
+                                      .withOpacity(0.8),
                                 ],
                               )
                             : null,
@@ -377,7 +385,8 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                         boxShadow: isActive
                             ? [
                                 BoxShadow(
-                                  color: (steps[index]['color'] as Color).withOpacity(0.5),
+                                  color: (steps[index]['color'] as Color)
+                                      .withOpacity(0.5),
                                   blurRadius: 6,
                                   offset: Offset(0, 2),
                                 ),
@@ -422,19 +431,20 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
         ),
         border: Border(
           top: BorderSide(
-            color: (isDark ? AppColors.gray700 : AppColors.gray200).withOpacity(0.5),
+            color: (isDark ? AppColors.gray700 : AppColors.gray200)
+                .withOpacity(0.5),
           ),
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: AppRadius.xl.bottomLeft,
-          bottomRight: AppRadius.xl.bottomRight,
+          bottomLeft: Radius.circular(AppRadius.xl),
+          bottomRight: Radius.circular(AppRadius.xl),
         ),
       ),
       child: Obx(() {
         final isLoading = controller.isLoading.value;
         final currentStep = controller.currentStep.value;
         final isLastStep = currentStep >= steps.length - 1;
-        
+
         return Row(
           children: [
             // Bouton Retour/Annuler
@@ -443,37 +453,43 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                 label: currentStep == 0 ? 'Annuler' : 'Retour',
                 icon: currentStep == 0 ? Icons.close : Icons.arrow_back,
                 variant: _FlashStepButtonVariant.secondary,
-                onPressed: isLoading ? null : () {
-                  if (currentStep > 0) {
-                    controller.previousStep();
-                  } else {
-                    Get.back();
-                  }
-                },
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        if (currentStep > 0) {
+                          controller.previousStep();
+                        } else {
+                          Get.back();
+                        }
+                      },
                 isLoading: false,
               ),
             ),
-            
+
             SizedBox(width: AppSpacing.md),
-            
+
             // Bouton Suivant/Convertir
             Expanded(
               flex: 2,
               child: _ModernFlashStepButton(
-                label: isLastStep 
-                    ? (isLoading ? 'Conversion en cours...' : 'Convertir en Commande')
+                label: isLastStep
+                    ? (isLoading
+                        ? 'Conversion en cours...'
+                        : 'Convertir en Commande')
                     : 'Suivant',
-                icon: isLastStep 
+                icon: isLastStep
                     ? (isLoading ? null : Icons.transform)
                     : Icons.arrow_forward,
                 variant: _FlashStepButtonVariant.primary,
-                onPressed: isLoading ? null : () async {
-                  if (isLastStep) {
-                    await controller.submitConversion();
-                  } else {
-                    controller.nextStep();
-                  }
-                },
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        if (isLastStep) {
+                          await controller.submitConversion();
+                        } else {
+                          controller.nextStep();
+                        }
+                      },
                 isLoading: isLoading,
               ),
             ),
@@ -489,7 +505,8 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
       context: context,
       builder: (_) => _ModernConfirmationDialog(
         title: 'Annuler la conversion ?',
-        message: 'Êtes-vous sûr de vouloir annuler la conversion de cette commande flash ?',
+        message:
+            'Êtes-vous sûr de vouloir annuler la conversion de cette commande flash ?',
         confirmText: 'Annuler',
         cancelText: 'Continuer',
         onConfirm: () {
@@ -504,6 +521,7 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
 
 // Composants modernes pour le Flash Order Stepper
 enum _FlashStepButtonVariant { primary, secondary }
+
 enum _FlashConfirmationVariant { warning, error, info }
 
 class _ModernCloseButton extends StatefulWidget {
@@ -585,7 +603,9 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
                       Icons.close,
                       color: _isHovered
                           ? AppColors.error
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       size: 22,
                     ),
                   ),
@@ -696,7 +716,9 @@ class _ModernFlashStepButtonState extends State<_ModernFlashStepButton>
                       widget.icon,
                       color: widget.variant == _FlashStepButtonVariant.primary
                           ? Colors.white
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       size: 20,
                     ),
                     SizedBox(width: AppSpacing.sm),
@@ -706,7 +728,9 @@ class _ModernFlashStepButtonState extends State<_ModernFlashStepButton>
                     style: AppTextStyles.buttonMedium.copyWith(
                       color: widget.variant == _FlashStepButtonVariant.primary
                           ? Colors.white
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -824,7 +848,9 @@ class _ModernConfirmationDialog extends StatelessWidget {
                         child: Text(
                           cancelText,
                           style: AppTextStyles.buttonMedium.copyWith(
-                            color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                            color: isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

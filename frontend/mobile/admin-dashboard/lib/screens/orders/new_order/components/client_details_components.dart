@@ -6,18 +6,18 @@ import 'package:admin/widgets/shared/glass_container.dart';
 import 'package:admin/models/address.dart';
 
 // Composants modernes pour le ClientDetailsDialog
-enum _ClientActionVariant { primary, secondary, info, warning, error }
+enum ClientActionVariant { primary, secondary, info, warning, error }
 
-class _ModernCloseButton extends StatefulWidget {
+class ModernCloseButton extends StatefulWidget {
   final VoidCallback onPressed;
 
-  const _ModernCloseButton({required this.onPressed});
+  const ModernCloseButton({required this.onPressed});
 
   @override
-  _ModernCloseButtonState createState() => _ModernCloseButtonState();
+  ModernCloseButtonState createState() => ModernCloseButtonState();
 }
 
-class _ModernCloseButtonState extends State<_ModernCloseButton>
+class ModernCloseButtonState extends State<ModernCloseButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -87,7 +87,9 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
                       Icons.close,
                       color: _isHovered
                           ? AppColors.error
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       size: 20,
                     ),
                   ),
@@ -101,14 +103,14 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
   }
 }
 
-class _ModernTextField extends StatefulWidget {
+class ModernTextField extends StatefulWidget {
   final TextEditingController controller;
   final String label;
   final IconData icon;
   final TextInputType keyboardType;
   final bool isDark;
 
-  const _ModernTextField({
+  const ModernTextField({
     required this.controller,
     required this.label,
     required this.icon,
@@ -117,22 +119,24 @@ class _ModernTextField extends StatefulWidget {
   });
 
   @override
-  _ModernTextFieldState createState() => _ModernTextFieldState();
+  ModernTextFieldState createState() => ModernTextFieldState();
 }
 
-class _ModernTextFieldState extends State<_ModernTextField> {
+class ModernTextFieldState extends State<ModernTextField> {
   bool _isFocused = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
-        borderRadius: AppRadius.md,
+        color: (widget.isDark ? AppColors.gray700 : AppColors.gray100)
+            .withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: _isFocused
               ? AppColors.primary.withOpacity(0.5)
-              : (widget.isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+              : (widget.isDark ? AppColors.gray600 : AppColors.gray300)
+                  .withOpacity(0.5),
         ),
       ),
       child: TextFormField(
@@ -165,24 +169,23 @@ class _ModernTextFieldState extends State<_ModernTextField> {
   }
 }
 
-class _ModernSaveButton extends StatefulWidget {
+class ModernSaveButton extends StatefulWidget {
   final bool isLoading;
   final VoidCallback? onPressed;
 
-  const _ModernSaveButton({
+  const ModernSaveButton({
     required this.isLoading,
     required this.onPressed,
   });
 
   @override
-  _ModernSaveButtonState createState() => _ModernSaveButtonState();
+  ModernSaveButtonState createState() => ModernSaveButtonState();
 }
 
-class _ModernSaveButtonState extends State<_ModernSaveButton>
+class ModernSaveButtonState extends State<ModernSaveButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -211,12 +214,10 @@ class _ModernSaveButtonState extends State<_ModernSaveButton>
     return MouseRegion(
       onEnter: (_) {
         if (widget.onPressed != null) {
-          setState(() => _isHovered = true);
           _controller.forward();
         }
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -270,13 +271,13 @@ class _ModernSaveButtonState extends State<_ModernSaveButton>
   }
 }
 
-class _ModernActionButton extends StatefulWidget {
+class ModernActionButton extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;
-  final _ClientActionVariant variant;
+  final ClientActionVariant variant;
 
-  const _ModernActionButton({
+  const ModernActionButton({
     required this.icon,
     required this.label,
     required this.onPressed,
@@ -284,14 +285,13 @@ class _ModernActionButton extends StatefulWidget {
   });
 
   @override
-  _ModernActionButtonState createState() => _ModernActionButtonState();
+  ModernActionButtonState createState() => ModernActionButtonState();
 }
 
-class _ModernActionButtonState extends State<_ModernActionButton>
+class ModernActionButtonState extends State<ModernActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -317,15 +317,15 @@ class _ModernActionButtonState extends State<_ModernActionButton>
 
   Color _getVariantColor() {
     switch (widget.variant) {
-      case _ClientActionVariant.primary:
+      case ClientActionVariant.primary:
         return AppColors.primary;
-      case _ClientActionVariant.secondary:
+      case ClientActionVariant.secondary:
         return AppColors.gray600;
-      case _ClientActionVariant.info:
+      case ClientActionVariant.info:
         return AppColors.info;
-      case _ClientActionVariant.warning:
+      case ClientActionVariant.warning:
         return AppColors.warning;
-      case _ClientActionVariant.error:
+      case ClientActionVariant.error:
         return AppColors.error;
     }
   }
@@ -338,12 +338,10 @@ class _ModernActionButtonState extends State<_ModernActionButton>
     return MouseRegion(
       onEnter: (_) {
         if (isEnabled) {
-          setState(() => _isHovered = true);
           _controller.forward();
         }
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -352,7 +350,7 @@ class _ModernActionButtonState extends State<_ModernActionButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: GlassContainer(
-              variant: widget.variant == _ClientActionVariant.warning
+              variant: widget.variant == ClientActionVariant.warning
                   ? GlassContainerVariant.warning
                   : GlassContainerVariant.neutral,
               padding: EdgeInsets.symmetric(
@@ -366,7 +364,7 @@ class _ModernActionButtonState extends State<_ModernActionButton>
                 children: [
                   Icon(
                     widget.icon,
-                    color: widget.variant == _ClientActionVariant.warning
+                    color: widget.variant == ClientActionVariant.warning
                         ? Colors.white
                         : variantColor,
                     size: 18,
@@ -375,7 +373,7 @@ class _ModernActionButtonState extends State<_ModernActionButton>
                   Text(
                     widget.label,
                     style: AppTextStyles.buttonMedium.copyWith(
-                      color: widget.variant == _ClientActionVariant.warning
+                      color: widget.variant == ClientActionVariant.warning
                           ? Colors.white
                           : variantColor,
                       fontWeight: FontWeight.w600,
@@ -391,28 +389,26 @@ class _ModernActionButtonState extends State<_ModernActionButton>
   }
 }
 
-class _AddressCard extends StatefulWidget {
+class AddressCard extends StatefulWidget {
   final Address address;
   final bool isDark;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  const _AddressCard({
+  const AddressCard({
     required this.address,
     required this.isDark,
     required this.onEdit,
     required this.onDelete,
   });
-
   @override
-  _AddressCardState createState() => _AddressCardState();
+  AddressCardState createState() => AddressCardState();
 }
 
-class _AddressCardState extends State<_AddressCard>
+class AddressCardState extends State<AddressCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -440,11 +436,9 @@ class _AddressCardState extends State<_AddressCard>
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _isHovered = true);
         _controller.forward();
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -468,29 +462,36 @@ class _AddressCardState extends State<_AddressCard>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: widget.address.isDefault
-                              ? [AppColors.info, AppColors.info.withOpacity(0.8)]
+                              ? [
+                                  AppColors.info,
+                                  AppColors.info.withOpacity(0.8)
+                                ]
                               : [AppColors.gray500, AppColors.gray400],
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        widget.address.isDefault ? Icons.home : Icons.location_on,
+                        widget.address.isDefault
+                            ? Icons.home
+                            : Icons.location_on,
                         color: Colors.white,
                         size: 20,
                       ),
                     ),
                     SizedBox(width: AppSpacing.md),
-                    
+
                     // Informations de l'adresse
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (widget.address.name.isNotEmpty) ...[
+                          if ((widget.address.name ?? '').isNotEmpty) ...[
                             Text(
-                              widget.address.name,
+                              widget.address.name ?? '',
                               style: AppTextStyles.bodyMedium.copyWith(
-                                color: widget.isDark ? AppColors.textLight : AppColors.textPrimary,
+                                color: widget.isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textPrimary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -499,13 +500,17 @@ class _AddressCardState extends State<_AddressCard>
                           Text(
                             widget.address.street,
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: widget.isDark ? AppColors.gray300 : AppColors.gray700,
+                              color: widget.isDark
+                                  ? AppColors.gray300
+                                  : AppColors.gray700,
                             ),
                           ),
                           Text(
                             '${widget.address.city} ${widget.address.postalCode}',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: widget.isDark ? AppColors.gray400 : AppColors.gray600,
+                              color: widget.isDark
+                                  ? AppColors.gray400
+                                  : AppColors.gray600,
                             ),
                           ),
                           if (widget.address.isDefault) ...[
@@ -532,18 +537,18 @@ class _AddressCardState extends State<_AddressCard>
                         ],
                       ),
                     ),
-                    
+
                     // Actions
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _AddressActionButton(
+                        AddressActionButton(
                           icon: Icons.edit,
                           onPressed: widget.onEdit,
                           color: AppColors.warning,
                         ),
                         SizedBox(width: AppSpacing.sm),
-                        _AddressActionButton(
+                        AddressActionButton(
                           icon: Icons.delete,
                           onPressed: widget.onDelete,
                           color: AppColors.error,
@@ -561,22 +566,22 @@ class _AddressCardState extends State<_AddressCard>
   }
 }
 
-class _AddressActionButton extends StatefulWidget {
+class AddressActionButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback onPressed;
   final Color color;
 
-  const _AddressActionButton({
+  const AddressActionButton({
     required this.icon,
     required this.onPressed,
     required this.color,
   });
 
   @override
-  _AddressActionButtonState createState() => _AddressActionButtonState();
+  AddressActionButtonState createState() => AddressActionButtonState();
 }
 
-class _AddressActionButtonState extends State<_AddressActionButton>
+class AddressActionButtonState extends State<AddressActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -642,14 +647,14 @@ class _AddressActionButtonState extends State<_AddressActionButton>
   }
 }
 
-class _ModernConfirmDialog extends StatelessWidget {
+class ModernConfirmDialog extends StatelessWidget {
   final String title;
   final String message;
   final String confirmText;
   final String cancelText;
   final bool isDestructive;
 
-  const _ModernConfirmDialog({
+  const ModernConfirmDialog({
     required this.title,
     required this.message,
     required this.confirmText,
@@ -680,7 +685,10 @@ class _ModernConfirmDialog extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: isDestructive
                         ? [AppColors.error, AppColors.error.withOpacity(0.8)]
-                        : [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                        : [
+                            AppColors.warning,
+                            AppColors.warning.withOpacity(0.8)
+                          ],
                   ),
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -691,7 +699,7 @@ class _ModernConfirmDialog extends StatelessWidget {
                 ),
               ),
               SizedBox(height: AppSpacing.lg),
-              
+
               // Titre
               Text(
                 title,
@@ -702,7 +710,7 @@ class _ModernConfirmDialog extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppSpacing.md),
-              
+
               // Message
               Text(
                 message,
@@ -712,27 +720,27 @@ class _ModernConfirmDialog extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppSpacing.xl),
-              
+
               // Actions
               Row(
                 children: [
                   Expanded(
-                    child: _ModernActionButton(
+                    child: ModernActionButton(
                       icon: Icons.close,
                       label: cancelText,
                       onPressed: () => Get.back(result: false),
-                      variant: _ClientActionVariant.secondary,
+                      variant: ClientActionVariant.secondary,
                     ),
                   ),
                   SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: _ModernActionButton(
+                    child: ModernActionButton(
                       icon: isDestructive ? Icons.delete : Icons.check,
                       label: confirmText,
                       onPressed: () => Get.back(result: true),
-                      variant: isDestructive 
-                          ? _ClientActionVariant.error 
-                          : _ClientActionVariant.primary,
+                      variant: isDestructive
+                          ? ClientActionVariant.error
+                          : ClientActionVariant.primary,
                     ),
                   ),
                 ],
@@ -745,11 +753,11 @@ class _ModernConfirmDialog extends StatelessWidget {
   }
 }
 
-class _ModernPasswordResetDialog extends StatelessWidget {
+class ModernPasswordResetDialog extends StatelessWidget {
   final dynamic user;
   final String tempPassword;
 
-  const _ModernPasswordResetDialog({
+  const ModernPasswordResetDialog({
     required this.user,
     required this.tempPassword,
   });
@@ -775,7 +783,10 @@ class _ModernPasswordResetDialog extends StatelessWidget {
                 height: 60,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                    colors: [
+                      AppColors.success,
+                      AppColors.success.withOpacity(0.8)
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(30),
                 ),
@@ -786,7 +797,7 @@ class _ModernPasswordResetDialog extends StatelessWidget {
                 ),
               ),
               SizedBox(height: AppSpacing.lg),
-              
+
               Text(
                 'Mot de passe réinitialisé',
                 style: AppTextStyles.h2.copyWith(
@@ -796,7 +807,7 @@ class _ModernPasswordResetDialog extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: AppSpacing.lg),
-              
+
               // Informations client
               GlassContainer(
                 variant: GlassContainerVariant.neutral,
@@ -805,17 +816,17 @@ class _ModernPasswordResetDialog extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _InfoRow(
+                    InfoRow(
                       label: 'Client',
                       value: '${user['firstName']} ${user['lastName']}',
                       isDark: isDark,
                     ),
-                    _InfoRow(
+                    InfoRow(
                       label: 'Email',
                       value: user['email'],
                       isDark: isDark,
                     ),
-                    _InfoRow(
+                    InfoRow(
                       label: 'Téléphone',
                       value: user['phone'] ?? '-',
                       isDark: isDark,
@@ -824,7 +835,7 @@ class _ModernPasswordResetDialog extends StatelessWidget {
                 ),
               ),
               SizedBox(height: AppSpacing.lg),
-              
+
               // Nouveau mot de passe
               GlassContainer(
                 variant: GlassContainerVariant.warning,
@@ -853,25 +864,25 @@ class _ModernPasswordResetDialog extends StatelessWidget {
                 ),
               ),
               SizedBox(height: AppSpacing.xl),
-              
+
               // Actions
               Row(
                 children: [
                   Expanded(
-                    child: _ModernActionButton(
+                    child: ModernActionButton(
                       icon: Icons.copy,
                       label: 'Copier tout',
                       onPressed: () => _copyInfo(),
-                      variant: _ClientActionVariant.info,
+                      variant: ClientActionVariant.info,
                     ),
                   ),
                   SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: _ModernActionButton(
+                    child: ModernActionButton(
                       icon: Icons.close,
                       label: 'Fermer',
                       onPressed: () => Get.back(),
-                      variant: _ClientActionVariant.secondary,
+                      variant: ClientActionVariant.secondary,
                     ),
                   ),
                 ],
@@ -888,9 +899,9 @@ class _ModernPasswordResetDialog extends StatelessWidget {
 Email : ${user['email']}
 Téléphone : ${user['phone'] ?? '-'}
 Nouveau mot de passe : $tempPassword''';
-    
+
     Clipboard.setData(ClipboardData(text: info));
-    
+
     Get.closeAllSnackbars();
     Get.rawSnackbar(
       messageText: Row(
@@ -927,12 +938,12 @@ Nouveau mot de passe : $tempPassword''';
   }
 }
 
-class _InfoRow extends StatelessWidget {
+class InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isDark;
 
-  const _InfoRow({
+  const InfoRow({
     required this.label,
     required this.value,
     required this.isDark,

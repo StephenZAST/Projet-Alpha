@@ -1,10 +1,8 @@
-import 'package:admin/widgets/shared/glass_button.dart';
 import 'package:admin/widgets/shared/glass_container.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../constants.dart';
 import '../../../../../controllers/orders_controller.dart';
-import '../../../../../models/user.dart';
 import '../create_client_dialog.dart';
 import '../client_details_dialog.dart';
 import 'client_selection_components.dart';
@@ -164,7 +162,8 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
             ),
           ),
           Obx(() {
-            if (controller.selectedClientId.value.isNotEmpty) {
+            final selectedId = controller.selectedClientId.value;
+            if (selectedId != null && selectedId.isNotEmpty) {
               return Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
@@ -172,9 +171,12 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                    colors: [
+                      AppColors.success,
+                      AppColors.success.withOpacity(0.8)
+                    ],
                   ),
-                  borderRadius: AppRadius.md,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -237,20 +239,18 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
           Row(
             children: [
               Expanded(
                 flex: 2,
-                child: _ModernSearchField(
+                child: ModernSearchField(
                   controller: searchController,
-                  onChanged: (value) => _performSearch(),
                   isDark: isDark,
                 ),
               ),
               SizedBox(width: AppSpacing.md),
               Expanded(
-                child: _ModernFilterDropdown(
+                child: ModernFilterDropdown(
                   value: selectedFilter,
                   onChanged: (value) {
                     setState(() {
@@ -266,13 +266,11 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
               ),
             ],
           ),
-          
           SizedBox(height: AppSpacing.md),
-          
           Row(
             children: [
               Expanded(
-                child: _ModernActionButton(
+                child: ModernActionButton(
                   icon: Icons.refresh,
                   label: 'Réinitialiser',
                   onPressed: () {
@@ -280,18 +278,17 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
                     setState(() => selectedFilter = 'all');
                     controller.loadClients();
                   },
-                  variant: _ClientActionVariant.secondary,
+                  variant: ClientActionVariant.secondary,
                 ),
               ),
               SizedBox(width: AppSpacing.md),
               Expanded(
-                child: Obx(() => _ModernActionButton(
-                  icon: Icons.search,
-                  label: 'Rechercher',
-                  onPressed: _performSearch,
-                  variant: _ClientActionVariant.primary,
-                  isLoading: controller.isLoadingClients.value,
-                )),
+                child: Obx(() => ModernActionButton(
+                      icon: Icons.search,
+                      label: 'Rechercher',
+                      onPressed: _performSearch,
+                      variant: ClientActionVariant.primary,
+                    )),
               ),
             ],
           ),
@@ -306,9 +303,10 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
         return _buildLoadingState(isDark);
       }
 
-      final clientsToShow = controller.filteredClients.isEmpty && searchController.text.isEmpty
-          ? controller.clients
-          : controller.filteredClients;
+      final clientsToShow =
+          controller.filteredClients.isEmpty && searchController.text.isEmpty
+              ? controller.clients
+              : controller.filteredClients;
 
       if (clientsToShow.isEmpty) {
         return _buildEmptyState(isDark);
@@ -339,15 +337,15 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
               ],
             ),
             SizedBox(height: AppSpacing.md),
-            
             Expanded(
               child: ListView.separated(
                 itemCount: clientsToShow.length,
                 separatorBuilder: (_, __) => SizedBox(height: AppSpacing.sm),
                 itemBuilder: (context, index) {
-                  return _ClientCard(
+                  return ClientCard(
                     client: clientsToShow[index],
-                    isSelected: controller.selectedClientId.value == clientsToShow[index].id,
+                    isSelected: controller.selectedClientId.value ==
+                        clientsToShow[index].id,
                     onSelect: () {
                       controller.selectClient(clientsToShow[index].id);
                       controller.setSelectedClient(clientsToShow[index].id);
@@ -380,7 +378,10 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
               height: 60,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.6)],
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.6)
+                  ],
                 ),
                 borderRadius: BorderRadius.circular(30),
               ),
@@ -483,11 +484,11 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
               ],
             ),
           ),
-          _ModernActionButton(
+          ModernActionButton(
             icon: Icons.add,
             label: 'Nouveau Client',
             onPressed: () => Get.dialog(CreateClientDialog()),
-            variant: _ClientActionVariant.info,
+            variant: ClientActionVariant.info,
           ),
         ],
       ),

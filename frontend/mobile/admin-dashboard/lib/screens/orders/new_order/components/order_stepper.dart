@@ -9,7 +9,6 @@ import 'steps/service_selection_step.dart';
 import 'steps/order_summary_step.dart';
 import 'steps/order_address_step.dart';
 import 'steps/order_extra_fields_step.dart';
-import '../../../../widgets/shared/glass_button.dart';
 import '../../../../services/article_service_couple_service.dart';
 
 class OrderStepper extends StatefulWidget {
@@ -129,7 +128,7 @@ class _OrderStepperState extends State<OrderStepper>
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) _animateStepChange();
             });
-            
+
             return AnimatedBuilder(
               animation: _stepAnimationController,
               builder: (context, child) {
@@ -154,7 +153,7 @@ class _OrderStepperState extends State<OrderStepper>
       padding: EdgeInsets.all(AppSpacing.lg),
       child: Obx(() {
         final currentStep = controller.currentStep.value;
-        
+
         return Column(
           children: [
             // Progress bar
@@ -178,7 +177,7 @@ class _OrderStepperState extends State<OrderStepper>
               ),
             ),
             SizedBox(height: AppSpacing.md),
-            
+
             // Step info
             Row(
               children: [
@@ -195,7 +194,8 @@ class _OrderStepperState extends State<OrderStepper>
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: (steps[currentStep]['color'] as Color).withOpacity(0.3),
+                        color: (steps[currentStep]['color'] as Color)
+                            .withOpacity(0.3),
                         blurRadius: 8,
                         offset: Offset(0, 2),
                       ),
@@ -222,7 +222,9 @@ class _OrderStepperState extends State<OrderStepper>
                       Text(
                         steps[currentStep]['title'] as String,
                         style: AppTextStyles.h3.copyWith(
-                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -240,7 +242,7 @@ class _OrderStepperState extends State<OrderStepper>
                   children: List.generate(steps.length, (index) {
                     final isActive = index == currentStep;
                     final isCompleted = index < currentStep;
-                    
+
                     return Container(
                       margin: EdgeInsets.symmetric(horizontal: 2),
                       width: isActive ? 12 : 8,
@@ -253,7 +255,8 @@ class _OrderStepperState extends State<OrderStepper>
                         boxShadow: isActive
                             ? [
                                 BoxShadow(
-                                  color: (steps[index]['color'] as Color).withOpacity(0.4),
+                                  color: (steps[index]['color'] as Color)
+                                      .withOpacity(0.4),
                                   blurRadius: 4,
                                   offset: Offset(0, 1),
                                 ),
@@ -292,7 +295,8 @@ class _OrderStepperState extends State<OrderStepper>
         ),
         border: Border(
           top: BorderSide(
-            color: (isDark ? AppColors.gray700 : AppColors.gray200).withOpacity(0.5),
+            color: (isDark ? AppColors.gray700 : AppColors.gray200)
+                .withOpacity(0.5),
           ),
         ),
       ),
@@ -300,46 +304,50 @@ class _OrderStepperState extends State<OrderStepper>
         final isLoading = controller.isLoading.value;
         final currentStep = controller.currentStep.value;
         final isLastStep = currentStep >= steps.length - 1;
-        
+
         return Row(
           children: [
             // Bouton Retour
             Expanded(
-              child: _ModernStepButton(
+              child: ModernStepButton(
                 label: currentStep == 0 ? 'Annuler' : 'Retour',
                 icon: currentStep == 0 ? Icons.close : Icons.arrow_back,
-                variant: _StepButtonVariant.secondary,
-                onPressed: isLoading ? null : () {
-                  if (currentStep > 0) {
-                    controller.currentStep.value--;
-                  } else {
-                    Get.back();
-                  }
-                },
+                variant: StepButtonVariant.secondary,
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        if (currentStep > 0) {
+                          controller.currentStep.value--;
+                        } else {
+                          Get.back();
+                        }
+                      },
                 isLoading: false,
               ),
             ),
-            
+
             SizedBox(width: AppSpacing.md),
-            
+
             // Bouton Suivant/Créer
             Expanded(
               flex: 2,
-              child: _ModernStepButton(
-                label: isLastStep 
+              child: ModernStepButton(
+                label: isLastStep
                     ? (isLoading ? 'Création en cours...' : 'Créer la commande')
                     : 'Suivant',
-                icon: isLastStep 
+                icon: isLastStep
                     ? (isLoading ? null : Icons.check_circle)
                     : Icons.arrow_forward,
-                variant: _StepButtonVariant.primary,
-                onPressed: isLoading ? null : () async {
-                  if (isLastStep) {
-                    await _submitOrderWithLoader();
-                  } else {
-                    await _handleNextStep();
-                  }
-                },
+                variant: StepButtonVariant.primary,
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        if (isLastStep) {
+                          await _submitOrderWithLoader();
+                        } else {
+                          await _handleNextStep();
+                        }
+                      },
                 isLoading: isLoading,
               ),
             ),
@@ -351,7 +359,7 @@ class _OrderStepperState extends State<OrderStepper>
 
   Future<void> _handleNextStep() async {
     final currentStep = controller.currentStep.value;
-    
+
     // Logique spécifique pour chaque étape
     if (currentStep == 2) {
       // Étape adresse - sélectionner une adresse par défaut si nécessaire
@@ -362,13 +370,13 @@ class _OrderStepperState extends State<OrderStepper>
         controller.setSelectedAddress(defaultAddress.id);
       }
     }
-    
+
     if (currentStep == 2) {
       // Synchronisation avant le récapitulatif
       final items = controller.orderDraft.value.items;
       final serviceTypeId = controller.orderDraft.value.serviceTypeId;
       final serviceId = controller.orderDraft.value.serviceId;
-      
+
       List<Map<String, dynamic>> couples = [];
       if (serviceTypeId != null && serviceId != null) {
         try {
@@ -380,18 +388,18 @@ class _OrderStepperState extends State<OrderStepper>
           print('[OrderStepper] Erreur lors du rechargement des couples: $e');
         }
       }
-      
+
       final selectedService = controller.lastSelectedService;
       final selectedServiceType = controller.lastSelectedServiceType;
       final isPremium = controller.lastIsPremium;
       final weight = controller.lastWeight;
       final showPremiumSwitch = controller.lastShowPremiumSwitch;
       final selectedArticles = <String, int>{};
-      
+
       for (final item in items) {
         selectedArticles[item.articleId] = item.quantity;
       }
-      
+
       controller.syncSelectedItemsFrom(
         selectedArticles: selectedArticles,
         couples: couples,
@@ -402,7 +410,7 @@ class _OrderStepperState extends State<OrderStepper>
         showPremiumSwitch: showPremiumSwitch,
       );
     }
-    
+
     controller.currentStep.value++;
   }
 
@@ -431,16 +439,16 @@ class _OrderStepperState extends State<OrderStepper>
 }
 
 // Composants modernes pour le stepper
-enum _StepButtonVariant { primary, secondary }
+enum StepButtonVariant { primary, secondary }
 
-class _ModernStepButton extends StatefulWidget {
+class ModernStepButton extends StatefulWidget {
   final String label;
   final IconData? icon;
-  final _StepButtonVariant variant;
+  final StepButtonVariant variant;
   final VoidCallback? onPressed;
   final bool isLoading;
 
-  const _ModernStepButton({
+  const ModernStepButton({
     required this.label,
     this.icon,
     required this.variant,
@@ -449,14 +457,13 @@ class _ModernStepButton extends StatefulWidget {
   });
 
   @override
-  _ModernStepButtonState createState() => _ModernStepButtonState();
+  ModernStepButtonState createState() => ModernStepButtonState();
 }
 
-class _ModernStepButtonState extends State<_ModernStepButton>
+class ModernStepButtonState extends State<ModernStepButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -488,12 +495,10 @@ class _ModernStepButtonState extends State<_ModernStepButton>
     return MouseRegion(
       onEnter: (_) {
         if (isEnabled) {
-          setState(() => _isHovered = true);
           _controller.forward();
         }
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -502,7 +507,7 @@ class _ModernStepButtonState extends State<_ModernStepButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: GlassContainer(
-              variant: widget.variant == _StepButtonVariant.primary
+              variant: widget.variant == StepButtonVariant.primary
                   ? GlassContainerVariant.primary
                   : GlassContainerVariant.neutral,
               padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -518,7 +523,7 @@ class _ModernStepButtonState extends State<_ModernStepButton>
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          widget.variant == _StepButtonVariant.primary
+                          widget.variant == StepButtonVariant.primary
                               ? Colors.white
                               : AppColors.primary,
                         ),
@@ -528,9 +533,11 @@ class _ModernStepButtonState extends State<_ModernStepButton>
                   ] else if (widget.icon != null) ...[
                     Icon(
                       widget.icon,
-                      color: widget.variant == _StepButtonVariant.primary
+                      color: widget.variant == StepButtonVariant.primary
                           ? Colors.white
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       size: 20,
                     ),
                     SizedBox(width: AppSpacing.sm),
@@ -538,9 +545,11 @@ class _ModernStepButtonState extends State<_ModernStepButton>
                   Text(
                     widget.label,
                     style: AppTextStyles.buttonMedium.copyWith(
-                      color: widget.variant == _StepButtonVariant.primary
+                      color: widget.variant == StepButtonVariant.primary
                           ? Colors.white
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       fontWeight: FontWeight.w600,
                     ),
                   ),

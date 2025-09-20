@@ -188,7 +188,7 @@ class _ModernStatCardState extends State<_ModernStatCard>
       duration: Duration(milliseconds: 200),
       vsync: this,
     );
-    
+
     _elevationAnimation = Tween<double>(
       begin: 0.0,
       end: 8.0,
@@ -196,7 +196,7 @@ class _ModernStatCardState extends State<_ModernStatCard>
       parent: _hoverController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 1.02,
@@ -245,8 +245,7 @@ class _ModernStatCardState extends State<_ModernStatCard>
   }
 
   String _buildSubtitle() {
-    if (widget.change == 0) return null;
-    
+    if (widget.change == 0) return '';
     final isPositive = widget.change >= 0;
     final prefix = isPositive ? '+' : '';
     return '$prefix${widget.change.toStringAsFixed(1)}% ce mois';
@@ -257,7 +256,7 @@ class _ModernStatCardState extends State<_ModernStatCard>
     _hoverController.forward().then((_) {
       _hoverController.reverse();
     });
-    
+
     // Logique de navigation ou action selon le type de carte
     switch (widget.index) {
       case 0: // Revenus
@@ -288,7 +287,6 @@ class _SkeletonStatCard extends StatefulWidget {
 class _SkeletonStatCardState extends State<_SkeletonStatCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _shimmerController;
-  late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
@@ -297,14 +295,6 @@ class _SkeletonStatCardState extends State<_SkeletonStatCard>
       duration: Duration(milliseconds: 1500),
       vsync: this,
     );
-    
-    _shimmerAnimation = Tween<double>(
-      begin: -1.0,
-      end: 2.0,
-    ).animate(CurvedAnimation(
-      parent: _shimmerController,
-      curve: Curves.easeInOut,
-    ));
 
     _shimmerController.repeat();
   }
@@ -317,8 +307,6 @@ class _SkeletonStatCardState extends State<_SkeletonStatCard>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return GlassContainer(
       variant: GlassContainerVariant.neutral,
       child: Column(
@@ -377,7 +365,7 @@ class _ShimmerBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       width: width,
       height: height,
@@ -390,111 +378,3 @@ class _ShimmerBox extends StatelessWidget {
 }
 
 // Ancien composant conservé pour compatibilité
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color iconColor;
-  final double change;
-  final bool isDark;
-  final bool showChange;
-
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.iconColor,
-    required this.change,
-    required this.isDark,
-    this.showChange = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 300),
-      padding: EdgeInsets.all(defaultPadding),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: AppRadius.radiusMD,
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black12 : Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
-                  borderRadius: AppRadius.radiusSM,
-                ),
-                child: Icon(icon, color: iconColor),
-              ),
-              if (showChange && change != 0)
-                AnimatedContainer(
-                  duration: Duration(milliseconds: 300),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  decoration: BoxDecoration(
-                    color: (change >= 0 ? AppColors.success : AppColors.error)
-                        .withOpacity(0.1),
-                    borderRadius: AppRadius.radiusSM,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        change >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
-                        color:
-                            change >= 0 ? AppColors.success : AppColors.error,
-                        size: 16,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        '${change.abs().toStringAsFixed(1)}%',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color:
-                              change >= 0 ? AppColors.success : AppColors.error,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.md),
-          Text(
-            value,
-            style: AppTextStyles.h2.copyWith(
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
-          ),
-          SizedBox(height: AppSpacing.xs),
-          Text(
-            title,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: isDark ? AppColors.textLight : AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

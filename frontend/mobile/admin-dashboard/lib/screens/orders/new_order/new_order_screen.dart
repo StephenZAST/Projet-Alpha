@@ -60,7 +60,7 @@ class _NewOrderScreenState extends State<NewOrderScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark ? AppColors.darkBg : AppColors.bgColor,
       body: AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) {
@@ -111,7 +111,7 @@ class _NewOrderScreenState extends State<NewOrderScreen>
       ),
       child: Row(
         children: [
-          _ModernBackButton(
+          ModernBackButton(
             onPressed: () => _handleBack(),
           ),
           SizedBox(width: AppSpacing.md),
@@ -135,7 +135,7 @@ class _NewOrderScreenState extends State<NewOrderScreen>
               ],
             ),
           ),
-          _ModernResetButton(
+          ModernResetButton(
             onPressed: () => _handleReset(),
           ),
         ],
@@ -145,7 +145,7 @@ class _NewOrderScreenState extends State<NewOrderScreen>
 
   void _handleBack() {
     // Vérifier s'il y a des données non sauvegardées
-    if (controller.hasUnsavedChanges()) {
+    if (controller.hasUnsavedChanges) {
       _showExitConfirmation();
     } else {
       Get.back();
@@ -158,9 +158,10 @@ class _NewOrderScreenState extends State<NewOrderScreen>
 
   void _showExitConfirmation() {
     Get.dialog(
-      _ModernConfirmationDialog(
+      ModernConfirmationDialog(
         title: 'Quitter la création ?',
-        message: 'Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?',
+        message:
+            'Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?',
         confirmText: 'Quitter',
         cancelText: 'Continuer',
         onConfirm: () {
@@ -168,24 +169,26 @@ class _NewOrderScreenState extends State<NewOrderScreen>
           Get.back(); // Ferme le dialog
           Get.back(); // Ferme l'écran
         },
-        variant: _ConfirmationVariant.warning,
+        variant: ConfirmationVariant.warning,
       ),
     );
   }
 
   void _showResetConfirmation() {
     Get.dialog(
-      _ModernConfirmationDialog(
+      ModernConfirmationDialog(
         title: 'Réinitialiser la commande ?',
-        message: 'Cette action effacera toutes les données saisies. Cette action est irréversible.',
+        message:
+            'Cette action effacera toutes les données saisies. Cette action est irréversible.',
         confirmText: 'Réinitialiser',
         cancelText: 'Annuler',
         onConfirm: () {
           controller.resetOrderStepper();
           Get.back(); // Ferme le dialog
-          _showSuccessSnackbar('Commande réinitialisée', 'Le formulaire a été remis à zéro');
+          _showSuccessSnackbar(
+              'Commande réinitialisée', 'Le formulaire a été remis à zéro');
         },
-        variant: _ConfirmationVariant.error,
+        variant: ConfirmationVariant.error,
       ),
     );
   }
@@ -241,20 +244,21 @@ class _NewOrderScreenState extends State<NewOrderScreen>
 }
 
 // Composants modernes pour l'écran de création
-class _ModernBackButton extends StatefulWidget {
+class ModernBackButton extends StatefulWidget {
   final VoidCallback onPressed;
 
-  const _ModernBackButton({required this.onPressed});
+  const ModernBackButton({required this.onPressed});
 
   @override
-  _ModernBackButtonState createState() => _ModernBackButtonState();
+  ModernBackButtonState createState() => ModernBackButtonState();
 }
 
-class _ModernBackButtonState extends State<_ModernBackButton>
+class ModernBackButtonState extends State<ModernBackButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   bool _isHovered = false;
+  // hover state removed: animation controller drives visual feedback
 
   @override
   void initState() {
@@ -317,7 +321,8 @@ class _ModernBackButtonState extends State<_ModernBackButton>
                   child: Center(
                     child: Icon(
                       Icons.arrow_back,
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                       size: 24,
                     ),
                   ),
@@ -331,20 +336,20 @@ class _ModernBackButtonState extends State<_ModernBackButton>
   }
 }
 
-class _ModernResetButton extends StatefulWidget {
+class ModernResetButton extends StatefulWidget {
   final VoidCallback onPressed;
 
-  const _ModernResetButton({required this.onPressed});
+  const ModernResetButton({required this.onPressed});
 
   @override
-  _ModernResetButtonState createState() => _ModernResetButtonState();
+  ModernResetButtonState createState() => ModernResetButtonState();
 }
 
-class _ModernResetButtonState extends State<_ModernResetButton>
+class ModernResetButtonState extends State<ModernResetButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
+  // hover state removed: animation controller drives visual feedback
 
   @override
   void initState() {
@@ -371,14 +376,8 @@ class _ModernResetButtonState extends State<_ModernResetButton>
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      onEnter: (_) {
-        setState(() => _isHovered = true);
-        _controller.forward();
-      },
-      onExit: (_) {
-        setState(() => _isHovered = false);
-        _controller.reverse();
-      },
+      onEnter: (_) => _controller.forward(),
+      onExit: (_) => _controller.reverse(),
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
@@ -418,17 +417,17 @@ class _ModernResetButtonState extends State<_ModernResetButton>
   }
 }
 
-enum _ConfirmationVariant { warning, error, info }
+enum ConfirmationVariant { warning, error, info }
 
-class _ModernConfirmationDialog extends StatelessWidget {
+class ModernConfirmationDialog extends StatelessWidget {
   final String title;
   final String message;
   final String confirmText;
   final String cancelText;
   final VoidCallback onConfirm;
-  final _ConfirmationVariant variant;
+  final ConfirmationVariant variant;
 
-  const _ModernConfirmationDialog({
+  const ModernConfirmationDialog({
     required this.title,
     required this.message,
     required this.confirmText,
@@ -439,22 +438,22 @@ class _ModernConfirmationDialog extends StatelessWidget {
 
   Color _getVariantColor() {
     switch (variant) {
-      case _ConfirmationVariant.warning:
+      case ConfirmationVariant.warning:
         return AppColors.warning;
-      case _ConfirmationVariant.error:
+      case ConfirmationVariant.error:
         return AppColors.error;
-      case _ConfirmationVariant.info:
+      case ConfirmationVariant.info:
         return AppColors.info;
     }
   }
 
   IconData _getVariantIcon() {
     switch (variant) {
-      case _ConfirmationVariant.warning:
+      case ConfirmationVariant.warning:
         return Icons.warning_amber;
-      case _ConfirmationVariant.error:
+      case ConfirmationVariant.error:
         return Icons.error_outline;
-      case _ConfirmationVariant.info:
+      case ConfirmationVariant.info:
         return Icons.info_outline;
     }
   }
@@ -519,7 +518,9 @@ class _ModernConfirmationDialog extends StatelessWidget {
                         child: Text(
                           cancelText,
                           style: AppTextStyles.buttonMedium.copyWith(
-                            color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                            color: isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -529,7 +530,7 @@ class _ModernConfirmationDialog extends StatelessWidget {
                   SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: GlassContainer(
-                      variant: variant == _ConfirmationVariant.error
+                      variant: variant == ConfirmationVariant.error
                           ? GlassContainerVariant.error
                           : GlassContainerVariant.warning,
                       padding: EdgeInsets.symmetric(vertical: AppSpacing.md),

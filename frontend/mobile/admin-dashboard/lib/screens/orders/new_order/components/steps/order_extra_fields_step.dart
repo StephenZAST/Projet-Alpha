@@ -153,7 +153,10 @@ class _OrderExtraFieldsStepState extends State<OrderExtraFieldsStep>
                   padding: EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                      colors: [
+                        AppColors.warning,
+                        AppColors.warning.withOpacity(0.8)
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
@@ -225,27 +228,28 @@ class _OrderExtraFieldsStepState extends State<OrderExtraFieldsStep>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
           Row(
             children: [
               Expanded(
-                child: Obx(() => _ModernDateField(
-                  label: 'Date de Collecte',
-                  icon: Icons.schedule,
-                  value: controller.orderDraft.value.collectionDate,
-                  onChanged: (date) => controller.setOrderDraftField('collectionDate', date),
-                  isDark: isDark,
-                )),
+                child: Obx(() => ModernDateField(
+                      label: 'Date de Collecte',
+                      icon: Icons.schedule,
+                      value: controller.orderDraft.value.collectionDate,
+                      onChanged: (date) =>
+                          controller.setOrderDraftField('collectionDate', date),
+                      isDark: isDark,
+                    )),
               ),
               SizedBox(width: AppSpacing.md),
               Expanded(
-                child: Obx(() => _ModernDateField(
-                  label: 'Date de Livraison',
-                  icon: Icons.local_shipping,
-                  value: controller.orderDraft.value.deliveryDate,
-                  onChanged: (date) => controller.setOrderDraftField('deliveryDate', date),
-                  isDark: isDark,
-                )),
+                child: Obx(() => ModernDateField(
+                      label: 'Date de Livraison',
+                      icon: Icons.local_shipping,
+                      value: controller.orderDraft.value.deliveryDate,
+                      onChanged: (date) =>
+                          controller.setOrderDraftField('deliveryDate', date),
+                      isDark: isDark,
+                    )),
               ),
             ],
           ),
@@ -280,82 +284,83 @@ class _OrderExtraFieldsStepState extends State<OrderExtraFieldsStep>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
           Row(
             children: [
               Expanded(
-                child: Obx(() => _ModernDropdown<OrderStatus>(
-                  label: 'Statut de la Commande',
-                  icon: Icons.flag,
-                  value: controller.orderDraft.value.status != null
-                      ? OrderStatus.values.firstWhereOrNull(
-                          (s) => s.name == controller.orderDraft.value.status)
-                      : OrderStatus.PENDING,
-                  items: OrderStatus.values.map((status) {
-                    return DropdownMenuItem<OrderStatus>(
-                      value: status,
-                      child: Row(
-                        children: [
-                          Icon(status.icon, color: status.color, size: 18),
-                          SizedBox(width: AppSpacing.sm),
-                          Text(
-                            status.label,
+                child: Obx(() => ModernDropdown<OrderStatus>(
+                      label: 'Statut de la Commande',
+                      icon: Icons.flag,
+                      value: controller.orderDraft.value.status != null
+                          ? OrderStatus.values.firstWhereOrNull((s) =>
+                              s.name == controller.orderDraft.value.status)
+                          : OrderStatus.PENDING,
+                      items: OrderStatus.values.map((status) {
+                        return DropdownMenuItem<OrderStatus>(
+                          value: status,
+                          child: Row(
+                            children: [
+                              Icon(status.icon, color: status.color, size: 18),
+                              SizedBox(width: AppSpacing.sm),
+                              Text(
+                                status.label,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (OrderStatus? newStatus) {
+                        if (newStatus != null) {
+                          controller.setOrderDraftField(
+                              'status', newStatus.name);
+                        }
+                      },
+                      isDark: isDark,
+                    )),
+              ),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Obx(() => ModernDropdown<PaymentMethod>(
+                      label: 'Méthode de Paiement',
+                      icon: Icons.payment,
+                      value: controller.orderDraft.value.paymentMethod != null
+                          ? PaymentMethod.values.firstWhereOrNull((m) =>
+                              m.name ==
+                              controller.orderDraft.value.paymentMethod)
+                          : PaymentMethod.CASH,
+                      items: PaymentMethod.values.map((method) {
+                        return DropdownMenuItem<PaymentMethod>(
+                          value: method,
+                          child: Text(
+                            method.label,
                             style: AppTextStyles.bodyMedium.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (OrderStatus? newStatus) {
-                    if (newStatus != null) {
-                      controller.setOrderDraftField('status', newStatus.name);
-                    }
-                  },
-                  isDark: isDark,
-                )),
-              ),
-              SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Obx(() => _ModernDropdown<PaymentMethod>(
-                  label: 'Méthode de Paiement',
-                  icon: Icons.payment,
-                  value: controller.orderDraft.value.paymentMethod != null
-                      ? PaymentMethod.values.firstWhereOrNull((m) =>
-                          m.name == controller.orderDraft.value.paymentMethod)
-                      : PaymentMethod.CASH,
-                  items: PaymentMethod.values.map((method) {
-                    return DropdownMenuItem<PaymentMethod>(
-                      value: method,
-                      child: Text(
-                        method.label,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (PaymentMethod? newMethod) {
-                    if (newMethod != null) {
-                      controller.setOrderDraftField('paymentMethod', newMethod.name);
-                    }
-                  },
-                  isDark: isDark,
-                )),
+                        );
+                      }).toList(),
+                      onChanged: (PaymentMethod? newMethod) {
+                        if (newMethod != null) {
+                          controller.setOrderDraftField(
+                              'paymentMethod', newMethod.name);
+                        }
+                      },
+                      isDark: isDark,
+                    )),
               ),
             ],
           ),
-          
           SizedBox(height: AppSpacing.lg),
-          
-          Obx(() => _ModernTextField(
-            label: 'Code Affilié',
-            icon: Icons.card_giftcard,
-            initialValue: controller.orderDraft.value.affiliateCode ?? '',
-            onChanged: (value) => controller.setOrderDraftField('affiliateCode', value),
-            isDark: isDark,
-          )),
+          Obx(() => ModernTextField(
+                label: 'Code Affilié',
+                icon: Icons.card_giftcard,
+                initialValue: controller.orderDraft.value.affiliateCode ?? '',
+                onChanged: (value) =>
+                    controller.setOrderDraftField('affiliateCode', value),
+                isDark: isDark,
+              )),
         ],
       ),
     );
@@ -387,16 +392,28 @@ class _OrderExtraFieldsStepState extends State<OrderExtraFieldsStep>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
           Obx(() {
-            final selected = controller.orderDraft.value.recurrenceType ?? 'NONE';
+            final selected =
+                controller.orderDraft.value.recurrenceType ?? 'NONE';
             final types = [
               {'value': 'NONE', 'label': 'Jamais', 'icon': Icons.block},
-              {'value': 'WEEKLY', 'label': 'Hebdomadaire', 'icon': Icons.calendar_view_week},
-              {'value': 'BIWEEKLY', 'label': '2 Semaines', 'icon': Icons.date_range},
-              {'value': 'MONTHLY', 'label': 'Mensuel', 'icon': Icons.calendar_month},
+              {
+                'value': 'WEEKLY',
+                'label': 'Hebdomadaire',
+                'icon': Icons.calendar_view_week
+              },
+              {
+                'value': 'BIWEEKLY',
+                'label': '2 Semaines',
+                'icon': Icons.date_range
+              },
+              {
+                'value': 'MONTHLY',
+                'label': 'Mensuel',
+                'icon': Icons.calendar_month
+              },
             ];
-            
+
             return Wrap(
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
@@ -416,31 +433,30 @@ class _OrderExtraFieldsStepState extends State<OrderExtraFieldsStep>
                   default:
                     color = AppColors.gray400;
                 }
-                
-                return _ModernOptionChip(
-                  label: type['label']!,
+
+                return ModernOptionChip(
+                  label: type['label']! as String,
                   icon: type['icon'] as IconData,
                   isSelected: isSelected,
                   color: color,
                   onSelected: () {
-                    controller.setOrderDraftField('recurrenceType', type['value']);
-                    _calculateNextRecurrenceDate(type['value']!);
+                    controller.setOrderDraftField(
+                        'recurrenceType', type['value'] as String);
+                    _calculateNextRecurrenceDate(type['value']! as String);
                   },
                 );
               }).toList(),
             );
           }),
-          
           SizedBox(height: AppSpacing.lg),
-          
           Obx(() {
             final recurrence = controller.orderDraft.value.recurrenceType;
             final nextDate = controller.orderDraft.value.nextRecurrenceDate;
             if (recurrence == null || recurrence == 'NONE') {
               return SizedBox.shrink();
             }
-            
-            return _NextRecurrenceCard(
+
+            return NextRecurrenceCard(
               nextDate: nextDate,
               recurrenceType: recurrence,
               isDark: isDark,
@@ -477,14 +493,15 @@ class _OrderExtraFieldsStepState extends State<OrderExtraFieldsStep>
             ],
           ),
           SizedBox(height: AppSpacing.lg),
-          
-          Obx(() => _ModernTextArea(
-            label: 'Note de Commande',
-            placeholder: 'Ajoutez des instructions spéciales ou des commentaires...',
-            initialValue: controller.orderDraft.value.note ?? '',
-            onChanged: (value) => controller.setOrderDraftField('note', value),
-            isDark: isDark,
-          )),
+          Obx(() => ModernTextArea(
+                label: 'Note de Commande',
+                placeholder:
+                    'Ajoutez des instructions spéciales ou des commentaires...',
+                initialValue: controller.orderDraft.value.note ?? '',
+                onChanged: (value) =>
+                    controller.setOrderDraftField('note', value),
+                isDark: isDark,
+              )),
         ],
       ),
     );

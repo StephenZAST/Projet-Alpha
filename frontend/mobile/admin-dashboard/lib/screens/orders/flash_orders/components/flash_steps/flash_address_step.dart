@@ -1,14 +1,12 @@
 import 'package:admin/controllers/flash_order_stepper_controller.dart';
 import 'package:admin/models/address.dart';
 import 'package:admin/services/address_service.dart';
-import 'package:admin/widgets/glass_button.dart';
 import 'package:admin/widgets/shared/glass_container.dart';
 import 'package:admin/screens/orders/components/order_address_dialog.dart';
 import 'package:admin/screens/orders/components/client_addresses_tab.dart';
 import 'package:admin/screens/orders/components/address_selection_map.dart';
 import 'package:admin/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'dart:ui';
 
 class FlashAddressStep extends StatefulWidget {
@@ -89,7 +87,7 @@ class _FlashAddressStepState extends State<FlashAddressStep>
       final userId = widget.controller.draft.value.userId;
       if (userId != null) {
         addresses = await AddressService.getAddressesByUser(userId);
-        
+
         // Sélection intelligente de l'adresse
         final selectedId = widget.controller.draft.value.addressId;
         if (selectedId != null && addresses.any((a) => a.id == selectedId)) {
@@ -223,7 +221,8 @@ class _FlashAddressStepState extends State<FlashAddressStep>
   Widget _buildAddressContent(bool isDark) {
     // Synchronisation de l'adresse sélectionnée
     final selectedAddressId = widget.controller.draft.value.addressId;
-    if (selectedAddressId != null && addresses.any((a) => a.id == selectedAddressId)) {
+    if (selectedAddressId != null &&
+        addresses.any((a) => a.id == selectedAddressId)) {
       selectedAddress = addresses.firstWhere((a) => a.id == selectedAddressId);
     }
 
@@ -238,7 +237,7 @@ class _FlashAddressStepState extends State<FlashAddressStep>
           _buildSelectedAddressCard(isDark),
           SizedBox(height: AppSpacing.lg),
         ],
-        
+
         // Onglets de sélection
         _buildAddressSelectionTabs(isDark),
       ],
@@ -386,7 +385,7 @@ class _FlashAddressStepState extends State<FlashAddressStep>
                 _ModernAddressButton(
                   label: 'Gérer',
                   icon: Icons.edit_location_alt,
-                  onPressed: selectedAddress != null 
+                  onPressed: selectedAddress != null
                       ? () => _editAddress(selectedAddress!)
                       : null,
                   variant: _AddressButtonVariant.secondary,
@@ -394,7 +393,7 @@ class _FlashAddressStepState extends State<FlashAddressStep>
               ],
             ),
             SizedBox(height: AppSpacing.md),
-            
+
             // Contenu des onglets
             Expanded(
               child: AnimatedSwitcher(
@@ -447,15 +446,21 @@ class _FlashAddressStepState extends State<FlashAddressStep>
 
   void _createNewAddress() async {
     // Logique pour créer une nouvelle adresse
-    await _openAddressDialog(context, selectedAddress ?? Address(
-      id: '',
-      userId: widget.controller.draft.value.userId ?? '',
-      name: '',
-      street: '',
-      city: '',
-      postalCode: '',
-      isDefault: false,
-    ));
+    final now = DateTime.now();
+    await _openAddressDialog(
+        context,
+        selectedAddress ??
+            Address(
+              id: '',
+              userId: widget.controller.draft.value.userId ?? '',
+              name: '',
+              street: '',
+              city: '',
+              postalCode: '',
+              isDefault: false,
+              createdAt: now,
+              updatedAt: now,
+            ));
   }
 
   void _editAddress(Address address) async {
@@ -503,7 +508,6 @@ class _ModernTabButtonState extends State<_ModernTabButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -532,14 +536,8 @@ class _ModernTabButtonState extends State<_ModernTabButton>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return MouseRegion(
-      onEnter: (_) {
-        setState(() => _isHovered = true);
-        _controller.forward();
-      },
-      onExit: (_) {
-        setState(() => _isHovered = false);
-        _controller.reverse();
-      },
+      onEnter: (_) => _controller.forward(),
+      onExit: (_) => _controller.reverse(),
       child: AnimatedBuilder(
         animation: _scaleAnimation,
         builder: (context, child) {
@@ -555,17 +553,22 @@ class _ModernTabButtonState extends State<_ModernTabButton>
                 decoration: BoxDecoration(
                   gradient: widget.isActive
                       ? LinearGradient(
-                          colors: [AppColors.info, AppColors.info.withOpacity(0.8)],
+                          colors: [
+                            AppColors.info,
+                            AppColors.info.withOpacity(0.8)
+                          ],
                         )
                       : null,
                   color: !widget.isActive
-                      ? (isDark ? AppColors.gray700 : AppColors.gray200).withOpacity(0.5)
+                      ? (isDark ? AppColors.gray700 : AppColors.gray200)
+                          .withOpacity(0.5)
                       : null,
-                  borderRadius: AppRadius.md,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(
                     color: widget.isActive
                         ? AppColors.info.withOpacity(0.3)
-                        : (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.5),
+                        : (isDark ? AppColors.gray600 : AppColors.gray300)
+                            .withOpacity(0.5),
                   ),
                 ),
                 child: Row(
@@ -585,7 +588,8 @@ class _ModernTabButtonState extends State<_ModernTabButton>
                         color: widget.isActive
                             ? Colors.white
                             : (isDark ? AppColors.gray400 : AppColors.gray600),
-                        fontWeight: widget.isActive ? FontWeight.bold : FontWeight.w500,
+                        fontWeight:
+                            widget.isActive ? FontWeight.bold : FontWeight.w500,
                       ),
                     ),
                   ],
@@ -620,7 +624,6 @@ class _ModernAddressButtonState extends State<_ModernAddressButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
-  bool _isHovered = false;
 
   @override
   void initState() {
@@ -652,12 +655,10 @@ class _ModernAddressButtonState extends State<_ModernAddressButton>
     return MouseRegion(
       onEnter: (_) {
         if (isEnabled) {
-          setState(() => _isHovered = true);
           _controller.forward();
         }
       },
       onExit: (_) {
-        setState(() => _isHovered = false);
         _controller.reverse();
       },
       child: AnimatedBuilder(
@@ -682,7 +683,9 @@ class _ModernAddressButtonState extends State<_ModernAddressButton>
                     widget.icon,
                     color: widget.variant == _AddressButtonVariant.primary
                         ? Colors.white
-                        : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                        : (isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary),
                     size: 18,
                   ),
                   SizedBox(width: AppSpacing.sm),
@@ -691,7 +694,9 @@ class _ModernAddressButtonState extends State<_ModernAddressButton>
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: widget.variant == _AddressButtonVariant.primary
                           ? Colors.white
-                          : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                          : (isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -719,7 +724,7 @@ class _AddressInfoDisplay extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (address.name.isNotEmpty) ...[
+        if (address.name?.isNotEmpty == true) ...[
           Row(
             children: [
               Icon(
@@ -730,7 +735,7 @@ class _AddressInfoDisplay extends StatelessWidget {
               SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  address.name,
+                  address.name ?? '',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: textColor,
                     fontWeight: FontWeight.w600,
@@ -741,7 +746,6 @@ class _AddressInfoDisplay extends StatelessWidget {
           ),
           SizedBox(height: AppSpacing.sm),
         ],
-        
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -761,9 +765,7 @@ class _AddressInfoDisplay extends StatelessWidget {
             ),
           ],
         ),
-        
         SizedBox(height: AppSpacing.sm),
-        
         Row(
           children: [
             Icon(
@@ -780,7 +782,6 @@ class _AddressInfoDisplay extends StatelessWidget {
             ),
           ],
         ),
-        
         if (address.gpsLatitude != null && address.gpsLongitude != null) ...[
           SizedBox(height: AppSpacing.sm),
           Row(

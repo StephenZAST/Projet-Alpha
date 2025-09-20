@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../../../../../constants.dart';
 import '../../../../../controllers/orders_controller.dart';
 import 'package:admin/models/enums.dart';
-import '../order_item_recap_card.dart';
 import 'order_summary_components.dart';
 import 'dart:ui';
 
@@ -135,7 +134,10 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
                   padding: EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                      colors: [
+                        AppColors.success,
+                        AppColors.success.withOpacity(0.8)
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
@@ -185,7 +187,7 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
               gradient: LinearGradient(
                 colors: [AppColors.info, AppColors.info.withOpacity(0.8)],
               ),
-              borderRadius: AppRadius.md,
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -218,32 +220,32 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
       final address = controller.clientAddresses
           .firstWhereOrNull((a) => a.id == controller.selectedAddressId.value);
 
-      return _SummarySection(
+      return SummarySection(
         title: 'Informations Client',
         icon: Icons.person,
         color: AppColors.primary,
         isDark: isDark,
         child: Column(
           children: [
-            _SummaryInfoRow(
+            SummaryInfoRow(
               icon: Icons.person,
               label: 'Nom complet',
               value: '${client?.firstName ?? ''} ${client?.lastName ?? ''}',
               isDark: isDark,
             ),
-            _SummaryInfoRow(
+            SummaryInfoRow(
               icon: Icons.email,
               label: 'Email',
               value: client?.email ?? 'Non renseigné',
               isDark: isDark,
             ),
-            _SummaryInfoRow(
+            SummaryInfoRow(
               icon: Icons.phone,
               label: 'Téléphone',
               value: client?.phone ?? 'Non renseigné',
               isDark: isDark,
             ),
-            _SummaryInfoRow(
+            SummaryInfoRow(
               icon: Icons.location_on,
               label: 'Adresse',
               value: address?.fullAddress ?? 'Non renseignée',
@@ -261,21 +263,21 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
       final service = controller.services
           .firstWhereOrNull((s) => s.id == controller.selectedServiceId.value);
 
-      return _SummarySection(
+      return SummarySection(
         title: 'Service Sélectionné',
         icon: Icons.cleaning_services,
         color: AppColors.info,
         isDark: isDark,
         child: Column(
           children: [
-            _SummaryInfoRow(
+            SummaryInfoRow(
               icon: Icons.label,
               label: 'Type de service',
               value: service?.name ?? 'Non sélectionné',
               isDark: isDark,
             ),
             if (service?.description != null)
-              _SummaryInfoRow(
+              SummaryInfoRow(
                 icon: Icons.description,
                 label: 'Description',
                 value: service!.description!,
@@ -289,7 +291,7 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
   }
 
   Widget _buildArticlesSummary(bool isDark) {
-    return _SummarySection(
+    return SummarySection(
       title: 'Articles Sélectionnés',
       icon: Icons.inventory,
       color: AppColors.accent,
@@ -297,29 +299,29 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
       child: Obx(() {
         final items = controller.selectedArticleDetails;
         if (items.isEmpty) {
-          return _EmptyState(
+          return EmptyState(
             icon: Icons.inventory_2_outlined,
             message: 'Aucun article sélectionné',
             isDark: isDark,
           );
         }
-        
+
         return Column(
           children: items.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
-            
+
             final bool isPremium = item['isPremium'] ?? false;
             final double unitPrice = isPremium
                 ? (item['premiumPrice'] ?? item['basePrice'] ?? 0.0)
                 : (item['basePrice'] ?? 0.0);
             final int quantity = item['quantity'] ?? 1;
             final double lineTotal = unitPrice * quantity;
-            
+
             return Column(
               children: [
                 if (index > 0) SizedBox(height: AppSpacing.sm),
-                _ModernArticleCard(
+                ModernArticleCard(
                   item: {
                     ...item,
                     'unitPrice': unitPrice,
@@ -338,7 +340,7 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
   Widget _buildExtraFieldsSummary(bool isDark) {
     return Obx(() {
       final draft = controller.orderDraft.value;
-      
+
       String? statusLabel;
       Color? statusColor;
       IconData? statusIcon;
@@ -349,14 +351,14 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
         statusColor = statusEnum?.color;
         statusIcon = statusEnum?.icon;
       }
-      
+
       String? paymentLabel;
       if (draft.paymentMethod != null) {
         final paymentEnum = PaymentMethod.values
             .firstWhereOrNull((p) => p.name == draft.paymentMethod);
         paymentLabel = paymentEnum?.label;
       }
-      
+
       String? recurrenceLabel;
       if (draft.recurrenceType != null) {
         switch (draft.recurrenceType) {
@@ -374,14 +376,14 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
         }
       }
 
-      return _SummarySection(
+      return SummarySection(
         title: 'Détails de la Commande',
         icon: Icons.settings,
         color: AppColors.warning,
         isDark: isDark,
         child: Column(
           children: [
-            _SummaryInfoRow(
+            SummaryInfoRow(
               icon: Icons.schedule,
               label: 'Date de collecte',
               value: draft.collectionDate != null
@@ -389,7 +391,7 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
                   : 'Non définie',
               isDark: isDark,
             ),
-            _SummaryInfoRow(
+            SummaryInfoRow(
               icon: Icons.local_shipping,
               label: 'Date de livraison',
               value: draft.deliveryDate != null
@@ -398,7 +400,7 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
               isDark: isDark,
             ),
             if (statusLabel != null)
-              _SummaryInfoRow(
+              SummaryInfoRow(
                 icon: statusIcon ?? Icons.flag,
                 label: 'Statut',
                 value: statusLabel,
@@ -406,21 +408,21 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
                 isDark: isDark,
               ),
             if (paymentLabel != null)
-              _SummaryInfoRow(
+              SummaryInfoRow(
                 icon: Icons.payment,
                 label: 'Méthode de paiement',
                 value: paymentLabel,
                 isDark: isDark,
               ),
             if (draft.affiliateCode != null && draft.affiliateCode!.isNotEmpty)
-              _SummaryInfoRow(
+              SummaryInfoRow(
                 icon: Icons.card_giftcard,
                 label: 'Code affilié',
                 value: draft.affiliateCode!,
                 isDark: isDark,
               ),
             if (recurrenceLabel != null && recurrenceLabel != 'Aucune')
-              _SummaryInfoRow(
+              SummaryInfoRow(
                 icon: Icons.repeat,
                 label: 'Récurrence',
                 value: recurrenceLabel,
@@ -429,14 +431,17 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
             if (draft.nextRecurrenceDate != null &&
                 draft.recurrenceType != null &&
                 draft.recurrenceType != 'NONE')
-              _SummaryInfoRow(
+              SummaryInfoRow(
                 icon: Icons.event,
                 label: 'Prochaine récurrence',
-                value: draft.nextRecurrenceDate!.toLocal().toString().split(' ')[0],
+                value: draft.nextRecurrenceDate!
+                    .toLocal()
+                    .toString()
+                    .split(' ')[0],
                 isDark: isDark,
               ),
             if (draft.note != null && draft.note!.trim().isNotEmpty)
-              _SummaryInfoRow(
+              SummaryInfoRow(
                 icon: Icons.note_alt,
                 label: 'Note',
                 value: draft.note!,
@@ -461,8 +466,8 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
             : (item['quantity'] as num?)?.toInt() ?? 1;
         return sum + (unitPrice * quantity);
       });
-      
-      return _TotalCard(
+
+      return TotalCard(
         total: total,
         itemCount: items.length,
         isDark: isDark,

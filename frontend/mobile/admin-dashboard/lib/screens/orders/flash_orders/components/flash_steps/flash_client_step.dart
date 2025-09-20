@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:ui';
 import 'package:admin/services/user_service.dart';
-import 'package:admin/widgets/shared/glass_button.dart';
 import 'package:admin/widgets/shared/client_selection_dialog.dart';
 import 'package:admin/widgets/shared/glass_container.dart';
 import 'package:admin/models/user.dart';
@@ -11,7 +10,7 @@ import 'package:admin/constants.dart';
 
 class FlashClientStep extends StatefulWidget {
   final FlashOrderStepperController controller;
-  
+
   const FlashClientStep({Key? key, required this.controller}) : super(key: key);
 
   @override
@@ -121,7 +120,10 @@ class _FlashClientStepState extends State<FlashClientStep>
               padding: EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.8)
+                  ],
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -139,7 +141,8 @@ class _FlashClientStepState extends State<FlashClientStep>
                   Text(
                     'Vérification Client',
                     style: AppTextStyles.h3.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -160,26 +163,28 @@ class _FlashClientStepState extends State<FlashClientStep>
 
   Widget _buildClientContent(bool isDark) {
     final draft = widget.controller.draft.value;
-    
+
     if (draft.userId == null) {
       return _buildNoClientSelected(isDark);
     }
-    
+
     return FutureBuilder<Map<String, dynamic>?>(
       future: _fetchUser(draft.userId!),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingState(isDark);
         }
-        
-        if (snapshot.hasError || (snapshot.hasData && snapshot.data?['error'] != null)) {
-          return _buildErrorState(isDark, snapshot.data?['error'] ?? snapshot.error.toString());
+
+        if (snapshot.hasError ||
+            (snapshot.hasData && snapshot.data?['error'] != null)) {
+          return _buildErrorState(
+              isDark, snapshot.data?['error'] ?? snapshot.error.toString());
         }
-        
+
         if (!snapshot.hasData) {
           return _buildNoDataState(isDark);
         }
-        
+
         return _buildClientInfo(isDark, snapshot.data!);
       },
     );
@@ -371,7 +376,10 @@ class _FlashClientStepState extends State<FlashClientStep>
                     height: 60,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Colors.white.withOpacity(0.3), Colors.white.withOpacity(0.1)],
+                        colors: [
+                          Colors.white.withOpacity(0.3),
+                          Colors.white.withOpacity(0.1)
+                        ],
                       ),
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -408,11 +416,15 @@ class _FlashClientStepState extends State<FlashClientStep>
                       vertical: AppSpacing.xs,
                     ),
                     decoration: BoxDecoration(
-                      color: (user['isActive'] == true ? AppColors.success : AppColors.error)
+                      color: (user['isActive'] == true
+                              ? AppColors.success
+                              : AppColors.error)
                           .withOpacity(0.2),
                       borderRadius: AppRadius.radiusSM,
                       border: Border.all(
-                        color: (user['isActive'] == true ? AppColors.success : AppColors.error)
+                        color: (user['isActive'] == true
+                                ? AppColors.success
+                                : AppColors.error)
                             .withOpacity(0.5),
                       ),
                     ),
@@ -429,9 +441,9 @@ class _FlashClientStepState extends State<FlashClientStep>
             ],
           ),
         ),
-        
+
         SizedBox(height: AppSpacing.lg),
-        
+
         // Informations détaillées
         GlassContainer(
           variant: GlassContainerVariant.neutral,
@@ -448,8 +460,8 @@ class _FlashClientStepState extends State<FlashClientStep>
                 ),
               ),
               SizedBox(height: AppSpacing.md),
-              
-              if (user['phone'] != null && user['phone'].toString().isNotEmpty) ...[
+              if (user['phone'] != null &&
+                  user['phone'].toString().isNotEmpty) ...[
                 _buildInfoRow(
                   'Téléphone',
                   user['phone'].toString(),
@@ -457,7 +469,6 @@ class _FlashClientStepState extends State<FlashClientStep>
                   isDark,
                 ),
               ],
-              
               if (user['role'] != null) ...[
                 _buildInfoRow(
                   'Rôle',
@@ -466,7 +477,6 @@ class _FlashClientStepState extends State<FlashClientStep>
                   isDark,
                 ),
               ],
-              
               if (user['loyaltyPoints'] != null) ...[
                 _buildInfoRow(
                   'Points fidélité',
@@ -479,9 +489,9 @@ class _FlashClientStepState extends State<FlashClientStep>
             ],
           ),
         ),
-        
+
         SizedBox(height: AppSpacing.lg),
-        
+
         // Bouton de changement
         _ModernSelectClientButton(
           onPressed: () => _showClientSelection(),
@@ -492,7 +502,8 @@ class _FlashClientStepState extends State<FlashClientStep>
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon, bool isDark, {bool highlight = false}) {
+  Widget _buildInfoRow(String label, String value, IconData icon, bool isDark,
+      {bool highlight = false}) {
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
@@ -500,7 +511,7 @@ class _FlashClientStepState extends State<FlashClientStep>
           Icon(
             icon,
             size: 20,
-            color: highlight 
+            color: highlight
                 ? AppColors.warning
                 : (isDark ? AppColors.gray400 : AppColors.gray600),
           ),
@@ -521,7 +532,9 @@ class _FlashClientStepState extends State<FlashClientStep>
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: highlight
                         ? AppColors.warning
-                        : (isDark ? AppColors.textLight : AppColors.textPrimary),
+                        : (isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary),
                     fontWeight: highlight ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
@@ -540,7 +553,7 @@ class _FlashClientStepState extends State<FlashClientStep>
         initialSelectedClientId: widget.controller.draft.value.userId,
       ),
     );
-    
+
     if (selectedClient != null && selectedClient is String) {
       widget.controller.setDraftField('userId', selectedClient);
     }
@@ -562,7 +575,8 @@ class _ModernSelectClientButton extends StatefulWidget {
   });
 
   @override
-  _ModernSelectClientButtonState createState() => _ModernSelectClientButtonState();
+  _ModernSelectClientButtonState createState() =>
+      _ModernSelectClientButtonState();
 }
 
 class _ModernSelectClientButtonState extends State<_ModernSelectClientButton>
