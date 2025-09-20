@@ -44,7 +44,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     _cascadeAnimations = List.generate(_componentCount, (index) {
       final start = index * 0.1;
       final end = start + 0.6;
-      
+
       return Tween<double>(
         begin: 0.0,
         end: 1.0,
@@ -104,7 +104,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                 physics: AlwaysScrollableScrollPhysics(),
                 child: Column(
                   children: [
-                    _buildAnimatedComponent(0, Header(title: "Tableau de bord")),
+                    _buildAnimatedComponent(
+                        0, Header(title: "Tableau de bord")),
                     SizedBox(height: defaultPadding),
                     _buildAnimatedComponent(1, StatisticsCards()),
                     SizedBox(height: defaultPadding),
@@ -127,7 +128,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   LinearGradient _buildBackgroundGradient(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     if (isDark) {
       return LinearGradient(
         begin: Alignment.topLeft,
@@ -155,7 +156,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildAnimatedComponent(int index, Widget child) {
     if (index >= _cascadeAnimations.length) return child;
-    
+
     return AnimatedBuilder(
       animation: _cascadeAnimations[index],
       builder: (context, _) {
@@ -329,7 +330,8 @@ class _ModernRefreshIndicator extends StatelessWidget {
 
 class _PulsingLoadingIndicator extends StatefulWidget {
   @override
-  _PulsingLoadingIndicatorState createState() => _PulsingLoadingIndicatorState();
+  _PulsingLoadingIndicatorState createState() =>
+      _PulsingLoadingIndicatorState();
 }
 
 class _PulsingLoadingIndicatorState extends State<_PulsingLoadingIndicator>
@@ -549,17 +551,17 @@ class _FloatingRefreshButtonState extends State<_FloatingRefreshButton>
   @override
   void initState() {
     super.initState();
-    
+
     _rotationController = AnimationController(
       duration: Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     _scaleController = AnimationController(
       duration: Duration(milliseconds: 200),
       vsync: this,
     );
-    
+
     _rotationAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -567,7 +569,7 @@ class _FloatingRefreshButtonState extends State<_FloatingRefreshButton>
       parent: _rotationController,
       curve: Curves.easeInOut,
     ));
-    
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 1.1,

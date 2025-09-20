@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../screens/dashboard/dashboard_screen_new.dart';
-import '../screens/articles/articles_screen_safe.dart';
+import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/articles/articles_screen.dart';
 import '../screens/categories/categories_screen.dart';
 import '../screens/orders/orders_screen.dart';
 import '../screens/services/services_screen.dart';
@@ -60,7 +60,7 @@ class ScreenManager extends GetxController {
     
     switch (index) {
       case MenuIndices.dashboard:
-        return DashboardScreenNew(key: Key('dashboard_$timestamp'));
+        return DashboardScreen(key: Key('dashboard_$timestamp'));
       case MenuIndices.orders:
         return _wrapWithKey(OrdersScreen(), 'orders_$timestamp');
       case MenuIndices.services:
@@ -68,7 +68,7 @@ class ScreenManager extends GetxController {
       case MenuIndices.categories:
         return _wrapWithKey(CategoriesScreen(), 'categories_$timestamp');
       case MenuIndices.articles:
-        return ArticlesScreenSafe(key: Key('articles_$timestamp'));
+        return ArticlesScreen(key: Key('articles_$timestamp'));
       case MenuIndices.serviceTypes:
         return _wrapWithKey(ServiceTypesScreen(), 'service_types_$timestamp');
       case MenuIndices.serviceArticleCouples:
@@ -90,7 +90,7 @@ class ScreenManager extends GetxController {
       case MenuIndices.delivery:
         return _wrapWithKey(DeliveryScreen(), 'delivery_$timestamp');
       default:
-        return DashboardScreenNew(key: Key('dashboard_default_$timestamp'));
+        return DashboardScreen(key: Key('dashboard_default_$timestamp'));
     }
   }
 
