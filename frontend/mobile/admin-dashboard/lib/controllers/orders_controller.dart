@@ -704,7 +704,7 @@ class OrdersController extends GetxController {
 
   // État de pagination
   final currentPage = 1.obs;
-  final itemsPerPage = 50.obs;
+  final itemsPerPage = 10.obs; // Réduit à 10 par défaut pour de meilleures performances
   final totalPages = 0.obs;
 
   // État spécifique aux commandes flash
@@ -883,7 +883,7 @@ class OrdersController extends GetxController {
     isFlashOrderFilter.value = false;
     searchQuery.value = '';
     currentPage.value = 1;
-    itemsPerPage.value = 50;
+    itemsPerPage.value = 10; // Cohérent avec la valeur par défaut
     fetchOrders();
   }
 

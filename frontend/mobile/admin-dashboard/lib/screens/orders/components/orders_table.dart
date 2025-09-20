@@ -5,6 +5,7 @@ import '../../../constants.dart';
 import '../../../models/order.dart';
 import '../../../models/enums.dart';
 import '../../../widgets/shared/glass_container.dart';
+import '../../../widgets/shared/performance_list_view.dart';
 
 class OrdersTable extends StatefulWidget {
   final List<Order> orders;
@@ -151,34 +152,55 @@ class _OrdersTableState extends State<OrdersTable>
       children: [
         _buildTableHeader(isDark),
         SizedBox(height: AppSpacing.sm),
-        Flexible(
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: widget.orders.length,
-            separatorBuilder: (context, index) => Container(
-              height: 1,
-              margin: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.transparent,
-                    (isDark ? AppColors.gray700 : AppColors.gray200)
-                        .withOpacity(0.5),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-            itemBuilder: (context, index) {
-              return TweenAnimationBuilder<double>(
-                duration: Duration(milliseconds: 300 + (index * 50)),
-                tween: Tween(begin: 0.0, end: 1.0),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) {
-                  return Transform.translate(
-                    offset: Offset(30 * (1 - value), 0),
-                    child: Opacity(
-                      opacity: value,
+        Expanded(
+          child: widget.orders.length <= 20 
+              ? ListView.separated(
+                  // Pour les petites listes, utiliser ListView normal
+                  itemCount: widget.orders.length,
+                  separatorBuilder: (context, index) => Container(
+                    height: 1,
+                    margin: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          (isDark ? AppColors.gray700 : AppColors.gray200)
+                              .withOpacity(0.5),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                  itemBuilder: (context, index) {
+                    return TweenAnimationBuilder<double>(
+                      duration: Duration(milliseconds: 300 + (index * 50)),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return Transform.translate(
+                          offset: Offset(30 * (1 - value), 0),
+                          child: Opacity(
+                            opacity: value,
+                            child: _ModernOrderRow(
+                              order: widget.orders[index],
+                              index: index,
+                              onStatusUpdate: widget.onStatusUpdate,
+                              onOrderSelect: widget.onOrderSelect,
+                              isDark: isDark,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                )
+              : ListView.builder(
+                  // Pour les grandes listes, utiliser ListView.builder optimisé
+                  itemCount: widget.orders.length,
+                  itemExtent: 80, // Hauteur fixe pour chaque élément
+                  itemBuilder: (context, index) {
+                    return Container(
+                      margin: EdgeInsets.symmetric(vertical: AppSpacing.xs),
                       child: _ModernOrderRow(
                         order: widget.orders[index],
                         index: index,
@@ -186,12 +208,9 @@ class _OrdersTableState extends State<OrdersTable>
                         onOrderSelect: widget.onOrderSelect,
                         isDark: isDark,
                       ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
+                    );
+                  },
+                ),
         ),
       ],
     );
