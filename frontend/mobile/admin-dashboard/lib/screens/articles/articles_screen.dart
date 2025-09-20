@@ -12,7 +12,34 @@ import 'components/article_stats_grid.dart';
 import 'components/article_table.dart';
 import 'components/article_filters.dart';
 
-class ArticlesScreen extends GetView<ArticleController> {
+class ArticlesScreen extends StatefulWidget {
+  const ArticlesScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ArticlesScreen> createState() => _ArticlesScreenState();
+}
+
+class _ArticlesScreenState extends State<ArticlesScreen> {
+  late ArticleController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    print('[ArticlesScreen] initState: Initialisation');
+
+    // S'assurer que le contrôleur existe et est unique
+    if (Get.isRegistered<ArticleController>()) {
+      controller = Get.find<ArticleController>();
+    } else {
+      controller = Get.put(ArticleController(), permanent: true);
+    }
+
+    // S'assurer que le CategoryController existe aussi
+    if (!Get.isRegistered<CategoryController>()) {
+      Get.put(CategoryController(), permanent: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

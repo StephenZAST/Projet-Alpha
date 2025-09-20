@@ -160,7 +160,7 @@ class GlassContainer extends StatelessWidget {
   }
 }
 
-/// Version spécialisée pour les cartes de statistiques
+/// Version spécialisée pour les cartes de statistiques - Style cohérent avec affiliate_stats_grid
 class GlassStatsCard extends StatelessWidget {
   final String title;
   final String value;
@@ -183,79 +183,102 @@ class GlassStatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GlassContainer(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark ? AppColors.gray300 : AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, 2),
               ),
-              Container(
-                width: 44,
-                height: 44,
-                padding: EdgeInsets.all(AppSpacing.sm),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: AppRadius.radiusSM,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.statGradientStart,
-                      AppColors.statGradientEnd
+                  color: isDark
+                      ? AppColors.gray800.withOpacity(0.8)
+                      : Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.gray700.withOpacity(0.3)
+                        : AppColors.gray200.withOpacity(0.5),
+                    width: 1,
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(AppSpacing.sm),
+                            decoration: BoxDecoration(
+                              color: iconColor.withOpacity(0.1),
+                              borderRadius: AppRadius.radiusSM,
+                            ),
+                            child: Icon(
+                              icon,
+                              color: iconColor,
+                              size: 24,
+                            ),
+                          ),
+                          if (subtitle != null)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                                vertical: AppSpacing.xs,
+                              ),
+                              decoration: BoxDecoration(
+                                color: iconColor.withOpacity(0.1),
+                                borderRadius: AppRadius.radiusXS,
+                              ),
+                              child: Text(
+                                subtitle!,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: iconColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      SizedBox(height: AppSpacing.md),
+                      Text(
+                        value,
+                        style: AppTextStyles.h2.copyWith(
+                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.xs),
+                      Text(
+                        title,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: iconColor.withOpacity(0.06),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 20,
                 ),
               ),
-            ],
+            ),
           ),
-          SizedBox(height: AppSpacing.sm),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: AppTextStyles.h2.copyWith(
-                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (subtitle != null) ...[
-                SizedBox(height: AppSpacing.xs),
-                Text(
-                  subtitle!,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark ? AppColors.gray400 : AppColors.gray600,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

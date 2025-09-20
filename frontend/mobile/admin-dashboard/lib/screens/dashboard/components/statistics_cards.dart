@@ -147,9 +147,9 @@ class _AnimatedStatsGrid extends StatelessWidget {
   }
 
   double _getChildAspectRatio(double width) {
-    if (width > 1200) return 1.4;
-    if (width > 800) return 1.6;
-    return 1.3;
+    if (width > 1200) return 1.2; // Même ratio que affiliate_stats_grid
+    if (width > 800) return 1.4;
+    return 1.2;
   }
 }
 
