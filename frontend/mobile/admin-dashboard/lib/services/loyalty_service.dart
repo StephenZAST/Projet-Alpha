@@ -31,14 +31,19 @@ class LoyaltyService {
       print('[LoyaltyService] Raw API response: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'];
-        if (data != null && data['data'] is List) {
-          final List<LoyaltyPoints> loyaltyPoints = (data['data'] as List)
-              .map((item) => LoyaltyPoints.fromJson(item))
-              .toList();
-          print(
-              '[LoyaltyService] ✅ Retrieved ${loyaltyPoints.length} loyalty points');
-          return loyaltyPoints;
+        final responseData = response.data;
+        print('[LoyaltyService] Full response structure: ${responseData.toString()}');
+        
+        // Le backend retourne { success: true, data: { data: [...], pagination: {...} } }
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final data = responseData['data'];
+          if (data['data'] is List) {
+            final List<LoyaltyPoints> loyaltyPoints = (data['data'] as List)
+                .map((item) => LoyaltyPoints.fromJson(item))
+                .toList();
+            print('[LoyaltyService] ✅ Retrieved ${loyaltyPoints.length} loyalty points');
+            return loyaltyPoints;
+          }
         }
       }
 
@@ -58,9 +63,15 @@ class LoyaltyService {
       final response = await _apiService.get('$_baseUrl/admin/stats');
 
       if (response.statusCode == 200 && response.data != null) {
-        final stats = LoyaltyStats.fromJson(response.data['data']);
-        print('[LoyaltyService] ✅ Retrieved loyalty stats');
-        return stats;
+        final responseData = response.data;
+        print('[LoyaltyService] Stats response structure: ${responseData.toString()}');
+        
+        // Le backend retourne { success: true, data: {...} }
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final stats = LoyaltyStats.fromJson(responseData['data']);
+          print('[LoyaltyService] ✅ Retrieved loyalty stats');
+          return stats;
+        }
       }
 
       throw Exception('Failed to load loyalty stats');
@@ -127,14 +138,17 @@ class LoyaltyService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'];
-        if (data != null && data['data'] is List) {
-          final List<PointTransaction> transactions = (data['data'] as List)
-              .map((item) => PointTransaction.fromJson(item))
-              .toList();
-          print(
-              '[LoyaltyService] ✅ Retrieved ${transactions.length} point transactions');
-          return transactions;
+        final responseData = response.data;
+        // Le backend retourne { success: true, data: { data: [...], pagination: {...} } }
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final data = responseData['data'];
+          if (data['data'] is List) {
+            final List<PointTransaction> transactions = (data['data'] as List)
+                .map((item) => PointTransaction.fromJson(item))
+                .toList();
+            print('[LoyaltyService] ✅ Retrieved ${transactions.length} point transactions');
+            return transactions;
+          }
         }
       }
 
@@ -238,13 +252,17 @@ class LoyaltyService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'];
-        if (data != null && data['data'] is List) {
-          final List<Reward> rewards = (data['data'] as List)
-              .map((item) => Reward.fromJson(item))
-              .toList();
-          print('[LoyaltyService] ✅ Retrieved ${rewards.length} rewards');
-          return rewards;
+        final responseData = response.data;
+        // Le backend retourne { success: true, data: { data: [...], pagination: {...} } }
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final data = responseData['data'];
+          if (data['data'] is List) {
+            final List<Reward> rewards = (data['data'] as List)
+                .map((item) => Reward.fromJson(item))
+                .toList();
+            print('[LoyaltyService] ✅ Retrieved ${rewards.length} rewards');
+            return rewards;
+          }
         }
       }
 
@@ -415,13 +433,17 @@ class LoyaltyService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'];
-        if (data != null && data['data'] is List) {
-          final List<RewardClaim> claims = (data['data'] as List)
-              .map((item) => RewardClaim.fromJson(item))
-              .toList();
-          print('[LoyaltyService] ✅ Retrieved ${claims.length} reward claims');
-          return claims;
+        final responseData = response.data;
+        // Le backend retourne { success: true, data: { data: [...], pagination: {...} } }
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final data = responseData['data'];
+          if (data['data'] is List) {
+            final List<RewardClaim> claims = (data['data'] as List)
+                .map((item) => RewardClaim.fromJson(item))
+                .toList();
+            print('[LoyaltyService] ✅ Retrieved ${claims.length} reward claims');
+            return claims;
+          }
         }
       }
 
@@ -449,14 +471,17 @@ class LoyaltyService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'];
-        if (data != null && data['data'] is List) {
-          final List<RewardClaim> claims = (data['data'] as List)
-              .map((item) => RewardClaim.fromJson(item))
-              .toList();
-          print(
-              '[LoyaltyService] ✅ Retrieved ${claims.length} pending reward claims');
-          return claims;
+        final responseData = response.data;
+        // Le backend retourne { success: true, data: { data: [...], pagination: {...} } }
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final data = responseData['data'];
+          if (data['data'] is List) {
+            final List<RewardClaim> claims = (data['data'] as List)
+                .map((item) => RewardClaim.fromJson(item))
+                .toList();
+            print('[LoyaltyService] ✅ Retrieved ${claims.length} pending reward claims');
+            return claims;
+          }
         }
       }
 
@@ -555,14 +580,17 @@ class LoyaltyService {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data['data'];
-        if (data != null && data['data'] is List) {
-          final List<PointTransaction> history = (data['data'] as List)
-              .map((item) => PointTransaction.fromJson(item))
-              .toList();
-          print(
-              '[LoyaltyService] ✅ Retrieved ${history.length} point transactions for user');
-          return history;
+        final responseData = response.data;
+        // Le backend retourne { success: true, data: { data: [...], pagination: {...} } }
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final data = responseData['data'];
+          if (data['data'] is List) {
+            final List<PointTransaction> history = (data['data'] as List)
+                .map((item) => PointTransaction.fromJson(item))
+                .toList();
+            print('[LoyaltyService] ✅ Retrieved ${history.length} point transactions for user');
+            return history;
+          }
         }
       }
 

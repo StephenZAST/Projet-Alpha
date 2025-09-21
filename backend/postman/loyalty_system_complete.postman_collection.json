@@ -1,0 +1,625 @@
+{
+  "info": {
+    "name": "Loyalty System - Complete Tests",
+    "description": "Tests complets pour le système de fidélité et récompenses",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "clientToken", 
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "rewardId",
+      "value": ""
+    },
+    {
+      "key": "claimId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('adminToken', response.token);",
+                  "    console.log('Admin token saved:', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@alpha.com\",\n    \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/admin/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "admin", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Loyalty Points",
+      "item": [
+        {
+          "name": "Get All Loyalty Points",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/points?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "points"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit", 
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Loyalty Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get User Loyalty Points",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/users/{{userId}}/points",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "users", "{{userId}}", "points"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Point Transactions",
+      "item": [
+        {
+          "name": "Get Point Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/transactions?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "transactions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Points to User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"points\": 100,\n    \"source\": \"REWARD\",\n    \"referenceId\": \"admin_bonus_001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/users/{{userId}}/add-points",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "users", "{{userId}}", "add-points"]
+            }
+          }
+        },
+        {
+          "name": "Deduct Points from User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"points\": 50,\n    \"source\": \"REWARD\",\n    \"referenceId\": \"admin_deduction_001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/users/{{userId}}/deduct-points",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "users", "{{userId}}", "deduct-points"]
+            }
+          }
+        },
+        {
+          "name": "Get User Point History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/users/{{userId}}/history?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "users", "{{userId}}", "history"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Rewards",
+      "item": [
+        {
+          "name": "Get All Rewards",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/rewards?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "rewards"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Reward by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/rewards/{{rewardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "rewards", "{{rewardId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Reward",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('rewardId', response.data.id);",
+                  "    console.log('Reward ID saved:', response.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Reward\",\n    \"description\": \"Récompense de test créée via Postman\",\n    \"pointsCost\": 150,\n    \"type\": \"DISCOUNT\",\n    \"discountValue\": 15,\n    \"discountType\": \"PERCENTAGE\",\n    \"maxRedemptions\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/rewards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "rewards"]
+            }
+          }
+        },
+        {
+          "name": "Update Reward",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Reward Updated\",\n    \"description\": \"Récompense de test mise à jour\",\n    \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/rewards/{{rewardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "rewards", "{{rewardId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Reward",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/rewards/{{rewardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "rewards", "{{rewardId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Reward Claims",
+      "item": [
+        {
+          "name": "Get All Reward Claims",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/claims?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "claims"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Claims",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/claims/pending?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "claims", "pending"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Reward Claim",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/claims/{{claimId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "claims", "{{claimId}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Reward Claim",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reason\": \"Demande non conforme aux conditions\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/claims/{{claimId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "claims", "{{claimId}}", "reject"]
+            }
+          }
+        },
+        {
+          "name": "Mark Claim as Used",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/admin/claims/{{claimId}}/use",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "admin", "claims", "{{claimId}}", "use"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client - Loyalty",
+      "item": [
+        {
+          "name": "Earn Points",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"points\": 100,\n    \"source\": \"ORDER\",\n    \"referenceId\": \"order_123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/earn-points",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "earn-points"]
+            }
+          }
+        },
+        {
+          "name": "Spend Points",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"points\": 50,\n    \"source\": \"REWARD\",\n    \"referenceId\": \"reward_claim_123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/spend-points",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "spend-points"]
+            }
+          }
+        },
+        {
+          "name": "Get Points Balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clientToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/points-balance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "points-balance"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Utilities",
+      "item": [
+        {
+          "name": "Calculate Order Points",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"orderAmount\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/calculate-points",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "calculate-points"]
+            }
+          }
+        },
+        {
+          "name": "Process Order Points",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"userId\": \"{{userId}}\",\n    \"orderId\": \"order_123\",\n    \"orderAmount\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/loyalty/process-order-points",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loyalty", "process-order-points"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
