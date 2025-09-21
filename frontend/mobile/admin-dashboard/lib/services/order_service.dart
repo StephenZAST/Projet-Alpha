@@ -188,6 +188,18 @@ class OrderService {
       normalizedData['items'] = _normalizeItems(data['items']);
     }
 
+    // Normaliser les notes de commande
+    if (data['order_notes'] != null) {
+      normalizedData['order_notes'] = data['order_notes'];
+      // Extraire la première note pour le champ 'note'
+      if (data['order_notes'] is List && (data['order_notes'] as List).isNotEmpty) {
+        final firstNote = (data['order_notes'] as List)[0];
+        if (firstNote != null && firstNote['note'] != null) {
+          normalizedData['note'] = firstNote['note'].toString();
+        }
+      }
+    }
+
     return normalizedData;
   }
 

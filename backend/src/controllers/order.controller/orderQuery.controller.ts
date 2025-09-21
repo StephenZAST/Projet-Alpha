@@ -49,7 +49,15 @@ export class OrderQueryController {
               description: true
             }
           },
-          address: true
+          address: true,
+          order_notes: {
+            select: {
+              id: true,
+              note: true,
+              created_at: true,
+              updated_at: true
+            }
+          }
         }
       });
 

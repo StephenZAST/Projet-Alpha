@@ -21,6 +21,7 @@ export class OrderUpdateService {
       status: string;
       items: any[];
       service_type_id: string;
+      note: string;
     }> = {},
     userId: string,
     userRole: string
@@ -121,6 +122,42 @@ export class OrderUpdateService {
       }
     }
 
+    // PATCH ORDER NOTES LOGIC
+    if (updateFields.note !== undefined) {
+      const existingNote = await prisma.order_notes.findFirst({
+        where: { order_id: orderId }
+      });
+      
+      if (updateFields.note && updateFields.note.trim().length > 0) {
+        // Créer ou mettre à jour la note
+        if (existingNote) {
+          await prisma.order_notes.update({
+            where: { id: existingNote.id },
+            data: { 
+              note: updateFields.note,
+              updated_at: new Date()
+            }
+          });
+        } else {
+          await prisma.order_notes.create({
+            data: {
+              order_id: orderId,
+              note: updateFields.note,
+              created_at: new Date(),
+              updated_at: new Date()
+            }
+          });
+        }
+      } else {
+        // Supprimer la note si elle existe et que la nouvelle valeur est vide
+        if (existingNote) {
+          await prisma.order_notes.delete({
+            where: { id: existingNote.id }
+          });
+        }
+      }
+    }
+
     // Mise à jour de la commande si des champs ont changé (hors updatedAt)
     const dataKeys = Object.keys(data);
     if (dataKeys.length > 0 && !(dataKeys.length === 1 && dataKeys[0] === 'updatedAt')) {
@@ -141,7 +178,15 @@ export class OrderUpdateService {
     const orderWithItems = await prisma.orders.findUnique({
       where: { id: orderId },
       include: {
-        order_items: true
+        order_items: true,
+        order_notes: {
+          select: {
+            id: true,
+            note: true,
+            created_at: true,
+            updated_at: true
+          }
+        }
       }
     });
     return orderWithItems as unknown as Order;

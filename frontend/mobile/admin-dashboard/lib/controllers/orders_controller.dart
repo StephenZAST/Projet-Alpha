@@ -506,6 +506,7 @@ class OrdersController extends GetxController {
     orderEditForm['paymentMethod'] = order.paymentMethod.name;
     orderEditForm['collectionDate'] = order.collectionDate;
     orderEditForm['deliveryDate'] = order.deliveryDate;
+    orderEditForm['note'] = order.note ?? ''; // Ajout du champ note
     // Ajoute d'autres champs si besoin
   }
 

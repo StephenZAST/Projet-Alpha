@@ -241,7 +241,6 @@ model order_notes {
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamptz(6)
   orders     orders    @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  @@unique([order_id])
 }
 
 model orders {
@@ -385,6 +384,7 @@ model users {
   orders                   orders[]
   point_transactions       point_transactions[]
   reset_codes              reset_codes[]
+  reward_claims            reward_claims[]
   temp_notifications       temp_notifications[] @ignore
   user_activity_logs       user_activity_logs[]
   user_offers              user_offers[]
@@ -442,11 +442,40 @@ model price_history {
 }
 
 model reward_claims {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  user_id          String?   @db.Uuid
+  reward_id        String?   @db.Uuid
+  points_used      Int       @default(0)
+  status           String    @default("PENDING") @db.VarChar
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  processed_at     DateTime? @db.Timestamptz(6)
+  used_at          DateTime? @db.Timestamptz(6)
+  rejection_reason String?
+  rewards          rewards?  @relation(fields: [reward_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reward_claims_reward")
+  users            users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reward_claims_user")
+
+  @@index([reward_id], map: "idx_reward_claims_reward")
+  @@index([status], map: "idx_reward_claims_status")
+  @@index([user_id], map: "idx_reward_claims_user")
 }
 
 model rewards {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id                  String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name                String          @default("Récompense") @db.VarChar
+  description         String?
+  points_cost         Int             @default(100)
+  type                String          @default("DISCOUNT") @db.VarChar
+  discount_value      Decimal?        @db.Decimal
+  discount_type       String?         @db.VarChar
+  is_active           Boolean?        @default(true)
+  max_redemptions     Int?
+  current_redemptions Int?            @default(0)
+  created_at          DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?       @default(now()) @db.Timestamptz(6)
+  reward_claims       reward_claims[]
+
+  @@index([is_active], map: "idx_rewards_active")
+  @@index([type], map: "idx_rewards_type")
 }
 
 model subscription_plans {

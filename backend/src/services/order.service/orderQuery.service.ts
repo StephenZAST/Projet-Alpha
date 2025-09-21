@@ -108,6 +108,14 @@ export class OrderQueryService {
           }
         }
       }
+    },
+    order_notes: {
+      select: {
+        id: true,
+        note: true,
+        created_at: true,
+        updated_at: true
+      }
     }
   };
 
@@ -352,6 +360,7 @@ export class OrderQueryService {
       service_type_id: order.service_type_id,
       paymentStatus: order.status,
       paymentMethod: order.paymentMethod || 'CASH',
+      note: order.order_notes && order.order_notes.length > 0 ? order.order_notes[0].note : null,
       items: order.order_items?.map((item: any) => ({
         id: item.id,
         orderId: item.orderId,

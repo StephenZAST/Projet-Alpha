@@ -217,10 +217,8 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
           SizedBox(height: AppSpacing.lg),
           _buildArticlesInfo(isDark),
         ],
-        if (widget.order.note != null && widget.order.note!.isNotEmpty) ...[
-          SizedBox(height: AppSpacing.lg),
-          _buildNoteInfo(isDark),
-        ],
+        SizedBox(height: AppSpacing.lg),
+        _buildNoteInfo(isDark),
       ],
     );
   }
@@ -427,6 +425,9 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
   }
 
   Widget _buildNoteInfo(bool isDark) {
+    final note = widget.order.note;
+    final hasNote = note != null && note.isNotEmpty;
+    
     return GlassContainer(
       variant: GlassContainerVariant.neutral,
       padding: EdgeInsets.all(AppSpacing.md),
@@ -437,8 +438,8 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
           Row(
             children: [
               Icon(
-                Icons.note,
-                color: AppColors.warning,
+                hasNote ? Icons.note : Icons.note_outlined,
+                color: hasNote ? AppColors.warning : AppColors.gray500,
                 size: 20,
               ),
               SizedBox(width: AppSpacing.sm),
@@ -449,6 +450,31 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              Spacer(),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: hasNote 
+                    ? AppColors.success.withOpacity(0.1)
+                    : AppColors.gray500.withOpacity(0.1),
+                  borderRadius: AppRadius.radiusSM,
+                  border: Border.all(
+                    color: hasNote 
+                      ? AppColors.success.withOpacity(0.3)
+                      : AppColors.gray500.withOpacity(0.3),
+                  ),
+                ),
+                child: Text(
+                  hasNote ? 'Note présente' : 'Aucune note',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: hasNote ? AppColors.success : AppColors.gray500,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ],
           ),
           SizedBox(height: AppSpacing.md),
@@ -456,16 +482,82 @@ class _FlashOrderDetailDialogState extends State<FlashOrderDetailDialog>
             width: double.infinity,
             padding: EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: (isDark ? AppColors.gray700 : AppColors.gray100)
-                  .withOpacity(0.5),
+              color: hasNote
+                ? (isDark ? AppColors.warning.withOpacity(0.1) : AppColors.warning.withOpacity(0.05))
+                : (isDark ? AppColors.gray700 : AppColors.gray100).withOpacity(0.5),
               borderRadius: AppRadius.radiusSM,
+              border: hasNote 
+                ? Border.all(
+                    color: AppColors.warning.withOpacity(0.2),
+                    width: 1,
+                  )
+                : null,
             ),
-            child: Text(
-              widget.order.note!,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.gray300 : AppColors.gray700,
-                fontStyle: FontStyle.italic,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (hasNote) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: AppColors.warning,
+                      ),
+                      SizedBox(width: AppSpacing.xs),
+                      Text(
+                        'Note créée lors de la commande flash :',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.warning,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppSpacing.sm),
+                ],
+                Text(
+                  hasNote ? note! : 'Aucune note n\'a été ajoutée lors de la création de cette commande flash.',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: hasNote 
+                      ? (isDark ? AppColors.textLight : AppColors.textPrimary)
+                      : (isDark ? AppColors.gray400 : AppColors.gray600),
+                    fontStyle: hasNote ? FontStyle.normal : FontStyle.italic,
+                    fontWeight: hasNote ? FontWeight.w500 : FontWeight.normal,
+                  ),
+                ),
+                if (hasNote) ...[
+                  SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.info.withOpacity(0.1),
+                      borderRadius: AppRadius.radiusSM,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline,
+                          size: 14,
+                          color: AppColors.info,
+                        ),
+                        SizedBox(width: AppSpacing.xs),
+                        Text(
+                          'Cette note peut être modifiée après conversion en commande',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.info,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
