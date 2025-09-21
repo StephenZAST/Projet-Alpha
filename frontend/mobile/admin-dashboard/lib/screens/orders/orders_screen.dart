@@ -6,7 +6,6 @@ import '../../constants.dart';
 import '../../controllers/orders_controller.dart';
 import '../../models/enums.dart' hide AppButtonVariant;
 import '../../widgets/shared/app_button.dart';
-import 'components/order_filters.dart';
 import 'components/orders_header.dart';
 import 'components/simple_orders_table.dart';
 import 'components/order_details_dialog.dart';
@@ -35,15 +34,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
       controller.isLoading.value = true;
       controller.hasError.value = false;
       controller.errorMessage.value = '';
-      
+
       // Chargement des données
       await controller.loadOrdersPage(
         page: 1,
         limit: controller.itemsPerPage.value,
         status: controller.filterStatus.value,
       );
-      
-      print('[OrdersScreen] Data loaded successfully. Orders count: ${controller.orders.length}');
+
+      print(
+          '[OrdersScreen] Data loaded successfully. Orders count: ${controller.orders.length}');
     } catch (e) {
       print('[OrdersScreen] Error loading data: $e');
       controller.hasError.value = true;
@@ -93,7 +93,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               // Header fixe
               OrdersHeader(),
               SizedBox(height: defaultPadding),
-              
+
               // Zone scrollable pour les filtres et le tableau
               Expanded(
                 child: CustomScrollView(
@@ -104,12 +104,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         children: [
                           AdvancedSearchFilter(),
                           SizedBox(height: defaultPadding),
-                          OrderFilters(),
-                          SizedBox(height: defaultPadding),
                         ],
                       ),
                     ),
-                    
+
                     // Tableau dans un SliverFillRemaining
                     SliverFillRemaining(
                       hasScrollBody: false,
@@ -118,11 +116,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         color: Colors.transparent,
                         child: Obx(() {
                           // Debug: Afficher l'état du controller
-                          print('[OrdersScreen] isLoading: ${controller.isLoading.value}');
-                          print('[OrdersScreen] hasError: ${controller.hasError.value}');
-                          print('[OrdersScreen] orders.length: ${controller.orders.length}');
-                          print('[OrdersScreen] isOrderIdSearchActive: ${controller.isOrderIdSearchActive.value}');
-                          
+                          print(
+                              '[OrdersScreen] isLoading: ${controller.isLoading.value}');
+                          print(
+                              '[OrdersScreen] hasError: ${controller.hasError.value}');
+                          print(
+                              '[OrdersScreen] orders.length: ${controller.orders.length}');
+                          print(
+                              '[OrdersScreen] isOrderIdSearchActive: ${controller.isOrderIdSearchActive.value}');
+
                           if (controller.isLoading.value) {
                             return Container(
                               height: 400,
@@ -173,7 +175,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     AppButton(
                                       label: 'Réessayer',
                                       icon: Icons.refresh_outlined,
-                                      onPressed: () => controller.loadOrdersPage(),
+                                      onPressed: () =>
+                                          controller.loadOrdersPage(),
                                       variant: AppButtonVariant.primary,
                                     ),
                                   ],
@@ -183,10 +186,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           }
 
                           // Vérifier si on a des données à afficher
-                          final ordersToShow = controller.isOrderIdSearchActive.value &&
-                                  controller.orderIdResult.value != null
-                              ? [controller.orderIdResult.value!]
-                              : controller.orders;
+                          final ordersToShow =
+                              controller.isOrderIdSearchActive.value &&
+                                      controller.orderIdResult.value != null
+                                  ? [controller.orderIdResult.value!]
+                                  : controller.orders;
 
                           if (ordersToShow.isEmpty) {
                             return Container(
@@ -236,7 +240,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 onStatusUpdate: _updateStatus,
                                 onOrderSelect: _handleOrderSelect,
                               ),
-                              
+
                               // Pagination fixe en bas (seulement si pas de recherche par ID)
                               if (!controller.isOrderIdSearchActive.value)
                                 Container(
@@ -245,12 +249,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     horizontal: AppSpacing.md,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: isDark 
+                                    color: isDark
                                         ? AppColors.gray800.withOpacity(0.5)
                                         : AppColors.white.withOpacity(0.8),
                                     borderRadius: BorderRadius.only(
                                       bottomLeft: Radius.circular(AppRadius.md),
-                                      bottomRight: Radius.circular(AppRadius.md),
+                                      bottomRight:
+                                          Radius.circular(AppRadius.md),
                                     ),
                                   ),
                                   child: PaginationControls(
@@ -268,7 +273,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     },
                                     onPageChanged: (page) {
                                       if (page != null &&
-                                          page != controller.currentPage.value) {
+                                          page !=
+                                              controller.currentPage.value) {
                                         controller.currentPage.value = page;
                                         controller.loadOrdersPage(page: page);
                                       }
