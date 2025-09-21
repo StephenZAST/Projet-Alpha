@@ -133,6 +133,8 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
         _buildStepIndicator(isDark),
         Expanded(
           child: Obx(() {
+            final currentStepIndex = controller.currentStep.value;
+            
             // Animer le changement d'étape
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) _animateStepChange();
@@ -145,7 +147,7 @@ class _FlashOrderStepperState extends State<FlashOrderStepper>
                   opacity: _stepFadeAnimation,
                   child: SlideTransition(
                     position: _stepSlideAnimation,
-                    child: stepWidgets[controller.currentStep.value],
+                    child: stepWidgets[currentStepIndex],
                   ),
                 );
               },

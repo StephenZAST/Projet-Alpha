@@ -394,13 +394,16 @@ class _FlashAddressStepState extends State<FlashAddressStep>
             ),
             SizedBox(height: AppSpacing.md),
 
-            // Contenu des onglets
+            // Contenu des onglets avec scroll amélioré
             Expanded(
-              child: AnimatedSwitcher(
-                duration: Duration(milliseconds: 300),
-                child: _tabIndex == 0
-                    ? _buildAddressList(isDark)
-                    : _buildAddressMap(isDark),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: AnimatedSwitcher(
+                  duration: Duration(milliseconds: 300),
+                  child: _tabIndex == 0
+                      ? _buildScrollableAddressList(isDark)
+                      : _buildAddressMap(isDark),
+                ),
               ),
             ),
           ],
@@ -409,18 +412,199 @@ class _FlashAddressStepState extends State<FlashAddressStep>
     );
   }
 
-  Widget _buildAddressList(bool isDark) {
-    return ClientAddressesTab(
-      key: ValueKey('list'),
-      userId: widget.controller.draft.value.userId,
-      selectedAddress: selectedAddress,
-      onAddressSelected: (address) {
+  Widget _buildScrollableAddressList(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: (isDark ? AppColors.gray800 : AppColors.gray50).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: addresses.isEmpty
+          ? _buildEmptyAddressList(isDark)
+          : ListView.separated(
+              padding: EdgeInsets.all(AppSpacing.md),
+              itemCount: addresses.length + 1, // +1 pour le bouton d'ajout
+              separatorBuilder: (context, index) => SizedBox(height: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                if (index == addresses.length) {
+                  // Bouton d'ajout d'adresse
+                  return _buildAddAddressButton(isDark);
+                }
+                
+                final address = addresses[index];
+                final isSelected = selectedAddress?.id == address.id;
+                
+                return _buildAddressListItem(address, isSelected, isDark);
+              },
+            ),
+    );
+  }
+
+  
+  Widget _buildEmptyAddressList(bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.location_off,
+            size: 48,
+            color: isDark ? AppColors.gray400 : AppColors.gray600,
+          ),
+          SizedBox(height: AppSpacing.md),
+          Text(
+            'Aucune adresse disponible',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? AppColors.gray400 : AppColors.gray600,
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          _buildAddAddressButton(isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddAddressButton(bool isDark) {
+    return GestureDetector(
+      onTap: () => _createNewAddress(),
+      child: Container(
+        padding: EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: AppColors.info.withOpacity(0.3),
+            style: BorderStyle.solid,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          color: AppColors.info.withOpacity(0.05),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_location,
+              color: AppColors.info,
+              size: 20,
+            ),
+            SizedBox(width: AppSpacing.sm),
+            Text(
+              'Ajouter une nouvelle adresse',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.info,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddressListItem(Address address, bool isSelected, bool isDark) {
+    return GestureDetector(
+      onTap: () {
         setState(() {
           selectedAddress = address;
           widget.controller.setDraftField('addressId', address.id);
         });
       },
-      onAddNewAddress: () => _createNewAddress(),
+      child: Container(
+        padding: EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [
+                    AppColors.info.withOpacity(0.2),
+                    AppColors.info.withOpacity(0.1),
+                  ],
+                )
+              : null,
+          color: !isSelected
+              ? (isDark ? AppColors.gray700 : Colors.white).withOpacity(0.8)
+              : null,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.info.withOpacity(0.5)
+                : (isDark ? AppColors.gray600 : AppColors.gray300).withOpacity(0.3),
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.info.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  color: isSelected ? AppColors.info : (isDark ? AppColors.gray400 : AppColors.gray600),
+                  size: 20,
+                ),
+                SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    address.name?.isNotEmpty == true ? address.name! : 'Adresse',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (address.isDefault) ...[
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'DÉFAUT',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            SizedBox(height: AppSpacing.sm),
+            Padding(
+              padding: EdgeInsets.only(left: 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    address.street,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.gray300 : AppColors.gray700,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    '${address.city} ${address.postalCode}',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.gray400 : AppColors.gray600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

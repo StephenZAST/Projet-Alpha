@@ -36,7 +36,7 @@ class StatisticsCards extends StatelessWidget {
 
       final revenueGrowth = _calculateGrowth(controller);
 
-      return _AnimatedStatsGrid(
+      return _ResponsiveStatsRow(
         children: [
           _ModernStatCard(
             title: 'Revenus Totaux',
@@ -76,65 +76,91 @@ class StatisticsCards extends StatelessWidget {
   }
 
   Widget _buildLoadingState(bool isDark) {
-    return _AnimatedStatsGrid(
+    return _ResponsiveStatsRow(
       children: List.generate(4, (index) => _SkeletonStatCard(index: index)),
     );
   }
 }
 
-// Composants modernes pour les statistiques
-class _AnimatedStatsGrid extends StatelessWidget {
+// Composant responsive pour les statistiques en row
+class _ResponsiveStatsRow extends StatelessWidget {
   final List<Widget> children;
 
-  const _AnimatedStatsGrid({required this.children});
+  const _ResponsiveStatsRow({required this.children});
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = _getCrossAxisCount(constraints.maxWidth);
-        final childAspectRatio = _getChildAspectRatio(constraints.maxWidth);
+    final width = MediaQuery.of(context).size.width;
 
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: AppSpacing.md,
-            mainAxisSpacing: AppSpacing.md,
-            childAspectRatio: childAspectRatio,
-          ),
-          itemCount: children.length,
-          itemBuilder: (context, index) {
-            return TweenAnimationBuilder<double>(
+    // Responsive: sur mobile et tablette, utiliser une colonne
+    if (width < 1200) {
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: _getCrossAxisCount(width),
+          crossAxisSpacing: AppSpacing.md,
+          mainAxisSpacing: AppSpacing.md,
+          childAspectRatio: _getChildAspectRatio(width),
+        ),
+        itemCount: children.length,
+        itemBuilder: (context, index) {
+          return TweenAnimationBuilder<double>(
+            duration: Duration(milliseconds: 600 + (index * 100)),
+            tween: Tween(begin: 0.0, end: 1.0),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, _) {
+              return Transform.translate(
+                offset: Offset(0, 30 * (1 - value)),
+                child: Opacity(
+                  opacity: value,
+                  child: children[index],
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
+
+    // Desktop: utiliser une Row avec des Expanded
+    return Row(
+      children: children.asMap().entries.map((entry) {
+        final index = entry.key;
+        final child = entry.value;
+
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: index < children.length - 1 ? AppSpacing.md : 0,
+            ),
+            child: TweenAnimationBuilder<double>(
               duration: Duration(milliseconds: 600 + (index * 100)),
               tween: Tween(begin: 0.0, end: 1.0),
               curve: Curves.easeOutCubic,
-              builder: (context, value, child) {
+              builder: (context, value, _) {
                 return Transform.translate(
                   offset: Offset(0, 30 * (1 - value)),
                   child: Opacity(
                     opacity: value,
-                    child: children[index],
+                    child: child,
                   ),
                 );
               },
-            );
-          },
+            ),
+          ),
         );
-      },
+      }).toList(),
     );
   }
 
   int _getCrossAxisCount(double width) {
-    if (width > 1200) return 4;
     if (width > 800) return 2;
     return 1;
   }
 
   double _getChildAspectRatio(double width) {
-    if (width > 1200) return 1.2; // Même ratio que affiliate_stats_grid
-    if (width > 800) return 1.4;
+    if (width > 800) return 1.3;
     return 1.2;
   }
 }

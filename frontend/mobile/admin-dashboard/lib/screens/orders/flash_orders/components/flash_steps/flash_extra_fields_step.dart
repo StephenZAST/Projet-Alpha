@@ -161,10 +161,7 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
         _buildDatesSection(isDark, draft),
         SizedBox(height: AppSpacing.lg),
 
-        // Section Options
-        _buildOptionsSection(isDark, draft),
-        SizedBox(height: AppSpacing.lg),
-
+        
         // Section Note
         _buildNoteSection(isDark, draft),
       ],
@@ -235,80 +232,7 @@ class _FlashExtraFieldsStepState extends State<FlashExtraFieldsStep>
     );
   }
 
-  Widget _buildOptionsSection(bool isDark, dynamic draft) {
-    return GlassContainer(
-      variant: GlassContainerVariant.neutral,
-      padding: EdgeInsets.all(AppSpacing.lg),
-      borderRadius: AppRadius.lg,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.tune,
-                color: AppColors.accent,
-                size: 20,
-              ),
-              SizedBox(width: AppSpacing.sm),
-              Text(
-                'Options de Commande',
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.lg),
-
-          // Option urgente
-          _ModernOptionTile(
-            title: 'Commande Urgente',
-            subtitle: 'Traitement prioritaire (+20%)',
-            icon: Icons.priority_high,
-            value: draft.isUrgent ?? false,
-            onChanged: (value) {
-              widget.controller.setDraftField('isUrgent', value);
-            },
-            color: AppColors.error,
-            isDark: isDark,
-          ),
-
-          SizedBox(height: AppSpacing.md),
-
-          // Option livraison express
-          _ModernOptionTile(
-            title: 'Livraison Express',
-            subtitle: 'Livraison le jour même (+15%)',
-            icon: Icons.flash_on,
-            value: draft.isExpress ?? false,
-            onChanged: (value) {
-              widget.controller.setDraftField('isExpress', value);
-            },
-            color: AppColors.warning,
-            isDark: isDark,
-          ),
-
-          SizedBox(height: AppSpacing.md),
-
-          // Option éco-responsable
-          _ModernOptionTile(
-            title: 'Service Éco-Responsable',
-            subtitle: 'Produits écologiques (-5%)',
-            icon: Icons.eco,
-            value: draft.isEcoFriendly ?? false,
-            onChanged: (value) {
-              widget.controller.setDraftField('isEcoFriendly', value);
-            },
-            color: AppColors.success,
-            isDark: isDark,
-          ),
-        ],
-      ),
-    );
-  }
-
+  
   Widget _buildNoteSection(bool isDark, dynamic draft) {
     return GlassContainer(
       variant: GlassContainerVariant.neutral,

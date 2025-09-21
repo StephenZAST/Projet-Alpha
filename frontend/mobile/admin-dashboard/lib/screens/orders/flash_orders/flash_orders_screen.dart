@@ -4,6 +4,7 @@ import 'dart:ui';
 import '../../../controllers/flash_orders_controller.dart';
 import '../../../constants.dart';
 import '../../../widgets/shared/glass_container.dart';
+import '../../../widgets/shared/modern_pagination.dart';
 import 'components/flash_order_card.dart';
 import 'components/flash_order_stepper.dart';
 import '../../../controllers/flash_order_stepper_controller.dart';
@@ -355,32 +356,134 @@ class _FlashOrdersScreenState extends State<FlashOrdersScreen>
   }
 
   Widget _buildOrdersList(bool isDark) {
-    return RefreshIndicator(
-      onRefresh: controller.refreshOrders,
-      color: AppColors.warning,
-      child: ListView.separated(
-        itemCount: controller.draftOrders.length,
-        separatorBuilder: (context, index) => SizedBox(height: AppSpacing.md),
-        itemBuilder: (context, index) {
-          final order = controller.draftOrders[index];
-          return TweenAnimationBuilder<double>(
-            duration: Duration(milliseconds: 300 + (index * 100)),
-            tween: Tween(begin: 0.0, end: 1.0),
-            builder: (context, value, child) {
-              return Transform.translate(
-                offset: Offset(0, 20 * (1 - value)),
-                child: Opacity(
-                  opacity: value,
-                  child: FlashOrderCard(
-                    order: order,
-                    onTap: () => _showConversionDialog(order),
-                  ),
+    return Column(
+      children: [
+        // Pagination en haut
+        Obx(() => ModernPagination(
+          currentPage: controller.currentPage.value,
+          totalPages: controller.totalPages.value,
+          totalItems: controller.totalItems.value,
+          paginationInfo: controller.paginationInfo,
+          isLoading: controller.isLoadingPage.value,
+          hasPrevious: controller.hasPreviousPage,
+          hasNext: controller.hasNextPage,
+          onPrevious: controller.hasPreviousPage 
+              ? () => controller.goToPage(controller.currentPage.value - 1)
+              : null,
+          onNext: controller.hasNextPage 
+              ? () => controller.goToPage(controller.currentPage.value + 1)
+              : null,
+          onPageSelected: (page) => controller.goToPage(page),
+        )),
+        
+        SizedBox(height: AppSpacing.lg),
+        
+        // Liste des commandes
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: controller.refreshOrders,
+            color: AppColors.warning,
+            child: Stack(
+              children: [
+                ListView.separated(
+                  itemCount: controller.draftOrders.length,
+                  separatorBuilder: (context, index) => SizedBox(height: AppSpacing.md),
+                  itemBuilder: (context, index) {
+                    final order = controller.draftOrders[index];
+                    return TweenAnimationBuilder<double>(
+                      duration: Duration(milliseconds: 300 + (index * 50)),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      builder: (context, value, child) {
+                        return Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: Opacity(
+                            opacity: value,
+                            child: FlashOrderCard(
+                              order: order,
+                              onTap: () => _showConversionDialog(order),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
-              );
-            },
-          );
-        },
-      ),
+                
+                // Indicateur de chargement pour les pages suivantes
+                Obx(() {
+                  if (controller.isLoadingPage.value) {
+                    return Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(AppSpacing.md),
+                        child: Center(
+                          child: GlassContainer(
+                            variant: GlassContainerVariant.info,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.md,
+                            ),
+                            borderRadius: AppRadius.lg,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                ),
+                                SizedBox(width: AppSpacing.md),
+                                Text(
+                                  'Chargement...',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return SizedBox.shrink();
+                }),
+              ],
+            ),
+          ),
+        ),
+        
+        SizedBox(height: AppSpacing.md),
+        
+        // Pagination en bas (optionnelle, pour les grandes listes)
+        Obx(() {
+          if (controller.totalPages.value > 5) {
+            return ModernPagination(
+              currentPage: controller.currentPage.value,
+              totalPages: controller.totalPages.value,
+              totalItems: controller.totalItems.value,
+              paginationInfo: controller.paginationInfo,
+              isLoading: controller.isLoadingPage.value,
+              hasPrevious: controller.hasPreviousPage,
+              hasNext: controller.hasNextPage,
+              onPrevious: controller.hasPreviousPage 
+                  ? () => controller.goToPage(controller.currentPage.value - 1)
+                  : null,
+              onNext: controller.hasNextPage 
+                  ? () => controller.goToPage(controller.currentPage.value + 1)
+                  : null,
+              onPageSelected: (page) => controller.goToPage(page),
+            );
+          }
+          return SizedBox.shrink();
+        }),
+      ],
     );
   }
 
@@ -453,10 +556,10 @@ class _ModernBackButtonState extends State<_ModernBackButton>
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _controller.forward());
+        _controller.forward();
       },
       onExit: (_) {
-        setState(() => _controller.reverse());
+        _controller.reverse();
       },
       child: AnimatedBuilder(
         animation: _scaleAnimation,
@@ -617,10 +720,10 @@ class _ModernRefreshButtonState extends State<_ModernRefreshButton>
   Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _controller.forward());
+        _controller.forward();
       },
       onExit: (_) {
-        setState(() => _controller.reverse());
+        _controller.reverse();
       },
       child: AnimatedBuilder(
         animation: _controller,
@@ -722,10 +825,10 @@ class _ModernActionButtonState extends State<_ModernActionButton>
 
     return MouseRegion(
       onEnter: (_) {
-        setState(() => _controller.forward());
+        _controller.forward();
       },
       onExit: (_) {
-        setState(() => _controller.reverse());
+        _controller.reverse();
       },
       child: AnimatedBuilder(
         animation: _scaleAnimation,

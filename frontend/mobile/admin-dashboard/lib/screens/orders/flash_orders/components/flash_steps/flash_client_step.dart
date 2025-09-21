@@ -98,7 +98,11 @@ class _FlashClientStepState extends State<FlashClientStep>
                   SizedBox(height: AppSpacing.xl),
                   Expanded(
                     child: SingleChildScrollView(
-                      child: Obx(() => _buildClientContent(isDark)),
+                      child: Obx(() {
+                        // Accès direct à la variable observable pour déclencher la réactivité
+                        widget.controller.draft.value;
+                        return _buildClientContent(isDark);
+                      }),
                     ),
                   ),
                 ],
