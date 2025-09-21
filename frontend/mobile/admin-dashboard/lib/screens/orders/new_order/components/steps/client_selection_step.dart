@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../constants.dart';
 import '../../../../../controllers/orders_controller.dart';
+import '../../../../../models/user.dart';
 import '../create_client_dialog.dart';
 import '../client_details_dialog.dart';
 import 'client_selection_components.dart';
@@ -30,7 +31,14 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
     super.initState();
     _setupAnimations();
     controller = Get.find<OrdersController>();
-    controller.loadClients();
+    
+    // S'assurer que les clients sont chargés avec pagination
+    print('[ClientSelectionStep] Initialisation - Chargement des clients avec pagination...');
+    controller.loadClients(page: 1, limit: controller.clientItemsPerPage.value).then((_) {
+      print('[ClientSelectionStep] Clients chargés: ${controller.clients.length}/${controller.clientTotalItems.value}');
+    }).catchError((error) {
+      print('[ClientSelectionStep] Erreur lors du chargement des clients: $error');
+    });
   }
 
   void _setupAnimations() {
@@ -91,7 +99,7 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
           opacity: _fadeAnimation,
           child: SlideTransition(
             position: _slideAnimation,
-            child: Container(
+            child: SingleChildScrollView(
               padding: EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,7 +108,11 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
                   SizedBox(height: AppSpacing.xl),
                   _buildSearchSection(isDark),
                   SizedBox(height: AppSpacing.lg),
-                  Expanded(child: _buildClientList(isDark)),
+                  // Container avec hauteur fixe pour la liste des clients
+                  Container(
+                    height: 450, // Hauteur augmentée pour inclure la pagination
+                    child: _buildClientList(isDark),
+                  ),
                   SizedBox(height: AppSpacing.lg),
                   _buildCreateClientSection(isDark),
                 ],
@@ -283,12 +295,12 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
               ),
               SizedBox(width: AppSpacing.md),
               Expanded(
-                child: Obx(() => ModernActionButton(
-                      icon: Icons.search,
-                      label: 'Rechercher',
-                      onPressed: _performSearch,
-                      variant: ClientActionVariant.primary,
-                    )),
+                child: ModernActionButton(
+                  icon: Icons.search,
+                  label: 'Rechercher',
+                  onPressed: _performSearch,
+                  variant: ClientActionVariant.primary,
+                ),
               ),
             ],
           ),
@@ -303,10 +315,16 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
         return _buildLoadingState(isDark);
       }
 
-      final clientsToShow =
-          controller.filteredClients.isEmpty && searchController.text.isEmpty
-              ? controller.clients
-              : controller.filteredClients;
+      // Amélioration de la logique d'affichage des clients
+      final clientsToShow = searchController.text.isEmpty
+          ? (controller.filteredClients.isEmpty 
+              ? controller.clients  // Tous les clients par défaut
+              : controller.filteredClients)  // Résultats de filtre
+          : controller.filteredClients;  // Résultats de recherche
+
+      print('[ClientSelectionStep] Clients à afficher: ${clientsToShow.length}');
+      print('[ClientSelectionStep] Tous les clients: ${controller.clients.length}');
+      print('[ClientSelectionStep] Clients filtrés: ${controller.filteredClients.length}');
 
       if (clientsToShow.isEmpty) {
         return _buildEmptyState(isDark);
@@ -319,45 +337,109 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.people,
-                  color: AppColors.accent,
-                  size: 20,
-                ),
-                SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Clients Disponibles (${clientsToShow.length})',
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
+            // Header avec compteur
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.people,
+                    color: AppColors.accent,
+                    size: 20,
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: AppSpacing.md),
-            Expanded(
-              child: ListView.separated(
-                itemCount: clientsToShow.length,
-                separatorBuilder: (_, __) => SizedBox(height: AppSpacing.sm),
-                itemBuilder: (context, index) {
-                  return ClientCard(
-                    client: clientsToShow[index],
-                    isSelected: controller.selectedClientId.value ==
-                        clientsToShow[index].id,
-                    onSelect: () {
-                      controller.selectClient(clientsToShow[index].id);
-                      controller.setSelectedClient(clientsToShow[index].id);
-                    },
-                    onViewDetails: () => Get.dialog(
-                      ClientDetailsDialog(client: clientsToShow[index]),
+                  SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Clients Disponibles (${clientsToShow.length})',
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
                     ),
-                    isDark: isDark,
-                  );
-                },
+                  ),
+                  Spacer(),
+                  if (searchController.text.isEmpty && controller.filteredClients.isEmpty)
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Tous',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
+            SizedBox(height: AppSpacing.md),
+            // Liste scrollable avec hauteur fixe
+            Expanded(
+              child: Container(
+                constraints: BoxConstraints(
+                  minHeight: 200, // Hauteur minimum garantie
+                  maxHeight: double.infinity,
+                ),
+                child: ListView.separated(
+                  physics: AlwaysScrollableScrollPhysics(), // Force le scroll
+                  itemCount: clientsToShow.length,
+                  separatorBuilder: (_, __) => SizedBox(height: AppSpacing.sm),
+                  itemBuilder: (context, index) {
+                    return Obx(() => ClientCard(
+                      client: clientsToShow[index],
+                      isSelected: controller.selectedClientId.value ==
+                          clientsToShow[index].id,
+                      onSelect: () {
+                        print('[ClientSelectionStep] Sélection du client: ${clientsToShow[index].id}');
+                        controller.selectClient(clientsToShow[index].id);
+                        controller.setSelectedClient(clientsToShow[index].id);
+                        print('[ClientSelectionStep] Client sélectionné dans le contrôleur: ${controller.selectedClientId.value}');
+                        
+                        // Feedback utilisateur avec snackbar
+                        _showClientSelectedFeedback(clientsToShow[index]);
+                      },
+                      onViewDetails: () => Get.dialog(
+                        ClientDetailsDialog(client: clientsToShow[index]),
+                      ),
+                      isDark: isDark,
+                    ));
+                  },
+                ),
+              ),
+            ),
+            
+            // Pagination (seulement si pas de recherche active et plus d'une page)
+            if (searchController.text.isEmpty && 
+                controller.filteredClients.isEmpty && 
+                controller.clientTotalPages.value > 1)
+              Container(
+                padding: EdgeInsets.symmetric(
+                  vertical: AppSpacing.sm,
+                  horizontal: AppSpacing.md,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.gray800.withOpacity(0.5)
+                      : AppColors.white.withOpacity(0.8),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(AppRadius.md),
+                    bottomRight: Radius.circular(AppRadius.md),
+                  ),
+                ),
+                child: _buildClientPagination(isDark),
+              ),
           ],
         ),
       );
@@ -492,6 +574,203 @@ class _ClientSelectionStepState extends State<ClientSelectionStep>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildClientPagination(bool isDark) {
+    return Obx(() {
+      final currentPage = controller.clientCurrentPage.value;
+      final totalPages = controller.clientTotalPages.value;
+      final itemsPerPage = controller.clientItemsPerPage.value;
+      final totalItems = controller.clientTotalItems.value;
+
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Affichage du nombre d'éléments par page
+          Row(
+            children: [
+              Text(
+                'Afficher',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.gray400 : AppColors.gray600,
+                ),
+              ),
+              SizedBox(width: AppSpacing.xs),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.gray700 : AppColors.gray100,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: DropdownButton<int>(
+                  value: itemsPerPage,
+                  underline: SizedBox.shrink(),
+                  items: [5, 10, 15, 20].map((int value) {
+                    return DropdownMenuItem<int>(
+                      value: value,
+                      child: Text(
+                        '$value',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.setClientItemsPerPage(value);
+                    }
+                  },
+                ),
+              ),
+              SizedBox(width: AppSpacing.xs),
+              Text(
+                'clients',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.gray400 : AppColors.gray600,
+                ),
+              ),
+            ],
+          ),
+
+          // Affichage de la plage d'éléments
+          Text(
+            '${((currentPage - 1) * itemsPerPage) + 1}–${(currentPage * itemsPerPage).clamp(0, totalItems)} sur $totalItems',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark ? AppColors.gray400 : AppColors.gray600,
+            ),
+          ),
+
+          // Navigation entre les pages
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.chevron_left,
+                  color: currentPage > 1
+                      ? (isDark ? AppColors.textLight : AppColors.textPrimary)
+                      : (isDark ? AppColors.gray600 : AppColors.gray400),
+                ),
+                onPressed: currentPage > 1 ? controller.clientPreviousPage : null,
+                constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+                padding: EdgeInsets.zero,
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.gray700 : AppColors.gray100,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: DropdownButton<int>(
+                  value: currentPage,
+                  underline: SizedBox.shrink(),
+                  items: List.generate(totalPages, (i) => i + 1)
+                      .map((page) => DropdownMenuItem(
+                            value: page,
+                            child: Text(
+                              'Page $page',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (page) {
+                    if (page != null) {
+                      controller.goToClientPage(page);
+                    }
+                  },
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.chevron_right,
+                  color: currentPage < totalPages
+                      ? (isDark ? AppColors.textLight : AppColors.textPrimary)
+                      : (isDark ? AppColors.gray600 : AppColors.gray400),
+                ),
+                onPressed: currentPage < totalPages ? controller.clientNextPage : null,
+                constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+                padding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+        ],
+      );
+    });
+  }
+
+  void _showClientSelectedFeedback(User client) {
+    Get.closeAllSnackbars();
+    Get.rawSnackbar(
+      messageText: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Center(
+              child: Text(
+                '${client.firstName[0]}${client.lastName[0]}'.toUpperCase(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Client sélectionné',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  '${client.firstName} ${client.lastName}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.check_circle,
+            color: Colors.white,
+            size: 24,
+          ),
+        ],
+      ),
+      backgroundColor: AppColors.success.withOpacity(0.9),
+      borderRadius: 16,
+      margin: EdgeInsets.all(24),
+      snackPosition: SnackPosition.TOP,
+      duration: Duration(seconds: 2),
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.1),
+          blurRadius: 16,
+          offset: Offset(0, 4),
+        ),
+      ],
+      isDismissible: true,
+      overlayBlur: 2.5,
     );
   }
 

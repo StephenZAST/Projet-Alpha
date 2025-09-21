@@ -77,6 +77,7 @@ class ModernServiceTypeDropdownState extends State<ModernServiceTypeDropdown> {
               return DropdownMenuItem<ServiceType>(
                 value: type,
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
                       padding: EdgeInsets.all(AppSpacing.xs),
@@ -96,23 +97,18 @@ class ModernServiceTypeDropdownState extends State<ModernServiceTypeDropdown> {
                       ),
                     ),
                     SizedBox(width: AppSpacing.sm),
-                    Expanded(
+                    Flexible(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             type.name,
-                            style: AppTextStyles.bodyMedium.copyWith(
+                            style: AppTextStyles.bodySmall.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
-                          ),
-                          Text(
-                            _getServiceTypeDescription(type.pricingType),
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: widget.isDark
-                                  ? AppColors.gray400
-                                  : AppColors.gray600,
-                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ],
                       ),
@@ -241,6 +237,7 @@ class ModernServiceDropdownState extends State<ModernServiceDropdown> {
                     return DropdownMenuItem<Service>(
                       value: service,
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
                             padding: EdgeInsets.all(AppSpacing.xs),
@@ -260,29 +257,14 @@ class ModernServiceDropdownState extends State<ModernServiceDropdown> {
                             ),
                           ),
                           SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  service.name,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                if (service.description != null) ...[
-                                  Text(
-                                    service.description!,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: widget.isDark
-                                          ? AppColors.gray400
-                                          : AppColors.gray600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ],
+                          Flexible(
+                            child: Text(
+                              service.name,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ],

@@ -124,6 +124,9 @@ class _OrderStepperState extends State<OrderStepper>
         _buildStepIndicator(isDark),
         Expanded(
           child: Obx(() {
+            // Récupérer la valeur de currentStep pour forcer la réactivité
+            final currentStep = controller.currentStep.value;
+            
             // Animer le changement d'étape
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) _animateStepChange();
@@ -136,7 +139,7 @@ class _OrderStepperState extends State<OrderStepper>
                   opacity: _stepFadeAnimation,
                   child: SlideTransition(
                     position: _stepSlideAnimation,
-                    child: _buildStep(controller.currentStep.value),
+                    child: _buildStep(currentStep),
                   ),
                 );
               },

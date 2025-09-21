@@ -734,6 +734,12 @@ class OrdersController extends GetxController {
   final filteredClients = <User>[].obs;
   final clientSearchFilter = 'name'.obs;
 
+  // Pagination pour les clients
+  final clientCurrentPage = 1.obs;
+  final clientItemsPerPage = 10.obs; // 10 clients par page par défaut
+  final clientTotalPages = 0.obs;
+  final clientTotalItems = 0.obs;
+
   // Ajouter cette propriété pour l'étape courante
   final currentStep = 0.obs;
 
@@ -888,16 +894,66 @@ class OrdersController extends GetxController {
   }
 
   // Méthodes pour la création/édition de commande
-  Future<void> loadClients() async {
+  Future<void> loadClients({int? page, int? limit}) async {
     try {
       isLoadingClients.value = true;
-      final result = await UserService.getClients();
-      clients.value = result;
-      print('[OrdersController] Loaded ${result.length} clients');
+      
+      // Si pas de pagination spécifiée, charger tous les clients (comportement par défaut)
+      if (page == null && limit == null) {
+        final result = await UserService.getClients();
+        clients.value = result;
+        clientTotalItems.value = result.length;
+        clientTotalPages.value = 1;
+        clientCurrentPage.value = 1;
+        print('[OrdersController] Loaded ${result.length} clients (all)');
+      } else {
+        // Chargement paginé (si le service le supporte)
+        final currentPageValue = page ?? clientCurrentPage.value;
+        final currentLimitValue = limit ?? clientItemsPerPage.value;
+        
+        // Pour l'instant, on simule la pagination côté client
+        // TODO: Implémenter la pagination côté serveur si nécessaire
+        final allClients = await UserService.getClients();
+        final startIndex = (currentPageValue - 1) * currentLimitValue;
+        final endIndex = (startIndex + currentLimitValue).clamp(0, allClients.length);
+        
+        clients.value = allClients.sublist(startIndex, endIndex);
+        clientTotalItems.value = allClients.length;
+        clientTotalPages.value = (allClients.length / currentLimitValue).ceil();
+        clientCurrentPage.value = currentPageValue;
+        
+        print('[OrdersController] Loaded ${clients.length} clients (page $currentPageValue/${ clientTotalPages.value})');
+      }
     } catch (e) {
       print('[OrdersController] Error loading clients: $e');
     } finally {
       isLoadingClients.value = false;
+    }
+  }
+
+  // Méthodes de pagination pour les clients
+  void clientNextPage() {
+    if (clientCurrentPage.value < clientTotalPages.value) {
+      loadClients(page: clientCurrentPage.value + 1);
+    }
+  }
+
+  void clientPreviousPage() {
+    if (clientCurrentPage.value > 1) {
+      loadClients(page: clientCurrentPage.value - 1);
+    }
+  }
+
+  void setClientItemsPerPage(int value) {
+    if (value != clientItemsPerPage.value) {
+      clientItemsPerPage.value = value;
+      loadClients(page: 1, limit: value);
+    }
+  }
+
+  void goToClientPage(int page) {
+    if (page >= 1 && page <= clientTotalPages.value && page != clientCurrentPage.value) {
+      loadClients(page: page);
     }
   }
 

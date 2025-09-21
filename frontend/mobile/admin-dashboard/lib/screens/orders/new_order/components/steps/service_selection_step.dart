@@ -203,6 +203,50 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
     );
   }
 
+  /// Met à jour le statut premium de tous les items existants dans le draft
+  void _updateAllItemsPremiumStatus(bool newPremiumStatus) {
+    print('[ServiceSelectionStep] Updating all items premium status to: $newPremiumStatus');
+    
+    // Récupérer tous les items actuels du draft
+    final currentItems = controller.orderDraft.value.items;
+    
+    // Mettre à jour chaque item avec le nouveau statut premium
+    for (final item in currentItems) {
+      if (item.quantity > 0) {
+        controller.updateDraftItemQuantity(
+          item.articleId,
+          item.quantity,
+          isPremium: showPremiumSwitch && newPremiumStatus,
+        );
+      }
+    }
+    
+    // Forcer la mise à jour de l'UI
+    controller.update();
+    
+    print('[ServiceSelectionStep] Updated ${currentItems.length} items with premium status: $newPremiumStatus');
+  }
+
+  /// Calcule le total actuel en utilisant le statut premium du stepper
+  double _calculateCurrentTotal() {
+    double sum = 0;
+    for (var item in controller.orderDraft.value.items) {
+      final couple = couples.firstWhereOrNull((c) => c['article_id'] == item.articleId);
+      if (couple != null) {
+        final basePrice = double.tryParse(couple['base_price'].toString()) ?? 0.0;
+        final premiumPrice = double.tryParse(couple['premium_price'].toString()) ?? 0.0;
+        
+        // Utiliser le statut premium actuel du stepper, pas celui de l'item
+        final price = (showPremiumSwitch && isPremium) ? premiumPrice : basePrice;
+        sum += price * item.quantity;
+        
+        print('[ServiceSelectionStep] Article ${item.articleId}: ${isPremium ? "premium" : "standard"} = ${price} FCFA x ${item.quantity}');
+      }
+    }
+    print('[ServiceSelectionStep] Total calculé: ${sum} FCFA (isPremium: $isPremium)');
+    return sum;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -214,23 +258,38 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
           opacity: _fadeAnimation,
           child: SlideTransition(
             position: _slideAnimation,
-            child: Container(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildStepHeader(isDark),
-                  SizedBox(height: AppSpacing.xl),
-                  if (isLoading)
-                    _buildLoadingState(isDark)
-                  else ...[
-                    _buildServiceConfiguration(isDark),
-                    SizedBox(height: AppSpacing.lg),
-                    if (selectedServiceType != null)
-                      Expanded(child: _buildServiceContent(isDark)),
-                  ],
-                ],
-              ),
+            child: Column(
+              children: [
+                // Header fixe
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: _buildStepHeader(isDark),
+                ),
+                
+                // Contenu scrollable
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isLoading)
+                          Container(
+                            height: 400,
+                            child: _buildLoadingContent(isDark),
+                          )
+                        else ...[
+                          _buildServiceConfiguration(isDark),
+                          SizedBox(height: AppSpacing.lg),
+                          if (selectedServiceType != null)
+                            _buildServiceContent(isDark),
+                        ],
+                        SizedBox(height: AppSpacing.xl), // Padding bottom
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -373,6 +432,40 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
     );
   }
 
+  Widget _buildLoadingContent(bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.accent, AppColors.accent.withOpacity(0.6)],
+              ),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 3,
+              ),
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg),
+          Text(
+            'Chargement des services...',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildServiceConfiguration(bool isDark) {
     return GlassContainer(
       variant: GlassContainerVariant.neutral,
@@ -439,6 +532,7 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
       borderRadius: AppRadius.lg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -463,24 +557,28 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
           if (showPremiumSwitch) ...[
             ModernPremiumSwitch(
               value: isPremium,
-              onChanged: (value) => setState(() => isPremium = value),
+              onChanged: (value) {
+                setState(() {
+                  isPremium = value;
+                  // Mettre à jour tous les items existants avec le nouveau statut premium
+                  _updateAllItemsPremiumStatus(value);
+                });
+              },
               isDark: isDark,
             ),
             SizedBox(height: AppSpacing.lg),
           ],
 
-          Expanded(
-            child: SingleChildScrollView(
-              child: Obx(() => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ..._buildArticlesByCategory(isDark),
-                      SizedBox(height: AppSpacing.lg),
-                      _buildTotalEstimation(isDark),
-                    ],
-                  )),
-            ),
-          ),
+          // Articles scrollables
+          Obx(() => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ..._buildArticlesByCategory(isDark),
+                  SizedBox(height: AppSpacing.lg),
+                  _buildTotalEstimation(isDark),
+                ],
+              )),
         ],
       ),
     );
@@ -535,7 +633,7 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
   }
 
   Widget _buildTotalEstimation(bool isDark) {
-    final total = controller.estimatedTotalFromCouples(couples);
+    final total = _calculateCurrentTotal();
 
     return AnimatedBuilder(
       animation: _pulseAnimation,
@@ -566,7 +664,7 @@ class _ServiceSelectionStepState extends State<ServiceSelectionStep>
                         ),
                       ),
                       Text(
-                        'Prix total des articles sélectionnés',
+                        isPremium ? 'Prix premium sélectionnés' : 'Prix standard sélectionnés',
                         style: AppTextStyles.bodySmall.copyWith(
                           color: Colors.white.withOpacity(0.9),
                         ),

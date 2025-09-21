@@ -45,6 +45,33 @@ class _FlashServiceStepState extends State<FlashServiceStep>
     setState(() {});
   }
 
+  /// Met à jour le statut premium de tous les items existants dans le draft
+  void _updateAllItemsPremiumStatus(bool newPremiumStatus) {
+    print(
+        '[FlashServiceStep] Updating all items premium status to: $newPremiumStatus');
+
+    // Récupérer tous les items actuels du draft
+    final currentItems = widget.controller.draft.value.items;
+
+    // Mettre à jour chaque item avec le nouveau statut premium
+    for (final item in currentItems) {
+      if (item.quantity > 0) {
+        widget.controller.updateDraftItemQuantity(
+          item.articleId,
+          item.quantity,
+          isPremium: newPremiumStatus,
+          serviceId: item.serviceId,
+        );
+      }
+    }
+
+    // Synchroniser avec les couples pour mettre à jour les prix
+    widget.controller.syncSelectedItemsFrom(couples: couples);
+
+    print(
+        '[FlashServiceStep] Updated ${currentItems.length} items with premium status: $newPremiumStatus');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -132,10 +159,6 @@ class _FlashServiceStepState extends State<FlashServiceStep>
   bool get showWeightField => selectedServiceType?.requiresWeight == true;
   bool get showPremiumSwitch => selectedServiceType?.supportsPremium == true;
   String? get pricingType => selectedServiceType?.pricingType;
-
-  List<Widget> _buildArticleCatalog() {
-    return []; // Méthode obsolète - remplacée par _buildModernArticleCatalog
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -408,6 +431,8 @@ class _FlashServiceStepState extends State<FlashServiceStep>
                   onChanged: (val) {
                     setState(() {
                       isPremium = val;
+                      // Mettre à jour tous les items existants avec le nouveau statut premium
+                      _updateAllItemsPremiumStatus(val);
                     });
                   },
                 ),

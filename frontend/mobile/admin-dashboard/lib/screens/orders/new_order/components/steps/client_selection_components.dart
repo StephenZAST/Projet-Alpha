@@ -333,100 +333,131 @@ class ClientCardState extends State<ClientCard>
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
+      cursor: SystemMouseCursors.click, // Indique que c'est cliquable
       onEnter: (_) {
         _controller.forward();
       },
       onExit: (_) {
         _controller.reverse();
       },
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: GlassContainer(
-              variant: widget.isSelected
-                  ? GlassContainerVariant.primary
-                  : GlassContainerVariant.neutral,
-              padding: EdgeInsets.all(AppSpacing.md),
-              borderRadius: AppRadius.md,
-              child: Row(
-                children: [
-                  // Avatar client
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: widget.isSelected
-                            ? [
-                                Colors.white.withOpacity(0.9),
-                                Colors.white.withOpacity(0.7)
-                              ]
-                            : [
-                                AppColors.primary,
-                                AppColors.primary.withOpacity(0.8)
-                              ],
-                      ),
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (widget.isSelected
-                                  ? Colors.white
-                                  : AppColors.primary)
-                              .withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
+      child: GestureDetector(
+        onTap:
+            widget.onSelect, // Rend toute la carte cliquable pour la sélection
+        child: AnimatedBuilder(
+          animation: _scaleAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _scaleAnimation.value,
+              child: GlassContainer(
+                variant: widget.isSelected
+                    ? GlassContainerVariant.primary
+                    : GlassContainerVariant.neutral,
+                padding: EdgeInsets.all(AppSpacing.md),
+                borderRadius: AppRadius.md,
+                child: Row(
+                  children: [
+                    // Avatar client
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: widget.isSelected
+                              ? [
+                                  Colors.white.withOpacity(0.9),
+                                  Colors.white.withOpacity(0.7)
+                                ]
+                              : [
+                                  AppColors.primary,
+                                  AppColors.primary.withOpacity(0.8)
+                                ],
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${widget.client.firstName[0]}${widget.client.lastName[0]}'
-                            .toUpperCase(),
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          color: widget.isSelected
-                              ? AppColors.primary
-                              : Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (widget.isSelected
+                                    ? Colors.white
+                                    : AppColors.primary)
+                                .withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.md),
-
-                  // Informations client
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${widget.client.firstName} ${widget.client.lastName}',
+                      child: Center(
+                        child: Text(
+                          '${widget.client.firstName[0]}${widget.client.lastName[0]}'
+                              .toUpperCase(),
                           style: AppTextStyles.bodyLarge.copyWith(
                             color: widget.isSelected
-                                ? Colors.white
-                                : (widget.isDark
-                                    ? AppColors.textLight
-                                    : AppColors.textPrimary),
+                                ? AppColors.primary
+                                : Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: AppSpacing.xs),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.email,
-                              size: 14,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.md),
+
+                    // Informations client
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${widget.client.firstName} ${widget.client.lastName}',
+                            style: AppTextStyles.bodyLarge.copyWith(
                               color: widget.isSelected
-                                  ? Colors.white.withOpacity(0.8)
+                                  ? Colors.white
                                   : (widget.isDark
-                                      ? AppColors.gray400
-                                      : AppColors.gray600),
+                                      ? AppColors.textLight
+                                      : AppColors.textPrimary),
+                              fontWeight: FontWeight.bold,
                             ),
-                            SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: Text(
-                                widget.client.email,
+                          ),
+                          SizedBox(height: AppSpacing.xs),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.email,
+                                size: 14,
+                                color: widget.isSelected
+                                    ? Colors.white.withOpacity(0.8)
+                                    : (widget.isDark
+                                        ? AppColors.gray400
+                                        : AppColors.gray600),
+                              ),
+                              SizedBox(width: AppSpacing.xs),
+                              Expanded(
+                                child: Text(
+                                  widget.client.email,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: widget.isSelected
+                                        ? Colors.white.withOpacity(0.9)
+                                        : (widget.isDark
+                                            ? AppColors.gray400
+                                            : AppColors.gray600),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: AppSpacing.xs),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.phone,
+                                size: 14,
+                                color: widget.isSelected
+                                    ? Colors.white.withOpacity(0.8)
+                                    : (widget.isDark
+                                        ? AppColors.gray400
+                                        : AppColors.gray600),
+                              ),
+                              SizedBox(width: AppSpacing.xs),
+                              Text(
+                                widget.client.phone ?? 'Pas de téléphone',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: widget.isSelected
                                       ? Colors.white.withOpacity(0.9)
@@ -434,69 +465,43 @@ class ClientCardState extends State<ClientCard>
                                           ? AppColors.gray400
                                           : AppColors.gray600),
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Actions
+                    Column(
+                      children: [
+                        ClientActionButton(
+                          icon: widget.isSelected
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          onPressed: widget.onSelect,
+                          color: widget.isSelected
+                              ? Colors.white
+                              : AppColors.primary,
+                          isSelected: widget.isSelected,
                         ),
-                        SizedBox(height: AppSpacing.xs),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.phone,
-                              size: 14,
-                              color: widget.isSelected
-                                  ? Colors.white.withOpacity(0.8)
-                                  : (widget.isDark
-                                      ? AppColors.gray400
-                                      : AppColors.gray600),
-                            ),
-                            SizedBox(width: AppSpacing.xs),
-                            Text(
-                              widget.client.phone ?? 'Pas de téléphone',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: widget.isSelected
-                                    ? Colors.white.withOpacity(0.9)
-                                    : (widget.isDark
-                                        ? AppColors.gray400
-                                        : AppColors.gray600),
-                              ),
-                            ),
-                          ],
+                        SizedBox(height: AppSpacing.sm),
+                        ClientActionButton(
+                          icon: Icons.visibility,
+                          onPressed: widget.onViewDetails,
+                          color: widget.isSelected
+                              ? Colors.white.withOpacity(0.8)
+                              : AppColors.info,
+                          isSelected: widget.isSelected,
                         ),
                       ],
                     ),
-                  ),
-
-                  // Actions
-                  Column(
-                    children: [
-                      ClientActionButton(
-                        icon: widget.isSelected
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked,
-                        onPressed: widget.onSelect,
-                        color: widget.isSelected
-                            ? Colors.white
-                            : AppColors.primary,
-                        isSelected: widget.isSelected,
-                      ),
-                      SizedBox(height: AppSpacing.sm),
-                      ClientActionButton(
-                        icon: Icons.visibility,
-                        onPressed: widget.onViewDetails,
-                        color: widget.isSelected
-                            ? Colors.white.withOpacity(0.8)
-                            : AppColors.info,
-                        isSelected: widget.isSelected,
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

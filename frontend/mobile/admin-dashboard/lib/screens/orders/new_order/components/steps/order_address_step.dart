@@ -101,18 +101,28 @@ class _OrderAddressStepState extends State<OrderAddressStep>
           opacity: _fadeAnimation,
           child: SlideTransition(
             position: _slideAnimation,
-            child: Container(
-              padding: EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildStepHeader(isDark),
-                  SizedBox(height: AppSpacing.xl),
-                  Expanded(
-                    child: Obx(() => _buildAddressContent(isDark)),
+            child: Column(
+              children: [
+                // Header fixe
+                Container(
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  child: _buildStepHeader(isDark),
+                ),
+                
+                // Contenu scrollable
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: Obx(() => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildAddressContent(isDark),
+                        SizedBox(height: AppSpacing.xl), // Padding bottom
+                      ],
+                    )),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
@@ -231,12 +241,13 @@ class _OrderAddressStepState extends State<OrderAddressStep>
     }
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         if (selectedAddress != null) ...[
           _buildSelectedAddress(selectedAddress, isDark),
           SizedBox(height: AppSpacing.lg),
         ],
-        Expanded(child: _buildAddressList(addresses, isDark)),
+        _buildAddressList(addresses, isDark),
         SizedBox(height: AppSpacing.lg),
         _buildAddressActions(selectedAddress, isDark),
       ],
@@ -285,6 +296,7 @@ class _OrderAddressStepState extends State<OrderAddressStep>
       borderRadius: AppRadius.lg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -304,16 +316,15 @@ class _OrderAddressStepState extends State<OrderAddressStep>
             ],
           ),
           SizedBox(height: AppSpacing.md),
-          Expanded(
-            child: ListView.separated(
-              itemCount: addresses.length,
-              separatorBuilder: (_, __) => SizedBox(height: AppSpacing.sm),
-              itemBuilder: (context, index) {
-                final address = addresses[index];
-                final isSelected =
-                    controller.selectedAddressId.value == address.id;
+          // Liste des adresses sans Expanded
+          ...addresses.asMap().entries.map((entry) {
+            final index = entry.key;
+            final address = entry.value;
+            final isSelected = controller.selectedAddressId.value == address.id;
 
-                return AddressCard(
+            return Column(
+              children: [
+                AddressCard(
                   address: address,
                   isSelected: isSelected,
                   onSelect: () {
@@ -322,10 +333,11 @@ class _OrderAddressStepState extends State<OrderAddressStep>
                   },
                   onEdit: () => _openAddressDialog(address),
                   isDark: isDark,
-                );
-              },
-            ),
-          ),
+                ),
+                if (index < addresses.length - 1) SizedBox(height: AppSpacing.sm),
+              ],
+            );
+          }).toList(),
         ],
       ),
     );
