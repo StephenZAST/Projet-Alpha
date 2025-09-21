@@ -1452,6 +1452,7 @@ class OrdersController extends GetxController {
   // Nouvelles méthodes pour le header modernisé
   void setView(OrderView view) {
     currentView.value = view;
+    print('[OrdersController] View changed to: $view');
   }
 
   void updateQuickStats() {

@@ -3,18 +3,18 @@ import 'package:admin/constants.dart';
 import 'package:admin/widgets/shared/glass_container.dart';
 
 // Composants modernes pour OrderAddressDialog
-enum _AddressActionVariant { primary, secondary, info, warning, error }
+enum AddressActionVariant { primary, secondary, info, warning, error }
 
-class _ModernCloseButton extends StatefulWidget {
+class ModernCloseButton extends StatefulWidget {
   final VoidCallback onPressed;
 
-  const _ModernCloseButton({required this.onPressed});
+  const ModernCloseButton({Key? key, required this.onPressed}) : super(key: key);
 
   @override
   _ModernCloseButtonState createState() => _ModernCloseButtonState();
 }
 
-class _ModernCloseButtonState extends State<_ModernCloseButton>
+class _ModernCloseButtonState extends State<ModernCloseButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -100,26 +100,27 @@ class _ModernCloseButtonState extends State<_ModernCloseButton>
   }
 }
 
-class _ModernTabButton extends StatefulWidget {
+class ModernTabButton extends StatefulWidget {
   final String label;
   final IconData icon;
   final bool isSelected;
   final VoidCallback onPressed;
   final bool isDark;
 
-  const _ModernTabButton({
+  const ModernTabButton({
+    Key? key,
     required this.label,
     required this.icon,
     required this.isSelected,
     required this.onPressed,
     required this.isDark,
-  });
+  }) : super(key: key);
 
   @override
   _ModernTabButtonState createState() => _ModernTabButtonState();
 }
 
-class _ModernTabButtonState extends State<_ModernTabButton>
+class _ModernTabButtonState extends State<ModernTabButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -225,26 +226,27 @@ class _ModernTabButtonState extends State<_ModernTabButton>
   }
 }
 
-class _ModernActionButton extends StatefulWidget {
+class ModernActionButton extends StatefulWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;
-  final _AddressActionVariant variant;
+  final AddressActionVariant variant;
   final bool isLoading;
 
-  const _ModernActionButton({
+  const ModernActionButton({
+    Key? key,
     required this.icon,
     required this.label,
     required this.onPressed,
     required this.variant,
     this.isLoading = false,
-  });
+  }) : super(key: key);
 
   @override
   _ModernActionButtonState createState() => _ModernActionButtonState();
 }
 
-class _ModernActionButtonState extends State<_ModernActionButton>
+class _ModernActionButtonState extends State<ModernActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -274,15 +276,15 @@ class _ModernActionButtonState extends State<_ModernActionButton>
 
   Color _getVariantColor() {
     switch (widget.variant) {
-      case _AddressActionVariant.primary:
+      case AddressActionVariant.primary:
         return AppColors.primary;
-      case _AddressActionVariant.secondary:
+      case AddressActionVariant.secondary:
         return AppColors.gray600;
-      case _AddressActionVariant.info:
+      case AddressActionVariant.info:
         return AppColors.info;
-      case _AddressActionVariant.warning:
+      case AddressActionVariant.warning:
         return AppColors.warning;
-      case _AddressActionVariant.error:
+      case AddressActionVariant.error:
         return AppColors.error;
     }
   }
@@ -309,7 +311,7 @@ class _ModernActionButtonState extends State<_ModernActionButton>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: GlassContainer(
-              variant: widget.variant == _AddressActionVariant.primary
+              variant: widget.variant == AddressActionVariant.primary
                   ? GlassContainerVariant.primary
                   : GlassContainerVariant.neutral,
               padding: EdgeInsets.symmetric(
@@ -328,7 +330,7 @@ class _ModernActionButtonState extends State<_ModernActionButton>
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          widget.variant == _AddressActionVariant.primary
+                          widget.variant == AddressActionVariant.primary
                               ? Colors.white
                               : variantColor,
                         ),
@@ -338,7 +340,7 @@ class _ModernActionButtonState extends State<_ModernActionButton>
                   ] else ...[
                     Icon(
                       widget.icon,
-                      color: widget.variant == _AddressActionVariant.primary
+                      color: widget.variant == AddressActionVariant.primary
                           ? Colors.white
                           : variantColor,
                       size: 20,
@@ -348,7 +350,7 @@ class _ModernActionButtonState extends State<_ModernActionButton>
                   Text(
                     widget.isLoading ? 'Enregistrement...' : widget.label,
                     style: AppTextStyles.buttonMedium.copyWith(
-                      color: widget.variant == _AddressActionVariant.primary
+                      color: widget.variant == AddressActionVariant.primary
                           ? Colors.white
                           : variantColor,
                       fontWeight: FontWeight.w600,
@@ -364,7 +366,7 @@ class _ModernActionButtonState extends State<_ModernActionButton>
   }
 }
 
-class _ModernAddressField extends StatefulWidget {
+class ModernAddressField extends StatefulWidget {
   final String label;
   final IconData icon;
   final String value;
@@ -373,7 +375,8 @@ class _ModernAddressField extends StatefulWidget {
   final String? hint;
   final bool isRequired;
 
-  const _ModernAddressField({
+  const ModernAddressField({
+    Key? key,
     required this.label,
     required this.icon,
     required this.value,
@@ -381,13 +384,13 @@ class _ModernAddressField extends StatefulWidget {
     required this.isDark,
     this.hint,
     this.isRequired = false,
-  });
+  }) : super(key: key);
 
   @override
   _ModernAddressFieldState createState() => _ModernAddressFieldState();
 }
 
-class _ModernAddressFieldState extends State<_ModernAddressField> {
+class _ModernAddressFieldState extends State<ModernAddressField> {
   late TextEditingController _controller;
   bool _isFocused = false;
 
@@ -398,7 +401,7 @@ class _ModernAddressFieldState extends State<_ModernAddressField> {
   }
 
   @override
-  void didUpdateWidget(_ModernAddressField oldWidget) {
+  void didUpdateWidget(ModernAddressField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.value != widget.value) {
       _controller.text = widget.value;
@@ -484,17 +487,17 @@ class _ModernAddressFieldState extends State<_ModernAddressField> {
   }
 }
 
-// ignore: unused_element
-class _GPSInfoCard extends StatelessWidget {
+class GPSInfoCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
 
-  const _GPSInfoCard({
+  const GPSInfoCard({
+    Key? key,
     required this.label,
     required this.value,
     required this.icon,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

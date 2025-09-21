@@ -206,6 +206,7 @@ class _ModernActionButtonState extends State<_ModernActionButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  late Animation<double> _glowAnimation;
   bool _isHovered = false;
 
   @override
@@ -219,6 +220,14 @@ class _ModernActionButtonState extends State<_ModernActionButton>
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 1.05,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _glowAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
@@ -437,27 +446,10 @@ class _ModernViewToggle extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: OrderView.values.map((view) {
             final isSelected = currentView.value == view;
-            return GestureDetector(
-              onTap: () => onViewChanged(view),
-              child: AnimatedContainer(
-                duration: Duration(milliseconds: 200),
-                padding: EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary.withOpacity(0.2)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(
-                  _getViewIcon(view),
-                  color: isSelected
-                      ? AppColors.primary
-                      : (Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.gray400
-                          : AppColors.gray600),
-                  size: 20,
-                ),
-              ),
+            return _ViewToggleButton(
+              view: view,
+              isSelected: isSelected,
+              onPressed: () => onViewChanged(view),
             );
           }).toList(),
         ),
@@ -596,6 +588,140 @@ class _QuickStatCardState extends State<_QuickStatCard>
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ViewToggleButton extends StatefulWidget {
+  final OrderView view;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  const _ViewToggleButton({
+    required this.view,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  @override
+  _ViewToggleButtonState createState() => _ViewToggleButtonState();
+}
+
+class _ViewToggleButtonState extends State<_ViewToggleButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _glowAnimation;
+  bool _isHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 150),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.1,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _glowAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  IconData _getViewIcon(OrderView view) {
+    switch (view) {
+      case OrderView.table:
+        return Icons.table_chart;
+      case OrderView.map:
+        return Icons.map;
+      case OrderView.cards:
+        return Icons.view_module;
+    }
+  }
+
+  String _getViewLabel(OrderView view) {
+    switch (view) {
+      case OrderView.table:
+        return 'Vue tableau';
+      case OrderView.map:
+        return 'Vue carte';
+      case OrderView.cards:
+        return 'Vue cartes';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() => _isHovered = true);
+        _controller.forward();
+      },
+      onExit: (_) {
+        setState(() => _isHovered = false);
+        _controller.reverse();
+      },
+      child: Tooltip(
+        message: _getViewLabel(widget.view),
+        child: GestureDetector(
+          onTap: widget.onPressed,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: _scaleAnimation.value,
+                child: AnimatedContainer(
+                  duration: Duration(milliseconds: 200),
+                  padding: EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: widget.isSelected
+                        ? AppColors.primary.withOpacity(0.2)
+                        : (_isHovered ? AppColors.primary.withOpacity(0.1) : Colors.transparent),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    boxShadow: _isHovered && widget.isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Icon(
+                    _getViewIcon(widget.view),
+                    color: widget.isSelected
+                        ? AppColors.primary
+                        : (_isHovered 
+                            ? AppColors.primary.withOpacity(0.8)
+                            : (isDark ? AppColors.gray400 : AppColors.gray600)),
+                    size: 20,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

@@ -3,8 +3,9 @@ import { OrderCreateController } from './orderCreate.controller';
 import { OrderQueryController } from './orderQuery.controller';
 import { OrderStatusController } from './orderStatus.controller';
 import { FlashOrderController } from './flashOrder.controller';
-import { OrderSharedMethods } from './shared';  
+import { OrderSharedMethods } from './shared';
 import { OrderUpdateController } from './orderUpdate.controller';
+import { OrderMapController } from './orderMap.controller';
 
 export class OrderController {
   // Méthodes de création
@@ -71,6 +72,15 @@ export class OrderController {
 
   static async completeFlashOrder(req: Request, res: Response): Promise<void> {
     await FlashOrderController.completeFlashOrder(req, res);
+  }
+
+  // Méthodes de carte
+  static async getOrdersForMap(req: Request, res: Response): Promise<void> {
+    await OrderMapController.getOrdersForMap(req, res);
+  }
+
+  static async getOrdersGeoStats(req: Request, res: Response): Promise<void> {
+    await OrderMapController.getOrdersGeoStats(req, res);
   }
 
   // Méthodes partagées

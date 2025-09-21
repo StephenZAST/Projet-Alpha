@@ -18,6 +18,21 @@ router.get(
   asyncHandler(OrderController.getOrderById)
 );
 
+// Routes pour la carte des commandes
+router.get(
+  '/map/orders',
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN', 'DELIVERY']),
+  asyncHandler(OrderController.getOrdersForMap)
+);
+
+router.get(
+  '/map/stats',
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(OrderController.getOrdersGeoStats)
+);
+
 // Ajouter des logs pour le debugging
 router.use((req, res, next) => {
   console.log('Order Route Request:', {

@@ -10,6 +10,7 @@ import '../../../constants.dart';
 import '../../../models/address.dart';
 import '../../../widgets/shared/app_button.dart';
 import '../../../controllers/address_controller.dart';
+import 'improved_map_widget.dart';
 
 class AddressSelectionMap extends StatefulWidget {
   final Address? initialAddress;
@@ -67,189 +68,81 @@ class _AddressSelectionMapState extends State<AddressSelectionMap> {
             child: IntrinsicHeight(
               child: Column(
                 children: [
-                  Container(
-                    height: 320,
-                    decoration: BoxDecoration(
-                      borderRadius: AppRadius.radiusLG,
-                      border: Border.all(
-                        color: AppColors.borderLight,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: AppRadius.radiusLG,
-                      child: Stack(
-                        children: [
-                          FlutterMap(
-                            mapController: _mapController,
-                            options: MapOptions(
-                              center: _selectedAddress?.gpsLatitude != null
-                                  ? LatLng(
-                                      _selectedAddress!.gpsLatitude!,
-                                      _selectedAddress!.gpsLongitude!,
-                                    )
-                                  : const LatLng(5.3484, -4.0305),
-                              zoom: _currentZoom,
-                              onPositionChanged: (pos, hasGesture) {
-                                if (pos.zoom != null) {
-                                  double clamped =
-                                      pos.zoom!.clamp(_minZoom, _maxZoom);
-                                  if (clamped != pos.zoom) {
-                                    _mapController.move(
-                                        _mapController.center, clamped);
-                                  }
-                                  setState(() {
-                                    _currentZoom = clamped;
-                                  });
-                                }
-                              },
-                            ),
-                            children: [
-                              TileLayer(
-                                urlTemplate:
-                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                userAgentPackageName: 'com.alpha.admin',
+                  Stack(
+                    children: [
+                      // Carte améliorée et robuste
+                      ImprovedMapWidget(
+                        height: 320,
+                        initialCenter: _selectedAddress?.gpsLatitude != null
+                            ? LatLng(
+                                _selectedAddress!.gpsLatitude!,
+                                _selectedAddress!.gpsLongitude!,
+                              )
+                            : const LatLng(12.3714, -1.5197), // Ouagadougou par défaut
+                        initialZoom: 15.0,
+                        markers: [
+                          if (_selectedAddress != null &&
+                              _selectedAddress!.gpsLatitude != null &&
+                              _selectedAddress!.gpsLongitude != null)
+                            Marker(
+                              point: LatLng(
+                                _selectedAddress!.gpsLatitude!,
+                                _selectedAddress!.gpsLongitude!,
                               ),
-                              MarkerLayer(
-                                markers: [
-                                  if (_selectedAddress != null &&
-                                      _selectedAddress!.gpsLatitude != null &&
-                                      _selectedAddress!.gpsLongitude != null)
-                                    Marker(
-                                      point: LatLng(
-                                        _selectedAddress!.gpsLatitude!,
-                                        _selectedAddress!.gpsLongitude!,
-                                      ),
-                                      width: 36,
-                                      height: 44,
-                                      builder: (context) => Icon(
-                                        Icons.place,
-                                        color: AppColors.primary,
-                                        size: 40,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          // Boutons overlay (ajout et centrer)
-                          Positioned(
-                            top: 16,
-                            right: 16,
-                            child: Column(
-                              children: [
-                                if (widget.onAddNewAddress != null)
-                                  AppButton(
-                                    icon: Icons.add_location_alt,
-                                    label: 'Nouvelle adresse',
-                                    onPressed: widget.onAddNewAddress!,
-                                    variant: AppButtonVariant.secondary,
-                                  ),
-                                if (_selectedAddress != null) ...[
-                                  const SizedBox(height: 8),
-                                  _GlassyMapButton(
-                                    icon: Icons.center_focus_strong,
-                                    label: 'Centrer',
-                                    onPressed: () =>
-                                        _centerOnAddress(_selectedAddress!),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          // Card d'adresse épurée et moderne
-                          if (_selectedAddress != null)
-                            Positioned(
-                              left: 32,
-                              right: 32,
-                              bottom: 18,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.10),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            _selectedAddress?.name ??
-                                                'Sans nom',
-                                            style: AppTextStyles.bodyMedium
-                                                .copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.primary,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          if (_selectedAddress?.street != null)
-                                            Text(
-                                              _selectedAddress!.street,
-                                              style: AppTextStyles.bodySmall
-                                                  .copyWith(
-                                                color: AppColors.textPrimary,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          Text(
-                                            [
-                                              _selectedAddress?.city,
-                                              _selectedAddress?.postalCode,
-                                            ].where((e) => e != null).join(' '),
-                                            style: AppTextStyles.bodySmall
-                                                .copyWith(
-                                              color: AppColors.textSecondary,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Material(
-                                      color: Colors.transparent,
-                                      child: IconButton(
-                                        icon: Icon(Icons.open_in_new_rounded,
-                                            color: AppColors.primary, size: 22),
-                                        tooltip: 'Ouvrir dans Google Maps',
-                                        onPressed: () {
-                                          final lat =
-                                              _selectedAddress?.gpsLatitude;
-                                          final lng =
-                                              _selectedAddress?.gpsLongitude;
-                                          if (lat != null && lng != null) {
-                                            final url =
-                                                'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
-                                            // ignore: deprecated_member_use
-                                            launchUrl(Uri.parse(url),
-                                                mode: LaunchMode
-                                                    .externalApplication);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              width: 40,
+                              height: 50,
+                              builder: (context) => _ModernMapMarker(
+                                color: AppColors.primary,
+                                borderColor: AppColors.primary.withOpacity(0.8),
+                                isSelected: true,
                               ),
                             ),
                         ],
+                        onPositionChanged: (position, hasGesture) {
+                          if (hasGesture && position.zoom != null) {
+                            setState(() {
+                              _currentZoom = position.zoom!;
+                            });
+                          }
+                        },
+                        showZoomControls: true,
+                        showAttribution: true,
+                        mapTheme: 'auto',
                       ),
-                    ),
+
+                      // Boutons overlay (ajout et centrer)
+                      Positioned(
+                        top: 16,
+                        right: 60, // Décalé pour éviter les contrôles de zoom
+                        child: Column(
+                          children: [
+                            if (widget.onAddNewAddress != null)
+                              _GlassyMapButton(
+                                icon: Icons.add_location_alt,
+                                label: 'Nouvelle',
+                                onPressed: widget.onAddNewAddress!,
+                              ),
+                            if (_selectedAddress != null) ...[
+                              const SizedBox(height: 8),
+                              _GlassyMapButton(
+                                icon: Icons.center_focus_strong,
+                                label: 'Centrer',
+                                onPressed: () => _centerOnAddress(_selectedAddress!),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      // Card d'adresse épurée et moderne
+                      if (_selectedAddress != null)
+                        Positioned(
+                          left: 16,
+                          right: 16,
+                          bottom: 16,
+                          child: _buildAddressCard(),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   // Liste d'adresses retirée pour simplifier l'UX, la gestion se fera dans un onglet dédié.
@@ -260,6 +153,134 @@ class _AddressSelectionMapState extends State<AddressSelectionMap> {
         );
       },
     );
+  }
+
+  Widget _buildAddressCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark 
+            ? AppColors.gray800.withOpacity(0.95)
+            : Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark 
+              ? AppColors.gray600.withOpacity(0.3)
+              : AppColors.gray300.withOpacity(0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Icône d'adresse
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.location_on,
+              color: AppColors.primary,
+              size: 20,
+            ),
+          ),
+          SizedBox(width: 12),
+          
+          // Informations d'adresse
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _selectedAddress?.name ?? 'Sans nom',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (_selectedAddress?.street != null) ...[
+                  SizedBox(height: 2),
+                  Text(
+                    _selectedAddress!.street,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.gray300 : AppColors.gray700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                if (_selectedAddress?.city != null || _selectedAddress?.postalCode != null) ...[
+                  SizedBox(height: 2),
+                  Text(
+                    [
+                      _selectedAddress?.city,
+                      _selectedAddress?.postalCode,
+                    ].where((e) => e != null && e.isNotEmpty).join(' '),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.gray400 : AppColors.gray600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          
+          // Bouton Google Maps
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _openInGoogleMaps(),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.open_in_new_rounded,
+                  color: AppColors.info,
+                  size: 18,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openInGoogleMaps() {
+    final lat = _selectedAddress?.gpsLatitude;
+    final lng = _selectedAddress?.gpsLongitude;
+    if (lat != null && lng != null) {
+      final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+      try {
+        launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } catch (e) {
+        Get.snackbar(
+          'Erreur',
+          'Impossible d\'ouvrir Google Maps',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.error.withOpacity(0.1),
+          colorText: AppColors.error,
+        );
+      }
+    }
   }
 }
 
