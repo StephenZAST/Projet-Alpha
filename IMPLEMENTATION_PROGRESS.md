@@ -274,7 +274,9 @@ AppBar(
 
 ## 📋 TASK BREAKDOWN & IMPLEMENTATION ORDER
 
-### Semaine 1: Dashboard Foundation
+## 🎯 PHASE ADMIN DASHBOARD (COMPLÉTÉE)
+
+### Semaine 1: Dashboard Foundation ✅
 ```
 Jour 1-2: Statistics Cards & Header modernization
 ├── statistics_cards.dart (glassmorphism + animations)
@@ -287,7 +289,7 @@ Jour 3: Charts Enhancement
 └── order_status_metrics.dart (métriques animées)
 ```
 
-### Semaine 2: Orders Core Interface
+### Semaine 2: Orders Core Interface ✅
 ```
 Jour 1-2: Orders Screen Foundation
 ├── orders_screen.dart (refonte interface)
@@ -302,7 +304,7 @@ Jour 3-4: Dialog Modernization
 └── status_update_dialog.dart (design cohérent)
 ```
 
-### Semaine 3: Address & Map Enhancement
+### Semaine 3: Address & Map Enhancement ✅
 ```
 Jour 1-2: Address Management
 ├── address_selection_map.dart (zoom fixes)
@@ -468,9 +470,290 @@ lib/
 ---
 
 **Début d'implémentation prévu**: Immédiat
-**Livraison estimée**: 3-4 semaines
+**Livraison estimée**: 3-4 semaines  
 **Équipe requise**: 1-2 développeurs frontend + 1 développeur backend (partiel)
 
 ---
 
-*Ce plan sera mis à jour au fur et à mesure de l'avancement. Chaque phase sera validée avant de passer à la suivante.*
+## 🚀 NOUVELLE PHASE : APPLICATION LIVREURS MOBILE-FIRST
+
+### 📋 Vue d'Ensemble
+Application Flutter dédiée aux livreurs d'Alpha Laundry, conçue mobile-first avec synchronisation backend existant.
+
+**Localisation**: `frontend/mobile/delivery-app/`
+**Durée**: 10 semaines
+**Technologies**: Flutter, GetX, FlutterMap, Geolocator
+
+### 🎯 Objectifs Principaux
+- **UX Mobile Optimale** : Design mobile-first, navigation au pouce
+- **Workflow Efficient** : Actions rapides, swipe gestures, FAB
+- **Cartographie Avancée** : Vue carte, sélection zones, navigation GPS
+- **Synchronisation Admin** : Backend partagé, temps réel
+- **Performance Mobile** : 60fps, démarrage < 2s, offline-ready
+
+### 📱 Architecture Delivery App
+```
+frontend/mobile/delivery-app/
+├── lib/
+│   ├── main.dart
+│   ├── app.dart  
+│   ├── constants.dart              # Mobile-first tokens
+│   ├── controllers/               # GetX state management
+│   │   ├── auth_controller.dart
+│   │   ├── dashboard_controller.dart
+│   │   ├── orders_controller.dart
+│   │   └── map_controller.dart
+│   ├── models/                    # Optimisés mobile
+│   │   ├── delivery_order.dart
+│   │   ├── delivery_stats.dart
+│   │   └── address_info.dart
+│   ├── screens/                   # UI mobile-first
+│   │   ├── auth/
+│   │   ├── dashboard/
+│   │   ├── orders/
+│   │   ├── map/
+│   │   └── profile/
+│   ├── services/                  # API + géolocalisation
+│   │   ├── api_service.dart
+│   │   ├── location_service.dart
+│   │   └── navigation_service.dart
+│   └── widgets/                   # Composants réutilisables
+│       ├── cards/
+│       ├── navigation/
+│       └── shared/
+└── Backend: Réutilise endpoints /delivery/* existants
+```
+
+### 🏗️ Fonctionnalités Clés
+
+#### **1. Dashboard Mobile Intelligent**
+- Statistiques du jour (livraisons, revenus, zones)
+- Commandes urgentes avec actions rapides
+- Statut disponibilité (actif/inactif toggle)
+- Navigation rapide vers fonctionnalités
+
+#### **2. Gestion Commandes Optimisée Mobile**
+- Liste avec swipe actions (Dismissible)
+- Filtres horizontaux scrollables  
+- Recherche temps réel par ID/client
+- Cards optimisées touch-friendly (120px height)
+
+#### **3. Cartographie Avancée & Navigation**
+- Vue carte avec marqueurs commandes/livreur
+- Sélection multiple par zone géographique
+- Intégration Google Maps/Apple Maps
+- Copie d'adresses pour apps tierces
+- DraggableScrollableSheet pour liste
+
+#### **4. Workflow Actions Rapides**
+- FAB pour actions primaires
+- Bottom navigation principale
+- Swipe-to-update statut commandes  
+- One-tap navigation GPS externe
+
+### 📅 Planning Détaillé (10 Semaines)
+
+#### **Semaines 1-2: Foundation & Setup** ⏳
+```
+□ Création projet Flutter delivery-app
+□ Configuration pubspec.yaml (GetX, FlutterMap, Geolocator, etc.)
+□ Architecture de base (MVC + GetX)
+□ Constants.dart avec tokens mobile-first
+□ Thème glassmorphism mobile adapté
+□ AuthService JWT intégré  
+□ Bottom navigation mobile
+□ Tests setup initial
+```
+
+#### **Semaines 3-4: Authentification & Dashboard** 🚧  
+```
+□ LoginScreen mobile-optimized
+□ DashboardScreen avec RefreshIndicator
+□ StatCardMobile glassmorphism (120px height)
+□ Welcome header avec statut livreur
+□ Quick actions avec FAB
+□ Loading states et skeleton animations
+□ Tests sur appareils physiques iOS/Android
+```
+
+#### **Semaines 5-6: Gestion Commandes Mobile** 📋
+```
+□ OrdersListScreen avec ListView.builder optimisé
+□ OrderCardMobile avec Dismissible swipe actions
+□ StatusBadgeMobile avec animations
+□ Filtres horizontaux (scrollable chips)
+□ Pull-to-refresh intégré  
+□ Performance testing listes longues (1000+ items)
+□ Micro-interactions et feedback tactile
+```
+
+#### **Semaines 7-8: Cartographie & Navigation** 🗺️
+```
+□ DeliveryMapScreen avec FlutterMap
+□ Marqueurs custom commandes + position livreur
+□ DraggableScrollableSheet bottom list
+□ NavigationService (Google/Apple Maps external)
+□ Sélection multiple zone avec polygones
+□ Géolocalisation temps réel optimisée batterie
+□ Tests GPS en conditions réelles
+```
+
+#### **Semaines 9-10: Détails & Optimisations** 🔍
+```
+□ OrderDetailsScreen complet mobile
+□ AddressCardMobile avec actions navigation
+□ OrderSearchScreen recherche avancée
+□ MobileFiltersBottomSheet 
+□ PerformanceOptimizer mobile
+□ Offline mode commandes critiques
+□ Tests complets et optimisations finales
+□ Documentation utilisateur livreurs
+```
+
+### 🎨 Design System Mobile-First
+
+#### **Tokens Spécifiques Mobile**
+```dart
+class MobileDimensions {
+  static const minTouchTarget = 48.0;    // Accessibilité
+  static const cardHeight = 120.0;       // Cards optimales
+  static const buttonHeight = 56.0;      // Boutons Material
+  static const bottomNavHeight = 80.0;   // Navigation bottom
+}
+
+class MobileSpacing {
+  static const xs = 4.0;
+  static const sm = 8.0; 
+  static const md = 16.0;  // Base spacing mobile
+  static const lg = 24.0;
+  static const xl = 32.0;
+}
+```
+
+#### **Patterns UI Mobile**
+- **Bottom Navigation** : Navigation principale sticky
+- **FAB** : Actions primaires accessibles pouce
+- **Swipe Gestures** : Dismissible pour actions rapides
+- **Bottom Sheets** : Modales adaptées mobile
+- **Cards 120px** : Hauteur optimale touch + contenu
+
+### 🔧 Synchronisation Admin-Delivery
+
+#### **Backend Partagé**
+```typescript
+// Mêmes endpoints, permissions différentes
+Routes /delivery/* existantes:
+- GET /delivery/pending-orders     (livreur actuel)
+- GET /delivery/assigned-orders    (livreur actuel) 
+- PATCH /delivery/:id/status       (update statut)
+- GET /delivery/ready-orders       (prêtes livraison)
+
+Admin voit: Tous les livreurs + toutes commandes
+Delivery voit: Ses propres commandes uniquement
+```
+
+#### **Modèles Synchronisés**
+```dart
+// Réutilise logique admin mais optimisé mobile
+class DeliveryOrder {
+  // Même structure que admin OrderMapData
+  // Mais avec getters mobile-optimisés
+  String get shortId => id.substring(0, 8);
+  String get shortAddress => address.city + ", " + address.street;
+  Color get statusColor => _getStatusColor(status);
+}
+```
+
+### 📊 Métriques de Succès
+
+#### **Performance Targets**
+- **Cold start** : < 2s
+- **List scrolling** : 60fps constant  
+- **Map rendering** : < 3s
+- **Search results** : < 500ms
+- **GPS accuracy** : < 10m
+- **Battery impact** : < 5%/hour usage normale
+
+#### **UX Targets**  
+- **One-hand navigation** : 90% actions accessibles pouce
+- **Swipe success rate** : > 95% gestes reconnus
+- **Task completion** : < 3 taps pour actions courantes
+- **Error recovery** : Retry automatique + feedback clair
+
+### ✅ Critères de Validation
+
+#### **Phase Foundation (Sem 1-2)**
+- [ ] Projet compile iOS + Android
+- [ ] Navigation bottom fonctionnelle
+- [ ] Authentification JWT opérationnelle
+- [ ] Thème mobile glassmorphism appliqué
+
+#### **Phase Dashboard (Sem 3-4)**  
+- [ ] Stats temps réel affichées
+- [ ] RefreshIndicator fonctionnel
+- [ ] FAB actions rapides implémentées
+- [ ] Performance 60fps validée
+
+#### **Phase Orders (Sem 5-6)**
+- [ ] Swipe actions opérationnelles  
+- [ ] Filtres horizontaux fonctionnels
+- [ ] Performance listes 1000+ items
+- [ ] Offline mode basique
+
+#### **Phase Map (Sem 7-8)**
+- [ ] Géolocalisation précise < 10m
+- [ ] Navigation externe fonctionnelle
+- [ ] Sélection multiple zones
+- [ ] Performance map < 3s load
+
+#### **Phase Final (Sem 9-10)**
+- [ ] Recherche avancée opérationnelle
+- [ ] Tests terrain concluants
+- [ ] Documentation complète
+- [ ] Prêt déploiement production
+
+### 🚦 Status Global Projet
+
+#### **✅ Admin Application (95% Complete)**
+- Dashboard glassmorphism: 100% ✅
+- Orders management: 100% ✅  
+- Map integration: 100% ✅
+- User management: 100% ✅
+- Affiliate system: 100% ✅
+
+#### **⏳ Delivery Application (0% - Starting)**  
+- Foundation setup: 0%
+- Mobile UI implementation: 0%
+- Map integration: 0%  
+- Testing & optimization: 0%
+
+#### **✅ Backend Integration (90% Ready)**
+- Delivery endpoints: 100% ✅
+- Authentication system: 100% ✅  
+- Order management APIs: 100% ✅
+- Map data services: 100% ✅
+
+### 🎯 Next Steps Immédiats
+
+#### **Cette Semaine**
+1. **Setup Delivery App Project** : Flutter create + dependencies
+2. **Configure Architecture** : GetX + folder structure  
+3. **Implement AuthService** : JWT integration backend existant
+
+#### **Prochaines 2 Semaines**
+1. **Dashboard Mobile** : Stats + actions rapides
+2. **Navigation Bottom** : Entre screens principales
+3. **First Orders List** : Basique fonctionnelle
+
+#### **Objectif 1 Mois**  
+1. **MVP Delivery App** : Login + Dashboard + Orders basic
+2. **Tests Terrain** : Avec vrais livreurs Alpha Laundry
+3. **Feedback Integration** : Ajustements UX selon retours
+
+---
+
+*Plan d'implémentation complet détaillé dans `DELIVERY_APP_SPECIFICATIONS.md`*
+
+**Équipe requise**: 1-2 dev Flutter mobile + 0.5 dev backend support
+**Budget temps**: 10 semaines full-time
+**Risques**: Performances mobile, intégration GPS, synchronisation temps réel
