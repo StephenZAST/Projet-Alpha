@@ -11,7 +11,7 @@ router.use(authenticateToken as express.RequestHandler);
 // Routes livreur
 router.get(
   '/pending-orders',
-  authorizeRoles(['DELIVERY']) as express.RequestHandler,
+  authorizeRoles(['DELIVERY', 'ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await DeliveryController.getPendingOrders(req, res);
   })
@@ -19,7 +19,7 @@ router.get(
 
 router.get(
   '/assigned-orders',
-  authorizeRoles(['DELIVERY']) as express.RequestHandler,
+  authorizeRoles(['DELIVERY', 'ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await DeliveryController.getAssignedOrders(req, res);
   })
@@ -35,7 +35,7 @@ router.patch(
 
 router.get(
   '/collected-orders',
-  authorizeRoles(['DELIVERY']) as express.RequestHandler,
+  authorizeRoles(['DELIVERY', 'ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await DeliveryController.getCOLLECTEDOrders(req, res);
   })
@@ -43,7 +43,7 @@ router.get(
 
 router.get(
   '/processing-orders',
-  authorizeRoles(['DELIVERY']) as express.RequestHandler,
+  authorizeRoles(['DELIVERY', 'ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await DeliveryController.getPROCESSINGOrders(req, res);
   })
@@ -51,7 +51,7 @@ router.get(
 
 router.get(
   '/ready-orders',
-  authorizeRoles(['DELIVERY']) as express.RequestHandler,
+  authorizeRoles(['DELIVERY', 'ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await DeliveryController.getREADYOrders(req, res);
   })
@@ -59,7 +59,7 @@ router.get(
 
 router.get(
   '/delivering-orders',
-  authorizeRoles(['DELIVERY']) as express.RequestHandler,
+  authorizeRoles(['DELIVERY', 'ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await DeliveryController.getDELIVERINGOrders(req, res);
   })
@@ -67,7 +67,7 @@ router.get(
 
 router.get(
   '/delivered-orders',
-  authorizeRoles(['DELIVERY']) as express.RequestHandler,
+  authorizeRoles(['DELIVERY', 'ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await DeliveryController.getDELIVEREDOrders(req, res);
   })
@@ -75,7 +75,7 @@ router.get(
 
 router.get(
   '/cancelled-orders',
-  authorizeRoles(['DELIVERY']) as express.RequestHandler,
+  authorizeRoles(['DELIVERY', 'ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     await DeliveryController.getCANCELLEDOrders(req, res);
   })
