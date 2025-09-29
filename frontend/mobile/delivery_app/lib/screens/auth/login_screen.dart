@@ -122,56 +122,90 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Formulaire de connexion avec glassmorphism
   Widget _buildLoginForm(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
-        borderRadius: AppRadius.radiusLG,
-        border: Border.all(
-          color: isDark 
-              ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
-              : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity),
-        ),
-        boxShadow: AppShadows.glassmorphism,
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Champ email
-            _buildEmailField(),
-            
-            const SizedBox(height: AppSpacing.lg),
-            
-            // Champ mot de passe
-            _buildPasswordField(),
-            
-            const SizedBox(height: AppSpacing.md),
-            
-            // Se souvenir de moi
-            _buildRememberMeCheckbox(isDark),
-            
-            const SizedBox(height: AppSpacing.xl),
-            
-            // Bouton de connexion
-            _buildLoginButton(),
-          ],
-        ),
-      ),
+    return GetBuilder<AuthController>(
+      builder: (controller) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+            borderRadius: AppRadius.radiusLG,
+            border: Border.all(
+              color: isDark 
+                  ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
+                  : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity),
+            ),
+            boxShadow: AppShadows.glassmorphism,
+          ),
+          child: Stack(
+            children: [
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Champ email
+                    _buildEmailField(controller.isLoading),
+                    
+                    const SizedBox(height: AppSpacing.lg),
+                    
+                    // Champ mot de passe
+                    _buildPasswordField(controller.isLoading),
+                    
+                    const SizedBox(height: AppSpacing.md),
+                    
+                    // Se souvenir de moi
+                    _buildRememberMeCheckbox(isDark, controller.isLoading),
+                    
+                    const SizedBox(height: AppSpacing.xl),
+                    
+                    // Bouton de connexion
+                    _buildLoginButton(),
+                    
+                    // Message d'erreur
+                    if (controller.loginError != null) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      _buildErrorMessage(controller.loginError!, isDark),
+                    ],
+                  ],
+                ),
+              ),
+              
+              // Overlay de chargement
+              if (controller.isLoading)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: (isDark ? AppColors.cardBgDark : AppColors.cardBgLight)
+                          .withOpacity(0.7),
+                      borderRadius: AppRadius.radiusLG,
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  /// Champ email
-  Widget _buildEmailField() {
+  /// Champ email avec état de chargement
+  Widget _buildEmailField(bool isLoading) {
     return TextFormField(
       controller: _emailController,
+      enabled: !isLoading,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Email',
         hintText: 'votre.email@exemple.com',
-        prefixIcon: Icon(Icons.email_outlined),
+        prefixIcon: Icon(
+          Icons.email_outlined,
+          color: isLoading ? AppColors.gray400 : null,
+        ),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -185,21 +219,26 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Champ mot de passe
-  Widget _buildPasswordField() {
+  /// Champ mot de passe avec état de chargement
+  Widget _buildPasswordField(bool isLoading) {
     return TextFormField(
       controller: _passwordController,
+      enabled: !isLoading,
       obscureText: _obscurePassword,
       textInputAction: TextInputAction.done,
       decoration: InputDecoration(
         labelText: 'Mot de passe',
         hintText: 'Votre mot de passe',
-        prefixIcon: const Icon(Icons.lock_outlined),
+        prefixIcon: Icon(
+          Icons.lock_outlined,
+          color: isLoading ? AppColors.gray400 : null,
+        ),
         suffixIcon: IconButton(
           icon: Icon(
             _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+            color: isLoading ? AppColors.gray400 : null,
           ),
-          onPressed: () {
+          onPressed: isLoading ? null : () {
             setState(() {
               _obscurePassword = !_obscurePassword;
             });
@@ -215,17 +254,17 @@ class _LoginScreenState extends State<LoginScreen> {
         }
         return null;
       },
-      onFieldSubmitted: (_) => _handleLogin(),
+      onFieldSubmitted: (_) => isLoading ? null : _handleLogin(),
     );
   }
 
-  /// Checkbox "Se souvenir de moi"
-  Widget _buildRememberMeCheckbox(bool isDark) {
+  /// Checkbox "Se souvenir de moi" avec état de chargement
+  Widget _buildRememberMeCheckbox(bool isDark, bool isLoading) {
     return Row(
       children: [
         Checkbox(
           value: _rememberMe,
-          onChanged: (value) {
+          onChanged: isLoading ? null : (value) {
             setState(() {
               _rememberMe = value ?? false;
             });
@@ -234,42 +273,109 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           'Se souvenir de moi',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+            color: isLoading 
+                ? AppColors.gray400
+                : (isDark ? AppColors.gray300 : AppColors.textSecondary),
           ),
         ),
       ],
     );
   }
 
-  /// Bouton de connexion
+  /// Message d'erreur avec animation
+  Widget _buildErrorMessage(String error, bool isDark) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.error.withOpacity(0.1),
+        borderRadius: AppRadius.radiusSM,
+        border: Border.all(
+          color: AppColors.error.withOpacity(0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: AppColors.error,
+            size: 20,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              error,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Bouton de connexion avec effet de chargement amélioré
   Widget _buildLoginButton() {
     return GetBuilder<AuthController>(
       builder: (controller) {
-        return SizedBox(
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           height: MobileDimensions.buttonHeight,
           child: ElevatedButton(
             onPressed: controller.isLoading ? null : _handleLogin,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: controller.isLoading 
+                  ? AppColors.primary.withOpacity(0.7)
+                  : AppColors.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: AppRadius.radiusMD,
               ),
-              elevation: 0,
+              elevation: controller.isLoading ? 0 : 2,
+              shadowColor: AppColors.primary.withOpacity(0.3),
             ),
-            child: controller.isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: controller.isLoading
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Connexion...',
+                          style: AppTextStyles.buttonMedium.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.login,
+                          size: 20,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Se connecter',
+                          style: AppTextStyles.buttonMedium,
+                        ),
+                      ],
                     ),
-                  )
-                : Text(
-                    'Se connecter',
-                    style: AppTextStyles.buttonMedium,
-                  ),
+            ),
           ),
         );
       },

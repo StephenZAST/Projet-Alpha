@@ -2,6 +2,7 @@ import 'package:delivery_app/services/auth_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' as getx;
+import 'package:get_storage/get_storage.dart';
 
 import '../constants.dart';
 
@@ -16,6 +17,7 @@ class ApiService extends getx.GetxService {
 
   late final Dio _dio;
   String? _authToken;
+  bool _isRefreshing = false;
 
   // ==========================================================================
   // 🚀 INITIALISATION
@@ -50,12 +52,13 @@ class ApiService extends getx.GetxService {
   void _setupInterceptors() {
     // Intercepteur de requête
     _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
+      onRequest: (options, handler) async {
         debugPrint('🚀 ${options.method} ${options.path}');
 
-        // Ajoute le token d'authentification si disponible
-        if (_authToken != null) {
-          options.headers['Authorization'] = 'Bearer $_authToken';
+        // Toujours tenter d'attacher un token à chaque requête (hot-reload safe)
+        final token = _getToken();
+        if (token != null && (options.headers['Authorization'] == null)) {
+          options.headers['Authorization'] = 'Bearer $token';
         }
 
         // Log des données de requête en mode debug
@@ -69,13 +72,58 @@ class ApiService extends getx.GetxService {
         debugPrint('✅ ${response.statusCode} ${response.requestOptions.path}');
         handler.next(response);
       },
-      onError: (error, handler) {
+      onError: (error, handler) async {
         debugPrint(
             '❌ ${error.response?.statusCode} ${error.requestOptions.path}');
         debugPrint('❌ Error: ${error.message}');
 
-        // Gestion spécifique des erreurs d'authentification
+        // Gestion spécifique des erreurs d'authentification avec auto-retry sécurisé
         if (error.response?.statusCode == 401) {
+          final req = error.requestOptions;
+          final alreadyRetried = req.extra['retried'] == true;
+          final hadAuthHeader = req.headers['Authorization'] != null;
+
+          // 1) Si pas d'en-tête Authorization (ex: hot reload), essayer d'en ajouter un et retenter
+          if (!alreadyRetried && !hadAuthHeader) {
+            final token = _getToken();
+            if (token != null) {
+              try {
+                req.headers['Authorization'] = 'Bearer $token';
+                final resp = await _retryRequest(req);
+                return handler.resolve(resp);
+              } catch (_) {
+                // fallback vers gestion standard
+              }
+            }
+          }
+
+          // 2) Si on avait un token mais expiré, tenter refreshToken une fois puis retenter
+          if (!alreadyRetried && hadAuthHeader) {
+            try {
+              final auth = getx.Get.find<AuthService>();
+              if (!_isRefreshing) {
+                _isRefreshing = true;
+                final ok = await auth.refreshToken();
+                _isRefreshing = false;
+                if (ok) {
+                  final newToken = _getToken();
+                  if (newToken != null) {
+                    req.headers['Authorization'] = 'Bearer $newToken';
+                    try {
+                      final resp = await _retryRequest(req);
+                      return handler.resolve(resp);
+                    } catch (_) {}
+                  }
+                }
+              }
+            } catch (_) {
+              // AuthService pas dispo, continuer
+            } finally {
+              _isRefreshing = false;
+            }
+          }
+
+          // 3) Sinon, déconnecter l'utilisateur (comportement existant)
           _handleUnauthorized();
         }
 
@@ -94,6 +142,63 @@ class ApiService extends getx.GetxService {
         logPrint: (object) => debugPrint('🌐 [Dio] $object'),
       ));
     }
+  }
+
+  /// Récupère le token depuis la mémoire, le service, ou le stockage local
+  String? _getToken() {
+    if (_authToken != null && _authToken!.isNotEmpty) return _authToken;
+    try {
+      final auth = getx.Get.isRegistered<AuthService>()
+          ? getx.Get.find<AuthService>()
+          : null;
+      final fromService = auth?.token;
+      if (fromService != null && fromService.isNotEmpty) {
+        _authToken = fromService; // garder en mémoire pour vitesse
+        return fromService;
+      }
+    } catch (_) {
+      // Ignorer si le service n'est pas encore enregistré
+    }
+
+    try {
+      final box = GetStorage();
+      final fromStorage = box.read<String>(StorageKeys.authToken);
+      if (fromStorage != null && fromStorage.isNotEmpty) {
+        _authToken = fromStorage; // rehydratation post hot-reload
+        return fromStorage;
+      }
+    } catch (_) {}
+
+    return null;
+  }
+
+  /// Retente une requête une seule fois en marquant l'option "retried"
+  Future<Response<dynamic>> _retryRequest(RequestOptions req) async {
+    final options = Options(
+      method: req.method,
+      headers: {
+        ...req.headers,
+      },
+      responseType: req.responseType,
+      contentType: req.contentType,
+      followRedirects: req.followRedirects,
+      validateStatus: req.validateStatus,
+      receiveDataWhenStatusError: req.receiveDataWhenStatusError,
+      extra: {
+        ...req.extra,
+        'retried': true,
+      },
+    );
+
+    return _dio.request(
+      req.path,
+      data: req.data,
+      queryParameters: req.queryParameters,
+      options: options,
+      cancelToken: req.cancelToken,
+      onReceiveProgress: req.onReceiveProgress,
+      onSendProgress: req.onSendProgress,
+    );
   }
 
   // ==========================================================================
@@ -119,7 +224,12 @@ class ApiService extends getx.GetxService {
     // Notifie AuthService pour déconnecter l'utilisateur
     try {
       final authService = getx.Get.find<AuthService>();
-      authService.logout();
+      // Vérifier si l'utilisateur est encore connecté avant de déclencher logout
+      if (authService.isAuthenticated) {
+        authService.logout();
+      } else {
+        debugPrint('⚠️ Utilisateur déjà déconnecté, pas de logout nécessaire');
+      }
     } catch (e) {
       debugPrint('⚠️ Impossible de notifier AuthService: $e');
     }

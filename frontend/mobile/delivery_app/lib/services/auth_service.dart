@@ -179,11 +179,24 @@ class AuthService extends GetxService {
     try {
       debugPrint('🚪 Déconnexion en cours...');
 
+      // Vérifier si on est déjà en cours de déconnexion pour éviter les boucles
+      if (!_isAuthenticated.value) {
+        debugPrint('⚠️ Déjà déconnecté, arrêt du processus');
+        return;
+      }
+
+      // Marquer comme déconnecté immédiatement pour éviter les boucles
+      _isAuthenticated.value = false;
+
       // Appel au serveur pour invalider le token (optionnel)
       try {
-        await _apiService.post('/auth/logout');
+        // Seulement si on a un token valide
+        if (_token.value != null && _token.value!.isNotEmpty) {
+          await _apiService.post('/auth/logout');
+        }
       } catch (e) {
         debugPrint('⚠️ Erreur lors de la déconnexion serveur: $e');
+        // Ne pas relancer d'erreur, continuer le nettoyage local
       }
 
       // Nettoyage local

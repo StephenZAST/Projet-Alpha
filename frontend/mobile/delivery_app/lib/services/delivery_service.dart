@@ -57,53 +57,126 @@ class DeliveryService extends GetxService {
       final deliveringOrders = futures[4].orders;
       final deliveredOrders = futures[5].orders;
 
+      // Combine toutes les commandes pour les statistiques globales
+      final allOrders = <DeliveryOrder>[];
+      allOrders.addAll(assignedOrders);
+      allOrders.addAll(pendingOrders);
+      allOrders.addAll(collectedOrders);
+      allOrders.addAll(readyOrders);
+      allOrders.addAll(deliveringOrders);
+      allOrders.addAll(deliveredOrders);
+
+      debugPrint('📊 Total commandes trouvées: ${allOrders.length}');
+      debugPrint(
+          '📊 Détail: Assigned=${assignedOrders.length}, Pending=${pendingOrders.length}, Collected=${collectedOrders.length}, Ready=${readyOrders.length}, Delivering=${deliveringOrders.length}, Delivered=${deliveredOrders.length}');
+
       // Calcule les statistiques
-      final totalDeliveries = deliveredOrders.length;
+      final totalDeliveries =
+          allOrders.length; // Toutes les commandes, pas seulement livrées
       final completedDeliveries = deliveredOrders.length;
-      final cancelledDeliveries = 0; // TODO: Ajouter endpoint pour commandes annulées
-      
+      final cancelledDeliveries =
+          0; // TODO: Ajouter endpoint pour commandes annulées
+
+      // Fonction helper pour vérifier si une date est aujourd'hui
+      bool isSameDay(DateTime date1, DateTime date2) {
+        return date1.year == date2.year &&
+            date1.month == date2.month &&
+            date1.day == date2.day;
+      }
+
+      // Fonction helper pour vérifier si une date est dans la semaine courante
+      bool isThisWeek(DateTime date, DateTime weekStart) {
+        return date.isAfter(weekStart.subtract(const Duration(days: 1))) &&
+            date.isBefore(weekStart.add(const Duration(days: 7)));
+      }
+
+      // Fonction helper pour vérifier si une date est dans le mois courant
+      bool isThisMonth(DateTime date, DateTime monthStart) {
+        return date.year == monthStart.year && date.month == monthStart.month;
+      }
+
       // Calcule les livraisons par période
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final thisWeekStart = today.subtract(Duration(days: now.weekday - 1));
       final thisMonthStart = DateTime(now.year, now.month, 1);
 
-      final deliveriesToday = deliveredOrders.where((order) {
-        final deliveryDate = order.deliveryDate ?? order.updatedAt;
-        return deliveryDate.isAfter(today);
+      // Compte les commandes d'aujourd'hui (toutes les commandes actives)
+      final deliveriesToday = allOrders.where((order) {
+        // Vérifie si la commande a été créée aujourd'hui
+        final createdToday = isSameDay(order.createdAt, now);
+        // Ou si elle a une date de collecte/livraison aujourd'hui
+        final collectionToday = order.collectionDate != null &&
+            isSameDay(order.collectionDate!, now);
+        final deliveryToday =
+            order.deliveryDate != null && isSameDay(order.deliveryDate!, now);
+
+        return createdToday || collectionToday || deliveryToday;
       }).length;
 
-      final deliveriesThisWeek = deliveredOrders.where((order) {
-        final deliveryDate = order.deliveryDate ?? order.updatedAt;
-        return deliveryDate.isAfter(thisWeekStart);
+      // Compte les commandes de cette semaine
+      final deliveriesThisWeek = allOrders.where((order) {
+        final createdThisWeek = isThisWeek(order.createdAt, thisWeekStart);
+        final collectionThisWeek = order.collectionDate != null &&
+            isThisWeek(order.collectionDate!, thisWeekStart);
+        final deliveryThisWeek = order.deliveryDate != null &&
+            isThisWeek(order.deliveryDate!, thisWeekStart);
+
+        return createdThisWeek || collectionThisWeek || deliveryThisWeek;
       }).length;
 
-      final deliveriesThisMonth = deliveredOrders.where((order) {
-        final deliveryDate = order.deliveryDate ?? order.updatedAt;
-        return deliveryDate.isAfter(thisMonthStart);
+      // Compte les commandes de ce mois
+      final deliveriesThisMonth = allOrders.where((order) {
+        final createdThisMonth = isThisMonth(order.createdAt, thisMonthStart);
+        final collectionThisMonth = order.collectionDate != null &&
+            isThisMonth(order.collectionDate!, thisMonthStart);
+        final deliveryThisMonth = order.deliveryDate != null &&
+            isThisMonth(order.deliveryDate!, thisMonthStart);
+
+        return createdThisMonth || collectionThisMonth || deliveryThisMonth;
       }).length;
 
-      // Calcule les gains (basé sur le montant total des commandes livrées)
-      final totalEarnings = deliveredOrders.fold<double>(0.0, (sum, order) => sum + (order.totalAmount ?? 0.0));
-      
-      final dailyEarnings = deliveredOrders.where((order) {
-        final deliveryDate = order.deliveryDate ?? order.updatedAt;
-        return deliveryDate.isAfter(today);
+      debugPrint(
+          '📊 Statistiques calculées: Aujourd\'hui=$deliveriesToday, Semaine=$deliveriesThisWeek, Mois=$deliveriesThisMonth');
+
+      // Calcule les gains (basé sur toutes les commandes avec montant)
+      final totalEarnings = allOrders.fold<double>(
+          0.0, (sum, order) => sum + (order.totalAmount ?? 0.0));
+
+      final dailyEarnings = allOrders.where((order) {
+        final createdToday = isSameDay(order.createdAt, now);
+        final collectionToday = order.collectionDate != null &&
+            isSameDay(order.collectionDate!, now);
+        final deliveryToday =
+            order.deliveryDate != null && isSameDay(order.deliveryDate!, now);
+        return createdToday || collectionToday || deliveryToday;
       }).fold<double>(0.0, (sum, order) => sum + (order.totalAmount ?? 0.0));
 
-      final weeklyEarnings = deliveredOrders.where((order) {
-        final deliveryDate = order.deliveryDate ?? order.updatedAt;
-        return deliveryDate.isAfter(thisWeekStart);
+      final weeklyEarnings = allOrders.where((order) {
+        final createdThisWeek = isThisWeek(order.createdAt, thisWeekStart);
+        final collectionThisWeek = order.collectionDate != null &&
+            isThisWeek(order.collectionDate!, thisWeekStart);
+        final deliveryThisWeek = order.deliveryDate != null &&
+            isThisWeek(order.deliveryDate!, thisWeekStart);
+        return createdThisWeek || collectionThisWeek || deliveryThisWeek;
       }).fold<double>(0.0, (sum, order) => sum + (order.totalAmount ?? 0.0));
 
-      final monthlyEarnings = deliveredOrders.where((order) {
-        final deliveryDate = order.deliveryDate ?? order.updatedAt;
-        return deliveryDate.isAfter(thisMonthStart);
+      final monthlyEarnings = allOrders.where((order) {
+        final createdThisMonth = isThisMonth(order.createdAt, thisMonthStart);
+        final collectionThisMonth = order.collectionDate != null &&
+            isThisMonth(order.collectionDate!, thisMonthStart);
+        final deliveryThisMonth = order.deliveryDate != null &&
+            isThisMonth(order.deliveryDate!, thisMonthStart);
+        return createdThisMonth || collectionThisMonth || deliveryThisMonth;
       }).fold<double>(0.0, (sum, order) => sum + (order.totalAmount ?? 0.0));
+
+      debugPrint(
+          '📊 Gains calculés: Jour=${dailyEarnings.toStringAsFixed(0)}, Semaine=${weeklyEarnings.toStringAsFixed(0)}, Mois=${monthlyEarnings.toStringAsFixed(0)}');
 
       // Calcule le taux de réussite
       final totalOrders = totalDeliveries + cancelledDeliveries;
-      final successRate = totalOrders > 0 ? (completedDeliveries / totalOrders) : 1.0;
+      final successRate =
+          totalOrders > 0 ? (completedDeliveries / totalOrders) : 0.0;
 
       // Crée l'objet DeliveryStats
       return DeliveryStats(
@@ -121,7 +194,6 @@ class DeliveryService extends GetxService {
         deliveriesThisWeek: deliveriesThisWeek,
         deliveriesThisMonth: deliveriesThisMonth,
       );
-
     } catch (e) {
       debugPrint('❌ Erreur getDashboardStats: $e');
       rethrow;
@@ -183,11 +255,20 @@ class DeliveryService extends GetxService {
         queryParameters: {'page': page, 'limit': limit},
       );
 
-      if (response.data['success'] == true) {
-        return DeliveryOrdersResponse.fromJson(response.data);
+      // Gère les réponses avec ou sans wrapper "success"
+      if (response.data is Map<String, dynamic>) {
+        if (response.data.containsKey('success') &&
+            response.data['success'] == true) {
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else if (response.data.containsKey('data')) {
+          // Réponse directe avec data
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else {
+          throw Exception(
+              response.data['error'] ?? 'Format de réponse invalide');
+        }
       } else {
-        throw Exception(response.data['error'] ??
-            'Erreur lors de la récupération des commandes');
+        throw Exception('Format de réponse invalide');
       }
     } catch (e) {
       debugPrint('❌ Erreur getPendingOrders: $e');
@@ -206,11 +287,20 @@ class DeliveryService extends GetxService {
         queryParameters: {'page': page, 'limit': limit},
       );
 
-      if (response.data['success'] == true) {
-        return DeliveryOrdersResponse.fromJson(response.data);
+      // Gère les réponses avec ou sans wrapper "success"
+      if (response.data is Map<String, dynamic>) {
+        if (response.data.containsKey('success') &&
+            response.data['success'] == true) {
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else if (response.data.containsKey('data')) {
+          // Réponse directe avec data
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else {
+          throw Exception(
+              response.data['error'] ?? 'Format de réponse invalide');
+        }
       } else {
-        throw Exception(response.data['error'] ??
-            'Erreur lors de la récupération des commandes');
+        throw Exception('Format de réponse invalide');
       }
     } catch (e) {
       debugPrint('❌ Erreur getAssignedOrders: $e');
@@ -227,11 +317,20 @@ class DeliveryService extends GetxService {
         queryParameters: {'page': page, 'limit': limit},
       );
 
-      if (response.data['success'] == true) {
-        return DeliveryOrdersResponse.fromJson(response.data);
+      // Gère les réponses avec ou sans wrapper "success"
+      if (response.data is Map<String, dynamic>) {
+        if (response.data.containsKey('success') &&
+            response.data['success'] == true) {
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else if (response.data.containsKey('data')) {
+          // Réponse directe avec data
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else {
+          throw Exception(
+              response.data['error'] ?? 'Format de réponse invalide');
+        }
       } else {
-        throw Exception(response.data['error'] ??
-            'Erreur lors de la récupération des commandes');
+        throw Exception('Format de réponse invalide');
       }
     } catch (e) {
       debugPrint('❌ Erreur getCollectedOrders: $e');
@@ -248,11 +347,20 @@ class DeliveryService extends GetxService {
         queryParameters: {'page': page, 'limit': limit},
       );
 
-      if (response.data['success'] == true) {
-        return DeliveryOrdersResponse.fromJson(response.data);
+      // Gère les réponses avec ou sans wrapper "success"
+      if (response.data is Map<String, dynamic>) {
+        if (response.data.containsKey('success') &&
+            response.data['success'] == true) {
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else if (response.data.containsKey('data')) {
+          // Réponse directe avec data
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else {
+          throw Exception(
+              response.data['error'] ?? 'Format de réponse invalide');
+        }
       } else {
-        throw Exception(response.data['error'] ??
-            'Erreur lors de la récupération des commandes');
+        throw Exception('Format de réponse invalide');
       }
     } catch (e) {
       debugPrint('❌ Erreur getReadyOrders: $e');
@@ -269,11 +377,20 @@ class DeliveryService extends GetxService {
         queryParameters: {'page': page, 'limit': limit},
       );
 
-      if (response.data['success'] == true) {
-        return DeliveryOrdersResponse.fromJson(response.data);
+      // Gère les réponses avec ou sans wrapper "success"
+      if (response.data is Map<String, dynamic>) {
+        if (response.data.containsKey('success') &&
+            response.data['success'] == true) {
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else if (response.data.containsKey('data')) {
+          // Réponse directe avec data
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else {
+          throw Exception(
+              response.data['error'] ?? 'Format de réponse invalide');
+        }
       } else {
-        throw Exception(response.data['error'] ??
-            'Erreur lors de la récupération des commandes');
+        throw Exception('Format de réponse invalide');
       }
     } catch (e) {
       debugPrint('❌ Erreur getDeliveringOrders: $e');
@@ -290,11 +407,20 @@ class DeliveryService extends GetxService {
         queryParameters: {'page': page, 'limit': limit},
       );
 
-      if (response.data['success'] == true) {
-        return DeliveryOrdersResponse.fromJson(response.data);
+      // Gère les réponses avec ou sans wrapper "success"
+      if (response.data is Map<String, dynamic>) {
+        if (response.data.containsKey('success') &&
+            response.data['success'] == true) {
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else if (response.data.containsKey('data')) {
+          // Réponse directe avec data
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else {
+          throw Exception(
+              response.data['error'] ?? 'Format de réponse invalide');
+        }
       } else {
-        throw Exception(response.data['error'] ??
-            'Erreur lors de la récupération des commandes');
+        throw Exception('Format de réponse invalide');
       }
     } catch (e) {
       debugPrint('❌ Erreur getDeliveredOrders: $e');
@@ -320,15 +446,32 @@ class DeliveryService extends GetxService {
         },
       );
 
-      if (response.data['success'] == true) {
-        return DeliveryOrder.fromJson(response.data['data']);
+      debugPrint('📤 Réponse updateOrderStatus: ${response.data}');
+
+      // Gère les différents formats de réponse
+      if (response.data is Map<String, dynamic>) {
+        // Format avec success wrapper
+        if (response.data.containsKey('success') &&
+            response.data['success'] == true) {
+          return DeliveryOrder.fromJson(response.data['data']);
+        }
+        // Format direct avec data
+        else if (response.data.containsKey('data')) {
+          return DeliveryOrder.fromJson(response.data['data']);
+        }
+        // Format direct sans wrapper
+        else if (response.data.containsKey('id')) {
+          return DeliveryOrder.fromJson(response.data);
+        } else {
+          throw Exception(
+              response.data['error'] ?? 'Format de réponse invalide');
+        }
       } else {
-        throw Exception(response.data['error'] ??
-            'Erreur lors de la mise à jour du statut');
+        throw Exception('Format de réponse invalide');
       }
     } catch (e) {
       debugPrint('❌ Erreur updateOrderStatus: $e');
-      rethrow;
+      throw Exception('Erreur lors de la mise à jour du statut');
     }
   }
 
@@ -368,14 +511,14 @@ class DeliveryService extends GetxService {
         'limit': limit,
       };
 
-      if (query != null && query.isNotEmpty) queryParams['q'] = query;
+      if (query != null && query.isNotEmpty) queryParams['query'] = query;
       if (status != null) queryParams['status'] = status.name;
       if (startDate != null)
         queryParams['startDate'] = startDate.toIso8601String();
       if (endDate != null) queryParams['endDate'] = endDate.toIso8601String();
 
       final response = await _apiService.get(
-        '/delivery/orders/search',
+        '/orders',
         queryParameters: queryParams,
       );
 
@@ -387,6 +530,97 @@ class DeliveryService extends GetxService {
       }
     } catch (e) {
       debugPrint('❌ Erreur searchOrders: $e');
+      rethrow;
+    }
+  }
+
+  /// Récupère les commandes par statut spécifique
+  Future<DeliveryOrdersResponse> getOrdersByStatus(
+    OrderStatus status, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      debugPrint('📦 Récupération commandes par statut: $status');
+
+      switch (status) {
+        case OrderStatus.PENDING:
+          return await getPendingOrders(page: page, limit: limit);
+        case OrderStatus.COLLECTING:
+          return await getAssignedOrders(page: page, limit: limit);
+        case OrderStatus.COLLECTED:
+          return await getCollectedOrders(page: page, limit: limit);
+        case OrderStatus.READY:
+          return await getReadyOrders(page: page, limit: limit);
+        case OrderStatus.DELIVERING:
+          return await getDeliveringOrders(page: page, limit: limit);
+        case OrderStatus.DELIVERED:
+          return await getDeliveredOrders(page: page, limit: limit);
+        default:
+          // Pour les autres statuts, utiliser l'endpoint général avec filtre
+          return await searchOrders(status: status, page: page, limit: limit);
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur getOrdersByStatus: $e');
+      rethrow;
+    }
+  }
+
+  /// Récupère toutes les commandes du livreur (tous statuts)
+  Future<DeliveryOrdersResponse> getAllDeliveryOrders({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      debugPrint('📦 Récupération de toutes les commandes de livraison...');
+
+      // Agrège depuis tous les endpoints de statut delivery pour obtenir uniquement les commandes pertinentes
+      final futures = await Future.wait([
+        getPendingOrders(
+            page: 1, limit: 1000), // Large limit pour récupérer tout
+        getAssignedOrders(page: 1, limit: 1000),
+        getCollectedOrders(page: 1, limit: 1000),
+        getReadyOrders(page: 1, limit: 1000),
+        getDeliveringOrders(page: 1, limit: 1000),
+        getDeliveredOrders(page: 1, limit: 1000),
+      ]);
+
+      // Combine toutes les commandes
+      final allOrders = <DeliveryOrder>[];
+      var totalCount = 0;
+      for (final response in futures) {
+        allOrders.addAll(response.orders);
+        totalCount += response.pagination?.total ?? response.orders.length;
+      }
+
+      // Trie par date de création décroissante
+      allOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      // Applique la pagination côté client
+      final startIndex = (page - 1) * limit;
+      final endIndex = startIndex + limit;
+      final paginatedOrders = allOrders.length > startIndex
+          ? allOrders.sublist(startIndex, endIndex.clamp(0, allOrders.length))
+          : <DeliveryOrder>[];
+
+      // Calcule la pagination
+      final totalPages = (totalCount / limit).ceil();
+      final pagination = DeliveryPagination(
+        page: page,
+        limit: limit,
+        total: totalCount,
+        totalPages: totalPages,
+      );
+
+      debugPrint(
+          '✅ ${paginatedOrders.length} commandes récupérées (page $page/$totalPages)');
+
+      return DeliveryOrdersResponse(
+        orders: paginatedOrders,
+        pagination: pagination,
+      );
+    } catch (e) {
+      debugPrint('❌ Erreur getAllDeliveryOrders: $e');
       rethrow;
     }
   }
@@ -457,14 +691,15 @@ class DeliveryService extends GetxService {
   // 📱 FONCTIONNALITÉS MOBILE SPÉCIFIQUES
   // ==========================================================================
 
-  /// Récupère les commandes du jour en filtrant depuis les endpoints existants
-  Future<List<DeliveryOrder>> getTodayOrders() async {
+  /// Récupère les commandes récentes triées par date (plus flexible que "du jour")
+  Future<List<DeliveryOrder>> getTodayOrders({int limit = 10}) async {
     try {
-      debugPrint('📅 Calcul des commandes du jour...');
+      debugPrint('📅 Récupération des commandes récentes (limit: $limit)...');
 
       // Récupère toutes les commandes actives
       final futures = await Future.wait([
         getAssignedOrders(page: 1, limit: 1000),
+        getPendingOrders(page: 1, limit: 1000),
         getCollectedOrders(page: 1, limit: 1000),
         getReadyOrders(page: 1, limit: 1000),
         getDeliveringOrders(page: 1, limit: 1000),
@@ -476,22 +711,47 @@ class DeliveryService extends GetxService {
         allOrders.addAll(response.orders);
       }
 
-      // Filtre les commandes du jour
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
+      debugPrint('📅 Total commandes actives: ${allOrders.length}');
 
-      final todayOrders = allOrders.where((order) {
-        // Vérifie si la commande a été créée aujourd'hui ou a une date de collecte/livraison aujourd'hui
-        final createdToday = order.createdAt.isAfter(today);
-        final collectionToday = order.collectionDate?.isAfter(today) ?? false;
-        final deliveryToday = order.deliveryDate?.isAfter(today) ?? false;
-        
-        return createdToday || collectionToday || deliveryToday;
-      }).toList();
+      if (allOrders.isEmpty) {
+        debugPrint('📅 Aucune commande active trouvée');
+        return [];
+      }
 
-      debugPrint('✅ ${todayOrders.length} commandes du jour trouvées');
-      return todayOrders;
+      // Trie les commandes par date la plus récente (création, collecte ou livraison)
+      allOrders.sort((a, b) {
+        // Obtient la date la plus récente pour chaque commande
+        DateTime getRecentDate(DeliveryOrder order) {
+          final dates = <DateTime>[order.createdAt];
+          if (order.collectionDate != null) dates.add(order.collectionDate!);
+          if (order.deliveryDate != null) dates.add(order.deliveryDate!);
+          dates.add(order.updatedAt);
 
+          // Retourne la date la plus récente
+          dates.sort((d1, d2) => d2.compareTo(d1));
+          return dates.first;
+        }
+
+        final dateA = getRecentDate(a);
+        final dateB = getRecentDate(b);
+
+        // Tri décroissant (plus récent en premier)
+        return dateB.compareTo(dateA);
+      });
+
+      // Retourne les commandes les plus récentes selon la limite
+      final recentOrders = allOrders.take(limit).toList();
+
+      debugPrint('✅ ${recentOrders.length} commandes récentes trouvées');
+
+      // Log des dates pour debug
+      for (int i = 0; i < recentOrders.length && i < 3; i++) {
+        final order = recentOrders[i];
+        debugPrint(
+            '📅 Commande ${i + 1}: Créée=${order.createdAt.toLocal()}, Collecte=${order.collectionDate?.toLocal()}, Livraison=${order.deliveryDate?.toLocal()}');
+      }
+
+      return recentOrders;
     } catch (e) {
       debugPrint('❌ Erreur getTodayOrders: $e');
       rethrow;

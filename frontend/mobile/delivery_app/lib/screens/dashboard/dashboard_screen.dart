@@ -29,11 +29,11 @@ class DashboardScreen extends StatelessWidget {
               
               // Contenu principal avec padding sécurisé
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
+                padding: EdgeInsets.fromLTRB(
                   AppSpacing.md,
                   AppSpacing.sm,
                   AppSpacing.md,
-                  AppSpacing.xxl * 2, // Espace pour bottom nav + FAB
+                  MediaQuery.of(context).padding.bottom + 120, // Espace dynamique pour bottom nav + FAB
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
@@ -410,65 +410,205 @@ class DashboardScreen extends StatelessWidget {
 
   /// Section commandes du jour
   Widget _buildTodayOrders(bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return GetBuilder<DashboardController>(
+      builder: (controller) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Commandes du jour',
-              style: AppTextStyles.h4.copyWith(
-                color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            TextButton(
-              onPressed: () => Get.toNamed('/orders'),
-              child: Text(
-                'Voir tout',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        
-        // Liste des commandes (placeholder)
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
-            borderRadius: AppRadius.radiusMD,
-            border: Border.all(
-              color: isDark 
-                  ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
-                  : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity),
-            ),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  Icons.inbox_outlined,
-                  size: 48,
-                  color: isDark ? AppColors.gray600 : AppColors.gray400,
+                Expanded(
+                  child: Text(
+                    'Commandes récentes',
+                    style: AppTextStyles.h4.copyWith(
+                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Aucune commande pour aujourd\'hui',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                TextButton(
+                  onPressed: () => Get.toNamed('/orders'),
+                  child: Text(
+                    'Voir tout',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: AppSpacing.md),
+            
+            // Liste des commandes avec gestion des données et scroll interne
+            Container(
+              height: 250, // Hauteur fixe pour éviter l'overflow
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                borderRadius: AppRadius.radiusMD,
+                border: Border.all(
+                  color: isDark 
+                      ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
+                      : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity),
+                ),
+              ),
+              child: controller.isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppSpacing.lg),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : controller.todayOrders.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.inbox_outlined,
+                                  size: 48,
+                                  color: isDark ? AppColors.gray600 : AppColors.gray400,
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  'Aucune commande récente',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          physics: const BouncingScrollPhysics(), // Scroll interne
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          itemCount: controller.todayOrders.length, // Pas de limite, scroll interne
+                          separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
+                          itemBuilder: (context, index) {
+                            final order = controller.todayOrders[index];
+                            return _buildOrderCard(order, isDark);
+                          },
+                        ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Card de commande compacte
+  Widget _buildOrderCard(dynamic order, bool isDark) {
+    // Gère le cas où order est un DeliveryOrder ou autre type
+    String orderId = 'N/A';
+    String orderStatus = 'En cours';
+    String customerName = 'Client';
+    String amount = '';
+    Color statusColor = AppColors.primary;
+
+    if (order != null) {
+      try {
+        // Si c'est un DeliveryOrder
+        if (order.runtimeType.toString().contains('DeliveryOrder')) {
+          orderId = order.shortId ?? order.id?.substring(0, 8) ?? 'N/A';
+          orderStatus = order.statusDisplayName ?? order.status?.toString() ?? 'En cours';
+          customerName = order.customerName ?? 'Client';
+          amount = order.formattedAmount ?? '';
+          statusColor = order.statusColor ?? AppColors.primary;
+        } else {
+          // Fallback pour autres types
+          orderId = order.toString().substring(0, 8);
+        }
+      } catch (e) {
+        debugPrint('Erreur affichage commande: $e');
+        orderId = order.toString().substring(0, 8);
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark 
+            ? AppColors.gray800.withOpacity(0.5)
+            : AppColors.gray100.withOpacity(0.5),
+        borderRadius: AppRadius.radiusSM,
+        border: Border.all(
+          color: isDark 
+              ? AppColors.gray600.withOpacity(0.3)
+              : AppColors.gray300.withOpacity(0.3),
         ),
-      ],
+      ),
+      child: Row(
+        children: [
+          // Statut indicator
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+              color: statusColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          
+          // Informations commande
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Commande #$orderId',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  orderStatus,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                  ),
+                ),
+                if (amount.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    amount,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          
+          // Action button
+          IconButton(
+            onPressed: () {
+              // TODO: Ouvrir les détails de la commande
+              Get.snackbar(
+                'Commande',
+                'Détails de la commande #$orderId',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppColors.info.withOpacity(0.9),
+                colorText: Colors.white,
+                margin: const EdgeInsets.all(AppSpacing.md),
+                borderRadius: MobileDimensions.radiusMD,
+              );
+            },
+            icon: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: isDark ? AppColors.gray400 : AppColors.gray600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

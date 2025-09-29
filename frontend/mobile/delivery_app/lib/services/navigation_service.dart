@@ -1,341 +1,250 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
 
-/// 🧭 Service de Navigation GPS - Alpha Delivery App
+/// 🧭 Service de Navigation - Alpha Delivery App
 ///
-/// Gère la navigation externe vers Google Maps, Apple Maps
-/// et autres applications de navigation.
+/// Gère la navigation GPS et l'ouverture d'applications de cartes externes.
+/// Optimisé pour les besoins des livreurs mobiles.
 class NavigationService extends GetxService {
+  
   // ==========================================================================
   // 🚀 INITIALISATION
   // ==========================================================================
-
+  
   @override
-  Future<void> onInit() async {
+  void onInit() {
     super.onInit();
     debugPrint('🧭 Initialisation NavigationService...');
-    debugPrint('✅ NavigationService initialisé');
   }
-
+  
   // ==========================================================================
-  // 🗺️ NAVIGATION VERS ADRESSES
+  // 🗺️ NAVIGATION GPS
   // ==========================================================================
-
-  /// Ouvre la navigation vers une adresse dans l'app de navigation par défaut
-  Future<bool> navigateToAddress(String address) async {
-    try {
-      debugPrint('🧭 Navigation vers: $address');
-
-      // Encode l'adresse pour l'URL
-      final encodedAddress = Uri.encodeComponent(address);
-
-      // Essaie d'abord Google Maps
-      final googleMapsUrl =
-          'https://www.google.com/maps/search/?api=1&query=$encodedAddress';
-
-      if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
-        await launchUrl(
-          Uri.parse(googleMapsUrl),
-          mode: LaunchMode.externalApplication,
-        );
-        return true;
-      }
-
-      // Fallback vers l'app de cartes par défaut
-      final defaultMapsUrl = 'geo:0,0?q=$encodedAddress';
-
-      if (await canLaunchUrl(Uri.parse(defaultMapsUrl))) {
-        await launchUrl(
-          Uri.parse(defaultMapsUrl),
-          mode: LaunchMode.externalApplication,
-        );
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      debugPrint('❌ Erreur navigation vers adresse: $e');
-      return false;
-    }
-  }
-
-  /// Ouvre la navigation vers des coordonnées GPS
-  Future<bool> navigateToCoordinates(double latitude, double longitude,
-      {String? label}) async {
-    try {
-      debugPrint('🧭 Navigation vers: $latitude, $longitude');
-
-      // URL Google Maps avec coordonnées
-      String googleMapsUrl;
-      if (label != null) {
-        final encodedLabel = Uri.encodeComponent(label);
-        googleMapsUrl =
-            'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude($encodedLabel)';
-      } else {
-        googleMapsUrl =
-            'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
-      }
-
-      if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
-        await launchUrl(
-          Uri.parse(googleMapsUrl),
-          mode: LaunchMode.externalApplication,
-        );
-        return true;
-      }
-
-      // Fallback vers geo: URI
-      final geoUrl = 'geo:$latitude,$longitude';
-
-      if (await canLaunchUrl(Uri.parse(geoUrl))) {
-        await launchUrl(
-          Uri.parse(geoUrl),
-          mode: LaunchMode.externalApplication,
-        );
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      debugPrint('❌ Erreur navigation vers coordonnées: $e');
-      return false;
-    }
-  }
-
-  /// Ouvre la navigation avec itinéraire depuis la position actuelle
-  Future<bool> navigateFromCurrentLocation(
-    double destinationLat,
-    double destinationLng, {
-    String? destinationLabel,
-    NavigationMode mode = NavigationMode.driving,
-  }) async {
-    try {
-      debugPrint(
-          '🧭 Navigation depuis position actuelle vers: $destinationLat, $destinationLng');
-
-      // Mode de transport pour Google Maps
-      String travelMode;
-      switch (mode) {
-        case NavigationMode.driving:
-          travelMode = 'driving';
-          break;
-        case NavigationMode.walking:
-          travelMode = 'walking';
-          break;
-        case NavigationMode.bicycling:
-          travelMode = 'bicycling';
-          break;
-        case NavigationMode.transit:
-          travelMode = 'transit';
-          break;
-      }
-
-      // URL Google Maps avec itinéraire
-      final googleMapsUrl = 'https://www.google.com/maps/dir/?api=1'
-          '&destination=$destinationLat,$destinationLng'
-          '&travelmode=$travelMode';
-
-      if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
-        await launchUrl(
-          Uri.parse(googleMapsUrl),
-          mode: LaunchMode.externalApplication,
-        );
-        return true;
-      }
-
-      // Fallback vers navigation simple
-      return await navigateToCoordinates(destinationLat, destinationLng,
-          label: destinationLabel);
-    } catch (e) {
-      debugPrint('❌ Erreur navigation depuis position actuelle: $e');
-      return false;
-    }
-  }
-
-  // ==========================================================================
-  // 📋 COPIE D'ADRESSES
-  // ==========================================================================
-
-  /// Copie une adresse dans le presse-papiers
-  Future<bool> copyAddressToClipboard(String address) async {
-    try {
-      await Clipboard.setData(ClipboardData(text: address));
-      debugPrint('📋 Adresse copiée: $address');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Erreur copie adresse: $e');
-      return false;
-    }
-  }
-
-  /// Copie des coordonnées GPS dans le presse-papiers
-  Future<bool> copyCoordinatesToClipboard(
-      double latitude, double longitude) async {
-    try {
-      final coordinates = '$latitude, $longitude';
-      await Clipboard.setData(ClipboardData(text: coordinates));
-      debugPrint('📋 Coordonnées copiées: $coordinates');
-      return true;
-    } catch (e) {
-      debugPrint('❌ Erreur copie coordonnées: $e');
-      return false;
-    }
-  }
-
-  // ==========================================================================
-  // 🔗 LIENS DIRECTS VERS APPLICATIONS
-  // ==========================================================================
-
-  /// Ouvre Google Maps directement
-  Future<bool> openGoogleMaps(double latitude, double longitude,
-      {String? label}) async {
-    try {
-      // URL scheme Google Maps
-      final googleMapsApp = 'comgooglemaps://?q=$latitude,$longitude';
-
-      if (await canLaunchUrl(Uri.parse(googleMapsApp))) {
-        await launchUrl(
-          Uri.parse(googleMapsApp),
-          mode: LaunchMode.externalApplication,
-        );
-        return true;
-      }
-
-      // Fallback vers version web
-      return await navigateToCoordinates(latitude, longitude, label: label);
-    } catch (e) {
-      debugPrint('❌ Erreur ouverture Google Maps: $e');
-      return false;
-    }
-  }
-
-  /// Ouvre Apple Maps (iOS uniquement)
-  Future<bool> openAppleMaps(double latitude, double longitude,
-      {String? label}) async {
-    try {
-      // URL scheme Apple Maps
-      String appleMapsUrl = 'http://maps.apple.com/?ll=$latitude,$longitude';
-      if (label != null) {
-        final encodedLabel = Uri.encodeComponent(label);
-        appleMapsUrl += '&q=$encodedLabel';
-      }
-
-      if (await canLaunchUrl(Uri.parse(appleMapsUrl))) {
-        await launchUrl(
-          Uri.parse(appleMapsUrl),
-          mode: LaunchMode.externalApplication,
-        );
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      debugPrint('❌ Erreur ouverture Apple Maps: $e');
-      return false;
-    }
-  }
-
-  /// Ouvre Waze
-  Future<bool> openWaze(double latitude, double longitude) async {
-    try {
-      // URL scheme Waze
-      final wazeUrl =
-          'https://waze.com/ul?ll=$latitude,$longitude&navigate=yes';
-
-      if (await canLaunchUrl(Uri.parse(wazeUrl))) {
-        await launchUrl(
-          Uri.parse(wazeUrl),
-          mode: LaunchMode.externalApplication,
-        );
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      debugPrint('❌ Erreur ouverture Waze: $e');
-      return false;
-    }
-  }
-
-  // ==========================================================================
-  // 🎯 MÉTHODES UTILITAIRES
-  // ==========================================================================
-
-  /// Affiche un sélecteur d'applications de navigation
-  Future<bool> showNavigationOptions(
+  
+  /// Navigue vers des coordonnées GPS sp��cifiques
+  Future<void> navigateToCoordinates(
     double latitude,
     double longitude, {
     String? label,
-    String? address,
   }) async {
     try {
-      // Cette méthode pourrait ouvrir un bottom sheet avec les options
-      // Pour l'instant, on utilise la navigation par défaut
-
-      if (address != null) {
-        return await navigateToAddress(address);
-      } else {
-        return await navigateToCoordinates(latitude, longitude, label: label);
+      debugPrint('🧭 Navigation vers coordonnées: $latitude, $longitude');
+      
+      // Essaie d'ouvrir Google Maps en premier
+      final googleMapsUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude${label != null ? '&destination_place_id=$label' : ''}'
+      );
+      
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
+        debugPrint('✅ Navigation ouverte dans Google Maps');
+        
+        _showSuccessMessage('Navigation ouverte dans Google Maps');
+        return;
       }
+      
+      // Fallback vers l'URL geo: pour d'autres applications
+      final geoUrl = Uri.parse('geo:$latitude,$longitude?q=$latitude,$longitude${label != null ? '($label)' : ''}');
+      
+      if (await canLaunchUrl(geoUrl)) {
+        await launchUrl(geoUrl, mode: LaunchMode.externalApplication);
+        debugPrint('✅ Navigation ouverte dans l\'application de cartes par défaut');
+        
+        _showSuccessMessage('Navigation ouverte');
+        return;
+      }
+      
+      // Si aucune application n'est disponible
+      throw Exception('Aucune application de navigation disponible');
+      
     } catch (e) {
-      debugPrint('❌ Erreur options de navigation: $e');
-      return false;
+      debugPrint('❌ Erreur navigation vers coordonnées: $e');
+      _showErrorMessage('Impossible d\'ouvrir la navigation GPS');
     }
   }
-
-  /// Vérifie si une application de navigation est disponible
-  Future<bool> isNavigationAppAvailable(NavigationApp app) async {
+  
+  /// Navigue vers une adresse textuelle
+  Future<void> navigateToAddress(String address) async {
     try {
-      String url;
-
-      switch (app) {
-        case NavigationApp.googleMaps:
-          url = 'comgooglemaps://';
-          break;
-        case NavigationApp.appleMaps:
-          url = 'http://maps.apple.com/';
-          break;
-        case NavigationApp.waze:
-          url = 'waze://';
-          break;
+      debugPrint('🧭 Navigation vers adresse: $address');
+      
+      final encodedAddress = Uri.encodeComponent(address);
+      
+      // Essaie d'ouvrir Google Maps avec l'adresse
+      final googleMapsUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=$encodedAddress'
+      );
+      
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
+        debugPrint('✅ Navigation ouverte dans Google Maps');
+        
+        _showSuccessMessage('Navigation ouverte dans Google Maps');
+        return;
       }
-
-      return await canLaunchUrl(Uri.parse(url));
+      
+      // Fallback vers l'URL geo: avec recherche
+      final geoUrl = Uri.parse('geo:0,0?q=$encodedAddress');
+      
+      if (await canLaunchUrl(geoUrl)) {
+        await launchUrl(geoUrl, mode: LaunchMode.externalApplication);
+        debugPrint('✅ Navigation ouverte dans l\'application de cartes par défaut');
+        
+        _showSuccessMessage('Navigation ouverte');
+        return;
+      }
+      
+      // Si aucune application n'est disponible
+      throw Exception('Aucune application de navigation disponible');
+      
     } catch (e) {
-      debugPrint('❌ Erreur vérification app navigation: $e');
+      debugPrint('❌ Erreur navigation vers adresse: $e');
+      _showErrorMessage('Impossible d\'ouvrir la navigation GPS');
+    }
+  }
+  
+  /// Ouvre l'application de cartes avec plusieurs destinations (itinéraire optimisé)
+  Future<void> navigateToMultipleDestinations(List<MapDestination> destinations) async {
+    try {
+      debugPrint('🧭 Navigation vers ${destinations.length} destinations');
+      
+      if (destinations.isEmpty) {
+        throw Exception('Aucune destination fournie');
+      }
+      
+      // Pour Google Maps, on peut créer un itinéraire avec plusieurs waypoints
+      final waypoints = destinations.skip(1).map((dest) {
+        if (dest.latitude != null && dest.longitude != null) {
+          return '${dest.latitude},${dest.longitude}';
+        } else {
+          return Uri.encodeComponent(dest.address);
+        }
+      }).join('|');
+      
+      final firstDest = destinations.first;
+      String destination;
+      if (firstDest.latitude != null && firstDest.longitude != null) {
+        destination = '${firstDest.latitude},${firstDest.longitude}';
+      } else {
+        destination = Uri.encodeComponent(firstDest.address);
+      }
+      
+      final googleMapsUrl = Uri.parse(
+        'https://www.google.com/maps/dir/?api=1&destination=$destination${waypoints.isNotEmpty ? '&waypoints=$waypoints' : ''}&travelmode=driving'
+      );
+      
+      if (await canLaunchUrl(googleMapsUrl)) {
+        await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
+        debugPrint('✅ Itinéraire multi-destinations ouvert dans Google Maps');
+        
+        _showSuccessMessage('Itinéraire optimisé ouvert dans Google Maps');
+        return;
+      }
+      
+      // Fallback : ouvre juste la première destination
+      if (firstDest.latitude != null && firstDest.longitude != null) {
+        await navigateToCoordinates(
+          firstDest.latitude!,
+          firstDest.longitude!,
+          label: firstDest.label,
+        );
+      } else {
+        await navigateToAddress(firstDest.address);
+      }
+      
+    } catch (e) {
+      debugPrint('❌ Erreur navigation multi-destinations: $e');
+      _showErrorMessage('Impossible d\'ouvrir l\'itinéraire optimisé');
+    }
+  }
+  
+  /// Vérifie si une application de navigation est disponible
+  Future<bool> isNavigationAvailable() async {
+    try {
+      // Test avec Google Maps
+      final googleMapsUrl = Uri.parse('https://www.google.com/maps/');
+      if (await canLaunchUrl(googleMapsUrl)) {
+        return true;
+      }
+      
+      // Test avec geo: URL
+      final geoUrl = Uri.parse('geo:0,0?q=test');
+      if (await canLaunchUrl(geoUrl)) {
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      debugPrint('❌ Erreur vérification navigation: $e');
       return false;
     }
   }
+  
+  // ==========================================================================
+  // 💬 MESSAGES UTILISATEUR
+  // ==========================================================================
+  
+  /// Affiche un message de succès
+  void _showSuccessMessage(String message) {
+    Get.snackbar(
+      'Navigation',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green.withOpacity(0.9),
+      colorText: Colors.white,
+      icon: const Icon(Icons.navigation, color: Colors.white),
+      duration: const Duration(seconds: 3),
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+    );
+  }
+  
+  /// Affiche un message d'erreur
+  void _showErrorMessage(String message) {
+    Get.snackbar(
+      'Erreur Navigation',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red.withOpacity(0.9),
+      colorText: Colors.white,
+      icon: const Icon(Icons.error, color: Colors.white),
+      duration: const Duration(seconds: 4),
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+    );
+  }
+  
+  @override
+  void onClose() {
+    debugPrint('🧹 NavigationService nettoyé');
+    super.onClose();
+  }
+}
 
-  /// Formate une adresse pour l'affichage
-  String formatAddressForDisplay(String street, String city,
-      {String? postalCode}) {
-    final parts = <String>[street, city];
-    if (postalCode != null && postalCode.isNotEmpty) {
-      parts.add(postalCode);
+/// 📍 Modèle de destination pour la navigation
+class MapDestination {
+  final String address;
+  final double? latitude;
+  final double? longitude;
+  final String? label;
+  
+  const MapDestination({
+    required this.address,
+    this.latitude,
+    this.longitude,
+    this.label,
+  });
+  
+  /// Vérifie si la destination a des coordonnées GPS
+  bool get hasCoordinates => latitude != null && longitude != null;
+  
+  @override
+  String toString() {
+    if (hasCoordinates) {
+      return 'MapDestination(lat: $latitude, lng: $longitude, label: $label)';
+    } else {
+      return 'MapDestination(address: $address, label: $label)';
     }
-    return parts.join(', ');
   }
-
-  /// Formate des coordonnées pour l'affichage
-  String formatCoordinatesForDisplay(double latitude, double longitude) {
-    return '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
-  }
-}
-
-/// 🏷️ Modes de navigation
-enum NavigationMode {
-  driving,
-  walking,
-  bicycling,
-  transit,
-}
-
-/// 🏷️ Applications de navigation
-enum NavigationApp {
-  googleMaps,
-  appleMaps,
-  waze,
 }

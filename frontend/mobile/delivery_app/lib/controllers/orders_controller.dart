@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../models/delivery_order.dart';
 import '../services/delivery_service.dart';
+import '../services/auth_service.dart';
 import '../constants.dart';
 
 /// 📦 Contrôleur Commandes - Alpha Delivery App
@@ -25,6 +26,14 @@ class OrdersController extends GetxController {
   final selectedOrder = Rxn<DeliveryOrder>();
   final currentFilter = OrderStatusFilter.all.obs;
 
+  // Pagination
+  final currentPage = 1.obs;
+  final totalPages = 1.obs;
+  final totalOrders = 0.obs;
+  final hasMorePages = false.obs;
+  final isLoadingMore = false.obs;
+  final limit = 20; // Nombre d'éléments par page
+
   // ==========================================================================
   // 🚀 INITIALISATION
   // ==========================================================================
@@ -34,33 +43,70 @@ class OrdersController extends GetxController {
     super.onInit();
     debugPrint('📦 Initialisation OrdersController...');
 
-    // Écouter les changements de filtre
-    ever(currentFilter, (_) => _applyFilter());
+    // Écouter les changements de filtre et recharger les données
+    ever(currentFilter, (_) => fetchOrders());
 
-    // Charger les commandes au démarrage
-    fetchOrders();
+    // Attendre l'authentification avant de charger (évite 401 après hot reload)
+    final auth = Get.find<AuthService>();
+    if (auth.isAuthenticated) {
+      fetchOrders();
+    } else {
+      // Une seule fois, dès que connecté, on charge
+      ever<bool>(auth.isAuthenticatedRx, (isAuth) {
+        if (isAuth) {
+          fetchOrders();
+        }
+      });
+    }
   }
 
   // ==========================================================================
   // 📊 CHARGEMENT DES COMMANDES
   // ==========================================================================
 
-  /// Récupère toutes les commandes assignées au livreur
-  Future<void> fetchOrders() async {
+  /// Récupère les commandes selon le filtre actuel avec pagination
+  Future<void> fetchOrders({bool reset = true}) async {
     try {
-      isLoading.value = true;
+      if (reset) {
+        isLoading.value = true;
+        currentPage.value = 1;
+        orders.clear();
+      } else {
+        isLoadingMore.value = true;
+      }
+
       hasError.value = false;
       errorMessage.value = '';
 
-      debugPrint('📦 Récupération des commandes...');
+      debugPrint(
+          '📦 Récupération des commandes (filtre: ${currentFilter.value}, page: ${currentPage.value})...');
 
       final deliveryService = Get.find<DeliveryService>();
-      final fetchedOrders = await deliveryService.getAssignedOrders();
+      DeliveryOrdersResponse fetchedOrders;
 
-      orders.assignAll(fetchedOrders.orders);
+      // Utiliser l'endpoint principal avec pagination
+      fetchedOrders = await deliveryService.getAllDeliveryOrders(
+        page: currentPage.value,
+        limit: limit,
+      );
+
+      // Mettre à jour les informations de pagination
+      if (fetchedOrders.pagination != null) {
+        totalPages.value = fetchedOrders.pagination!.totalPages;
+        totalOrders.value = fetchedOrders.pagination!.total;
+        hasMorePages.value = currentPage.value < totalPages.value;
+      }
+
+      if (reset) {
+        orders.assignAll(fetchedOrders.orders);
+      } else {
+        orders.addAll(fetchedOrders.orders);
+      }
+
       _applyFilter();
 
-      debugPrint('✅ ${fetchedOrders.orders.length} commandes récupérées');
+      debugPrint(
+          '✅ ${fetchedOrders.orders.length} commandes récupérées (page ${currentPage.value}/${totalPages.value})');
     } catch (e) {
       debugPrint('❌ Erreur lors de la récupération des commandes: $e');
       hasError.value = true;
@@ -76,7 +122,16 @@ class OrdersController extends GetxController {
       );
     } finally {
       isLoading.value = false;
+      isLoadingMore.value = false;
     }
+  }
+
+  /// Charge la page suivante
+  Future<void> loadNextPage() async {
+    if (!hasMorePages.value || isLoadingMore.value) return;
+
+    currentPage.value++;
+    await fetchOrders(reset: false);
   }
 
   /// Actualise les commandes (pull-to-refresh)
@@ -92,34 +147,66 @@ class OrdersController extends GetxController {
   void _applyFilter() {
     final filter = currentFilter.value;
 
+    // Debug : afficher les statuts présents
+    final statusCounts = <OrderStatus, int>{};
+    for (final order in orders) {
+      statusCounts[order.status] = (statusCounts[order.status] ?? 0) + 1;
+    }
+    debugPrint('📊 Statuts présents: $statusCounts');
+
     switch (filter) {
       case OrderStatusFilter.pending:
         filteredOrders.assignAll(orders
             .where((order) => order.status == OrderStatus.PENDING)
             .toList());
         break;
-      case OrderStatusFilter.inProgress:
+      case OrderStatusFilter.collecting:
         filteredOrders.assignAll(orders
-            .where((order) => [
-                  OrderStatus.COLLECTING,
-                  OrderStatus.PROCESSING,
-                  OrderStatus.DELIVERING
-                ].contains(order.status))
+            .where((order) => order.status == OrderStatus.COLLECTING)
             .toList());
         break;
       case OrderStatusFilter.collected:
+        final collectedOrders = orders
+            .where((order) => order.status == OrderStatus.COLLECTED)
+            .toList();
+        debugPrint(
+            '🔍 Commandes collectées trouvées: ${collectedOrders.length}');
+        for (final order in collectedOrders) {
+          debugPrint('  - ${order.id}: ${order.status}');
+        }
+        filteredOrders.assignAll(collectedOrders);
+        break;
+      case OrderStatusFilter.processing:
         filteredOrders.assignAll(orders
-            .where((order) => [OrderStatus.COLLECTED, OrderStatus.READY]
-                .contains(order.status))
+            .where((order) => order.status == OrderStatus.PROCESSING)
+            .toList());
+        break;
+      case OrderStatusFilter.ready:
+        filteredOrders.assignAll(orders
+            .where((order) => order.status == OrderStatus.READY)
+            .toList());
+        break;
+      case OrderStatusFilter.delivering:
+        filteredOrders.assignAll(orders
+            .where((order) => order.status == OrderStatus.DELIVERING)
             .toList());
         break;
       case OrderStatusFilter.delivered:
-        filteredOrders.assignAll(orders
+        final deliveredOrders = orders
             .where((order) => order.status == OrderStatus.DELIVERED)
+            .toList();
+        debugPrint('🔍 Commandes livrées trouvées: ${deliveredOrders.length}');
+        for (final order in deliveredOrders) {
+          debugPrint('  - ${order.id}: ${order.status}');
+        }
+        filteredOrders.assignAll(deliveredOrders);
+        break;
+      case OrderStatusFilter.cancelled:
+        filteredOrders.assignAll(orders
+            .where((order) => order.status == OrderStatus.CANCELLED)
             .toList());
         break;
       case OrderStatusFilter.all:
-      default:
         filteredOrders.assignAll(orders);
         break;
     }
@@ -159,29 +246,30 @@ class OrdersController extends GetxController {
   }
 
   /// Recherche avancée avec paramètres multiples
-  Future<List<DeliveryOrder>> searchOrdersAdvanced(Map<String, dynamic> searchParams) async {
+  Future<List<DeliveryOrder>> searchOrdersAdvanced(
+      Map<String, dynamic> searchParams) async {
     try {
       debugPrint('🔍 Recherche avancée avec paramètres: $searchParams');
 
       final deliveryService = Get.find<DeliveryService>();
-      
+
       // Utiliser la méthode de recherche du service
       final results = await deliveryService.searchOrders(
         query: searchParams['searchTerm'],
-        status: searchParams['status'] != null 
-            ? OrderStatus.values.firstWhere((s) => s.name == searchParams['status'])
+        status: searchParams['status'] != null
+            ? OrderStatus.values
+                .firstWhere((s) => s.name == searchParams['status'])
             : null,
-        startDate: searchParams['startDate'] != null 
+        startDate: searchParams['startDate'] != null
             ? DateTime.parse(searchParams['startDate'])
             : null,
-        endDate: searchParams['endDate'] != null 
+        endDate: searchParams['endDate'] != null
             ? DateTime.parse(searchParams['endDate'])
             : null,
       );
 
       debugPrint('✅ Recherche avancée: ${results.orders.length} résultats');
       return results.orders;
-
     } catch (e) {
       debugPrint('❌ Erreur recherche avancée: $e');
       throw Exception('Erreur lors de la recherche avancée: $e');
@@ -192,13 +280,21 @@ class OrdersController extends GetxController {
     switch (filter) {
       case OrderStatusFilter.pending:
         return OrderStatus.PENDING;
-      case OrderStatusFilter.inProgress:
+      case OrderStatusFilter.collecting:
         return OrderStatus.COLLECTING;
       case OrderStatusFilter.collected:
         return OrderStatus.COLLECTED;
+      case OrderStatusFilter.processing:
+        return OrderStatus.PROCESSING;
+      case OrderStatusFilter.ready:
+        return OrderStatus.READY;
+      case OrderStatusFilter.delivering:
+        return OrderStatus.DELIVERING;
       case OrderStatusFilter.delivered:
         return OrderStatus.DELIVERED;
-      default:
+      case OrderStatusFilter.cancelled:
+        return OrderStatus.CANCELLED;
+      case OrderStatusFilter.all:
         return OrderStatus.PENDING;
     }
   }
@@ -377,7 +473,11 @@ class OrdersController extends GetxController {
 enum OrderStatusFilter {
   all,
   pending,
-  inProgress,
+  collecting,
   collected,
+  processing,
+  ready,
+  delivering,
   delivered,
+  cancelled,
 }

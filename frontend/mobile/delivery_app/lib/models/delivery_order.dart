@@ -66,34 +66,125 @@ class DeliveryOrder {
   
   /// Crée une commande depuis JSON
   factory DeliveryOrder.fromJson(Map<String, dynamic> json) {
-    return DeliveryOrder(
-      id: json['id'] as String,
-      status: OrderStatus.values.firstWhere(
-        (e) => e.name.toUpperCase() == (json['status'] as String).toUpperCase(),
-        orElse: () => OrderStatus.PENDING,
-      ),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-      totalAmount: (json['totalAmount'] as num?)?.toDouble(),
-      collectionDate: json['collectionDate'] != null 
-          ? DateTime.parse(json['collectionDate'] as String)
-          : null,
-      deliveryDate: json['deliveryDate'] != null
-          ? DateTime.parse(json['deliveryDate'] as String)
-          : null,
-      paymentMethod: json['paymentMethod'] as String? ?? 'CASH',
-      customer: DeliveryCustomer.fromJson(json['user'] as Map<String, dynamic>),
-      address: DeliveryAddress.fromJson(json['address'] as Map<String, dynamic>),
-      serviceTypeName: json['service_types']?['name'] as String? ?? 'Service Standard',
-      items: (json['order_items'] as List<dynamic>?)
-          ?.map((item) => DeliveryOrderItem.fromJson(item as Map<String, dynamic>))
-          .toList() ?? [],
-      isFlashOrder: json['order_metadata']?['is_flash_order'] as bool? ?? false,
-      notes: (json['order_notes'] as List<dynamic>?)
-          ?.map((note) => DeliveryOrderNote.fromJson(note as Map<String, dynamic>))
-          .toList() ?? [],
-      metadata: json['order_metadata']?['metadata'] as Map<String, dynamic>?,
-    );
+    try {
+      // Gère les différents formats de date (peut être null)
+      DateTime? parseDate(dynamic dateValue) {
+        if (dateValue == null) return null;
+        if (dateValue is String) {
+          try {
+            return DateTime.parse(dateValue);
+          } catch (e) {
+            debugPrint('❌ Erreur parsing date: $dateValue');
+            return null;
+          }
+        }
+        return null;
+      }
+
+      // Parse les dates obligatoires avec fallback
+      DateTime parseRequiredDate(dynamic dateValue, String fieldName) {
+        final parsed = parseDate(dateValue);
+        if (parsed != null) return parsed;
+        
+        debugPrint('⚠️ Date manquante pour $fieldName, utilisation de DateTime.now()');
+        return DateTime.now();
+      }
+
+      // Crée un client par défaut si manquant
+      DeliveryCustomer createDefaultCustomer() {
+        return DeliveryCustomer(
+          id: 'unknown',
+          firstName: 'Client',
+          lastName: 'Inconnu',
+        );
+      }
+
+      // Crée une adresse par défaut si manquante
+      DeliveryAddress createDefaultAddress() {
+        return DeliveryAddress(
+          id: 'unknown',
+          street: 'Adresse inconnue',
+          city: 'Ville inconnue',
+        );
+      }
+
+      // Fonction pour parser les montants (String, num ou null)
+      double? parseAmount(dynamic value) {
+        if (value == null) return null;
+        if (value is num) return value.toDouble();
+        if (value is String) {
+          if (value.isEmpty) return null;
+          final parsed = double.tryParse(value);
+          return parsed;
+        }
+        return null;
+      }
+
+      // Parse le statut avec gestion d'erreur
+      OrderStatus parseStatus(dynamic statusValue) {
+        if (statusValue == null) return OrderStatus.PENDING;
+        
+        final statusString = statusValue.toString().toUpperCase();
+        try {
+          return OrderStatus.values.firstWhere(
+            (e) => e.name.toUpperCase() == statusString,
+          );
+        } catch (e) {
+          debugPrint('⚠️ Statut inconnu: $statusString, utilisation de PENDING');
+          return OrderStatus.PENDING;
+        }
+      }
+
+      return DeliveryOrder(
+        id: json['id']?.toString() ?? 'unknown',
+        status: parseStatus(json['status']),
+        createdAt: parseRequiredDate(json['createdAt'], 'createdAt'),
+        updatedAt: parseRequiredDate(json['updatedAt'], 'updatedAt'),
+        totalAmount: parseAmount(json['totalAmount']),
+        collectionDate: parseDate(json['collectionDate']),
+        deliveryDate: parseDate(json['deliveryDate']),
+        paymentMethod: json['paymentMethod']?.toString() ?? 'CASH',
+        customer: json['user'] != null 
+            ? DeliveryCustomer.fromJson(json['user'] as Map<String, dynamic>)
+            : createDefaultCustomer(),
+        address: json['address'] != null
+            ? DeliveryAddress.fromJson(json['address'] as Map<String, dynamic>)
+            : createDefaultAddress(),
+        serviceTypeName: json['service_types']?['name']?.toString() ?? 
+                        json['serviceType']?['name']?.toString() ?? 
+                        'Service Standard',
+        items: (json['order_items'] as List<dynamic>?)
+            ?.map((item) {
+              try {
+                return DeliveryOrderItem.fromJson(item as Map<String, dynamic>);
+              } catch (e) {
+                debugPrint('❌ Erreur parsing order_item: $e');
+                return null;
+              }
+            })
+            .where((item) => item != null)
+            .cast<DeliveryOrderItem>()
+            .toList() ?? [],
+        isFlashOrder: json['order_metadata']?['is_flash_order'] as bool? ?? false,
+        notes: (json['order_notes'] as List<dynamic>?)
+            ?.map((note) {
+              try {
+                return DeliveryOrderNote.fromJson(note as Map<String, dynamic>);
+              } catch (e) {
+                debugPrint('❌ Erreur parsing order_note: $e');
+                return null;
+              }
+            })
+            .where((note) => note != null)
+            .cast<DeliveryOrderNote>()
+            .toList() ?? [],
+        metadata: json['order_metadata']?['metadata'] as Map<String, dynamic>?,
+      );
+    } catch (e) {
+      debugPrint('❌ Erreur parsing DeliveryOrder: $e');
+      debugPrint('JSON reçu: $json');
+      rethrow;
+    }
   }
   
   /// Convertit en JSON
@@ -337,11 +428,11 @@ class DeliveryCustomer {
   
   factory DeliveryCustomer.fromJson(Map<String, dynamic> json) {
     return DeliveryCustomer(
-      id: json['id'] as String,
-      firstName: json['first_name'] as String,
-      lastName: json['last_name'] as String,
-      phone: json['phone'] as String?,
-      email: json['email'] as String?,
+      id: json['id']?.toString() ?? 'unknown',
+      firstName: json['first_name']?.toString() ?? 'Client',
+      lastName: json['last_name']?.toString() ?? 'Inconnu',
+      phone: json['phone']?.toString(),
+      email: json['email']?.toString(),
     );
   }
   
@@ -380,14 +471,25 @@ class DeliveryAddress {
   });
   
   factory DeliveryAddress.fromJson(Map<String, dynamic> json) {
+    // Fonction pour parser les coordonnées GPS (String ou num)
+    double? parseCoordinate(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        final parsed = double.tryParse(value);
+        return parsed;
+      }
+      return null;
+    }
+
     return DeliveryAddress(
-      id: json['id'] as String,
-      street: json['street'] as String,
-      city: json['city'] as String,
-      postalCode: json['postal_code'] as String?,
-      name: json['name'] as String?,
-      latitude: (json['gps_latitude'] as num?)?.toDouble(),
-      longitude: (json['gps_longitude'] as num?)?.toDouble(),
+      id: json['id']?.toString() ?? 'unknown',
+      street: json['street']?.toString() ?? 'Adresse inconnue',
+      city: json['city']?.toString() ?? 'Ville inconnue',
+      postalCode: json['postal_code']?.toString(),
+      name: json['name']?.toString(),
+      latitude: parseCoordinate(json['gps_latitude']),
+      longitude: parseCoordinate(json['gps_longitude']),
     );
   }
   
@@ -443,14 +545,47 @@ class DeliveryOrderItem {
   });
   
   factory DeliveryOrderItem.fromJson(Map<String, dynamic> json) {
+    // Fonction pour parser les prix (String ou num)
+    double parsePrice(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        final parsed = double.tryParse(value);
+        return parsed ?? 0.0;
+      }
+      return 0.0;
+    }
+
+    // Fonction pour parser les poids (String ou num)
+    double? parseWeight(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        final parsed = double.tryParse(value);
+        return parsed;
+      }
+      return null;
+    }
+
+    // Fonction pour parser les quantités (int ou String)
+    int parseQuantity(dynamic value) {
+      if (value == null) return 1;
+      if (value is int) return value;
+      if (value is String) {
+        final parsed = int.tryParse(value);
+        return parsed ?? 1;
+      }
+      return 1;
+    }
+
     return DeliveryOrderItem(
-      id: json['id'] as String,
-      articleName: json['article']['name'] as String,
-      categoryName: json['article']['article_categories']?['name'] as String?,
-      quantity: json['quantity'] as int,
-      unitPrice: (json['unitPrice'] as num).toDouble(),
+      id: json['id']?.toString() ?? 'unknown',
+      articleName: json['article']?['name']?.toString() ?? 'Article inconnu',
+      categoryName: json['article']?['article_categories']?['name']?.toString(),
+      quantity: parseQuantity(json['quantity']),
+      unitPrice: parsePrice(json['unitPrice']),
       isPremium: json['isPremium'] as bool? ?? false,
-      weight: (json['weight'] as num?)?.toDouble(),
+      weight: parseWeight(json['weight']),
     );
   }
   
@@ -484,10 +619,24 @@ class DeliveryOrderNote {
   });
   
   factory DeliveryOrderNote.fromJson(Map<String, dynamic> json) {
+    // Parse la date avec gestion d'erreur
+    DateTime parseCreatedAt(dynamic dateValue) {
+      if (dateValue == null) return DateTime.now();
+      if (dateValue is String) {
+        try {
+          return DateTime.parse(dateValue);
+        } catch (e) {
+          debugPrint('❌ Erreur parsing created_at pour note: $dateValue');
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
     return DeliveryOrderNote(
-      id: json['id'] as String,
-      note: json['note'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      id: json['id']?.toString() ?? 'unknown',
+      note: json['note']?.toString() ?? '',
+      createdAt: parseCreatedAt(json['created_at']),
     );
   }
   
@@ -503,20 +652,55 @@ class DeliveryOrderNote {
 /// 📊 Réponse paginée de commandes
 class DeliveryOrdersResponse {
   final List<DeliveryOrder> orders;
-  final DeliveryPagination pagination;
+  final DeliveryPagination? pagination;
   
   DeliveryOrdersResponse({
     required this.orders,
-    required this.pagination,
+    this.pagination,
   });
   
   factory DeliveryOrdersResponse.fromJson(Map<String, dynamic> json) {
-    return DeliveryOrdersResponse(
-      orders: (json['data'] as List<dynamic>)
-          .map((orderJson) => DeliveryOrder.fromJson(orderJson as Map<String, dynamic>))
-          .toList(),
-      pagination: DeliveryPagination.fromJson(json['pagination'] as Map<String, dynamic>),
-    );
+    try {
+      // Gère les réponses avec ou sans pagination
+      final List<dynamic> ordersData = json['data'] as List<dynamic>;
+      
+      // Parse chaque commande individuellement avec gestion d'erreur
+      final orders = <DeliveryOrder>[];
+      for (final orderJson in ordersData) {
+        try {
+          final order = DeliveryOrder.fromJson(orderJson as Map<String, dynamic>);
+          orders.add(order);
+        } catch (e) {
+          debugPrint('❌ Erreur parsing commande individuelle: $e');
+          debugPrint('JSON commande problématique: $orderJson');
+          // Continue avec les autres commandes au lieu de tout faire planter
+          continue;
+        }
+      }
+      
+      // Pagination optionnelle
+      DeliveryPagination? pagination;
+      if (json.containsKey('pagination') && json['pagination'] != null) {
+        pagination = DeliveryPagination.fromJson(json['pagination'] as Map<String, dynamic>);
+      } else {
+        // Crée une pagination par défaut si pas fournie
+        pagination = DeliveryPagination(
+          page: 1,
+          limit: orders.length,
+          total: orders.length,
+          totalPages: 1,
+        );
+      }
+      
+      return DeliveryOrdersResponse(
+        orders: orders,
+        pagination: pagination,
+      );
+    } catch (e) {
+      debugPrint('❌ Erreur parsing DeliveryOrdersResponse: $e');
+      debugPrint('JSON reçu: $json');
+      rethrow;
+    }
   }
 }
 
@@ -535,11 +719,22 @@ class DeliveryPagination {
   });
   
   factory DeliveryPagination.fromJson(Map<String, dynamic> json) {
+    // Fonction pour parser les entiers avec gestion d'erreur
+    int parseInt(dynamic value, int defaultValue) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      if (value is String) {
+        final parsed = int.tryParse(value);
+        return parsed ?? defaultValue;
+      }
+      return defaultValue;
+    }
+
     return DeliveryPagination(
-      page: json['page'] as int,
-      limit: json['limit'] as int,
-      total: json['total'] as int,
-      totalPages: json['totalPages'] as int,
+      page: parseInt(json['page'], 1),
+      limit: parseInt(json['limit'], 20),
+      total: parseInt(json['total'], 0),
+      totalPages: parseInt(json['totalPages'], 1),
     );
   }
   

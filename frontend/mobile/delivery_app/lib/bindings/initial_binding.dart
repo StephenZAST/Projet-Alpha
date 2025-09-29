@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
+import '../services/navigation_service.dart';
 import '../controllers/app_controller.dart';
 
 /// 🔗 Binding Initial - Alpha Delivery App
@@ -41,6 +42,12 @@ class InitialBinding extends Bindings {
     // Service de notifications
     Get.put<NotificationService>(
       NotificationService(),
+      permanent: true,
+    );
+
+    // Service de navigation GPS
+    Get.put<NavigationService>(
+      NavigationService(),
       permanent: true,
     );
 

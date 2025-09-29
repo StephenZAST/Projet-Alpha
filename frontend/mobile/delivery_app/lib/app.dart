@@ -11,7 +11,6 @@ import 'constants.dart';
 import 'theme/mobile_theme.dart';
 import 'routes/app_routes.dart';
 import 'bindings/initial_binding.dart';
-import 'services/auth_service.dart';
 
 /// 📱 Application principale Alpha Delivery
 ///
@@ -73,19 +72,13 @@ class DeliveryApp extends StatelessWidget {
 
   /// Détermine la route initiale selon l'état d'authentification
   String _getInitialRoute() {
-    try {
-      // Vérifie si AuthService est déjà initialisé
-      if (Get.isRegistered<AuthService>()) {
-        final authService = Get.find<AuthService>();
-        if (authService.isAuthenticated) {
-          return AppRoutes.dashboard;
-        }
-      }
-    } catch (e) {
-      debugPrint('⚠️ AuthService pas encore initialisé, redirection vers login');
+    // Si un token existe en stockage, on démarre sur le dashboard
+    // Sinon, on va sur la page de connexion
+    final storage = GetStorage();
+    final token = storage.read<String>(StorageKeys.authToken);
+    if (token != null && token.isNotEmpty) {
+      return AppRoutes.dashboard;
     }
-    
-    // Par défaut, redirige vers la page de connexion
     return AppRoutes.login;
   }
 
@@ -152,7 +145,8 @@ class AppInitializer {
 
       // Initialise les timezones pour les notifications programmées
       tz.initializeTimeZones();
-      tz.setLocalLocation(tz.getLocation('Africa/Dakar')); // Timezone du Sénégal
+      tz.setLocalLocation(
+          tz.getLocation('Africa/Dakar')); // Timezone du Sénégal
 
       // Configure l'orientation (portrait uniquement pour mobile)
       await SystemChrome.setPreferredOrientations([

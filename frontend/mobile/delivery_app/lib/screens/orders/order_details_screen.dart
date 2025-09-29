@@ -20,82 +20,92 @@ class OrderDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<OrdersController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Récupérer la commande depuis les arguments ou la sélection
     final arguments = Get.arguments as Map<String, dynamic>?;
     final orderId = arguments?['orderId'] as String?;
     final orderFromArgs = arguments?['order'] as DeliveryOrder?;
-    
+
+    // Si on a une commande dans les arguments, l'utiliser directement
+    if (orderFromArgs != null) {
+      return _buildOrderDetails(context, orderFromArgs, controller, isDark);
+    }
+
+    // Sinon, observer les changements du contrôleur
     return Obx(() {
       DeliveryOrder? order;
-      
-      if (orderFromArgs != null) {
-        order = orderFromArgs;
-      } else if (orderId != null) {
+
+      if (orderId != null) {
         order = controller.orders.firstWhereOrNull((o) => o.id == orderId);
       } else {
         order = controller.selectedOrder.value;
       }
-      
+
       if (order == null) {
         return _buildErrorScreen(isDark);
       }
-      
-      return Scaffold(
-        backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
-        body: CustomScrollView(
-          slivers: [
-            // =================================================================
-            // 📱 APP BAR AVEC ACTIONS
-            // =================================================================
-            _buildSliverAppBar(context, order, isDark),
-            
-            // =================================================================
-            // 📋 CONTENU PRINCIPAL
-            // =================================================================
-            SliverPadding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // Informations principales
-                  _buildMainInfoSection(order, isDark),
-                  const SizedBox(height: AppSpacing.lg),
-                  
-                  // Informations client
-                  _buildCustomerSection(order, isDark),
-                  const SizedBox(height: AppSpacing.lg),
-                  
-                  // Adresse avec navigation
-                  _buildAddressSection(order, isDark),
-                  const SizedBox(height: AppSpacing.lg),
-                  
-                  // Articles de la commande
-                  _buildItemsSection(order, isDark),
-                  const SizedBox(height: AppSpacing.lg),
-                  
-                  // Notes et historique
-                  if (order.notes.isNotEmpty)
-                    _buildNotesSection(order, isDark),
-                  
-                  // Espacement pour le FAB
-                  const SizedBox(height: AppSpacing.xxl * 2),
-                ]),
-              ),
-            ),
-          ],
-        ),
-        
-        // =================================================================
-        // 🎯 ACTIONS FLOTTANTES
-        // =================================================================
-        floatingActionButton: _buildFloatingActions(order, controller, isDark),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      );
+
+      return _buildOrderDetails(context, order, controller, isDark);
     });
   }
 
+  /// 📋 Construction des détails de commande
+  Widget _buildOrderDetails(BuildContext context, DeliveryOrder order,
+      OrdersController controller, bool isDark) {
+    return Scaffold(
+      backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
+      body: CustomScrollView(
+        slivers: [
+          // =================================================================
+          // 📱 APP BAR AVEC ACTIONS
+          // =================================================================
+          _buildSliverAppBar(context, order, isDark),
+
+          // =================================================================
+          // 📋 CONTENU PRINCIPAL
+          // =================================================================
+          SliverPadding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Informations principales
+                _buildMainInfoSection(order, isDark),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Informations client
+                _buildCustomerSection(order, isDark),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Adresse avec navigation
+                _buildAddressSection(order, isDark),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Articles de la commande
+                _buildItemsSection(order, isDark),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Notes et historique
+                if (order.notes.isNotEmpty) _buildNotesSection(order, isDark),
+
+                // Espacement pour le FAB
+                const SizedBox(height: AppSpacing.xxl * 2),
+              ]),
+            ),
+          ),
+        ],
+      ),
+
+      // =================================================================
+      // 🎯 ACTIONS FLOTTANTES
+      // =================================================================
+      floatingActionButton: _buildFloatingActions(order, controller, isDark),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
   /// 📱 App Bar avec informations commande
-  Widget _buildSliverAppBar(BuildContext context, DeliveryOrder order, bool isDark) {
+  Widget _buildSliverAppBar(
+      BuildContext context, DeliveryOrder order, bool isDark) {
     return SliverAppBar(
       expandedHeight: 120.0,
       floating: false,
@@ -244,28 +254,24 @@ class OrderDetailsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          
           _buildInfoRow(
             'Service',
             order.serviceTypeName,
             Icons.cleaning_services,
             isDark,
           ),
-          
           _buildInfoRow(
             'Montant total',
             order.formattedAmount,
             Icons.payments,
             isDark,
           ),
-          
           _buildInfoRow(
             'Mode de paiement',
             order.paymentMethod,
             Icons.payment,
             isDark,
           ),
-          
           if (order.collectionDate != null)
             _buildInfoRow(
               'Date de collecte',
@@ -273,7 +279,6 @@ class OrderDetailsScreen extends StatelessWidget {
               Icons.schedule,
               isDark,
             ),
-          
           if (order.deliveryDate != null)
             _buildInfoRow(
               'Date de livraison',
@@ -281,7 +286,6 @@ class OrderDetailsScreen extends StatelessWidget {
               Icons.local_shipping,
               isDark,
             ),
-          
           _buildInfoRow(
             'Créée le',
             _formatDateTime(order.createdAt),
@@ -328,7 +332,6 @@ class OrderDetailsScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          
           Row(
             children: [
               Container(
@@ -356,7 +359,9 @@ class OrderDetailsScreen extends StatelessWidget {
                     Text(
                       order.customer.fullName,
                       style: AppTextStyles.h4.copyWith(
-                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -365,7 +370,9 @@ class OrderDetailsScreen extends StatelessWidget {
                       Text(
                         order.customer.phone!,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.gray300
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -374,7 +381,9 @@ class OrderDetailsScreen extends StatelessWidget {
                       Text(
                         order.customer.email!,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.gray300
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -442,7 +451,6 @@ class OrderDetailsScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -460,7 +468,9 @@ class OrderDetailsScreen extends StatelessWidget {
                       Text(
                         order.address.name!,
                         style: AppTextStyles.bodyLarge.copyWith(
-                          color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -469,7 +479,9 @@ class OrderDetailsScreen extends StatelessWidget {
                     Text(
                       order.address.fullAddress,
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                        color: isDark
+                            ? AppColors.gray300
+                            : AppColors.textSecondary,
                       ),
                     ),
                     if (order.address.hasCoordinates) ...[
@@ -516,89 +528,96 @@ class OrderDetailsScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          
-          ...order.items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: item.isPremium 
-                        ? AppColors.warning.withOpacity(0.1)
-                        : AppColors.gray200.withOpacity(0.5),
-                    borderRadius: AppRadius.radiusSM,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${item.quantity}',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: item.isPremium ? AppColors.warning : AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
+          ...order.items
+              .map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: item.isPremium
+                                ? AppColors.warning.withOpacity(0.1)
+                                : AppColors.gray200.withOpacity(0.5),
+                            borderRadius: AppRadius.radiusSM,
+                          ),
+                          child: Center(
                             child: Text(
-                              item.articleName,
+                              '${item.quantity}',
                               style: AppTextStyles.bodyMedium.copyWith(
-                                color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                                fontWeight: FontWeight.w500,
+                                color: item.isPremium
+                                    ? AppColors.warning
+                                    : AppColors.primary,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
-                          if (item.isPremium)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.xs,
-                                vertical: 2,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item.articleName,
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: isDark
+                                            ? AppColors.textLight
+                                            : AppColors.textPrimary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  if (item.isPremium)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: AppSpacing.xs,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.warning,
+                                        borderRadius: AppRadius.radiusXS,
+                                      ),
+                                      child: Text(
+                                        'PREMIUM',
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                              decoration: BoxDecoration(
-                                color: AppColors.warning,
-                                borderRadius: AppRadius.radiusXS,
-                              ),
-                              child: Text(
-                                'PREMIUM',
-                                style: AppTextStyles.caption.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
+                              if (item.categoryName != null) ...[
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(
+                                  item.categoryName!,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: isDark
+                                        ? AppColors.gray400
+                                        : AppColors.gray500,
+                                  ),
                                 ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      if (item.categoryName != null) ...[
-                        const SizedBox(height: AppSpacing.xs),
+                              ],
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
                         Text(
-                          item.categoryName!,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: isDark ? AppColors.gray400 : AppColors.gray500,
+                          item.formattedTotalPrice,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Text(
-                  item.formattedTotalPrice,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          )).toList(),
+                    ),
+                  ))
+              .toList(),
         ],
       ),
     );
@@ -618,59 +637,64 @@ class OrderDetailsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          
-          ...order.notes.map((note) => Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.md),
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? AppColors.gray800.withOpacity(0.5)
-                    : AppColors.gray100.withOpacity(0.5),
-                borderRadius: AppRadius.radiusSM,
-                border: Border.all(
-                  color: isDark 
-                      ? AppColors.gray700
-                      : AppColors.gray200,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    note.note,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+          ...order.notes
+              .map((note) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.gray800.withOpacity(0.5)
+                            : AppColors.gray100.withOpacity(0.5),
+                        borderRadius: AppRadius.radiusSM,
+                        border: Border.all(
+                          color: isDark ? AppColors.gray700 : AppColors.gray200,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            note.note,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            _formatDateTime(note.createdAt),
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark
+                                  ? AppColors.gray400
+                                  : AppColors.gray500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    _formatDateTime(note.createdAt),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: isDark ? AppColors.gray400 : AppColors.gray500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )).toList(),
+                  ))
+              .toList(),
         ],
       ),
     );
   }
 
   /// 🎯 Actions flottantes selon le statut
-  Widget _buildFloatingActions(DeliveryOrder order, OrdersController controller, bool isDark) {
+  Widget _buildFloatingActions(
+      DeliveryOrder order, OrdersController controller, bool isDark) {
     final actions = _getAvailableActions(order);
-    
+
     if (actions.isEmpty) {
       return const SizedBox.shrink();
     }
-    
+
     if (actions.length == 1) {
       final action = actions.first;
       return FloatingActionButton.extended(
-        onPressed: () => _handleStatusUpdate(controller, order.id, action.status),
+        onPressed: () =>
+            _handleStatusUpdate(controller, order.id, action.status),
         backgroundColor: action.color,
         icon: Icon(action.icon, color: Colors.white),
         label: Text(
@@ -679,15 +703,18 @@ class OrderDetailsScreen extends StatelessWidget {
         ),
       );
     }
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: actions.map((action) => FloatingActionButton(
-        heroTag: action.label,
-        onPressed: () => _handleStatusUpdate(controller, order.id, action.status),
-        backgroundColor: action.color,
-        child: Icon(action.icon, color: Colors.white),
-      )).toList(),
+      children: actions
+          .map((action) => FloatingActionButton(
+                heroTag: action.label,
+                onPressed: () =>
+                    _handleStatusUpdate(controller, order.id, action.status),
+                backgroundColor: action.color,
+                child: Icon(action.icon, color: Colors.white),
+              ))
+          .toList(),
     );
   }
 
@@ -777,7 +804,7 @@ class OrderDetailsScreen extends StatelessWidget {
             status: OrderStatus.COLLECTING,
           ),
         ];
-      
+
       case OrderStatus.COLLECTING:
         return [
           _OrderAction(
@@ -787,7 +814,7 @@ class OrderDetailsScreen extends StatelessWidget {
             status: OrderStatus.COLLECTED,
           ),
         ];
-      
+
       case OrderStatus.READY:
         return [
           _OrderAction(
@@ -797,7 +824,7 @@ class OrderDetailsScreen extends StatelessWidget {
             status: OrderStatus.DELIVERING,
           ),
         ];
-      
+
       case OrderStatus.DELIVERING:
         return [
           _OrderAction(
@@ -807,14 +834,15 @@ class OrderDetailsScreen extends StatelessWidget {
             status: OrderStatus.DELIVERED,
           ),
         ];
-      
+
       default:
         return [];
     }
   }
 
   /// 🎬 Gestion des actions
-  Future<void> _handleStatusUpdate(OrdersController controller, String orderId, OrderStatus newStatus) async {
+  Future<void> _handleStatusUpdate(OrdersController controller, String orderId,
+      OrderStatus newStatus) async {
     final success = await controller.updateOrderStatus(orderId, newStatus);
     if (success) {
       // Optionnel : retour à la liste après mise à jour
@@ -832,16 +860,32 @@ class OrderDetailsScreen extends StatelessWidget {
 
   /// 🧭 Navigation vers l'adresse
   Future<void> _navigateToAddress(DeliveryAddress address) async {
-    final navigationService = Get.find<NavigationService>();
-    
-    if (address.hasCoordinates) {
-      await navigationService.navigateToCoordinates(
-        address.latitude!,
-        address.longitude!,
-        label: address.name ?? 'Adresse de livraison',
+    try {
+      final navigationService = Get.find<NavigationService>();
+
+      if (address.hasCoordinates) {
+        await navigationService.navigateToCoordinates(
+          address.latitude!,
+          address.longitude!,
+          label: address.name ?? 'Adresse de livraison',
+        );
+      } else {
+        await navigationService.navigateToAddress(address.fullAddress);
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur navigation: $e');
+
+      // Fallback : copier l'adresse si la navigation échoue
+      _copyAddress(address.fullAddress);
+
+      Get.snackbar(
+        'Navigation indisponible',
+        'L\'adresse a été copiée dans le presse-papiers',
+        backgroundColor: AppColors.warning.withOpacity(0.9),
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
       );
-    } else {
-      await navigationService.navigateToAddress(address.fullAddress);
     }
   }
 
@@ -867,7 +911,7 @@ Statut: ${order.status.displayName}
 Montant: ${order.formattedAmount}
 Adresse: ${order.address.fullAddress}
     ''';
-    
+
     // TODO: Implémenter le partage
     Get.snackbar(
       'Partage',
@@ -905,7 +949,7 @@ Adresse: ${order.address.fullAddress}
   void _showAddNoteDialog(DeliveryOrder order) {
     final controller = Get.find<OrdersController>();
     final textController = TextEditingController();
-    
+
     Get.dialog(
       AlertDialog(
         title: const Text('Ajouter une note'),
@@ -940,7 +984,7 @@ Adresse: ${order.address.fullAddress}
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inDays == 0) {
       return 'Aujourd\'hui ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays == 1) {

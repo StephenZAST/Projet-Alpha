@@ -74,6 +74,51 @@ class OrdersScreen extends StatelessWidget {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
+                    // Si on arrive à la fin de la liste et qu'il y a plus de pages
+                    if (index == controller.filteredOrders.length) {
+                      if (controller.hasMorePages.value) {
+                        // Déclencher le chargement de la page suivante
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          controller.loadNextPage();
+                        });
+
+                        return Padding(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                const CircularProgressIndicator(),
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  'Chargement...',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: isDark
+                                        ? AppColors.gray300
+                                        : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      } else {
+                        // Fin de la liste
+                        return Padding(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: Center(
+                            child: Text(
+                              'Toutes les commandes ont été chargées',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark
+                                    ? AppColors.gray400
+                                    : AppColors.gray500,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    }
+
                     final order = controller.filteredOrders[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -85,7 +130,12 @@ class OrdersScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  childCount: controller.filteredOrders.length,
+                  childCount: controller.filteredOrders.length +
+                      (controller.hasMorePages.value ||
+                              controller.totalOrders.value >
+                                  controller.filteredOrders.length
+                          ? 1
+                          : 0),
                 ),
               ),
             );
@@ -126,21 +176,21 @@ class OrdersScreen extends StatelessWidget {
     bool isDark,
   ) {
     return SliverAppBar(
-      expandedHeight: 140.0, // Augmenté pour éviter l'overflow
+      expandedHeight: 160.0, // Augmenté pour éviter l'overflow
       floating: true,
       pinned: true,
       backgroundColor: isDark ? AppColors.gray800 : AppColors.primary,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(
           left: 16,
-          bottom: 80, // Ajusté pour laisser place à la recherche
+          bottom: 90, // Ajusté pour laisser plus de place à la recherche
         ),
         title: const Text(
           'Mes Commandes',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
-            fontSize: 18, // Taille réduite pour éviter l'overflow
+            fontSize: 16, // Taille encore plus réduite
           ),
         ),
         background: Container(
@@ -164,35 +214,40 @@ class OrdersScreen extends StatelessWidget {
         ),
       ],
       bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(70), // Augmenté
+        preferredSize: const Size.fromHeight(80), // Augmenté
         child: Container(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            AppSpacing.sm,
+            AppSpacing.xs, // Réduit le padding top
             AppSpacing.md,
             AppSpacing.md,
           ),
           child: SafeArea(
             top: false,
-            child: TextField(
-              onChanged: controller.searchOrders,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Rechercher par ID, client...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: Colors.white.withOpacity(0.7),
-                ),
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.2),
-                border: OutlineInputBorder(
-                  borderRadius: AppRadius.radiusMD,
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
+            child: SizedBox(
+              height: 48, // Hauteur fixe pour éviter l'overflow
+              child: TextField(
+                onChanged: controller.searchOrders,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Rechercher par ID, client...',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.white.withOpacity(0.7),
+                    size: 20, // Icône plus petite
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: AppRadius.radiusMD,
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  isDense: true, // Réduit la hauteur interne
                 ),
               ),
             ),
@@ -228,9 +283,8 @@ class OrdersScreen extends StatelessWidget {
                         label: Text(_getFilterLabel(filter)),
                         selected: isSelected,
                         onSelected: (_) => controller.setFilter(filter),
-                        backgroundColor: isDark
-                            ? AppColors.gray700
-                            : AppColors.gray100,
+                        backgroundColor:
+                            isDark ? AppColors.gray700 : AppColors.gray100,
                         selectedColor: AppColors.primary.withOpacity(0.2),
                         checkmarkColor: AppColors.primary,
                         labelStyle: TextStyle(
@@ -239,9 +293,8 @@ class OrdersScreen extends StatelessWidget {
                               : (isDark
                                   ? AppColors.textLight
                                   : AppColors.textPrimary),
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
                         ),
                       ),
                     );
@@ -444,12 +497,20 @@ class OrdersScreen extends StatelessWidget {
         return 'Toutes';
       case OrderStatusFilter.pending:
         return 'En attente';
-      case OrderStatusFilter.inProgress:
-        return 'En cours';
+      case OrderStatusFilter.collecting:
+        return 'Collecte';
       case OrderStatusFilter.collected:
         return 'Collectées';
+      case OrderStatusFilter.processing:
+        return 'Traitement';
+      case OrderStatusFilter.ready:
+        return 'Prêtes';
+      case OrderStatusFilter.delivering:
+        return 'Livraison';
       case OrderStatusFilter.delivered:
         return 'Livrées';
+      case OrderStatusFilter.cancelled:
+        return 'Annulées';
     }
   }
 }

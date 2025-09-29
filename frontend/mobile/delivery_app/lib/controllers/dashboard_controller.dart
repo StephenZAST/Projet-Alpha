@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../constants.dart';
 import '../services/delivery_service.dart';
 import '../models/user.dart';
 
@@ -69,10 +70,18 @@ class DashboardController extends GetxController {
   
   /// Charge les données initiales du dashboard
   Future<void> _loadInitialData() async {
-    await Future.wait([
-      loadStats(),
-      loadTodayOrders(),
-    ]);
+    try {
+      debugPrint('🔄 Chargement des données initiales...');
+      
+      await Future.wait([
+        loadStats(),
+        loadTodayOrders(),
+      ]);
+      
+      debugPrint('✅ Données initiales chargées');
+    } catch (e) {
+      debugPrint('❌ Erreur chargement données initiales: $e');
+    }
   }
   
   // ==========================================================================
@@ -85,24 +94,51 @@ class DashboardController extends GetxController {
       debugPrint('📊 Chargement des statistiques...');
       
       _isLoading.value = true;
+      update(); // Force la mise à jour de l'interface
       
       final stats = await _deliveryService.getDashboardStats();
       _stats.value = stats;
       
       debugPrint('✅ Statistiques chargées: ${stats.totalDeliveries} livraisons');
+      debugPrint('📊 Détail stats: Aujourd\'hui=${stats.deliveriesToday}, Semaine=${stats.deliveriesThisWeek}, Gains=${stats.dailyEarnings}');
+      
+      update(); // Force la mise à jour après chargement
       
     } catch (e) {
       debugPrint('❌ Erreur chargement statistiques: $e');
       
-      // Affiche un message d'erreur
+      // Crée des statistiques par défaut en cas d'erreur
+      _stats.value = DeliveryStats(
+        totalDeliveries: 0,
+        completedDeliveries: 0,
+        cancelledDeliveries: 0,
+        averageRating: 0.0,
+        successRate: 0.0,
+        averageDeliveryTime: const Duration(minutes: 0),
+        totalEarnings: 0.0,
+        monthlyEarnings: 0.0,
+        weeklyEarnings: 0.0,
+        dailyEarnings: 0.0,
+        deliveriesToday: 0,
+        deliveriesThisWeek: 0,
+        deliveriesThisMonth: 0,
+      );
+      
+      update(); // Force la mise à jour même en cas d'erreur
+      
+      // Affiche un message d'erreur discret
       Get.snackbar(
-        'Erreur',
-        'Impossible de charger les statistiques',
+        'Information',
+        'Données en cours de synchronisation...',
         snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 2),
+        backgroundColor: AppColors.info.withOpacity(0.8),
+        colorText: Colors.white,
       );
       
     } finally {
       _isLoading.value = false;
+      update(); // Force la mise à jour finale
     }
   }
   
@@ -115,12 +151,22 @@ class DashboardController extends GetxController {
       _todayOrders.value = orders;
       
       debugPrint('✅ Commandes du jour chargées: ${orders.length}');
+      if (orders.isNotEmpty) {
+        debugPrint('📅 Première commande: ${orders.first.runtimeType}');
+      }
+      
+      update(); // Force la mise à jour de l'interface
       
     } catch (e) {
       debugPrint('❌ Erreur chargement commandes du jour: $e');
       
       // En cas d'erreur, on garde une liste vide
       _todayOrders.value = [];
+      
+      update(); // Force la mise à jour même en cas d'erreur
+      
+      // Log détaillé pour debug
+      debugPrint('Stack trace: ${StackTrace.current}');
     }
   }
   
