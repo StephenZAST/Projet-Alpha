@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:prima/models/notification.dart';
+import 'package:prima/models/notification.dart' as model;
 import 'package:prima/theme/colors.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class NotificationListItem extends StatelessWidget {
-  final Notification notification;
+  final model.Notification notification;
   final VoidCallback onTap;
 
   const NotificationListItem({

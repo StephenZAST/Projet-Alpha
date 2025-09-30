@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/notification.dart';
+import '../models/notification.dart' as notification_model;
 import '../services/notification_service.dart';
 import '../services/websocket_service.dart';
 
@@ -39,7 +39,7 @@ class NotificationProvider with ChangeNotifier {
   final NotificationService _notificationService;
   final WebSocketService _webSocketService;
 
-  List<Notification> _notifications = [];
+  List<notification_model.Notification> _notifications = [];
   bool _isLoading = false;
   String? _error;
   int _unreadCount = 0;
@@ -51,20 +51,23 @@ class NotificationProvider with ChangeNotifier {
     _initWebSocket();
   }
 
-  List<Notification> get notifications => _notifications;
+  List<notification_model.Notification> get notifications => _notifications;
   bool get isLoading => _isLoading;
   String? get error => _error;
   int get unreadCount => _unreadCount;
 
   void _initWebSocket() {
-    _webSocketService.on('notification', _handleNewNotification);
+    _webSocketService.orderUpdates.listen(_handleNewNotification);
   }
 
   void _handleNewNotification(dynamic data) {
-    final notification = Notification.fromJson(data);
-    _notifications.insert(0, notification);
-    if (!notification.isRead) _unreadCount++;
-    notifyListeners();
+    if (data['type'] == 'notification') {
+      final notification =
+          notification_model.Notification.fromJson(data['data']);
+      _notifications.insert(0, notification);
+      if (!notification.isRead) _unreadCount++;
+      notifyListeners();
+    }
   }
 
   Future<void> loadNotifications() async {
@@ -92,7 +95,7 @@ class NotificationProvider with ChangeNotifier {
         final notification = _notifications[index];
         if (!notification.isRead) _unreadCount--;
 
-        _notifications[index] = Notification(
+        _notifications[index] = notification_model.Notification(
           id: notification.id,
           userId: notification.userId,
           type: notification.type,
@@ -114,7 +117,7 @@ class NotificationProvider with ChangeNotifier {
     try {
       await _notificationService.markAllAsRead();
       _notifications = _notifications
-          .map((notification) => Notification(
+          .map((notification) => notification_model.Notification(
                 id: notification.id,
                 userId: notification.userId,
                 type: notification.type,
@@ -133,6 +136,8 @@ class NotificationProvider with ChangeNotifier {
   }
 
   Future<void> loadPreferences() async {
+    // TODO: Implement when backend supports preferences
+    /*
     try {
       final prefs = await _notificationService.getPreferences();
       _preferences = NotificationPreferences(
@@ -146,9 +151,12 @@ class NotificationProvider with ChangeNotifier {
     } catch (e) {
       print('Error loading preferences: $e');
     }
+    */
   }
 
   Future<void> updatePreference(String key, bool value) async {
+    // TODO: Implement when backend supports preferences
+    /*
     try {
       final newPrefs = _preferences.copyWith(
         push: key == 'push' ? value : null,
@@ -164,13 +172,14 @@ class NotificationProvider with ChangeNotifier {
     } catch (e) {
       print('Error updating preferences: $e');
     }
+    */
   }
 
   void _updateUnreadCount() {
     _unreadCount = _notifications.where((n) => !n.isRead).length;
   }
 
-  void handleNewNotification(Notification notification) {
+  void handleNewNotification(notification_model.Notification notification) {
     _notifications.insert(0, notification);
     if (!notification.isRead) _unreadCount++;
     notifyListeners();
@@ -178,7 +187,7 @@ class NotificationProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    _webSocketService.off('notification');
+    // _webSocketService.off('notification'); // Not implemented in WebSocketService
     super.dispose();
   }
 }

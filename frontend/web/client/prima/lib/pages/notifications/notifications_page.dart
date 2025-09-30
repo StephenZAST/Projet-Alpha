@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:prima/home-components/app_bar.dart';
 import 'package:prima/providers/notification_provider.dart';
+import 'package:prima/widgets/notification/notification_list_item.dart';
 import 'package:provider/provider.dart';
 import 'package:prima/widgets/connection_error_widget.dart';
 

@@ -19,6 +19,7 @@ import 'package:prima/widgets/order/order_summary.dart';
 import 'package:prima/widgets/order/bottom_sheet_header.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:prima/widgets/order/order_confirmation_popup.dart';
+import 'package:prima/models/payment.dart';
 
 class OrderBottomSheet extends StatefulWidget {
   final Function(Order)? onOrderCreated;
@@ -40,6 +41,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
   String? _selectedAddressId;
   TimeOfDay? _collectionTime;
   TimeOfDay? _deliveryTime;
+  PaymentMethod _selectedPaymentMethod = PaymentMethod.CASH;
 
   @override
   void initState() {
@@ -272,7 +274,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
     setState(() => _deliveryTime = time);
   }
 
-  Future<void> _handleConfirmOrder() async {
+  Future<void> _handleConfirmOrder(dynamic order) async {
     print('🚀 Début de _handleConfirmOrder');
 
     final addressProvider =
@@ -324,8 +326,12 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
         deliveryTime: _deliveryTime,
         isRecurring: _selectedRecurrence != RecurrenceType.none,
         recurrenceType: _selectedRecurrence,
+        paymentMethod: _selectedPaymentMethod,
       );
       print('✅ Commande créée avec succès');
+
+      // Notify parent widget
+      widget.onOrderCreated?.call(order);
 
       if (!mounted) {
         print('❌ Widget non monté après création de commande');

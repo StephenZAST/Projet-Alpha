@@ -1,4 +1,6 @@
+import 'package:prima/models/address.dart';
 import 'package:prima/models/article.dart';
+import 'package:prima/models/offer.dart';
 import 'package:prima/models/service.dart';
 
 class Order {
@@ -6,6 +8,7 @@ class Order {
   final Service service;
   final String serviceId;
   final String addressId;
+  final Address? address;
   final DateTime collectionDate;
   final DateTime deliveryDate;
   final DateTime createdAt;
@@ -13,14 +16,16 @@ class Order {
   final String status;
   final bool isRecurring;
   final String recurrenceType;
-  final List<OrderItem>? items; // Changed from List<MapEntry<Article, int>>
+  final List<OrderItem>? items;
   final List<MapEntry<Article, int>> articles;
+  final List<Offer> appliedOffers;
 
   Order({
     required this.id,
     required this.service,
     required this.serviceId,
     required this.addressId,
+    this.address,
     required this.collectionDate,
     required this.deliveryDate,
     required this.createdAt,
@@ -28,8 +33,9 @@ class Order {
     required this.status,
     required this.isRecurring,
     required this.recurrenceType,
-    this.items, // Added items parameter
+    this.items,
     required this.articles,
+    this.appliedOffers = const [],
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -38,6 +44,8 @@ class Order {
       service: Service.fromJson(json['service']),
       serviceId: json['service_id'],
       addressId: json['address_id'],
+      address:
+          json['address'] != null ? Address.fromJson(json['address']) : null,
       collectionDate: DateTime.parse(json['collectionDate']),
       deliveryDate: DateTime.parse(json['deliveryDate']),
       createdAt: DateTime.parse(json['createdAt']),
@@ -49,6 +57,10 @@ class Order {
           ?.map((item) => OrderItem.fromJson(item))
           .toList(),
       articles: [],
+      appliedOffers: (json['appliedOffers'] as List<dynamic>?)
+              ?.map((offer) => Offer.fromJson(offer))
+              .toList() ??
+          [],
     );
   }
 
@@ -58,6 +70,7 @@ class Order {
       'service': service.toJson(),
       'serviceId': serviceId,
       'addressId': addressId,
+      'address': address?.toJson(),
       'collectionDate': collectionDate.toIso8601String(),
       'deliveryDate': deliveryDate.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
@@ -66,6 +79,7 @@ class Order {
       'isRecurring': isRecurring,
       'recurrenceType': recurrenceType,
       'items': items?.map((item) => item.toJson()).toList(),
+      'appliedOffers': appliedOffers.map((offer) => offer.toJson()).toList(),
     };
   }
 }

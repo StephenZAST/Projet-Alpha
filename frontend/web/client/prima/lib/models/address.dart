@@ -56,4 +56,7 @@ class Address {
       'updated_at': updatedAt.toIso8601String(),
     };
   }
+
+  // Getter for backward compatibility
+  String? get postal_code => postalCode;
 }

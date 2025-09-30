@@ -85,7 +85,8 @@ class OfferProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> applyPointsExchangeOffer(String offerId) async {
+  Future<void> exchangePointsForOffer(
+      String offerId, LoyaltyProvider loyaltyProvider) async {
     try {
       _isLoading = true;
       notifyListeners();
@@ -96,7 +97,7 @@ class OfferProvider with ChangeNotifier {
       }
 
       // Vérifier le solde de points
-      final points = await context.read<LoyaltyProvider>().getPointsBalance();
+      final points = loyaltyProvider.points?.pointsBalance ?? 0;
       if (points < (offer.pointsRequired ?? 0)) {
         throw Exception('Insufficient points');
       }
@@ -117,7 +118,8 @@ class OfferProvider with ChangeNotifier {
     return _offers
         .where((offer) =>
             offer.isValid &&
-            (!offer.minPurchaseAmount || offer.minPurchaseAmount! <= amount))
+            (offer.minPurchaseAmount == null ||
+                offer.minPurchaseAmount! <= amount))
         .toList();
   }
 
@@ -125,10 +127,9 @@ class OfferProvider with ChangeNotifier {
     return _recentlyUsedOfferIds
         .map((id) => _offers.firstWhere(
               (offer) => offer.id == id,
-              orElse: () => null,
+              orElse: () => throw StateError('Offer with id $id not found'),
             ))
         .where((offer) => offer.isValid)
-        .cast<Offer>()
         .toList();
   }
 

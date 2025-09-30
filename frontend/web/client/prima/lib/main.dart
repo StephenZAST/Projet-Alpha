@@ -28,6 +28,7 @@ import 'package:prima/providers/profile_provider.dart';
 import 'package:prima/pages/auth/login_page.dart';
 import 'package:prima/pages/auth/register_page.dart';
 import 'package:prima/providers/auth_provider.dart';
+import 'package:prima/pages/loyalty/loyalty_points_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:prima/services/article_service.dart';
 import 'package:prima/services/service_service.dart';

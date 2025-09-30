@@ -3,7 +3,6 @@ import 'package:prima/models/order.dart';
 import 'package:prima/models/order_status.dart';
 import 'package:prima/providers/loyalty_provider.dart';
 import 'package:prima/services/order_service.dart';
-import 'package:prima/managers/order_status_manager.dart';
 import 'dart:async';
 import 'package:prima/models/payment.dart';
 
@@ -129,17 +128,18 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  Future<void> completeOrder(String orderId) async {
+  Future<void> completeOrder(
+      String orderId, LoyaltyProvider loyaltyProvider) async {
     try {
       final order = await _orderService.completeOrder(orderId);
       // Mettre à jour les points via LoyaltyProvider
       if (order.status == 'DELIVERED') {
         final points = (order.totalAmount * 10).floor(); // 1 point pour 0.1€
-        await context.read<LoyaltyProvider>().earnPoints(
-              points,
-              'ORDER',
-              orderId,
-            );
+        await loyaltyProvider.earnPoints(
+          points,
+          'ORDER',
+          orderId,
+        );
       }
       notifyListeners();
     } catch (e) {

@@ -20,8 +20,9 @@ class PointExchangeOfferCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<LoyaltyProvider>(
       builder: (context, loyaltyProvider, _) {
-        final hasEnoughPoints = loyaltyProvider.points?.pointsBalance ??
-            0 >= (offer.pointsRequired ?? 0);
+        final bool hasEnoughPoints =
+            (loyaltyProvider.points?.pointsBalance ?? 0) >=
+                (offer.pointsRequired ?? 0);
 
         return Card(
           elevation: isSelected ? 4 : 1,

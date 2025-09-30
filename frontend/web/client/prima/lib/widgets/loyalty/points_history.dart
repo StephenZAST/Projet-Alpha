@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:prima/models/point_transaction.dart';
 import 'package:prima/providers/loyalty_provider.dart';
 import 'package:prima/theme/colors.dart';
 import 'package:provider/provider.dart';
@@ -22,21 +23,21 @@ class PointsHistoryWidget extends StatelessWidget {
             final transaction = provider.transactions[index];
             return ListTile(
               leading: Icon(
-                transaction.type == 'EARNED'
+                transaction.type == TransactionType.EARNED
                     ? Icons.add_circle
                     : Icons.remove_circle,
-                color: transaction.type == 'EARNED'
+                color: transaction.type == TransactionType.EARNED
                     ? AppColors.success
                     : AppColors.error,
               ),
               title: Text('${transaction.points} points'),
-              subtitle: Text(_getSourceText(transaction.source)),
+              subtitle: Text(transaction.getSourceText()),
               trailing: Text(
-                transaction.type == 'EARNED'
+                transaction.type == TransactionType.EARNED
                     ? '+${transaction.points}'
                     : '-${transaction.points}',
                 style: TextStyle(
-                  color: transaction.type == 'EARNED'
+                  color: transaction.type == TransactionType.EARNED
                       ? AppColors.success
                       : AppColors.error,
                   fontWeight: FontWeight.bold,
@@ -47,18 +48,5 @@ class PointsHistoryWidget extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _getSourceText(String source) {
-    switch (source) {
-      case 'ORDER':
-        return 'Commande';
-      case 'REFERRAL':
-        return 'Parrainage';
-      case 'REWARD':
-        return 'Récompense';
-      default:
-        return source;
-    }
   }
 }

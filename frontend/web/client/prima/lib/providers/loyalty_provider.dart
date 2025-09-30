@@ -10,12 +10,20 @@ class LoyaltyProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
 
+  // Statistiques calculées
+  int _pointsThisMonth = 0;
+  int _totalOrders = 0;
+  int _totalReferrals = 0;
+
   LoyaltyProvider(this._loyaltyService);
 
   LoyaltyPoints? get points => _points;
   List<PointTransaction> get transactions => _transactions;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  int get pointsThisMonth => _pointsThisMonth;
+  int get totalOrders => _totalOrders;
+  int get totalReferrals => _totalReferrals;
 
   Future<void> loadPoints() async {
     try {
@@ -25,12 +33,19 @@ class LoyaltyProvider with ChangeNotifier {
 
       _points = await _loyaltyService.getPointsBalance();
       _transactions = await _loyaltyService.getTransactions();
+
+      // Calculer les statistiques
+      _calculateStats();
     } catch (e) {
       _error = e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> loadTransactions() async {
+    await loadPoints(); // loadTransactions fait la même chose que loadPoints
   }
 
   Future<void> earnPoints(int points, String source, String referenceId) async {
@@ -105,5 +120,23 @@ class LoyaltyProvider with ChangeNotifier {
   // Calcul du montant de réduction possible
   double calculatePossibleDiscount(int points) {
     return (points / 100).floor().toDouble(); // 100 points = 1€
+  }
+
+  void _calculateStats() {
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+
+    _pointsThisMonth = _transactions
+        .where((t) =>
+            t.createdAt.isAfter(startOfMonth) &&
+            t.type == TransactionType.EARNED)
+        .fold(0, (sum, t) => sum + t.points);
+
+    _totalOrders =
+        _transactions.where((t) => t.source == TransactionSource.ORDER).length;
+
+    _totalReferrals = _transactions
+        .where((t) => t.source == TransactionSource.REFERRAL)
+        .length;
   }
 }

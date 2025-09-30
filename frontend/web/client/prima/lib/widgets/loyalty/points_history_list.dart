@@ -36,7 +36,7 @@ class PointsHistoryList extends StatelessWidget {
       separatorBuilder: (_, __) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final transaction = transactions[index];
-        final isEarned = transaction.type == 'EARNED';
+        final isEarned = transaction.type == TransactionType.EARNED;
 
         return ListTile(
           leading: Container(
@@ -51,7 +51,7 @@ class PointsHistoryList extends StatelessWidget {
               color: isEarned ? AppColors.success : AppColors.error,
             ),
           ),
-          title: Text(_getSourceText(transaction.source)),
+          title: Text(transaction.getSourceText()),
           subtitle: Text(
             timeago.format(transaction.createdAt, locale: 'fr'),
             style: const TextStyle(fontSize: 12),
@@ -66,18 +66,5 @@ class PointsHistoryList extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _getSourceText(String source) {
-    switch (source) {
-      case 'ORDER':
-        return 'Commande';
-      case 'REFERRAL':
-        return 'Parrainage';
-      case 'REWARD':
-        return 'Récompense';
-      default:
-        return source;
-    }
   }
 }

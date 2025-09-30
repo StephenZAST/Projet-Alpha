@@ -42,4 +42,18 @@ class Article {
       rethrow;
     }
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'basePrice': basePrice,
+      'premiumPrice': premiumPrice,
+      'description': description,
+      'categoryId': categoryId,
+      'category': category,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 }

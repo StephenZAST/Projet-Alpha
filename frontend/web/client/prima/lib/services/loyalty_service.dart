@@ -49,4 +49,23 @@ class LoyaltyService {
       rethrow;
     }
   }
+
+  Future<LoyaltyPoints> spendPoints(
+      int points, String source, String referenceId) async {
+    try {
+      final response = await _dio.post('/api/loyalty/spend-points', data: {
+        'points': points,
+        'source': source,
+        'referenceId': referenceId,
+      });
+
+      if (response.data['data'] != null) {
+        return LoyaltyPoints.fromJson(response.data['data']);
+      }
+      throw Exception('Failed to spend points');
+    } catch (e) {
+      print('Error spending points: $e');
+      rethrow;
+    }
+  }
 }
