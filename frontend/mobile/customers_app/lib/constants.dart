@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 ///
 /// Système de design sophistiqué pour l'application client Alpha Pressing
 /// avec glassmorphism, micro-interactions et expérience utilisateur exceptionnelle.
+/// Support complet des thèmes clair/sombre avec contraste optimal.
 
 // =============================================================================
-// 🌈 COULEURS SIGNATURE ALPHA
+// 🌈 COULEURS SIGNATURE ALPHA - SYSTÈME DE THÈMES
 // =============================================================================
 
+/// 🎨 Couleurs adaptatives selon le thème
 class AppColors {
-  // 🔵 Couleurs Signature Alpha Pressing
+  // 🔵 Couleurs Signature Alpha Pressing (invariantes)
   static const Color primary = Color(0xFF2563EB); // Bleu signature Alpha
   static const Color primaryLight = Color(0xFF60A5FA); // Bleu clair Alpha
   static const Color primaryDark = Color(0xFF1E40AF); // Bleu foncé Alpha
@@ -42,32 +44,108 @@ class AppColors {
 
   // Aliases pour compatibilité
   static const Color purple = violet;
-  static const Color textTertiary = Color(0xFF9CA3AF);
 
-  // 📝 Couleurs de Texte Sophistiquées
-  static const Color textPrimary = Color(0xFF0F172A); // Presque noir
-  static const Color textSecondary = Color(0xFF475569); // Gris moyen
-  static const Color textMuted = Color(0xFF94A3B8); // Gris clair
-  static const Color textOnPrimary = Color(0xFFFFFFFF); // Blanc sur bleu
-  static const Color textOnDark = Color(0xFFFFFFFF); // Blanc sur sombre
+  // =============================================================================
+  // 🌓 THÈME CLAIR
+  // =============================================================================
 
-  // 🎨 Couleurs de Surface
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceVariant = Color(0xFFF8FAFC);
-  static const Color surfaceTint = Color(0xFFF1F5F9);
-  static const Color onSurface = textPrimary;
+  // 📝 Couleurs de Texte - Thème Clair
+  static const Color lightTextPrimary = Color(0xFF0F172A); // Presque noir
+  static const Color lightTextSecondary = Color(0xFF475569); // Gris moyen
+  static const Color lightTextTertiary = Color(0xFF94A3B8); // Gris clair
+  static const Color lightTextMuted = Color(0xFFCBD5E1); // Très clair
+  static const Color lightTextOnPrimary = Color(0xFFFFFFFF); // Blanc sur bleu
 
-  // 💎 Glassmorphism Premium
-  static final Color glassLight = Colors.white.withOpacity(0.95);
-  static final Color glassDark = const Color(0xFF1E293B).withOpacity(0.85);
-  static final Color glassAccent = primary.withOpacity(0.1);
+  // 🎨 Couleurs de Surface - Thème Clair
+  static const Color lightSurface = Color(0xFFFFFFFF); // Blanc pur
+  static const Color lightBackground = Color(0xFFF8FAFC); // Gris très clair
+  static const Color lightSurfaceVariant =
+      Color(0xFFF1F5F9); // Cards avec contraste
+  static const Color lightSurfaceTint = Color(0xFFE2E8F0); // Subtle highlight
+  static const Color lightBorder = Color(0xFFE2E8F0); // Bordures douces
 
-  // Tokens de glass sophistiqués
+  // 💎 Glassmorphism - Thème Clair
+  static final Color lightGlass = Colors.white.withOpacity(0.95);
+  static final Color lightGlassAccent = primary.withOpacity(0.08);
+  static final Color lightGlassBorder = Colors.white.withOpacity(0.3);
+
+  // =============================================================================
+  // 🌙 THÈME SOMBRE
+  // =============================================================================
+
+  // 📝 Couleurs de Texte - Thème Sombre
+  static const Color darkTextPrimary = Color(0xFFF8FAFC); // Blanc cassé
+  static const Color darkTextSecondary = Color(0xFFCBD5E1); // Gris clair
+  static const Color darkTextTertiary = Color(0xFF94A3B8); // Gris moyen
+  static const Color darkTextMuted = Color(0xFF64748B); // Gris foncé
+  static const Color darkTextOnPrimary = Color(0xFFFFFFFF); // Blanc sur bleu
+
+  // 🎨 Couleurs de Surface - Thème Sombre
+  static const Color darkSurface = Color(0xFF1E293B); // Ardoise foncée
+  static const Color darkBackground = Color(0xFF0F172A); // Presque noir
+  static const Color darkSurfaceVariant =
+      Color(0xFF334155); // Cards avec contraste
+  static const Color darkSurfaceTint = Color(0xFF475569); // Subtle highlight
+  static const Color darkBorder = Color(0xFF334155); // Bordures subtiles
+
+  // 💎 Glassmorphism - Thème Sombre
+  static final Color darkGlass = const Color(0xFF1E293B).withOpacity(0.9);
+  static final Color darkGlassAccent = primary.withOpacity(0.15);
+  static final Color darkGlassBorder = Colors.white.withOpacity(0.1);
+
+  // =============================================================================
+  // 🎨 COULEURS ADAPTATIVES (dépendent du thème actuel)
+  // =============================================================================
+
+  static Color textPrimary(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkTextPrimary
+          : lightTextPrimary;
+
+  static Color textSecondary(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkTextSecondary
+          : lightTextSecondary;
+
+  static Color textTertiary(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkTextTertiary
+          : lightTextTertiary;
+
+  static Color surface(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkSurface
+          : lightSurface;
+
+  static Color background(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkBackground
+          : lightBackground;
+
+  static Color surfaceVariant(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkSurfaceVariant
+          : lightSurfaceVariant;
+
+  static Color border(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkBorder
+          : lightBorder;
+
+  static Color glass(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? darkGlass : lightGlass;
+
+  static Color glassAccent(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkGlassAccent
+          : lightGlassAccent;
+
+  // 💎 Tokens de glass sophistiqués
   static const double glassBlur = 12.0;
   static const double glassBorderOpacity = 0.2;
   static final Color glassBorder = Colors.white.withOpacity(glassBorderOpacity);
 
-  // 🎨 Gradients Signature
+  // 🎨 Gradients Signature (adaptés selon le thème)
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primary, accent],
     begin: Alignment.topLeft,
@@ -80,11 +158,12 @@ class AppColors {
     end: Alignment.bottomCenter,
   );
 
-  static const LinearGradient cardGradient = LinearGradient(
-    colors: [surface, surfaceVariant],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  // Gradients adaptatifs selon le thème
+  static LinearGradient cardGradient(BuildContext context) => LinearGradient(
+        colors: [surface(context), surfaceVariant(context)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      );
 }
 
 // =============================================================================
@@ -283,6 +362,48 @@ class AppTextStyles {
   static const TextStyle headlineLarge = h1;
   static const TextStyle headlineMedium = h2;
   static const TextStyle headlineSmall = h3;
+
+  // =============================================================================
+  // 🌓 THÈMES DE TEXTE
+  // =============================================================================
+
+  /// ☀️ Thème de texte clair
+  static TextTheme get lightTextTheme => TextTheme(
+        displayLarge: display.copyWith(color: AppColors.lightTextPrimary),
+        displayMedium: h1.copyWith(color: AppColors.lightTextPrimary),
+        displaySmall: h2.copyWith(color: AppColors.lightTextPrimary),
+        headlineLarge: h1.copyWith(color: AppColors.lightTextPrimary),
+        headlineMedium: h2.copyWith(color: AppColors.lightTextPrimary),
+        headlineSmall: h3.copyWith(color: AppColors.lightTextPrimary),
+        titleLarge: h3.copyWith(color: AppColors.lightTextPrimary),
+        titleMedium: h4.copyWith(color: AppColors.lightTextPrimary),
+        titleSmall: labelLarge.copyWith(color: AppColors.lightTextPrimary),
+        bodyLarge: bodyLarge.copyWith(color: AppColors.lightTextSecondary),
+        bodyMedium: bodyMedium.copyWith(color: AppColors.lightTextSecondary),
+        bodySmall: bodySmall.copyWith(color: AppColors.lightTextTertiary),
+        labelLarge: labelLarge.copyWith(color: AppColors.lightTextPrimary),
+        labelMedium: labelMedium.copyWith(color: AppColors.lightTextSecondary),
+        labelSmall: labelSmall.copyWith(color: AppColors.lightTextTertiary),
+      );
+
+  /// 🌙 Thème de texte sombre
+  static TextTheme get darkTextTheme => TextTheme(
+        displayLarge: display.copyWith(color: AppColors.darkTextPrimary),
+        displayMedium: h1.copyWith(color: AppColors.darkTextPrimary),
+        displaySmall: h2.copyWith(color: AppColors.darkTextPrimary),
+        headlineLarge: h1.copyWith(color: AppColors.darkTextPrimary),
+        headlineMedium: h2.copyWith(color: AppColors.darkTextPrimary),
+        headlineSmall: h3.copyWith(color: AppColors.darkTextPrimary),
+        titleLarge: h3.copyWith(color: AppColors.darkTextPrimary),
+        titleMedium: h4.copyWith(color: AppColors.darkTextPrimary),
+        titleSmall: labelLarge.copyWith(color: AppColors.darkTextPrimary),
+        bodyLarge: bodyLarge.copyWith(color: AppColors.darkTextSecondary),
+        bodyMedium: bodyMedium.copyWith(color: AppColors.darkTextSecondary),
+        bodySmall: bodySmall.copyWith(color: AppColors.darkTextTertiary),
+        labelLarge: labelLarge.copyWith(color: AppColors.darkTextPrimary),
+        labelMedium: labelMedium.copyWith(color: AppColors.darkTextSecondary),
+        labelSmall: labelSmall.copyWith(color: AppColors.darkTextTertiary),
+      );
 }
 
 // =============================================================================
@@ -362,6 +483,22 @@ class AppShadows {
     BoxShadow(
       color: Color(0x0F000000),
       blurRadius: 6,
+      offset: Offset(0, 2),
+    ),
+  ];
+
+  // Subtle primary-tinted glass shadow used for brand/logo containers and
+  // light glass surfaces that should carry a hint of the primary color
+  // without being heavy or overly saturated.
+  static const List<BoxShadow> glassPrimary = [
+    BoxShadow(
+      color: Color(0x1A2563EB), // ~10% tint of primary
+      blurRadius: 24.0,
+      offset: Offset(0, 12),
+    ),
+    BoxShadow(
+      color: Color(0x0D000000), // subtle dark ground shadow
+      blurRadius: 6.0,
       offset: Offset(0, 2),
     ),
   ];
@@ -468,7 +605,7 @@ extension OrderStatusExtension on OrderStatus {
       case OrderStatus.ready:
         return AppColors.success;
       case OrderStatus.delivered:
-        return AppColors.textSecondary;
+        return AppColors.lightTextSecondary; // Couleur fixe pour enum
       case OrderStatus.cancelled:
         return AppColors.error;
     }
@@ -495,15 +632,56 @@ extension OrderStatusExtension on OrderStatus {
 // =============================================================================
 
 class ApiConfig {
-  static const String baseUrl = 'https://api.alphapressing.com';
-  static const String apiVersion = 'v1';
+  // Allow overriding the base URL at compile time for local/dev testing:
+  // flutter run --dart-define=API_BASE_URL=http://localhost:3000
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://api.alphapressing.com',
+  );
+
+  // Optional API version segment (omit or set to empty if backend doesn't use it)
+  static const String apiVersion =
+      String.fromEnvironment('API_VERSION', defaultValue: '');
+
   static const Duration timeout = Duration(seconds: 30);
 
-  // Endpoints
+  // Endpoints (relative paths)
   static const String ordersEndpoint = '/orders';
   static const String servicesEndpoint = '/services';
   static const String userEndpoint = '/user';
   static const String authEndpoint = '/auth';
+
+  /// Build a full URL for a given relative API path.
+  /// Accepts paths like '/auth/login' or 'auth/login'.
+  static String url(String path) {
+    final cleanedBase = effectiveBaseUrl.endsWith('/')
+        ? effectiveBaseUrl.substring(0, effectiveBaseUrl.length - 1)
+        : effectiveBaseUrl;
+    final apiSeg = '/api';
+    final versionSeg = apiVersion.isNotEmpty ? '/$apiVersion' : '';
+    final cleanedPath = path.startsWith('/') ? path : '/$path';
+    final pathHasApi = cleanedPath.startsWith('/api');
+    final prefix = pathHasApi ? '' : '$apiSeg$versionSeg';
+    return '$cleanedBase$prefix$cleanedPath';
+  }
+
+  /// Runtime effective base URL. Priority:
+  /// 1. compile-time API_BASE_URL (when provided with --dart-define)
+  /// 2. in debug mode, fall back to localhost:3001 (common dev backend)
+  /// 3. production default (https://api.alphapressing.com)
+  static String get effectiveBaseUrl {
+    // If developer provided an override at compile time, use it
+    if (baseUrl != 'https://api.alphapressing.com') return baseUrl;
+
+    // In debug builds prefer a local backend to avoid DNS failures
+    // Use http://localhost:3001 which matches backend/.env PORT
+    if (const bool.fromEnvironment('dart.vm.product') == false) {
+      return 'http://localhost:3001';
+    }
+
+    // Otherwise, production default
+    return baseUrl;
+  }
 }
 
 // =============================================================================

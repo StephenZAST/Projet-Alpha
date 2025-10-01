@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+// svg support removed; using PNG logo instead
+import 'package:provider/provider.dart';
 import '../constants.dart';
 import '../components/glass_components.dart';
+import '../theme/theme_provider.dart';
+import '../shared/providers/auth_provider.dart';
+import '../shared/providers/address_provider.dart';
+import '../shared/providers/notification_provider.dart';
+import '../features/orders/screens/flash_order_screen.dart';
+import '../features/profile/screens/address_management_screen.dart';
+import '../features/profile/screens/profile_screen.dart';
+import '../features/notifications/screens/notifications_screen.dart';
 
 /// 🏠 Page d'Accueil Premium - Alpha Client App
 ///
@@ -74,29 +84,30 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      // Don't draw the body behind the AppBar to avoid visual overlap with
+      // the top cards / hero area. This ensures the AppBar logo area isn't
+      // visually masked by content that sits under the AppBar.
+      extendBodyBehindAppBar: false,
       appBar: _buildAppBar(),
       body: _isLoading ? _buildLoadingScreen() : _buildHomeContent(),
     );
   }
 
-  /// 📱 AppBar Transparente Premium
+  /// 📱 AppBar Transparente Premium avec Logo SVG
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.surface,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
-      systemOverlayStyle: SystemUiOverlayStyle.dark,
+      systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
       title: Row(
         children: [
+          // 🎨 Logo SVG Alpha
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.primary, AppColors.primaryLight],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -106,34 +117,112 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.local_laundry_service_rounded,
-              color: Colors.white,
-              size: 24,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                // Use contain so the PNG keeps its aspect ratio and cannot
+                // overflow the 40x40 container. Padding keeps some inner
+                // breathing room (avoids the image touching rounded corners).
+                child: Image.asset(
+                  'assets/Frame 95.png',
+                  width: 32,
+                  height: 32,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox.shrink(),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Text(
             'Alpha Pressing',
             style: AppTextStyles.headlineMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
       actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            icon: Icon(Icons.notifications_outlined,
-                color: AppColors.textSecondary),
-            onPressed: () {},
-          ),
+        // 🌓 Toggle de thème
+        Consumer<ThemeProvider>(
+          builder: (context, themeProvider, child) {
+            return Container(
+              margin: const EdgeInsets.only(right: 8),
+              child: ThemeToggle(themeProvider: themeProvider),
+            );
+          },
+        ),
+        // 🔔 Notifications avec badge
+        Consumer<NotificationProvider>(
+          builder: (context, notificationProvider, child) {
+            return Container(
+              margin: const EdgeInsets.only(right: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.notifications_outlined,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) => 
+                              const NotificationsScreen(),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                            return SlideTransition(
+                              position: animation.drive(
+                                Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                                    .chain(CurveTween(curve: AppAnimations.slideIn)),
+                              ),
+                              child: child,
+                            );
+                          },
+                          transitionDuration: AppAnimations.medium,
+                        ),
+                      );
+                    },
+                  ),
+                  if (notificationProvider.hasUnreadNotifications)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: AppColors.error,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            notificationProvider.unreadCount > 9 
+                                ? '9+' 
+                                : '${notificationProvider.unreadCount}',
+                            style: AppTextStyles.overline.copyWith(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
@@ -142,19 +231,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// 💀 Écran de Chargement Premium
   Widget _buildLoadingScreen() {
     return Container(
-      color: AppColors.surface, // Fond blanc pour le loading
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
-        child: Padding(
-          padding: AppSpacing.pagePadding,
-          child: Column(
-            children: [
-              const SizedBox(height: 60),
-              _buildSkeletonHeader(),
-              const SizedBox(height: 32),
-              _buildSkeletonServices(),
-              const SizedBox(height: 32),
-              _buildSkeletonOrders(),
-            ],
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: AppSpacing.pagePadding,
+            child: Column(
+              children: [
+                const SizedBox(height: 60),
+                _buildSkeletonHeader(),
+                const SizedBox(height: 32),
+                _buildSkeletonServices(),
+                const SizedBox(height: 32),
+                _buildSkeletonOrders(),
+                const SizedBox(height: 32), // Espace supplémentaire en bas
+              ],
+            ),
           ),
         ),
       ),
@@ -262,7 +354,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// 🎨 Contenu Principal Premium
   Widget _buildHomeContent() {
     return Container(
-      color: AppColors.surface, // Fond blanc moderne
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -295,161 +387,184 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   /// 👋 Section d'Accueil Premium
   Widget _buildWelcomeSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header avec salutation
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final user = authProvider.currentUser;
+        final loyaltyPoints = authProvider.loyaltyPoints;
+        final loyaltyTier = authProvider.loyaltyTier;
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Header avec salutation
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Bonjour,',
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                Text(
-                  'Marie Dubois',
-                  style: AppTextStyles.headlineLarge.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.person_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
-        // Carte principale style banking
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryDark],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Alpha Premium',
-                    style: AppTextStyles.labelLarge.copyWith(
-                      color: Colors.white.withOpacity(0.9),
-                      fontWeight: FontWeight.w500,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bonjour,',
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: AppColors.textSecondary(context),
+                      ),
                     ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    Text(
+                      user?.firstName ?? 'Utilisateur',
+                      style: AppTextStyles.headlineLarge.copyWith(
+                        color: AppColors.textPrimary(context),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                GestureDetector(
+                  onTap: _showProfileMenu,
+                  child: Container(
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      'VIP',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Crédit disponible',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '€ 150.00',
-                style: AppTextStyles.display.copyWith(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Nouvelle Commande',
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
+                    child: Center(
+                      child: Text(
+                        authProvider.userInitials,
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.qr_code_scanner,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Carte principale style banking
+            GestureDetector(
+              onTap: _handleNewOrderTap,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Alpha Premium',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            loyaltyTier.toUpperCase(),
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Points de fidélité',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$loyaltyPoints pts',
+                      style: AppTextStyles.display.copyWith(
+                        color: Colors.white,
+                        fontSize: 36,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _handleNewOrderTap,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Nouvelle Commande',
+                                  style: AppTextStyles.labelMedium.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        GestureDetector(
+                          onTap: _handleFlashOrderTap,
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.flash_on,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -461,7 +576,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         Text(
           'Services populaires',
           style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.textPrimary,
+            color: AppColors.textPrimary(context),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -508,12 +623,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       width: 140,
       margin: const EdgeInsets.only(right: 12),
       child: Container(
+        // Ensure the card fills the parent's vertical space (the horizontal ListView
+        // provides a bounded height). This prevents the inner Column from exceeding
+        // the available height and causing a RenderFlex overflow.
+        height: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surface(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.surfaceVariant,
+            color: AppColors.surfaceVariant(context),
             width: 1,
           ),
           boxShadow: [
@@ -525,6 +644,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ],
         ),
         child: Column(
+          // Center content vertically so items don't push past the bottom on
+          // small heights.
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 50,
@@ -540,19 +662,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              title,
-              style: AppTextStyles.labelLarge.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
+            // Constrain the title so it can't grow vertically and cause overflow.
+            Flexible(
+              fit: FlexFit.loose,
+              child: Text(
+                title,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               price,
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondary(context),
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -571,7 +703,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Text(
               'Nos Services',
               style: AppTextStyles.headlineMedium.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.textPrimary(context),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -630,10 +762,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.surfaceVariant,
+          color: AppColors.surfaceVariant(context),
           width: 1,
         ),
         boxShadow: [
@@ -664,7 +796,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           Text(
             title,
             style: AppTextStyles.labelLarge.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textPrimary(context),
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -673,7 +805,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           Text(
             subtitle,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: AppColors.textSecondary(context),
             ),
             textAlign: TextAlign.center,
           ),
@@ -693,7 +825,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Text(
               'Commandes Récentes',
               style: AppTextStyles.headlineMedium.copyWith(
-                color: AppColors.textPrimary,
+                color: AppColors.textPrimary(context),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -759,7 +891,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         statusIcon = Icons.check_circle;
         break;
       case OrderStatus.delivered:
-        statusColor = AppColors.textSecondary;
+        statusColor = AppColors.textSecondary(context);
         statusText = 'Livré';
         statusIcon = Icons.done_all;
         break;
@@ -774,10 +906,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.surfaceVariant,
+          color: AppColors.surfaceVariant(context),
           width: 1,
         ),
         boxShadow: [
@@ -814,7 +946,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     Text(
                       orderId,
                       style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.textPrimary,
+                        color: AppColors.textPrimary(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -831,7 +963,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 Text(
                   description,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondary(context),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -846,7 +978,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     Text(
                       '${date.day}/${date.month}/${date.year}',
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textTertiary,
+                        color: AppColors.textTertiary(context),
                       ),
                     ),
                   ],
@@ -912,7 +1044,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 Text(
                   '-20% sur votre prochaine commande de plus de 50€',
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondary(context),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -935,6 +1067,240 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 🛍️ Gestionnaire Nouvelle Commande
+  void _handleNewOrderTap() {
+    HapticFeedback.lightImpact();
+    // TODO: Navigate to full order creation flow
+    _showSnackBar('Commande complète - Bientôt disponible !');
+  }
+
+  /// ⚡ Gestionnaire Commande Flash
+  void _handleFlashOrderTap() {
+    HapticFeedback.lightImpact();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    if (!authProvider.canMakeFlashOrders) {
+      _showAddressRequiredDialog();
+      return;
+    }
+    
+    // Navigation vers l'écran de commande flash
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => 
+            const FlashOrderScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
+      ),
+    );
+  }
+
+  /// 📍 Dialog Adresse Requise
+  void _showAddressRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.location_on_outlined,
+              color: AppColors.warning,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Adresse requise',
+              style: AppTextStyles.headlineSmall.copyWith(
+                color: AppColors.textPrimary(context),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Pour utiliser la commande flash, vous devez d\'abord configurer une adresse par défaut dans votre profil.',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary(context),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Plus tard',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+          ),
+          PremiumButton(
+            text: 'Configurer',
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigation vers la gestion des adresses
+              Navigator.of(context).push(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => 
+                      const AddressManagementScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return SlideTransition(
+                      position: animation.drive(
+                        Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                            .chain(CurveTween(curve: AppAnimations.slideIn)),
+                      ),
+                      child: child,
+                    );
+                  },
+                  transitionDuration: AppAnimations.medium,
+                ),
+              );
+            },
+            width: 120,
+            height: 40,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 📱 Afficher SnackBar
+  void _showSnackBar(String message, {bool isSuccess = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isSuccess ? Icons.check_circle : Icons.info_outline,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: isSuccess ? AppColors.success : AppColors.info,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.radiusMD,
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// 👤 Menu Profil
+  void _showProfileMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary(context),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Menu items
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  return Column(
+                    children: [
+                      ListTile(
+                        leading: Icon(Icons.person_outline, color: AppColors.textPrimary(context)),
+                        title: Text('Profil', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary(context))),
+                        onTap: () {
+                          Navigator.pop(context);
+                          // Navigation vers l'écran de profil
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) => 
+                                  const ProfileScreen(),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                return SlideTransition(
+                                  position: animation.drive(
+                                    Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                                        .chain(CurveTween(curve: AppAnimations.slideIn)),
+                                  ),
+                                  child: child,
+                                );
+                              },
+                              transitionDuration: AppAnimations.medium,
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.settings_outlined, color: AppColors.textPrimary(context)),
+                        title: Text('Paramètres', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary(context))),
+                        onTap: () {
+                          Navigator.pop(context);
+                          // TODO: Navigate to settings
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.help_outline, color: AppColors.textPrimary(context)),
+                        title: Text('Aide', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary(context))),
+                        onTap: () {
+                          Navigator.pop(context);
+                          // TODO: Navigate to help
+                        },
+                      ),
+                      const Divider(),
+                      ListTile(
+                        leading: Icon(Icons.logout, color: AppColors.error),
+                        title: Text('Déconnexion', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.error)),
+                        onTap: () async {
+                          Navigator.pop(context);
+                          await authProvider.logout();
+                          if (mounted) {
+                            Navigator.of(context).pushReplacementNamed('/login');
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

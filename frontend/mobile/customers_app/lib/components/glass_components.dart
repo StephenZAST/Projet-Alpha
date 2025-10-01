@@ -39,7 +39,8 @@ class GlassContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultColor = isDark ? AppColors.glassDark : AppColors.glassLight;
+    // Use the theme-specific glass tokens defined in AppColors
+    final defaultColor = isDark ? AppColors.darkGlass : AppColors.lightGlass;
 
     Widget container = Container(
       width: width,
@@ -123,7 +124,7 @@ class _PremiumButtonState extends State<PremiumButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
+  // removed unused _isPressed; animations handle press visuals
 
   @override
   void initState() {
@@ -148,12 +149,10 @@ class _PremiumButtonState extends State<PremiumButton>
   }
 
   void _handleTapDown(TapDownDetails details) {
-    setState(() => _isPressed = true);
     _animationController.forward();
   }
 
   void _handleTapUp(TapUpDetails details) {
-    setState(() => _isPressed = false);
     _animationController.reverse();
     if (widget.onPressed != null && !widget.isLoading) {
       widget.onPressed!();
@@ -161,15 +160,17 @@ class _PremiumButtonState extends State<PremiumButton>
   }
 
   void _handleTapCancel() {
-    setState(() => _isPressed = false);
     _animationController.reverse();
   }
 
   @override
   Widget build(BuildContext context) {
     final isEnabled = widget.onPressed != null && !widget.isLoading;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = widget.backgroundColor ?? AppColors.primary;
-    final textColor = widget.textColor ?? AppColors.textOnPrimary;
+    // Fallback to theme-specific on-primary color when no explicit textColor is provided
+    final textColor = widget.textColor ??
+        (isDark ? AppColors.darkTextOnPrimary : AppColors.lightTextOnPrimary);
 
     return AnimatedBuilder(
       animation: _scaleAnimation,
@@ -236,12 +237,19 @@ class _PremiumButtonState extends State<PremiumButton>
                         color: widget.isOutlined ? backgroundColor : textColor,
                         size: AppDimensions.iconSize,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 8),
                     ],
-                    Text(
-                      widget.text,
-                      style: AppTextStyles.buttonMedium.copyWith(
-                        color: widget.isOutlined ? backgroundColor : textColor,
+                    // Make text flexible so it can shrink/ellipsis when space is constrained
+                    Flexible(
+                      child: Text(
+                        widget.text,
+                        style: AppTextStyles.buttonMedium.copyWith(
+                          color:
+                              widget.isOutlined ? backgroundColor : textColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
                       ),
                     ),
                   ],
@@ -298,11 +306,17 @@ class StatusBadge extends StatelessWidget {
             ),
             SizedBox(width: isLarge ? 6 : 4),
           ],
-          Text(
-            text,
-            style:
-                (isLarge ? AppTextStyles.labelLarge : AppTextStyles.labelMedium)
-                    .copyWith(color: color),
+          Flexible(
+            child: Text(
+              text,
+              style: (isLarge
+                      ? AppTextStyles.labelLarge
+                      : AppTextStyles.labelMedium)
+                  .copyWith(color: color),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+            ),
           ),
         ],
       ),

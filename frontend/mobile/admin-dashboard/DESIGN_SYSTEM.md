@@ -51,7 +51,7 @@ L'application admin Alpha doit offrir une expérience moderne, fluide et cohére
 ### Composant standardisé
 Toutes les notifications doivent utiliser le même composant/snackbar, basé sur `Get.rawSnackbar` avec les paramètres suivants :
 - **Apparition** : Animation de slide/fade depuis le haut, effet glassy (fond semi-transparent, overlayBlur, arrondi, ombre portée).
-- **Effet de flux** : Le contenu de la page est floutté à l’apparition de la notification, puis se rétablit à la disparition.
+- **Leger et rapid Effet de flux** : Le contenu de la page est floutté à l’apparition de la notification, puis se rétablit à la disparition.
 - **Disparition** : Animation inverse, sans laisser de vide.
 - **Couleur** :
   - Success : vert (`AppColors.success`)
