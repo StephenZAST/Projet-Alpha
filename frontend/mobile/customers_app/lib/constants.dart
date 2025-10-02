@@ -17,10 +17,14 @@ class AppColors {
   static const Color primaryLight = Color(0xFF60A5FA); // Bleu clair Alpha
   static const Color primaryDark = Color(0xFF1E40AF); // Bleu foncé Alpha
 
-  // 🎯 Couleurs d'Accent
+  // 🎯 Couleurs d'Accent et Secondaires
   static const Color accent = Color(0xFF06B6D4); // Cyan moderne
   static const Color accentLight = Color(0xFF7DD3FC); // Cyan clair
   static const Color accentDark = Color(0xFF0369A1); // Cyan foncé
+  
+  static const Color secondary = Color(0xFF8B5CF6); // Violet secondaire
+  static const Color secondaryLight = Color(0xFFEDE9FE); // Violet clair
+  static const Color secondaryDark = Color(0xFF6D28D9); // Violet foncé
 
   // 🌈 Couleurs de Statut (Pressing)
   static const Color success = Color(0xFF10B981); // Vert - Service terminé
@@ -44,6 +48,8 @@ class AppColors {
 
   // Aliases pour compatibilité
   static const Color purple = violet;
+
+  //
 
   // =============================================================================
   // 🌓 THÈME CLAIR
@@ -407,6 +413,29 @@ class AppTextStyles {
 }
 
 // =============================================================================
+// 🧮 UTILITAIRES PRATIQUES
+// =============================================================================
+
+extension NumFormatting on num {
+  /// Formatte un nombre en chaîne lisible (ex: 120000 -> "120 000")
+  String toFormattedString() {
+    try {
+      final value = (this.toDouble());
+      final parts = value.toInt().toString().split('');
+      final buffer = StringBuffer();
+      for (var i = 0; i < parts.length; i++) {
+        final pos = parts.length - i;
+        buffer.write(parts[i]);
+        if (pos > 1 && pos % 3 == 1) buffer.write(' ');
+      }
+      return buffer.toString();
+    } catch (e) {
+      return this.toString();
+    }
+  }
+}
+
+// =============================================================================
 // 🎭 ANIMATIONS MICROINTERACTIONS
 // =============================================================================
 
@@ -572,60 +601,8 @@ class AppDimensions {
 // 🎯 STATUTS DE COMMANDE
 // =============================================================================
 
-enum OrderStatus {
-  pending,
-  inProgress,
-  ready,
-  delivered,
-  cancelled,
-}
-
-extension OrderStatusExtension on OrderStatus {
-  String get displayName {
-    switch (this) {
-      case OrderStatus.pending:
-        return 'En attente';
-      case OrderStatus.inProgress:
-        return 'En cours';
-      case OrderStatus.ready:
-        return 'Prêt';
-      case OrderStatus.delivered:
-        return 'Livré';
-      case OrderStatus.cancelled:
-        return 'Annulé';
-    }
-  }
-
-  Color get color {
-    switch (this) {
-      case OrderStatus.pending:
-        return AppColors.warning;
-      case OrderStatus.inProgress:
-        return AppColors.info;
-      case OrderStatus.ready:
-        return AppColors.success;
-      case OrderStatus.delivered:
-        return AppColors.lightTextSecondary; // Couleur fixe pour enum
-      case OrderStatus.cancelled:
-        return AppColors.error;
-    }
-  }
-
-  IconData get icon {
-    switch (this) {
-      case OrderStatus.pending:
-        return Icons.pending;
-      case OrderStatus.inProgress:
-        return Icons.refresh;
-      case OrderStatus.ready:
-        return Icons.check_circle;
-      case OrderStatus.delivered:
-        return Icons.done_all;
-      case OrderStatus.cancelled:
-        return Icons.cancel;
-    }
-  }
-}
+// OrderStatus enum supprimé pour éviter les conflits d'import
+// Utiliser celui défini dans core/models/order.dart qui est plus complet
 
 // =============================================================================
 // ⚙️ CONFIGURATION API

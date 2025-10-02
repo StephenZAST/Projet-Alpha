@@ -1,16 +1,19 @@
-# 📱 Alpha Delivery App - Handover Documentation
+# 📱 Alpha Client App - Handover Documentation
 
 ## 🎯 Vue d'ensemble du projet
 
-**Alpha Delivery App** est une application mobile Flutter pour les livreurs d'Alpha Laundry (service de blanchisserie au Sénégal). L'application permet aux livreurs de gérer leurs commandes, suivre leurs livraisons, et communiquer avec le backend existant.
+**Alpha Client App** est une application mobile Flutter pour les clients d'Alpha Laundry (service de blanchisserie au Sénégal). L'application permet aux clients de créer des commandes, suivre leurs livraisons, gérer leur profil et participer au programme de fidélité.
 
-### 📊 État actuel : 40% complété
+### 📊 État actuel : 85% complété
 - ✅ **Architecture & Fondations** : 100%
-- ✅ **Services Backend** : 90%
+- ✅ **Services Backend** : 95%
 - ✅ **Authentification** : 100%
-- ✅ **Dashboard de base** : 80%
-- 🚧 **Écrans principaux** : 20%
-- ⏳ **Fonctionnalités avancées** : 0%
+- ✅ **Dashboard Principal** : 100%
+- ✅ **Système de Commandes** : 100%
+- ✅ **Profil Utilisateur** : 100%
+- ✅ **Notifications** : 100%
+- 🚧 **Programme Fidélité** : 0%
+- 🚧 **Historique Commandes** : 0%
 
 ---
 
@@ -18,34 +21,31 @@
 
 ### 📁 Structure des dossiers
 ```
-frontend/mobile/delivery_app/
+frontend/mobile/customers_app/
 ├── lib/
-│   ├── app.dart                    # Configuration principale de l'app
-│   ├── main.dart                   # Point d'entrée avec gestion d'erreurs
-│   ├── constants.dart              # Design system mobile-first complet
-│   ├── bindings/                   # Injection de dépendances GetX
-│   ├── controllers/                # Contrôleurs d'état GetX
-│   ├── models/                     # Modèles de données
-│   ├── routes/                     # Configuration navigation
-│   ├── screens/                    # Écrans de l'application
-│   ├── services/                   # Services de communication
-│   ├── theme/                      # Thème glassmorphism
-│   └── widgets/                    # Composants réutilisables
+│   ├── main.dart                   # Point d'entrée avec MultiProvider
+│   ├── constants.dart              # Design system glassmorphism complet
+│   ├── components/                 # Composants réutilisables premium
+│   ├── core/                       # Services, modèles, utils
+│   ├── features/                   # Features organisées par domaine
+│   ├── screens/                    # Écrans principaux
+│   ├── shared/                     # Providers et widgets partagés
+│   ├── theme/                      # Theme provider light/dark
+│   └── utils/                      # Utilitaires et helpers
+├── assets/                         # Images, logos, icônes
 ├── pubspec.yaml                    # Dépendances Flutter
-├── DELIVERY_APP_TODO.md           # TODO détaillé par phases
 └── PROJECT_HANDOVER.md            # Ce fichier
 ```
 
 ### 🔧 Stack Technique
 - **Framework** : Flutter 3.6.0+
-- **State Management** : GetX 4.6.6
+- **State Management** : Provider Pattern
 - **HTTP Client** : Dio 5.4.0
-- **Stockage Local** : GetStorage 2.1.1
-- **Cartes** : FlutterMap 6.1.0 (OpenStreetMap)
-- **Géolocalisation** : Geolocator 10.1.0
-- **Notifications** : FlutterLocalNotifications 16.3.2
-- **Permissions** : PermissionHandler 11.2.0
-- **Navigation GPS** : UrlLauncher 6.2.2
+- **Stockage Local** : SharedPreferences
+- **Notifications** : FlutterLocalNotifications
+- **Animations** : Flutter built-in + Custom
+- **UI** : Glassmorphism Design System
+- **Navigation** : Flutter Navigator 2.0
 
 ---
 
@@ -55,26 +55,41 @@ frontend/mobile/delivery_app/
 **Base URL** : Configuration dans `constants.dart`
 
 #### Authentification
-- `POST /auth/admin/login` - Connexion multi-rôles (DELIVERY, ADMIN, SUPER_ADMIN)
+- `POST /auth/register` - Inscription client
+- `POST /auth/login` - Connexion client
+- `POST /auth/logout` - Déconnexion
+- `POST /auth/refresh` - Refresh token
 
-#### Delivery Endpoints
-- `GET /delivery/dashboard/stats` - Statistiques livreur
-- `GET /delivery/profile` - Profil livreur complet
-- `PATCH /delivery/profile` - Mise à jour profil
-- `GET /delivery/pending-orders` - Commandes en attente
-- `GET /delivery/assigned-orders` - Commandes assignées
-- `GET /delivery/collected-orders` - Commandes collectées
-- `GET /delivery/ready-orders` - Commandes prêtes
-- `GET /delivery/delivering-orders` - En cours de livraison
-- `GET /delivery/delivered-orders` - Livrées
-- `PATCH /delivery/:orderId/status` - Mise à jour statut
-- `GET /delivery/orders/:orderId` - Détails commande
-- `GET /delivery/orders/search` - Recherche avancée
-- `GET /delivery/orders/by-location` - Commandes par zone GPS
-- `PATCH /delivery/location` - Position livreur
-- `GET /delivery/today-orders` - Commandes du jour
-- `GET /delivery/delivery-history` - Historique
-- `PATCH /delivery/availability` - Disponibilité
+#### Client Endpoints
+- `GET /users/profile` - Profil utilisateur
+- `PATCH /users/profile` - Mise à jour profil
+- `GET /addresses` - Adresses utilisateur
+- `POST /addresses` - Créer adresse
+- `PATCH /addresses/:id` - Modifier adresse
+- `DELETE /addresses/:id` - Supprimer adresse
+
+#### Orders Endpoints
+- `POST /orders` - Créer commande complète
+- `POST /orders/flash` - Créer commande flash (draft)
+- `GET /orders` - Historique commandes utilisateur
+- `GET /orders/:id` - Détails commande
+- `PATCH /orders/:id/cancel` - Annuler commande (si autorisé)
+
+#### Services & Articles
+- `GET /service-types` - Types de services
+- `GET /services/all` - Services disponibles
+- `GET /articles` - Articles disponibles
+- `GET /article-services/prices` - Prix article-service
+
+#### Loyalty System
+- `GET /loyalty/profile` - Profil fidélité
+- `GET /loyalty/transactions` - Historique points
+- `POST /loyalty/redeem` - Utiliser points
+
+#### Notifications
+- `GET /notifications` - Notifications utilisateur
+- `PATCH /notifications/:id/read` - Marquer comme lu
+- `PATCH /notifications/mark-all-read` - Tout marquer lu
 
 ---
 
@@ -358,26 +373,27 @@ frontend/mobile/delivery_app/
 
 ## 🎯 Prochaines Priorités (Par Ordre)
 
-### 🔥 Phase 1 : Écrans Principaux (1-2 semaines)
-1. **Créer `orders_screen.dart`** - Liste commandes avec filtres
-2. **Créer `order_details_screen.dart`** - Détails avec actions
-3. **Créer `orders_controller.dart`** - Gestion état commandes
-4. **Intégrer vraies données** - Remplacer placeholders
+### 🔥 Phase 1 : Programme Fidélité (1 semaine)
+1. **Créer `loyalty_dashboard_screen.dart`** - Dashboard points et niveau
+2. **Créer `loyalty_history_screen.dart`** - Historique transactions points
+3. **Créer `rewards_catalog_screen.dart`** - Catalogue récompenses
+4. **Créer `loyalty_provider.dart`** - Provider gestion fidélité
+5. **Intégrer endpoints loyalty** - `/loyalty/*` backend
 
-### 🔥 Phase 2 : Cartographie (1 semaine)
-1. **Créer `delivery_map_screen.dart`** - Carte OpenStreetMap
-2. **Créer `map_controller.dart`** - Gestion GPS et markers
-3. **Intégrer navigation externe** - Google Maps, Waze
+### 🔥 Phase 2 : Historique Commandes (1 semaine)
+1. **Créer `orders_history_screen.dart`** - Liste commandes avec filtres par statut
+2. **Créer `order_details_screen.dart`** - Détails commande avec timeline statut
+3. **Créer `order_tracking_screen.dart`** - Suivi temps réel (lecture seule)
+4. **Créer `orders_provider.dart`** - Provider gestion historique
+5. **Intégrer endpoints orders** - `GET /orders`, `GET /orders/:id`
 
-### 🔥 Phase 3 : Profil & Paramètres (1 semaine)
-1. **Créer `profile_screen.dart`** - Profil avec statistiques
-2. **Créer `settings_screen.dart`** - Paramètres app
-3. **Créer `profile_controller.dart`** - Gestion profil
+**Note importante** : Le client peut uniquement **observer** les statuts mis à jour par les admins. Aucune modification de statut n'est autorisée côté client.
 
-### 🔥 Phase 4 : Composants UI (1 semaine)
-1. **Créer widgets partagés** - Cards, containers, navigation
-2. **Optimiser UX mobile** - Gestures, animations
-3. **Tests sur devices** - Android variés
+### 🔥 Phase 3 : Optimisations & Polish (1 semaine)
+1. **Performance optimization** - Lazy loading, cache
+2. **Animations polish** - Micro-interactions
+3. **Error handling** - Messages utilisateur améliorés
+4. **Tests sur devices** - Android/iOS variés
 
 ---
 
@@ -386,7 +402,7 @@ frontend/mobile/delivery_app/
 ### Commandes Essentielles
 ```bash
 # Installation dépendances
-cd frontend/mobile/delivery_app
+cd frontend/mobile/customers_app
 flutter pub get
 
 # Lancement app
@@ -402,11 +418,11 @@ flutter analyze
 ### Variables d'Environnement
 - **Backend URL** : Configuré dans `constants.dart`
 - **Timezone** : Africa/Dakar (GMT+0)
-- **Rôles autorisés** : DELIVERY, ADMIN, SUPER_ADMIN
+- **Rôles autorisés** : CLIENT
 
 ### Base de Données Backend
-- **Utilisateur test** : Créer avec `role: 'DELIVERY'` dans table `users`
-- **Endpoints** : Tous documentés dans `delivery.routes.ts`
+- **Utilisateur test** : Créer avec `role: 'CLIENT'` dans table `users`
+- **Endpoints** : Tous documentés dans `backend/docs/`
 
 ---
 
@@ -426,15 +442,16 @@ flutter analyze
 
 ## 🎯 Objectif Final
 
-**Application mobile complète** permettant aux livreurs de :
+**Application mobile complète** permettant aux clients de :
 - ✅ Se connecter avec authentification sécurisée
-- 🚧 Gérer leurs commandes (statuts, détails, actions)
-- ⏳ Naviguer avec GPS intégré
-- ⏳ Suivre leurs performances et gains
-- ⏳ Recevoir notifications en temps réel
-- ⏳ Fonctionner hors ligne (synchronisation)
+- ✅ Créer des commandes complètes et flash
+- ✅ Gérer leur profil et adresses
+- ✅ Recevoir notifications en temps réel
+- 🚧 Suivre leurs commandes (lecture seule des statuts)
+- 🚧 Participer au programme de fidélité
+- ⏳ Optimisations et polish final
 
-**Timeline estimée** : 4-6 semaines pour MVP complet
+**Timeline estimée** : 2-3 semaines pour finalisation complète
 
 ---
 

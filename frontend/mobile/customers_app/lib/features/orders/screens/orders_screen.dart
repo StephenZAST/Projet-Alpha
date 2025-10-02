@@ -13,9 +13,8 @@ class OrdersScreen extends StatefulWidget {
   State<OrdersScreen> createState() => _OrdersScreenState();
 }
 
-class _OrdersScreenState extends State<OrdersScreen> 
+class _OrdersScreenState extends State<OrdersScreen>
     with TickerProviderStateMixin {
-  
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -169,7 +168,8 @@ class _OrdersScreenState extends State<OrdersScreen>
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -278,6 +278,83 @@ class _OrdersScreenState extends State<OrdersScreen>
           ),
         ],
       ),
+    );
+  }
+
+  /// 🔎 Dialog de recherche (simple placeholder)
+  void _showSearchDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        String query = '';
+        return AlertDialog(
+          title: const Text('Rechercher une commande'),
+          content: TextField(
+            decoration: const InputDecoration(
+              hintText: 'Numéro de commande, produit ou client',
+            ),
+            onChanged: (v) => query = v,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Placeholder: integrate search later
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Recherche: "${query.trim()}"')),
+                );
+              },
+              child: const Text('Rechercher'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// ⚙️ Dialog de filtres (simple placeholder)
+  void _showFiltersDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        bool onlyActive = true;
+        return AlertDialog(
+          title: const Text('Filtres'),
+          content: StatefulBuilder(
+            builder: (context, setState) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CheckboxListTile(
+                  value: onlyActive,
+                  onChanged: (v) => setState(() => onlyActive = v ?? true),
+                  title:
+                      const Text('Afficher uniquement les commandes actives'),
+                ),
+                // Additional filters can be added here
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Fermer'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Filtres appliqués')),
+                );
+              },
+              child: const Text('Appliquer'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

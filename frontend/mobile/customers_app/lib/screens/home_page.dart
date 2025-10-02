@@ -4,11 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
 import '../components/glass_components.dart';
+import '../core/models/order.dart';
 import '../theme/theme_provider.dart';
 import '../shared/providers/auth_provider.dart';
 import '../shared/providers/address_provider.dart';
 import '../shared/providers/notification_provider.dart';
 import '../features/orders/screens/flash_order_screen.dart';
+import '../features/orders/screens/create_order_screen.dart';
 import '../features/profile/screens/address_management_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/notifications/screens/notifications_screen.dart';
@@ -844,7 +846,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         _buildOrderCard(
           'CMD001',
           '3 Chemises + 1 Pantalon',
-          OrderStatus.inProgress,
+          OrderStatus.processing,
           DateTime.now().subtract(const Duration(days: 2)),
           '28€',
         ),
@@ -875,12 +877,27 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     IconData statusIcon;
 
     switch (status) {
+      case OrderStatus.draft:
+        statusColor = AppColors.textTertiary(context);
+        statusText = 'Brouillon';
+        statusIcon = Icons.edit;
+        break;
       case OrderStatus.pending:
         statusColor = AppColors.warning;
         statusText = 'En attente';
         statusIcon = Icons.pending;
         break;
-      case OrderStatus.inProgress:
+      case OrderStatus.collecting:
+        statusColor = AppColors.info;
+        statusText = 'Collecte';
+        statusIcon = Icons.local_shipping;
+        break;
+      case OrderStatus.collected:
+        statusColor = AppColors.primary;
+        statusText = 'Collectée';
+        statusIcon = Icons.inventory_2;
+        break;
+      case OrderStatus.processing:
         statusColor = AppColors.info;
         statusText = 'En cours';
         statusIcon = Icons.refresh;
@@ -889,6 +906,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         statusColor = AppColors.success;
         statusText = 'Prêt';
         statusIcon = Icons.check_circle;
+        break;
+      case OrderStatus.delivering:
+        statusColor = AppColors.accent;
+        statusText = 'En livraison';
+        statusIcon = Icons.local_shipping;
         break;
       case OrderStatus.delivered:
         statusColor = AppColors.textSecondary(context);
@@ -1074,8 +1096,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// 🛍️ Gestionnaire Nouvelle Commande
   void _handleNewOrderTap() {
     HapticFeedback.lightImpact();
-    // TODO: Navigate to full order creation flow
-    _showSnackBar('Commande complète - Bientôt disponible !');
+    
+    // Navigation vers l'écran de création de commande complète
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => 
+            const CreateOrderScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
+      ),
+    );
   }
 
   /// ⚡ Gestionnaire Commande Flash
