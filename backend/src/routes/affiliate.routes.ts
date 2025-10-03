@@ -20,6 +20,7 @@ const adminCheck = (req: any, res: any, next: any) => {
 
 // Routes pour les affiliés
 router.get('/profile', authMiddleware, AffiliateController.getProfile);
+router.post('/create-profile', authMiddleware, AffiliateController.createProfile);
 router.put('/profile', authMiddleware, AffiliateController.updateProfile);
 router.get('/commissions', authMiddleware, AffiliateController.getCommissions);
 router.post('/withdrawal', authMiddleware, AffiliateController.requestWithdrawal);

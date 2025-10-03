@@ -20,6 +20,14 @@
     "migrate:functions": "ts-node src/scripts/migrateFunctions.ts",
     "migrate:validate": "ts-node src/scripts/validateRelations.ts",
     "migrate:all": "ts-node src/scripts/migrationRunner.ts"
+    ,
+    "find:user": "ts-node src/scripts/findUser.ts"
+    ,
+    "set:user-password": "ts-node src/scripts/setTempPassword.ts"
+    ,
+    "aff:manage": "ts-node src/scripts/manageAffiliateProfile.ts"
+    ,
+    "aff:sync": "ts-node src/scripts/syncAffiliateProfiles.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

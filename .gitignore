@@ -19,3 +19,8 @@ serviceAccountKey.json
 .env.production.local
 .env.exemple
 .qodo
+backend\src\scripts
+backend/src/scripts/findUser.ts
+backend/src/scripts/manageAffiliateProfile.ts
+backend/src/scripts/setTempPassword.ts
+backend/src/scripts/syncAffiliateProfiles.ts

@@ -124,7 +124,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${provider.availableBalance.toFormattedString()} FCFA',
+                      '${formatNumber(provider.availableBalance)} FCFA',
                       style: AppTextStyles.headlineMedium.copyWith(
                         color: AppColors.textPrimary(context),
                         fontWeight: FontWeight.w700,
@@ -157,7 +157,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Montant minimum requis: ${AffiliateConfig.minWithdrawalAmount.toFormattedString()} FCFA',
+                      'Montant minimum requis: ${formatNumber(AffiliateConfig.minWithdrawalAmount)} FCFA',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.warning,
                       ),
@@ -220,7 +220,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   final amount = double.tryParse(value.replaceAll(' ', '')) ?? 0.0;
                   
                   if (amount < AffiliateConfig.minWithdrawalAmount) {
-                    return 'Montant minimum: ${AffiliateConfig.minWithdrawalAmount.toFormattedString()} FCFA';
+                    return 'Montant minimum: ${formatNumber(AffiliateConfig.minWithdrawalAmount)} FCFA';
                   }
                   
                   if (amount > provider.availableBalance) {
@@ -282,7 +282,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               Text(
                 _isAmountValid 
                     ? 'Montant valide'
-                    : 'Montant minimum: ${AffiliateConfig.minWithdrawalAmount.toFormattedString()} FCFA',
+                    : 'Montant minimum: ${formatNumber(AffiliateConfig.minWithdrawalAmount)} FCFA',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: _isAmountValid ? AppColors.success : AppColors.error,
                 ),
@@ -355,7 +355,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
           const SizedBox(height: 12),
           
           _buildInfoItem(
-            'Montant minimum: ${AffiliateConfig.minWithdrawalAmount.toFormattedString()} FCFA',
+            'Montant minimum: ${formatNumber(AffiliateConfig.minWithdrawalAmount)} FCFA',
           ),
           _buildInfoItem(
             'Délai de traitement: 1-3 jours ouvrables',

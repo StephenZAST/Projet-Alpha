@@ -30,20 +30,20 @@ class ApiConfig {
   static const Duration timeout = Duration(seconds: 30);
 }
 
-// 🎨 Palette de Couleurs Glassmorphism
+// 🎨 Palette de Couleurs Alpha Laundry - Glassmorphism Premium
 class AppColors {
-  // Couleurs principales
-  static const Color primary = Color(0xFF6366F1);
-  static const Color primaryDark = Color(0xFF4F46E5);
-  static const Color primaryLight = Color(0xFF818CF8);
+  // Couleurs principales Alpha Laundry
+  static const Color primary = Color(0xFF0045CE); // Bleu Alpha Laundry
+  static const Color primaryDark = Color(0xFF003399); // Bleu plus foncé
+  static const Color primaryLight = Color(0xFF49A3F1); // Nuance gradient Alpha
 
   static const Color secondary = Color(0xFF10B981);
   static const Color secondaryDark = Color(0xFF059669);
   static const Color secondaryLight = Color(0xFF34D399);
 
-  static const Color accent = Color(0xFFF59E0B);
-  static const Color accentDark = Color(0xFFD97706);
-  static const Color accentLight = Color(0xFFFBBF24);
+  static const Color accent = Color(0xFF49A3F1); // Utiliser la nuance gradient comme accent
+  static const Color accentDark = Color(0xFF2563EB);
+  static const Color accentLight = Color(0xFF60A5FA);
 
   // Couleurs système
   static const Color success = Color(0xFF10B981);
@@ -92,9 +92,40 @@ class AppColors {
     return Theme.of(context).brightness == Brightness.dark ? gray600 : gray200;
   }
 
-  // Gradients
+  // 🌈 Tokens de Design Premium (Glassmorphism)
+  // Card backgrounds (parité avec admin dashboard)
+  static const Color cardBgDark = Color(0xCC1E293B); // gray800 @ 0.8
+  static const Color cardBgLight = Color(0xE6FFFFFF); // white @ 0.9
+  
+  // Glass tokens
+  static const double glassBlurSigma = 10.0;
+  static const double glassBorderDarkOpacity = 0.3;
+  static const double glassBorderLightOpacity = 0.5;
+  
+  // Micro tokens
+  static const double iconBoxOpacity = 0.1;
+  static const double badgeBorderOpacity = 0.3;
+
+  // 🌈 Gradients Premium Alpha Laundry
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primary, primaryDark],
+    colors: [primary, primaryLight],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: [0.0, 1.0],
+  );
+
+  static const LinearGradient alphaGradient = LinearGradient(
+    colors: [primary, primaryLight, accent],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    stops: [0.0, 0.6, 1.0],
+  );
+
+  static const LinearGradient glassGradient = LinearGradient(
+    colors: [
+      Color(0x1A0045CE), // primary @ 0.1
+      Color(0x0D49A3F1), // accent @ 0.05
+    ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -106,7 +137,14 @@ class AppColors {
   );
 
   static const LinearGradient warningGradient = LinearGradient(
-    colors: [warning, accentDark],
+    colors: [warning, Color(0xFFD97706)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Gradient pour les stats cards
+  static const LinearGradient statGradient = LinearGradient(
+    colors: [primaryLight, accent],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -231,34 +269,83 @@ class AppRadius {
       BorderRadius.all(Radius.circular(radiusXL));
 }
 
-// 🌟 Ombres Glassmorphism
+// 🌟 Ombres Glassmorphism Premium
 class AppShadows {
+  // Ombres pour les conteneurs glass
   static const List<BoxShadow> glassShadow = [
     BoxShadow(
-      color: Color(0x0A000000),
+      color: Color(0x0A000000), // Ombre primaire
       blurRadius: 10,
       offset: Offset(0, 4),
+      spreadRadius: 0,
     ),
     BoxShadow(
-      color: Color(0x0F000000),
+      color: Color(0x0F000000), // Ombre ambiante
       blurRadius: 20,
       offset: Offset(0, 8),
+      spreadRadius: 0,
     ),
   ];
 
+  // Ombres pour les cartes
   static const List<BoxShadow> cardShadow = [
     BoxShadow(
       color: Color(0x08000000),
       blurRadius: 8,
       offset: Offset(0, 2),
+      spreadRadius: 0,
     ),
   ];
 
+  // Ombres pour les boutons premium
   static const List<BoxShadow> buttonShadow = [
     BoxShadow(
-      color: Color(0x15000000),
-      blurRadius: 12,
+      color: Color(0x1A0045CE), // Ombre colorée Alpha
+      blurRadius: 16,
+      offset: Offset(0, 6),
+      spreadRadius: 0,
+    ),
+    BoxShadow(
+      color: Color(0x0A000000), // Ombre neutre
+      blurRadius: 8,
+      offset: Offset(0, 2),
+      spreadRadius: 0,
+    ),
+  ];
+
+  // Ombres pour les boutons outlined
+  static const List<BoxShadow> buttonOutlinedShadow = [
+    BoxShadow(
+      color: Color(0x08000000),
+      blurRadius: 6,
+      offset: Offset(0, 2),
+      spreadRadius: 0,
+    ),
+  ];
+
+  // Ombres pour les éléments flottants
+  static const List<BoxShadow> floatingShadow = [
+    BoxShadow(
+      color: Color(0x1A0045CE), // Ombre colorée
+      blurRadius: 20,
+      offset: Offset(0, 8),
+      spreadRadius: 0,
+    ),
+    BoxShadow(
+      color: Color(0x0F000000), // Ombre ambiante
+      blurRadius: 40,
+      offset: Offset(0, 16),
+      spreadRadius: 0,
+    ),
+  ];
+
+  // Ombres pour les headers
+  static const List<BoxShadow> headerShadow = [
+    BoxShadow(
+      color: Color(0x1A0045CE), // Ombre Alpha
+      blurRadius: 24,
       offset: Offset(0, 4),
+      spreadRadius: 0,
     ),
   ];
 }
@@ -351,7 +438,18 @@ extension StringExtension on String {
 
 extension DoubleExtension on double {
   String toFormattedString() {
+    if (isNaN || isInfinite) return '0';
     return toStringAsFixed(0).replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]} ',
+    );
+  }
+}
+
+// Support pour int
+extension IntExtension on int {
+  String toFormattedString() {
+    return toString().replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (Match m) => '${m[1]} ',
     );
@@ -361,9 +459,37 @@ extension DoubleExtension on double {
 // Support pour int et double via num
 extension NumExtension on num {
   String toFormattedString() {
-    return this.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]} ',
-        );
+    if (this is double && (this as double).isNaN) return '0';
+    if (this is double && (this as double).isInfinite) return '0';
+    return toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]} ',
+    );
   }
+}
+
+// Extension pour les valeurs nullables
+extension NullableNumExtension on num? {
+  String toFormattedString() {
+    if (this == null) return '0';
+    return this!.toFormattedString();
+  }
+}
+
+// Fonction utilitaire globale pour formater les nombres
+String formatNumber(dynamic value) {
+  if (value == null) return '0';
+  if (value is String) {
+    final parsed = double.tryParse(value);
+    if (parsed == null) return '0';
+    value = parsed;
+  }
+  if (value is num) {
+    if (value is double && (value.isNaN || value.isInfinite)) return '0';
+    return value.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]} ',
+    );
+  }
+  return value.toString();
 }

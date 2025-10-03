@@ -15,7 +15,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isLoading = false;
   String? _error;
-  
+
   // Informations utilisateur
   String? _userId;
   String? _email;
@@ -27,17 +27,17 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  
+
   String? get userId => _userId;
   String? get email => _email;
   String? get firstName => _firstName;
   String? get lastName => _lastName;
   String? get role => _role;
-  
-  String get displayName => _firstName != null && _lastName != null 
-      ? '$_firstName $_lastName' 
+
+  String get displayName => _firstName != null && _lastName != null
+      ? '$_firstName $_lastName'
       : _email ?? 'Utilisateur';
-  
+
   String get initials => _firstName != null && _lastName != null
       ? '${_firstName![0]}${_lastName![0]}'.toUpperCase()
       : 'U';
@@ -52,14 +52,14 @@ class AuthProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString(StorageKeys.authToken);
-      
+
       if (token != null) {
         _userId = prefs.getString(StorageKeys.userId);
         _email = prefs.getString('user_email');
         _firstName = prefs.getString('user_first_name');
         _lastName = prefs.getString('user_last_name');
         _role = prefs.getString(StorageKeys.userRole);
-        
+
         await _apiService.setAuthToken(token);
         _isAuthenticated = true;
         notifyListeners();
@@ -88,23 +88,32 @@ class AuthProvider extends ChangeNotifier {
       );
 
       bool success = false;
-      response.onSuccess((data) async {
+
+      // Traiter la réponse de manière synchrone pour pouvoir await les opérations
+      if (response.isSuccess && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        print('📊 Réponse reçue: $data'); // Debug log
+        
         if (data['success'] == true && data['data'] != null) {
           final userData = data['data'] as Map<String, dynamic>;
-          final token = userData['token'] as String;
-          final user = userData['user'] as Map<String, dynamic>;
+          final token = userData['token'] as String?;
+          final user = userData['user'] as Map<String, dynamic>?;
 
-          // Vérifier que l'utilisateur peut être affilié
-          // (soit déjà affilié, soit client qui peut devenir affilié)
-          await _saveAuthData(token, user);
-          _isAuthenticated = true;
-          success = true;
+          if (token != null && user != null) {
+            // Sauvegarder les données d'authentification avant de retourner
+            await _saveAuthData(token, user);
+            _isAuthenticated = true;
+            success = true;
+          } else {
+            _error = 'Réponse invalide du serveur - token ou user manquant.';
+          }
+        } else {
+          // Quand response.isSuccess est true mais data['success'] est false
+          _error = data['message'] as String? ?? 'Échec de la connexion';
         }
-      });
-
-      response.onError((error) {
-        _error = error.message;
-      });
+      } else {
+        _error = response.error?.message ?? 'Erreur lors de la requête';
+      }
 
       _isLoading = false;
       notifyListeners();
@@ -132,9 +141,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final response = await _apiService.post<Map<String, dynamic>>(
-        affiliateCode != null 
-            ? ApiConfig.registerWithCode 
-            : '/auth/register',
+        affiliateCode != null ? ApiConfig.registerWithCode : '/auth/register',
         data: {
           'email': email,
           'password': password,
@@ -146,26 +153,26 @@ class AuthProvider extends ChangeNotifier {
       );
 
       bool success = false;
-      response.onSuccess((data) async {
+
+      if (response.isSuccess && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
         if (data['success'] == true && data['data'] != null) {
           final userData = data['data'] as Map<String, dynamic>;
-          
-          // Si inscription avec code affilié, l'utilisateur est automatiquement connecté
-          if (userData['token'] != null) {
-            final token = userData['token'] as String;
-            final user = userData['user'] as Map<String, dynamic>;
-            
+          final token = userData['token'] as String?;
+          final user = userData['user'] as Map<String, dynamic>?;
+
+          if (token != null && user != null) {
             await _saveAuthData(token, user);
             _isAuthenticated = true;
           }
-          
           success = true;
+        } else {
+          _error = response.error?.message ?? 'Inscription échouée';
         }
-      });
-
-      response.onError((error) {
-        _error = error.message;
-      });
+      } else {
+        _error = response.error?.message ??
+            'Erreur lors de la requête d\'inscription';
+      }
 
       _isLoading = false;
       notifyListeners();
@@ -182,15 +189,16 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _saveAuthData(String token, Map<String, dynamic> user) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       _userId = user['id'] as String;
       _email = user['email'] as String;
-      _firstName = user['firstName'] as String?;
-      _lastName = user['lastName'] as String?;
+      _firstName = user['first_name'] as String?; // Utiliser first_name du serveur
+      _lastName = user['last_name'] as String?;   // Utiliser last_name du serveur
       _role = user['role'] as String?;
 
       await Future.wait([
         _apiService.setAuthToken(token),
+        prefs.setString(StorageKeys.authToken, token), // Sauvegarder le token
         prefs.setString(StorageKeys.userId, _userId!),
         prefs.setString('user_email', _email!),
         if (_firstName != null) prefs.setString('user_first_name', _firstName!),
@@ -214,7 +222,7 @@ class AuthProvider extends ChangeNotifier {
 
     // Nettoyer les données locales
     await _clearAuthData();
-    
+
     _isAuthenticated = false;
     _userId = null;
     _email = null;
@@ -222,7 +230,7 @@ class AuthProvider extends ChangeNotifier {
     _lastName = null;
     _role = null;
     _error = null;
-    
+
     notifyListeners();
   }
 
@@ -230,7 +238,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _clearAuthData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       await Future.wait([
         _apiService.clearAuthToken(),
         prefs.remove(StorageKeys.authToken),
@@ -250,7 +258,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final refreshToken = prefs.getString(StorageKeys.refreshToken);
-      
+
       if (refreshToken == null) return false;
 
       final response = await _apiService.post<Map<String, dynamic>>(
@@ -259,13 +267,18 @@ class AuthProvider extends ChangeNotifier {
       );
 
       bool success = false;
-      response.onSuccess((data) async {
+      if (response.isSuccess && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
         if (data['success'] == true && data['data'] != null) {
-          final token = data['data']['token'] as String;
-          await _apiService.setAuthToken(token);
-          success = true;
+          final token = data['data']['token'] as String?;
+          if (token != null) {
+            await _apiService.setAuthToken(token);
+            success = true;
+          }
+        } else {
+          print('Refresh failed: ${response.error?.message}');
         }
-      });
+      }
 
       return success;
     } catch (e) {

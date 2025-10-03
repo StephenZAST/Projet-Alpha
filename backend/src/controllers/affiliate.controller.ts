@@ -38,6 +38,38 @@ export class AffiliateController {
     }
   }
 
+  static async createProfile(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      // Vérifier si l'utilisateur a le rôle AFFILIATE
+      if (req.user?.role !== 'AFFILIATE') {
+        return res.status(403).json({ error: 'Only users with AFFILIATE role can create affiliate profile' });
+      }
+
+      // Vérifier si un profil existe déjà
+      const existingProfile = await AffiliateService.getProfile(userId);
+      if (existingProfile) {
+        return res.status(409).json({ error: 'Affiliate profile already exists' });
+      }
+
+      // Créer le profil affilié
+      const profile = await AffiliateService.createAffiliate({
+        userId: userId,
+        parentAffiliateCode: undefined // Pas de parrain pour l'auto-création
+      });
+
+      res.json({
+        success: true,
+        data: profile
+      });
+    } catch (error: any) {
+      console.error('Create profile error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async getLevels(req: Request, res: Response) {
     try {
       const levels = await prisma.affiliate_levels.findMany({

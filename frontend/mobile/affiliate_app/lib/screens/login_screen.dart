@@ -359,16 +359,37 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = context.read<AuthProvider>();
     authProvider.clearError();
 
+    print('🔑 Tentative de connexion pour: ${_emailController.text.trim()}');
+
     final success = await authProvider.login(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-      );
+    print('🔑 Résultat de la connexion: $success');
+    print('🔑 Erreur: ${authProvider.error}');
+    print('🔑 isAuthenticated: ${authProvider.isAuthenticated}');
+
+    if (mounted) {
+      if (success && authProvider.isAuthenticated) {
+        print('🎉 Connexion réussie, navigation vers le dashboard');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      } else {
+        print('❌ Connexion échouée: ${authProvider.error}');
+        // L'erreur sera affichée automatiquement via le Consumer
+        if (authProvider.error == null) {
+          // Si pas d'erreur spécifique, afficher un message générique
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erreur de connexion inconnue'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
     }
   }
 }

@@ -29,6 +29,21 @@ class AffiliateService {
     });
   }
 
+  /// 🆕 Créer un profil affilié
+  /// POST /api/affiliate/create-profile
+  Future<ApiResponse<AffiliateProfile>> createProfile() async {
+    final response = await _apiService.post<Map<String, dynamic>>(
+      '${ApiConfig.affiliateEndpoint}/create-profile',
+    );
+
+    return response.map((data) {
+      if (data['success'] == true && data['data'] != null) {
+        return AffiliateProfile.fromJson(data['data'] as Map<String, dynamic>);
+      }
+      throw Exception('Format de réponse invalide');
+    });
+  }
+
   /// 👤 Mettre à jour le profil affilié
   /// PUT /api/affiliate/profile
   Future<ApiResponse<AffiliateProfile>> updateProfile({

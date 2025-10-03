@@ -106,12 +106,57 @@ class AffiliateProvider extends ChangeNotifier {
     });
 
     response.onError((error) {
-      _profileError = error.message;
-      _profile = null;
+      print('❌ Erreur lors du chargement du profil: ${error.message}');
+      
+      // Si l'erreur est 401 (non autorisé), arrêter les tentatives
+      if (error.statusCode == 401) {
+        print('🚪 Token expiré ou invalide, arrêt du chargement du profil');
+        _profileError = 'Session expirée, veuillez vous reconnecter';
+        _profile = null;
+        _isLoadingProfile = false;
+        notifyListeners();
+        return;
+      }
+      
+      // Si l'erreur est 404 (profil non trouvé), essayer de créer le profil
+      if (error.statusCode == 404 || error.message.contains('Profile not found')) {
+        print('🔄 Tentative de création du profil affilié...');
+        _createAffiliateProfile();
+      } else {
+        _profileError = error.message;
+        _profile = null;
+      }
     });
 
     _isLoadingProfile = false;
     notifyListeners();
+  }
+
+  /// 🆕 Créer un profil affilié
+  Future<void> _createAffiliateProfile() async {
+    try {
+      print('🆕 Création du profil affilié en cours...');
+      
+      // Appeler l'endpoint de création de profil affilié
+      final response = await _affiliateService.createProfile();
+      
+      response.onSuccess((profile) {
+        print('✅ Profil affilié créé avec succès');
+        _profile = profile;
+        _profileError = null;
+        notifyListeners();
+      });
+
+      response.onError((error) {
+        print('❌ Erreur lors de la création du profil: ${error.message}');
+        _profileError = 'Impossible de créer le profil affilié: ${error.message}';
+        notifyListeners();
+      });
+    } catch (e) {
+      print('❌ Exception lors de la création du profil: $e');
+      _profileError = 'Erreur lors de la création du profil affilié';
+      notifyListeners();
+    }
   }
 
   /// 👤 Mettre à jour le profil

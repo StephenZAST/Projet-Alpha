@@ -84,8 +84,9 @@ class ApiService {
     try {
       print('Le token d\'authentification a expiré — nettoyage en cours.');
       await clearAuthToken();
-      // Rediriger vers l'écran de login via NavigationService
-      NavigationService().navigateToLogin();
+      
+      // Ne pas rediriger automatiquement, laisser l'application gérer
+      // NavigationService().navigateToLogin();
     } catch (e) {
       print('Erreur lors du traitement du token expiré: $e');
     }

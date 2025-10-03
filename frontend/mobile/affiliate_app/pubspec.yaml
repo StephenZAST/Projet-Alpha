@@ -33,8 +33,7 @@ flutter:
 
   # Assets
   assets:
-    - assets/images/
-    - assets/icons/
+    - assets/Alpha_logo.png
 
   # Fonts (optionnel - utilise les fonts système par défaut)
   # fonts:

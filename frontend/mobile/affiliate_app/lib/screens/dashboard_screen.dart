@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
@@ -62,52 +63,200 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 📱 AppBar avec profil
+  /// 📱 AppBar Glass Premium - Modern Design
   Widget _buildAppBar(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         return SliverAppBar(
-          expandedHeight: 120,
+          expandedHeight: 140,
           floating: true,
           pinned: true,
           backgroundColor: Colors.transparent,
           elevation: 0,
           flexibleSpace: FlexibleSpaceBar(
-            background: Container(
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
+            background: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
               ),
-            ),
-          ),
-          title: Text(
-            'Alpha Affiliate',
-            style: AppTextStyles.headlineSmall.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          actions: [
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                );
-              },
-              icon: CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.white.withOpacity(0.2),
-                child: Text(
-                  authProvider.initials,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  decoration: BoxDecoration(
+                    // Effet glass moderne avec couleur Alpha
+                    color: AppColors.primary.withOpacity(0.85),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(24),
+                      bottomRight: Radius.circular(24),
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Row(
+                            children: [
+                              // Logo Alpha Laundry avec effet glass
+                              Container(
+                                width: 48,
+                                height: 48,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.3),
+                                          width: 1.5,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.1),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Image.asset(
+                                          'assets/Alpha_logo.png',
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return Icon(
+                                              Icons.local_laundry_service,
+                                              color: Colors.white,
+                                              size: 24,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Alpha Laundry',
+                                      style: AppTextStyles.headlineSmall.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 24,
+                                        shadows: [
+                                          Shadow(
+                                            color: Colors.black.withOpacity(0.2),
+                                            offset: const Offset(0, 1),
+                                            blurRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Programme Affilié',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // Avatar utilisateur avec effet glass
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const ProfileScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(0.3),
+                                            width: 1.5,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.1),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            authProvider.initials,
+                                            style: AppTextStyles.labelLarge.copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 18,
+                                              shadows: [
+                                                Shadow(
+                                                  color: Colors.black.withOpacity(0.3),
+                                                  offset: const Offset(0, 1),
+                                                  blurRadius: 2,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-          ],
+          ),
+          title: Container(), // Titre vide car contenu dans flexibleSpace
         );
       },
     );
@@ -218,19 +367,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.2,
+          childAspectRatio: 1.1, // Légèrement plus de hauteur pour éviter l'overflow
           children: [
             StatCard(
               title: 'Solde Disponible',
-              value: '${stats['availableBalance'].toFormattedString()} FCFA',
-              subtitle: provider.canWithdraw ? 'Retrait possible' : 'Minimum ${AffiliateConfig.minWithdrawalAmount.toFormattedString()} FCFA',
+              value: '${formatNumber(stats['availableBalance'])} FCFA',
+              subtitle: provider.canWithdraw ? 'Retrait possible' : 'Minimum ${formatNumber(AffiliateConfig.minWithdrawalAmount)} FCFA',
               icon: Icons.account_balance_wallet,
               color: AppColors.success,
               onTap: () => _navigateToWithdrawal(context),
             ),
             StatCard(
               title: 'Gains Totaux',
-              value: '${stats['totalEarnings'].toFormattedString()} FCFA',
+              value: '${formatNumber(stats['totalEarnings'])} FCFA',
               subtitle: 'Depuis le début',
               icon: Icons.trending_up,
               color: AppColors.primary,
@@ -238,7 +387,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             StatCard(
               title: 'Ce Mois',
-              value: '${stats['monthlyEarnings'].toFormattedString()} FCFA',
+              value: '${formatNumber(stats['monthlyEarnings'])} FCFA',
               subtitle: 'Gains mensuels',
               icon: Icons.calendar_month,
               color: AppColors.accent,
@@ -382,14 +531,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 children: [
                   Text(
-                    '${progress['currentEarnings'].toFormattedString()} FCFA',
+                    '${formatNumber(progress['currentEarnings'])} FCFA',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary(context),
                     ),
                   ),
                   const Spacer(),
                   Text(
-                    'Objectif: ${progress['requiredEarnings'].toFormattedString()} FCFA',
+                    'Objectif: ${formatNumber(progress['requiredEarnings'])} FCFA',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.textSecondary(context),
                     ),
@@ -403,17 +552,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🎈 Bouton flottant
+  /// 🎈 Bouton flottant Premium
   Widget _buildFloatingActionButton(BuildContext context) {
-    return FloatingActionButton.extended(
-      onPressed: () => _generateNewCode(context),
-      backgroundColor: AppColors.primary,
-      icon: const Icon(Icons.refresh, color: Colors.white),
-      label: Text(
-        'Nouveau Code',
-        style: AppTextStyles.labelMedium.copyWith(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: AppShadows.floatingShadow,
+      ),
+      child: FloatingActionButton.extended(
+        onPressed: () => _generateNewCode(context),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        icon: Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Icon(
+            Icons.refresh,
+            color: Colors.white,
+            size: 16,
+          ),
+        ),
+        label: Text(
+          'Nouveau Code',
+          style: AppTextStyles.labelMedium.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+          ),
         ),
       ),
     );

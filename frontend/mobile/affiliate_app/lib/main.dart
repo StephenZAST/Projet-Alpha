@@ -45,18 +45,7 @@ class AffiliateApp extends StatelessWidget {
               '/login': (ctx) => const LoginScreen(),
               '/dashboard': (ctx) => const DashboardScreen(),
             },
-            home: FutureBuilder(
-              future: authProvider.initialize(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SplashScreen();
-                }
-
-                return authProvider.isAuthenticated
-                    ? const DashboardScreen()
-                    : const LoginScreen();
-              },
-            ),
+            home: _buildHome(authProvider),
           );
         },
       ),
@@ -181,6 +170,31 @@ class AffiliateApp extends StatelessWidget {
         labelMedium: AppTextStyles.labelMedium,
         labelSmall: AppTextStyles.labelSmall,
       ),
+    );
+  }
+
+  /// 🏠 Construire l'écran d'accueil selon l'état d'authentification
+  Widget _buildHome(AuthProvider authProvider) {
+    // Si l'utilisateur est déjà authentifié, aller directement au dashboard
+    if (authProvider.isAuthenticated) {
+      print('🏠 Utilisateur authentifié, affichage du dashboard');
+      return const DashboardScreen();
+    }
+
+    // Sinon, initialiser et vérifier l'authentification
+    return FutureBuilder(
+      future: authProvider.initialize(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          print('🏠 Initialisation en cours, affichage du splash');
+          return const SplashScreen();
+        }
+
+        print('🏠 Initialisation terminée, isAuthenticated: ${authProvider.isAuthenticated}');
+        return authProvider.isAuthenticated
+            ? const DashboardScreen()
+            : const LoginScreen();
+      },
     );
   }
 }
