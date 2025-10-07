@@ -84,52 +84,63 @@ class PremiumBottomNavigation extends StatelessWidget {
   }) {
     final isActive = currentIndex == index;
     
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap(index);
-      },
-      child: AnimatedContainer(
-        duration: AppAnimations.fast,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive 
-              ? AppColors.primary.withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: AppAnimations.fast,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isActive 
-                    ? AppColors.primary.withOpacity(0.15)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap(index);
+        },
+        child: AnimatedContainer(
+          duration: AppAnimations.fast,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          decoration: BoxDecoration(
+            color: isActive 
+                ? AppColors.primary.withOpacity(0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: AppAnimations.fast,
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: isActive 
+                      ? AppColors.primary.withOpacity(0.15)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isActive ? activeIcon : icon,
+                  color: isActive 
+                      ? AppColors.primary 
+                      : AppColors.textSecondary(context),
+                  size: 20,
+                ),
               ),
-              child: Icon(
-                isActive ? activeIcon : icon,
-                color: isActive 
-                    ? AppColors.primary 
-                    : AppColors.textSecondary(context),
-                size: 24,
+              const SizedBox(height: 2),
+              Flexible(
+                child: AnimatedDefaultTextStyle(
+                  duration: AppAnimations.fast,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: isActive 
+                        ? AppColors.primary 
+                        : AppColors.textTertiary(context),
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 10,
+                  ),
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            AnimatedDefaultTextStyle(
-              duration: AppAnimations.fast,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: isActive 
-                    ? AppColors.primary 
-                    : AppColors.textTertiary(context),
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-              ),
-              child: Text(label),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

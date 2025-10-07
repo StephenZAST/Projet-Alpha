@@ -47,47 +47,55 @@ class ProfileStatsCard extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Grille de statistiques
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.3,
-                children: [
-                  _buildStatCard(
-                    context,
-                    'Commandes',
-                    '${stats.totalOrders}',
-                    Icons.shopping_bag_outlined,
-                    AppColors.primary,
-                    'Total passées',
-                  ),
-                  _buildStatCard(
-                    context,
-                    'Dépensé',
-                    '€${stats.totalSpent.toStringAsFixed(0)}',
-                    Icons.euro_outlined,
-                    AppColors.success,
-                    'Montant total',
-                  ),
-                  _buildStatCard(
-                    context,
-                    'Points',
-                    '${loyaltyInfo['points']}',
-                    Icons.stars_outlined,
-                    AppColors.warning,
-                    'Fidélité',
-                  ),
-                  _buildStatCard(
-                    context,
-                    'Adresses',
-                    '${stats.addressesCount}',
-                    Icons.location_on_outlined,
-                    AppColors.info,
-                    'Configurées',
-                  ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
+                  final itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 12) / crossAxisCount;
+                  final itemHeight = itemWidth * 0.9; // Ratio plus adaptatif
+                  
+                  return GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: itemWidth / itemHeight,
+                    children: [
+                      _buildStatCard(
+                        context,
+                        'Commandes',
+                        '${stats.totalOrders}',
+                        Icons.shopping_bag_outlined,
+                        AppColors.primary,
+                        'Total passées',
+                      ),
+                      _buildStatCard(
+                        context,
+                        'Dépensé',
+                        '€${stats.totalSpent.toStringAsFixed(0)}',
+                        Icons.euro_outlined,
+                        AppColors.success,
+                        'Montant total',
+                      ),
+                      _buildStatCard(
+                        context,
+                        'Points',
+                        '${loyaltyInfo['points']}',
+                        Icons.stars_outlined,
+                        AppColors.warning,
+                        'Fidélité',
+                      ),
+                      _buildStatCard(
+                        context,
+                        'Adresses',
+                        '${stats.addressesCount}',
+                        Icons.location_on_outlined,
+                        AppColors.info,
+                        'Configurées',
+                      ),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: 16),

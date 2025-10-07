@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import '../models/user.dart';
 import '../utils/storage_service.dart';
 import '../../constants.dart';
@@ -13,6 +14,8 @@ class AuthService {
   /// Endpoint: POST /api/auth/login
   Future<AuthResult> login(String email, String password) async {
     try {
+      debugPrint('[AuthService] POST ${ApiConfig.url('/auth/login')}');
+      debugPrint('[AuthService] Payload: email=$email, password=***');
       final response = await http
           .post(
             Uri.parse(ApiConfig.url('/auth/login')),
@@ -26,21 +29,59 @@ class AuthService {
           )
           .timeout(ApiConfig.timeout);
 
+      debugPrint('[AuthService] Status: ${response.statusCode}');
+      debugPrint('[AuthService] Response: ${response.body}');
+
       final data = jsonDecode(response.body);
+      debugPrint('[AuthService] Parsed data: $data');
 
       if (response.statusCode == 200) {
-        final user = User.fromJson(data['user']);
-        final token = data['token'];
+        try {
+          // Gérer les deux formats de réponse possibles du backend
+          Map<String, dynamic> responseData;
+          if (data.containsKey('success') && data['success'] == true) {
+            // Nouveau format: { "success": true, "data": { "user": ..., "token": ... } }
+            responseData = data['data'];
+            debugPrint('[AuthService] Format nouveau détecté');
+          } else if (data.containsKey('data')) {
+            // Ancien format: { "data": { "user": ..., "token": ... } }
+            responseData = data['data'];
+            debugPrint('[AuthService] Format ancien détecté');
+          } else {
+            debugPrint('[AuthService] Format de réponse inattendu: $data');
+            return AuthResult.error('Format de réponse inattendu du serveur');
+          }
 
-        // Sauvegarder les données utilisateur
-        await StorageService.saveUser(user);
-        await StorageService.saveToken(token);
+          debugPrint('[AuthService] Response data: $responseData');
+          
+          if (!responseData.containsKey('user') || !responseData.containsKey('token')) {
+            debugPrint('[AuthService] Données manquantes - user: ${responseData.containsKey('user')}, token: ${responseData.containsKey('token')}');
+            return AuthResult.error('Données utilisateur ou token manquants');
+          }
 
-        return AuthResult.success(user, token);
+          debugPrint('[AuthService] User data: ${responseData['user']}');
+          final user = User.fromJson(responseData['user']);
+          final token = responseData['token'];
+
+          // Sauvegarder les données utilisateur
+          await StorageService.saveUser(user);
+          await StorageService.saveToken(token);
+
+          debugPrint('[AuthService] Connexion réussie, userId=${user.id}');
+          return AuthResult.success(user, token);
+        } catch (e, stack) {
+          debugPrint('[AuthService] Erreur lors du parsing des données: $e');
+          debugPrint('[AuthService] Stack trace: $stack');
+          return AuthResult.error('Erreur lors du traitement des données: ${e.toString()}');
+        }
       } else {
-        return AuthResult.error(data['message'] ?? 'Erreur de connexion');
+        final errorMessage = data['error'] ?? data['message'] ?? 'Erreur de connexion';
+        debugPrint('[AuthService] Erreur backend: $errorMessage');
+        return AuthResult.error(errorMessage);
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[AuthService] Exception: $e');
+      debugPrint(stack.toString());
       return AuthResult.error('Erreur de connexion: ${e.toString()}');
     }
   }
@@ -75,8 +116,8 @@ class AuthService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 201) {
-        final user = User.fromJson(data['user']);
-        final token = data['token'];
+        final user = User.fromJson(data['data']['user']);
+        final token = data['data']['token'];
 
         // Sauvegarder les données utilisateur
         await StorageService.saveUser(user);

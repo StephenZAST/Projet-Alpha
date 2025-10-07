@@ -10,6 +10,24 @@ const router = express.Router();
 // Protection des routes avec authentification 
 router.use(authenticateToken);
 
+// Route pour obtenir le profil de l'utilisateur connecté
+router.get('/profile', asyncHandler(async (req, res) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userData = await AuthService.getCurrentUser(req.user.id);
+    res.json({
+      success: true,
+      data: userData
+    });
+  } catch (error: any) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+}));
+
 // Route pour créer un utilisateur par un admin
 router.post('/',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),

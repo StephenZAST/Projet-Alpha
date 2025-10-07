@@ -98,6 +98,28 @@ router.post('/verify-code', asyncHandler(async (req: Request, res: Response) => 
   } 
 }));
 
+// Route de vérification du token (publique mais nécessite un token)
+router.get('/verify', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: 'Token required' });
+    }
+
+    // Vérifier le token avec le service d'authentification
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    if (decoded) {
+      res.json({ success: true, valid: true });
+    } else {
+      res.status(401).json({ error: 'Invalid token' });
+    }
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+}));
+
 // Routes protégées par authentification
 router.use(authenticateToken);
 

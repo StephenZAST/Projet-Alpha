@@ -9,7 +9,7 @@ import '../../core/utils/storage_service.dart';
 /// avec persistance et synchronisation automatique.
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
-  
+
   User? _currentUser;
   bool _isAuthenticated = false;
   bool _isLoading = false;
@@ -24,16 +24,16 @@ class AuthProvider extends ChangeNotifier {
   /// 🚀 Initialisation du provider
   Future<void> initialize() async {
     _setLoading(true);
-    
+
     try {
       // Vérifier si un utilisateur est déjà connecté
       final user = await StorageService.getUser();
       final token = await StorageService.getToken();
-      
+
       if (user != null && token != null) {
         // Vérifier la validité du token
         final isValidToken = await _authService.verifyToken();
-        
+
         if (isValidToken) {
           _currentUser = user;
           _isAuthenticated = true;
@@ -52,24 +52,30 @@ class AuthProvider extends ChangeNotifier {
 
   /// 🔑 Connexion
   Future<bool> login(String email, String password) async {
+    debugPrint('[AuthProvider] Tentative de connexion pour $email');
     _setLoading(true);
     _clearError();
 
     try {
       final result = await _authService.login(email, password);
-      
-      if (result.isSuccess) {
+      debugPrint(
+          '[AuthProvider] Résultat login: isSuccess=${result.isSuccess}, erreur=${result.error}');
+      if (result.isSuccess && result.user != null) {
         _currentUser = result.user;
         _isAuthenticated = true;
         _clearError();
         notifyListeners();
+        debugPrint('[AuthProvider] Connexion réussie pour $email');
         return true;
       } else {
         _setError(result.error ?? 'Erreur de connexion');
+        debugPrint('[AuthProvider] Connexion échouée: ${result.error}');
         return false;
       }
-    } catch (e) {
+    } catch (e, stack) {
       _setError('Erreur de connexion: ${e.toString()}');
+      debugPrint('[AuthProvider] Exception lors de la connexion: $e');
+      debugPrint(stack.toString());
       return false;
     } finally {
       _setLoading(false);
@@ -95,7 +101,7 @@ class AuthProvider extends ChangeNotifier {
         lastName: lastName,
         phone: phone,
       );
-      
+
       if (result.isSuccess) {
         _currentUser = result.user;
         _isAuthenticated = true;
@@ -117,7 +123,7 @@ class AuthProvider extends ChangeNotifier {
   /// 🚪 Déconnexion
   Future<void> logout() async {
     _setLoading(true);
-    
+
     try {
       await _authService.logout();
       await _clearUserData();
@@ -146,7 +152,7 @@ class AuthProvider extends ChangeNotifier {
   /// 👤 Mettre à jour le profil utilisateur
   Future<bool> updateUserProfile(User updatedUser) async {
     _setLoading(true);
-    
+
     try {
       await StorageService.saveUser(updatedUser);
       _currentUser = updatedUser;
@@ -168,11 +174,11 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       final success = await _authService.forgotPassword(email);
-      
+
       if (!success) {
         _setError('Erreur lors de l\'envoi de l\'email');
       }
-      
+
       return success;
     } catch (e) {
       _setError('Erreur: ${e.toString()}');
@@ -187,19 +193,21 @@ class AuthProvider extends ChangeNotifier {
     // Vérifier l'authentification et l'adresse par défaut
     return isAuthenticated && hasDefaultAddress;
   }
-  
+
   bool get hasDefaultAddress => _currentUser?.defaultAddress != null;
-  
-  bool get hasDefaultPaymentMethod => _currentUser?.defaultPaymentMethod != null;
+
+  bool get hasDefaultPaymentMethod =>
+      _currentUser?.defaultPaymentMethod != null;
 
   String get userDisplayName => _currentUser?.fullName ?? 'Utilisateur';
-  
+
   String get userInitials => _currentUser?.initials ?? 'U';
 
   /// 🎁 Informations de fidélité
   int get loyaltyPoints => _currentUser?.profile?.loyaltyInfo?.points ?? 0;
-  
-  String get loyaltyTier => _currentUser?.profile?.loyaltyInfo?.tier ?? 'Bronze';
+
+  String get loyaltyTier =>
+      _currentUser?.profile?.loyaltyInfo?.tier ?? 'Bronze';
 
   /// 🔧 Méthodes privées
   void _setLoading(bool loading) {

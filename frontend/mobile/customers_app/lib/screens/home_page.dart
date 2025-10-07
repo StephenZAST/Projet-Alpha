@@ -721,39 +721,47 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ],
         ),
         const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.2,
-          children: [
-            _buildServiceCard(
-              'Nettoyage à Sec',
-              'Service professionnel',
-              Icons.dry_cleaning,
-              AppColors.primary,
-            ),
-            _buildServiceCard(
-              'Repassage',
-              'Finition parfaite',
-              Icons.iron,
-              AppColors.warning,
-            ),
-            _buildServiceCard(
-              'Retouches',
-              'Ajustements sur mesure',
-              Icons.content_cut,
-              AppColors.info,
-            ),
-            _buildServiceCard(
-              'Express 24h',
-              'Livraison rapide',
-              Icons.flash_on,
-              AppColors.success,
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+            final itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 12) / crossAxisCount;
+            final itemHeight = itemWidth * 0.85; // Ratio plus adaptatif
+            
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: itemWidth / itemHeight,
+              children: [
+                _buildServiceCard(
+                  'Nettoyage à Sec',
+                  'Service professionnel',
+                  Icons.dry_cleaning,
+                  AppColors.primary,
+                ),
+                _buildServiceCard(
+                  'Repassage',
+                  'Finition parfaite',
+                  Icons.iron,
+                  AppColors.warning,
+                ),
+                _buildServiceCard(
+                  'Retouches',
+                  'Ajustements sur mesure',
+                  Icons.content_cut,
+                  AppColors.info,
+                ),
+                _buildServiceCard(
+                  'Express 24h',
+                  'Livraison rapide',
+                  Icons.flash_on,
+                  AppColors.success,
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -762,7 +770,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget _buildServiceCard(
       String title, String subtitle, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(16),
@@ -780,36 +788,46 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
               color: color,
-              size: 28,
+              size: 22,
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: AppTextStyles.labelLarge.copyWith(
-              color: AppColors.textPrimary(context),
-              fontWeight: FontWeight.w600,
+          const SizedBox(height: 8),
+          Flexible(
+            child: Text(
+              title,
+              style: AppTextStyles.labelMedium.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary(context),
+          const SizedBox(height: 2),
+          Flexible(
+            child: Text(
+              subtitle,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary(context),
+                fontSize: 11,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),

@@ -47,16 +47,14 @@ class User {
     return User(
       id: json['id'],
       email: json['email'],
-      firstName: json['firstName'],
-      lastName: json['lastName'],
+      // Gérer les deux formats de noms possibles du backend
+      firstName: json['firstName'] ?? json['first_name'] ?? '',
+      lastName: json['lastName'] ?? json['last_name'] ?? '',
       phone: json['phone'],
-      role: UserRole.values.firstWhere(
-        (role) => role.name.toLowerCase() == json['role'].toLowerCase(),
-        orElse: () => UserRole.client,
-      ),
+      role: _parseUserRole(json['role']),
       isActive: json['isActive'] ?? true,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: DateTime.parse(json['createdAt'] ?? json['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(json['updatedAt'] ?? json['updated_at'] ?? DateTime.now().toIso8601String()),
       profile: json['profile'] != null
           ? UserProfile.fromJson(json['profile'])
           : null,
@@ -392,5 +390,28 @@ class LoyaltyInfo {
       'pointsToNextTier': pointsToNextTier,
       'totalSpent': totalSpent,
     };
+  }
+}
+
+/// 🔧 Fonction utilitaire pour parser les rôles utilisateur
+UserRole _parseUserRole(dynamic roleValue) {
+  if (roleValue == null) return UserRole.client;
+  
+  final roleString = roleValue.toString().toLowerCase();
+  
+  switch (roleString) {
+    case 'client':
+      return UserRole.client;
+    case 'admin':
+      return UserRole.admin;
+    case 'super_admin':
+    case 'superadmin':
+      return UserRole.superAdmin;
+    case 'delivery':
+      return UserRole.delivery;
+    case 'affiliate':
+      return UserRole.affiliate;
+    default:
+      return UserRole.client;
   }
 }

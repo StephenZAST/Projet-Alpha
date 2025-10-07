@@ -179,39 +179,47 @@ class _ServicesScreenState extends State<ServicesScreen>
           ),
         ),
         const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.2,
-          children: [
-            _buildCategoryCard(
-              'Nettoyage à Sec',
-              'Vêtements délicats',
-              Icons.dry_cleaning,
-              AppColors.primary,
-            ),
-            _buildCategoryCard(
-              'Repassage',
-              'Finition parfaite',
-              Icons.iron,
-              AppColors.warning,
-            ),
-            _buildCategoryCard(
-              'Retouches',
-              'Ajustements précis',
-              Icons.content_cut,
-              AppColors.info,
-            ),
-            _buildCategoryCard(
-              'Express 24h',
-              'Service rapide',
-              Icons.flash_on,
-              AppColors.success,
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
+            final itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 12) / crossAxisCount;
+            final itemHeight = itemWidth * 0.85; // Ratio plus adaptatif
+            
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: itemWidth / itemHeight,
+              children: [
+                _buildCategoryCard(
+                  'Nettoyage à Sec',
+                  'Vêtements délicats',
+                  Icons.dry_cleaning,
+                  AppColors.primary,
+                ),
+                _buildCategoryCard(
+                  'Repassage',
+                  'Finition parfaite',
+                  Icons.iron,
+                  AppColors.warning,
+                ),
+                _buildCategoryCard(
+                  'Retouches',
+                  'Ajustements précis',
+                  Icons.content_cut,
+                  AppColors.info,
+                ),
+                _buildCategoryCard(
+                  'Express 24h',
+                  'Service rapide',
+                  Icons.flash_on,
+                  AppColors.success,
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
