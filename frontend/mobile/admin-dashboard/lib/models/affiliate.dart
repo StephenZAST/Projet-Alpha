@@ -411,6 +411,113 @@ class AffiliateStats {
       '${averageCommissionRate.toStringAsFixed(1)}%';
 }
 
+class AffiliateClientLink {
+  final String id;
+  final String affiliateId;
+  final String clientId;
+  final DateTime startDate;
+  final DateTime? endDate;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final AffiliateProfile? affiliate;
+  final User? client;
+
+  const AffiliateClientLink({
+    required this.id,
+    required this.affiliateId,
+    required this.clientId,
+    required this.startDate,
+    this.endDate,
+    required this.isActive,
+    required this.createdAt,
+    required this.updatedAt,
+    this.affiliate,
+    this.client,
+  });
+
+  factory AffiliateClientLink.fromJson(Map<String, dynamic> json) {
+    try {
+      print('[AffiliateClientLink] Parsing JSON: ${json['id']}');
+
+      // Créer un objet affiliate simplifié pour éviter les erreurs de parsing
+      AffiliateProfile? affiliate;
+      if (json['affiliate'] != null) {
+        try {
+          affiliate = AffiliateProfile.fromJson(json['affiliate']);
+        } catch (e) {
+          print(
+              '[AffiliateClientLink] Error parsing affiliate, creating minimal one: $e');
+          // Créer un affiliate minimal avec les données disponibles
+          final affiliateData = json['affiliate'] as Map<String, dynamic>;
+          final userData = affiliateData['users'] ?? affiliateData['user'];
+          final user = userData != null ? User.fromJson(userData) : null;
+
+          affiliate = AffiliateProfile(
+            id: affiliateData['id'] as String? ?? '',
+            userId: affiliateData['user_id'] as String? ??
+                affiliateData['id'] as String? ??
+                '',
+            affiliateCode: affiliateData['affiliate_code'] as String? ?? '',
+            commissionRate: 0.0,
+            commissionBalance: 0.0,
+            totalEarned: 0.0,
+            monthlyEarnings: 0.0,
+            isActive: true,
+            status: AffiliateStatus.ACTIVE,
+            totalReferrals: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            user: user,
+          );
+        }
+      }
+
+      final link = AffiliateClientLink(
+        id: json['id'] as String,
+        affiliateId: json['affiliate_id'] as String,
+        clientId: json['client_id'] as String,
+        startDate: DateTime.parse(json['start_date'] as String),
+        endDate: json['end_date'] != null
+            ? DateTime.parse(json['end_date'] as String)
+            : null,
+        isActive: json['isActive'] ?? true,
+        createdAt: DateTime.parse(json['created_at'] as String),
+        updatedAt: DateTime.parse(json['updated_at'] as String),
+        affiliate: affiliate,
+        client: json['client'] != null ? User.fromJson(json['client']) : null,
+      );
+
+      print('[AffiliateClientLink] Successfully parsed link: ${link.id}');
+      return link;
+    } catch (e) {
+      print('[AffiliateClientLink] Error parsing JSON: $e');
+      print('[AffiliateClientLink] Problematic JSON: $json');
+      rethrow;
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'affiliateId': affiliateId,
+      'clientId': clientId,
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
+      'isActive': isActive,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  String get affiliateName => affiliate?.fullName ?? 'Affilié inconnu';
+  String get clientName => client != null
+      ? '${client!.firstName} ${client!.lastName}'
+      : 'Client inconnu';
+  String get statusLabel => isActive ? 'Actif' : 'Inactif';
+  Color get statusColor => isActive ? AppColors.success : AppColors.gray400;
+}
+
 // Enums
 enum AffiliateStatus {
   PENDING,

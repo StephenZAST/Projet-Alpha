@@ -51,7 +51,7 @@ class AffiliateService {
     Map<String, dynamic>? notificationPreferences,
   }) async {
     final data = <String, dynamic>{};
-    
+
     if (phone != null) data['phone'] = phone;
     if (notificationPreferences != null) {
       data['notificationPreferences'] = notificationPreferences;
@@ -70,11 +70,29 @@ class AffiliateService {
     });
   }
 
+  /// � Récupérer les clients liés
+  /// GET /api/affiliate/linked-clients
+  Future<ApiResponse<List<LinkedClient>>> getLinkedClients() async {
+    final response = await _apiService.get<Map<String, dynamic>>(
+      '${ApiConfig.affiliateEndpoint}/linked-clients',
+    );
+
+    return response.map((data) {
+      if (data['data'] != null) {
+        final clients = (data['data'] as List)
+            .map((item) => LinkedClient.fromJson(item as Map<String, dynamic>))
+            .toList();
+        return clients;
+      }
+      return [];
+    });
+  }
+
   /// 💰 Récupérer les commissions
   /// GET /api/affiliate/commissions
   Future<ApiResponse<PaginatedCommissions>> getCommissions({
     int page = 1,
-    int limit = 10,
+    int limit = 20,
   }) async {
     final response = await _apiService.get<Map<String, dynamic>>(
       ApiConfig.commissions,
@@ -85,16 +103,22 @@ class AffiliateService {
     );
 
     return response.map((data) {
-      final commissions = (data['data'] as List)
-          .map((item) => CommissionTransaction.fromJson(item as Map<String, dynamic>))
-          .toList();
-      
-      final pagination = data['pagination'] as Map<String, dynamic>?;
-      
-      return PaginatedCommissions(
-        data: commissions,
-        pagination: pagination != null ? PaginationInfo.fromJson(pagination) : null,
-      );
+      if (data['data'] != null) {
+        final commissions = (data['data'] as List)
+            .map((item) => CommissionTransaction.fromJson(item as Map<String, dynamic>))
+            .toList();
+
+        PaginationInfo? pagination;
+        if (data['pagination'] != null) {
+          pagination = PaginationInfo.fromJson(data['pagination'] as Map<String, dynamic>);
+        }
+
+        return PaginatedCommissions(
+          data: commissions,
+          pagination: pagination,
+        );
+      }
+      return PaginatedCommissions(data: [], pagination: null);
     });
   }
 
@@ -112,7 +136,8 @@ class AffiliateService {
 
     return response.map((data) {
       if (data['success'] == true && data['data'] != null) {
-        return CommissionTransaction.fromJson(data['data'] as Map<String, dynamic>);
+        return CommissionTransaction.fromJson(
+            data['data'] as Map<String, dynamic>);
       }
       throw Exception('Format de réponse invalide');
     });
@@ -128,7 +153,8 @@ class AffiliateService {
     return response.map((data) {
       if (data['data'] != null) {
         return (data['data'] as List)
-            .map((item) => AffiliateReferral.fromJson(item as Map<String, dynamic>))
+            .map((item) =>
+                AffiliateReferral.fromJson(item as Map<String, dynamic>))
             .toList();
       }
       return <AffiliateReferral>[];
@@ -146,9 +172,10 @@ class AffiliateService {
       final levels = (data['data']['levels'] as List)
           .map((item) => AffiliateLevel.fromJson(item as Map<String, dynamic>))
           .toList();
-      
-      final additionalInfo = data['data']['additionalInfo'] as Map<String, dynamic>?;
-      
+
+      final additionalInfo =
+          data['data']['additionalInfo'] as Map<String, dynamic>?;
+
       return LevelsResponse(
         levels: levels,
         additionalInfo: additionalInfo,

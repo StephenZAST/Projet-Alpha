@@ -6,7 +6,7 @@ import '../screens/categories/categories_screen.dart';
 import '../screens/orders/orders_screen.dart';
 import '../screens/services/services_screen.dart';
 import '../screens/users/users_screen.dart';
-import '../screens/affiliates/affiliates_screen.dart';
+import '../screens/affiliates/affiliate_management_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/services/service_types_screen.dart';
@@ -30,16 +30,16 @@ class ScreenManager extends GetxController {
   /// Obtient un écran de manière sécurisée avec cache
   Widget getScreen(int index) {
     print('[ScreenManager] getScreen called with index: $index');
-    
+
     // Mettre à jour l'index actuel
     currentScreenIndex.value = index;
-    
+
     // Pour ArticlesScreen, toujours créer une nouvelle instance pour éviter les problèmes
     if (index == MenuIndices.articles) {
       print('[ScreenManager] Creating fresh ArticlesScreen instance');
       return _createScreen(index);
     }
-    
+
     // Vérifier le cache d'abord pour les autres écrans
     if (_screenCache.containsKey(index)) {
       print('[ScreenManager] Returning cached screen for index: $index');
@@ -49,7 +49,7 @@ class ScreenManager extends GetxController {
     // Créer et cacher le nouvel écran
     Widget screen = _createScreen(index);
     _screenCache[index] = screen;
-    
+
     print('[ScreenManager] Created and cached new screen for index: $index');
     return screen;
   }
@@ -57,7 +57,7 @@ class ScreenManager extends GetxController {
   /// Crée un nouvel écran basé sur l'index
   Widget _createScreen(int index) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    
+
     switch (index) {
       case MenuIndices.dashboard:
         return DashboardScreen(key: Key('dashboard_$timestamp'));
@@ -72,7 +72,8 @@ class ScreenManager extends GetxController {
       case MenuIndices.serviceTypes:
         return _wrapWithKey(ServiceTypesScreen(), 'service_types_$timestamp');
       case MenuIndices.serviceArticleCouples:
-        return _wrapWithKey(ServiceArticleCouplesScreen(), 'service_couples_$timestamp');
+        return _wrapWithKey(
+            ServiceArticleCouplesScreen(), 'service_couples_$timestamp');
       case MenuIndices.users:
         return _wrapWithKey(UsersScreen(), 'users_$timestamp');
       case MenuIndices.profile:
@@ -80,11 +81,13 @@ class ScreenManager extends GetxController {
       case MenuIndices.notifications:
         return _wrapWithKey(NotificationsScreen(), 'notifications_$timestamp');
       case MenuIndices.subscriptions:
-        return _wrapWithKey(SubscriptionManagementPage(), 'subscriptions_$timestamp');
+        return _wrapWithKey(
+            SubscriptionManagementPage(), 'subscriptions_$timestamp');
       case MenuIndices.offers:
         return _wrapWithKey(OffersScreen(), 'offers_$timestamp');
       case MenuIndices.affiliates:
-        return _wrapWithKey(AffiliatesScreen(), 'affiliates_$timestamp');
+        return _wrapWithKey(
+            AffiliateManagementScreen(), 'affiliates_$timestamp');
       case MenuIndices.loyalty:
         return _wrapWithKey(LoyaltyScreen(), 'loyalty_$timestamp');
       case MenuIndices.delivery:
@@ -118,7 +121,8 @@ class ScreenManager extends GetxController {
   void cleanupUnusedScreens() {
     final currentIndex = currentScreenIndex.value;
     _screenCache.removeWhere((index, screen) => index != currentIndex);
-    print('[ScreenManager] Cleaned up unused screens, kept index: $currentIndex');
+    print(
+        '[ScreenManager] Cleaned up unused screens, kept index: $currentIndex');
   }
 
   /// Obtient le nom de l'écran pour le debug

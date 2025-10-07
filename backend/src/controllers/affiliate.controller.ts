@@ -4,37 +4,78 @@ import { AffiliateService, AffiliateWithdrawalService } from '../services/affili
 import { validatePaginationParams } from '../utils/pagination';
 import supabase from '../config/database';
 import { INDIRECT_COMMISSION_RATE, PROFIT_MARGIN_RATE } from '../services/affiliate.service/constants';
-import { NotificationSettings, AffiliateProfile } from '../models/types';
+import { NotificationSettings, AffiliateProfile, CommissionTransactionDB } from '../models/types';
 
 const prisma = new PrismaClient();
 
 export class AffiliateController {
   static async getProfile(req: Request, res: Response) {
     try {
+      console.log('[AffiliateController] getProfile called for user:', req.user?.id);
+      
       const userId = req.user?.id;
-      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-      const profile = await AffiliateService.getProfile(userId);
-      if (!profile) {
-        return res.status(404).json({ error: 'Profile not found' });
+      if (!userId) {
+        console.log('[AffiliateController] No userId found in request');
+        return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      const recentTransactions = await prisma.commission_transactions.findMany({
-        where: { affiliate_id: profile.id },
-        orderBy: { created_at: 'desc' },
-        take: 5
-      });
+      console.log('[AffiliateController] Fetching profile for userId:', userId);
+      const profile = await AffiliateService.getProfile(userId);
+      
+      if (!profile) {
+        console.log('[AffiliateController] No profile found for userId:', userId);
+        return res.status(404).json({ 
+          error: 'Profile not found',
+          message: 'No affiliate profile exists for this user. Please create one first.'
+        });
+      }
 
+      console.log('[AffiliateController] Profile found, fetching recent transactions');
+      
+      // Récupérer les transactions récentes de manière sécurisée
+      let recentTransactions: CommissionTransactionDB[] = [];
+      
+      try {
+        recentTransactions = await prisma.commission_transactions.findMany({
+          where: { affiliate_id: profile.id },
+          orderBy: { created_at: 'desc' },
+          take: 5,
+          select: {
+            id: true,
+            affiliate_id: true,
+            amount: true,
+            status: true,
+            created_at: true,
+            updated_at: true,
+            order_id: true
+          }
+        });
+        console.log('[AffiliateController] Found', recentTransactions.length, 'recent transactions');
+      } catch (transactionError) {
+        console.warn('[AffiliateController] Error fetching transactions:', transactionError);
+        // Continue sans les transactions si erreur
+      }
+
+      const responseData = {
+        ...profile,
+        transactionsCount: recentTransactions?.length || 0,
+        recentTransactions: recentTransactions.map(t => ({
+          ...t,
+          amount: Number(t.amount)
+        }))
+      };
+
+      console.log('[AffiliateController] Sending response with profile data');
       res.json({
         success: true,
-        data: {
-          ...profile,
-          transactionsCount: recentTransactions?.length || 0,
-          recentTransactions
-        }
+        data: responseData
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error('[AffiliateController] getProfile error:', error);
+      res.status(500).json({ 
+        error: error.message || 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   }
 
@@ -371,6 +412,13 @@ export class AffiliateController {
       const affiliateCode = await AffiliateService.generateCode(userId);
       res.json({ success: true, data: { affiliateCode } });
     } catch (error: any) {
+      // Gestion d'erreur explicite pour code déjà existant
+      if (error.message && error.message.includes('already exists')) {
+        return res.status(409).json({ error: 'Affiliate code already exists for this user', code: 'AFFILIATE_CODE_EXISTS' });
+      }
+      if (error.message && error.message.includes('not found')) {
+        return res.status(404).json({ error: 'Affiliate profile not found', code: 'AFFILIATE_PROFILE_NOT_FOUND' });
+      }
       res.status(500).json({ error: error.message });
     }
   }

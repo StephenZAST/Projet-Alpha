@@ -3,6 +3,7 @@ import { AuthService } from '../services/auth.service';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 import { UserController } from '../controllers/user.controller';
+import clientAffiliateLinkRoutes from './clientAffiliateLink.routes';
 
 const router = express.Router();
 
@@ -162,5 +163,7 @@ router.get(
 );
 
 // Note : Suppression de la route PUT /users/:userId car elle existe déjà dans auth.routes.ts
+
+router.use(clientAffiliateLinkRoutes);
 
 export default router;

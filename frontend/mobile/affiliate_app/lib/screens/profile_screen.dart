@@ -4,6 +4,11 @@ import '../constants.dart';
 import '../providers/affiliate_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/notification_system.dart';
+import 'profile/personal_info_screen.dart';
+import 'profile/notification_settings_screen.dart';
+import 'profile/level_history_screen.dart';
+import 'profile/support_screen.dart';
 
 /// 👤 Écran Profil - Alpha Affiliate App
 ///
@@ -159,25 +164,38 @@ class ProfileScreen extends StatelessWidget {
           context,
           'Informations Personnelles',
           Icons.person_outline,
-          () => _showComingSoon(context),
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const PersonalInfoScreen()),
+          ),
         ),
         _buildMenuItem(
           context,
           'Paramètres de Notification',
           Icons.notifications_outlined,
-          () => _showComingSoon(context),
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const NotificationSettingsScreen()),
+          ),
         ),
         _buildMenuItem(
           context,
           'Historique des Niveaux',
           Icons.timeline,
-          () => _showComingSoon(context),
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LevelHistoryScreen()),
+          ),
         ),
         _buildMenuItem(
           context,
           'Support & Aide',
           Icons.help_outline,
-          () => _showComingSoon(context),
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SupportScreen()),
+          ),
         ),
         _buildMenuItem(
           context,
@@ -195,44 +213,65 @@ class ProfileScreen extends StatelessWidget {
     IconData icon,
     VoidCallback onTap,
   ) {
+    // Couleurs selon la nature de l'icône pour un effet glassy moderne
+    Color _getIconColor(IconData icon) {
+      switch (icon) {
+        case Icons.person_outline:
+          return AppColors.primary; // Bleu pour informations personnelles
+        case Icons.notifications_outlined:
+          return AppColors.warning; // Orange pour notifications
+        case Icons.timeline:
+          return AppColors.success; // Vert pour historique niveaux
+        case Icons.help_outline:
+          return AppColors.error; // Rouge pour support
+        case Icons.info_outline:
+          return AppColors.secondary; // Violet pour à propos
+        default:
+          return AppColors.primary;
+      }
+    }
+
+    final iconColor = _getIconColor(icon);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: GlassContainer(
-        onTap: onTap,
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.gray100,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: AppColors.textSecondary(context),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textPrimary(context),
-                  fontWeight: FontWeight.w500,
+        margin: const EdgeInsets.only(bottom: 8),
+        child: GlassContainer(
+          child: InkWell(
+            onTap: onTap,
+            child: Row(
+              children: [
+                GlassContainer(
+                  width: 40,
+                  height: 40,
+                  padding: EdgeInsets.zero,
+                  alignment: Alignment.center,
+                  color: iconColor.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 20,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textPrimary(context),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppColors.textTertiary(context),
+                  size: 16,
+                ),
+              ],
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: AppColors.textTertiary(context),
-              size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 
   Widget _buildLogoutButton(BuildContext context, AuthProvider authProvider) {
@@ -243,15 +282,6 @@ class ProfileScreen extends StatelessWidget {
         icon: Icons.logout,
         color: AppColors.error,
         onPressed: () => _showLogoutDialog(context, authProvider),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fonctionnalité bientôt disponible'),
-        backgroundColor: AppColors.info,
       ),
     );
   }
@@ -299,9 +329,17 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          PremiumButton(
-            text: 'Fermer',
-            onPressed: () => Navigator.pop(context),
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0, bottom: 8.0),
+            child: SizedBox(
+              width: 110,
+              height: 44,
+              child: PremiumButton(
+                text: 'Fermer',
+                onPressed: () => Navigator.pop(context),
+                isOutlined: true,
+              ),
+            ),
           ),
         ],
       ),
@@ -346,7 +384,18 @@ class ProfileScreen extends StatelessWidget {
               Navigator.pop(context);
               await authProvider.logout();
               context.read<AffiliateProvider>().logout();
-              // TODO: Naviguer vers l'écran de login
+
+              NotificationManager().showSuccess(
+                context,
+                title: 'Déconnexion Réussie',
+                message: 'Vous avez été déconnecté avec succès',
+              );
+
+              // Navigation vers l'écran de login
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/login',
+                (route) => false,
+              );
             },
           ),
         ],

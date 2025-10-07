@@ -201,25 +201,40 @@ export class AffiliateProfileService {
     byId: boolean = false
   ): Promise<AffiliateProfile | null> {
     try {
+      console.log('[AffiliateProfileService] Getting profile for:', { identifier, byId });
+      
       const where = byId 
         ? { id: identifier }
         : { userId: identifier };
+
+      console.log('[AffiliateProfileService] Query where:', where);
 
       const profile = await prisma.affiliate_profiles.findUnique({
         where,
         include: {
           affiliate_levels: true,
-          users: true
+          users: {
+            select: {
+              id: true,
+              email: true,
+              first_name: true,
+              last_name: true,
+              phone: true
+            }
+          }
         }
       });
 
+      console.log('[AffiliateProfileService] Found profile:', profile ? 'YES' : 'NO');
+
       if (!profile) return null;
 
-      return {
+      // Formatage cohérent avec les autres méthodes
+      const formattedProfile: AffiliateProfile = {
         id: profile.id,
         userId: profile.userId,
         affiliateCode: profile.affiliate_code,
-        parent_affiliate_id: profile.parent_affiliate_id || undefined, // Utiliser le nom exact
+        parent_affiliate_id: profile.parent_affiliate_id || undefined,
         commissionBalance: Number(profile.commission_balance),
         totalEarned: Number(profile.total_earned),
         createdAt: profile.created_at || new Date(),
@@ -229,8 +244,33 @@ export class AffiliateProfileService {
         isActive: profile.is_active || false,
         totalReferrals: profile.total_referrals || 0,
         monthlyEarnings: Number(profile.monthly_earnings),
-        levelId: profile.level_id || undefined
+        levelId: profile.level_id || undefined,
+        // Ajouter les informations utilisateur si disponibles
+        user: profile.users ? {
+          id: profile.users.id,
+          email: profile.users.email,
+          firstName: profile.users.first_name,
+          lastName: profile.users.last_name,
+          phone: profile.users.phone || undefined
+        } : undefined,
+        // Ajouter les informations de niveau si disponibles
+        level: profile.affiliate_levels ? {
+          id: profile.affiliate_levels.id,
+          name: profile.affiliate_levels.name,
+          minEarnings: Number(profile.affiliate_levels.minEarnings),
+          commissionRate: Number(profile.affiliate_levels.commissionRate),
+          createdAt: profile.affiliate_levels.created_at || new Date(),
+          updatedAt: profile.affiliate_levels.updated_at || new Date()
+        } : undefined
       };
+
+      console.log('[AffiliateProfileService] Returning formatted profile:', {
+        id: formattedProfile.id,
+        userId: formattedProfile.userId,
+        affiliateCode: formattedProfile.affiliateCode
+      });
+
+      return formattedProfile;
     } catch (error) {
       console.error('[AffiliateProfileService] Get affiliate profile error:', error);
       throw error;

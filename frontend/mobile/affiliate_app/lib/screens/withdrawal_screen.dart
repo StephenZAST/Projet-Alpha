@@ -1,9 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
 import '../providers/affiliate_provider.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/notification_system.dart';
 
 /// 💸 Écran Retrait - Alpha Affiliate App
 ///
@@ -230,41 +232,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   return null;
                 },
               ),
-              
-              const SizedBox(height: 16),
-              
-              // Boutons de montant rapide
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildQuickAmountButton(
-                      '25%',
-                      provider.availableBalance * 0.25,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildQuickAmountButton(
-                      '50%',
-                      provider.availableBalance * 0.5,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildQuickAmountButton(
-                      '75%',
-                      provider.availableBalance * 0.75,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildQuickAmountButton(
-                      'Tout',
-                      provider.availableBalance,
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -399,40 +366,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     );
   }
 
-  /// 🎯 Bouton de montant rapide
-  Widget _buildQuickAmountButton(String label, double amount) {
-    final isEnabled = amount >= AffiliateConfig.minWithdrawalAmount;
-    
-    return GestureDetector(
-      onTap: isEnabled ? () {
-        _amountController.text = amount.toInt().toString();
-        _validateAmount();
-      } : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isEnabled 
-              ? AppColors.primary.withOpacity(0.1)
-              : AppColors.gray200.withOpacity(0.5),
-          borderRadius: AppRadius.borderRadiusSM,
-          border: Border.all(
-            color: isEnabled 
-                ? AppColors.primary.withOpacity(0.3)
-                : AppColors.gray300,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: isEnabled ? AppColors.primary : AppColors.textTertiary(context),
-            fontWeight: FontWeight.w600,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
+  
   /// 🚀 Bouton de soumission
   Widget _buildSubmitButton(AffiliateProvider provider) {
     return SizedBox(
@@ -458,19 +392,18 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     final success = await provider.requestWithdrawal(_enteredAmount);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Demande de retrait envoyée avec succès'),
-          backgroundColor: AppColors.success,
-        ),
+      // Utiliser le système de notifications premium
+      NotificationManager().showWithdrawal(
+        context,
+        title: 'Demande Envoyée',
+        message: 'Votre demande de retrait de ${formatNumber(_enteredAmount)} FCFA a été envoyée avec succès',
       );
       Navigator.pop(context);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.withdrawalError ?? 'Erreur lors de la demande'),
-          backgroundColor: AppColors.error,
-        ),
+      NotificationManager().showError(
+        context,
+        title: 'Erreur de Retrait',
+        message: provider.withdrawalError ?? 'Erreur lors de la demande de retrait',
       );
     }
   }
@@ -547,6 +480,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
           ),
           PremiumButton(
             text: 'Confirmer',
+            icon: Icons.check,
             onPressed: () => Navigator.pop(context, true),
           ),
         ],

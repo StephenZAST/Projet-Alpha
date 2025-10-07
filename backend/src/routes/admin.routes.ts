@@ -1,4 +1,5 @@
 import subscriptionRoutes from './subscription.routes';
+import affiliateLinkAdminRoutes from './affiliateLinkAdmin.routes';
 import express, { Request, Response, NextFunction } from 'express';
 import { AdminController } from '../controllers/admin.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
@@ -16,6 +17,40 @@ router.use(authenticateToken as express.RequestHandler);
 
 // Register subscription management routes under /admin/subscriptions
 router.use('/subscriptions', subscriptionRoutes);
+
+// Routes de gestion des affiliés
+router.get('/affiliates', authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler, asyncHandler(async (req: Request, res: Response) => {
+  const { AffiliateController } = await import('../controllers/affiliate.controller');
+  await AffiliateController.getAllAffiliates(req, res);
+}));
+
+router.get('/affiliates/stats', authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler, asyncHandler(async (req: Request, res: Response) => {
+  const { AffiliateController } = await import('../controllers/affiliate.controller');
+  await AffiliateController.getAffiliateStats(req, res);
+}));
+
+router.get('/affiliates/withdrawals/pending', authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler, asyncHandler(async (req: Request, res: Response) => {
+  const { AffiliateController } = await import('../controllers/affiliate.controller');
+  await AffiliateController.getPendingWithdrawals(req, res);
+}));
+
+router.get('/affiliates/withdrawals', authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler, asyncHandler(async (req: Request, res: Response) => {
+  const { AffiliateController } = await import('../controllers/affiliate.controller');
+  await AffiliateController.getWithdrawals(req, res);
+}));
+
+router.patch('/affiliates/withdrawals/:withdrawalId/reject', authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler, asyncHandler(async (req: Request, res: Response) => {
+  const { AffiliateController } = await import('../controllers/affiliate.controller');
+  await AffiliateController.rejectWithdrawal(req, res);
+}));
+
+router.patch('/affiliates/withdrawals/:withdrawalId/approve', authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler, asyncHandler(async (req: Request, res: Response) => {
+  const { AffiliateController } = await import('../controllers/affiliate.controller');
+  await AffiliateController.approveWithdrawal(req, res);
+}));
+
+// Routes de liaison affilié-client (CRUD)
+router.use('/affiliate-links', affiliateLinkAdminRoutes);
 
 // Routes de gestion des commandes
 router.get(

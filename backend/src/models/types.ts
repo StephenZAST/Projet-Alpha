@@ -102,6 +102,13 @@ export interface AffiliateProfile {
     createdAt: Date;
     updatedAt: Date;
   };
+  user?: {               // Ajout de la propriété user
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string | null;
+  };
   totalReferrals?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -123,6 +130,16 @@ export interface CommissionTransaction {
   amount: number;
   status: 'PENDING' | 'APPROVED' | 'PAID' | 'REJECTED';
   createdAt: Date;
+}
+
+export interface CommissionTransactionDB {
+  id: string;
+  affiliate_id: string | null;
+  order_id: string | null;
+  amount: any; // Prisma Decimal type
+  status: any; // Prisma enum type
+  created_at: Date | null;
+  updated_at: Date | null;
 }
 
 // Loyalty related types

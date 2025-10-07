@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/affiliate.dart';
+import '../models/user.dart';
 import '../services/affiliate_service.dart';
+import '../services/user_service.dart';
 import '../utils/token_debug.dart';
 
 class AffiliatesController extends GetxController {
@@ -44,6 +46,18 @@ class AffiliatesController extends GetxController {
   // Affilié sélectionné pour les détails
   final selectedAffiliate = Rxn<AffiliateProfile>();
   final affiliateReferrals = <AffiliateProfile>[].obs;
+
+  // Liaisons affilié-client
+  final affiliateClientLinks = <AffiliateClientLink>[].obs;
+  final isLoadingLinks = false.obs;
+  final currentLinksPage = 1.obs;
+  final totalLinksPages = 1.obs;
+  final totalLinks = 0.obs;
+
+  // Clients et affiliés pour les dropdowns
+  final availableClients = <User>[].obs;
+  final availableAffiliates = <AffiliateProfile>[].obs;
+  final isLoadingDropdowns = false.obs;
 
   @override
   void onInit() {
@@ -399,7 +413,195 @@ class AffiliatesController extends GetxController {
       fetchAffiliates(resetPage: true),
       fetchAffiliateStats(),
       fetchPendingWithdrawals(),
+      fetchAffiliateClientLinks(resetPage: true),
     ]);
+  }
+
+  // ===== AFFILIATE CLIENT LINKS =====
+
+  /// Récupère les liaisons affilié-client
+  Future<void> fetchAffiliateClientLinks({bool resetPage = false}) async {
+    try {
+      if (resetPage) currentLinksPage.value = 1;
+
+      isLoadingLinks.value = true;
+      print('[AffiliatesController] Fetching affiliate client links...');
+
+      final result = await AffiliateService.getAffiliateClientLinks(
+        page: currentLinksPage.value,
+        limit: itemsPerPage.value,
+      );
+
+      affiliateClientLinks.value = result;
+      print('[AffiliatesController] ✅ Fetched ${result.length} links');
+    } catch (e) {
+      print('[AffiliatesController] ❌ Error fetching links: $e');
+      _showErrorSnackbar(
+          'Erreur lors du chargement des liaisons', e.toString());
+    } finally {
+      isLoadingLinks.value = false;
+    }
+  }
+
+  /// Crée une nouvelle liaison
+  Future<void> createAffiliateClientLink({
+    required String affiliateId,
+    required String clientId,
+    required DateTime startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      print('[AffiliatesController] Creating new link...');
+      print('[AffiliatesController] Parameters received:');
+      print('  - affiliateId: $affiliateId (type: ${affiliateId.runtimeType})');
+      print('  - clientId: $clientId (type: ${clientId.runtimeType})');
+      print('  - startDate: $startDate (type: ${startDate.runtimeType})');
+      print('  - endDate: $endDate (type: ${endDate?.runtimeType})');
+
+      // Validation des paramètres
+      if (affiliateId.isEmpty) {
+        throw Exception('Affiliate ID is empty');
+      }
+      if (clientId.isEmpty) {
+        throw Exception('Client ID is empty');
+      }
+
+      print(
+          '[AffiliatesController] Calling AffiliateService.createAffiliateClientLink...');
+
+      final newLink = await AffiliateService.createAffiliateClientLink(
+        affiliateId: affiliateId,
+        clientId: clientId,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+      print('[AffiliatesController] Service returned: $newLink');
+
+      if (newLink != null) {
+        affiliateClientLinks.add(newLink);
+        _showSuccessSnackbar('Succès', 'Liaison créée avec succès');
+        print('[AffiliatesController] ✅ Link created successfully');
+      } else {
+        print('[AffiliatesController] ⚠️ Service returned null link');
+        throw Exception('Service returned null link');
+      }
+    } catch (e) {
+      print('[AffiliatesController] ❌ Error creating link: $e');
+      print('[AffiliatesController] ❌ Error type: ${e.runtimeType}');
+      _showErrorSnackbar('Erreur lors de la création', e.toString());
+    }
+  }
+
+  /// Met à jour une liaison
+  Future<void> updateAffiliateClientLink({
+    required String linkId,
+    String? affiliateId,
+    String? clientId,
+    DateTime? startDate,
+    DateTime? endDate,
+    bool? isActive,
+  }) async {
+    try {
+      print('[AffiliatesController] Updating link $linkId...');
+
+      final updatedLink = await AffiliateService.updateAffiliateClientLink(
+        linkId: linkId,
+        affiliateId: affiliateId,
+        clientId: clientId,
+        startDate: startDate,
+        endDate: endDate,
+        isActive: isActive,
+      );
+
+      if (updatedLink != null) {
+        final index =
+            affiliateClientLinks.indexWhere((link) => link.id == linkId);
+        if (index != -1) {
+          affiliateClientLinks[index] = updatedLink;
+        }
+        _showSuccessSnackbar('Succès', 'Liaison mise à jour');
+        print('[AffiliatesController] ✅ Link updated successfully');
+      }
+    } catch (e) {
+      print('[AffiliatesController] ❌ Error updating link: $e');
+      _showErrorSnackbar('Erreur lors de la mise à jour', e.toString());
+    }
+  }
+
+  /// Supprime une liaison
+  Future<void> deleteAffiliateClientLink(String linkId) async {
+    try {
+      print('[AffiliatesController] Deleting link $linkId...');
+
+      final success = await AffiliateService.deleteAffiliateClientLink(linkId);
+
+      if (success) {
+        affiliateClientLinks.removeWhere((link) => link.id == linkId);
+        _showSuccessSnackbar('Succès', 'Liaison supprimée');
+        print('[AffiliatesController] ✅ Link deleted successfully');
+      }
+    } catch (e) {
+      print('[AffiliatesController] ❌ Error deleting link: $e');
+      _showErrorSnackbar('Erreur lors de la suppression', e.toString());
+    }
+  }
+
+  /// Récupère les clients disponibles pour les dropdowns
+  Future<void> fetchAvailableClients() async {
+    try {
+      print('[AffiliatesController] Fetching available clients...');
+      isLoadingDropdowns.value = true;
+
+      final response = await UserService.getUsers(
+        role: 'CLIENT',
+        limit: 1000, // Récupérer tous les clients
+      );
+
+      // Filtrer pour s'assurer qu'on n'a que des clients
+      final clients =
+          response.items.where((user) => user.role == UserRole.CLIENT).toList();
+      availableClients.value = clients;
+
+      print(
+          '[AffiliatesController] ✅ Fetched ${clients.length} clients (filtered from ${response.items.length} users)');
+    } catch (e) {
+      print('[AffiliatesController] ❌ Error fetching clients: $e');
+      _showErrorSnackbar('Erreur', 'Impossible de charger les clients');
+    } finally {
+      isLoadingDropdowns.value = false;
+    }
+  }
+
+  /// Récupère les affiliés disponibles pour les dropdowns
+  Future<void> fetchAvailableAffiliates() async {
+    try {
+      print('[AffiliatesController] Fetching available affiliates...');
+      isLoadingDropdowns.value = true;
+
+      final affiliates = await AffiliateService.getAllAffiliates(
+        limit: 1000, // Récupérer tous les affiliés
+      );
+
+      availableAffiliates.value = affiliates;
+      print('[AffiliatesController] ✅ Fetched ${affiliates.length} affiliates');
+    } catch (e) {
+      print('[AffiliatesController] ❌ Error fetching affiliates: $e');
+      _showErrorSnackbar('Erreur', 'Impossible de charger les affiliés');
+    } finally {
+      isLoadingDropdowns.value = false;
+    }
+  }
+
+  /// Charge les données pour les dropdowns
+  Future<void> loadDropdownData() async {
+    print('[AffiliatesController] Loading dropdown data...');
+    await Future.wait([
+      fetchAvailableClients(),
+      fetchAvailableAffiliates(),
+    ]);
+    print(
+        '[AffiliatesController] Dropdown data loaded - Clients: ${availableClients.length}, Affiliates: ${availableAffiliates.length}');
   }
 
   /// Affiche un snackbar de succès

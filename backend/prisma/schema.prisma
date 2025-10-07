@@ -8,6 +8,24 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model affiliate_client_links {
+  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  affiliate_id String             @db.Uuid
+  client_id    String             @db.Uuid
+  start_date   DateTime           @db.Date
+  end_date     DateTime?          @db.Date
+  created_by   String?            @db.Uuid
+  created_at   DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime?          @default(now()) @updatedAt @db.Timestamptz(6)
+  affiliate    affiliate_profiles @relation("affiliate_client_links_affiliate", fields: [affiliate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  client       users              @relation("affiliate_client_links_client", fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  creator      users?             @relation("CreatedAffiliateLinks", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([affiliate_id, client_id, start_date], name: "unique_affiliate_client_period", map: "unique_affiliate_client_period")
+  @@index([client_id], map: "idx_affiliate_client_links_client")
+  @@index([affiliate_id], map: "idx_affiliate_client_links_affiliate")
+}
+
 model addresses {
   id             String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   userId         String?          @db.Uuid
@@ -50,6 +68,7 @@ model affiliate_profiles {
   monthly_earnings         Decimal?                  @default(0.00) @db.Decimal
   level_id                 String?                   @db.Uuid
   status                   status?                   @default(PENDING)
+  affiliate_client_links   affiliate_client_links[]  @relation("affiliate_client_links_affiliate")
   affiliate_levels         affiliate_levels?         @relation(fields: [level_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   affiliate_profiles       affiliate_profiles?       @relation("affiliate_profilesToaffiliate_profiles", fields: [parent_affiliate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   other_affiliate_profiles affiliate_profiles[]      @relation("affiliate_profilesToaffiliate_profiles")
@@ -364,31 +383,33 @@ model temp_notifications {
 }
 
 model users {
-  id                       String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email                    String                     @db.VarChar
-  password                 String                     @db.VarChar
-  first_name               String                     @db.VarChar
-  last_name                String                     @db.VarChar
-  phone                    String?                    @db.VarChar
-  role                     user_role?                 @default(CLIENT)
-  referral_code            String?                    @db.VarChar
-  created_at               DateTime?                  @default(now()) @db.Timestamptz(6)
-  updated_at               DateTime?                  @default(now()) @db.Timestamptz(6)
-  addresses                addresses[]
-  affiliate_profiles       affiliate_profiles?
-  blog_articles            blog_articles[]
-  loyalty_points           loyalty_points?
-  notification_preferences notification_preferences[]
-  notifications            notifications[]
-  offer_subscriptions      offer_subscriptions[]
-  orders                   orders[]
-  point_transactions       point_transactions[]
-  reset_codes              reset_codes[]
-  reward_claims            reward_claims[]
-  temp_notifications       temp_notifications[] @ignore
-  user_activity_logs       user_activity_logs[]
-  user_offers              user_offers[]
-  user_subscriptions       user_subscriptions[]
+  id                            String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email                         String                     @db.VarChar
+  password                      String                     @db.VarChar
+  first_name                    String                     @db.VarChar
+  last_name                     String                     @db.VarChar
+  phone                         String?                    @db.VarChar
+  role                          user_role?                 @default(CLIENT)
+  referral_code                 String?                    @db.VarChar
+  created_at                    DateTime?                  @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime?                  @default(now()) @db.Timestamptz(6)
+  addresses                     addresses[]
+  affiliate_client_links_client affiliate_client_links[]   @relation("affiliate_client_links_client")
+  created_affiliate_links       affiliate_client_links[]   @relation("CreatedAffiliateLinks")
+  affiliate_profiles            affiliate_profiles?
+  blog_articles                 blog_articles[]
+  loyalty_points                loyalty_points?
+  notification_preferences      notification_preferences[]
+  notifications                 notifications[]
+  offer_subscriptions           offer_subscriptions[]
+  orders                        orders[]
+  point_transactions            point_transactions[]
+  reset_codes                   reset_codes[]
+  reward_claims                 reward_claims[]
+  temp_notifications            temp_notifications[] @ignore
+  user_activity_logs            user_activity_logs[]
+  user_offers                   user_offers[]
+  user_subscriptions            user_subscriptions[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.

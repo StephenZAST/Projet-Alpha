@@ -20,6 +20,35 @@ export class OrderCreateService {
     // Vérification d’abonnement actif
     const subscription = await import('../subscription.service').then(m => m.SubscriptionService.getUserActiveSubscription(orderData.userId));
     const isSubscriptionOrder = !!subscription;
+
+    // --- Injection automatique du code affilié si non fourni ---
+    let affiliateCodeToUse = orderData.affiliateCode;
+    if (!affiliateCodeToUse) {
+      // Chercher une liaison active pour ce client
+      const now = new Date();
+      const link = await prisma.affiliate_client_links.findFirst({
+        where: {
+          client_id: orderData.userId,
+          start_date: { lte: now },
+          OR: [
+            { end_date: null },
+            { end_date: { gte: now } }
+          ],
+          affiliate: {
+            is_active: true,
+            status: 'ACTIVE'
+          }
+        },
+        include: {
+          affiliate: true
+        },
+        orderBy: { start_date: 'desc' }
+      });
+      if (link && link.affiliate && link.affiliate.affiliate_code) {
+        affiliateCodeToUse = link.affiliate.affiliate_code;
+      }
+    }
+
     try {
       const service_type_id = orderData.service_type_id || orderData.serviceTypeId;
       if (!service_type_id) {
@@ -70,7 +99,7 @@ export class OrderCreateService {
           recurrenceType: orderData.recurrenceType,
           collectionDate: orderData.collectionDate,
           deliveryDate: orderData.deliveryDate,
-          affiliateCode: orderData.affiliateCode,
+          affiliateCode: affiliateCodeToUse,
           service_type_id: service_type_id,
           paymentMethod: orderData.paymentMethod as payment_method_enum,
           order_items: {
@@ -132,12 +161,15 @@ export class OrderCreateService {
       });
 
       // Traitement affilié et points
-      if (orderData.affiliateCode) {
+      if (affiliateCodeToUse) {
         await OrderPaymentService.processAffiliateCommission(
           createdOrder.id,
-          orderData.affiliateCode,
+          affiliateCodeToUse,
           finalAmount
         );
+
+        // Créer automatiquement une liaison affilié-client si elle n'existe pas
+        await this.ensureAffiliateClientLink(orderData.userId, affiliateCodeToUse);
       }
 
       const earnedPoints = Math.floor(finalAmount);
@@ -230,6 +262,57 @@ export class OrderCreateService {
     } catch (error) {
       console.error('[OrderService] Error creating order:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Assure qu'une liaison affilié-client existe pour ce client et ce code affilié
+   */
+  private static async ensureAffiliateClientLink(clientId: string, affiliateCode: string): Promise<void> {
+    try {
+      // Trouver l'affilié par son code
+      const affiliate = await prisma.affiliate_profiles.findUnique({
+        where: { affiliate_code: affiliateCode }
+      });
+
+      if (!affiliate) {
+        console.warn('[OrderCreateService] Affiliate not found for code:', affiliateCode);
+        return;
+      }
+
+      // Vérifier si une liaison existe déjà
+      const existingLink = await prisma.affiliate_client_links.findFirst({
+        where: {
+          affiliate_id: affiliate.id,
+          client_id: clientId
+        }
+      });
+
+      if (existingLink) {
+        console.log('[OrderCreateService] Affiliate-client link already exists');
+        return;
+      }
+
+      // Créer la liaison automatiquement
+      await prisma.affiliate_client_links.create({
+        data: {
+          affiliate_id: affiliate.id,
+          client_id: clientId,
+          start_date: new Date(),
+          end_date: null, // Liaison permanente
+          created_by: null // Création automatique
+        }
+      });
+
+      console.log('[OrderCreateService] ✅ Auto-created affiliate-client link:', {
+        affiliateId: affiliate.id,
+        clientId: clientId,
+        affiliateCode: affiliateCode
+      });
+
+    } catch (error) {
+      console.error('[OrderCreateService] Error ensuring affiliate-client link:', error);
+      // Ne pas faire échouer la commande pour cette erreur
     }
   }
 }

@@ -5,6 +5,7 @@ import '../constants.dart';
 import '../providers/affiliate_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/notification_system.dart';
 import 'commissions_screen.dart';
 import 'withdrawal_screen.dart';
 import 'referrals_screen.dart';
@@ -63,7 +64,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 📱 AppBar Glass Premium - Modern Design
+  /// 📱 AppBar Glass Premium - Modern Design avec particules
   Widget _buildAppBar(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
@@ -79,186 +80,333 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 bottomLeft: Radius.circular(24),
                 bottomRight: Radius.circular(24),
               ),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  decoration: BoxDecoration(
-                    // Effet glass moderne avec couleur Alpha
-                    color: AppColors.primary.withOpacity(0.85),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                        spreadRadius: 0,
+              child: Stack(
+                children: [
+                  // Gradient de fond comme dans l'écran de connexion
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.primary,
+                          AppColors.primaryDark,
+                          AppColors.accent,
+                        ],
+                        stops: const [0.0, 0.7, 1.0],
                       ),
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                        spreadRadius: 0,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(24),
                       ),
-                    ],
+                    ),
                   ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Row(
-                            children: [
-                              // Logo Alpha Laundry avec effet glass
-                              Container(
-                                width: 48,
-                                height: 48,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: BackdropFilter(
-                                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(
-                                          color: Colors.white.withOpacity(0.3),
-                                          width: 1.5,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.1),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8),
-                                        child: Image.asset(
-                                          'assets/Alpha_logo.png',
-                                          fit: BoxFit.contain,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Icon(
-                                              Icons.local_laundry_service,
-                                              color: Colors.white,
-                                              size: 24,
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Alpha Laundry',
-                                      style: AppTextStyles.headlineSmall.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 24,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black.withOpacity(0.2),
-                                            offset: const Offset(0, 1),
-                                            blurRadius: 2,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Programme Affilié',
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Avatar utilisateur avec effet glass
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const ProfileScreen(),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  width: 48,
-                                  height: 48,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: BackdropFilter(
-                                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(
-                                            color: Colors.white.withOpacity(0.3),
-                                            width: 1.5,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.1),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            authProvider.initials,
-                                            style: AppTextStyles.labelLarge.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 18,
-                                              shadows: [
-                                                Shadow(
-                                                  color: Colors.black.withOpacity(0.3),
-                                                  offset: const Offset(0, 1),
-                                                  blurRadius: 2,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                  
+                  // Particules flottantes en arrière-plan
+                  _buildAppBarParticles(),
+                  
+                  // Effet glass par-dessus
+                  BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(24),
+                          bottomRight: Radius.circular(24),
+                        ),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                            spreadRadius: 0,
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                            spreadRadius: 0,
                           ),
                         ],
                       ),
+                      child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Row(
+                                children: [
+                                  // Logo Alpha Laundry avec effet glass
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: BackdropFilter(
+                                        filter: ImageFilter.blur(
+                                            sigmaX: 10, sigmaY: 10),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(14),
+                                            border: Border.all(
+                                              color: Colors.white.withOpacity(0.3),
+                                              width: 1.5,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color:
+                                                    Colors.black.withOpacity(0.1),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8),
+                                            child: Image.asset(
+                                              'assets/Alpha_logo.png',
+                                              fit: BoxFit.contain,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return Icon(
+                                                  Icons.local_laundry_service,
+                                                  color: Colors.white,
+                                                  size: 24,
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Alpha Laundry',
+                                          style:
+                                              AppTextStyles.headlineSmall.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 24,
+                                            shadows: [
+                                              Shadow(
+                                                color:
+                                                    Colors.black.withOpacity(0.2),
+                                                offset: const Offset(0, 1),
+                                                blurRadius: 2,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Programme Affilié',
+                                          style: AppTextStyles.bodyMedium.copyWith(
+                                            color: Colors.white.withOpacity(0.9),
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Avatar utilisateur avec effet glass
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ProfileScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      width: 48,
+                                      height: 48,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(16),
+                                        child: BackdropFilter(
+                                          filter: ImageFilter.blur(
+                                              sigmaX: 10, sigmaY: 10),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.15),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color:
+                                                    Colors.white.withOpacity(0.3),
+                                                width: 1.5,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color:
+                                                      Colors.black.withOpacity(0.1),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                authProvider.initials,
+                                                style: AppTextStyles.labelLarge
+                                                    .copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 18,
+                                                  shadows: [
+                                                    Shadow(
+                                                      color: Colors.black
+                                                          .withOpacity(0.3),
+                                                      offset: const Offset(0, 1),
+                                                      blurRadius: 2,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
           title: Container(), // Titre vide car contenu dans flexibleSpace
         );
       },
+    );
+  }
+
+  /// 🌟 Particules flottantes pour l'AppBar
+  Widget _buildAppBarParticles() {
+    return Positioned.fill(
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        child: Stack(
+          children: [
+            // Cercles flottants plus grands
+            Positioned(
+              top: -30,
+              right: -30,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.08),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 20,
+              left: -40,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.05),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -20,
+              right: 50,
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.06),
+                ),
+              ),
+            ),
+            
+            // Petites particules dispersées
+            ...List.generate(
+              12,
+              (index) => Positioned(
+                top: 30 + (index * 12.0),
+                left: 40 + (index % 4 * 80.0),
+                child: Container(
+                  width: 3,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.25),
+                  ),
+                ),
+              ),
+            ),
+            
+            // Particules moyennes pour plus de profondeur
+            Positioned(
+              top: 50,
+              right: 100,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.15),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 80,
+              left: 120,
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.12),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 30,
+              left: 80,
+              child: Container(
+                width: 5,
+                height: 5,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.18),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -320,14 +468,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Icon(
                         Icons.link,
-                        color: AppColors.primary,
+                        color: AppColors.info,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Code: ${affiliateProvider.affiliateCode}',
                         style: AppTextStyles.labelMedium.copyWith(
-                          color: AppColors.primary,
+                          color: AppColors.info,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -336,7 +484,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onTap: () => _shareAffiliateCode(context),
                         child: Icon(
                           Icons.share,
-                          color: AppColors.primary,
+                          color: AppColors.info,
                           size: 20,
                         ),
                       ),
@@ -367,12 +515,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.1, // Légèrement plus de hauteur pour éviter l'overflow
+          childAspectRatio:
+              1.1, // Légèrement plus de hauteur pour éviter l'overflow
           children: [
             StatCard(
               title: 'Solde Disponible',
               value: '${formatNumber(stats['availableBalance'])} FCFA',
-              subtitle: provider.canWithdraw ? 'Retrait possible' : 'Minimum ${formatNumber(AffiliateConfig.minWithdrawalAmount)} FCFA',
+              subtitle: provider.canWithdraw
+                  ? 'Retrait possible'
+                  : 'Minimum ${formatNumber(AffiliateConfig.minWithdrawalAmount)} FCFA',
               icon: Icons.account_balance_wallet,
               color: AppColors.success,
               onTap: () => _navigateToWithdrawal(context),
@@ -382,7 +533,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               value: '${formatNumber(stats['totalEarnings'])} FCFA',
               subtitle: 'Depuis le début',
               icon: Icons.trending_up,
-              color: AppColors.primary,
+              color: AppColors.info,
               onTap: () => _navigateToCommissions(context),
             ),
             StatCard(
@@ -423,9 +574,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Expanded(
               child: PremiumButton(
-                text: 'Demander Retrait',
-                icon: Icons.request_quote,
-                onPressed: () => _navigateToWithdrawal(context),
+                text: 'Mes Clients',
+                icon: Icons.people,
+                isOutlined: true,
+                color: AppColors.success,
+                onPressed: () => _navigateToLinkedClients(context),
               ),
             ),
             const SizedBox(width: 12),
@@ -434,6 +587,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 text: 'Partager Code',
                 icon: Icons.share,
                 isOutlined: true,
+                color: AppColors.info,
                 onPressed: () => _shareAffiliateCode(context),
               ),
             ),
@@ -447,7 +601,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildRecentTransactions(BuildContext context) {
     return Consumer<AffiliateProvider>(
       builder: (context, provider, child) {
-        final recentTransactions = provider.dashboardStats['recentTransactions'] as List;
+        final recentTransactions =
+            provider.dashboardStats['recentTransactions'] as List;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -480,10 +635,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             else if (recentTransactions.isEmpty)
               _buildEmptyTransactions()
             else
-              ...recentTransactions.map((transaction) => TransactionCard(
-                transaction: transaction,
-                onTap: () => _showTransactionDetails(context, transaction),
-              )).toList(),
+              ...recentTransactions
+                  .map((transaction) => TransactionCard(
+                        transaction: transaction,
+                        onTap: () =>
+                            _showTransactionDetails(context, transaction),
+                      ))
+                  .toList(),
           ],
         );
       },
@@ -495,7 +653,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Consumer<AffiliateProvider>(
       builder: (context, provider, child) {
         final progress = provider.nextLevelProgress;
-        
+
         if (progress == null) {
           return const SizedBox.shrink();
         }
@@ -552,40 +710,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🎈 Bouton flottant Premium
+  /// 🎈 Bouton flottant Premium - Demander Retrait
   Widget _buildFloatingActionButton(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: AppShadows.floatingShadow,
-      ),
-      child: FloatingActionButton.extended(
-        onPressed: () => _generateNewCode(context),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        icon: Container(
-          width: 24,
-          height: 24,
+    return Consumer<AffiliateProvider>(
+      builder: (context, provider, child) {
+        // Afficher le bouton seulement si l'utilisateur peut faire un retrait
+        if (!provider.canWithdraw) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(6),
+            gradient: AppColors.successGradient,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.success.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+                spreadRadius: 0,
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+                spreadRadius: 0,
+              ),
+            ],
           ),
-          child: const Icon(
-            Icons.refresh,
-            color: Colors.white,
-            size: 16,
+          child: FloatingActionButton.extended(
+            onPressed: () => _navigateToWithdrawal(context),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            icon: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(
+                Icons.account_balance_wallet,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+            label: Text(
+              'Demander Retrait',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
           ),
-        ),
-        label: Text(
-          'Nouveau Code',
-          style: AppTextStyles.labelMedium.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -613,8 +793,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       childAspectRatio: 1.2,
-      children: List.generate(4, (index) => 
-        GlassContainer(
+      children: List.generate(
+        4,
+        (index) => GlassContainer(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -637,8 +818,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTransactionsSkeleton() {
     return Column(
-      children: List.generate(3, (index) => 
-        Container(
+      children: List.generate(
+        3,
+        (index) => Container(
           margin: const EdgeInsets.only(bottom: 8),
           child: GlassContainer(
             child: Row(
@@ -724,17 +906,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _navigateToLinkedClients(BuildContext context) {
+    Navigator.pushNamed(context, '/linked-clients');
+  }
+
   void _shareAffiliateCode(BuildContext context) {
     final provider = context.read<AffiliateProvider>();
     final code = provider.affiliateCode;
-    
+
     if (code.isNotEmpty) {
       // TODO: Implémenter le partage système
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Code copié: $code'),
-          backgroundColor: AppColors.success,
-        ),
+      NotificationManager().showSuccess(
+        context,
+        title: 'Code Partagé',
+        message: 'Votre code affilié $code a été copié',
       );
     }
   }
@@ -742,20 +927,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _generateNewCode(BuildContext context) async {
     final provider = context.read<AffiliateProvider>();
     final success = await provider.generateNewCode();
-    
+
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nouveau code généré avec succès'),
-          backgroundColor: AppColors.success,
-        ),
+      NotificationManager().showSuccess(
+        context,
+        title: 'Code Généré',
+        message: 'Nouveau code affilié généré avec succès',
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.codeError ?? 'Erreur lors de la génération'),
-          backgroundColor: AppColors.error,
-        ),
+      NotificationManager().showError(
+        context,
+        title: 'Erreur de Génération',
+        message: provider.codeError ?? 'Erreur lors de la génération du code',
       );
     }
   }

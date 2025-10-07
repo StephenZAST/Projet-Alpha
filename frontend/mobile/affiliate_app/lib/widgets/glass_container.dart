@@ -1,56 +1,40 @@
 import 'dart:ui';
-import 'package:affiliate_app/models/affiliate_profile.dart';
 import 'package:flutter/material.dart';
 import '../constants.dart';
 
-/// 🌟 Conteneur Glass Premium - Alpha Affiliate App
+/// 🌟 Glass Container - Alpha Affiliate App
 ///
-/// Conteneur avec effet glassmorphism sophistiqué utilisant les tokens de design
+/// Conteneur avec effet glassmorphism premium pour l'application affilié
 
 class GlassContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
+  final Alignment? alignment;
   final double? width;
   final double? height;
   final BorderRadius? borderRadius;
-  final VoidCallback? onTap;
   final Color? color;
-  final double? blur;
-  final double? opacity;
   final List<BoxShadow>? boxShadow;
-  final bool hasBorder;
-  final bool hasGradient;
+  final Border? border;
 
   const GlassContainer({
     Key? key,
     required this.child,
     this.padding,
     this.margin,
+    this.alignment,
     this.width,
     this.height,
     this.borderRadius,
-    this.onTap,
     this.color,
-    this.blur,
-    this.opacity,
     this.boxShadow,
-    this.hasBorder = true,
-    this.hasGradient = false,
+    this.border,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveBlur = blur ?? AppColors.glassBlurSigma;
-    
-    // Utiliser les tokens de design centralisés
-    final backgroundColor = color ?? 
-        (isDark ? AppColors.cardBgDark : AppColors.cardBgLight);
-    
-    final borderColor = isDark 
-        ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
-        : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity);
 
     return Container(
       width: width,
@@ -60,34 +44,28 @@ class GlassContainer extends StatelessWidget {
         borderRadius: borderRadius ?? AppRadius.borderRadiusLG,
         child: BackdropFilter(
           filter: ImageFilter.blur(
-            sigmaX: effectiveBlur,
-            sigmaY: effectiveBlur,
+            sigmaX: AppColors.glassBlurSigma,
+            sigmaY: AppColors.glassBlurSigma,
           ),
           child: Container(
+            padding: padding ?? AppSpacing.cardPadding,
+            alignment: alignment,
             decoration: BoxDecoration(
-              color: backgroundColor,
-              gradient: hasGradient ? AppColors.glassGradient : null,
+              color: color ??
+                  (isDark ? AppColors.cardBgDark : AppColors.cardBgLight),
               borderRadius: borderRadius ?? AppRadius.borderRadiusLG,
-              border: hasBorder ? Border.all(
-                color: borderColor,
-                width: 1,
-              ) : null,
+              border: border ??
+                  Border.all(
+                    color: isDark
+                        ? Colors.white
+                            .withOpacity(AppColors.glassBorderDarkOpacity)
+                        : Colors.white
+                            .withOpacity(AppColors.glassBorderLightOpacity),
+                    width: 1,
+                  ),
               boxShadow: boxShadow ?? AppShadows.glassShadow,
             ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: borderRadius ?? AppRadius.borderRadiusLG,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: borderRadius ?? AppRadius.borderRadiusLG,
-                splashColor: AppColors.primary.withOpacity(0.1),
-                highlightColor: AppColors.primary.withOpacity(0.05),
-                child: Container(
-                  padding: padding ?? const EdgeInsets.all(16),
-                  child: child,
-                ),
-              ),
-            ),
+            child: child,
           ),
         ),
       ),
@@ -95,31 +73,156 @@ class GlassContainer extends StatelessWidget {
   }
 }
 
-/// 🎯 Bouton Glass Premium - Modern Glassmorphism
+/// 🎯 Status Badge - Badge de statut avec effet glass
+class StatusBadge extends StatelessWidget {
+  final String text;
+  final Color color;
+  final IconData? icon;
+
+  const StatusBadge({
+    Key? key,
+    required this.text,
+    required this.color,
+    this.icon,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(AppColors.iconBoxOpacity),
+        borderRadius: AppRadius.borderRadiusSM,
+        border: Border.all(
+          color: color.withOpacity(AppColors.badgeBorderOpacity),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, color: color, size: 16),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            text,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 📊 Stat Card - Carte de statistique avec effet glass
+class StatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String? subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const StatCard({
+    Key? key,
+    required this.title,
+    required this.value,
+    this.subtitle,
+    required this.icon,
+    required this.color,
+    this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: GlassContainer(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(AppColors.iconBoxOpacity),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const Spacer(),
+                if (onTap != null)
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: AppColors.textTertiary(context),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: AppTextStyles.headlineSmall.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle!,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textTertiary(context),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 🎈 Premium Button - Bouton premium avec effet glass uniforme
 class PremiumButton extends StatefulWidget {
   final String text;
-  final VoidCallback? onPressed;
   final IconData? icon;
+  final VoidCallback? onPressed;
+  final bool isOutlined;
   final Color? color;
-  final Color? textColor;
+  final bool isLoading;
   final double? width;
   final double? height;
-  final bool isLoading;
-  final bool isOutlined;
-  final bool isElevated;
 
   const PremiumButton({
     Key? key,
     required this.text,
-    this.onPressed,
     this.icon,
+    this.onPressed,
+    this.isOutlined = false,
     this.color,
-    this.textColor,
+    this.isLoading = false,
     this.width,
     this.height,
-    this.isLoading = false,
-    this.isOutlined = false,
-    this.isElevated = false,
   }) : super(key: key);
 
   @override
@@ -130,25 +233,17 @@ class _PremiumButtonState extends State<PremiumButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _glowAnimation;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: AppAnimations.fast,
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-    _glowAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
+      end: 0.95,
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
@@ -181,74 +276,51 @@ class _PremiumButtonState extends State<PremiumButton>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AnimatedBuilder(
-      animation: _animationController,
+      animation: _scaleAnimation,
       builder: (context, child) {
         return Transform.scale(
           scale: _scaleAnimation.value,
-          child: Container(
-            width: widget.width,
-            height: widget.height ?? 52,
-            child: ClipRRect(
-              borderRadius: AppRadius.borderRadiusLG,
-              child: BackdropFilter(
-                filter: ImageFilter.blur(
-                  sigmaX: AppColors.glassBlurSigma,
-                  sigmaY: AppColors.glassBlurSigma,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    // Effet glass moderne sans gradient
-                    color: widget.isOutlined
-                        ? (isDark 
-                            ? Colors.white.withOpacity(0.05)
-                            : Colors.white.withOpacity(0.15))
-                        : buttonColor.withOpacity(widget.isElevated ? 0.9 : 0.85),
-                    borderRadius: AppRadius.borderRadiusLG,
-                    border: Border.all(
+          child: GestureDetector(
+            onTap: widget.isLoading ? null : widget.onPressed,
+            onTapDown: _handleTapDown,
+            onTapUp: _handleTapUp,
+            onTapCancel: _handleTapCancel,
+            child: Container(
+              width: widget.width,
+              height: widget.height ?? 48,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      // Glassy, subtle fill so backdrop blur shows through
                       color: widget.isOutlined
-                          ? buttonColor.withOpacity(0.4)
-                          : Colors.white.withOpacity(0.2),
-                      width: widget.isOutlined ? 1.5 : 1,
-                    ),
-                    boxShadow: [
-                      // Ombre principale
-                      BoxShadow(
-                        color: buttonColor.withOpacity(widget.isOutlined ? 0.1 : 0.3),
-                        blurRadius: widget.isElevated ? 20 : 12,
-                        offset: Offset(0, widget.isElevated ? 8 : 4),
-                        spreadRadius: 0,
+                          ? buttonColor.withOpacity(0.10)
+                          : buttonColor.withOpacity(0.22),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        // Slight colored border when outlined, otherwise soft white border
+                        color: widget.isOutlined
+                            ? buttonColor.withOpacity(0.36)
+                            : Colors.white.withOpacity(0.06),
+                        width: widget.isOutlined ? 1.4 : 1,
                       ),
-                      // Ombre ambiante
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                        spreadRadius: 0,
-                      ),
-                      // Glow effect au tap
-                      if (_glowAnimation.value > 0)
+                      boxShadow: [
+                        // Soft ambient shadow to lift the button slightly
                         BoxShadow(
-                          color: buttonColor.withOpacity(0.4 * _glowAnimation.value),
-                          blurRadius: 24,
-                          offset: const Offset(0, 0),
-                          spreadRadius: 2,
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
                         ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: widget.isLoading ? null : widget.onPressed,
-                      onTapDown: _handleTapDown,
-                      onTapUp: _handleTapUp,
-                      onTapCancel: _handleTapCancel,
-                      borderRadius: AppRadius.borderRadiusLG,
-                      splashColor: buttonColor.withOpacity(0.2),
-                      highlightColor: buttonColor.withOpacity(0.1),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
+                          horizontal: 20,
+                          vertical: 12,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -256,12 +328,14 @@ class _PremiumButtonState extends State<PremiumButton>
                           children: [
                             if (widget.isLoading) ...[
                               SizedBox(
-                                width: 20,
-                                height: 20,
+                                width: 18,
+                                height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    widget.isOutlined ? buttonColor : Colors.white,
+                                    widget.isOutlined
+                                        ? buttonColor
+                                        : Colors.white,
                                   ),
                                 ),
                               ),
@@ -269,8 +343,10 @@ class _PremiumButtonState extends State<PremiumButton>
                             ] else if (widget.icon != null) ...[
                               Icon(
                                 widget.icon,
-                                color: widget.isOutlined ? buttonColor : Colors.white,
-                                size: 20,
+                                color: widget.isOutlined
+                                    ? buttonColor
+                                    : Colors.white,
+                                size: 18,
                               ),
                               const SizedBox(width: 10),
                             ],
@@ -278,9 +354,11 @@ class _PremiumButtonState extends State<PremiumButton>
                               child: Text(
                                 widget.text,
                                 style: AppTextStyles.labelLarge.copyWith(
-                                  color: widget.isOutlined ? buttonColor : Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
+                                  color: widget.isOutlined
+                                      ? buttonColor
+                                      : Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -301,178 +379,9 @@ class _PremiumButtonState extends State<PremiumButton>
   }
 }
 
-/// 🏷️ Badge de Statut
-class StatusBadge extends StatelessWidget {
-  final String text;
-  final Color color;
-  final IconData? icon;
-  final bool isSmall;
-
-  const StatusBadge({
-    Key? key,
-    required this.text,
-    required this.color,
-    this.icon,
-    this.isSmall = false,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isSmall ? 8 : 12,
-        vertical: isSmall ? 4 : 6,
-      ),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(isSmall ? 8 : 12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(
-              icon,
-              color: color,
-              size: isSmall ? 12 : 16,
-            ),
-            SizedBox(width: isSmall ? 4 : 6),
-          ],
-          Text(
-            text,
-            style: (isSmall ? AppTextStyles.overline : AppTextStyles.labelSmall)
-                .copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 📊 Carte de Statistique
-class StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String? subtitle;
-  final IconData icon;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const StatCard({
-    Key? key,
-    required this.title,
-    required this.value,
-    this.subtitle,
-    required this.icon,
-    required this.color,
-    this.onTap,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassContainer(
-      onTap: onTap,
-      padding: const EdgeInsets.all(12), // Réduire le padding pour plus d'espace
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Calculer l'espace disponible pour le contenu
-          final availableHeight = constraints.maxHeight - 24; // Padding vertical
-          
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header avec icône et flèche
-              SizedBox(
-                height: 32, // Hauteur fixe pour l'header
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: color,
-                        size: 18,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (onTap != null)
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        color: AppColors.textTertiary(context),
-                        size: 14,
-                      ),
-                  ],
-                ),
-              ),
-              
-              // Contenu flexible
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Titre
-                    Text(
-                      title,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary(context),
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    
-                    // Valeur principale
-                    Text(
-                      value,
-                      style: AppTextStyles.headlineSmall.copyWith(
-                        color: AppColors.textPrimary(context),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18, // Réduire légèrement la taille
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    
-                    // Sous-titre (si présent)
-                    if (subtitle != null)
-                      Text(
-                        subtitle!,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 10,
-                        ),
-                        maxLines: 2, // Permettre 2 lignes pour le sous-titre
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// 💰 Carte de Transaction
+/// 💳 Transaction Card - Carte de transaction avec effet glass
 class TransactionCard extends StatelessWidget {
-  final CommissionTransaction transaction;
+  final dynamic transaction;
   final VoidCallback? onTap;
 
   const TransactionCard({
@@ -483,105 +392,119 @@ class TransactionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWithdrawal = transaction.isWithdrawal;
-    final color = isWithdrawal ? AppColors.error : AppColors.success;
-    final icon = isWithdrawal ? Icons.arrow_upward : Icons.arrow_downward;
-
-    return GlassContainer(
+    return GestureDetector(
       onTap: onTap,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: GlassContainer(
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: _getTransactionColor().withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _getTransactionIcon(),
+                  color: _getTransactionColor(),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      transaction.typeText,
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.textPrimary(context),
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          _getTransactionTitle(),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textPrimary(context),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          _getTransactionAmount(),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: _getTransactionColor(),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
-                    Text(
-                      '${isWithdrawal ? '-' : '+'}${formatNumber(transaction.amount)} FCFA',
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          _getTransactionDate(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary(context),
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _getTransactionColor().withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _getTransactionStatus(),
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: _getTransactionColor(),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    StatusBadge(
-                      text: transaction.statusText,
-                      color: _getStatusColor(transaction.status),
-                      isSmall: true,
-                    ),
-                    const Spacer(),
-                    Text(
-                      _formatDate(transaction.createdAt),
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textTertiary(context),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Color _getStatusColor(WithdrawalStatus status) {
-    switch (status) {
-      case WithdrawalStatus.pending:
-        return AppColors.warning;
-      case WithdrawalStatus.approved:
-        return AppColors.success;
-      case WithdrawalStatus.rejected:
-        return AppColors.error;
-    }
+  Color _getTransactionColor() {
+    // Logique pour déterminer la couleur selon le type de transaction
+    return AppColors.success; // Placeholder
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
+  IconData _getTransactionIcon() {
+    // Logique pour déterminer l'icône selon le type de transaction
+    return Icons.account_balance_wallet; // Placeholder
+  }
 
-    if (difference.inDays == 0) {
-      return 'Aujourd\'hui';
-    } else if (difference.inDays == 1) {
-      return 'Hier';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} jours';
-    } else {
-      return '${date.day}/${date.month}/${date.year}';
-    }
+  String _getTransactionTitle() {
+    // Logique pour déterminer le titre selon le type de transaction
+    return 'Commission'; // Placeholder
+  }
+
+  String _getTransactionAmount() {
+    // Logique pour formater le montant
+    return '+ 1 500 FCFA'; // Placeholder
+  }
+
+  String _getTransactionDate() {
+    // Logique pour formater la date
+    return 'Aujourd\'hui'; // Placeholder
+  }
+
+  String _getTransactionStatus() {
+    // Logique pour déterminer le statut
+    return 'Confirmé'; // Placeholder
   }
 }
 
-/// 💀 Loader Skeleton
+/// 💀 Skeleton Loader - Loader squelette pour les états de chargement
 class SkeletonLoader extends StatefulWidget {
   final double width;
   final double height;
@@ -600,30 +523,32 @@ class SkeletonLoader extends StatefulWidget {
 
 class _SkeletonLoaderState extends State<SkeletonLoader>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  late AnimationController _animationController;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _animationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    _animation = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _controller.repeat(reverse: true);
+    _animationController.repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
@@ -631,8 +556,9 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            color: AppColors.gray300.withOpacity(_animation.value),
-            borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
+            color: (isDark ? AppColors.gray700 : AppColors.gray200)
+                .withOpacity(_animation.value),
+            borderRadius: widget.borderRadius ?? BorderRadius.circular(4),
           ),
         );
       },

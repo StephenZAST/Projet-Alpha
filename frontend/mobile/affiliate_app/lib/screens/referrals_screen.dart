@@ -117,9 +117,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -133,7 +131,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
               children: [
                 Icon(
                   Icons.link,
-                  color: AppColors.primary,
+                  color: AppColors.info,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -144,13 +142,13 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                       Text(
                         'Votre Code Affilié',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.primary,
+                          color: AppColors.info,
                         ),
                       ),
                       Text(
                         provider.affiliateCode,
                         style: AppTextStyles.labelLarge.copyWith(
-                          color: AppColors.primary,
+                          color: AppColors.info,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -193,62 +191,63 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        
-        ...provider.referrals.map((referral) => Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: GlassContainer(
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                  child: Text(
-                    referral.user?.initials ?? 'U',
-                    style: AppTextStyles.labelMedium.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
+        ...provider.referrals
+            .map((referral) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: GlassContainer(
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          child: Text(
+                            referral.user?.initials ?? 'U',
+                            style: AppTextStyles.labelMedium.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                referral.displayName,
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  color: AppColors.textPrimary(context),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Inscrit le ${_formatDate(referral.createdAt)}',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.textSecondary(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const StatusBadge(
+                          text: 'Actif',
+                          color: AppColors.success,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        referral.displayName,
-                        style: AppTextStyles.labelMedium.copyWith(
-                          color: AppColors.textPrimary(context),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Inscrit le ${_formatDate(referral.createdAt)}',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                StatusBadge(
-                  text: 'Actif',
-                  color: AppColors.success,
-                  isSmall: true,
-                ),
-              ],
-            ),
-          ),
-        )).toList(),
+                ))
+            .toList(),
       ],
     );
   }
 
   Widget _buildLoadingList() {
     return Column(
-      children: List.generate(5, (index) => 
-        Container(
+      children: List.generate(
+        5,
+        (index) => Container(
           margin: const EdgeInsets.only(bottom: 8),
           child: GlassContainer(
             child: Row(
@@ -312,7 +311,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
   void _shareAffiliateCode(BuildContext context) {
     final provider = context.read<AffiliateProvider>();
     final code = provider.affiliateCode;
-    
+
     if (code.isNotEmpty) {
       // TODO: Implémenter le partage système
       ScaffoldMessenger.of(context).showSnackBar(

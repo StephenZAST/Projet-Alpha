@@ -7,6 +7,7 @@ import 'services/api_service.dart';
 import 'services/navigation_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/linked_clients_screen.dart';
 
 /// 🚀 Application Principale - Alpha Affiliate App
 ///
@@ -44,6 +45,7 @@ class AffiliateApp extends StatelessWidget {
             routes: {
               '/login': (ctx) => const LoginScreen(),
               '/dashboard': (ctx) => const DashboardScreen(),
+              '/linked-clients': (ctx) => const LinkedClientsScreen(),
             },
             home: _buildHome(authProvider),
           );
@@ -190,7 +192,8 @@ class AffiliateApp extends StatelessWidget {
           return const SplashScreen();
         }
 
-        print('🏠 Initialisation terminée, isAuthenticated: ${authProvider.isAuthenticated}');
+        print(
+            '🏠 Initialisation terminée, isAuthenticated: ${authProvider.isAuthenticated}');
         return authProvider.isAuthenticated
             ? const DashboardScreen()
             : const LoginScreen();

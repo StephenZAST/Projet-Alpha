@@ -40,7 +40,8 @@ export class AffiliateCommissionService {
         data: commissions.map(commission => ({
           id: commission.id,
           orderId: commission.order_id,
-          amount: Number(commission.orders?.totalAmount || 0),
+          amount: Number(commission.amount || 0), // Utiliser commission.amount au lieu de orders.totalAmount
+          status: commission.status,
           createdAt: commission.created_at || new Date(),
           order: commission.orders ? {
             id: commission.orders.id,

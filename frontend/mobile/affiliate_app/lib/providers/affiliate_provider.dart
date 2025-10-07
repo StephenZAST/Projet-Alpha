@@ -29,6 +29,11 @@ class AffiliateProvider extends ChangeNotifier {
   bool _isLoadingReferrals = false;
   String? _referralsError;
 
+  // État des clients liés
+  List<LinkedClient> _linkedClients = [];
+  bool _isLoadingLinkedClients = false;
+  String? _linkedClientsError;
+
   // État des niveaux
   List<AffiliateLevel> _levels = [];
   AffiliateLevel? _currentLevel;
@@ -59,6 +64,10 @@ class AffiliateProvider extends ChangeNotifier {
   bool get isLoadingReferrals => _isLoadingReferrals;
   String? get referralsError => _referralsError;
 
+  List<LinkedClient> get linkedClients => _linkedClients;
+  bool get isLoadingLinkedClients => _isLoadingLinkedClients;
+  String? get linkedClientsError => _linkedClientsError;
+
   List<AffiliateLevel> get levels => _levels;
   AffiliateLevel? get currentLevel => _currentLevel;
   bool get isLoadingLevels => _isLoadingLevels;
@@ -87,6 +96,7 @@ class AffiliateProvider extends ChangeNotifier {
       await Future.wait([
         loadCommissions(),
         loadReferrals(),
+        loadLinkedClients(),
         loadLevels(),
       ]);
     }
@@ -99,7 +109,7 @@ class AffiliateProvider extends ChangeNotifier {
     notifyListeners();
 
     final response = await _affiliateService.getProfile();
-    
+
     response.onSuccess((profile) {
       _profile = profile;
       _profileError = null;
@@ -107,7 +117,7 @@ class AffiliateProvider extends ChangeNotifier {
 
     response.onError((error) {
       print('❌ Erreur lors du chargement du profil: ${error.message}');
-      
+
       // Si l'erreur est 401 (non autorisé), arrêter les tentatives
       if (error.statusCode == 401) {
         print('🚪 Token expiré ou invalide, arrêt du chargement du profil');
@@ -117,9 +127,10 @@ class AffiliateProvider extends ChangeNotifier {
         notifyListeners();
         return;
       }
-      
+
       // Si l'erreur est 404 (profil non trouvé), essayer de créer le profil
-      if (error.statusCode == 404 || error.message.contains('Profile not found')) {
+      if (error.statusCode == 404 ||
+          error.message.contains('Profile not found')) {
         print('🔄 Tentative de création du profil affilié...');
         _createAffiliateProfile();
       } else {
@@ -136,10 +147,10 @@ class AffiliateProvider extends ChangeNotifier {
   Future<void> _createAffiliateProfile() async {
     try {
       print('🆕 Création du profil affilié en cours...');
-      
+
       // Appeler l'endpoint de création de profil affilié
       final response = await _affiliateService.createProfile();
-      
+
       response.onSuccess((profile) {
         print('✅ Profil affilié créé avec succès');
         _profile = profile;
@@ -149,7 +160,8 @@ class AffiliateProvider extends ChangeNotifier {
 
       response.onError((error) {
         print('❌ Erreur lors de la création du profil: ${error.message}');
-        _profileError = 'Impossible de créer le profil affilié: ${error.message}';
+        _profileError =
+            'Impossible de créer le profil affilié: ${error.message}';
         notifyListeners();
       });
     } catch (e) {
@@ -253,10 +265,10 @@ class AffiliateProvider extends ChangeNotifier {
           commissionBalance: _profile!.commissionBalance - amount,
         );
       }
-      
+
       // Ajouter la transaction à la liste
       _commissions.insert(0, transaction);
-      
+
       _withdrawalError = null;
       success = true;
     });
@@ -288,6 +300,27 @@ class AffiliateProvider extends ChangeNotifier {
     });
 
     _isLoadingReferrals = false;
+    notifyListeners();
+  }
+
+  /// 👥 Charger les clients liés
+  Future<void> loadLinkedClients() async {
+    _isLoadingLinkedClients = true;
+    _linkedClientsError = null;
+    notifyListeners();
+
+    final response = await _affiliateService.getLinkedClients();
+
+    response.onSuccess((linkedClients) {
+      _linkedClients = linkedClients;
+      _linkedClientsError = null;
+    });
+
+    response.onError((error) {
+      _linkedClientsError = error.message;
+    });
+
+    _isLoadingLinkedClients = false;
     notifyListeners();
   }
 
@@ -328,18 +361,24 @@ class AffiliateProvider extends ChangeNotifier {
     bool success = false;
     response.onSuccess((code) {
       _generatedCode = code;
-      
       // Mettre à jour le profil avec le nouveau code
       if (_profile != null) {
         _profile = _profile!.copyWith(affiliateCode: code);
       }
-      
       _codeError = null;
       success = true;
     });
 
     response.onError((error) {
-      _codeError = error.message;
+      // Gestion explicite du code d'erreur 409 (conflit)
+      if (error.statusCode == 409 &&
+          (error.message.contains('already exists') ||
+              error.message.contains('AFFILIATE_CODE_EXISTS'))) {
+        _codeError =
+            "Vous avez déjà un code affilié. Il n'est pas possible d'en générer un nouveau.";
+      } else {
+        _codeError = error.message;
+      }
     });
 
     _isGeneratingCode = false;
@@ -376,12 +415,12 @@ class AffiliateProvider extends ChangeNotifier {
     _levels.clear();
     _currentLevel = null;
     _generatedCode = null;
-    
+
     clearErrors();
-    
+
     // Nettoyer le token d'authentification
     ApiService().clearAuthToken();
-    
+
     notifyListeners();
   }
 
@@ -421,17 +460,21 @@ class AffiliateProvider extends ChangeNotifier {
   }
 
   /// 📈 Filtrer les commissions par type
-  List<CommissionTransaction> getCommissionsByType({bool withdrawalsOnly = false}) {
+  List<CommissionTransaction> getCommissionsByType(
+      {bool withdrawalsOnly = false}) {
     return _commissions.where((transaction) {
-      return withdrawalsOnly ? transaction.isWithdrawal : transaction.isCommission;
+      return withdrawalsOnly
+          ? transaction.isWithdrawal
+          : transaction.isCommission;
     }).toList();
   }
 
   /// 📅 Filtrer les commissions par période
-  List<CommissionTransaction> getCommissionsByPeriod(DateTime startDate, DateTime endDate) {
+  List<CommissionTransaction> getCommissionsByPeriod(
+      DateTime startDate, DateTime endDate) {
     return _commissions.where((transaction) {
-      return transaction.createdAt.isAfter(startDate) && 
-             transaction.createdAt.isBefore(endDate);
+      return transaction.createdAt.isAfter(startDate) &&
+          transaction.createdAt.isBefore(endDate);
     }).toList();
   }
 }

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { AffiliateController } from '../controllers/affiliate.controller';
 import { authenticateToken, authMiddleware } from '../middleware/auth.middleware';
 import { debugMiddleware } from '../middleware/debug.middleware';
+import affiliateLinkRoutes from './affiliateLink.routes';
 
 const router = Router();
 
@@ -40,5 +41,8 @@ router.patch('/admin/affiliates/:affiliateId/status', authenticateToken, adminCh
 
 // Création d'un client avec code affilié
 router.post('/register-with-code', AffiliateController.createCustomerWithAffiliateCode);
+
+// Routes pour les liens d'affiliation
+router.use(affiliateLinkRoutes);
 
 export default router;

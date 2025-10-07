@@ -7,6 +7,7 @@ import 'components/affiliate_list.dart';
 import 'components/affiliate_filters.dart';
 import 'components/withdrawal_requests.dart';
 import 'components/commission_settings.dart';
+import 'components/affiliate_client_links.dart';
 
 class AffiliateManagementScreen extends StatefulWidget {
   @override
@@ -22,9 +23,10 @@ class _AffiliateManagementScreenState extends State<AffiliateManagementScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     controller = Get.put(AffiliatesController());
     controller.fetchAffiliates();
+    controller.fetchAffiliateClientLinks();
   }
 
   @override
@@ -61,6 +63,7 @@ class _AffiliateManagementScreenState extends State<AffiliateManagementScreen>
                   Tab(text: 'Liste des affiliés'),
                   Tab(text: 'Demandes de retrait'),
                   Tab(text: 'Paramètres'),
+                  Tab(text: 'Liaisons clients'),
                 ],
               ),
               SizedBox(height: defaultPadding),
@@ -91,6 +94,8 @@ class _AffiliateManagementScreenState extends State<AffiliateManagementScreen>
                     WithdrawalRequests(),
                     // Paramètres des commissions
                     CommissionSettings(),
+                    // Liaisons clients
+                    AffiliateClientLinks(),
                   ],
                 ),
               ),

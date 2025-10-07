@@ -300,6 +300,34 @@ class AuthProvider extends ChangeNotifier {
     return _role == 'CLIENT' || _role == 'AFFILIATE';
   }
 
+  /// 🔄 Mettre à jour les informations utilisateur
+  void updateUserInfo({
+    String? firstName,
+    String? lastName,
+    String? email,
+  }) {
+    if (firstName != null) _firstName = firstName;
+    if (lastName != null) _lastName = lastName;
+    if (email != null) _email = email;
+    
+    // Sauvegarder les changements
+    _saveUserInfoToStorage();
+    notifyListeners();
+  }
+
+  /// 💾 Sauvegarder les infos utilisateur dans le stockage
+  Future<void> _saveUserInfoToStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      if (_firstName != null) await prefs.setString('user_first_name', _firstName!);
+      if (_lastName != null) await prefs.setString('user_last_name', _lastName!);
+      if (_email != null) await prefs.setString('user_email', _email!);
+    } catch (e) {
+      print('Erreur lors de la sauvegarde des infos utilisateur: $e');
+    }
+  }
+
   /// 📊 Informations utilisateur pour l'affichage
   Map<String, dynamic> get userInfo {
     return {

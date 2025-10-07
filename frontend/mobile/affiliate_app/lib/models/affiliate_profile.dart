@@ -62,12 +62,13 @@ class AffiliateProfile {
       transactionsCount: json['transactionsCount'] as int,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
-      user: json['user'] != null 
+      user: json['user'] != null
           ? AffiliateUser.fromJson(json['user'] as Map<String, dynamic>)
           : null,
       recentTransactions: json['recentTransactions'] != null
           ? (json['recentTransactions'] as List)
-              .map((t) => CommissionTransaction.fromJson(t as Map<String, dynamic>))
+              .map((t) =>
+                  CommissionTransaction.fromJson(t as Map<String, dynamic>))
               .toList()
           : [],
     );
@@ -142,10 +143,11 @@ class AffiliateProfile {
   String get email => user?.email ?? '';
   String get statusText => _getStatusText(status);
   String get levelName => AffiliateConfig.commissionLevels[levelId] ?? 'Bronze';
-  
-  bool get canWithdraw => isActive && 
-                         status == AffiliateStatus.active && 
-                         commissionBalance >= AffiliateConfig.minWithdrawalAmount;
+
+  bool get canWithdraw =>
+      isActive &&
+      status == AffiliateStatus.active &&
+      commissionBalance >= AffiliateConfig.minWithdrawalAmount;
 
   /// Parse status depuis string
   static AffiliateStatus _parseStatus(String status) {
@@ -174,7 +176,8 @@ class AffiliateProfile {
   }
 
   @override
-  String toString() => 'AffiliateProfile(id: $id, code: $affiliateCode, balance: $commissionBalance)';
+  String toString() =>
+      'AffiliateProfile(id: $id, code: $affiliateCode, balance: $commissionBalance)';
 
   @override
   bool operator ==(Object other) {
@@ -280,7 +283,7 @@ class CommissionTransaction {
   /// Type de transaction
   bool get isWithdrawal => orderId == null;
   bool get isCommission => orderId != null;
-  
+
   String get typeText => isWithdrawal ? 'Retrait' : 'Commission';
   String get statusText => _getWithdrawalStatusText(status);
 
@@ -311,7 +314,8 @@ class CommissionTransaction {
   }
 
   @override
-  String toString() => 'CommissionTransaction(id: $id, amount: $amount, type: $typeText)';
+  String toString() =>
+      'CommissionTransaction(id: $id, amount: $amount, type: $typeText)';
 }
 
 /// 🎯 Niveau d'Affiliation
@@ -380,7 +384,7 @@ class AffiliateReferral {
       userId: json['userId'] as String,
       affiliateId: json['affiliateId'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
-      user: json['user'] != null 
+      user: json['user'] != null
           ? AffiliateUser.fromJson(json['user'] as Map<String, dynamic>)
           : null,
     );
@@ -400,4 +404,86 @@ class AffiliateReferral {
 
   @override
   String toString() => 'AffiliateReferral(id: $id, user: $displayName)';
+}
+
+/// 👥 Client lié à un affilié
+class LinkedClient {
+  final AffiliateUser client;
+  final AffiliateClientLink link;
+  final int ordersCount;
+  final double totalCommissions; // 💰 Commissions gagnées au lieu du total dépensé
+
+  const LinkedClient({
+    required this.client,
+    required this.link,
+    required this.ordersCount,
+    required this.totalCommissions,
+  });
+
+  factory LinkedClient.fromJson(Map<String, dynamic> json) {
+    return LinkedClient(
+      client: AffiliateUser.fromJson(json['client'] as Map<String, dynamic>),
+      link: AffiliateClientLink.fromJson(json['link'] as Map<String, dynamic>),
+      ordersCount: json['ordersCount'] as int? ?? 0,
+      totalCommissions: (json['totalCommissions'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'client': client.toJson(),
+      'link': link.toJson(),
+      'ordersCount': ordersCount,
+      'totalCommissions': totalCommissions,
+    };
+  }
+
+  String get displayName => client.displayName;
+  String get email => client.email;
+
+  @override
+  String toString() =>
+      'LinkedClient(client: $displayName, orders: $ordersCount, commissions: $totalCommissions)';
+}
+
+/// 🔗 Liaison affilié-client
+class AffiliateClientLink {
+  final String id;
+  final DateTime startDate;
+  final DateTime? endDate;
+  final bool isActive;
+  final String? type;
+
+  const AffiliateClientLink({
+    required this.id,
+    required this.startDate,
+    this.endDate,
+    required this.isActive,
+    this.type,
+  });
+
+  factory AffiliateClientLink.fromJson(Map<String, dynamic> json) {
+    return AffiliateClientLink(
+      id: json['id'] as String,
+      startDate: DateTime.parse(json['startDate'] as String),
+      endDate: json['endDate'] != null
+          ? DateTime.parse(json['endDate'] as String)
+          : null,
+      isActive: json['isActive'] as bool? ?? true,
+      type: json['type'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
+      'isActive': isActive,
+      'type': type,
+    };
+  }
+
+  @override
+  String toString() => 'AffiliateClientLink(id: $id, active: $isActive)';
 }

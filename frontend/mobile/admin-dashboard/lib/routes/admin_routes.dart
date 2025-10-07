@@ -20,6 +20,7 @@ import '../controllers/service_type_controller.dart';
 import '../controllers/article_service_controller.dart';
 import '../screens/services/service_types_screen.dart';
 import '../screens/services/service_article_couples_screen.dart';
+import '../screens/affiliates/affiliate_management_screen.dart';
 import '../middleware/auth_middleware.dart';
 
 class AdminBinding extends Bindings {
@@ -72,6 +73,7 @@ class AdminRoutes {
   static const String subscriptions = '/subscriptions';
   static const String loyalty = '/loyalty';
   static const String delivery = '/delivery';
+  static const String affiliates = '/affiliates';
 
   // Ajouter les routes pour les commandes flash
   static const String flashOrders = '/orders/flash';
@@ -95,6 +97,8 @@ class AdminRoutes {
       //   return '/service-types'; // Ajout de la route service-types
       case MenuIndices.users:
         return users;
+      case MenuIndices.affiliates:
+        return affiliates;
       case MenuIndices.loyalty:
         return loyalty;
       case MenuIndices.delivery:
@@ -129,6 +133,8 @@ class AdminRoutes {
         return MenuIndices.serviceArticleCouples;
       case users:
         return MenuIndices.users;
+      case affiliates:
+        return MenuIndices.affiliates;
       case loyalty:
         return MenuIndices.loyalty;
       case delivery:
@@ -231,6 +237,15 @@ class AdminRoutes {
       middlewares: [AuthMiddleware()],
       transition: Transition.fadeIn,
     ),
+    GetPage(
+      name: affiliates,
+      page: () => AffiliateManagementScreen(),
+      binding: BindingsBuilder(() {
+        // Aucune dépendance spécifique à initialiser pour cette page
+      }),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.fadeIn,
+    ),
   ];
 
   // Navigation helpers
@@ -288,6 +303,10 @@ class AdminRoutes {
 
   static void goToLoyalty() {
     navigateByIndex(MenuIndices.loyalty);
+  }
+
+  static void goToAffiliates() {
+    navigateByIndex(MenuIndices.affiliates);
   }
 
   // Ajouter les méthodes de navigation

@@ -401,4 +401,172 @@ class AffiliateService {
       rethrow;
     }
   }
+
+  // ===== AFFILIATE CLIENT LINKS =====
+
+  /// Récupère toutes les liaisons affilié-client
+  static Future<List<AffiliateClientLink>> getAffiliateClientLinks({
+    int page = 1,
+    int limit = 10,
+    String? affiliateId,
+    String? clientId,
+    bool? isActive,
+  }) async {
+    try {
+      print('[AffiliateService] Getting affiliate client links...');
+
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+
+      if (affiliateId != null) queryParams['affiliateId'] = affiliateId;
+      if (clientId != null) queryParams['clientId'] = clientId;
+      if (isActive != null) queryParams['isActive'] = isActive;
+
+      final response = await _apiService.get(
+        '/admin/affiliate-links',
+        queryParameters: queryParams,
+      );
+
+      print('[AffiliateService] Links API response: ${response.data}');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data['data'];
+        if (data != null && data is List) {
+          final links =
+              data.map((item) => AffiliateClientLink.fromJson(item)).toList();
+          print('[AffiliateService] ✅ Retrieved ${links.length} links');
+          return links;
+        }
+      }
+
+      print('[AffiliateService] ⚠️ No links data in response');
+      return [];
+    } catch (e) {
+      print('[AffiliateService] ❌ Error getting links: $e');
+      rethrow;
+    }
+  }
+
+  /// Crée une nouvelle liaison affilié-client
+  static Future<AffiliateClientLink?> createAffiliateClientLink({
+    required String affiliateId,
+    required String clientId,
+    required DateTime startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      print('[AffiliateService] Creating affiliate client link...');
+      print('[AffiliateService] Parameters:');
+      print('  - affiliateId: $affiliateId');
+      print('  - clientId: $clientId');
+      print('  - startDate: $startDate');
+      print('  - endDate: $endDate');
+
+      final body = {
+        'affiliateId': affiliateId,
+        'clientId': clientId,
+        'startDate': startDate.toIso8601String(),
+        if (endDate != null) 'endDate': endDate.toIso8601String(),
+      };
+
+      print('[AffiliateService] Request body: $body');
+
+      final response =
+          await _apiService.post('/admin/affiliate-links', data: body);
+
+      print(
+          '[AffiliateService] Create link response status: ${response.statusCode}');
+      print('[AffiliateService] Create link response data: ${response.data}');
+      print(
+          '[AffiliateService] Create link response headers: ${response.headers}');
+
+      if (response.statusCode == 201 && response.data != null) {
+        final link = AffiliateClientLink.fromJson(response.data['data']);
+        print('[AffiliateService] ✅ Link created successfully');
+        return link;
+      }
+
+      // Log détaillé de l'erreur
+      print(
+          '[AffiliateService] ❌ Failed to create link - Status: ${response.statusCode}');
+      if (response.data != null) {
+        print('[AffiliateService] ❌ Response data: ${response.data}');
+        if (response.data is Map && response.data.containsKey('message')) {
+          print(
+              '[AffiliateService] ❌ Error message: ${response.data['message']}');
+        }
+        if (response.data is Map && response.data.containsKey('error')) {
+          print(
+              '[AffiliateService] ❌ Error details: ${response.data['error']}');
+        }
+      }
+
+      throw Exception('Failed to create link');
+    } catch (e) {
+      print('[AffiliateService] ❌ Error creating link: $e');
+      print('[AffiliateService] ❌ Stack trace: ${StackTrace.current}');
+      rethrow;
+    }
+  }
+
+  /// Met à jour une liaison affilié-client
+  static Future<AffiliateClientLink?> updateAffiliateClientLink({
+    required String linkId,
+    String? affiliateId,
+    String? clientId,
+    DateTime? startDate,
+    DateTime? endDate,
+    bool? isActive,
+  }) async {
+    try {
+      print('[AffiliateService] Updating affiliate client link...');
+
+      final body = <String, dynamic>{};
+      if (affiliateId != null) body['affiliateId'] = affiliateId;
+      if (clientId != null) body['clientId'] = clientId;
+      if (startDate != null) body['startDate'] = startDate.toIso8601String();
+      if (endDate != null) body['endDate'] = endDate.toIso8601String();
+      if (isActive != null) body['isActive'] = isActive;
+
+      final response =
+          await _apiService.put('/admin/affiliate-links/$linkId', data: body);
+
+      print('[AffiliateService] Update link response: ${response.data}');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final link = AffiliateClientLink.fromJson(response.data['data']);
+        print('[AffiliateService] ✅ Link updated successfully');
+        return link;
+      }
+
+      throw Exception('Failed to update link');
+    } catch (e) {
+      print('[AffiliateService] ❌ Error updating link: $e');
+      rethrow;
+    }
+  }
+
+  /// Supprime une liaison affilié-client
+  static Future<bool> deleteAffiliateClientLink(String linkId) async {
+    try {
+      print('[AffiliateService] Deleting affiliate client link...');
+
+      final response =
+          await _apiService.delete('/admin/affiliate-links/$linkId');
+
+      print('[AffiliateService] Delete link response: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('[AffiliateService] ✅ Link deleted successfully');
+        return true;
+      }
+
+      throw Exception('Failed to delete link');
+    } catch (e) {
+      print('[AffiliateService] ❌ Error deleting link: $e');
+      rethrow;
+    }
+  }
 }

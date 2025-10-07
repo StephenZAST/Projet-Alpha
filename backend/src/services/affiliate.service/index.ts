@@ -8,13 +8,61 @@ const prisma = new PrismaClient();
 
 export class AffiliateService {
   // Profile Management
-  static getProfile = AffiliateProfileService.getAffiliateProfile;
+  static async getProfile(userId: string) {
+    try {
+      console.log('[AffiliateService] Getting profile for userId:', userId);
+      const profile = await AffiliateProfileService.getAffiliateProfile(userId);
+      console.log('[AffiliateService] Profile retrieved:', profile ? 'SUCCESS' : 'NOT_FOUND');
+      return profile;
+    } catch (error) {
+      console.error('[AffiliateService] Error getting profile:', error);
+      throw error;
+    }
+  }
+  
   static updateProfile = AffiliateProfileService.updateAffiliateProfile;
-  static getReferrals = AffiliateProfileService.getReferralsByAffiliateId;
   static createAffiliate = AffiliateProfileService.createAffiliate;
+  
+  static async getReferrals(userId: string) {
+    try {
+      console.log('[AffiliateService] Getting referrals for userId:', userId);
+      
+      // D'abord récupérer le profil affilié pour obtenir l'affiliateId
+      const profile = await AffiliateProfileService.getAffiliateProfile(userId);
+      if (!profile) {
+        throw new Error('Affiliate profile not found');
+      }
+      
+      console.log('[AffiliateService] Found affiliate profile:', profile.id);
+      
+      // Maintenant récupérer les référencements avec l'affiliateId
+      return await AffiliateProfileService.getReferralsByAffiliateId(profile.id);
+    } catch (error) {
+      console.error('[AffiliateService] Error getting referrals:', error);
+      throw error;
+    }
+  }
 
   // Commission Management
-  static getCommissions = AffiliateCommissionService.getCommissions;
+  static async getCommissions(userId: string, page: number = 1, limit: number = 10) {
+    try {
+      console.log('[AffiliateService] Getting commissions for userId:', userId);
+      
+      // D'abord récupérer le profil affilié pour obtenir l'affiliateId
+      const profile = await AffiliateProfileService.getAffiliateProfile(userId);
+      if (!profile) {
+        throw new Error('Affiliate profile not found');
+      }
+      
+      console.log('[AffiliateService] Found affiliate profile:', profile.id);
+      
+      // Maintenant récupérer les commissions avec l'affiliateId
+      return await AffiliateCommissionService.getCommissions(profile.id, page, limit);
+    } catch (error) {
+      console.error('[AffiliateService] Error getting commissions:', error);
+      throw error;
+    }
+  }
   static calculateCommissionRate = AffiliateCommissionService.calculateCommissionRate;
   static processNewCommission = AffiliateCommissionService.processNewCommission;
 
@@ -210,10 +258,28 @@ export class AffiliateService {
   }
 
   static async generateCode(userId: string): Promise<string> {
+    // Vérifier si l'utilisateur a déjà un code affilié
+    const profile = await prisma.affiliate_profiles.findUnique({
+      where: { userId }
+    });
+    if (!profile) {
+      throw new Error("Affiliate profile not found for this user");
+    }
+    if (profile.affiliate_code) {
+      // Un code existe déjà, on refuse la régénération
+      throw new Error("Affiliate code already exists and cannot be regenerated");
+    }
+    // Générer un nouveau code unique
     const prefix = 'AFF';
     const timestamp = Date.now().toString(36);
     const randomStr = Math.random().toString(36).substring(2, 6);
-    return `${prefix}-${timestamp}-${randomStr}`.toUpperCase();
+    const newCode = `${prefix}-${timestamp}-${randomStr}`.toUpperCase();
+    // Enregistrer le code dans le profil affilié
+    await prisma.affiliate_profiles.update({
+      where: { userId },
+      data: { affiliate_code: newCode }
+    });
+    return newCode;
   }
 
   static async getCurrentLevel(userId: string): Promise<any> {

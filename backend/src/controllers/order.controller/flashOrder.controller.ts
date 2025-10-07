@@ -21,15 +21,40 @@ export class FlashOrderController {
     try {
       const { addressId, notes, note } = req.body as FlashOrderData;
       const userId = req.user?.id;
-      
       if (!userId) {
         console.error('[FlashOrderController] No userId found in request');
         return res.status(401).json({ error: 'Unauthorized - User ID required' });
       }
-
       const noteText = notes || note;
 
-      // Créer la commande avec les métadonnées
+      // --- Injection automatique du code affilié si non fourni ---
+      let affiliateCodeToUse = req.body.affiliateCode;
+      if (!affiliateCodeToUse) {
+        const now = new Date();
+        const link = await prisma.affiliate_client_links.findFirst({
+          where: {
+            client_id: userId,
+            start_date: { lte: now },
+            OR: [
+              { end_date: null },
+              { end_date: { gte: now } }
+            ],
+            affiliate: {
+              is_active: true,
+              status: 'ACTIVE'
+            }
+          },
+          include: {
+            affiliate: true
+          },
+          orderBy: { start_date: 'desc' }
+        });
+        if (link && link.affiliate && link.affiliate.affiliate_code) {
+          affiliateCodeToUse = link.affiliate.affiliate_code;
+        }
+      }
+
+      // Créer la commande avec les métadonnées et le code affilié injecté
       const defaultServiceTypeId = await prisma.service_types.findFirst({
         where: {
           is_default: true
@@ -43,7 +68,6 @@ export class FlashOrderController {
         throw new Error('No default service type found');
       }
 
-      // Création de la commande
       const order = await prisma.orders.create({
         data: {
           userId,
@@ -53,6 +77,7 @@ export class FlashOrderController {
           createdAt: new Date(),
           updatedAt: new Date(),
           service_type_id: defaultServiceTypeId.id,
+          affiliateCode: affiliateCodeToUse,
           order_metadata: {
             create: {
               is_flash_order: true,
