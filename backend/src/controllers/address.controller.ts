@@ -147,8 +147,13 @@ export class AddressController {
       const userId = req.user?.id;
       const userRole = req.user?.role ?? '';
 
+      console.log('[updateAddress] Request params:', req.params);
+      console.log('[updateAddress] Request body:', req.body);
+      console.log('[updateAddress] User info:', { userId, userRole });
+
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        console.error('[updateAddress] No userId found in request');
+        return res.status(401).json({ error: 'Unauthorized - User not authenticated' });
       }
 
       const existingAddress = await AddressService.getAddressById(addressId);

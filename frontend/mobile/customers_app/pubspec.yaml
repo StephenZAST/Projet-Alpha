@@ -40,6 +40,11 @@ dependencies:
   provider: ^6.1.1              # State management
   shared_preferences: ^2.2.2    # Persistance des préférences
   http: ^1.1.0                  # Requêtes HTTP pour l'API
+  
+  # 🗺️ Géolocalisation et Cartes
+  flutter_map: ^6.1.0           # Cartes OpenStreetMap
+  latlong2: ^0.9.1              # Coordonnées géographiques (mis à jour pour compatibilité avec flutter_map)
+  geolocator: ^10.1.0           # Géolocalisation GPS
 
 dev_dependencies:
   flutter_test:

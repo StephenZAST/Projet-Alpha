@@ -41,7 +41,50 @@ class Address {
 
   /// 📍 Adresse courte pour les listes
   String get shortAddress {
+    // Éviter d'afficher les coordonnées GPS dans l'adresse courte
+    if (_isCoordinateString(name)) {
+      return city.isNotEmpty ? city : 'Position GPS';
+    }
     return '$name - $city';
+  }
+
+  /// 🔍 Vérifier si une chaîne ressemble à des coordonnées GPS
+  bool _isCoordinateString(String text) {
+    // Vérifier si le texte contient des coordonnées (format: nombre.nombre, nombre.nombre)
+    final coordinatePattern = RegExp(r'^-?\d+\.\d+,?\s*-?\d+\.\d+$');
+    return coordinatePattern.hasMatch(text.trim());
+  }
+
+  /// 📍 Nom d'affichage intelligent (évite les coordonnées GPS)
+  String get displayName {
+    if (_isCoordinateString(name)) {
+      return city.isNotEmpty ? city : 'Position GPS';
+    }
+    return name;
+  }
+
+  /// 📍 Adresse d'affichage intelligente
+  String get smartFormattedAddress {
+    final parts = <String>[];
+    
+    // Utiliser le nom intelligent
+    if (displayName.isNotEmpty && displayName != 'Position GPS') {
+      parts.add(displayName);
+    }
+    
+    // Ajouter la rue si elle n'est pas des coordonnées
+    if (street.isNotEmpty && !_isCoordinateString(street)) {
+      parts.add(street);
+    }
+    
+    // Ajouter ville et code postal
+    if (city.isNotEmpty && postalCode.isNotEmpty) {
+      parts.add('$postalCode $city');
+    } else if (city.isNotEmpty) {
+      parts.add(city);
+    }
+    
+    return parts.join('\n');
   }
 
   /// 🗺️ Vérifier si l'adresse a des coordonnées GPS

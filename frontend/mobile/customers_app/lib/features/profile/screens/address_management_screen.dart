@@ -6,7 +6,7 @@ import '../../../components/glass_components.dart';
 import '../../../shared/providers/address_provider.dart';
 import '../../../core/models/address.dart';
 import '../widgets/address_card.dart';
-import '../widgets/address_form_dialog.dart';
+import '../widgets/enhanced_address_form_dialog.dart';
 
 /// 🏠 Écran de Gestion des Adresses - Alpha Client App
 ///
@@ -551,7 +551,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
   void _showCreateAddressDialog() {
     showDialog(
       context: context,
-      builder: (context) => AddressFormDialog(
+      builder: (context) => EnhancedAddressFormDialog(
         title: 'Nouvelle Adresse',
         onSave: (request) async {
           final provider = Provider.of<AddressProvider>(context, listen: false);
@@ -573,7 +573,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
   void _showEditAddressDialog(Address address) {
     showDialog(
       context: context,
-      builder: (context) => AddressFormDialog(
+      builder: (context) => EnhancedAddressFormDialog(
         title: 'Modifier Adresse',
         initialAddress: address,
         onSave: (request) async {

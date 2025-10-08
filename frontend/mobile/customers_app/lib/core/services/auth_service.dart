@@ -53,9 +53,11 @@ class AuthService {
           }
 
           debugPrint('[AuthService] Response data: $responseData');
-          
-          if (!responseData.containsKey('user') || !responseData.containsKey('token')) {
-            debugPrint('[AuthService] Données manquantes - user: ${responseData.containsKey('user')}, token: ${responseData.containsKey('token')}');
+
+          if (!responseData.containsKey('user') ||
+              !responseData.containsKey('token')) {
+            debugPrint(
+                '[AuthService] Données manquantes - user: ${responseData.containsKey('user')}, token: ${responseData.containsKey('token')}');
             return AuthResult.error('Données utilisateur ou token manquants');
           }
 
@@ -72,10 +74,12 @@ class AuthService {
         } catch (e, stack) {
           debugPrint('[AuthService] Erreur lors du parsing des données: $e');
           debugPrint('[AuthService] Stack trace: $stack');
-          return AuthResult.error('Erreur lors du traitement des données: ${e.toString()}');
+          return AuthResult.error(
+              'Erreur lors du traitement des données: ${e.toString()}');
         }
       } else {
-        final errorMessage = data['error'] ?? data['message'] ?? 'Erreur de connexion';
+        final errorMessage =
+            data['error'] ?? data['message'] ?? 'Erreur de connexion';
         debugPrint('[AuthService] Erreur backend: $errorMessage');
         return AuthResult.error(errorMessage);
       }

@@ -23,6 +23,151 @@ class AddressCard extends StatelessWidget {
     this.onSetDefault,
   }) : super(key: key);
 
+  /// 📍 Afficher les détails GPS
+  void _showGpsDetails(BuildContext context, Address address) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.gps_fixed,
+              color: AppColors.success,
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Coordonnées GPS',
+              style: AppTextStyles.headlineSmall.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              address.name,
+              style: AppTextStyles.labelLarge.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              address.formattedAddress,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant(context),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.my_location,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Latitude:',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.textSecondary(context),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        address.gpsLatitude!.toStringAsFixed(6),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.textPrimary(context),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.my_location,
+                        color: AppColors.primary,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Longitude:',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.textSecondary(context),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        address.gpsLongitude!.toStringAsFixed(6),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.textPrimary(context),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.info.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: AppColors.info,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Ces coordonnées permettent aux livreurs de vous localiser précisément.',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.info,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          PremiumButton(
+            text: 'Fermer',
+            onPressed: () => Navigator.pop(context),
+            width: 100,
+            height: 40,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -66,14 +211,14 @@ class AddressCard extends StatelessWidget {
                             Row(
                               children: [
                                 Flexible(
-                                  child: Text(
-                                    address.name,
-                                    style: AppTextStyles.labelLarge.copyWith(
-                                      color: AppColors.textPrimary(context),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                child: Text(
+                                address.displayName,
+                                style: AppTextStyles.labelLarge.copyWith(
+                                color: AppColors.textPrimary(context),
+                                fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                ),
                                 ),
                                 if (address.isDefault) ...[
                                   const SizedBox(width: 8),
@@ -171,29 +316,36 @@ class AddressCard extends StatelessWidget {
               children: [
                 // Coordonnées GPS
                 if (address.hasGpsCoordinates)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.gps_fixed,
-                          color: AppColors.success,
-                          size: 12,
+                  GestureDetector(
+                    onTap: () => _showGpsDetails(context, address),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: AppColors.success.withOpacity(0.3),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'GPS',
-                          style: AppTextStyles.labelSmall.copyWith(
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.gps_fixed,
                             color: AppColors.success,
-                            fontSize: 10,
+                            size: 12,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            'GPS',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.success,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 

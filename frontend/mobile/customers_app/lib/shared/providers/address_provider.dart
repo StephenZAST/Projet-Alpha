@@ -103,22 +103,27 @@ class AddressProvider extends ChangeNotifier {
 
   /// ✏️ Mettre à jour une adresse
   Future<bool> updateAddress(String addressId, UpdateAddressRequest request) async {
+    print('[AddressProvider] Updating address $addressId with request: ${request.toJson()}');
+    
     _isUpdating = true;
     _clearError();
     notifyListeners();
 
     try {
       final result = await _addressService.updateAddress(addressId, request);
+      print('[AddressProvider] Update result: success=${result.isSuccess}, error=${result.error}');
 
       if (result.isSuccess) {
         // Recharger les adresses pour avoir la liste à jour
         await loadAddresses();
+        print('[AddressProvider] Addresses reloaded after update');
         return true;
       } else {
         _setError(result.error ?? 'Erreur lors de la mise à jour de l\'adresse');
         return false;
       }
     } catch (e) {
+      print('[AddressProvider] Update exception: $e');
       _setError('Erreur de connexion: ${e.toString()}');
       return false;
     } finally {

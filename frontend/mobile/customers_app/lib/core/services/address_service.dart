@@ -77,7 +77,7 @@ class AddressService {
   }
 
   /// ✏️ Mettre à jour une adresse
-  /// Endpoint: PATCH /api/addresses/update/:addressId
+  /// Endpoint: PATCH /api/addresses/:addressId
   Future<AddressResult> updateAddress(
       String addressId, UpdateAddressRequest request) async {
     try {
@@ -90,9 +90,14 @@ class AddressService {
         throw Exception('Aucune modification détectée');
       }
 
+      print('[AddressService] Updating address $addressId with data: ${request.toJson()}');
+      print('[AddressService] Token available: ${token != null}');
+      print('[AddressService] Token length: ${token?.length ?? 0}');
+      print('[AddressService] Request URL: ${ApiConfig.url('/addresses/$addressId')}');
+
       final response = await http
           .patch(
-            Uri.parse(ApiConfig.url('/addresses/update/$addressId')),
+            Uri.parse(ApiConfig.url('/addresses/$addressId')),
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
@@ -100,6 +105,9 @@ class AddressService {
             body: jsonEncode(request.toJson()),
           )
           .timeout(ApiConfig.timeout);
+
+      print('[AddressService] Update response status: ${response.statusCode}');
+      print('[AddressService] Update response body: ${response.body}');
 
       final data = jsonDecode(response.body);
 
@@ -110,6 +118,7 @@ class AddressService {
             data['error'] ?? 'Erreur lors de la mise à jour de l\'adresse');
       }
     } catch (e) {
+      print('[AddressService] Update error: $e');
       return AddressResult.error('Erreur de connexion: ${e.toString()}');
     }
   }
