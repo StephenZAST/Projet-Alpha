@@ -243,4 +243,19 @@ class ProfileHeader extends StatelessWidget {
       return '$years an${years > 1 ? 's' : ''}';
     }
   }
+
+  /// 🎨 Obtenir la couleur du niveau de fidélité
+  Color _getLoyaltyTierColor(String tier) {
+    switch (tier.toLowerCase()) {
+      case 'platine':
+        return const Color(0xFFE5E7EB); // Platine
+      case 'or':
+        return const Color(0xFFFCD34D); // Or
+      case 'argent':
+        return const Color(0xFFD1D5DB); // Argent
+      case 'bronze':
+      default:
+        return const Color(0xFFF59E0B); // Bronze
+    }
+  }
 }

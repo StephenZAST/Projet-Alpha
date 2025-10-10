@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import '../../../constants.dart';
 import '../../../components/glass_components.dart';
 import '../../../shared/providers/user_profile_provider.dart';
-import '../../../shared/providers/auth_provider.dart';
-import '../../../shared/providers/address_provider.dart';
+import '../../../core/services/auth_service.dart';
+import '../../auth/screens/login_screen.dart';
 import '../widgets/profile_header.dart';
 import '../widgets/profile_stats_card.dart';
 import '../widgets/profile_menu_section.dart';
@@ -13,6 +13,8 @@ import '../widgets/edit_profile_dialog.dart';
 import '../widgets/change_password_dialog.dart';
 import '../widgets/notification_preferences_dialog.dart';
 import 'address_management_screen.dart';
+import 'help_center_screen.dart';
+import 'contact_us_screen.dart';
 
 /// 👤 Écran de Profil Utilisateur - Alpha Client App
 ///
@@ -25,9 +27,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> 
+class _ProfileScreenState extends State<ProfileScreen>
     with TickerProviderStateMixin {
-  
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
@@ -74,7 +75,8 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   void _initializeProfile() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final profileProvider = Provider.of<UserProfileProvider>(context, listen: false);
+      final profileProvider =
+          Provider.of<UserProfileProvider>(context, listen: false);
       profileProvider.initialize();
     });
   }
@@ -106,13 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     return AppBar(
       backgroundColor: AppColors.surface(context),
       elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back_ios,
-          color: AppColors.textPrimary(context),
-        ),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
+      automaticallyImplyLeading: false, // Retire le bouton retour
       title: Text(
         'Mon Profil',
         style: AppTextStyles.headlineMedium.copyWith(
@@ -223,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Barre de progression
           Container(
             height: 8,
@@ -244,7 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ),
           ),
-          
+
           if (suggestions.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
@@ -256,26 +252,26 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             const SizedBox(height: 8),
             ...suggestions.take(3).map((suggestion) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.arrow_right,
-                    color: AppColors.textTertiary(context),
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      suggestion,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary(context),
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.arrow_right,
+                        color: AppColors.textTertiary(context),
+                        size: 16,
                       ),
-                    ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          suggestion,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary(context),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            )),
+                )),
           ],
         ],
       ),
@@ -310,9 +306,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ],
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Section Préférences
         ProfileMenuSection(
           title: 'Préférences',
@@ -337,9 +333,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ],
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Section Support
         ProfileMenuSection(
           title: 'Support',
@@ -348,13 +344,13 @@ class _ProfileScreenState extends State<ProfileScreen>
               icon: Icons.help_outline,
               title: 'Centre d\'aide',
               subtitle: 'FAQ et support',
-              onTap: () => _showSnackBar('Bientôt disponible'),
+              onTap: _navigateToHelpCenter,
             ),
             ProfileMenuItem(
               icon: Icons.feedback_outlined,
               title: 'Nous contacter',
               subtitle: 'Questions et suggestions',
-              onTap: () => _showSnackBar('Bientôt disponible'),
+              onTap: _navigateToContactUs,
             ),
             ProfileMenuItem(
               icon: Icons.info_outline,
@@ -364,18 +360,18 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ],
         ),
-        
+
         const SizedBox(height: 24),
-        
-        // Section Danger
+
+        // Section Danger (Logout)
         ProfileMenuSection(
           title: 'Zone de danger',
           items: [
             ProfileMenuItem(
-              icon: Icons.delete_outline,
-              title: 'Supprimer le compte',
-              subtitle: 'Action irréversible',
-              onTap: _showDeleteAccountDialog,
+              icon: Icons.logout,
+              title: 'Déconnecter',
+              subtitle: 'Se déconnecter de votre compte',
+              onTap: _showLogoutDialog,
               isDestructive: true,
             ),
           ],
@@ -442,7 +438,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             PremiumButton(
               text: 'Réessayer',
               onPressed: () {
-                final provider = Provider.of<UserProfileProvider>(context, listen: false);
+                final provider =
+                    Provider.of<UserProfileProvider>(context, listen: false);
                 provider.refresh();
               },
               icon: Icons.refresh,
@@ -481,8 +478,48 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _navigateToAddresses() {
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => 
+        pageBuilder: (context, animation, secondaryAnimation) =>
             const AddressManagementScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
+      ),
+    );
+  }
+
+  /// 🆘 Naviguer vers le centre d'aide
+  void _navigateToHelpCenter() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const HelpCenterScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
+      ),
+    );
+  }
+
+  /// 📞 Naviguer vers nous contacter
+  void _navigateToContactUs() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const ContactUsScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
             position: animation.drive(
@@ -570,8 +607,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  /// 🗑️ Afficher le dialog de suppression de compte
-  void _showDeleteAccountDialog() {
+  /// � Afficher le dialog de déconnexion
+  void _showLogoutDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -581,18 +618,35 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         title: Row(
           children: [
-            Icon(
-              Icons.warning_outlined,
-              color: AppColors.error,
-              size: 28,
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.logout,
+                color: AppColors.error,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
-            Text(
-              'Supprimer le compte',
-              style: AppTextStyles.headlineSmall.copyWith(
-                color: AppColors.error,
-                fontWeight: FontWeight.w700,
+            Expanded(
+              child: Text(
+                'Déconnecter',
+                style: AppTextStyles.headlineSmall.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.close,
+                color: AppColors.textSecondary(context),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         ),
@@ -601,34 +655,18 @@ class _ProfileScreenState extends State<ProfileScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Cette action est irréversible. Toutes vos données seront définitivement supprimées :',
+              'Voulez-vous vraiment vous déconnecter ? Vous pourrez vous reconnecter depuis la page de connexion.',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary(context),
               ),
             ),
             const SizedBox(height: 12),
-            ...['Profil et informations personnelles', 'Historique des commandes', 'Points de fidélité', 'Adresses sauvegardées']
-                .map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.close,
-                        color: AppColors.error,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          item,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textSecondary(context),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
+            Text(
+              'Vous serez redirigé vers la page de connexion.',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textTertiary(context),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -642,14 +680,20 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
           ),
           PremiumButton(
-            text: 'Supprimer',
-            onPressed: () {
+            text: 'Déconnecter',
+            onPressed: () async {
               Navigator.pop(context);
-              _showSnackBar('Fonctionnalité bientôt disponible');
+              // Perform logout and navigate to login
+              final authService = AuthService();
+              await authService.logout();
+              // Push replacement to LoginScreen
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
             },
             backgroundColor: AppColors.error,
-            width: 100,
             height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           ),
         ],
       ),

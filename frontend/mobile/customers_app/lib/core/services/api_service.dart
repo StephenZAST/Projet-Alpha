@@ -15,6 +15,12 @@ class ApiService {
     try {
       final response = await future.timeout(ApiConfig.timeout);
 
+      // Debug: log status and raw body for easier troubleshooting
+      try {
+        print('[ApiService] response status: ${response.statusCode}');
+        print('[ApiService] response body: ${response.body}');
+      } catch (_) {}
+
       final content =
           response.body.isNotEmpty ? jsonDecode(response.body) : null;
 
@@ -56,6 +62,12 @@ class ApiService {
           queryParameters?.map((k, v) => MapEntry(k, v?.toString())),
     );
     final headers = await _buildHeaders();
+    // Debug: outgoing request
+    try {
+      print('[ApiService] GET $uri');
+      print('[ApiService] headers: $headers');
+    } catch (_) {}
+
     return _safeRequest(http.get(uri, headers: headers));
   }
 
@@ -64,6 +76,13 @@ class ApiService {
     final uri = Uri.parse(url);
     final headers = await _buildHeaders();
     final body = data != null ? jsonEncode(data) : null;
+    // Debug: outgoing request
+    try {
+      print('[ApiService] POST $uri');
+      print('[ApiService] headers: $headers');
+      print('[ApiService] body: $body');
+    } catch (_) {}
+
     return _safeRequest(http.post(uri, headers: headers, body: body));
   }
 
@@ -72,6 +91,13 @@ class ApiService {
     final uri = Uri.parse(url);
     final headers = await _buildHeaders();
     final body = data != null ? jsonEncode(data) : null;
+    // Debug: outgoing request
+    try {
+      print('[ApiService] PATCH $uri');
+      print('[ApiService] headers: $headers');
+      print('[ApiService] body: $body');
+    } catch (_) {}
+
     return _safeRequest(http.patch(uri, headers: headers, body: body));
   }
 

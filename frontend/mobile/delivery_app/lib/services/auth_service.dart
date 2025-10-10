@@ -126,12 +126,12 @@ class AuthService extends GetxService {
 
       if (response.statusCode == 200) {
         final responseData = response.data;
-        
+
         // Vérifie la structure de la réponse
         if (responseData['success'] != true || responseData['data'] == null) {
           return AuthResult.error('Réponse invalide du serveur');
         }
-        
+
         final data = responseData['data'] as Map<String, dynamic>;
 
         // Vérifie que l'utilisateur a un rôle autorisé (DELIVERY, ADMIN, SUPER_ADMIN)
@@ -316,7 +316,8 @@ class AuthService extends GetxService {
     try {
       debugPrint('🔒 Changement de mot de passe...');
 
-      final response = await _apiService.put(
+      debugPrint('[AuthService] POST /auth/change-password payload present');
+      final response = await _apiService.post(
         '/auth/change-password',
         data: {
           'currentPassword': currentPassword,
@@ -324,11 +325,30 @@ class AuthService extends GetxService {
         },
       );
 
-      if (response.statusCode == 200) {
-        debugPrint('✅ Mot de passe changé');
-        return AuthResult.success();
+      debugPrint(
+          '[AuthService] changePassword response status: ${response.statusCode}');
+      debugPrint(
+          '[AuthService] changePassword response data: ${response.data}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final data = response.data;
+          if (data != null && data['success'] == true) {
+            return AuthResult.success();
+          }
+          return AuthResult.error(
+              data?['message'] ?? 'Erreur lors du changement');
+        } catch (e) {
+          debugPrint('[AuthService] Non-JSON OK response, treating as success');
+          return AuthResult.success();
+        }
       } else {
-        final message = response.data['message'] ?? 'Erreur lors du changement';
+        final message = response.data != null
+            ? (response.data['message'] ??
+                response.data['error'] ??
+                response.data.toString())
+            : 'Erreur lors du changement (status ${response.statusCode})';
+        debugPrint('[AuthService] changePassword error message: $message');
         return AuthResult.error(message);
       }
     } on DioException catch (e) {

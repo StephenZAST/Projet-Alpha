@@ -50,9 +50,11 @@ class ProfileStatsCard extends StatelessWidget {
               LayoutBuilder(
                 builder: (context, constraints) {
                   final crossAxisCount = constraints.maxWidth > 600 ? 4 : 2;
-                  final itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 12) / crossAxisCount;
+                  final itemWidth =
+                      (constraints.maxWidth - (crossAxisCount - 1) * 12) /
+                          crossAxisCount;
                   final itemHeight = itemWidth * 0.9; // Ratio plus adaptatif
-                  
+
                   return GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -67,13 +69,13 @@ class ProfileStatsCard extends StatelessWidget {
                         '${stats.totalOrders}',
                         Icons.shopping_bag_outlined,
                         AppColors.primary,
-                        'Total passées',
+                        'Derniers 3 mois',
                       ),
                       _buildStatCard(
                         context,
                         'Dépensé',
-                        '€${stats.totalSpent.toStringAsFixed(0)}',
-                        Icons.euro_outlined,
+                        stats.formattedTotalSpent,
+                        Icons.attach_money_outlined,
                         AppColors.success,
                         'Montant total',
                       ),
@@ -88,7 +90,7 @@ class ProfileStatsCard extends StatelessWidget {
                       _buildStatCard(
                         context,
                         'Adresses',
-                        '${stats.addressesCount}',
+                        '${stats.addressCount}',
                         Icons.location_on_outlined,
                         AppColors.info,
                         'Configurées',
@@ -100,35 +102,8 @@ class ProfileStatsCard extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              // Informations supplémentaires
-              if (stats.lastOrderDate != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant(context),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.schedule_outlined,
-                        color: AppColors.textSecondary(context),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Dernière commande: ${_formatLastOrderDate(stats.lastOrderDate!)}',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              if (stats.favoriteService != null) ...[
-                const SizedBox(height: 8),
+              // Informations supplémentaires (simplifiées)
+              if (stats.loyaltyPoints > 0) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -138,13 +113,13 @@ class ProfileStatsCard extends StatelessWidget {
                   child: Row(
                     children: [
                       Icon(
-                        Icons.favorite_outline,
+                        Icons.stars,
                         color: AppColors.primary,
                         size: 16,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Service préféré: ${stats.favoriteService}',
+                        'Niveau de fidélité: ${stats.loyaltyTier}',
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,

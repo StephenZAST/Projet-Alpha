@@ -1,106 +1,115 @@
 import 'package:flutter/material.dart';
-import '../../core/models/user.dart' as model;
-import '../../core/services/user_profile_service.dart' as ups;
+import '../../core/models/user.dart';
+import '../../core/services/user_profile_service.dart';
+import '../../core/utils/storage_service.dart';
 
 /// 👤 Provider de Profil Utilisateur - Alpha Client App
 ///
-/// Gère l'état du profil utilisateur avec synchronisation backend
-/// et gestion des préférences et statistiques.
+/// Gère l'état du profil utilisateur avec données réelles
+/// et statistiques de fidélité depuis le backend.
 class UserProfileProvider extends ChangeNotifier {
-  final ups.UserProfileService _userProfileService = ups.UserProfileService();
+  final UserProfileService _profileService = UserProfileService();
 
-  // État du profil utilisateur
-  model.User? _currentUser;
-  ups.UserStats? _userStats;
-  model.NotificationPreferences? _notificationPreferences;
-
-  // États de chargement et d'erreur
+  User? _user;
+  UserStats? _stats;
   bool _isLoading = false;
-  bool _isUpdating = false;
-  bool _isChangingPassword = false;
   String? _error;
 
   // Getters
-  model.User? get currentUser => _currentUser;
-  ups.UserStats? get userStats => _userStats;
-  model.NotificationPreferences? get notificationPreferences =>
-      _notificationPreferences;
+  User? get currentUser => _user;
+  UserStats? get userStats => _stats;
   bool get isLoading => _isLoading;
-  bool get isUpdating => _isUpdating;
-  bool get isChangingPassword => _isChangingPassword;
   String? get error => _error;
+  bool get hasUserData => _user != null;
+  bool get hasStats =>
+      _stats != null &&
+      (_stats!.totalOrders > 0 ||
+          _stats!.totalSpent > 0 ||
+          _stats!.loyaltyPoints > 0);
+
+  // Statistiques (avec fallback)
+  int get totalOrders => _stats?.totalOrders ?? 0;
+  double get totalSpent => _stats?.totalSpent ?? 0.0;
+  int get loyaltyPoints => _stats?.loyaltyPoints ?? 0;
+  int get addressCount => _stats?.addressCount ?? 0;
 
   // Getters calculés
-  bool get hasUserData => _currentUser != null;
-  String get userDisplayName => _currentUser?.fullName ?? 'Utilisateur';
-  String get userInitials => _currentUser?.initials ?? 'U';
-  bool get hasStats => _userStats != null;
+  String get userDisplayName => _user?.fullName ?? 'Utilisateur';
+  String get userInitials => _user?.initials ?? 'U';
 
-  /// 🚀 Initialisation du provider
+  /// 🚀 Initialiser le provider
   Future<void> initialize() async {
     _setLoading(true);
 
     try {
-      // Charger le profil utilisateur
-      await loadUserProfile();
+      // Récupérer l'utilisateur depuis le cache d'abord
+      final cachedUser = await StorageService.getUser();
+      if (cachedUser != null) {
+        _user = cachedUser;
+        print(
+            '[UserProfileProvider] Utilisateur chargé depuis le cache: ${_user!.fullName}');
+        notifyListeners();
+      }
 
-      // Charger les statistiques
-      await loadUserStats();
+      // Essayer de récupérer les données depuis l'API (profil depuis cache)
+      try {
+        _user = await _profileService.getUserProfile();
+        print('[UserProfileProvider] Profil utilisateur récupéré');
+      } catch (e) {
+        print(
+            '[UserProfileProvider] Impossible de récupérer le profil depuis l\'API: $e');
+        // Continuer avec l'utilisateur en cache
+      }
+
+      // Récupérer les statistiques (peut échouer silencieusement)
+      try {
+        _stats = await _profileService.getUserStats();
+        print(
+            '[UserProfileProvider] Statistiques récupérées: ${_stats!.loyaltyPoints} points');
+      } catch (e) {
+        print(
+            '[UserProfileProvider] Impossible de récupérer les statistiques: $e');
+        // Statistiques par défaut
+        _stats = UserStats(
+          totalOrders: 0,
+          totalSpent: 0.0,
+          loyaltyPoints: 0,
+          addressCount: 0,
+        );
+      }
 
       _clearError();
+      notifyListeners();
     } catch (e) {
-      _setError('Erreur d\'initialisation: ${e.toString()}');
+      print('[UserProfileProvider] Erreur initialize: $e');
+
+      // En cas d'erreur totale, essayer de charger depuis le cache
+      if (_user == null) {
+        final cachedUser = await StorageService.getUser();
+        if (cachedUser != null) {
+          _user = cachedUser;
+          _stats = UserStats(
+            totalOrders: 0,
+            totalSpent: 0.0,
+            loyaltyPoints: 0,
+            addressCount: 0,
+          );
+          print('[UserProfileProvider] Fallback vers le cache réussi');
+          _clearError();
+          notifyListeners();
+        } else {
+          _setError(
+              'Aucun profil utilisateur disponible. Veuillez vous reconnecter.');
+        }
+      }
     } finally {
       _setLoading(false);
     }
   }
 
-  /// 👤 Charger le profil utilisateur
-  Future<void> loadUserProfile() async {
-    try {
-      _currentUser = await _userProfileService.getUserProfile();
-      _clearError();
-      notifyListeners();
-    } catch (e) {
-      _setError('Erreur de chargement du profil: ${e.toString()}');
-    }
-  }
-
-  /// 📊 Charger les statistiques utilisateur
-  Future<void> loadUserStats() async {
-    try {
-      _userStats = await _userProfileService.getUserStats();
-      notifyListeners();
-    } catch (e) {
-      // Erreur silencieuse pour les statistiques
-    }
-  }
-
-  /// ✏️ Mettre à jour le profil utilisateur
-  Future<bool> updateUserProfile(ups.UpdateUserProfileRequest request) async {
-    _isUpdating = true;
-    _clearError();
-    notifyListeners();
-
-    try {
-      final result = await _userProfileService.updateUserProfile(request);
-
-      if (result.isSuccess && result.user != null) {
-        _currentUser = result.user;
-        _clearError();
-        notifyListeners();
-        return true;
-      } else {
-        _setError(result.error ?? 'Erreur lors de la mise à jour du profil');
-        return false;
-      }
-    } catch (e) {
-      _setError('Erreur de connexion: ${e.toString()}');
-      return false;
-    } finally {
-      _isUpdating = false;
-      notifyListeners();
-    }
+  /// 🔄 Actualiser les données
+  Future<void> refresh() async {
+    await initialize();
   }
 
   /// 🔒 Changer le mot de passe
@@ -108,108 +117,112 @@ class UserProfileProvider extends ChangeNotifier {
     required String currentPassword,
     required String newPassword,
   }) async {
-    _isChangingPassword = true;
+    _setLoading(true);
     _clearError();
-    notifyListeners();
 
     try {
-      final result = await _userProfileService.changePassword(
+      final success = await _profileService.changePassword(
         currentPassword: currentPassword,
         newPassword: newPassword,
       );
 
-      if (result.isSuccess) {
-        _clearError();
-        return true;
-      } else {
-        _setError(result.error ?? 'Erreur lors du changement de mot de passe');
-        return false;
-      }
-    } catch (e) {
-      _setError('Erreur de connexion: ${e.toString()}');
-      return false;
-    } finally {
-      _isChangingPassword = false;
-      notifyListeners();
-    }
-  }
-
-  /// 🔔 Mettre à jour les préférences de notification
-  Future<bool> updateNotificationPreferences(
-      model.NotificationPreferences preferences) async {
-    try {
-      // Convert model.NotificationPreferences -> service.NotificationPreferences
-      final ups.NotificationPreferences upsPrefs = ups.NotificationPreferences(
-        emailNotifications: preferences.newsletter,
-        pushNotifications: preferences.push,
-        smsNotifications: preferences.sms,
-        orderUpdates: preferences.orderUpdates,
-        promotionalOffers: preferences.promotions,
-        loyaltyUpdates: false,
-      );
-
-      final result =
-          await _userProfileService.updateNotificationPreferences(upsPrefs);
-
-      if (result.isSuccess) {
-        // Keep provider state as the model type
-        _notificationPreferences = preferences;
+      if (success) {
+        // Clear any previous error and notify
+        print('[UserProfileProvider] changePassword succeeded');
         _clearError();
         notifyListeners();
         return true;
-      } else {
-        _setError(
-            result.error ?? 'Erreur lors de la mise à jour des préférences');
-        return false;
       }
-    } catch (e) {
-      _setError('Erreur de connexion: ${e.toString()}');
+
+      // If not success and no detailed error was provided, set a generic one
+      _setError('Erreur lors du changement de mot de passe');
       return false;
-    }
-  }
-
-  /// 🗑️ Supprimer le compte utilisateur
-  Future<bool> deleteAccount(String password) async {
-    _setLoading(true);
-    _clearError();
-    notifyListeners();
-
-    try {
-      final result = await _userProfileService.deleteAccount(password);
-
-      if (result.isSuccess) {
-        // Nettoyer les données locales
-        _currentUser = null;
-        _userStats = null;
-        _notificationPreferences = null;
-        _clearError();
-        notifyListeners();
-        return true;
-      } else {
-        _setError(result.error ?? 'Erreur lors de la suppression du compte');
-        return false;
-      }
     } catch (e) {
-      _setError('Erreur de connexion: ${e.toString()}');
+      print('[UserProfileProvider] Erreur changePassword: $e');
+      // Use the exception message if available to provide better feedback
+      final message = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : e.toString();
+      _setError('Erreur lors du changement de mot de passe: $message');
       return false;
     } finally {
       _setLoading(false);
-      notifyListeners();
     }
   }
 
-  /// 🔄 Actualiser toutes les données
-  Future<void> refresh() async {
-    await initialize();
+  /// 📈 Calculer la complétude du profil
+  double get profileCompleteness {
+    if (_user == null) return 0.0;
+
+    int completedFields = 0;
+    int totalFields = 5;
+
+    if (_user!.firstName.isNotEmpty) completedFields++;
+    if (_user!.lastName.isNotEmpty) completedFields++;
+    if (_user!.email.isNotEmpty) completedFields++;
+    if (_user!.phone?.isNotEmpty == true) completedFields++;
+    if (addressCount > 0) completedFields++;
+
+    return completedFields / totalFields;
   }
 
-  /// 👤 Mettre à jour les données utilisateur localement
-  void updateLocalUser(model.User user) {
-    _currentUser = user;
-    notifyListeners();
+  /// 💡 Suggestions d'amélioration du profil
+  List<String> get profileSuggestions {
+    if (_user == null) return [];
+
+    List<String> suggestions = [];
+
+    if (_user!.phone?.isEmpty != false) {
+      suggestions.add('Ajoutez votre numéro de téléphone');
+    }
+    if (addressCount == 0) {
+      suggestions.add('Ajoutez une adresse de livraison');
+    }
+    if (totalOrders == 0) {
+      suggestions.add('Passez votre première commande');
+    }
+    if (loyaltyPoints < 100) {
+      suggestions.add('Gagnez plus de points de fidélité');
+    }
+
+    return suggestions;
   }
 
-  /// 🔧 Méthodes utilitaires privées
+  /// 🏆 Niveau de fidélité
+  String get loyaltyTier {
+    return _stats?.loyaltyTier ?? 'BRONZE';
+  }
+
+  /// 🎨 Couleur du niveau de fidélité
+  Color get loyaltyTierColor {
+    final tierColorHex = _stats?.loyaltyTierColor ?? '#F59E0B';
+    return Color(int.parse(tierColorHex.replaceFirst('#', '0xFF')));
+  }
+
+  /// 💰 Montant total formaté en FCFA
+  String get formattedTotalSpent {
+    return _stats?.formattedTotalSpent ?? '0 FCFA';
+  }
+
+  /// 🎯 Informations de fidélité
+  Map<String, dynamic> get loyaltyInfo {
+    if (_stats != null) {
+      return {
+        'points': _stats!.loyaltyPoints,
+        'tier': _stats!.loyaltyTier,
+        'totalSpent': _stats!.totalSpent,
+        'totalOrders': _stats!.totalOrders,
+      };
+    }
+    return {
+      'points': 0,
+      'tier': 'BRONZE',
+      'totalSpent': 0.0,
+      'totalOrders': 0,
+    };
+  }
+
+  /// 🔧 Méthodes privées
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
@@ -222,80 +235,5 @@ class UserProfileProvider extends ChangeNotifier {
 
   void _clearError() {
     _error = null;
-  }
-
-  /// 🧹 Nettoyage des ressources
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  /// 🎯 Méthodes utilitaires pour l'UI
-
-  /// Obtenir les informations de fidélité
-  Map<String, dynamic> get loyaltyInfo {
-    if (_userStats != null) {
-      return {
-        'points': _userStats!.loyaltyPoints,
-        'tier': _userStats!.loyaltyTier,
-        'totalSpent': _userStats!.totalSpent,
-        'totalOrders': _userStats!.totalOrders,
-      };
-    }
-    return {
-      'points': _currentUser?.profile?.loyaltyInfo?.points ?? 0,
-      'tier': _currentUser?.profile?.loyaltyInfo?.tier ?? 'Bronze',
-      'totalSpent': 0.0,
-      'totalOrders': 0,
-    };
-  }
-
-  /// Vérifier si l'utilisateur peut modifier son profil
-  bool get canEditProfile => _currentUser != null && !_isUpdating;
-
-  /// Obtenir le niveau de complétude du profil
-  double get profileCompleteness {
-    if (_currentUser == null) return 0.0;
-
-    int completedFields = 0;
-    int totalFields = 6;
-
-    if (_currentUser!.firstName.isNotEmpty) completedFields++;
-    if (_currentUser!.lastName.isNotEmpty) completedFields++;
-    if (_currentUser!.email.isNotEmpty) completedFields++;
-    if (_currentUser!.phone?.isNotEmpty == true) completedFields++;
-    if (_currentUser!.profile?.dateOfBirth != null) completedFields++;
-    if (_currentUser!.profile?.defaultAddress != null) completedFields++;
-
-    return completedFields / totalFields;
-  }
-
-  /// Obtenir les suggestions d'amélioration du profil
-  List<String> get profileSuggestions {
-    if (_currentUser == null) return [];
-
-    List<String> suggestions = [];
-
-    if (_currentUser!.profile?.dateOfBirth == null) {
-      suggestions.add('Ajoutez votre date de naissance');
-    }
-    if (_currentUser!.profile?.defaultAddress == null) {
-      suggestions.add('Configurez une adresse par défaut');
-    }
-    if (_currentUser!.profile?.defaultPaymentMethod == null) {
-      suggestions.add('Ajoutez un moyen de paiement');
-    }
-    if (_notificationPreferences == null) {
-      suggestions.add('Configurez vos préférences de notification');
-    }
-
-    return suggestions;
-  }
-
-  /// Vérifier si l'utilisateur a des données sensibles
-  bool get hasSensitiveData {
-    return _currentUser != null &&
-        ((_currentUser!.profile?.defaultPaymentMethod != null) ||
-            _userStats?.totalSpent != null && _userStats!.totalSpent > 0);
   }
 }

@@ -8,8 +8,8 @@ import '../../../core/services/user_profile_service.dart';
 
 /// ✏️ Dialog d'Édition de Profil - Alpha Client App
 ///
-/// Dialog premium pour modifier les informations du profil utilisateur
-/// avec validation en temps réel et design glassmorphism.
+/// Dialog simplifié pour modifier les informations du profil utilisateur
+/// basé sur les endpoints backend disponibles.
 class EditProfileDialog extends StatefulWidget {
   const EditProfileDialog({Key? key}) : super(key: key);
 
@@ -24,8 +24,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
 
-  DateTime? _selectedDateOfBirth;
-  String? _selectedGender;
   bool _isLoading = false;
 
   @override
@@ -43,8 +41,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
       _lastNameController.text = user.lastName;
       _phoneController.text = user.phone ?? '';
       _emailController.text = user.email;
-      _selectedDateOfBirth = user.profile?.dateOfBirth;
-      _selectedGender = user.profile?.gender;
     }
   }
 
@@ -62,7 +58,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
         child: GlassContainer(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -134,7 +130,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     );
   }
 
-  /// 📝 Formulaire
+  /// 📝 Formulaire (simplifié selon les endpoints backend)
   Widget _buildForm() {
     return Form(
       key: _formKey,
@@ -204,37 +200,23 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
 
           const SizedBox(height: 16),
 
-          // Téléphone
+          // Téléphone (optionnel)
           _buildTextField(
             controller: _phoneController,
             label: 'Téléphone',
-            hint: '06 12 34 56 78',
+            hint: '+226 70 12 34 56',
             icon: Icons.phone_outlined,
             keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(10),
-            ],
             validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Le téléphone est requis';
-              }
-              if (value.trim().length != 10) {
-                return 'Numéro invalide (10 chiffres)';
+              // Téléphone optionnel
+              if (value != null && value.trim().isNotEmpty) {
+                if (value.trim().length < 8) {
+                  return 'Numéro trop court';
+                }
               }
               return null;
             },
           ),
-
-          const SizedBox(height: 16),
-
-          // Date de naissance
-          _buildDateField(),
-
-          const SizedBox(height: 16),
-
-          // Genre
-          _buildGenderField(),
         ],
       ),
     );
@@ -323,126 +305,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     );
   }
 
-  /// 📅 Champ de date
-  Widget _buildDateField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Date de naissance',
-          style: AppTextStyles.labelMedium.copyWith(
-            color: AppColors.textPrimary(context),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: _selectDateOfBirth,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surface(context),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.surfaceVariant(context),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.calendar_today_outlined,
-                  color: AppColors.textSecondary(context),
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  _selectedDateOfBirth != null
-                      ? '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}'
-                      : 'Sélectionner une date',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: _selectedDateOfBirth != null
-                        ? AppColors.textPrimary(context)
-                        : AppColors.textTertiary(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 👤 Champ de genre
-  Widget _buildGenderField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Genre',
-          style: AppTextStyles.labelMedium.copyWith(
-            color: AppColors.textPrimary(context),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _buildGenderOption('Homme', 'male'),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildGenderOption('Femme', 'female'),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildGenderOption('Autre', 'other'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGenderOption(String label, String value) {
-    final isSelected = _selectedGender == value;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedGender = value;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withOpacity(0.1)
-              : AppColors.surface(context),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : AppColors.surfaceVariant(context),
-          ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: AppTextStyles.labelMedium.copyWith(
-              color: isSelected
-                  ? AppColors.primary
-                  : AppColors.textSecondary(context),
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 🎯 Actions du dialog
   Widget _buildActions() {
     return Row(
@@ -472,34 +334,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     );
   }
 
-  /// 📅 Sélectionner la date de naissance
-  Future<void> _selectDateOfBirth() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDateOfBirth ??
-          DateTime.now().subtract(const Duration(days: 365 * 25)),
-      firstDate: DateTime.now().subtract(const Duration(days: 365 * 100)),
-      lastDate: DateTime.now().subtract(const Duration(days: 365 * 13)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: AppColors.primary,
-                ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (date != null) {
-      setState(() {
-        _selectedDateOfBirth = date;
-      });
-    }
-  }
-
-  /// 💾 Gestionnaire de sauvegarde
+  /// 💾 Gestionnaire de sauvegarde (simplifié)
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -510,27 +345,28 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     });
 
     try {
-      final request = UpdateUserProfileRequest(
+      // Utiliser directement le service UserProfileService
+      final service = UserProfileService();
+      final success = await service.updateProfile(
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        phone: _phoneController.text.trim(),
         email: _emailController.text.trim(),
-        dateOfBirth: _selectedDateOfBirth,
-        gender: _selectedGender,
+        phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
       );
 
-      final provider = Provider.of<UserProfileProvider>(context, listen: false);
-      final success = await provider.updateUserProfile(request);
-
       if (success && mounted) {
+        // Rafraîchir les données du provider
+        final provider = Provider.of<UserProfileProvider>(context, listen: false);
+        await provider.initialize();
+        
         Navigator.of(context).pop();
         _showSuccessSnackBar('Profil mis à jour avec succès');
-      } else if (provider.error != null && mounted) {
-        _showErrorSnackBar(provider.error!);
+      } else if (mounted) {
+        _showErrorSnackBar('Erreur lors de la mise à jour');
       }
     } catch (e) {
       if (mounted) {
-        _showErrorSnackBar('Erreur lors de la sauvegarde');
+        _showErrorSnackBar('Erreur lors de la sauvegarde: ${e.toString()}');
       }
     } finally {
       if (mounted) {

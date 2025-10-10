@@ -45,6 +45,7 @@ dependencies:
   flutter_map: ^6.1.0           # Cartes OpenStreetMap
   latlong2: ^0.9.1              # Coordonnées géographiques (mis à jour pour compatibilité avec flutter_map)
   geolocator: ^10.1.0           # Géolocalisation GPS
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

@@ -1,438 +1,346 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../constants.dart';
 import '../models/user.dart';
 import '../utils/storage_service.dart';
-import '../../constants.dart';
+import 'api_service.dart';
 
 /// 👤 Service de Profil Utilisateur - Alpha Client App
 ///
-/// Gère les opérations sur le profil utilisateur avec le backend Alpha Pressing
-/// Référence: backend/src/routes/user.routes.ts
+/// Service simplifié basé sur les endpoints backend disponibles
 class UserProfileService {
-  /// 👤 Récupérer le profil utilisateur complet
-  /// Endpoint: GET /api/users/profile
-  Future<User?> getUserProfile() async {
+  static final UserProfileService _instance = UserProfileService._internal();
+  factory UserProfileService() => _instance;
+  UserProfileService._internal();
+
+  /// 👤 Récupérer le profil utilisateur depuis le cache
+  /// L'endpoint /user/profile n'est pas disponible, on utilise le cache
+  Future<User> getUserProfile() async {
     try {
-      final token = await StorageService.getToken();
-      if (token == null) {
-        throw Exception('Token d\'authentification manquant');
+      // Essayer de récupérer depuis le cache d'abord
+      final cachedUser = await StorageService.getUser();
+      if (cachedUser != null) {
+        print('[UserProfileService] Profil récupéré depuis le cache');
+        return cachedUser;
       }
 
-      final response = await http.get(
-        Uri.parse(ApiConfig.url('/users/profile')),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      ).timeout(ApiConfig.timeout);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final user = User.fromJson(data['user'] ?? data);
-
-        // Sauvegarder localement
-        await StorageService.saveUser(user);
-
-        return user;
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(
-            error['error'] ?? 'Erreur lors de la récupération du profil');
-      }
+      // Si pas de cache, créer un utilisateur par défaut
+      // (en attendant que l'endpoint soit disponible)
+      throw Exception(
+          'Aucun profil utilisateur en cache. Veuillez vous reconnecter.');
     } catch (e) {
-      throw Exception('Erreur de connexion: ${e.toString()}');
+      print('[UserProfileService] Erreur getUserProfile: $e');
+      throw Exception('Erreur de récupération du profil: ${e.toString()}');
     }
   }
 
-  /// ✏️ Mettre à jour le profil utilisateur
-  /// Endpoint: PUT /api/users/profile
-  Future<UserProfileResult> updateUserProfile(
-      UpdateUserProfileRequest request) async {
+  /// 📊 Récupérer les statistiques utilisateur basiques
+  Future<UserStats> getUserStats() async {
     try {
       final token = await StorageService.getToken();
       if (token == null) {
-        throw Exception('Token d\'authentification manquant');
+        throw Exception('Token non trouvé');
       }
 
+      // Récupérer les points de fidélité depuis /loyalty/points-balance (backend)
+      int loyaltyPoints = 0;
+      try {
+        final loyaltyResponse = await http.get(
+          Uri.parse(ApiConfig.url('/loyalty/points-balance')),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ).timeout(ApiConfig.timeout);
+
+        print(
+            '[UserProfileService] loyalty status: ${loyaltyResponse.statusCode} body: ${loyaltyResponse.body}');
+
+        if (loyaltyResponse.statusCode == 200) {
+          final loyaltyData = jsonDecode(loyaltyResponse.body);
+          if (loyaltyData['data'] != null) {
+            loyaltyPoints = loyaltyData['data']['pointsBalance'] ?? 0;
+          }
+        }
+      } catch (e) {
+        print('[UserProfileService] Erreur récupération points: $e');
+      }
+
+      // Récupérer les adresses depuis /addresses/all (backend)
+      int addressCount = 0;
+
+      // Préparer les métriques de commandes récentes (3 derniers mois)
+      int recentOrdersCount = 0;
+      double recentTotalSpent = 0.0;
+      try {
+        final addressesResponse = await http.get(
+          Uri.parse(ApiConfig.url('/addresses/all')),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        ).timeout(ApiConfig.timeout);
+        print(
+            '[UserProfileService] addresses status: ${addressesResponse.statusCode} body: ${addressesResponse.body}');
+
+        if (addressesResponse.statusCode == 200) {
+          final addressesData = jsonDecode(addressesResponse.body);
+
+          // Gérer plusieurs formats de réponse possibles :
+          // 1) Une liste brute : [ {..}, {..} ]
+          // 2) Un objet { data: [...] }
+          // 3) Un objet { success: true, data: [...] }
+          if (addressesData is List) {
+            addressCount = addressesData.length;
+          } else if (addressesData is Map) {
+            if (addressesData['data'] is List) {
+              addressCount = (addressesData['data'] as List).length;
+            } else if (addressesData['addresses'] is List) {
+              // fallback clé alternative
+              addressCount = (addressesData['addresses'] as List).length;
+            } else if (addressesData['total'] is int) {
+              // parfois l'API peut renvoyer un total séparé
+              addressCount = addressesData['total'] as int;
+            }
+          }
+
+          // Récupérer les commandes des 3 derniers mois et calculer total et nombre
+          try {
+            final now = DateTime.now();
+            final threeMonthsAgo = DateTime(now.year, now.month - 3, now.day);
+
+            final api = ApiService();
+            final ordersResp = await api.get(
+              '/orders/my-orders',
+              queryParameters: {
+                'startDate': threeMonthsAgo.toIso8601String(),
+                'endDate': now.toIso8601String(),
+                'limit': 1000,
+              },
+            );
+
+            print(
+                '[UserProfileService] ordersResp for period: $threeMonthsAgo -> $now : $ordersResp');
+
+            if (ordersResp['success'] == true && ordersResp['data'] != null) {
+              final ordersList = ordersResp['data'] as List;
+              recentOrdersCount = ordersList.length;
+
+              for (final o in ordersList) {
+                final status = (o['status'] ?? '').toString().toUpperCase();
+                // Considérer uniquement les commandes livrées pour le total dépensé
+                if (status == 'DELIVERED' ||
+                    status == 'DELIVERED'.toUpperCase()) {
+                  final amt =
+                      o['totalAmount'] ?? o['total'] ?? o['amount'] ?? 0;
+                  final double parsed = amt is num
+                      ? amt.toDouble()
+                      : double.tryParse(amt.toString()) ?? 0.0;
+                  recentTotalSpent += parsed;
+                }
+              }
+            }
+          } catch (e) {
+            print(
+                '[UserProfileService] Erreur récupération commandes récentes: $e');
+          }
+
+          print('[UserProfileService] Parsed address count: $addressCount');
+        }
+      } catch (e) {
+        print('[UserProfileService] Erreur récupération adresses: $e');
+      }
+
+      return UserStats(
+        // totalOrders et totalSpent représentent maintenant les 3 derniers mois
+        totalOrders: recentOrdersCount,
+        totalSpent: recentTotalSpent,
+        loyaltyPoints: loyaltyPoints,
+        addressCount: addressCount,
+      );
+    } catch (e) {
+      print('[UserProfileService] Erreur getUserStats: $e');
+      // Retourner des statistiques par défaut en cas d'erreur
+      return UserStats(
+        totalOrders: 0,
+        totalSpent: 0.0,
+        loyaltyPoints: 0,
+        addressCount: 0,
+      );
+    }
+  }
+
+  /// 📝 Mettre à jour le profil utilisateur (basé sur auth.service.ts updateProfile)
+  Future<bool> updateProfile({
+    required String firstName,
+    required String lastName,
+    required String email,
+    String? phone,
+  }) async {
+    try {
+      final token = await StorageService.getToken();
+      if (token == null) {
+        throw Exception('Token non trouvé');
+      }
+
+      // Utiliser l'endpoint auth updateProfile
       final response = await http
           .put(
-            Uri.parse(ApiConfig.url('/users/profile')),
+            Uri.parse(ApiConfig.url('/auth/profile')),
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
             },
-            body: jsonEncode(request.toJson()),
+            body: jsonEncode({
+              'firstName': firstName,
+              'lastName': lastName,
+              'email': email,
+              'phone': phone,
+            }),
           )
           .timeout(ApiConfig.timeout);
 
-      final data = jsonDecode(response.body);
-
       if (response.statusCode == 200) {
-        final updatedUser = User.fromJson(data['user'] ?? data);
-
-        // Sauvegarder localement
-        await StorageService.saveUser(updatedUser);
-
-        return UserProfileResult.success(
-          user: updatedUser,
-          message: data['message'] ?? 'Profil mis à jour avec succès',
-        );
-      } else {
-        return UserProfileResult.error(
-            data['error'] ?? 'Erreur lors de la mise à jour du profil');
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          // Mettre à jour les données en cache
+          if (data['data'] != null) {
+            final updatedUser = User.fromJson(data['data']);
+            await StorageService.saveUser(updatedUser);
+          }
+          return true;
+        }
       }
+
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error'] ?? 'Erreur lors de la mise à jour');
     } catch (e) {
-      return UserProfileResult.error('Erreur de connexion: ${e.toString()}');
+      print('[UserProfileService] Erreur updateProfile: $e');
+      throw Exception('Erreur de mise à jour: ${e.toString()}');
     }
   }
 
-  /// 🔒 Changer le mot de passe
-  /// Endpoint: PUT /api/users/change-password
-  Future<UserProfileResult> changePassword({
+  /// 🔒 Changer le mot de passe (basé sur auth.service.ts changePassword)
+  Future<bool> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
     try {
       final token = await StorageService.getToken();
       if (token == null) {
-        throw Exception('Token d\'authentification manquant');
+        throw Exception('Token non trouvé');
       }
 
+      final uri = Uri.parse(ApiConfig.url('/auth/change-password'));
+      final requestBody = jsonEncode({
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      });
+
+      print('[UserProfileService] POST $uri');
+      print('[UserProfileService] Request body: $requestBody');
+
       final response = await http
-          .put(
-            Uri.parse(ApiConfig.url('/users/change-password')),
+          .post(
+            uri,
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
             },
-            body: jsonEncode({
-              'currentPassword': currentPassword,
-              'newPassword': newPassword,
-            }),
+            body: requestBody,
           )
           .timeout(ApiConfig.timeout);
 
-      final data = jsonDecode(response.body);
+      print('[UserProfileService] Response status: ${response.statusCode}');
+      print('[UserProfileService] Response body: ${response.body}');
 
-      if (response.statusCode == 200) {
-        return UserProfileResult.success(
-          message: data['message'] ?? 'Mot de passe modifié avec succès',
-        );
-      } else {
-        return UserProfileResult.error(
-            data['error'] ?? 'Erreur lors du changement de mot de passe');
+      // Parfois le backend peut renvoyer une page HTML pour 404/500, gérer proprement
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final data = jsonDecode(response.body);
+          // Accept either explicit success=true or presence of a data object
+          if (data is Map<String, dynamic>) {
+            if (data['success'] == true) {
+              print('[UserProfileService] changePassword: success=true');
+              return true;
+            }
+            if (data['data'] != null) {
+              print(
+                  '[UserProfileService] changePassword: data object present -> treating as success');
+              return true;
+            }
+          }
+          // No success flag nor data -> treat as failure
+          print(
+              '[UserProfileService] changePassword: no success/data in JSON -> treating as failure');
+          return false;
+        } catch (e) {
+          // Réponse non JSON mais status OK -> considérer comme succès
+          print(
+              '[UserProfileService] Non-JSON OK response, treating as success');
+          return true;
+        }
+      }
+
+      // Try to extract JSON error if present
+      try {
+        final errorData = jsonDecode(response.body);
+        final errMsg =
+            errorData['error'] ?? errorData['message'] ?? response.body;
+        throw Exception(
+            'ChangePassword failed: $errMsg (status ${response.statusCode})');
+      } catch (e) {
+        // If body is not JSON, include raw body for debugging
+        throw Exception(
+            'ChangePassword failed: HTTP ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      return UserProfileResult.error('Erreur de connexion: ${e.toString()}');
-    }
-  }
-
-  /// 🔔 Mettre à jour les préférences de notification
-  /// Endpoint: PUT /api/users/notification-preferences
-  Future<UserProfileResult> updateNotificationPreferences(
-    NotificationPreferences preferences,
-  ) async {
-    try {
-      final token = await StorageService.getToken();
-      if (token == null) {
-        throw Exception('Token d\'authentification manquant');
-      }
-
-      final response = await http
-          .put(
-            Uri.parse(ApiConfig.url('/users/notification-preferences')),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(preferences.toJson()),
-          )
-          .timeout(ApiConfig.timeout);
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return UserProfileResult.success(
-          message: data['message'] ?? 'Préférences mises à jour avec succès',
-        );
-      } else {
-        return UserProfileResult.error(
-            data['error'] ?? 'Erreur lors de la mise à jour des préférences');
-      }
-    } catch (e) {
-      return UserProfileResult.error('Erreur de connexion: ${e.toString()}');
-    }
-  }
-
-  /// 📊 Récupérer les statistiques utilisateur
-  /// Endpoint: GET /api/users/stats
-  Future<UserStats?> getUserStats() async {
-    try {
-      final token = await StorageService.getToken();
-      if (token == null) {
-        throw Exception('Token d\'authentification manquant');
-      }
-
-      final response = await http.get(
-        Uri.parse(ApiConfig.url('/users/stats')),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      ).timeout(ApiConfig.timeout);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return UserStats.fromJson(data);
-      } else {
-        return null;
-      }
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// 🗑️ Supprimer le compte utilisateur
-  /// Endpoint: DELETE /api/users/account
-  Future<UserProfileResult> deleteAccount(String password) async {
-    try {
-      final token = await StorageService.getToken();
-      if (token == null) {
-        throw Exception('Token d\'authentification manquant');
-      }
-
-      final response = await http
-          .delete(
-            Uri.parse(ApiConfig.url('/users/account')),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'password': password,
-            }),
-          )
-          .timeout(ApiConfig.timeout);
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        // Nettoyer les données locales
-        await StorageService.clearUser();
-        await StorageService.clearToken();
-
-        return UserProfileResult.success(
-          message: data['message'] ?? 'Compte supprimé avec succès',
-        );
-      } else {
-        return UserProfileResult.error(
-            data['error'] ?? 'Erreur lors de la suppression du compte');
-      }
-    } catch (e) {
-      return UserProfileResult.error('Erreur de connexion: ${e.toString()}');
-    }
-  }
-
-  /// 📱 Mettre à jour le token de notification push
-  /// Endpoint: PUT /api/users/push-token
-  Future<bool> updatePushToken(String pushToken) async {
-    try {
-      final token = await StorageService.getToken();
-      if (token == null) return false;
-
-      final response = await http
-          .put(
-            Uri.parse(ApiConfig.url('/users/push-token')),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({
-              'pushToken': pushToken,
-            }),
-          )
-          .timeout(ApiConfig.timeout);
-
-      return response.statusCode == 200;
-    } catch (e) {
-      return false;
+      print('[UserProfileService] Erreur changePassword: $e');
+      throw Exception('Erreur de changement de mot de passe: ${e.toString()}');
     }
   }
 }
 
-/// 📋 Résultat d'opération sur le profil utilisateur
-class UserProfileResult {
-  final bool isSuccess;
-  final User? user;
-  final String? message;
-  final String? error;
-
-  UserProfileResult._({
-    required this.isSuccess,
-    this.user,
-    this.message,
-    this.error,
-  });
-
-  /// ✅ Résultat de succès
-  factory UserProfileResult.success({
-    User? user,
-    String? message,
-  }) {
-    return UserProfileResult._(
-      isSuccess: true,
-      user: user,
-      message: message ?? 'Opération réussie',
-    );
-  }
-
-  /// ❌ Résultat d'erreur
-  factory UserProfileResult.error(String error) {
-    return UserProfileResult._(
-      isSuccess: false,
-      error: error,
-    );
-  }
-}
-
-/// 🎯 DTO pour mise à jour du profil
-class UpdateUserProfileRequest {
-  final String? firstName;
-  final String? lastName;
-  final String? phone;
-  final String? email;
-  final DateTime? dateOfBirth;
-  final String? gender;
-
-  UpdateUserProfileRequest({
-    this.firstName,
-    this.lastName,
-    this.phone,
-    this.email,
-    this.dateOfBirth,
-    this.gender,
-  });
-
-  /// ✅ Vérifier si au moins un champ est modifié
-  bool get hasChanges {
-    return firstName != null ||
-        lastName != null ||
-        phone != null ||
-        email != null ||
-        dateOfBirth != null ||
-        gender != null;
-  }
-
-  /// 📤 Conversion vers JSON
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> json = {};
-
-    if (firstName != null) json['firstName'] = firstName!.trim();
-    if (lastName != null) json['lastName'] = lastName!.trim();
-    if (phone != null) json['phone'] = phone!.trim();
-    if (email != null) json['email'] = email!.trim();
-    if (dateOfBirth != null)
-      json['dateOfBirth'] = dateOfBirth!.toIso8601String();
-    if (gender != null) json['gender'] = gender;
-
-    return json;
-  }
-}
-
-/// 🔔 Préférences de notification
-class NotificationPreferences {
-  final bool emailNotifications;
-  final bool pushNotifications;
-  final bool smsNotifications;
-  final bool orderUpdates;
-  final bool promotionalOffers;
-  final bool loyaltyUpdates;
-
-  NotificationPreferences({
-    this.emailNotifications = true,
-    this.pushNotifications = true,
-    this.smsNotifications = false,
-    this.orderUpdates = true,
-    this.promotionalOffers = true,
-    this.loyaltyUpdates = true,
-  });
-
-  /// 📊 Conversion depuis JSON
-  factory NotificationPreferences.fromJson(Map<String, dynamic> json) {
-    return NotificationPreferences(
-      emailNotifications: json['emailNotifications'] ?? true,
-      pushNotifications: json['pushNotifications'] ?? true,
-      smsNotifications: json['smsNotifications'] ?? false,
-      orderUpdates: json['orderUpdates'] ?? true,
-      promotionalOffers: json['promotionalOffers'] ?? true,
-      loyaltyUpdates: json['loyaltyUpdates'] ?? true,
-    );
-  }
-
-  /// 📤 Conversion vers JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'emailNotifications': emailNotifications,
-      'pushNotifications': pushNotifications,
-      'smsNotifications': smsNotifications,
-      'orderUpdates': orderUpdates,
-      'promotionalOffers': promotionalOffers,
-      'loyaltyUpdates': loyaltyUpdates,
-    };
-  }
-
-  /// 🔄 Copie avec modifications
-  NotificationPreferences copyWith({
-    bool? emailNotifications,
-    bool? pushNotifications,
-    bool? smsNotifications,
-    bool? orderUpdates,
-    bool? promotionalOffers,
-    bool? loyaltyUpdates,
-  }) {
-    return NotificationPreferences(
-      emailNotifications: emailNotifications ?? this.emailNotifications,
-      pushNotifications: pushNotifications ?? this.pushNotifications,
-      smsNotifications: smsNotifications ?? this.smsNotifications,
-      orderUpdates: orderUpdates ?? this.orderUpdates,
-      promotionalOffers: promotionalOffers ?? this.promotionalOffers,
-      loyaltyUpdates: loyaltyUpdates ?? this.loyaltyUpdates,
-    );
-  }
-}
-
-/// 📊 Statistiques utilisateur
+/// 📈 Modèle des statistiques utilisateur (simplifié)
 class UserStats {
   final int totalOrders;
   final double totalSpent;
   final int loyaltyPoints;
-  final String loyaltyTier;
-  final int addressesCount;
-  final DateTime? lastOrderDate;
-  final String? favoriteService;
+  final int addressCount;
 
   UserStats({
     required this.totalOrders,
     required this.totalSpent,
     required this.loyaltyPoints,
-    required this.loyaltyTier,
-    required this.addressesCount,
-    this.lastOrderDate,
-    this.favoriteService,
+    required this.addressCount,
   });
 
-  /// 📊 Conversion depuis JSON
-  factory UserStats.fromJson(Map<String, dynamic> json) {
-    return UserStats(
-      totalOrders: json['totalOrders'] ?? 0,
-      totalSpent: (json['totalSpent'] ?? 0).toDouble(),
-      loyaltyPoints: json['loyaltyPoints'] ?? 0,
-      loyaltyTier: json['loyaltyTier'] ?? 'Bronze',
-      addressesCount: json['addressesCount'] ?? 0,
-      lastOrderDate: json['lastOrderDate'] != null
-          ? DateTime.parse(json['lastOrderDate'])
-          : null,
-      favoriteService: json['favoriteService'],
-    );
+  /// Formatage du montant dépensé en FCFA
+  String get formattedTotalSpent {
+    return '${totalSpent.toInt().toFormattedString()} FCFA';
+  }
+
+  /// Niveau de fidélité basé sur les points
+  String get loyaltyTier {
+    if (loyaltyPoints >= 10000) return 'PLATINE';
+    if (loyaltyPoints >= 5000) return 'OR';
+    if (loyaltyPoints >= 1000) return 'ARGENT';
+    return 'BRONZE';
+  }
+
+  /// Couleur du niveau de fidélité
+  String get loyaltyTierColor {
+    switch (loyaltyTier) {
+      case 'PLATINE':
+        return '#E5E7EB'; // Platine
+      case 'OR':
+        return '#FCD34D'; // Or
+      case 'ARGENT':
+        return '#D1D5DB'; // Argent
+      case 'BRONZE':
+        return '#F59E0B'; // Bronze
+      default:
+        return '#F59E0B';
+    }
   }
 }

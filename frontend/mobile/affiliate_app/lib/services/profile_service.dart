@@ -17,7 +17,7 @@ class ProfileService {
     Map<String, dynamic>? notificationPreferences,
   }) async {
     final data = <String, dynamic>{};
-    
+
     if (phone != null) data['phone'] = phone;
     if (notificationPreferences != null) {
       data['notificationPreferences'] = notificationPreferences;
@@ -50,16 +50,19 @@ class ProfileService {
     bool? referralUpdates,
   }) async {
     final preferences = <String, dynamic>{};
-    
+
     if (email != null) preferences['email'] = email;
     if (push != null) preferences['push'] = push;
     if (sms != null) preferences['sms'] = sms;
     if (orderUpdates != null) preferences['order_updates'] = orderUpdates;
-    if (commissionUpdates != null) preferences['commission_updates'] = commissionUpdates;
-    if (withdrawalUpdates != null) preferences['withdrawal_updates'] = withdrawalUpdates;
+    if (commissionUpdates != null)
+      preferences['commission_updates'] = commissionUpdates;
+    if (withdrawalUpdates != null)
+      preferences['withdrawal_updates'] = withdrawalUpdates;
     if (promotions != null) preferences['promotions'] = promotions;
     if (levelUpdates != null) preferences['level_updates'] = levelUpdates;
-    if (referralUpdates != null) preferences['referral_updates'] = referralUpdates;
+    if (referralUpdates != null)
+      preferences['referral_updates'] = referralUpdates;
 
     final response = await _apiService.put<Map<String, dynamic>>(
       '${ApiConfig.affiliateEndpoint}/profile',
@@ -94,7 +97,7 @@ class ProfileService {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final response = await _apiService.put<Map<String, dynamic>>(
+    final response = await _apiService.post<Map<String, dynamic>>(
       '/auth/change-password',
       data: {
         'currentPassword': currentPassword,
