@@ -796,7 +796,7 @@ class _ServicesScreenState extends State<ServicesScreen>
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.75,
+                childAspectRatio: 0.68, // Réduit pour donner plus de hauteur
               ),
               itemCount: articles.length,
               itemBuilder: (context, index) {

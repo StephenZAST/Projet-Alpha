@@ -40,7 +40,7 @@ class _ArticlePricingDialogState extends State<ArticlePricingDialog> {
       });
 
       final prices = await _pricingService.getArticlePrices(widget.article.id);
-      
+
       setState(() {
         _prices = prices;
         _isLoading = false;
@@ -113,9 +113,9 @@ class _ArticlePricingDialogState extends State<ArticlePricingDialog> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Info box
               Container(
                 padding: const EdgeInsets.all(12),
@@ -136,7 +136,7 @@ class _ArticlePricingDialogState extends State<ArticlePricingDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Les prix varient selon le type de service et le service choisi',
+                        'Les prix varient selon le service choisi. Des réductions (jusqu\'à -70% cumulables) peuvent s\'appliquer — consultez les offres.',
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.info,
                         ),
@@ -145,9 +145,9 @@ class _ArticlePricingDialogState extends State<ArticlePricingDialog> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Tableau des prix
               Text(
                 'Tarification disponible',
@@ -156,9 +156,9 @@ class _ArticlePricingDialogState extends State<ArticlePricingDialog> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Content
               Flexible(
                 child: _isLoading
@@ -329,9 +329,9 @@ class _ArticlePricingDialogState extends State<ArticlePricingDialog> {
                 ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Prix
           Row(
             children: [
@@ -375,9 +375,9 @@ class _ArticlePricingDialogState extends State<ArticlePricingDialog> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
+
               // Prix Premium
               Expanded(
                 child: Container(
@@ -430,7 +430,7 @@ class _ArticlePricingDialogState extends State<ArticlePricingDialog> {
               ),
             ],
           ),
-          
+
           // Prix au kg si disponible
           if (pricePerKg != null) ...[
             const SizedBox(height: 8),

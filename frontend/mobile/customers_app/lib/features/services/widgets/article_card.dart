@@ -25,110 +25,162 @@ class ArticleCard extends StatelessWidget {
     return GlassContainer(
       onTap: onTap,
       isInteractive: onTap != null,
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.zero,
       child: LayoutBuilder(
         builder: (context, constraints) {
           // Adapter la taille selon la largeur disponible
           final isSmall = constraints.maxWidth < 100;
-          final iconSize = isSmall ? 24.0 : 28.0;
-          final iconHeight = isSmall ? 45.0 : 55.0;
+          final iconSize = isSmall ? 28.0 : 36.0;
+          final iconContainerHeight = isSmall ? 60.0 : 75.0;
           
           return Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Icône
+              // Icône avec gradient background
               Container(
-                width: double.infinity,
-                height: iconHeight,
+                height: iconContainerHeight,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  _getIconForArticle(article.name),
-                  color: color,
-                  size: iconSize,
-                ),
-              ),
-              const SizedBox(height: 6),
-              
-              // Nom - Flexible avec hauteur minimale
-              Flexible(
-                child: Text(
-                  article.name,
-                  style: TextStyle(
-                    fontSize: isSmall ? 10 : 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary(context),
-                    height: 1.2,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      color.withOpacity(0.15),
+                      color.withOpacity(0.05),
+                    ],
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              
-              // Catégorie - Seulement si assez d'espace
-              if (showCategory && article.categoryName != null && !isSmall) ...[
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Text(
-                    article.categoryName!,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
                   ),
                 ),
-              ],
-              
-              const SizedBox(height: 6),
-              
-              // Badge "Voir tarifs" - Compact
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isSmall ? 4 : 6,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: AppColors.primary.withOpacity(0.3),
-                    width: 0.5,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Stack(
                   children: [
-                    Icon(
-                      Icons.price_check,
-                      size: isSmall ? 10 : 11,
-                      color: AppColors.primary,
+                    // Icône principale
+                    Center(
+                      child: Icon(
+                        _getIconForArticle(article.name),
+                        color: color,
+                        size: iconSize,
+                      ),
                     ),
-                    if (!isSmall) ...[
-                      const SizedBox(width: 3),
-                      Text(
-                        'Prix',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                    // Badge catégorie en haut à droite (si assez d'espace)
+                    if (showCategory && article.categoryName != null && !isSmall)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            article.categoryName!.length > 8
+                                ? '${article.categoryName!.substring(0, 8)}.'
+                                : article.categoryName!,
+                            style: const TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
                         ),
                       ),
-                    ],
+                  ],
+                ),
+              ),
+              
+              // Contenu avec padding
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  isSmall ? 8.0 : 10.0,
+                  isSmall ? 8.0 : 10.0,
+                  isSmall ? 8.0 : 10.0,
+                  isSmall ? 10.0 : 12.0, // Plus d'espace en bas
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Nom de l'article - Conteneur avec hauteur minimale
+                    Container(
+                      constraints: BoxConstraints(
+                        minHeight: isSmall ? 28 : 32, // Hauteur minimale pour 2 lignes
+                      ),
+                      child: Center(
+                        child: Text(
+                          article.name,
+                          style: TextStyle(
+                            fontSize: isSmall ? 10.5 : 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary(context),
+                            height: 1.3,
+                            letterSpacing: 0.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                    
+                    SizedBox(height: isSmall ? 8 : 10),
+                    
+                    // Badge "Voir tarifs" - Design amélioré
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmall ? 8 : 10,
+                        vertical: isSmall ? 5 : 6,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary.withOpacity(0.1),
+                            AppColors.primary.withOpacity(0.05),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.4),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.local_offer_outlined,
+                            size: isSmall ? 11 : 12,
+                            color: AppColors.primary,
+                          ),
+                          if (!isSmall) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              'Tarifs',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
