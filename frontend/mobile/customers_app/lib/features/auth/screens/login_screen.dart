@@ -474,6 +474,8 @@ class _LoginScreenState extends State<LoginScreen>
       onPressed: onPressed,
       isOutlined: true,
       backgroundColor: AppColors.textSecondary(context),
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     );
   }
 

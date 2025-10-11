@@ -16,12 +16,12 @@ class AddressManagementScreen extends StatefulWidget {
   const AddressManagementScreen({Key? key}) : super(key: key);
 
   @override
-  State<AddressManagementScreen> createState() => _AddressManagementScreenState();
+  State<AddressManagementScreen> createState() =>
+      _AddressManagementScreenState();
 }
 
-class _AddressManagementScreenState extends State<AddressManagementScreen> 
+class _AddressManagementScreenState extends State<AddressManagementScreen>
     with TickerProviderStateMixin {
-  
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
@@ -68,7 +68,8 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
 
   void _initializeAddresses() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final addressProvider = Provider.of<AddressProvider>(context, listen: false);
+      final addressProvider =
+          Provider.of<AddressProvider>(context, listen: false);
       addressProvider.initialize();
     });
   }
@@ -236,7 +237,9 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
                   'Par défaut',
                   provider.hasDefaultAddress ? '1' : '0',
                   Icons.home,
-                  provider.hasDefaultAddress ? AppColors.success : AppColors.warning,
+                  provider.hasDefaultAddress
+                      ? AppColors.success
+                      : AppColors.warning,
                 ),
               ),
             ],
@@ -277,7 +280,8 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -327,15 +331,15 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
         ),
         const SizedBox(height: 16),
         ...provider.addresses.map((address) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: AddressCard(
-            address: address,
-            onTap: () => _showAddressOptions(address),
-            onEdit: () => _showEditAddressDialog(address),
-            onDelete: () => _showDeleteConfirmation(address),
-            onSetDefault: () => _setDefaultAddress(address),
-          ),
-        )),
+              padding: const EdgeInsets.only(bottom: 12),
+              child: AddressCard(
+                address: address,
+                onTap: () => _showAddressOptions(address),
+                onEdit: () => _showEditAddressDialog(address),
+                onDelete: () => _showDeleteConfirmation(address),
+                onSetDefault: () => _setDefaultAddress(address),
+              ),
+            )),
       ],
     );
   }
@@ -398,7 +402,8 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
             PremiumButton(
               text: 'Réessayer',
               onPressed: () {
-                final provider = Provider.of<AddressProvider>(context, listen: false);
+                final provider =
+                    Provider.of<AddressProvider>(context, listen: false);
                 provider.refresh();
               },
               icon: Icons.refresh,
@@ -464,7 +469,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
     return Consumer<AddressProvider>(
       builder: (context, provider, child) {
         if (!provider.hasAddresses) return const SizedBox.shrink();
-        
+
         return FloatingActionButton.extended(
           onPressed: _showCreateAddressDialog,
           backgroundColor: AppColors.primary,
@@ -500,7 +505,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // Titre
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -512,7 +517,7 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
                   ),
                 ),
               ),
-              
+
               // Options
               if (!address.isDefault)
                 ListTile(
@@ -556,13 +561,13 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
         onSave: (request) async {
           final provider = Provider.of<AddressProvider>(context, listen: false);
           final success = await provider.createAddress(request);
-          
+
           if (success) {
             _showSuccessSnackBar('Adresse créée avec succès');
           } else if (provider.error != null) {
             _showErrorSnackBar(provider.error!);
           }
-          
+
           return success;
         },
       ),
@@ -587,15 +592,16 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
             gpsLongitude: request.gpsLongitude,
             isDefault: request.isDefault,
           );
-          
-          final success = await provider.updateAddress(address.id, updateRequest);
-          
+
+          final success =
+              await provider.updateAddress(address.id, updateRequest);
+
           if (success) {
             _showSuccessSnackBar('Adresse modifiée avec succès');
           } else if (provider.error != null) {
             _showErrorSnackBar(provider.error!);
           }
-          
+
           return success;
         },
       ),
@@ -688,8 +694,8 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
               await _deleteAddress(address);
             },
             backgroundColor: AppColors.error,
-            width: 100,
             height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
         ],
       ),
@@ -699,10 +705,10 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
   /// 🏠 Définir une adresse par défaut
   Future<void> _setDefaultAddress(Address address) async {
     HapticFeedback.lightImpact();
-    
+
     final provider = Provider.of<AddressProvider>(context, listen: false);
     final success = await provider.setDefaultAddress(address.id);
-    
+
     if (success) {
       _showSuccessSnackBar('${address.name} définie comme adresse par défaut');
     } else if (provider.error != null) {
@@ -713,10 +719,10 @@ class _AddressManagementScreenState extends State<AddressManagementScreen>
   /// 🗑️ Supprimer une adresse
   Future<void> _deleteAddress(Address address) async {
     HapticFeedback.lightImpact();
-    
+
     final provider = Provider.of<AddressProvider>(context, listen: false);
     final success = await provider.deleteAddress(address.id);
-    
+
     if (success) {
       _showSuccessSnackBar('Adresse supprimée avec succès');
     } else if (provider.error != null) {

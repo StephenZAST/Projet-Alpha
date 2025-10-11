@@ -160,8 +160,8 @@ class AddressCard extends StatelessWidget {
           PremiumButton(
             text: 'Fermer',
             onPressed: () => Navigator.pop(context),
-            width: 100,
             height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
         ],
       ),
@@ -190,15 +190,15 @@ class AddressCard extends StatelessWidget {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: address.isDefault 
+                          color: address.isDefault
                               ? AppColors.primary.withOpacity(0.1)
                               : AppColors.surfaceVariant(context),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           address.isDefault ? Icons.home : Icons.location_on,
-                          color: address.isDefault 
-                              ? AppColors.primary 
+                          color: address.isDefault
+                              ? AppColors.primary
                               : AppColors.textSecondary(context),
                           size: 20,
                         ),
@@ -211,14 +211,14 @@ class AddressCard extends StatelessWidget {
                             Row(
                               children: [
                                 Flexible(
-                                child: Text(
-                                address.displayName,
-                                style: AppTextStyles.labelLarge.copyWith(
-                                color: AppColors.textPrimary(context),
-                                fontWeight: FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                ),
+                                  child: Text(
+                                    address.displayName,
+                                    style: AppTextStyles.labelLarge.copyWith(
+                                      color: AppColors.textPrimary(context),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 if (address.isDefault) ...[
                                   const SizedBox(width: 8),
@@ -278,9 +278,9 @@ class AddressCard extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Adresse complète
             Container(
               width: double.infinity,
@@ -308,9 +308,9 @@ class AddressCard extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Actions rapides
             Row(
               children: [
@@ -319,7 +319,8 @@ class AddressCard extends StatelessWidget {
                   GestureDetector(
                     onTap: () => _showGpsDetails(context, address),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.success.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -348,9 +349,9 @@ class AddressCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                
+
                 const Spacer(),
-                
+
                 // Actions
                 if (!address.isDefault && onSetDefault != null)
                   _buildActionButton(
@@ -359,7 +360,7 @@ class AddressCard extends StatelessWidget {
                     AppColors.primary,
                     onSetDefault!,
                   ),
-                
+
                 if (onEdit != null) ...[
                   const SizedBox(width: 8),
                   _buildActionButton(
@@ -369,7 +370,7 @@ class AddressCard extends StatelessWidget {
                     onEdit!,
                   ),
                 ],
-                
+
                 if (onDelete != null) ...[
                   const SizedBox(width: 8),
                   _buildActionButton(
@@ -455,23 +456,25 @@ class CompactAddressCard extends StatelessWidget {
         duration: AppAnimations.fast,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? AppColors.primary.withOpacity(0.1)
               : AppColors.surface(context),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected 
-                ? AppColors.primary 
+            color: isSelected
+                ? AppColors.primary
                 : AppColors.surfaceVariant(context),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ] : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
@@ -479,15 +482,15 @@ class CompactAddressCard extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: address.isDefault 
+                color: address.isDefault
                     ? AppColors.primary.withOpacity(0.2)
                     : AppColors.surfaceVariant(context),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 address.isDefault ? Icons.home : Icons.location_on,
-                color: address.isDefault 
-                    ? AppColors.primary 
+                color: address.isDefault
+                    ? AppColors.primary
                     : AppColors.textSecondary(context),
                 size: 16,
               ),

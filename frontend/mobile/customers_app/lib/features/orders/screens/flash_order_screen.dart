@@ -737,8 +737,8 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
               Navigator.pop(context);
             },
             backgroundColor: AppColors.error,
-            width: 100,
             height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
         ],
       ),

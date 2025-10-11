@@ -43,7 +43,7 @@ class FlashOrderItemCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // Informations article
               Expanded(
                 child: Column(
@@ -62,7 +62,8 @@ class FlashOrderItemCard extends StatelessWidget {
                         ),
                         if (item.isPremium)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: AppColors.warning.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(6),
@@ -96,7 +97,7 @@ class FlashOrderItemCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Prix total
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -126,9 +127,9 @@ class FlashOrderItemCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Contrôles de quantité
           Row(
             children: [
@@ -142,7 +143,7 @@ class FlashOrderItemCard extends StatelessWidget {
               _buildQuantityControls(context),
             ],
           ),
-          
+
           // Notes si présentes
           if (item.notes != null && item.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -194,9 +195,9 @@ class FlashOrderItemCard extends StatelessWidget {
                   ? () => _handleQuantityChange(context, item.quantity - 1)
                   : null,
             ),
-            
+
             const SizedBox(width: 12),
-            
+
             // Affichage quantité
             Container(
               width: 40,
@@ -215,9 +216,9 @@ class FlashOrderItemCard extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(width: 12),
-            
+
             // Bouton augmenter
             _buildQuantityButton(
               context: context,
@@ -242,16 +243,16 @@ class FlashOrderItemCard extends StatelessWidget {
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: onPressed != null 
-            ? AppColors.primary 
+        color: onPressed != null
+            ? AppColors.primary
             : AppColors.surfaceVariant(context),
         borderRadius: BorderRadius.circular(8),
       ),
       child: IconButton(
         icon: Icon(
           icon,
-          color: onPressed != null 
-              ? Colors.white 
+          color: onPressed != null
+              ? Colors.white
               : AppColors.textTertiary(context),
           size: 18,
         ),
@@ -264,7 +265,7 @@ class FlashOrderItemCard extends StatelessWidget {
   /// 🎯 Gestionnaire de changement de quantité
   void _handleQuantityChange(BuildContext context, int newQuantity) {
     HapticFeedback.lightImpact();
-    
+
     final provider = Provider.of<FlashOrderProvider>(context, listen: false);
     provider.updateItemQuantity(
       item.articleId,
@@ -277,7 +278,7 @@ class FlashOrderItemCard extends StatelessWidget {
   /// 🗑️ Gestionnaire de suppression d'article
   void _handleRemoveItem(BuildContext context) {
     HapticFeedback.lightImpact();
-    
+
     // Confirmation avant suppression
     showDialog(
       context: context,
@@ -311,14 +312,15 @@ class FlashOrderItemCard extends StatelessWidget {
           PremiumButton(
             text: 'Supprimer',
             onPressed: () {
-              final provider = Provider.of<FlashOrderProvider>(context, listen: false);
+              final provider =
+                  Provider.of<FlashOrderProvider>(context, listen: false);
               provider.removeItem(
                 item.articleId,
                 item.serviceId,
                 item.isPremium,
               );
               Navigator.pop(context);
-              
+
               // Feedback
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -334,8 +336,8 @@ class FlashOrderItemCard extends StatelessWidget {
               );
             },
             backgroundColor: AppColors.error,
-            width: 100,
             height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           ),
         ],
       ),
@@ -345,7 +347,7 @@ class FlashOrderItemCard extends StatelessWidget {
   /// 🎨 Obtenir l'icône selon le type d'article
   IconData _getArticleIcon(String articleName) {
     final name = articleName.toLowerCase();
-    
+
     if (name.contains('chemise') || name.contains('shirt')) {
       return Icons.checkroom;
     } else if (name.contains('pantalon') || name.contains('pants')) {

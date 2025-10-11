@@ -599,8 +599,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           PremiumButton(
             text: 'Fermer',
             onPressed: () => Navigator.pop(context),
-            width: 100,
             height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
         ],
       ),

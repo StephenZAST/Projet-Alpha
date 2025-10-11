@@ -38,30 +38,30 @@ class ContactUsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-            
+
             // En-tête
             _buildHeader(context),
-            
+
             const SizedBox(height: 32),
-            
+
             // Moyens de contact
             _buildContactMethods(context),
-            
+
             const SizedBox(height: 24),
-            
+
             // Horaires
             _buildSchedule(context),
-            
+
             const SizedBox(height: 24),
-            
+
             // Localisation
             _buildLocation(context),
-            
+
             const SizedBox(height: 24),
-            
+
             // Offre spéciale
             _buildSpecialOffer(context),
-            
+
             const SizedBox(height: 100),
           ],
         ),
@@ -128,7 +128,7 @@ class ContactUsScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // Téléphone 1
         _buildContactCard(
           context,
@@ -139,9 +139,9 @@ class ContactUsScreen extends StatelessWidget {
           color: AppColors.success,
           onTap: () => _makePhoneCall('22667801668'),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Téléphone 2
         _buildContactCard(
           context,
@@ -152,9 +152,9 @@ class ContactUsScreen extends StatelessWidget {
           color: AppColors.info,
           onTap: () => _makePhoneCall('22679457843'),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Email
         _buildContactCard(
           context,
@@ -270,7 +270,8 @@ class ContactUsScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                    Icon(Icons.check_circle,
+                        color: AppColors.success, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -377,6 +378,8 @@ class ContactUsScreen extends StatelessWidget {
                 onPressed: () => _openMaps(),
                 icon: Icons.directions,
                 height: 44,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
             ],
           ),
