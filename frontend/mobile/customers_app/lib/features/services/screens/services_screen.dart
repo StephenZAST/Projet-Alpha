@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../constants.dart';
 import '../../../components/glass_components.dart';
+import '../../../providers/services_provider.dart';
+import '../widgets/service_type_card.dart';
+import '../widgets/service_card.dart';
+import '../widgets/article_card.dart';
+import '../widgets/service_detail_dialog.dart';
+import '../widgets/article_pricing_dialog.dart';
 
 /// 🏪 Écran des Services - Alpha Client App
 ///
-/// Catalogue des services Alpha Pressing avec catégories,
-/// recherche et détails complets des prestations.
+/// Catalogue complet des services Alpha Pressing avec types,
+/// services, articles et tarification.
 class ServicesScreen extends StatefulWidget {
   const ServicesScreen({Key? key}) : super(key: key);
 
@@ -18,11 +25,46 @@ class _ServicesScreenState extends State<ServicesScreen>
   
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  
+  String _searchQuery = '';
+
+  // 🛠️ Services disponibles (liste statique)
+  final List<ServiceInfo> _availableServices = [
+    ServiceInfo(
+      name: 'Nettoyage à sec',
+      description: 'Utilisation de solvants non aqueux pour nettoyer les vêtements délicats',
+      icon: Icons.dry_cleaning,
+      color: AppColors.primary,
+      badge: 'Premium',
+    ),
+    ServiceInfo(
+      name: 'LAVAGE + REPASSAGE',
+      description: 'Nettoyage à l\'eau + repassage des vêtements et du linge de maison',
+      icon: Icons.local_laundry_service,
+      color: AppColors.accent,
+      badge: 'Complet',
+    ),
+    ServiceInfo(
+      name: 'Lavage Simple',
+      description: 'Lavage unique de vos vêtements',
+      icon: Icons.water_drop,
+      color: AppColors.info,
+      badge: 'Rapide',
+    ),
+    ServiceInfo(
+      name: 'Repassage Simple',
+      description: 'Repassage unique de vos vêtements',
+      icon: Icons.iron,
+      color: AppColors.warning,
+      badge: 'Express',
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
     _initAnimations();
+    _loadData();
   }
 
   void _initAnimations() {
@@ -40,6 +82,13 @@ class _ServicesScreenState extends State<ServicesScreen>
     ));
 
     _fadeController.forward();
+  }
+
+  void _loadData() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<ServicesProvider>(context, listen: false);
+      provider.initialize();
+    });
   }
 
   @override
@@ -87,20 +136,52 @@ class _ServicesScreenState extends State<ServicesScreen>
 
   /// 🎨 Corps principal
   Widget _buildBody() {
-    return SingleChildScrollView(
-      padding: AppSpacing.pagePadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 16),
-          _buildHeroSection(),
-          const SizedBox(height: 24),
-          _buildCategoriesSection(),
-          const SizedBox(height: 24),
-          _buildPopularServicesSection(),
-          const SizedBox(height: 100), // Bottom padding pour navigation
-        ],
-      ),
+    return Consumer<ServicesProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading && !provider.hasData) {
+          return _buildLoadingState();
+        }
+
+        if (provider.error != null) {
+          return _buildErrorState(provider);
+        }
+
+        return RefreshIndicator(
+          onRefresh: provider.refresh,
+          color: AppColors.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: AppSpacing.pagePadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                _buildHeroSection(),
+                const SizedBox(height: 24),
+                
+                if (provider.serviceTypes.isNotEmpty) ...[
+                  _buildServiceTypesSection(provider),
+                  const SizedBox(height: 24),
+                ],
+                
+                // Toujours afficher les services (liste statique)
+                _buildServicesSection(provider),
+                const SizedBox(height: 24),
+                
+                if (provider.articles.isNotEmpty) ...[
+                  _buildArticlesSection(provider),
+                  const SizedBox(height: 24),
+                ],
+                
+                if (!provider.hasData)
+                  _buildEmptyState(),
+                
+                const SizedBox(height: 100), // Bottom padding
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -156,7 +237,7 @@ class _ServicesScreenState extends State<ServicesScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Découvrez notre gamme complète de services de pressing professionnel avec des finitions impeccables.',
+            'Découvrez notre gamme complète de services de pressing professionnel avec des finitions impeccables et une attention particulière aux détails.',
             style: AppTextStyles.bodyMedium.copyWith(
               color: Colors.white.withOpacity(0.9),
             ),
@@ -166,178 +247,677 @@ class _ServicesScreenState extends State<ServicesScreen>
     );
   }
 
-  /// 📂 Section catégories
-  Widget _buildCategoriesSection() {
+  /// 🏷️ Section types de service
+  Widget _buildServiceTypesSection(ServicesProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Catégories de Services',
+          'Types de Service',
           style: AppTextStyles.headlineMedium.copyWith(
             color: AppColors.textPrimary(context),
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 16),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-            final itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 12) / crossAxisCount;
-            final itemHeight = itemWidth * 0.85; // Ratio plus adaptatif
-            
-            return GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: itemWidth / itemHeight,
-              children: [
-                _buildCategoryCard(
-                  'Nettoyage à Sec',
-                  'Vêtements délicats',
-                  Icons.dry_cleaning,
-                  AppColors.primary,
-                ),
-                _buildCategoryCard(
-                  'Repassage',
-                  'Finition parfaite',
-                  Icons.iron,
-                  AppColors.warning,
-                ),
-                _buildCategoryCard(
-                  'Retouches',
-                  'Ajustements précis',
-                  Icons.content_cut,
-                  AppColors.info,
-                ),
-                _buildCategoryCard(
-                  'Express 24h',
-                  'Service rapide',
-                  Icons.flash_on,
-                  AppColors.success,
-                ),
-              ],
-            );
-          },
-        ),
+        ...provider.serviceTypes.map((serviceType) {
+          return ServiceTypeCard(
+            serviceType: serviceType,
+            onTap: () => _showServiceTypeInfo(serviceType.name, serviceType.description),
+          );
+        }).toList(),
       ],
     );
   }
 
-  Widget _buildCategoryCard(String title, String subtitle, IconData icon, Color color) {
+  /// 🛠️ Section services (liste statique)
+  Widget _buildServicesSection(ServicesProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Nos Services',
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              '${_availableServices.length} services',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // Services disponibles
+        ..._availableServices.map((serviceInfo) {
+          return _buildStaticServiceCard(serviceInfo);
+        }).toList(),
+        
+        // Card informative pour les services au poids
+        _buildWeightBasedServicesInfoCard(),
+      ],
+    );
+  }
+
+  /// 📦 Card service statique
+  Widget _buildStaticServiceCard(ServiceInfo serviceInfo) {
     return GlassContainer(
+      onTap: () => _showStaticServiceDetails(serviceInfo),
+      isInteractive: true,
       padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Row(
         children: [
+          // Icône
           Container(
-            width: 50,
-            height: 50,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: serviceInfo.color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(
-              icon,
-              color: color,
+              serviceInfo.icon,
+              color: serviceInfo.color,
               size: 28,
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: AppTextStyles.labelLarge.copyWith(
-              color: AppColors.textPrimary(context),
-              fontWeight: FontWeight.w600,
+          const SizedBox(width: 16),
+          
+          // Contenu
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  serviceInfo.name,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.textPrimary(context),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  serviceInfo.description,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary(context),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: serviceInfo.color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    serviceInfo.badge,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: serviceInfo.color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary(context),
-            ),
-            textAlign: TextAlign.center,
+          
+          // Flèche
+          Icon(
+            Icons.arrow_forward_ios,
+            color: AppColors.textTertiary(context),
+            size: 16,
           ),
         ],
       ),
     );
   }
 
-  /// ⭐ Section services populaires
-  Widget _buildPopularServicesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Services Populaires',
-          style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.textPrimary(context),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildComingSoonCard(),
-      ],
-    );
-  }
-
-  /// 🚧 Carte "Bientôt disponible"
-  Widget _buildComingSoonCard() {
+  /// ⚖️ Card informative services au poids
+  Widget _buildWeightBasedServicesInfoCard() {
     return GlassContainer(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.teal.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.scale_outlined,
+                  color: AppColors.teal,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Services au Poids',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.textPrimary(context),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Tarification au kilogramme',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.teal,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Info',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.info,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Container(
-            width: 80,
-            height: 80,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.info.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(40),
-            ),
-            child: Icon(
-              Icons.construction,
-              color: AppColors.info,
-              size: 40,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Catalogue Complet',
-            style: AppTextStyles.headlineMedium.copyWith(
-              color: AppColors.textPrimary(context),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Le catalogue détaillé de nos services sera bientôt disponible.\nTarifs, descriptions et options personnalisées.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary(context),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: AppColors.info.withOpacity(0.3),
               ),
             ),
-            child: Text(
-              'En développement',
-              style: AppTextStyles.labelMedium.copyWith(
-                color: AppColors.info,
-                fontWeight: FontWeight.w600,
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: AppColors.info,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Service disponible sur demande',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.info,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Nous proposons également des services au poids pour les grandes quantités de linge. Contactez-nous pour plus d\'informations sur les tarifs et disponibilités.',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.info,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Services disponibles au poids :',
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.textSecondary(context),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildServiceBadge('Lavage Simple', Icons.water_drop),
+              _buildServiceBadge('Repassage', Icons.iron),
+              _buildServiceBadge('Nettoyage à sec', Icons.dry_cleaning),
+              _buildServiceBadge('Lavage + Repassage', Icons.local_laundry_service),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🏷️ Badge service
+  Widget _buildServiceBadge(String label, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.teal.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.teal.withOpacity(0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.teal),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.teal,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 📋 Afficher les détails d'un service statique
+  void _showStaticServiceDetails(ServiceInfo serviceInfo) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: serviceInfo.color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                serviceInfo.icon,
+                color: serviceInfo.color,
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                serviceInfo.name,
+                style: AppTextStyles.headlineSmall.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Description',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              serviceInfo.description,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: serviceInfo.color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.verified,
+                    color: serviceInfo.color,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    serviceInfo.badge,
+                    style: AppTextStyles.labelMedium.copyWith(
+                      color: serviceInfo.color,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.info.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.info.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: AppColors.info,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Le prix varie selon l\'article choisi',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.info,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          PremiumButton(
+            text: 'Fermer',
+            onPressed: () => Navigator.pop(context),
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 📦 Section articles (organisés par catégories)
+  Widget _buildArticlesSection(ServicesProvider provider) {
+    // Grouper les articles par catégorie
+    final articlesByCategory = <String, List<dynamic>>{};
+    for (final article in provider.articles) {
+      final category = article.categoryName ?? 'Autres';
+      if (!articlesByCategory.containsKey(category)) {
+        articlesByCategory[category] = [];
+      }
+      articlesByCategory[category]!.add(article);
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Articles',
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              '${provider.articles.length} articles',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.info.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.info.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: AppColors.info,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Cliquez sur un article pour voir ses tarifs selon les services',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.info,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        // Afficher les articles par catégorie
+        ...articlesByCategory.entries.map((entry) {
+          return _buildCategorySection(entry.key, entry.value);
+        }).toList(),
+      ],
+    );
+  }
+
+  /// 📂 Section catégorie d'articles
+  Widget _buildCategorySection(String categoryName, List<dynamic> articles) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12, top: 8),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                categoryName,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${articles.length}',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount = constraints.maxWidth > 600 ? 4 : 3;
+            
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: articles.length,
+              itemBuilder: (context, index) {
+                final article = articles[index];
+                return ArticleCard(
+                  article: article,
+                  onTap: () => _showArticlePricing(article),
+                );
+              },
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  /// 💀 État de chargement
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 60,
+            height: 60,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Chargement des services...',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: AppColors.textSecondary(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ❌ État d'erreur
+  Widget _buildErrorState(ServicesProvider provider) {
+    return Center(
+      child: Padding(
+        padding: AppSpacing.pagePadding,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.error,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Erreur de chargement',
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: AppColors.textPrimary(context),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              provider.error ?? 'Une erreur est survenue',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            PremiumButton(
+              text: 'Réessayer',
+              onPressed: () => provider.refresh(),
+              icon: Icons.refresh,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 📭 État vide
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.info.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(40),
+              ),
+              child: Icon(
+                Icons.inventory_2_outlined,
+                color: AppColors.info,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Aucun service disponible',
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Les services seront bientôt disponibles.\nRevenez plus tard.',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -360,7 +940,7 @@ class _ServicesScreenState extends State<ServicesScreen>
             ),
             const SizedBox(width: 8),
             Text(
-              'Rechercher un service',
+              'Rechercher',
               style: AppTextStyles.headlineSmall.copyWith(
                 color: AppColors.textPrimary(context),
                 fontWeight: FontWeight.w700,
@@ -372,8 +952,9 @@ class _ServicesScreenState extends State<ServicesScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
+              autofocus: true,
               decoration: InputDecoration(
-                hintText: 'Tapez votre recherche...',
+                hintText: 'Service ou article...',
                 hintStyle: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textTertiary(context),
                 ),
@@ -396,37 +977,68 @@ class _ServicesScreenState extends State<ServicesScreen>
                 ),
               ),
               onChanged: (value) {
-                // TODO: Implémenter la logique de recherche en temps réel
+                setState(() => _searchQuery = value);
               },
             ),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.info.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.info.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppColors.info,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'La recherche sera disponible avec le catalogue complet.',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.info,
-                      ),
+            Consumer<ServicesProvider>(
+              builder: (context, provider, child) {
+                if (_searchQuery.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.info.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-                ],
-              ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: AppColors.info, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Tapez pour rechercher',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.info,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                
+                final services = provider.searchServices(_searchQuery);
+                final articles = provider.searchArticles(_searchQuery);
+                
+                if (services.isEmpty && articles.isEmpty) {
+                  return Text(
+                    'Aucun résultat trouvé',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.textSecondary(context),
+                    ),
+                  );
+                }
+                
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (services.isNotEmpty)
+                      Text(
+                        '${services.length} service(s) trouvé(s)',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: AppColors.textPrimary(context),
+                        ),
+                      ),
+                    if (articles.isNotEmpty)
+                      Text(
+                        '${articles.length} article(s) trouvé(s)',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: AppColors.textPrimary(context),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -444,4 +1056,71 @@ class _ServicesScreenState extends State<ServicesScreen>
       ),
     );
   }
+
+  /// 📋 Afficher les détails d'un service
+  void _showServiceDetails(service) {
+    showDialog(
+      context: context,
+      builder: (context) => ServiceDetailDialog(service: service),
+    );
+  }
+
+  /// ℹ️ Afficher info type de service
+  void _showServiceTypeInfo(String title, String description) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          title,
+          style: AppTextStyles.headlineSmall.copyWith(
+            color: AppColors.textPrimary(context),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          description,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary(context),
+          ),
+        ),
+        actions: [
+          PremiumButton(
+            text: 'Fermer',
+            onPressed: () => Navigator.pop(context),
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 💰 Afficher la tarification d'un article
+  void _showArticlePricing(dynamic article) {
+    showDialog(
+      context: context,
+      builder: (context) => ArticlePricingDialog(article: article),
+    );
+  }
+}
+
+/// 📋 Modèle d'information de service (statique)
+class ServiceInfo {
+  final String name;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final String badge;
+
+  ServiceInfo({
+    required this.name,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.badge,
+  });
 }

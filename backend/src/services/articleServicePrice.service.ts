@@ -163,14 +163,33 @@ export class ArticleServicePriceService {
 
   static async getArticlePrices(articleId: string) {
     try {
-      return await prisma.article_service_prices.findMany({
+      const data = await prisma.article_service_prices.findMany({
         where: {
           article_id: articleId
         },
         include: {
-          service_types: true
+          service_types: true,
+          services: true,
+          articles: true
         }
       });
+
+      // Formater les données pour inclure les noms
+      return data.map((item: any) => ({
+        id: item.id,
+        article_id: item.article_id,
+        service_type_id: item.service_type_id,
+        service_id: item.service_id ?? '',
+        base_price: item.base_price,
+        premium_price: item.premium_price,
+        price_per_kg: item.price_per_kg,
+        is_available: item.is_available,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        article_name: item.articles?.name ?? '',
+        service_type_name: item.service_types?.name ?? '',
+        service_name: item.services?.name ?? ''
+      }));
     } catch (error) {
       console.error('Error getting article prices:', error);
       throw error;

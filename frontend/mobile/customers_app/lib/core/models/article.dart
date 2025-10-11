@@ -33,12 +33,13 @@ class Article {
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
-      categoryId: json['category_id']?.toString() ?? '',
-      isActive: json['is_active'] ?? true,
-      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updated_at'] ?? '') ?? DateTime.now(),
-      // Informations enrichies
-      categoryName: json['category_name'],
+      // Le backend peut retourner categoryId (camelCase) ou category_id (snake_case)
+      categoryId: (json['categoryId'] ?? json['category_id'])?.toString() ?? '',
+      isActive: json['isActive'] ?? json['is_active'] ?? true,
+      createdAt: DateTime.tryParse(json['createdAt'] ?? json['created_at'] ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updatedAt'] ?? json['updated_at'] ?? '') ?? DateTime.now(),
+      // Informations enrichies - le backend retourne 'category' comme nom
+      categoryName: json['category'] ?? json['category_name'],
       categoryDescription: json['category_description'],
     );
   }

@@ -10,6 +10,7 @@ import 'shared/providers/address_provider.dart';
 import 'shared/providers/user_profile_provider.dart';
 import 'shared/providers/notification_provider.dart';
 import 'shared/providers/order_draft_provider.dart';
+import 'providers/services_provider.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'core/utils/storage_service.dart';
 
@@ -37,6 +38,7 @@ class AlphaCustomerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
         ChangeNotifierProvider(create: (context) => FlashOrderProvider()),
         ChangeNotifierProvider(create: (context) => OrderDraftProvider()),
+        ChangeNotifierProvider(create: (context) => ServicesProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
