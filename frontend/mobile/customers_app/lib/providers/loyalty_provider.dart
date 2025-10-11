@@ -5,7 +5,7 @@ import '../core/models/loyalty.dart';
 /// 🎁 Provider Fidélité - Alpha Client App
 ///
 /// Provider pour la gestion du programme de fidélité avec points,
-/// récompenses et historique des transactions
+/// récompenses, historique des transactions et système de cache optimisé.
 
 class LoyaltyProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -31,6 +31,11 @@ class LoyaltyProvider extends ChangeNotifier {
   bool _isUsingPoints = false;
   String? _usePointsError;
 
+  // 🔥 Cache Management
+  DateTime? _lastFetch;
+  bool _isInitialized = false;
+  static const Duration _cacheDuration = Duration(minutes: 5); // 5 min (données dynamiques)
+
   // Getters
   LoyaltyPoints? get loyaltyPoints => _loyaltyPoints;
   bool get isLoadingPoints => _isLoadingPoints;
@@ -53,19 +58,69 @@ class LoyaltyProvider extends ChangeNotifier {
   int get totalEarned => _loyaltyPoints?.totalEarned ?? 0;
   bool get hasPoints => currentPoints > 0;
 
+  // 🔥 Cache Getters
+  bool get isInitialized => _isInitialized;
+  DateTime? get lastFetch => _lastFetch;
+  
+  bool get _shouldRefresh {
+    if (_lastFetch == null) return true;
+    final difference = DateTime.now().difference(_lastFetch!);
+    return difference > _cacheDuration;
+  }
+  
+  String get cacheStatus {
+    if (_lastFetch == null) return 'Aucune donnée';
+    final difference = DateTime.now().difference(_lastFetch!);
+    final minutes = difference.inMinutes;
+    if (minutes < 1) return 'À l\'instant';
+    if (minutes == 1) return 'Il y a 1 minute';
+    return 'Il y a $minutes minutes';
+  }
+
   // Récompenses disponibles (que l'utilisateur peut s'offrir)
   List<Reward> get availableRewards => _rewards
       .where(
           (reward) => reward.isActive && reward.pointsRequired <= currentPoints)
       .toList();
 
-  /// 🚀 Initialiser le provider
-  Future<void> initialize() async {
-    await Future.wait([
-      loadLoyaltyPoints(),
-      loadRewards(),
-      loadTransactions(refresh: true),
-    ]);
+  /// 🚀 Initialiser le provider avec système de cache
+  Future<void> initialize({bool forceRefresh = false}) async {
+    // 🔥 Vérifier le cache avant de charger
+    if (_isInitialized && !forceRefresh && !_shouldRefresh && _loyaltyPoints != null) {
+      debugPrint('✅ [LoyaltyProvider] Cache valide - Pas de rechargement');
+      debugPrint('📊 [LoyaltyProvider] Dernière mise à jour: $cacheStatus');
+      debugPrint('🎁 [LoyaltyProvider] $currentPoints points, ${_rewards.length} récompenses');
+      return;
+    }
+
+    if (forceRefresh) {
+      debugPrint('🔄 [LoyaltyProvider] Rechargement forcé');
+    } else if (_shouldRefresh) {
+      debugPrint('⏰ [LoyaltyProvider] Cache expiré - Rechargement');
+    } else {
+      debugPrint('🆕 [LoyaltyProvider] Première initialisation');
+    }
+
+    try {
+      final startTime = DateTime.now();
+      
+      await Future.wait([
+        loadLoyaltyPoints(),
+        loadRewards(),
+        loadTransactions(refresh: true),
+      ]);
+      
+      // 🔥 Marquer comme initialisé
+      _isInitialized = true;
+      _lastFetch = DateTime.now();
+      
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [LoyaltyProvider] Chargement terminé en ${duration.inMilliseconds}ms');
+      debugPrint('🎁 [LoyaltyProvider] $currentPoints points, ${_rewards.length} récompenses, ${_transactions.length} transactions');
+      
+    } catch (e) {
+      debugPrint('❌ [LoyaltyProvider] Erreur: $e');
+    }
   }
 
   /// 💰 Charger les points de fidélité
@@ -325,13 +380,17 @@ class LoyaltyProvider extends ChangeNotifier {
     return points * conversionRate;
   }
 
-  /// 🔄 Actualiser toutes les données
+  /// 🔄 Actualiser toutes les données (force le rechargement)
   Future<void> refreshAll() async {
-    await Future.wait([
-      loadLoyaltyPoints(),
-      loadRewards(),
-      loadTransactions(refresh: true),
-    ]);
+    debugPrint('🔄 [LoyaltyProvider] Rafraîchissement manuel');
+    await initialize(forceRefresh: true);
+  }
+  
+  /// 🗑️ Invalider le cache (pour forcer un rechargement au prochain accès)
+  void invalidateCache() {
+    debugPrint('🗑️ [LoyaltyProvider] Cache invalidé');
+    _isInitialized = false;
+    _lastFetch = null;
   }
 
   /// 🧹 Nettoyer les erreurs

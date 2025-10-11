@@ -6,17 +6,28 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
-router.use(authenticateToken);
-
-// Routes publiques
-
+// Routes publiques (pas d'authentification requise pour la lecture)
 router.get('/prices', asyncHandler(ArticleServiceController.getAllPrices));
 router.get('/:articleId/prices', asyncHandler(ArticleServiceController.getArticlePrices));
 router.get('/couples', asyncHandler(ArticleServiceController.getCouplesForServiceType));
-router.use(authorizeRoles(['ADMIN', 'SUPER_ADMIN']));
-router.post('/prices', asyncHandler(ArticleServiceController.createPrice));
-router.put('/prices/:id', asyncHandler(ArticleServiceController.updatePrice));
-router.delete('/prices/:id', asyncHandler(ArticleServicePriceController.delete));
+
+// Routes protégées (nécessitent authentification + rôle ADMIN)
+router.post('/prices', 
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(ArticleServiceController.createPrice)
+);
+
+router.put('/prices/:id', 
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(ArticleServiceController.updatePrice)
+);
+
+router.delete('/prices/:id', 
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(ArticleServicePriceController.delete)
+);
 
 export default router;
-  

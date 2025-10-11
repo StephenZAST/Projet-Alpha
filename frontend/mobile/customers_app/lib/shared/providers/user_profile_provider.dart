@@ -5,8 +5,8 @@ import '../../core/utils/storage_service.dart';
 
 /// 👤 Provider de Profil Utilisateur - Alpha Client App
 ///
-/// Gère l'état du profil utilisateur avec données réelles
-/// et statistiques de fidélité depuis le backend.
+/// Gère l'état du profil utilisateur avec données réelles,
+/// statistiques de fidélité et système de cache optimisé.
 class UserProfileProvider extends ChangeNotifier {
   final UserProfileService _profileService = UserProfileService();
 
@@ -14,6 +14,11 @@ class UserProfileProvider extends ChangeNotifier {
   UserStats? _stats;
   bool _isLoading = false;
   String? _error;
+
+  // 🔥 Cache Management
+  DateTime? _lastFetch;
+  bool _isInitialized = false;
+  static const Duration _cacheDuration = Duration(minutes: 5); // 5 min pour profil
 
   // Getters
   User? get currentUser => _user;
@@ -27,6 +32,25 @@ class UserProfileProvider extends ChangeNotifier {
           _stats!.totalSpent > 0 ||
           _stats!.loyaltyPoints > 0);
 
+  // 🔥 Cache Getters
+  bool get isInitialized => _isInitialized;
+  DateTime? get lastFetch => _lastFetch;
+  
+  bool get _shouldRefresh {
+    if (_lastFetch == null) return true;
+    final difference = DateTime.now().difference(_lastFetch!);
+    return difference > _cacheDuration;
+  }
+  
+  String get cacheStatus {
+    if (_lastFetch == null) return 'Aucune donnée';
+    final difference = DateTime.now().difference(_lastFetch!);
+    final minutes = difference.inMinutes;
+    if (minutes < 1) return 'À l\'instant';
+    if (minutes == 1) return 'Il y a 1 minute';
+    return 'Il y a $minutes minutes';
+  }
+
   // Statistiques (avec fallback)
   int get totalOrders => _stats?.totalOrders ?? 0;
   double get totalSpent => _stats?.totalSpent ?? 0.0;
@@ -37,39 +61,53 @@ class UserProfileProvider extends ChangeNotifier {
   String get userDisplayName => _user?.fullName ?? 'Utilisateur';
   String get userInitials => _user?.initials ?? 'U';
 
-  /// 🚀 Initialiser le provider
-  Future<void> initialize() async {
+  /// 🚀 Initialiser le provider avec système de cache
+  Future<void> initialize({bool forceRefresh = false}) async {
+    // 🔥 Vérifier le cache avant de charger
+    if (_isInitialized && !forceRefresh && !_shouldRefresh && hasUserData) {
+      debugPrint('✅ [UserProfileProvider] Cache valide - Pas de rechargement');
+      debugPrint('📊 [UserProfileProvider] Dernière mise à jour: $cacheStatus');
+      debugPrint('👤 [UserProfileProvider] Utilisateur: $userDisplayName');
+      return;
+    }
+
+    if (forceRefresh) {
+      debugPrint('🔄 [UserProfileProvider] Rechargement forcé');
+    } else if (_shouldRefresh) {
+      debugPrint('⏰ [UserProfileProvider] Cache expiré - Rechargement');
+    } else {
+      debugPrint('🆕 [UserProfileProvider] Première initialisation');
+    }
+
     _setLoading(true);
 
     try {
-      // Récupérer l'utilisateur depuis le cache d'abord
+      final startTime = DateTime.now();
+      
+      // 1. Recuperer l'utilisateur depuis le cache d'abord (affichage immediat)
       final cachedUser = await StorageService.getUser();
       if (cachedUser != null) {
         _user = cachedUser;
-        print(
-            '[UserProfileProvider] Utilisateur chargé depuis le cache: ${_user!.fullName}');
-        notifyListeners();
+        debugPrint('[UserProfileProvider] OK Utilisateur depuis cache: ${_user!.fullName}');
+        notifyListeners(); // Afficher immediatement
       }
 
-      // Essayer de récupérer les données depuis l'API (profil depuis cache)
+      // 2. Essayer de recuperer les donnees depuis l'API
       try {
         _user = await _profileService.getUserProfile();
-        print('[UserProfileProvider] Profil utilisateur récupéré');
+        debugPrint('[UserProfileProvider] OK Profil utilisateur recupere depuis API');
       } catch (e) {
-        print(
-            '[UserProfileProvider] Impossible de récupérer le profil depuis l\'API: $e');
+        debugPrint('[UserProfileProvider] WARN API profil indisponible: $e');
         // Continuer avec l'utilisateur en cache
       }
 
-      // Récupérer les statistiques (peut échouer silencieusement)
+      // 3. Recuperer les statistiques
       try {
         _stats = await _profileService.getUserStats();
-        print(
-            '[UserProfileProvider] Statistiques récupérées: ${_stats!.loyaltyPoints} points');
+        debugPrint('[UserProfileProvider] OK Stats: ${_stats!.loyaltyPoints} points, ${_stats!.totalOrders} commandes');
       } catch (e) {
-        print(
-            '[UserProfileProvider] Impossible de récupérer les statistiques: $e');
-        // Statistiques par défaut
+        debugPrint('[UserProfileProvider] WARN Erreur stats: $e');
+        // Statistiques par defaut
         _stats = UserStats(
           totalOrders: 0,
           totalSpent: 0.0,
@@ -78,10 +116,18 @@ class UserProfileProvider extends ChangeNotifier {
         );
       }
 
+      // Marquer comme initialise
+      _isInitialized = true;
+      _lastFetch = DateTime.now();
+      
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('OK [UserProfileProvider] Chargement termine en ${duration.inMilliseconds}ms');
+      
       _clearError();
       notifyListeners();
+      
     } catch (e) {
-      print('[UserProfileProvider] Erreur initialize: $e');
+      debugPrint('❌ [UserProfileProvider] Erreur: $e');
 
       // En cas d'erreur totale, essayer de charger depuis le cache
       if (_user == null) {
@@ -94,12 +140,13 @@ class UserProfileProvider extends ChangeNotifier {
             loyaltyPoints: 0,
             addressCount: 0,
           );
-          print('[UserProfileProvider] Fallback vers le cache réussi');
+          debugPrint('[UserProfileProvider] ✅ Fallback vers le cache réussi');
+          _isInitialized = true;
+          _lastFetch = DateTime.now();
           _clearError();
           notifyListeners();
         } else {
-          _setError(
-              'Aucun profil utilisateur disponible. Veuillez vous reconnecter.');
+          _setError('Aucun profil utilisateur disponible. Veuillez vous reconnecter.');
         }
       }
     } finally {
@@ -107,9 +154,57 @@ class UserProfileProvider extends ChangeNotifier {
     }
   }
 
-  /// 🔄 Actualiser les données
+  /// 🔄 Actualiser les données (force le rechargement)
   Future<void> refresh() async {
-    await initialize();
+    debugPrint('🔄 [UserProfileProvider] Rafraîchissement manuel');
+    await initialize(forceRefresh: true);
+  }
+  
+  /// 🗑️ Invalider le cache (pour forcer un rechargement au prochain accès)
+  void invalidateCache() {
+    debugPrint('🗑️ [UserProfileProvider] Cache invalidé');
+    _isInitialized = false;
+    _lastFetch = null;
+  }
+  
+  /// 📝 Mettre à jour le profil utilisateur (invalide le cache)
+  Future<bool> updateProfile({
+    required String firstName,
+    required String lastName,
+    required String email,
+    String? phone,
+  }) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final success = await _profileService.updateProfile(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        phone: phone,
+      );
+
+      if (success) {
+        debugPrint('[UserProfileProvider] ✅ Profil mis à jour');
+        // Invalider le cache et recharger
+        invalidateCache();
+        await initialize(forceRefresh: true);
+        return true;
+      }
+
+      _setError('Erreur lors de la mise à jour du profil');
+      return false;
+    } catch (e) {
+      debugPrint('[UserProfileProvider] ❌ Erreur updateProfile: $e');
+      final message = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : e.toString();
+      _setError('Erreur de mise à jour: $message');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   /// 🔒 Changer le mot de passe

@@ -5,9 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
-router.use(authenticateToken);
-
-// Routes publiques (accessibles aux utilisateurs authentifiés)
+// Routes publiques (pas d'authentification requise pour la lecture)
 router.get('/', 
   asyncHandler((req, res) => ServiceTypeController.getAllServiceTypes(req, res))
 );
@@ -16,18 +14,22 @@ router.get('/:id',
   asyncHandler((req, res) => ServiceTypeController.getServiceType(req, res))
 );
 
-// Routes admin
-router.use(authorizeRoles(['ADMIN', 'SUPER_ADMIN']));
-
+// Routes admin (nécessitent authentification + rôle ADMIN)
 router.post('/', 
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
   asyncHandler((req, res) => ServiceTypeController.createServiceType(req, res))
 );
 
 router.put('/:id', 
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
   asyncHandler((req, res) => ServiceTypeController.updateServiceType(req, res))
 );
 
 router.delete('/:id', 
+  authenticateToken,
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
   asyncHandler((req, res) => ServiceTypeController.deleteServiceType(req, res))
 );
 

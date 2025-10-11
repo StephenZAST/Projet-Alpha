@@ -9,7 +9,7 @@ import '../core/services/category_service.dart' as cat;
 
 /// 🛠️ Provider des Services - Alpha Client App
 ///
-/// Gère l'état global des services, articles et tarifs
+/// Gère l'état global des services, articles et tarifs avec système de cache
 class ServicesProvider extends ChangeNotifier {
   final ArticleService _articleService = ArticleService();
   final ServiceService _serviceService = ServiceService();
@@ -19,6 +19,11 @@ class ServicesProvider extends ChangeNotifier {
   // État
   bool _isLoading = false;
   String? _error;
+
+  // 🔥 Cache Management
+  DateTime? _lastFetch;
+  bool _isInitialized = false;
+  static const Duration _cacheDuration = Duration(minutes: 10);
 
   // Données
   List<Article> _articles = [];
@@ -37,13 +42,50 @@ class ServicesProvider extends ChangeNotifier {
   List<cat.ArticleCategory> get categories => _categories;
 
   bool get hasData => _articles.isNotEmpty || _services.isNotEmpty;
+  
+  // 🔥 Cache Getters
+  bool get isInitialized => _isInitialized;
+  DateTime? get lastFetch => _lastFetch;
+  
+  bool get _shouldRefresh {
+    if (_lastFetch == null) return true;
+    final difference = DateTime.now().difference(_lastFetch!);
+    return difference > _cacheDuration;
+  }
+  
+  String get cacheStatus {
+    if (_lastFetch == null) return 'Aucune donnée';
+    final difference = DateTime.now().difference(_lastFetch!);
+    final minutes = difference.inMinutes;
+    if (minutes < 1) return 'À l\'instant';
+    if (minutes == 1) return 'Il y a 1 minute';
+    return 'Il y a $minutes minutes';
+  }
 
   /// 🚀 Initialiser et charger toutes les données
-  Future<void> initialize() async {
+  Future<void> initialize({bool forceRefresh = false}) async {
+    // 🔥 Vérifier le cache avant de charger
+    if (_isInitialized && !forceRefresh && !_shouldRefresh && hasData) {
+      debugPrint('✅ [ServicesProvider] Cache valide - Pas de rechargement');
+      debugPrint('📊 [ServicesProvider] Dernière mise à jour: $cacheStatus');
+      debugPrint('📦 [ServicesProvider] Données: ${_articles.length} articles, ${_services.length} services');
+      return;
+    }
+
+    if (forceRefresh) {
+      debugPrint('🔄 [ServicesProvider] Rechargement forcé');
+    } else if (_shouldRefresh) {
+      debugPrint('⏰ [ServicesProvider] Cache expiré - Rechargement');
+    } else {
+      debugPrint('🆕 [ServicesProvider] Première initialisation');
+    }
+
     _setLoading(true);
     _clearError();
 
     try {
+      final startTime = DateTime.now();
+      
       // 1. Charger les catégories d'abord
       await loadCategories();
       
@@ -57,7 +99,17 @@ class ServicesProvider extends ChangeNotifier {
       
       // 3. Enrichir les articles avec les noms de catégories
       _enrichArticlesWithCategoryNames();
+      
+      // 🔥 Marquer comme initialisé et mettre à jour le timestamp
+      _isInitialized = true;
+      _lastFetch = DateTime.now();
+      
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [ServicesProvider] Chargement terminé en ${duration.inMilliseconds}ms');
+      debugPrint('📦 [ServicesProvider] ${_articles.length} articles, ${_services.length} services, ${_prices.length} prix');
+      
     } catch (e) {
+      debugPrint('❌ [ServicesProvider] Erreur: $e');
       _setError('Erreur d\'initialisation: ${e.toString()}');
     } finally {
       _setLoading(false);
@@ -67,51 +119,71 @@ class ServicesProvider extends ChangeNotifier {
   /// 📦 Charger tous les articles
   Future<void> loadArticles() async {
     try {
+      final startTime = DateTime.now();
       _articles = await _articleService.getAllArticles();
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [Articles] ${_articles.length} articles chargés en ${duration.inMilliseconds}ms');
       notifyListeners();
     } catch (e) {
-      debugPrint('[ServicesProvider] Erreur chargement articles: $e');
+      debugPrint('❌ [Articles] Erreur: $e');
       // Ne pas bloquer si les articles ne se chargent pas
+      rethrow; // Propager l'erreur pour la gestion globale
     }
   }
 
   /// 🛠️ Charger tous les services
   Future<void> loadServices() async {
     try {
+      final startTime = DateTime.now();
       _services = await _serviceService.getAllServices();
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [Services] ${_services.length} services chargés en ${duration.inMilliseconds}ms');
       notifyListeners();
     } catch (e) {
-      debugPrint('[ServicesProvider] Erreur chargement services: $e');
+      debugPrint('❌ [Services] Erreur: $e');
+      rethrow;
     }
   }
 
   /// 🏷️ Charger tous les types de service
   Future<void> loadServiceTypes() async {
     try {
+      final startTime = DateTime.now();
       _serviceTypes = await _serviceService.getAllServiceTypes();
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [ServiceTypes] ${_serviceTypes.length} types chargés en ${duration.inMilliseconds}ms');
       notifyListeners();
     } catch (e) {
-      debugPrint('[ServicesProvider] Erreur chargement types de service: $e');
+      debugPrint('❌ [ServiceTypes] Erreur: $e');
+      rethrow;
     }
   }
 
   /// 💰 Charger tous les prix
   Future<void> loadPrices() async {
     try {
+      final startTime = DateTime.now();
       _prices = await _pricingService.getAllPrices();
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [Prices] ${_prices.length} prix chargés en ${duration.inMilliseconds}ms');
       notifyListeners();
     } catch (e) {
-      debugPrint('[ServicesProvider] Erreur chargement prix: $e');
+      debugPrint('❌ [Prices] Erreur: $e');
+      rethrow;
     }
   }
 
   /// 📂 Charger toutes les catégories
   Future<void> loadCategories() async {
     try {
+      final startTime = DateTime.now();
       _categories = await _categoryService.getAllCategories();
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [Categories] ${_categories.length} catégories chargées en ${duration.inMilliseconds}ms');
       notifyListeners();
     } catch (e) {
-      debugPrint('[ServicesProvider] Erreur chargement catégories: $e');
+      debugPrint('❌ [Categories] Erreur: $e');
+      rethrow;
     }
   }
 
@@ -136,9 +208,17 @@ class ServicesProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 🔄 Rafraîchir toutes les données
+  /// 🔄 Rafraîchir toutes les données (force le rechargement)
   Future<void> refresh() async {
-    await initialize();
+    debugPrint('🔄 [ServicesProvider] Rafraîchissement manuel');
+    await initialize(forceRefresh: true);
+  }
+  
+  /// 🗑️ Invalider le cache (pour forcer un rechargement au prochain accès)
+  void invalidateCache() {
+    debugPrint('🗑️ [ServicesProvider] Cache invalidé');
+    _isInitialized = false;
+    _lastFetch = null;
   }
 
   /// 🔍 Rechercher des articles par nom

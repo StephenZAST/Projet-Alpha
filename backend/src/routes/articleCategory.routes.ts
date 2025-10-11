@@ -5,28 +5,28 @@ import { asyncHandler } from '../utils/asyncHandler';
  
 const router = express.Router();
 
-// Appliquer l'authentification à toutes les routes
-router.use(authenticateToken);
-
-// Routes publiques (nécessitent authentification mais pas d'autorisation spéciale)
+// Routes publiques (pas d'authentification requise pour la lecture)
 router.get('/', asyncHandler(ArticleCategoryController.getAllArticleCategories));
 router.get('/:categoryId', asyncHandler(ArticleCategoryController.getArticleCategoryById));
 
-// Routes protégées (nécessitent le rôle ADMIN)
+// Routes protégées (nécessitent authentification + rôle ADMIN)
 router.post(
   '/',
+  authenticateToken,
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
   asyncHandler(ArticleCategoryController.createArticleCategory)
 );
 
 router.patch(
   '/:categoryId',
+  authenticateToken,
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
   asyncHandler(ArticleCategoryController.updateArticleCategory)
 );
 
 router.delete(
   '/:categoryId',
+  authenticateToken,
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
   asyncHandler(ArticleCategoryController.deleteArticleCategory)
 );

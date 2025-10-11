@@ -4,8 +4,8 @@ import '../../core/services/address_service.dart';
 
 /// 🏠 Provider de Gestion des Adresses - Alpha Client App
 ///
-/// Gère l'état global des adresses utilisateur avec synchronisation backend
-/// et persistance automatique des brouillons.
+/// Gère l'état global des adresses utilisateur avec synchronisation backend,
+/// persistance automatique des brouillons et système de cache optimisé.
 class AddressProvider extends ChangeNotifier {
   final AddressService _addressService = AddressService();
 
@@ -22,6 +22,11 @@ class AddressProvider extends ChangeNotifier {
   
   // Brouillon d'adresse
   CreateAddressRequest? _draftAddress;
+
+  // 🔥 Cache Management
+  DateTime? _lastFetch;
+  bool _isInitialized = false;
+  static const Duration _cacheDuration = Duration(minutes: 15); // 15 min (données stables)
 
   // Getters
   AddressList? get addressList => _addressList;
@@ -41,19 +46,65 @@ class AddressProvider extends ChangeNotifier {
   int get totalAddresses => addresses.length;
   bool get canMakeOrders => hasDefaultAddress;
 
-  /// 🚀 Initialisation du provider
-  Future<void> initialize() async {
+  // 🔥 Cache Getters
+  bool get isInitialized => _isInitialized;
+  DateTime? get lastFetch => _lastFetch;
+  
+  bool get _shouldRefresh {
+    if (_lastFetch == null) return true;
+    final difference = DateTime.now().difference(_lastFetch!);
+    return difference > _cacheDuration;
+  }
+  
+  String get cacheStatus {
+    if (_lastFetch == null) return 'Aucune donnée';
+    final difference = DateTime.now().difference(_lastFetch!);
+    final minutes = difference.inMinutes;
+    if (minutes < 1) return 'À l\'instant';
+    if (minutes == 1) return 'Il y a 1 minute';
+    return 'Il y a $minutes minutes';
+  }
+
+  /// 🚀 Initialisation du provider avec système de cache
+  Future<void> initialize({bool forceRefresh = false}) async {
+    // 🔥 Vérifier le cache avant de charger
+    if (_isInitialized && !forceRefresh && !_shouldRefresh && hasAddresses) {
+      debugPrint('✅ [AddressProvider] Cache valide - Pas de rechargement');
+      debugPrint('📊 [AddressProvider] Dernière mise à jour: $cacheStatus');
+      debugPrint('🏠 [AddressProvider] $totalAddresses adresse(s)');
+      return;
+    }
+
+    if (forceRefresh) {
+      debugPrint('🔄 [AddressProvider] Rechargement forcé');
+    } else if (_shouldRefresh) {
+      debugPrint('⏰ [AddressProvider] Cache expiré - Rechargement');
+    } else {
+      debugPrint('🆕 [AddressProvider] Première initialisation');
+    }
+
     _setLoading(true);
     
     try {
+      final startTime = DateTime.now();
+      
       // Charger les adresses
       await loadAddresses();
       
       // Charger le brouillon sauvegardé
       await _loadDraftAddress();
       
+      // 🔥 Marquer comme initialisé
+      _isInitialized = true;
+      _lastFetch = DateTime.now();
+      
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [AddressProvider] Chargement terminé en ${duration.inMilliseconds}ms');
+      debugPrint('🏠 [AddressProvider] $totalAddresses adresse(s), défaut: ${hasDefaultAddress ? "✓" : "✗"}');
+      
       _clearError();
     } catch (e) {
+      debugPrint('❌ [AddressProvider] Erreur: $e');
       _setError('Erreur d\'initialisation: ${e.toString()}');
     } finally {
       _setLoading(false);
@@ -63,11 +114,16 @@ class AddressProvider extends ChangeNotifier {
   /// 📋 Charger toutes les adresses
   Future<void> loadAddresses() async {
     try {
+      final startTime = DateTime.now();
       _addressList = await _addressService.getAllAddresses();
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('✅ [Addresses] ${addresses.length} adresse(s) chargée(s) en ${duration.inMilliseconds}ms');
       _clearError();
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ [Addresses] Erreur: $e');
       _setError('Erreur de chargement des adresses: ${e.toString()}');
+      rethrow;
     }
   }
 
@@ -237,9 +293,17 @@ class AddressProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 🔄 Actualiser les adresses
+  /// 🔄 Actualiser les adresses (force le rechargement)
   Future<void> refresh() async {
-    await loadAddresses();
+    debugPrint('🔄 [AddressProvider] Rafraîchissement manuel');
+    await initialize(forceRefresh: true);
+  }
+  
+  /// 🗑️ Invalider le cache (pour forcer un rechargement au prochain accès)
+  void invalidateCache() {
+    debugPrint('🗑️ [AddressProvider] Cache invalidé');
+    _isInitialized = false;
+    _lastFetch = null;
   }
 
   /// 🔧 Méthodes utilitaires privées
