@@ -52,7 +52,7 @@ Ce document synthétise la logique de couplage et de tarification entre articles
 ## 1. Modèles et Couplage
 
 - **Article** : Un produit (ex : chemise, pantalon)
-- **ServiceType** : Type de prestation (ex : Express, Standard)
+- **ServiceType** : Type de prestation (ex : par articles, par poid)
 - **Service** : Prestation spécifique (ex : Nettoyage à sec, Repassage)
 - **ArticleService** : Couple article/service, pour gérer les relations et les prix multipliés
 - **ArticleServicePrice** : Table centrale de tarification, structure :

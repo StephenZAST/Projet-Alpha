@@ -45,8 +45,7 @@ class AlphaCustomerApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: ThemeProvider.lightTheme,
             darkTheme: ThemeProvider.darkTheme,
-            themeMode:
-                themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            themeMode: themeProvider.themeMode,
             home: const AuthWrapper(),
             routes: {
               '/home': (context) => const HomePage(),

@@ -7,30 +7,49 @@ import '../constants.dart';
 /// Gestion sophistiquée des thèmes clair/sombre avec transitions fluides
 /// et persistance des préférences utilisateur.
 class ThemeProvider extends ChangeNotifier {
-  bool _isDarkMode = false;
+  ThemeMode _themeMode = ThemeMode.system;
 
-  bool get isDarkMode => _isDarkMode;
+  ThemeMode get themeMode => _themeMode;
+  
+  // Compatibilité avec l'ancien code
+  bool get isDarkMode => _themeMode == ThemeMode.dark;
 
-  /// 🌓 Basculer entre les thèmes
+  /// 🌓 Basculer entre les thèmes (clair/sombre uniquement)
   void toggleTheme() {
-    _isDarkMode = !_isDarkMode;
+    if (_themeMode == ThemeMode.dark) {
+      _themeMode = ThemeMode.light;
+    } else {
+      _themeMode = ThemeMode.dark;
+    }
+    notifyListeners();
+  }
+
+  /// 🎨 Définir le mode de thème
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
     notifyListeners();
   }
 
   /// 🌅 Activer le thème clair
   void setLightTheme() {
-    _isDarkMode = false;
+    _themeMode = ThemeMode.light;
     notifyListeners();
   }
 
   /// 🌙 Activer le thème sombre
   void setDarkTheme() {
-    _isDarkMode = true;
+    _themeMode = ThemeMode.dark;
+    notifyListeners();
+  }
+
+  /// 🔄 Activer le mode automatique
+  void setSystemTheme() {
+    _themeMode = ThemeMode.system;
     notifyListeners();
   }
 
   /// 🎨 Obtenir le ThemeData selon le mode actuel
-  ThemeData get themeData => _isDarkMode ? darkTheme : lightTheme;
+  ThemeData get themeData => isDarkMode ? darkTheme : lightTheme;
 
   /// ☀️ Thème Clair Premium
   static ThemeData get lightTheme {

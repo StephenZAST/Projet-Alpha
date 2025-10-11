@@ -12,6 +12,8 @@ import '../widgets/profile_menu_section.dart';
 import '../widgets/edit_profile_dialog.dart';
 import '../widgets/change_password_dialog.dart';
 import '../widgets/notification_preferences_dialog.dart';
+import '../widgets/language_preferences_dialog.dart';
+import '../widgets/theme_preferences_dialog.dart';
 import 'address_management_screen.dart';
 import 'help_center_screen.dart';
 import 'contact_us_screen.dart';
@@ -323,13 +325,13 @@ class _ProfileScreenState extends State<ProfileScreen>
               icon: Icons.language_outlined,
               title: 'Langue',
               subtitle: 'Français',
-              onTap: () => _showSnackBar('Bientôt disponible'),
+              onTap: _showLanguagePreferencesDialog,
             ),
             ProfileMenuItem(
               icon: Icons.palette_outlined,
               title: 'Thème',
               subtitle: 'Clair, sombre, automatique',
-              onTap: () => _showSnackBar('Utilisez le toggle dans l\'en-tête'),
+              onTap: _showThemePreferencesDialog,
             ),
           ],
         ),
@@ -470,7 +472,23 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _showNotificationPreferencesDialog() {
     showDialog(
       context: context,
-      builder: (context) => NotificationPreferencesDialog(),
+      builder: (context) => const NotificationPreferencesDialog(),
+    );
+  }
+
+  /// 🌍 Afficher le dialog des préférences de langue
+  void _showLanguagePreferencesDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const LanguagePreferencesDialog(),
+    );
+  }
+
+  /// 🎨 Afficher le dialog des préférences de thème
+  void _showThemePreferencesDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const ThemePreferencesDialog(),
     );
   }
 
