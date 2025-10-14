@@ -5,6 +5,7 @@ import '../constants.dart';
 import '../components/glass_components.dart';
 import '../theme/theme_provider.dart';
 import '../shared/providers/auth_provider.dart';
+import '../shared/providers/user_profile_provider.dart';
 import '../shared/providers/notification_provider.dart';
 import '../features/orders/screens/flash_order_screen.dart';
 import '../features/orders/screens/create_order_screen.dart';
@@ -77,16 +78,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final ordersProvider = Provider.of<OrdersProvider>(context, listen: false);
     final loyaltyProvider = Provider.of<LoyaltyProvider>(context, listen: false);
     final servicesProvider = Provider.of<ServicesProvider>(context, listen: false);
+    final profileProvider = Provider.of<UserProfileProvider>(context, listen: false);
     
     try {
       // Charger en parallèle (utilise le cache si valide)
       await Future.wait([
+        profileProvider.initialize(),  // ✅ Charger le profil en premier pour les points
         ordersProvider.initialize(),
         loyaltyProvider.initialize(),
         servicesProvider.initialize(),
       ]);
+      
+      debugPrint('🏠 [HomePage] Tous les providers initialisés');
+      debugPrint('   💰 Points: ${profileProvider.loyaltyPoints}');
     } catch (e) {
-      debugPrint('[HomePage] Erreur chargement: $e');
+      debugPrint('❌ [HomePage] Erreur chargement: $e');
     }
     
     setState(() => _isLoading = false);
@@ -408,20 +414,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   /// 👋 Section d'Accueil Premium
   Widget _buildWelcomeSection() {
-    return Consumer2<AuthProvider, LoyaltyProvider>(
-      builder: (context, authProvider, loyaltyProvider, child) {
+    return Consumer2<AuthProvider, UserProfileProvider>(
+      builder: (context, authProvider, profileProvider, child) {
         final user = authProvider.currentUser;
-        final loyaltyPoints = loyaltyProvider.currentPoints;  // ✅ Données réelles
-        
-        // ✅ Calculer le tier en fonction des points
-        String loyaltyTier = 'BRONZE';
-        if (loyaltyPoints >= 10000) {
-          loyaltyTier = 'PLATINUM';
-        } else if (loyaltyPoints >= 5000) {
-          loyaltyTier = 'GOLD';
-        } else if (loyaltyPoints >= 1000) {
-          loyaltyTier = 'SILVER';
-        }
+        final loyaltyInfo = profileProvider.loyaltyInfo;
+        final loyaltyPoints = loyaltyInfo['points'] ?? 0;  // ✅ Données réelles depuis UserProfileProvider
+        final loyaltyTier = loyaltyInfo['tier'] ?? 'BRONZE';  // ✅ Tier depuis UserProfileProvider
         
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1120,14 +1118,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// ⚡ Gestionnaire Commande Flash
   void _handleFlashOrderTap() {
     HapticFeedback.lightImpact();
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
-    if (!authProvider.canMakeFlashOrders) {
-      _showAddressRequiredDialog();
-      return;
-    }
-    
-    // Navigation vers l'écran de commande flash
+    // Navigation directe vers l'écran de commande flash
+    // La vérification de l'adresse se fera dans FlashOrderScreen
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => 

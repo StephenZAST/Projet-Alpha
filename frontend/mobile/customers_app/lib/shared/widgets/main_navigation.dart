@@ -106,11 +106,8 @@ class _MainNavigationState extends State<MainNavigation>
 
   /// ⚡ Gestionnaire Commande Flash
   void _handleFlashOrder(AuthProvider authProvider) {
-    if (!authProvider.canMakeFlashOrders) {
-      _showAddressRequiredDialog();
-      return;
-    }
-    
+    // Navigation directe vers FlashOrderScreen
+    // La vérification de l'adresse se fera dans le service
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => 

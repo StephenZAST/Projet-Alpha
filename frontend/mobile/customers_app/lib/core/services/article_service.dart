@@ -9,9 +9,10 @@ class ArticleService {
   final ApiService _api = ApiService();
 
   /// 📋 Récupérer tous les articles
-  Future<List<Article>> getAllArticles() async {
+  Future<List<Article>> getAllArticles({bool onlyActive = true}) async {
     try {
-      final response = await _api.get('/articles');
+      final queryParams = onlyActive ? {'isActive': 'true'} : null;
+      final response = await _api.get('/articles', queryParameters: queryParams);
       
       if (response['success'] == true || response['articles'] != null) {
         final articlesData = response['articles'] ?? response['data'] ?? [];

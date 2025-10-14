@@ -9,6 +9,7 @@ import '../../../core/models/flash_order.dart';
 import '../widgets/flash_order_item_card.dart';
 import '../widgets/flash_order_summary.dart';
 import '../widgets/popular_items_grid.dart';
+import '../../profile/screens/address_management_screen.dart';
 
 /// ⚡ Écran de Commande Flash - Alpha Client App
 ///
@@ -210,16 +211,11 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
             children: [
               const SizedBox(height: 16),
               _buildWelcomeSection(),
-              const SizedBox(height: 24),
-              _buildPopularItemsSection(),
-              const SizedBox(height: 24),
-              if (provider.hasItems) ...[
-                _buildCurrentOrderSection(),
-                const SizedBox(height: 24),
-              ],
+              const SizedBox(height: 32),
               _buildNotesSection(),
-              const SizedBox(
-                  height: 100), // Bottom padding pour le bouton flottant
+              const SizedBox(height: 32),
+              _buildHowItWorksSection(),
+              const SizedBox(height: 100), // Bottom padding pour le bouton
             ],
           ),
         );
@@ -261,14 +257,14 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Commande Flash',
+                          'Commande Flash ⚡',
                           style: AppTextStyles.headlineSmall.copyWith(
                             color: AppColors.textPrimary(context),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         Text(
-                          'Sélectionnez vos articles favoris pour une commande rapide',
+                          'Créez votre commande en un clic',
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.textSecondary(context),
                           ),
@@ -298,7 +294,7 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Votre commande sera créée en brouillon et validée par notre équipe.',
+                        'Votre commande sera créée en brouillon. Notre équipe vous contactera pour confirmer les détails et finaliser votre commande.',
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.info,
                         ),
@@ -385,10 +381,17 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Notes (optionnel)',
+          'Vos besoins',
           style: AppTextStyles.headlineMedium.copyWith(
             color: AppColors.textPrimary(context),
             fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Décrivez brièvement ce dont vous avez besoin',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary(context),
           ),
         ),
         const SizedBox(height: 16),
@@ -396,9 +399,9 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
           padding: const EdgeInsets.all(16),
           child: TextField(
             controller: _notesController,
-            maxLines: 3,
+            maxLines: 4,
             decoration: InputDecoration(
-              hintText: 'Instructions spéciales, préférences...',
+              hintText: 'Ex: 3 chemises, 2 pantalons, nettoyage à sec...',
               hintStyle: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textTertiary(context),
               ),
@@ -412,6 +415,111 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
                   Provider.of<FlashOrderProvider>(context, listen: false);
               provider.updateNotes(value);
             },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 📖 Section "Comment ça marche"
+  Widget _buildHowItWorksSection() {
+    return GlassContainer(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.help_outline,
+                color: AppColors.primary,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Comment ça marche ?',
+                style: AppTextStyles.headlineSmall.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildStep(
+            number: '1',
+            title: 'Décrivez vos besoins',
+            description: 'Indiquez les articles et services souhaités',
+            icon: Icons.edit_note,
+            color: AppColors.primary,
+          ),
+          const SizedBox(height: 16),
+          _buildStep(
+            number: '2',
+            title: 'Validation rapide',
+            description: 'Notre équipe vous contacte pour confirmer',
+            icon: Icons.phone_callback,
+            color: AppColors.accent,
+          ),
+          const SizedBox(height: 16),
+          _buildStep(
+            number: '3',
+            title: 'Collecte & Livraison',
+            description: 'Nous récupérons et livrons vos articles',
+            icon: Icons.local_shipping,
+            color: AppColors.success,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 📍 Widget étape
+  Widget _buildStep({
+    required String number,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Icon(
+              icon,
+              color: color,
+              size: 20,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary(context),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -488,12 +596,10 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
     );
   }
 
-  /// 📊 Barre inférieure avec résumé et validation
+  /// 📊 Barre inférieure avec bouton de création
   Widget? _buildBottomBar() {
     return Consumer<FlashOrderProvider>(
       builder: (context, provider, child) {
-        if (!provider.hasItems) return const SizedBox.shrink();
-
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -507,43 +613,13 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
             ],
           ),
           child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${provider.totalItems} article${provider.totalItems > 1 ? 's' : ''}',
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.textSecondary(context),
-                          ),
-                        ),
-                        Text(
-                          '€${provider.totalPrice.toStringAsFixed(2)}',
-                          style: AppTextStyles.headlineSmall.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    PremiumButton(
-                      text: 'Créer la commande',
-                      onPressed:
-                          provider.canCreateOrder && !provider.isCreatingOrder
-                              ? _handleCreateOrder
-                              : null,
-                      isLoading: provider.isCreatingOrder,
-                      icon: Icons.flash_on,
-                      width: 180,
-                    ),
-                  ],
-                ),
-              ],
+            child: PremiumButton(
+              text: 'Créer ma commande flash',
+              onPressed: !provider.isCreatingOrder ? _handleCreateOrder : null,
+              isLoading: provider.isCreatingOrder,
+              icon: Icons.flash_on,
+              width: double.infinity,
+              height: 56,
             ),
           ),
         );
@@ -556,21 +632,27 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
     HapticFeedback.lightImpact();
 
     final provider = Provider.of<FlashOrderProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    // Vérifier les prérequis
-    if (!authProvider.canMakeFlashOrders) {
-      _showAddressRequiredDialog();
-      return;
-    }
+    debugPrint('🚀 [FlashOrderScreen] Starting flash order creation...');
 
-    // Créer la commande
+    // Créer la commande (la vérification de l'adresse se fait dans le service)
     final success = await provider.submitFlashOrder();
 
+    debugPrint('📊 [FlashOrderScreen] Flash order creation result: $success');
+    debugPrint('   Error: ${provider.error}');
+
     if (success && mounted) {
+      debugPrint('✅ [FlashOrderScreen] Success! Showing success dialog');
       _showSuccessDialog(provider.lastOrderResult!);
     } else if (provider.error != null && mounted) {
-      _showErrorSnackBar(provider.error!);
+      debugPrint('❌ [FlashOrderScreen] Error! Showing error: ${provider.error}');
+      
+      // Si l'erreur concerne l'adresse, afficher le dialog spécifique
+      if (provider.error!.toLowerCase().contains('adresse')) {
+        _showAddressRequiredDialog();
+      } else {
+        _showErrorSnackBar(provider.error!);
+      }
     }
   }
 
@@ -618,10 +700,25 @@ class _FlashOrderScreenState extends State<FlashOrderScreen>
           PremiumButton(
             text: 'Configurer',
             onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigate to address setup
-              _showErrorSnackBar(
-                  'Configuration adresse - Bientôt disponible !');
+              Navigator.pop(context); // Fermer le dialog
+              Navigator.pop(context); // Retourner à la home
+              // Navigation vers la gestion des adresses
+              Navigator.of(context).push(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => 
+                      const AddressManagementScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return SlideTransition(
+                      position: animation.drive(
+                        Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                            .chain(CurveTween(curve: AppAnimations.slideIn)),
+                      ),
+                      child: child,
+                    );
+                  },
+                  transitionDuration: AppAnimations.medium,
+                ),
+              );
             },
             width: 120,
             height: 40,

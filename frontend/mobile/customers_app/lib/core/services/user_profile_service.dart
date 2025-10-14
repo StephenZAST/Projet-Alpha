@@ -45,25 +45,45 @@ class UserProfileService {
       // Récupérer les points de fidélité depuis /loyalty/points-balance (backend)
       int loyaltyPoints = 0;
       try {
+        final loyaltyUrl = ApiConfig.url('/loyalty/points-balance');
+        print('🔍 [UserProfileService] Fetching loyalty points from: $loyaltyUrl');
+        
         final loyaltyResponse = await http.get(
-          Uri.parse(ApiConfig.url('/loyalty/points-balance')),
+          Uri.parse(loyaltyUrl),
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
           },
         ).timeout(ApiConfig.timeout);
 
-        print(
-            '[UserProfileService] loyalty status: ${loyaltyResponse.statusCode} body: ${loyaltyResponse.body}');
+        print('📊 [UserProfileService] Loyalty Response:');
+        print('   Status: ${loyaltyResponse.statusCode}');
+        print('   Body: ${loyaltyResponse.body}');
 
         if (loyaltyResponse.statusCode == 200) {
           final loyaltyData = jsonDecode(loyaltyResponse.body);
+          print('📦 [UserProfileService] Parsed loyalty data: $loyaltyData');
+          
           if (loyaltyData['data'] != null) {
-            loyaltyPoints = loyaltyData['data']['pointsBalance'] ?? 0;
+            print('✅ [UserProfileService] Data object found: ${loyaltyData['data']}');
+            
+            // Essayer différents formats de réponse
+            final data = loyaltyData['data'];
+            loyaltyPoints = data['pointsBalance'] ?? 
+                           data['points_balance'] ?? 
+                           data['balance'] ?? 
+                           0;
+            
+            print('💰 [UserProfileService] Points extraits: $loyaltyPoints');
+          } else {
+            print('⚠️ [UserProfileService] Pas de data dans la réponse');
           }
+        } else {
+          print('❌ [UserProfileService] Status code non-200: ${loyaltyResponse.statusCode}');
         }
       } catch (e) {
-        print('[UserProfileService] Erreur récupération points: $e');
+        print('❌ [UserProfileService] Erreur récupération points: $e');
+        print('   Stack trace: ${StackTrace.current}');
       }
 
       // Récupérer les adresses depuis /addresses/all (backend)

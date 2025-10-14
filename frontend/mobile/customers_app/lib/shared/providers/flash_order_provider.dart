@@ -47,11 +47,9 @@ class FlashOrderProvider extends ChangeNotifier {
       // Charger le brouillon sauvegardé
       await _loadDraftOrder();
       
-      // Charger les articles populaires
-      await loadPopularItems();
-      
-      // Charger l'historique
-      await loadOrderHistory();
+      // ❌ Désactivé: Les endpoints n'existent pas encore
+      // await loadPopularItems();
+      // await loadOrderHistory();
       
       _clearError();
     } catch (e) {
@@ -201,9 +199,18 @@ class FlashOrderProvider extends ChangeNotifier {
 
   /// ⚡ Créer la commande flash
   Future<bool> submitFlashOrder() async {
-    if (_currentFlashOrder == null || !canCreateOrder) {
-      _setError('Commande invalide');
-      return false;
+    debugPrint('🔍 [FlashOrderProvider] submitFlashOrder called');
+    debugPrint('   _currentFlashOrder: $_currentFlashOrder');
+    debugPrint('   canCreateOrder: $canCreateOrder');
+    
+    // Pour une commande flash simplifiée, on crée une commande vide si nécessaire
+    if (_currentFlashOrder == null) {
+      debugPrint('⚠️ [FlashOrderProvider] No current flash order, creating empty one');
+      _currentFlashOrder = FlashOrder(
+        items: [], // Liste vide pour commande flash simplifiée
+        notes: '', // Notes vides par défaut
+        useDefaultAddresses: true,
+      );
     }
 
     _isCreatingOrder = true;
@@ -211,24 +218,35 @@ class FlashOrderProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('🚀 [FlashOrderProvider] Calling service.createFlashOrder...');
       final result = await _flashOrderService.createFlashOrder(_currentFlashOrder!);
       _lastOrderResult = result;
 
+      debugPrint('📊 [FlashOrderProvider] Service result: isSuccess=${result.isSuccess}');
+      debugPrint('   Error: ${result.error}');
+
       if (result.isSuccess) {
         // Commande créée avec succès
+        debugPrint('✅ [FlashOrderProvider] Success! Clearing draft...');
         await _clearDraftOrder();
         _currentFlashOrder = null;
         
-        // Recharger l'historique
-        await loadOrderHistory();
+        // ❌ Désactivé: L'endpoint history n'existe pas encore
+        // try {
+        //   await loadOrderHistory();
+        // } catch (e) {
+        //   debugPrint('⚠️ [FlashOrderProvider] Failed to load history: $e');
+        // }
         
         notifyListeners();
         return true;
       } else {
+        debugPrint('❌ [FlashOrderProvider] Failed: ${result.error}');
         _setError(result.error ?? 'Erreur lors de la création de la commande');
         return false;
       }
     } catch (e) {
+      debugPrint('❌ [FlashOrderProvider] Exception: $e');
       _setError('Erreur de connexion: ${e.toString()}');
       return false;
     } finally {

@@ -1,4 +1,3 @@
->> 
 components
 core
 features
@@ -31,6 +30,7 @@ core\services\category_service.dart
 core\services\flash_order_service.dart
 core\services\location_service.dart
 core\services\notification_service.dart
+core\services\order_service.dart
 core\services\pricing_service.dart
 core\services\service_service.dart
 core\services\user_profile_service.dart
@@ -53,10 +53,15 @@ features\orders\widgets
 features\orders\screens\create_order_screen.dart
 features\orders\screens\flash_order_screen.dart
 features\orders\screens\orders_screen.dart
+features\orders\screens\order_details_screen.dart
 features\orders\widgets\steps
+features\orders\widgets\flash_order_dialog.dart
 features\orders\widgets\flash_order_item_card.dart
 features\orders\widgets\flash_order_summary.dart
+features\orders\widgets\order_card.dart
+features\orders\widgets\order_filters_dialog.dart
 features\orders\widgets\order_stepper_indicator.dart
+features\orders\widgets\order_timeline.dart
 features\orders\widgets\popular_items_grid.dart
 features\orders\widgets\steps\address_selection_step.dart
 features\orders\widgets\steps\article_selection_step.dart
@@ -94,12 +99,14 @@ providers\orders_provider.dart
 providers\services_provider.dart
 screens\loyalty
 screens\orders
+screens\widgets
 screens\home_page.dart
 screens\loyalty\loyalty_dashboard_screen.dart
 screens\loyalty\loyalty_history_screen.dart
 screens\loyalty\rewards_catalog_screen.dart
 screens\orders\orders_history_screen.dart
 screens\orders\order_details_screen.dart
+screens\widgets\recent_orders_widget.dart
 shared\providers
 shared\utils
 shared\widgets

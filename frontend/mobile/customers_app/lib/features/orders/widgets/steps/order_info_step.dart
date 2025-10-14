@@ -55,9 +55,20 @@ class _OrderInfoStepState extends State<OrderInfoStep>
     final draft = provider.orderDraft;
     
     _noteController.text = draft.note ?? '';
-    _collectionDate = draft.collectionDate;
-    _deliveryDate = draft.deliveryDate;
+    
+    // Dates par défaut si non définies
+    _collectionDate = draft.collectionDate ?? DateTime.now().add(const Duration(days: 1));
+    _deliveryDate = draft.deliveryDate ?? DateTime.now().add(const Duration(days: 3));
+    
     _paymentMethod = draft.paymentMethod ?? 'CASH';
+    
+    // Mettre à jour le draft avec les dates par défaut
+    if (draft.collectionDate == null) {
+      provider.orderDraft.collectionDate = _collectionDate;
+    }
+    if (draft.deliveryDate == null) {
+      provider.orderDraft.deliveryDate = _deliveryDate;
+    }
   }
 
   @override
@@ -503,48 +514,232 @@ class _OrderInfoStepState extends State<OrderInfoStep>
           ),
           const SizedBox(height: 16),
           
-          Container(
+          // Commande récurrente
+          _buildRecurringSection(context, provider),
+          const SizedBox(height: 16),
+          
+          // Code affilié
+          _buildAffiliateCodeSection(context, provider),
+        ],
+      ),
+    );
+  }
+
+  /// 🔄 Section récurrence
+  Widget _buildRecurringSection(BuildContext context, OrderDraftProvider provider) {
+    final isRecurring = provider.orderDraft.recurrenceType != null && 
+                        provider.orderDraft.recurrenceType != 'NONE';
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Toggle récurrence
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              if (isRecurring) {
+                provider.orderDraft.recurrenceType = 'NONE';
+              } else {
+                provider.orderDraft.recurrenceType = 'WEEKLY';
+              }
+            });
+          },
+          child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.1),
+              color: isRecurring 
+                  ? AppColors.purple.withOpacity(0.1) 
+                  : AppColors.surfaceVariant(context),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppColors.info.withOpacity(0.3),
+                color: isRecurring 
+                    ? AppColors.purple 
+                    : AppColors.border(context),
+                width: isRecurring ? 2 : 1,
               ),
             ),
-            child: Column(
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.construction,
-                      color: AppColors.info,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Options Avancées',
+                Icon(
+                  Icons.repeat,
+                  color: isRecurring ? AppColors.purple : AppColors.textSecondary(context),
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Commande Récurrente',
                         style: AppTextStyles.labelMedium.copyWith(
-                          color: AppColors.info,
+                          color: AppColors.textPrimary(context),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Les options avancées (récurrence, code affilié, etc.) seront bientôt disponibles.',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.info,
+                      Text(
+                        'Répéter cette commande automatiquement',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary(context),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                Icon(
+                  isRecurring ? Icons.toggle_on : Icons.toggle_off,
+                  color: isRecurring ? AppColors.purple : AppColors.textSecondary(context),
+                  size: 40,
                 ),
               ],
             ),
           ),
+        ),
+        
+        // Options de récurrence
+        if (isRecurring) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildRecurrenceChip(context, provider, 'WEEKLY', 'Hebdomadaire'),
+              _buildRecurrenceChip(context, provider, 'BIWEEKLY', 'Bi-hebdomadaire'),
+              _buildRecurrenceChip(context, provider, 'MONTHLY', 'Mensuel'),
+            ],
+          ),
         ],
+      ],
+    );
+  }
+
+  /// 🏷️ Chip de récurrence
+  Widget _buildRecurrenceChip(
+    BuildContext context,
+    OrderDraftProvider provider,
+    String value,
+    String label,
+  ) {
+    final isSelected = provider.orderDraft.recurrenceType == value;
+    
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          provider.orderDraft.recurrenceType = value;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? AppColors.purple 
+              : AppColors.surfaceVariant(context),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected 
+                ? AppColors.purple 
+                : AppColors.border(context),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: isSelected 
+                ? Colors.white 
+                : AppColors.textPrimary(context),
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
       ),
+    );
+  }
+
+  /// 🎁 Section code affilié
+  Widget _buildAffiliateCodeSection(BuildContext context, OrderDraftProvider provider) {
+    final TextEditingController _affiliateController = TextEditingController(
+      text: provider.orderDraft.affiliateCode ?? '',
+    );
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.card_giftcard,
+              color: AppColors.warning,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Code Affilié',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _affiliateController,
+          decoration: InputDecoration(
+            hintText: 'Entrez un code affilié (optionnel)',
+            hintStyle: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textTertiary(context),
+            ),
+            prefixIcon: Icon(
+              Icons.loyalty,
+              color: AppColors.warning,
+              size: 20,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: AppColors.border(context),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: AppColors.warning,
+                width: 2,
+              ),
+            ),
+            filled: true,
+            fillColor: AppColors.surfaceVariant(context),
+          ),
+          onChanged: (value) {
+            provider.orderDraft.affiliateCode = value.isEmpty ? null : value;
+          },
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.info.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: AppColors.info,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Utilisez le code d\'un affilié pour lui faire bénéficier d\'une commission.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.info,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

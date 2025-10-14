@@ -43,7 +43,8 @@ class LoyaltyPoints {
   factory LoyaltyPoints.fromJson(Map<String, dynamic> json) {
     return LoyaltyPoints(
       id: json['id'] as String,
-      userId: json['userId'] as String,
+      // ✅ Accepte à la fois user_id (backend) et userId (fallback)
+      userId: (json['user_id'] ?? json['userId']) as String,
       pointsBalance: json['pointsBalance'] as int? ?? 0,
       totalEarned: json['totalEarned'] as int? ?? 0,
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -220,15 +221,20 @@ class Reward {
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
       type: _parseRewardType(json['type'] as String),
-      pointsRequired: json['pointsRequired'] as int,
-      discountAmount: json['discountAmount']?.toDouble(),
+      // ✅ Accepte à la fois points_cost (backend) et pointsRequired (fallback)
+      pointsRequired: (json['points_cost'] ?? json['pointsRequired']) as int,
+      // ✅ Accepte discount_value (backend) et discountAmount (fallback)
+      discountAmount: (json['discount_value'] ?? json['discountAmount'])?.toDouble(),
       discountPercentage: json['discountPercentage']?.toDouble(),
-      isActive: json['isActive'] as bool? ?? true,
+      // ✅ Accepte is_active (backend) et isActive (fallback)
+      isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
       validUntil: json['validUntil'] != null 
           ? DateTime.parse(json['validUntil'] as String)
           : null,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      // ✅ Accepte created_at (backend) et createdAt (fallback)
+      createdAt: DateTime.parse((json['created_at'] ?? json['createdAt']) as String),
+      // ✅ Accepte updated_at (backend) et updatedAt (fallback)
+      updatedAt: DateTime.parse((json['updated_at'] ?? json['updatedAt']) as String),
     );
   }
 

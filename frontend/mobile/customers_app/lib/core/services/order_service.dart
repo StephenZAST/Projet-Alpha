@@ -141,8 +141,17 @@ class OrderService {
         data: request.toJson(),
       );
 
-      if (response['success'] == true && response['data'] != null) {
-        return Order.fromJson(response['data']);
+      // Le backend retourne {data: {order: {...}, pricing: {...}, rewards: {...}}}
+      if (response['data'] != null) {
+        final data = response['data'];
+        
+        // Si data contient 'order', c'est le nouveau format
+        if (data['order'] != null) {
+          return Order.fromJson(data['order']);
+        }
+        
+        // Sinon, c'est l'ancien format (rétrocompatibilité)
+        return Order.fromJson(data);
       }
 
       throw Exception(response['error'] ?? 'Erreur lors de la création');

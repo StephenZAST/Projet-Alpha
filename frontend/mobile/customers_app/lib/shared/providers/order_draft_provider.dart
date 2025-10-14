@@ -6,6 +6,11 @@ import '../../core/models/service_type.dart';
 import '../../core/models/service.dart';
 import '../../core/models/article.dart';
 import '../../core/services/address_service.dart';
+import '../../core/services/service_type_service.dart';
+import '../../core/services/service_service.dart';
+import '../../core/services/article_service.dart';
+import '../../core/services/pricing_service.dart';
+import '../../core/services/order_service.dart';
 import '../utils/notification_utils.dart';
 import 'auth_provider.dart';
 
@@ -36,12 +41,14 @@ class OrderDraftProvider extends ChangeNotifier {
   List<ServiceType> _serviceTypes = [];
   List<Service> _services = [];
   List<Article> _articles = [];
-  Map<String, dynamic> _couples = {}; // Cache des couples article-service
+  List<ArticleServicePrice> _couples = []; // Couples article-service-price disponibles
+  Map<String, double> _priceCache = {}; // Cache des prix (clé: articleId-serviceTypeId-serviceId-isPremium)
 
   List<Address> get addresses => _addresses;
   List<ServiceType> get serviceTypes => _serviceTypes;
   List<Service> get services => _services;
   List<Article> get articles => _articles;
+  List<ArticleServicePrice> get couples => _couples; // Getter pour les couples
 
   // Sélections actuelles
   Address? _selectedAddress;
@@ -124,46 +131,12 @@ class OrderDraftProvider extends ChangeNotifier {
   /// 🏷️ Charger les types de service
   Future<void> _loadServiceTypes() async {
     try {
-      // TODO: Implémenter l'API pour récupérer les types de service
-      // Pour l'instant, utilisons des données mock
-      _serviceTypes = [
-        ServiceType(
-          id: 'standard',
-          name: 'Standard',
-          description: 'Service standard avec délai normal',
-          pricingType: 'FIXED',
-          requiresWeight: false,
-          supportsPremium: true,
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        ServiceType(
-          id: 'express',
-          name: 'Express 24h',
-          description: 'Service express livré en 24h',
-          pricingType: 'FIXED',
-          requiresWeight: false,
-          supportsPremium: true,
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        ServiceType(
-          id: 'weight',
-          name: 'Au poids',
-          description: 'Service facturé au poids',
-          pricingType: 'WEIGHT_BASED',
-          requiresWeight: true,
-          supportsPremium: false,
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      ];
-
+      debugPrint('🔍 [OrderDraftProvider] Loading service types from API...');
+      _serviceTypes = await ServiceTypeService().getAllServiceTypes();
+      debugPrint('✅ [OrderDraftProvider] Loaded ${_serviceTypes.length} service types');
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ [OrderDraftProvider] Error loading service types: $e');
       throw Exception(
           'Erreur lors du chargement des types de service: ${e.toString()}');
     }
@@ -172,40 +145,12 @@ class OrderDraftProvider extends ChangeNotifier {
   /// 🛠️ Charger les services par type
   Future<void> _loadServicesByType(String serviceTypeId) async {
     try {
-      // TODO: Implémenter l'API pour récupérer les services par type
-      // Pour l'instant, utilisons des données mock
-      _services = [
-        Service(
-          id: 'nettoyage-sec',
-          name: 'Nettoyage à sec',
-          description: 'Nettoyage professionnel à sec',
-          serviceTypeId: serviceTypeId,
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        Service(
-          id: 'repassage',
-          name: 'Repassage',
-          description: 'Repassage professionnel',
-          serviceTypeId: serviceTypeId,
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        Service(
-          id: 'retouches',
-          name: 'Retouches',
-          description: 'Retouches et ajustements',
-          serviceTypeId: serviceTypeId,
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      ];
-
+      debugPrint('🔍 [OrderDraftProvider] Loading services for type: $serviceTypeId');
+      _services = await ServiceService().getServicesByType(serviceTypeId);
+      debugPrint('✅ [OrderDraftProvider] Loaded ${_services.length} services');
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ [OrderDraftProvider] Error loading services: $e');
       throw Exception(
           'Erreur lors du chargement des services: ${e.toString()}');
     }
@@ -214,49 +159,12 @@ class OrderDraftProvider extends ChangeNotifier {
   /// 📦 Charger les articles disponibles
   Future<void> _loadArticles() async {
     try {
-      // TODO: Implémenter l'API pour récupérer les articles
-      // Pour l'instant, utilisons des données mock
-      _articles = [
-        Article(
-          id: 'chemise',
-          name: 'Chemise',
-          description: 'Chemise homme/femme',
-          categoryId: 'vetements',
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        Article(
-          id: 'pantalon',
-          name: 'Pantalon',
-          description: 'Pantalon classique',
-          categoryId: 'vetements',
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        Article(
-          id: 'costume',
-          name: 'Costume',
-          description: 'Costume complet',
-          categoryId: 'vetements',
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-        Article(
-          id: 'robe',
-          name: 'Robe',
-          description: 'Robe de soirée',
-          categoryId: 'vetements',
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      ];
-
+      debugPrint('🔍 [OrderDraftProvider] Loading articles from API...');
+      _articles = await ArticleService().getAllArticles(onlyActive: true);
+      debugPrint('✅ [OrderDraftProvider] Loaded ${_articles.length} articles');
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ [OrderDraftProvider] Error loading articles: $e');
       throw Exception(
           'Erreur lors du chargement des articles: ${e.toString()}');
     }
@@ -292,9 +200,47 @@ class OrderDraftProvider extends ChangeNotifier {
 
     notifyListeners();
 
-    // Charger les articles si pas encore fait
-    if (_articles.isEmpty) {
-      await _loadArticles();
+    // Charger les couples article-service-price disponibles
+    await _loadCouples();
+  }
+
+  /// 💰 Charger les couples article-service-price
+  Future<void> _loadCouples() async {
+    if (_selectedService == null || _selectedServiceType == null) {
+      return;
+    }
+
+    try {
+      debugPrint('🔍 [OrderDraftProvider] Loading couples for service: ${_selectedService!.id}, type: ${_selectedServiceType!.id}');
+      
+      // Récupérer tous les prix disponibles pour ce couple service/serviceType
+      final allPrices = await PricingService().getAllPrices();
+      
+      // Filtrer les couples pour le service et serviceType sélectionnés
+      _couples = allPrices.where((price) {
+        return price.serviceId == _selectedService!.id &&
+               price.serviceTypeId == _selectedServiceType!.id &&
+               price.isAvailable;
+      }).toList();
+      
+      debugPrint('✅ [OrderDraftProvider] Loaded ${_couples.length} couples');
+      
+      // Mettre en cache les prix
+      for (final couple in _couples) {
+        final baseCacheKey = '${couple.articleId}-${couple.serviceTypeId}-${couple.serviceId}-false';
+        final premiumCacheKey = '${couple.articleId}-${couple.serviceTypeId}-${couple.serviceId}-true';
+        
+        _priceCache[baseCacheKey] = couple.basePrice;
+        if (couple.premiumPrice != null) {
+          _priceCache[premiumCacheKey] = couple.premiumPrice!;
+        }
+      }
+      
+      debugPrint('✅ [OrderDraftProvider] Cached ${_priceCache.length} prices');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ [OrderDraftProvider] Error loading couples: $e');
+      throw Exception('Erreur lors du chargement des articles: ${e.toString()}');
     }
   }
 
@@ -365,23 +311,95 @@ class OrderDraftProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 💰 Obtenir le prix d'un article (mock pour l'instant)
-  double _getArticlePrice(String articleId, bool isPremium) {
-    // TODO: Récupérer les vrais prix depuis l'API
-    final basePrices = {
-      'chemise': 8.0,
-      'pantalon': 10.0,
-      'costume': 25.0,
-      'robe': 15.0,
-    };
+  /// 💰 Obtenir le prix d'un article depuis le cache ou l'API
+  /// ⚠️ IMPORTANT: Utilise le TRIO (article_id, service_type_id, service_id)
+  Future<double> _getArticlePriceAsync(String articleId, bool isPremium) async {
+    if (_selectedService == null || _selectedServiceType == null) {
+      debugPrint('⚠️ [OrderDraftProvider] Cannot get price: service or serviceType not selected');
+      return 0.0;
+    }
 
-    final basePrice = basePrices[articleId] ?? 5.0;
-    return isPremium ? basePrice * 1.5 : basePrice;
+    // Clé de cache
+    final cacheKey = '$articleId-${_selectedServiceType!.id}-${_selectedService!.id}-$isPremium';
+
+    // Vérifier le cache
+    if (_priceCache.containsKey(cacheKey)) {
+      debugPrint('💾 [OrderDraftProvider] Price from cache: $cacheKey = ${_priceCache[cacheKey]}');
+      return _priceCache[cacheKey]!;
+    }
+
+    try {
+      debugPrint('🔍 [OrderDraftProvider] Fetching price for: $cacheKey');
+      final priceData = await PricingService().getPrice(
+        articleId: articleId,
+        serviceTypeId: _selectedServiceType!.id,
+        serviceId: _selectedService!.id,
+      );
+
+      if (priceData == null) {
+        debugPrint('❌ [OrderDraftProvider] No price found for: $cacheKey');
+        return 0.0;
+      }
+
+      final price = isPremium ? (priceData.premiumPrice ?? 0.0) : priceData.basePrice;
+      
+      // Mettre en cache
+      _priceCache[cacheKey] = price;
+      debugPrint('✅ [OrderDraftProvider] Price fetched and cached: $cacheKey = $price');
+      
+      return price;
+    } catch (e) {
+      debugPrint('❌ [OrderDraftProvider] Error fetching price: $e');
+      return 0.0;
+    }
   }
 
-  /// 💰 Obtenir le prix d'un article (méthode publique)
+  /// 💰 Obtenir le prix d'un article (synchrone, utilise le cache)
+  /// Pour la compatibilité avec le code existant
+  double _getArticlePrice(String articleId, bool isPremium) {
+    if (_selectedService == null || _selectedServiceType == null) {
+      return 0.0;
+    }
+
+    final cacheKey = '$articleId-${_selectedServiceType!.id}-${_selectedService!.id}-$isPremium';
+    return _priceCache[cacheKey] ?? 0.0;
+  }
+
+  /// 💰 Obtenir le prix d'un article (méthode publique asynchrone)
+  Future<double> getArticlePriceAsync(String articleId, bool isPremium) async {
+    return await _getArticlePriceAsync(articleId, isPremium);
+  }
+
+  /// 💰 Obtenir le prix d'un article (méthode publique synchrone depuis le cache)
   double getArticlePrice(String articleId, bool isPremium) {
     return _getArticlePrice(articleId, isPremium);
+  }
+
+  /// 🔄 Pré-charger les prix pour tous les articles
+  Future<void> _preloadPrices() async {
+    if (_selectedService == null || _selectedServiceType == null || _articles.isEmpty) {
+      return;
+    }
+
+    debugPrint('🔄 [OrderDraftProvider] Preloading prices for ${_articles.length} articles...');
+    
+    try {
+      // Charger les prix pour chaque article (base et premium)
+      for (final article in _articles) {
+        // Prix base
+        await _getArticlePriceAsync(article.id, false);
+        
+        // Prix premium si supporté
+        if (_selectedServiceType!.supportsPremium) {
+          await _getArticlePriceAsync(article.id, true);
+        }
+      }
+      
+      debugPrint('✅ [OrderDraftProvider] Preloaded ${_priceCache.length} prices');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ [OrderDraftProvider] Error preloading prices: $e');
+    }
   }
 
   /// ➡️ Aller à l'étape suivante
@@ -417,6 +435,22 @@ class OrderDraftProvider extends ChangeNotifier {
       return false;
     }
 
+    // Vérifier que tous les éléments nécessaires sont présents
+    if (_selectedAddress == null) {
+      _setError('Veuillez sélectionner une adresse');
+      return false;
+    }
+
+    if (_selectedService == null || _selectedServiceType == null) {
+      _setError('Veuillez sélectionner un service');
+      return false;
+    }
+
+    if (_orderDraft.items.isEmpty) {
+      _setError('Veuillez ajouter au moins un article');
+      return false;
+    }
+
     _setSubmitting(true);
 
     try {
@@ -427,21 +461,59 @@ class OrderDraftProvider extends ChangeNotifier {
         throw Exception('Utilisateur non connecté');
       }
 
-      final payload = _orderDraft.toPayload(userId);
+      debugPrint('🚀 [OrderDraftProvider] Creating order...');
+      debugPrint('   Service Type: ${_selectedServiceType!.id}');
+      debugPrint('   Service: ${_selectedService!.id}');
+      debugPrint('   Address: ${_selectedAddress!.id}');
+      debugPrint('   Items: ${_orderDraft.items.length}');
 
-      // TODO: Implémenter l'API de création de commande
-      await Future.delayed(const Duration(seconds: 2)); // Simulation
+      // Créer le payload pour l'API avec dates au format ISO-8601 complet avec timezone UTC
+      final request = CreateOrderRequest(
+        serviceTypeId: _selectedServiceType!.id,
+        serviceId: _selectedService!.id,
+        addressId: _selectedAddress!.id,
+        items: _orderDraft.items.map((item) => OrderItemRequest(
+          articleId: item.articleId,
+          serviceId: _selectedService!.id,
+          serviceTypeId: _selectedServiceType!.id,
+          quantity: item.quantity,
+          isPremium: item.isPremium,
+          weight: item.weight,
+        )).toList(),
+        note: _orderDraft.note,
+        paymentMethod: _orderDraft.paymentMethod ?? 'CASH',
+        // Convertir les dates en format ISO-8601 complet avec timezone UTC (ajout de .toUtc())
+        collectionDate: _orderDraft.collectionDate != null 
+            ? DateTime(_orderDraft.collectionDate!.year, _orderDraft.collectionDate!.month, _orderDraft.collectionDate!.day, 10, 0, 0).toUtc()
+            : null,
+        deliveryDate: _orderDraft.deliveryDate != null
+            ? DateTime(_orderDraft.deliveryDate!.year, _orderDraft.deliveryDate!.month, _orderDraft.deliveryDate!.day, 18, 0, 0).toUtc()
+            : null,
+        affiliateCode: _orderDraft.affiliateCode,
+        isRecurring: _orderDraft.recurrenceType != null && _orderDraft.recurrenceType != 'NONE',
+        recurrenceType: _orderDraft.recurrenceType,
+      );
+
+      debugPrint('📦 [OrderDraftProvider] Sending request to API...');
+
+      // Appeler l'API
+      final order = await OrderService().createOrder(request);
+
+      debugPrint('✅ [OrderDraftProvider] Order created successfully!');
+      debugPrint('   Order ID: ${order.id}');
+      debugPrint('   Reference: ${order.shortOrderId}');
 
       // Réinitialiser le draft après succès
       reset();
 
       NotificationUtils.showSuccess(
         context,
-        'Commande créée avec succès !',
+        'Commande créée avec succès ! Référence: ${order.shortOrderId}',
       );
 
       return true;
     } catch (e) {
+      debugPrint('❌ [OrderDraftProvider] Error creating order: $e');
       _setError('Erreur lors de la création: ${e.toString()}');
       NotificationUtils.showError(
         context,

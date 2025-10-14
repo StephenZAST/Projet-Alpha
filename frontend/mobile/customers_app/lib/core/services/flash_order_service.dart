@@ -10,14 +10,34 @@ import '../../constants.dart';
 /// Gère les commandes flash avec le backend Alpha Pressing
 /// Référence: backend/docs/REFERENCE_ARTICLE_SERVICE.md - Flash Orders
 class FlashOrderService {
-  /// ⚡ Créer une commande flash
+  /// ⚡ Créer une commande flash (DRAFT)
   /// Endpoint: POST /api/orders/flash
+  ///
+  /// Crée une commande flash en mode brouillon avec seulement l'adresse et les notes.
+  /// Les admins complèteront ensuite la commande avec les articles.
   Future<FlashOrderResult> createFlashOrder(FlashOrder flashOrder) async {
     try {
       final token = await StorageService.getToken();
       if (token == null) {
         return FlashOrderResult.error('Token d\'authentification manquant');
       }
+
+      // 🎯 Récupérer l'adresse par défaut de l'utilisateur
+      final defaultAddress = await _getDefaultAddress(token);
+      if (defaultAddress == null) {
+        return FlashOrderResult.error(
+            'Aucune adresse par défaut configurée. Veuillez configurer une adresse dans votre profil.');
+      }
+
+      // 📦 Préparer les données pour le backend (format simplifié)
+      final requestBody = {
+        'addressId': defaultAddress['id'],
+        'notes': flashOrder.notes ??
+            'Commande flash créée depuis l\'application mobile',
+      };
+
+      debugPrint(
+          '🚀 [FlashOrderService] Creating flash order with data: $requestBody');
 
       final response = await http
           .post(
@@ -26,20 +46,108 @@ class FlashOrderService {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
             },
-            body: jsonEncode(flashOrder.toJson()),
+            body: jsonEncode(requestBody),
           )
           .timeout(ApiConfig.timeout);
+
+      debugPrint(
+          '📊 [FlashOrderService] Response status: ${response.statusCode}');
+      debugPrint('📦 [FlashOrderService] Response body: ${response.body}');
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return FlashOrderResult.fromJson(data);
+        // ✅ Succès - Créer le résultat
+        final orderData = data['data'];
+
+        return FlashOrderResult.success(
+          orderId: orderData['id'],
+          orderReference: orderData['orderReference'] ??
+              'FLASH-${orderData['id'].substring(0, 8).toUpperCase()}',
+          message:
+              'Votre commande flash a été créée avec succès ! Notre équipe va la traiter rapidement.',
+        );
       } else {
-        return FlashOrderResult.error(data['message'] ??
+        return FlashOrderResult.error(data['error'] ??
+            data['message'] ??
             'Erreur lors de la création de la commande flash');
       }
     } catch (e) {
+      debugPrint('❌ [FlashOrderService] Error: $e');
       return FlashOrderResult.error('Erreur de connexion: ${e.toString()}');
+    }
+  }
+
+  /// 📍 Récupérer l'adresse par défaut de l'utilisateur
+  Future<Map<String, dynamic>?> _getDefaultAddress(String token) async {
+    try {
+      debugPrint('🔍 [FlashOrderService] Fetching addresses...');
+
+      final response = await http.get(
+        Uri.parse(ApiConfig.url('/addresses/all')),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(ApiConfig.timeout);
+
+      debugPrint(
+          '📊 [FlashOrderService] Addresses response status: ${response.statusCode}');
+      debugPrint(
+          '📦 [FlashOrderService] Addresses response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> addresses =
+            data is List ? data : (data['data'] ?? []);
+
+        debugPrint(
+            '📍 [FlashOrderService] Found ${addresses.length} addresses');
+
+        // Afficher toutes les adresses pour debug
+        for (var i = 0; i < addresses.length; i++) {
+          final addr = addresses[i];
+          debugPrint(
+              '   Address $i: id=${addr['id']}, isDefault=${addr['isDefault']}, is_default=${addr['is_default']}, label=${addr['label']}');
+        }
+
+        // Chercher l'adresse par défaut (vérifier plusieurs formats)
+        Map<String, dynamic>? defaultAddress;
+        for (var address in addresses) {
+          if (address['isDefault'] == true ||
+              address['is_default'] == true ||
+              address['isDefault'] == 1 ||
+              address['is_default'] == 1) {
+            defaultAddress = address;
+            debugPrint(
+                '✅ [FlashOrderService] Found default address: ${address['id']} - ${address['label']}');
+            break;
+          }
+        }
+
+        // Si pas d'adresse par défaut, prendre la première
+        if (defaultAddress == null && addresses.isNotEmpty) {
+          defaultAddress = addresses.first;
+          debugPrint(
+              '⚠️ [FlashOrderService] No default address found, using first address: ${defaultAddress?['id']} - ${defaultAddress?['label']}');
+        }
+
+        if (defaultAddress == null) {
+          debugPrint('❌ [FlashOrderService] No addresses found at all');
+        }
+
+        return defaultAddress;
+      } else {
+        debugPrint(
+            '❌ [FlashOrderService] Failed to fetch addresses: ${response.statusCode}');
+        debugPrint('   Response: ${response.body}');
+      }
+
+      return null;
+    } catch (e, stackTrace) {
+      debugPrint('❌ [FlashOrderService] Error fetching default address: $e');
+      debugPrint('   Stack trace: $stackTrace');
+      return null;
     }
   }
 

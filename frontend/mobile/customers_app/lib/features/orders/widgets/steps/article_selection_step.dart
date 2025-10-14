@@ -5,6 +5,8 @@ import '../../../../constants.dart';
 import '../../../../components/glass_components.dart';
 import '../../../../shared/providers/order_draft_provider.dart';
 import '../../../../core/models/article.dart';
+import '../../../../core/services/pricing_service.dart';
+import '../article_service_couple_card.dart';
 
 /// 📦 Étape de Sélection d'Articles - Alpha Client App
 ///
@@ -319,7 +321,7 @@ class _ArticleSelectionStepState extends State<ArticleSelectionStep>
     );
   }
 
-  /// 📦 Section des articles
+  /// 📦 Section des articles (couples article-service-price)
   Widget _buildArticlesSection(BuildContext context, OrderDraftProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,9 +333,18 @@ class _ArticleSelectionStepState extends State<ArticleSelectionStep>
             fontWeight: FontWeight.w600,
           ),
         ),
+        const SizedBox(height: 8),
+        Text(
+          'Prix pour ${provider.selectedService?.name ?? 'ce service'}',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary(context),
+          ),
+        ),
         const SizedBox(height: 16),
         
-        if (provider.articles.isEmpty)
+        if (provider.isLoading)
+          _buildLoadingState(context)
+        else if (provider.couples.isEmpty)
           _buildEmptyState(context)
         else
           GridView.builder(
@@ -345,10 +356,46 @@ class _ArticleSelectionStepState extends State<ArticleSelectionStep>
               mainAxisSpacing: 12,
               childAspectRatio: 0.85,
             ),
-            itemCount: provider.articles.length,
+            itemCount: provider.couples.length,
             itemBuilder: (context, index) {
-              final article = provider.articles[index];
-              return _buildArticleCard(context, article, provider);
+              final couple = provider.couples[index];
+              
+              // Trouver la quantité actuelle dans le panier
+              final cartItem = provider.orderDraft.items.where(
+                (item) => item.articleId == couple.articleId && 
+                          item.isPremium == provider.isPremium,
+              ).firstOrNull;
+              final quantity = cartItem?.quantity ?? 0;
+              
+              return ArticleServiceCoupleCard(
+                couple: couple,
+                quantity: quantity,
+                isPremium: provider.isPremium,
+                onQuantityChanged: (newQuantity) {
+                  if (newQuantity == 0) {
+                    provider.removeArticle(couple.articleId, provider.isPremium);
+                  } else if (quantity == 0) {
+                    // Ajouter un nouvel article (créer un Article temporaire sans prix)
+                    final article = Article(
+                      id: couple.articleId,
+                      name: couple.articleName ?? 'Article',
+                      description: '',
+                      categoryId: '',
+                      isActive: true,
+                      createdAt: DateTime.now(),
+                      updatedAt: DateTime.now(),
+                    );
+                    provider.addArticle(article, newQuantity);
+                  } else {
+                    // Mettre à jour la quantité
+                    provider.updateArticleQuantity(
+                      couple.articleId,
+                      provider.isPremium,
+                      newQuantity,
+                    );
+                  }
+                },
+              );
             },
           ),
       ],
@@ -561,6 +608,41 @@ class _ArticleSelectionStepState extends State<ArticleSelectionStep>
           ),
         ),
       ],
+    );
+  }
+
+  /// ⏳ État de chargement
+  Widget _buildLoadingState(BuildContext context) {
+    return GlassContainer(
+      padding: const EdgeInsets.all(48),
+      child: Column(
+        children: [
+          SizedBox(
+            width: 50,
+            height: 50,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Chargement des articles...',
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: AppColors.textPrimary(context),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Récupération des prix pour ce service',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary(context),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 

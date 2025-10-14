@@ -103,10 +103,16 @@ class UserProfileProvider extends ChangeNotifier {
 
       // 3. Recuperer les statistiques
       try {
+        debugPrint('🔄 [UserProfileProvider] Chargement des stats...');
         _stats = await _profileService.getUserStats();
-        debugPrint('[UserProfileProvider] OK Stats: ${_stats!.loyaltyPoints} points, ${_stats!.totalOrders} commandes');
+        debugPrint('✅ [UserProfileProvider] Stats récupérées:');
+        debugPrint('   💰 Points: ${_stats!.loyaltyPoints}');
+        debugPrint('   📦 Commandes: ${_stats!.totalOrders}');
+        debugPrint('   💵 Total dépensé: ${_stats!.totalSpent}');
+        debugPrint('   📍 Adresses: ${_stats!.addressCount}');
+        debugPrint('   🏆 Tier: ${_stats!.loyaltyTier}');
       } catch (e) {
-        debugPrint('[UserProfileProvider] WARN Erreur stats: $e');
+        debugPrint('❌ [UserProfileProvider] Erreur stats: $e');
         // Statistiques par defaut
         _stats = UserStats(
           totalOrders: 0,
@@ -114,6 +120,7 @@ class UserProfileProvider extends ChangeNotifier {
           loyaltyPoints: 0,
           addressCount: 0,
         );
+        debugPrint('⚠️ [UserProfileProvider] Stats par défaut appliquées');
       }
 
       // Marquer comme initialise

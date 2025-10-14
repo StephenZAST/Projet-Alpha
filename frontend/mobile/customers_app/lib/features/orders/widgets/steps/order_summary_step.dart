@@ -356,77 +356,90 @@ class _OrderSummaryStepState extends State<OrderSummaryStep>
     );
   }
 
-  /// 📦 Ligne d'article
+  /// 📦 Ligne d'article (optimisée pour petits écrans)
   Widget _buildOrderItemRow(BuildContext context, dynamic item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant(context),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.checkroom,
-              color: AppColors.primary,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      item.articleName,
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.textPrimary(context),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (item.isPremium) ...[
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.star,
-                        color: AppColors.warning,
-                        size: 16,
-                      ),
-                    ],
-                  ],
+          // Ligne 1: Icône + Nom + Badge Premium
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                Text(
-                  'Quantité: ${item.quantity}',
+                child: Icon(
+                  Icons.checkroom,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  item.articleName,
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.textPrimary(context),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (item.isPremium)
+                Icon(
+                  Icons.star,
+                  color: AppColors.warning,
+                  size: 16,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          
+          // Ligne 2: Quantité + Prix unitaire + Total
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Quantité
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Qté: ${item.quantity}',
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary(context),
+                    color: AppColors.info,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
+              ),
+              
+              // Prix unitaire
               Text(
                 '${item.unitPrice.toStringAsFixed(0)} FCFA',
-                style: AppTextStyles.labelSmall.copyWith(
+                style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.textSecondary(context),
                 ),
               ),
+              
+              // Total
               Text(
                 '${item.estimatedPrice.toStringAsFixed(0)} FCFA',
                 style: AppTextStyles.labelMedium.copyWith(
                   color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],

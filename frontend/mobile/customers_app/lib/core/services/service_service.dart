@@ -27,6 +27,24 @@ class ServiceService {
     }
   }
 
+  /// 🔍 Récupérer les services par type de service
+  /// GET /api/services/all (puis filtrage côté client)
+  Future<List<Service>> getServicesByType(String serviceTypeId) async {
+    try {
+      // Récupérer tous les services
+      final allServices = await getAllServices();
+      
+      // Filtrer par serviceTypeId côté client
+      final filteredServices = allServices.where((service) {
+        return service.serviceTypeId == serviceTypeId && service.isActive;
+      }).toList();
+      
+      return filteredServices;
+    } catch (e) {
+      throw Exception('Erreur de connexion: ${e.toString()}');
+    }
+  }
+
   /// 🏷️ Récupérer tous les types de service (nécessite authentification)
   Future<List<ServiceType>> getAllServiceTypes() async {
     try {

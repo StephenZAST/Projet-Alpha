@@ -96,6 +96,62 @@ class PricingService {
       throw Exception('Erreur de calcul du prix: ${e.toString()}');
     }
   }
+
+  /// 🎯 Récupérer le prix d'un couple spécifique (optimisé)
+  /// GET /api/article-services/prices?articleId=xxx&serviceTypeId=yyy&serviceId=zzz
+  /// 
+  /// ⚠️ IMPORTANT: Filtrer sur le TRIO (article_id, service_type_id, service_id)
+  Future<ArticleServicePrice?> getPrice({
+    required String articleId,
+    required String serviceTypeId,
+    required String serviceId,
+  }) async {
+    try {
+      final response = await _api.get('/article-services/prices', queryParameters: {
+        'articleId': articleId,
+        'serviceTypeId': serviceTypeId,
+        'serviceId': serviceId,
+      });
+
+      if (response['success'] == true || response['data'] != null) {
+        final data = response['data'] ?? response['prices'] ?? [];
+        if (data is List && data.isNotEmpty) {
+          return ArticleServicePrice.fromJson(data.first);
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print('[PricingService] Error fetching price: $e');
+      return null;
+    }
+  }
+
+  /// 💰 Calculer le total d'une commande avec réductions
+  /// POST /api/orders/calculate-total
+  Future<Map<String, dynamic>> calculateOrderTotal({
+    required List<Map<String, dynamic>> items,
+    List<String>? appliedOfferIds,
+  }) async {
+    try {
+      final response = await _api.post(
+        '/orders/calculate-total',
+        data: {
+          'items': items,
+          if (appliedOfferIds != null && appliedOfferIds.isNotEmpty) 
+            'appliedOfferIds': appliedOfferIds,
+        },
+      );
+
+      if (response['success'] == true || response['data'] != null) {
+        return response['data'] ?? response;
+      }
+
+      throw Exception(response['error'] ?? 'Erreur lors du calcul du total');
+    } catch (e) {
+      throw Exception('Erreur de connexion: ${e.toString()}');
+    }
+  }
 }
 
 /// 💰 Modèle Prix Article-Service
