@@ -252,7 +252,7 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
         }
 
         return RefreshIndicator(
-          onRefresh: provider.refreshOrders,
+          onRefresh: provider.refresh,
           child: ListView.builder(
             controller: _scrollController,
             padding: AppSpacing.pagePadding,
@@ -606,8 +606,7 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
     Navigator.pop(context); // Fermer le dialog
 
     final provider = context.read<OrdersProvider>();
-    final success =
-        await provider.cancelOrder(order.id, 'Annulé par le client');
+    final success = await provider.cancelOrder(order.id);
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(

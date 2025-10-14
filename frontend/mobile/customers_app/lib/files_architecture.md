@@ -1,3 +1,4 @@
+>> 
 components
 core
 features
@@ -6,6 +7,7 @@ screens
 shared
 theme
 constants.dart
+files_architecture.md
 main.dart
 components\glass_components.dart
 core\models

@@ -69,7 +69,7 @@ export class OrderQueryService {
     return { orders, totalItems, totalPages };
   }
   private static readonly orderInclude = {
-    users: {
+    user: {
       select: {
         id: true,
         email: true,
@@ -80,15 +80,15 @@ export class OrderQueryService {
         referral_code: true
       }
     },
-    services: {
+    service_types: {
       select: {
         id: true,
         name: true,
-        price: true,
-        description: true
+        description: true,
+        pricing_type: true
       }
     },
-    addresses: {
+    address: {
       select: {
         id: true,
         name: true,
@@ -116,7 +116,8 @@ export class OrderQueryService {
         created_at: true,
         updated_at: true
       }
-    }
+    },
+    order_metadata: true
   };
 
   static async getUserOrders(userId: string): Promise<Order[]> {

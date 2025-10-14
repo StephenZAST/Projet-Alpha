@@ -255,6 +255,20 @@ class Order {
       return null;
     }
 
+    double parseDouble(dynamic v) {
+      if (v == null) return 0.0;
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      if (v is String) {
+        try {
+          return double.parse(v);
+        } catch (_) {
+          return 0.0;
+        }
+      }
+      return 0.0;
+    }
+
     List<OrderItem> parseItems(dynamic v) {
       if (v == null) return [];
       if (v is List) {
@@ -284,13 +298,11 @@ class Order {
       deliveryDate: parseDate(data['deliveryDate'] ?? data['delivery_date']),
       status: parseStatus(data['status']?.toString()),
       items: parseItems(data['items']),
-      subtotal: (data['subtotal'] ?? data['sub_total'] ?? 0).toDouble(),
-      discountAmount:
-          (data['discountAmount'] ?? data['discount'] ?? 0).toDouble(),
-      deliveryFee:
-          (data['deliveryFee'] ?? data['delivery_fee'] ?? 0).toDouble(),
-      taxAmount: (data['taxAmount'] ?? data['tax'] ?? 0).toDouble(),
-      totalAmount: (data['totalAmount'] ?? data['total'] ?? 0).toDouble(),
+      subtotal: parseDouble(data['subtotal'] ?? data['sub_total']),
+      discountAmount: parseDouble(data['discountAmount'] ?? data['discount']),
+      deliveryFee: parseDouble(data['deliveryFee'] ?? data['delivery_fee']),
+      taxAmount: parseDouble(data['taxAmount'] ?? data['tax']),
+      totalAmount: parseDouble(data['totalAmount'] ?? data['total']),
       pickupAddress: data['pickupAddress'] != null
           ? OrderAddress.fromJson(
               Map<String, dynamic>.from(data['pickupAddress']))
@@ -396,28 +408,91 @@ class OrderItem {
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic v) {
+      if (v == null) return 0.0;
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      if (v is String) {
+        try {
+          return double.parse(v);
+        } catch (_) {
+          return 0.0;
+        }
+      }
+      return 0.0;
+    }
+
+    int parseInt(dynamic v) {
+      if (v == null) return 0;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      if (v is String) {
+        try {
+          return int.parse(v);
+        } catch (_) {
+          return 0;
+        }
+      }
+      return 0;
+    }
+
+    // 🔍 DEBUG: Log du JSON brut
+    print('[OrderItem.fromJson] 📦 Raw JSON: ${json.toString()}');
+    
+    // Extraire les informations de l'article imbriqué
+    final article = json['article'] as Map<String, dynamic>?;
+    final articleName = article?['name']?.toString() ?? 
+                       json['articleName']?.toString() ?? 
+                       json['name']?.toString() ?? 
+                       'Article inconnu';
+    
+    print('[OrderItem.fromJson] 📋 Article name: $articleName');
+    
+    // ✅ Extraire les informations du service imbriqué
+    final service = json['service'] as Map<String, dynamic>?;
+    print('[OrderItem.fromJson] 🔍 Service object: ${service?.toString() ?? "NULL"}');
+    
+    final serviceName = service?['name']?.toString() ?? 
+                       json['serviceName']?.toString() ?? 
+                       json['service_name']?.toString() ?? 
+                       'Service';
+    
+    print('[OrderItem.fromJson] 📋 Service name: $serviceName');
+    
+    // ✅ Extraire les informations du service type imbriqué
+    final serviceType = service?['serviceType'] as Map<String, dynamic>?;
+    print('[OrderItem.fromJson] 🔍 ServiceType object: ${serviceType?.toString() ?? "NULL"}');
+    
+    final serviceTypeName = serviceType?['name']?.toString() ?? 
+                           json['serviceTypeName']?.toString() ?? 
+                           json['service_type_name']?.toString() ?? 
+                           '';
+    
+    print('[OrderItem.fromJson] 📋 ServiceType name: $serviceTypeName');
+    
+    // Déterminer si c'est premium en fonction du prix
+    final unitPrice = parseDouble(json['unitPrice'] ?? json['price']);
+    final basePrice = parseDouble(article?['basePrice']);
+    final premiumPrice = parseDouble(article?['premiumPrice']);
+    final isPremium = json['isPremium'] ?? 
+                     json['is_premium'] ?? 
+                     (unitPrice > 0 && premiumPrice > 0 && unitPrice >= premiumPrice);
+
     return OrderItem(
       id: json['id']?.toString() ?? '',
       orderId:
           json['orderId']?.toString() ?? json['order_id']?.toString() ?? '',
       articleId:
-          json['articleId']?.toString() ?? json['article_id']?.toString() ?? '',
+          json['articleId']?.toString() ?? json['article_id']?.toString() ?? article?['id']?.toString() ?? '',
       serviceId:
-          json['serviceId']?.toString() ?? json['service_id']?.toString() ?? '',
-      articleName: json['articleName']?.toString() ??
-          json['name']?.toString() ??
-          json['article']?.toString() ??
-          '',
-      serviceName: json['serviceName']?.toString() ??
-          json['service_name']?.toString() ??
-          '',
-      serviceTypeName: json['serviceTypeName']?.toString() ??
-          json['service_type_name']?.toString() ??
-          '',
-      quantity: (json['quantity'] ?? json['qty'] ?? 1) as int,
-      unitPrice: (json['unitPrice'] ?? json['price'] ?? 0).toDouble(),
-      isPremium: json['isPremium'] ?? json['is_premium'] ?? false,
-      weight: json['weight']?.toDouble(),
+          json['serviceId']?.toString() ?? json['service_id']?.toString() ?? service?['id']?.toString() ?? '',
+      articleName: articleName,
+      serviceName: serviceName,  // ✅ Utilise le nom extrait
+      serviceTypeName: serviceTypeName,  // �� Utilise le nom extrait
+      quantity: parseInt(json['quantity'] ?? json['qty']),
+      unitPrice: unitPrice,
+      isPremium: isPremium,
+      weight: parseDouble(json['weight']),
     );
   }
 

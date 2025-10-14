@@ -2,6 +2,7 @@ import express from 'express';
 import { AddressController } from '../controllers/address.controller';
 import { OrderController } from '../controllers/order.controller/index';
 import { FlashOrderController } from '../controllers/order.controller/flashOrder.controller';
+import { ClientOrderController } from '../controllers/order.controller/clientOrder.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { validateOrder } from '../middleware/validators';
 import { validateCreateFlashOrder, validateCompleteFlashOrder } from '../middleware/flashOrderValidator';
@@ -10,6 +11,26 @@ import { AdminService } from '../services/admin.service';
 import { order_status } from '@prisma/client';
 
 const router = express.Router();
+
+// 📱 Routes dédiées au CLIENT APP (avec données enrichies)
+// Ces routes sont spécifiques à l'app client et n'affectent pas les autres apps
+router.get(
+  '/client/my-orders',
+  authenticateToken,
+  asyncHandler(ClientOrderController.getMyOrdersEnriched)
+);
+
+router.get(
+  '/client/by-id/:orderId',
+  authenticateToken,
+  asyncHandler(ClientOrderController.getOrderByIdEnriched)
+);
+
+router.get(
+  '/client/recent',
+  authenticateToken,
+  asyncHandler(ClientOrderController.getRecentOrdersEnriched)
+);
 
 // Dedicated endpoint for searching by order ID (placed immediately after router declaration)
 router.get(

@@ -11,9 +11,16 @@ import '../shared/providers/address_provider.dart';
 import '../shared/providers/notification_provider.dart';
 import '../features/orders/screens/flash_order_screen.dart';
 import '../features/orders/screens/create_order_screen.dart';
+import '../features/orders/screens/orders_screen.dart';
+import '../features/orders/widgets/order_card.dart';
+import '../screens/orders/order_details_screen.dart';
 import '../features/profile/screens/address_management_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/notifications/screens/notifications_screen.dart';
+import '../features/services/screens/services_screen.dart';
+import '../providers/orders_provider.dart';
+import '../providers/loyalty_provider.dart';
+import '../providers/services_provider.dart';
 
 /// 🏠 Page d'Accueil Premium - Alpha Client App
 ///
@@ -69,7 +76,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void _simulateLoading() async {
-    await Future.delayed(const Duration(seconds: 2));
+    // ✅ Charger les données réelles avec cache
+    final ordersProvider = Provider.of<OrdersProvider>(context, listen: false);
+    final loyaltyProvider = Provider.of<LoyaltyProvider>(context, listen: false);
+    final servicesProvider = Provider.of<ServicesProvider>(context, listen: false);
+    
+    try {
+      // Charger en parallèle (utilise le cache si valide)
+      await Future.wait([
+        ordersProvider.initialize(),
+        loyaltyProvider.initialize(),
+        servicesProvider.initialize(),
+      ]);
+    } catch (e) {
+      debugPrint('[HomePage] Erreur chargement: $e');
+    }
+    
     setState(() => _isLoading = false);
     _fadeController.forward();
     await Future.delayed(const Duration(milliseconds: 200));
@@ -389,11 +411,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   /// 👋 Section d'Accueil Premium
   Widget _buildWelcomeSection() {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
+    return Consumer2<AuthProvider, LoyaltyProvider>(
+      builder: (context, authProvider, loyaltyProvider, child) {
         final user = authProvider.currentUser;
-        final loyaltyPoints = authProvider.loyaltyPoints;
-        final loyaltyTier = authProvider.loyaltyTier;
+        final loyaltyPoints = loyaltyProvider.currentPoints;  // ✅ Données réelles
+        
+        // ✅ Calculer le tier en fonction des points
+        String loyaltyTier = 'BRONZE';
+        if (loyaltyPoints >= 10000) {
+          loyaltyTier = 'PLATINUM';
+        } else if (loyaltyPoints >= 5000) {
+          loyaltyTier = 'GOLD';
+        } else if (loyaltyPoints >= 1000) {
+          loyaltyTier = 'SILVER';
+        }
         
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -710,7 +741,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
             TextButton(
-              onPressed: () {},
+              onPressed: () {
+                // ✅ Navigation vers ServicesScreen
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ServicesScreen(),
+                  ),
+                );
+              },
               child: Text(
                 'Voir tout',
                 style: AppTextStyles.labelMedium.copyWith(
@@ -834,114 +872,113 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  /// 📋 Section Commandes Récentes
+  /// 📋 Section Commandes Récentes (✅ Données réelles)
   Widget _buildRecentOrdersSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<OrdersProvider>(
+      builder: (context, ordersProvider, child) {
+        // Récupérer les 3 dernières commandes
+        final recentOrders = ordersProvider.orders.take(3).toList();
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Commandes Récentes',
-              style: AppTextStyles.headlineMedium.copyWith(
-                color: AppColors.textPrimary(context),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            TextButton(
-              onPressed: () {},
-              child: Text(
-                'Historique',
-                style: AppTextStyles.labelMedium.copyWith(
-                  color: AppColors.primary,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Commandes Récentes',
+                  style: AppTextStyles.headlineMedium.copyWith(
+                    color: AppColors.textPrimary(context),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
+                TextButton(
+                  onPressed: () {
+                    // ✅ Navigation vers OrdersScreen
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const OrdersScreen(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Historique',
+                    style: AppTextStyles.labelMedium.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 16),
+            
+            // ✅ Afficher les vraies commandes
+            if (ordersProvider.isLoading)
+              ...List.generate(3, (index) => _buildSkeletonOrderCard())
+            else if (recentOrders.isEmpty)
+              _buildEmptyOrdersState()
+            else
+              ...recentOrders.map((order) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: OrderCard(
+                  order: order,
+                  onTap: () {
+                    // Navigation vers les détails
+                    ordersProvider.selectOrder(order);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => OrderDetailsScreen(orderId: order.id),
+                      ),
+                    );
+                  },
+                ),
+              )),
           ],
-        ),
-        const SizedBox(height: 16),
-        _buildOrderCard(
-          'CMD001',
-          '3 Chemises + 1 Pantalon',
-          OrderStatus.processing,
-          DateTime.now().subtract(const Duration(days: 2)),
-          '28€',
-        ),
-        const SizedBox(height: 12),
-        _buildOrderCard(
-          'CMD002',
-          '1 Costume complet',
-          OrderStatus.ready,
-          DateTime.now().subtract(const Duration(days: 5)),
-          '45€',
-        ),
-        const SizedBox(height: 12),
-        _buildOrderCard(
-          'CMD003',
-          '2 Robes de soirée',
-          OrderStatus.delivered,
-          DateTime.now().subtract(const Duration(days: 8)),
-          '35€',
-        ),
-      ],
+        );
+      },
     );
   }
 
-  Widget _buildOrderCard(String orderId, String description, OrderStatus status,
-      DateTime date, String price) {
-    Color statusColor;
-    String statusText;
-    IconData statusIcon;
+  /// 📦 État vide - Aucune commande
+  Widget _buildEmptyOrdersState() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.surfaceVariant(context),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.shopping_bag_outlined,
+            size: 48,
+            color: AppColors.textTertiary(context),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Aucune commande récente',
+            style: AppTextStyles.labelLarge.copyWith(
+              color: AppColors.textSecondary(context),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Créez votre première commande',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textTertiary(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    switch (status) {
-      case OrderStatus.draft:
-        statusColor = AppColors.textTertiary(context);
-        statusText = 'Brouillon';
-        statusIcon = Icons.edit;
-        break;
-      case OrderStatus.pending:
-        statusColor = AppColors.warning;
-        statusText = 'En attente';
-        statusIcon = Icons.pending;
-        break;
-      case OrderStatus.collecting:
-        statusColor = AppColors.info;
-        statusText = 'Collecte';
-        statusIcon = Icons.local_shipping;
-        break;
-      case OrderStatus.collected:
-        statusColor = AppColors.primary;
-        statusText = 'Collectée';
-        statusIcon = Icons.inventory_2;
-        break;
-      case OrderStatus.processing:
-        statusColor = AppColors.info;
-        statusText = 'En cours';
-        statusIcon = Icons.refresh;
-        break;
-      case OrderStatus.ready:
-        statusColor = AppColors.success;
-        statusText = 'Prêt';
-        statusIcon = Icons.check_circle;
-        break;
-      case OrderStatus.delivering:
-        statusColor = AppColors.accent;
-        statusText = 'En livraison';
-        statusIcon = Icons.local_shipping;
-        break;
-      case OrderStatus.delivered:
-        statusColor = AppColors.textSecondary(context);
-        statusText = 'Livré';
-        statusIcon = Icons.done_all;
-        break;
-      case OrderStatus.cancelled:
-        statusColor = AppColors.error;
-        statusText = 'Annulé';
-        statusIcon = Icons.cancel;
-        break;
-    }
-
+  /// 💀 Skeleton pour les commandes en chargement
+  Widget _buildSkeletonOrderCard() {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -952,75 +989,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           color: AppColors.surfaceVariant(context),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              statusIcon,
-              color: statusColor,
-              size: 30,
-            ),
-          ),
+          const SkeletonLoader(width: 60, height: 60),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      orderId,
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.textPrimary(context),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      price,
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary(context),
-                  ),
-                ),
+                const SkeletonLoader(width: double.infinity, height: 16),
+                const SizedBox(height: 8),
+                const SkeletonLoader(width: 120, height: 14),
                 const SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    StatusBadge(
-                      text: statusText,
-                      color: statusColor,
-                      icon: statusIcon,
-                    ),
-                    Text(
-                      '${date.day}/${date.month}/${date.year}',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textTertiary(context),
-                      ),
-                    ),
+                    const SkeletonLoader(width: 80, height: 24),
+                    const Spacer(),
+                    const SkeletonLoader(width: 60, height: 16),
                   ],
                 ),
               ],

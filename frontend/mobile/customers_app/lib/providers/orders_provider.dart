@@ -1,339 +1,428 @@
 import 'package:flutter/material.dart';
-import '../constants.dart';
-import '../core/services/api_service.dart';
 import '../core/models/order.dart';
+import '../core/services/order_service.dart';
 
-/// 📦 Provider Commandes - Alpha Client App
+/// 📦 Provider de Gestion des Commandes - Alpha Client App
 ///
-/// Provider pour la gestion de l'historique des commandes avec filtres,
-/// pagination et suivi des statuts
-
+/// Gère l'état global des commandes avec système de cache optimisé
 class OrdersProvider extends ChangeNotifier {
-  final ApiService _apiService = ApiService();
+  final OrderService _orderService = OrderService();
 
   // État des commandes
   List<Order> _orders = [];
-  bool _isLoadingOrders = false;
-  String? _ordersError;
-  int _currentPage = 1;
-  bool _hasMoreOrders = true;
+  Order? _selectedOrder;
+  Map<String, int> _ordersByStatus = {};
+
+  // États de chargement
+  bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _isRefreshing = false;
+  String? _error;
+
+  // 🔥 Cache Management
+  DateTime? _lastFetch;
+  bool _isInitialized = false;
+  static const Duration _cacheDuration = Duration(minutes: 5);
 
   // Filtres
-  OrderStatus? _statusFilter;
-  DateTime? _startDateFilter;
-  DateTime? _endDateFilter;
+  OrderStatus? _filterStatus;
+  DateTime? _filterStartDate;
+  DateTime? _filterEndDate;
   String? _searchQuery;
 
-  // Commande sélectionnée
-  Order? _selectedOrder;
-  bool _isLoadingOrderDetails = false;
-  String? _orderDetailsError;
+  // Pagination
+  int _currentPage = 1;
+  int _totalPages = 1;
+  int _totalOrders = 0;
+  bool _hasMore = true;
+  static const int _pageSize = 20;
 
   // Getters
   List<Order> get orders => _orders;
-  bool get isLoadingOrders => _isLoadingOrders;
-  String? get ordersError => _ordersError;
-  bool get hasMoreOrders => _hasMoreOrders;
+  Order? get selectedOrder => _selectedOrder;
+  Map<String, int> get ordersByStatus => _ordersByStatus;
+  bool get isLoading => _isLoading;
+  bool get isLoadingMore => _isLoadingMore;
+  bool get isRefreshing => _isRefreshing;
+  String? get error => _error;
+  bool get hasOrders => _orders.isNotEmpty;
+  int get totalOrders => _totalOrders;
+  bool get hasMore => _hasMore;
+  
+  // Alias pour compatibilité avec anciens fichiers
+  bool get isLoadingOrders => _isLoading;
+  bool get isLoadingOrderDetails => _isLoading;
+  bool get hasMoreOrders => _hasMore;
+  Map<String, dynamic> get ordersStats => statistics;
 
-  OrderStatus? get statusFilter => _statusFilter;
-  DateTime? get startDateFilter => _startDateFilter;
-  DateTime? get endDateFilter => _endDateFilter;
+  // Filtres getters
+  OrderStatus? get filterStatus => _filterStatus;
+  DateTime? get filterStartDate => _filterStartDate;
+  DateTime? get filterEndDate => _filterEndDate;
   String? get searchQuery => _searchQuery;
 
-  Order? get selectedOrder => _selectedOrder;
-  bool get isLoadingOrderDetails => _isLoadingOrderDetails;
-  String? get orderDetailsError => _orderDetailsError;
+  // 🔥 Cache Getters
+  bool get isInitialized => _isInitialized;
+  DateTime? get lastFetch => _lastFetch;
+
+  bool get _shouldRefresh {
+    if (_lastFetch == null) return true;
+    final difference = DateTime.now().difference(_lastFetch!);
+    return difference > _cacheDuration;
+  }
+
+  String get cacheStatus {
+    if (_lastFetch == null) return 'Aucune donnee';
+    final difference = DateTime.now().difference(_lastFetch!);
+    final minutes = difference.inMinutes;
+    if (minutes < 1) return 'A l\'instant';
+    if (minutes == 1) return 'Il y a 1 minute';
+    return 'Il y a $minutes minutes';
+  }
 
   // Getters calculés
-  int get totalOrders => _orders.length;
+  List<Order> get pendingOrders =>
+      _orders.where((o) => o.status == OrderStatus.pending).toList();
 
   List<Order> get activeOrders => _orders
-      .where((order) =>
-          order.status != OrderStatus.delivered &&
-          order.status != OrderStatus.cancelled)
+      .where((o) =>
+          o.status != OrderStatus.delivered &&
+          o.status != OrderStatus.cancelled)
       .toList();
 
   List<Order> get completedOrders =>
-      _orders.where((order) => order.status == OrderStatus.delivered).toList();
+      _orders.where((o) => o.status == OrderStatus.delivered).toList();
 
   List<Order> get cancelledOrders =>
-      _orders.where((order) => order.status == OrderStatus.cancelled).toList();
+      _orders.where((o) => o.status == OrderStatus.cancelled).toList();
 
-  Map<OrderStatus, int> get ordersByStatus {
-    final Map<OrderStatus, int> statusCount = {};
-    for (final order in _orders) {
-      statusCount[order.status] = (statusCount[order.status] ?? 0) + 1;
+  int get activeOrdersCount => activeOrders.length;
+  int get completedOrdersCount => completedOrders.length;
+
+  /// 🚀 Initialiser le provider avec système de cache
+  Future<void> initialize({bool forceRefresh = false}) async {
+    // 🔥 Vérifier le cache avant de charger
+    if (_isInitialized && !forceRefresh && !_shouldRefresh && hasOrders) {
+      debugPrint('OK [OrdersProvider] Cache valide - Pas de rechargement');
+      debugPrint('INFO [OrdersProvider] Derniere mise a jour: $cacheStatus');
+      debugPrint('INFO [OrdersProvider] $_totalOrders commande(s)');
+      return;
     }
-    return statusCount;
+
+    if (forceRefresh) {
+      debugPrint('REFRESH [OrdersProvider] Rechargement force');
+    } else if (_shouldRefresh) {
+      debugPrint('EXPIRED [OrdersProvider] Cache expire - Rechargement');
+    } else {
+      debugPrint('INIT [OrdersProvider] Premiere initialisation');
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final startTime = DateTime.now();
+
+      // Charger les commandes et les stats en parallèle
+      await Future.wait([
+        loadOrders(refresh: true),
+        loadOrdersByStatus(),
+      ]);
+
+      // Marquer comme initialise
+      _isInitialized = true;
+      _lastFetch = DateTime.now();
+
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('OK [OrdersProvider] Chargement termine en ${duration.inMilliseconds}ms');
+      debugPrint('INFO [OrdersProvider] $_totalOrders commande(s), ${_ordersByStatus.length} statuts');
+    } catch (e) {
+      debugPrint('ERROR [OrdersProvider] Erreur: $e');
+      _setError('Erreur d\'initialisation: ${e.toString()}');
+    } finally {
+      _setLoading(false);
+    }
   }
 
-  /// 🚀 Initialiser le provider
-  Future<void> initialize() async {
-    await loadOrders(refresh: true);
-  }
-
-  /// 📦 Charger les commandes
+  /// 📋 Charger les commandes
   Future<void> loadOrders({bool refresh = false}) async {
     if (refresh) {
       _currentPage = 1;
+      _hasMore = true;
       _orders.clear();
-      _hasMoreOrders = true;
     }
 
-    if (!_hasMoreOrders && !refresh) return;
+    if (!_hasMore && !refresh) return;
 
-    _isLoadingOrders = true;
-    _ordersError = null;
+    if (refresh) {
+      _isRefreshing = true;
+    } else if (_currentPage > 1) {
+      _isLoadingMore = true;
+    } else {
+      _setLoading(true);
+    }
+
+    _clearError();
     notifyListeners();
 
     try {
-      final queryParameters = <String, dynamic>{
-        'page': _currentPage,
-        'limit': 20,
-      };
+      final startTime = DateTime.now();
 
-      // Ajouter les filtres
-      if (_statusFilter != null) {
-        queryParameters['status'] = _statusFilter!.name.toUpperCase();
-      }
-      if (_startDateFilter != null) {
-        queryParameters['startDate'] = _startDateFilter!.toIso8601String();
-      }
-      if (_endDateFilter != null) {
-        queryParameters['endDate'] = _endDateFilter!.toIso8601String();
-      }
-      if (_searchQuery != null && _searchQuery!.isNotEmpty) {
-        queryParameters['query'] = _searchQuery;
-      }
-
-      final response = await _apiService.get(
-        '/orders/my-orders',
-        queryParameters: queryParameters,
+      final result = await _orderService.searchOrders(
+        query: _searchQuery,
+        status: _filterStatus,
+        startDate: _filterStartDate,
+        endDate: _filterEndDate,
+        page: _currentPage,
+        limit: _pageSize,
       );
 
-      if (response['success'] == true && response['data'] != null) {
-        final ordersData = response['data'] as List;
-        final newOrders =
-            ordersData.map((json) => Order.fromJson(json)).toList();
-
-        if (refresh) {
-          _orders = newOrders;
-        } else {
-          _orders.addAll(newOrders);
-        }
-
-        // Vérifier s'il y a plus de pages
-        final pagination = response['pagination'];
-        if (pagination != null) {
-          final currentPage = pagination['currentPage'] as int;
-          final totalPages = pagination['totalPages'] as int;
-          _hasMoreOrders = currentPage < totalPages;
-          if (_hasMoreOrders) {
-            _currentPage++;
-          }
-        } else {
-          _hasMoreOrders = newOrders.length >= 20;
-          if (_hasMoreOrders) {
-            _currentPage++;
-          }
-        }
-
-        _ordersError = null;
-      } else {
-        _ordersError = 'Erreur lors du chargement des commandes';
+      // 🔍 DEBUG: Vérifier les données reçues
+      debugPrint('[OrdersProvider] 📦 Received ${result.orders.length} orders');
+      if (result.orders.isNotEmpty) {
+        final firstOrder = result.orders.first;
+        debugPrint('[OrdersProvider] 📊 First order items: ${firstOrder.items.length}');
+        debugPrint('[OrdersProvider] 📋 First order ID: ${firstOrder.id}');
       }
-    } catch (e) {
-      _ordersError = 'Erreur de connexion: $e';
-      print('Erreur loadOrders: $e');
-    }
 
-    _isLoadingOrders = false;
-    notifyListeners();
+      if (refresh) {
+        _orders = result.orders;
+      } else {
+        _orders.addAll(result.orders);
+      }
+
+      _totalOrders = result.total;
+      _totalPages = result.totalPages;
+      _hasMore = result.hasMore;
+
+      if (_hasMore) {
+        _currentPage++;
+      }
+
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('OK [Orders] ${result.orders.length} commande(s) chargee(s) en ${duration.inMilliseconds}ms');
+
+      _clearError();
+    } catch (e) {
+      debugPrint('ERROR [Orders] Erreur: $e');
+      _setError('Erreur de chargement: ${e.toString()}');
+    } finally {
+      _isLoading = false;
+      _isLoadingMore = false;
+      _isRefreshing = false;
+      notifyListeners();
+    }
   }
 
-  /// 📋 Charger les détails d'une commande
-  Future<void> loadOrderDetails(String orderId) async {
-    _isLoadingOrderDetails = true;
-    _orderDetailsError = null;
-    notifyListeners();
+  /// 📊 Charger les statistiques par statut
+  Future<void> loadOrdersByStatus() async {
+    try {
+      final startTime = DateTime.now();
+      _ordersByStatus = await _orderService.getOrdersByStatus();
+      final duration = DateTime.now().difference(startTime);
+      debugPrint('OK [OrdersStats] Stats chargees en ${duration.inMilliseconds}ms');
+    } catch (e) {
+      debugPrint('ERROR [OrdersStats] Erreur: $e');
+    }
+  }
+
+  /// 🔍 Charger une commande par ID
+  Future<void> loadOrderById(String orderId) async {
+    _setLoading(true);
+    _clearError();
 
     try {
-      final response = await _apiService.get('/orders/by-id/$orderId');
+      _selectedOrder = await _orderService.getOrderById(orderId);
+      debugPrint('OK [OrderDetails] Commande $orderId chargee');
 
-      if (response['success'] == true && response['data'] != null) {
-        _selectedOrder = Order.fromJson(response['data']);
-        _orderDetailsError = null;
-      } else {
-        _orderDetailsError = 'Erreur lors du chargement des détails';
+      // Mettre à jour dans la liste si elle existe
+      final index = _orders.indexWhere((o) => o.id == orderId);
+      if (index != -1) {
+        _orders[index] = _selectedOrder!;
       }
-    } catch (e) {
-      _orderDetailsError = 'Erreur de connexion: $e';
-      print('Erreur loadOrderDetails: $e');
-    }
 
-    _isLoadingOrderDetails = false;
-    notifyListeners();
+      _clearError();
+    } catch (e) {
+      debugPrint('ERROR [OrderDetails] Erreur: $e');
+      _setError('Erreur de chargement: ${e.toString()}');
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
   }
 
-  /// ❌ Annuler une commande (si autorisé)
-  Future<bool> cancelOrder(String orderId, String reason) async {
+  /// ➕ Créer une commande normale
+  Future<Order?> createOrder(CreateOrderRequest request) async {
+    _setLoading(true);
+    _clearError();
+
     try {
-      final response = await _apiService.patch('/orders/$orderId', data: {
-        'status': 'CANCELLED',
-        'cancellationReason': reason,
-      });
+      final order = await _orderService.createOrder(request);
+      debugPrint('OK [CreateOrder] Commande ${order.id} creee');
 
-      if (response['success'] == true) {
-        // Mettre à jour la commande localement
-        final orderIndex = _orders.indexWhere((o) => o.id == orderId);
-        if (orderIndex != -1) {
-          _orders[orderIndex] = _orders[orderIndex].copyWith(
-            status: OrderStatus.cancelled,
-          );
-        }
+      // Ajouter au début de la liste
+      _orders.insert(0, order);
+      _totalOrders++;
 
-        // Mettre à jour la commande sélectionnée si c'est la même
-        if (_selectedOrder?.id == orderId) {
-          _selectedOrder = _selectedOrder!.copyWith(
-            status: OrderStatus.cancelled,
-          );
-        }
+      // Invalider le cache pour forcer un rechargement
+      invalidateCache();
 
-        notifyListeners();
-        return true;
-      }
+      _clearError();
+      notifyListeners();
+      return order;
     } catch (e) {
-      print('Erreur cancelOrder: $e');
+      debugPrint('ERROR [CreateOrder] Erreur: $e');
+      _setError('Erreur de creation: ${e.toString()}');
+      notifyListeners();
+      return null;
+    } finally {
+      _setLoading(false);
     }
-    return false;
   }
 
-  /// 🔍 Appliquer les filtres
+  /// ⚡ Créer une commande flash
+  Future<Order?> createFlashOrder(CreateFlashOrderRequest request) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final order = await _orderService.createFlashOrder(request);
+      debugPrint('OK [CreateFlashOrder] Commande flash ${order.id} creee');
+
+      // Ajouter au début de la liste
+      _orders.insert(0, order);
+      _totalOrders++;
+
+      // Invalider le cache
+      invalidateCache();
+
+      _clearError();
+      notifyListeners();
+      return order;
+    } catch (e) {
+      debugPrint('ERROR [CreateFlashOrder] Erreur: $e');
+      _setError('Erreur de creation flash: ${e.toString()}');
+      notifyListeners();
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// 🚫 Annuler une commande
+  Future<bool> cancelOrder(String orderId) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      final updatedOrder = await _orderService.cancelOrder(orderId);
+      debugPrint('OK [CancelOrder] Commande $orderId annulee');
+
+      // Mettre à jour dans la liste
+      final index = _orders.indexWhere((o) => o.id == orderId);
+      if (index != -1) {
+        _orders[index] = updatedOrder;
+      }
+
+      // Mettre à jour la commande sélectionnée
+      if (_selectedOrder?.id == orderId) {
+        _selectedOrder = updatedOrder;
+      }
+
+      _clearError();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('ERROR [CancelOrder] Erreur: $e');
+      _setError('Erreur d\'annulation: ${e.toString()}');
+      notifyListeners();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// 🔄 Actualiser les commandes (force le rechargement)
+  Future<void> refresh() async {
+    debugPrint('REFRESH [OrdersProvider] Rafraichissement manuel');
+    await initialize(forceRefresh: true);
+  }
+
+  /// 🗑️ Invalider le cache
+  void invalidateCache() {
+    debugPrint('CACHE [OrdersProvider] Cache invalide');
+    _isInitialized = false;
+    _lastFetch = null;
+  }
+
+  /// 🔍 Appliquer des filtres
   void applyFilters({
     OrderStatus? status,
     DateTime? startDate,
     DateTime? endDate,
     String? query,
   }) {
-    _statusFilter = status;
-    _startDateFilter = startDate;
-    _endDateFilter = endDate;
+    _filterStatus = status;
+    _filterStartDate = startDate;
+    _filterEndDate = endDate;
     _searchQuery = query;
 
+    debugPrint('FILTER [OrdersProvider] Filtres appliques');
     loadOrders(refresh: true);
   }
 
-  /// 🧹 Nettoyer les filtres
+  /// 🧹 Effacer les filtres
   void clearFilters() {
-    _statusFilter = null;
-    _startDateFilter = null;
-    _endDateFilter = null;
+    _filterStatus = null;
+    _filterStartDate = null;
+    _filterEndDate = null;
     _searchQuery = null;
 
+    debugPrint('FILTER [OrdersProvider] Filtres effaces');
     loadOrders(refresh: true);
   }
 
-  /// 🔄 Actualiser les commandes
-  Future<void> refreshOrders() async {
-    await loadOrders(refresh: true);
-  }
-
-  /// 🧹 Nettoyer les erreurs
-  void clearErrors() {
-    _ordersError = null;
-    _orderDetailsError = null;
+  /// 🎯 Sélectionner une commande
+  void selectOrder(Order order) {
+    _selectedOrder = order;
     notifyListeners();
   }
 
-  /// 📊 Statistiques pour l'affichage
-  Map<String, dynamic> get ordersStats {
+  /// 🎯 Désélectionner la commande
+  void clearSelection() {
+    _selectedOrder = null;
+    notifyListeners();
+  }
+
+  /// 📊 Obtenir les statistiques
+  Map<String, dynamic> get statistics {
     return {
-      'totalOrders': totalOrders,
-      'activeOrders': activeOrders.length,
-      'completedOrders': completedOrders.length,
-      'cancelledOrders': cancelledOrders.length,
-      'ordersByStatus': ordersByStatus,
-      'recentOrders': _orders.take(5).toList(),
+      'total': _totalOrders,
+      'active': activeOrdersCount,
+      'completed': completedOrdersCount,
+      'pending': pendingOrders.length,
+      'cancelled': cancelledOrders.length,
+      'byStatus': _ordersByStatus,
     };
   }
 
-  /// 📅 Obtenir les commandes par période
-  List<Order> getOrdersByPeriod(DateTime startDate, DateTime endDate) {
-    return _orders.where((order) {
-      return order.createdAt.isAfter(startDate) &&
-          order.createdAt.isBefore(endDate);
-    }).toList();
+  // Méthodes privées
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
   }
 
-  /// 💰 Calculer le total dépensé
-  double get totalSpent {
-    return _orders
-        .where((order) => order.status == OrderStatus.delivered)
-        .fold(0.0, (sum, order) => sum + order.totalAmount);
+  void _setError(String error) {
+    _error = error;
+    notifyListeners();
   }
 
-  /// 📈 Obtenir les commandes récentes (30 derniers jours)
-  List<Order> get recentOrders {
-    final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
-    return _orders
-        .where((order) => order.createdAt.isAfter(thirtyDaysAgo))
-        .toList();
+  void _clearError() {
+    _error = null;
   }
 
-  /// 🔍 Rechercher des commandes
-  List<Order> searchOrders(String query) {
-    if (query.isEmpty) return _orders;
-
-    final lowerQuery = query.toLowerCase();
-    return _orders.where((order) {
-      return order.id.toLowerCase().contains(lowerQuery) ||
-          order.items.any((item) =>
-              item.articleName.toLowerCase().contains(lowerQuery) ||
-              item.serviceName.toLowerCase().contains(lowerQuery));
-    }).toList();
-  }
-
-  /// 🎯 Obtenir une commande par ID
-  Order? getOrderById(String orderId) {
-    try {
-      return _orders.firstWhere((order) => order.id == orderId);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// 📊 Obtenir les commandes par service
-  Map<String, List<Order>> get ordersByService {
-    final Map<String, List<Order>> serviceOrders = {};
-
-    for (final order in _orders) {
-      for (final item in order.items) {
-        final serviceName = item.serviceName;
-        if (!serviceOrders.containsKey(serviceName)) {
-          serviceOrders[serviceName] = [];
-        }
-        if (!serviceOrders[serviceName]!.contains(order)) {
-          serviceOrders[serviceName]!.add(order);
-        }
-      }
-    }
-
-    return serviceOrders;
-  }
-
-  /// 🏆 Obtenir le service le plus utilisé
-  String? get mostUsedService {
-    final serviceCount = <String, int>{};
-
-    for (final order in _orders) {
-      for (final item in order.items) {
-        final serviceName = item.serviceName;
-        serviceCount[serviceName] = (serviceCount[serviceName] ?? 0) + 1;
-      }
-    }
-
-    if (serviceCount.isEmpty) return null;
-
-    return serviceCount.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+  @override
+  void dispose() {
+    super.dispose();
   }
 }

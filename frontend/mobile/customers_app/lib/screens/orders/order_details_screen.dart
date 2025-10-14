@@ -26,7 +26,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<OrdersProvider>().loadOrderDetails(widget.orderId);
+      context.read<OrdersProvider>().loadOrderById(widget.orderId);
     });
   }
 
@@ -48,12 +48,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       ),
       body: Consumer<OrdersProvider>(
         builder: (context, provider, child) {
-          if (provider.isLoadingOrderDetails) {
+          if (provider.isLoading) {
             return _buildLoadingState();
           }
 
-          if (provider.orderDetailsError != null) {
-            return _buildErrorState(provider.orderDetailsError!);
+          if (provider.error != null) {
+            return _buildErrorState(provider.error!);
           }
 
           final order = provider.selectedOrder;
@@ -62,7 +62,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: () => provider.loadOrderDetails(widget.orderId),
+            onRefresh: () => provider.loadOrderById(widget.orderId),
             child: SingleChildScrollView(
               padding: AppSpacing.pagePadding,
               child: Column(
@@ -716,7 +716,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               text: 'Réessayer',
               onPressed: () => context
                   .read<OrdersProvider>()
-                  .loadOrderDetails(widget.orderId),
+                  .loadOrderById(widget.orderId),
             ),
           ],
         ),
@@ -808,8 +808,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     Navigator.pop(context); // Fermer le dialog
 
     final provider = context.read<OrdersProvider>();
-    final success =
-        await provider.cancelOrder(order.id, 'Annulé par le client');
+    final success = await provider.cancelOrder(order.id);
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
