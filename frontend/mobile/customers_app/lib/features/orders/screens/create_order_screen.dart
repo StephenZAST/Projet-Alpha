@@ -156,6 +156,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen>
         ),
       ),
       actions: [
+        // Bouton Panier
         Consumer<OrderDraftProvider>(
           builder: (context, provider, child) {
             final itemCount = provider.orderDraft.totalItems;
@@ -192,6 +193,27 @@ class _CreateOrderScreenState extends State<CreateOrderScreen>
                     ),
                   ),
               ],
+            );
+          },
+        ),
+        
+        // Bouton Réinitialiser
+        Consumer<OrderDraftProvider>(
+          builder: (context, provider, child) {
+            // Afficher seulement si on a commencé à remplir
+            final hasStarted = provider.currentStep > 0 || 
+                               provider.orderDraft.items.isNotEmpty ||
+                               provider.selectedAddress != null;
+            
+            if (!hasStarted) return const SizedBox.shrink();
+            
+            return IconButton(
+              icon: Icon(
+                Icons.refresh_rounded,
+                color: AppColors.error,
+              ),
+              tooltip: 'Recommencer',
+              onPressed: () => _showResetConfirmation(),
             );
           },
         ),
@@ -580,6 +602,146 @@ class _CreateOrderScreenState extends State<CreateOrderScreen>
       default:
         return Icons.arrow_forward;
     }
+  }
+
+  /// 🔄 Afficher la confirmation de réinitialisation
+  void _showResetConfirmation() {
+    HapticFeedback.mediumImpact();
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.surface(context),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icône animée
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: Icon(
+                  Icons.refresh_rounded,
+                  color: AppColors.error,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Titre
+              Text(
+                'Recommencer ?',
+                style: AppTextStyles.headlineMedium.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              
+              // Description
+              Text(
+                'Toutes vos sélections seront effacées et vous recommencerez depuis le début.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary(context),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              
+              // Boutons
+              Row(
+                children: [
+                  // Annuler
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: AppColors.border(context),
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Annuler',
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.textSecondary(context),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  
+                  // Confirmer
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _resetOrder();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Recommencer',
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 🔄 Réinitialiser la commande
+  void _resetOrder() {
+    HapticFeedback.heavyImpact();
+    
+    final provider = Provider.of<OrderDraftProvider>(context, listen: false);
+    
+    // Réinitialiser le provider
+    provider.reset();
+    
+    // Retourner à la première page avec animation
+    _animateToPage(0);
+    
+    // Feedback visuel
+    NotificationUtils.showInfo(
+      context,
+      'Commande réinitialisée. Vous pouvez recommencer.',
+    );
   }
 }
 
