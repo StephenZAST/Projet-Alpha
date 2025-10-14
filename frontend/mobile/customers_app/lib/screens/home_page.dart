@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// svg support removed; using PNG logo instead
 import 'package:provider/provider.dart';
 import '../constants.dart';
 import '../components/glass_components.dart';
-import '../core/models/order.dart';
 import '../theme/theme_provider.dart';
 import '../shared/providers/auth_provider.dart';
-import '../shared/providers/address_provider.dart';
 import '../shared/providers/notification_provider.dart';
 import '../features/orders/screens/flash_order_screen.dart';
 import '../features/orders/screens/create_order_screen.dart';
