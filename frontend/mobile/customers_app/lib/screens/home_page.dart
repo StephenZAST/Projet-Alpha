@@ -720,7 +720,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  /// 🛍️ Section Services
+  /// 🛍️ Section Services (✅ Hardcodé - Simple et rapide)
   Widget _buildServicesSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -737,7 +737,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
             TextButton(
               onPressed: () {
-                // ✅ Navigation vers ServicesScreen
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => const ServicesScreen(),
@@ -754,11 +753,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ],
         ),
         const SizedBox(height: 16),
+        
+        // Grid 2x2 avec les 4 services en dur
         LayoutBuilder(
           builder: (context, constraints) {
             final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
             final itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 12) / crossAxisCount;
-            final itemHeight = itemWidth * 0.85; // Ratio plus adaptatif
+            final itemHeight = itemWidth * 0.85;
             
             return GridView.count(
               shrinkWrap: true,
@@ -768,29 +769,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               mainAxisSpacing: 12,
               childAspectRatio: itemWidth / itemHeight,
               children: [
-                _buildServiceCard(
-                  'Nettoyage à Sec',
-                  'Service professionnel',
+                _buildServiceCardSimple(
+                  'Nettoyage à sec',
+                  'Utilisation de solvants non aqueux',
                   Icons.dry_cleaning,
-                  AppColors.primary,
+                  AppColors.success,
                 ),
-                _buildServiceCard(
-                  'Repassage',
-                  'Finition parfaite',
+                _buildServiceCardSimple(
+                  'LAVAGE + REPASSAGE',
+                  'Nettoyage à l\'eau + repassage',
+                  Icons.local_laundry_service,
+                  AppColors.info,
+                ),
+                _buildServiceCardSimple(
+                  'Repassage Simple',
+                  'Repassage unique de vos vêtements',
                   Icons.iron,
                   AppColors.warning,
                 ),
-                _buildServiceCard(
-                  'Retouches',
-                  'Ajustements sur mesure',
-                  Icons.content_cut,
-                  AppColors.info,
-                ),
-                _buildServiceCard(
-                  'Express 24h',
-                  'Livraison rapide',
-                  Icons.flash_on,
-                  AppColors.success,
+                _buildServiceCardSimple(
+                  'Lavage Simple',
+                  'Lavage unique de vos vêtements',
+                  Icons.water_drop,
+                  AppColors.primary,
                 ),
               ],
             );
@@ -800,69 +801,81 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildServiceCard(
-      String title, String subtitle, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.surfaceVariant(context),
-          width: 1,
+  /// 📦 Carte de service simple (hardcodée)
+  Widget _buildServiceCardSimple(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        // Navigation vers le stepper de création de commande
+        _handleNewOrderTap();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.surfaceVariant(context),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 22,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Flexible(
-            child: Text(
-              title,
-              style: AppTextStyles.labelMedium.copyWith(
-                color: AppColors.textPrimary(context),
-                fontWeight: FontWeight.w600,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Flexible(
-            child: Text(
-              subtitle,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary(context),
-                fontSize: 11,
+              child: Icon(
+                icon,
+                color: color,
+                size: 22,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Flexible(
+              child: Text(
+                title,
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Flexible(
+              child: Text(
+                subtitle,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary(context),
+                  fontSize: 11,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

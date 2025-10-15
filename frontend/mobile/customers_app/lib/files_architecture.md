@@ -14,11 +14,13 @@ core\services
 core\utils
 core\models\address.dart
 core\models\article.dart
+core\models\article_service_price.dart
 core\models\flash_order.dart
 core\models\loyalty.dart
 core\models\notification.dart
 core\models\order.dart
 core\models\order_draft.dart
+core\models\order_pricing.dart
 core\models\service.dart
 core\models\service_type.dart
 core\models\user.dart
@@ -33,6 +35,7 @@ core\services\notification_service.dart
 core\services\order_service.dart
 core\services\pricing_service.dart
 core\services\service_service.dart
+core\services\service_type_service.dart
 core\services\user_profile_service.dart
 core\utils\storage_service.dart
 features\auth
@@ -55,6 +58,7 @@ features\orders\screens\flash_order_screen.dart
 features\orders\screens\orders_screen.dart
 features\orders\screens\order_details_screen.dart
 features\orders\widgets\steps
+features\orders\widgets\article_service_couple_card.dart
 features\orders\widgets\flash_order_dialog.dart
 features\orders\widgets\flash_order_item_card.dart
 features\orders\widgets\flash_order_summary.dart
