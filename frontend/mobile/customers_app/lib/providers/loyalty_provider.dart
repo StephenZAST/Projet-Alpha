@@ -132,15 +132,18 @@ class LoyaltyProvider extends ChangeNotifier {
     try {
       final response = await _apiService.get('/loyalty/points-balance');
 
-      if (response['success'] == true && response['data'] != null) {
+      // ✅ Le backend renvoie directement { "data": {...} } sans "success"
+      if (response['data'] != null) {
         _loyaltyPoints = LoyaltyPoints.fromJson(response['data']);
         _pointsError = null;
+        debugPrint('✅ [LoyaltyProvider] Points chargés: ${_loyaltyPoints?.pointsBalance}');
       } else {
         _pointsError = 'Erreur lors du chargement des points';
+        debugPrint('❌ [LoyaltyProvider] Pas de données dans la réponse');
       }
     } catch (e) {
       _pointsError = 'Erreur de connexion: $e';
-      print('Erreur loadLoyaltyPoints: $e');
+      debugPrint('❌ [LoyaltyProvider] Erreur loadLoyaltyPoints: $e');
     }
 
     _isLoadingPoints = false;

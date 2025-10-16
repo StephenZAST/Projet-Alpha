@@ -19,6 +19,8 @@ import '../features/services/screens/services_screen.dart';
 import '../providers/orders_provider.dart';
 import '../providers/loyalty_provider.dart';
 import '../providers/services_provider.dart';
+import 'loyalty/loyalty_dashboard_screen.dart';
+import 'loyalty/rewards_catalog_screen.dart';
 
 /// 🏠 Page d'Accueil Premium - Alpha Client App
 ///
@@ -76,25 +78,29 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void _simulateLoading() async {
     // ✅ Charger les données réelles avec cache
     final ordersProvider = Provider.of<OrdersProvider>(context, listen: false);
-    final loyaltyProvider = Provider.of<LoyaltyProvider>(context, listen: false);
-    final servicesProvider = Provider.of<ServicesProvider>(context, listen: false);
-    final profileProvider = Provider.of<UserProfileProvider>(context, listen: false);
-    
+    final loyaltyProvider =
+        Provider.of<LoyaltyProvider>(context, listen: false);
+    final servicesProvider =
+        Provider.of<ServicesProvider>(context, listen: false);
+    final profileProvider =
+        Provider.of<UserProfileProvider>(context, listen: false);
+
     try {
       // Charger en parallèle (utilise le cache si valide)
       await Future.wait([
-        profileProvider.initialize(),  // ✅ Charger le profil en premier pour les points
+        profileProvider
+            .initialize(), // ✅ Charger le profil en premier pour les points
         ordersProvider.initialize(),
         loyaltyProvider.initialize(),
         servicesProvider.initialize(),
       ]);
-      
+
       debugPrint('🏠 [HomePage] Tous les providers initialisés');
       debugPrint('   💰 Points: ${profileProvider.loyaltyPoints}');
     } catch (e) {
       debugPrint('❌ [HomePage] Erreur chargement: $e');
     }
-    
+
     setState(() => _isLoading = false);
     _fadeController.forward();
     await Future.delayed(const Duration(milliseconds: 200));
@@ -201,13 +207,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     onPressed: () {
                       Navigator.of(context).push(
                         PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) => 
-                              const NotificationsScreen(),
-                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  const NotificationsScreen(),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
                             return SlideTransition(
                               position: animation.drive(
-                                Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
-                                    .chain(CurveTween(curve: AppAnimations.slideIn)),
+                                Tween(
+                                        begin: const Offset(1.0, 0.0),
+                                        end: Offset.zero)
+                                    .chain(CurveTween(
+                                        curve: AppAnimations.slideIn)),
                               ),
                               child: child,
                             );
@@ -234,8 +245,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                         child: Center(
                           child: Text(
-                            notificationProvider.unreadCount > 9 
-                                ? '9+' 
+                            notificationProvider.unreadCount > 9
+                                ? '9+'
                                 : '${notificationProvider.unreadCount}',
                             style: AppTextStyles.overline.copyWith(
                               color: Colors.white,
@@ -418,9 +429,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       builder: (context, authProvider, profileProvider, child) {
         final user = authProvider.currentUser;
         final loyaltyInfo = profileProvider.loyaltyInfo;
-        final loyaltyPoints = loyaltyInfo['points'] ?? 0;  // ✅ Données réelles depuis UserProfileProvider
-        final loyaltyTier = loyaltyInfo['tier'] ?? 'BRONZE';  // ✅ Tier depuis UserProfileProvider
-        
+        final loyaltyPoints = loyaltyInfo['points'] ??
+            0; // ✅ Données réelles depuis UserProfileProvider
+        final loyaltyTier = loyaltyInfo['tier'] ??
+            'BRONZE'; // ✅ Tier depuis UserProfileProvider
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -512,7 +525,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(20),
@@ -596,125 +610,147 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  /// ⚡ Section Commande Rapide
+  /// ⚡ Section Services Populaires (Raccourcis)
   Widget _buildQuickOrderSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Services populaires',
-          style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.textPrimary(context),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          height: 120,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              _buildQuickOrderCard(
-                'Chemise',
-                'À partir de 8€',
-                Icons.checkroom,
-                AppColors.success,
+    return Consumer<UserProfileProvider>(
+      builder: (context, profileProvider, child) {
+        final loyaltyPoints = profileProvider.loyaltyPoints;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Services populaires',
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w600,
               ),
-              _buildQuickOrderCard(
-                'Pantalon',
-                'À partir de 10€',
-                Icons.checkroom_outlined,
-                AppColors.warning,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  // 1. Fidélité Dashboard
+                  _buildQuickActionCard(
+                    '$loyaltyPoints pts',
+                    'Mes récompenses',
+                    Icons.stars,
+                    AppColors.purple,
+                    () => _navigateToLoyaltyDashboard(),
+                  ),
+
+                  // 2. Mes Adresses
+                  _buildQuickActionCard(
+                    'Adresses',
+                    'Mes Adresses',
+                    Icons.location_on,
+                    AppColors.success,
+                    () => _navigateToAddresses(),
+                  ),
+
+                  // 3. Offres (TODO: à implémenter)
+                  _buildQuickActionCard(
+                    'Offres',
+                    'Offres',
+                    Icons.local_offer,
+                    AppColors.warning,
+                    () => _showComingSoonDialog('Offres'),
+                  ),
+
+                  // 4. Récompenses
+                  _buildQuickActionCard(
+                    'Récompenses',
+                    'Échanger',
+                    Icons.card_giftcard,
+                    AppColors.accent,
+                    () => _navigateToRewards(),
+                  ),
+                ],
               ),
-              _buildQuickOrderCard(
-                'Costume',
-                'À partir de 25€',
-                Icons.work_outline,
-                AppColors.info,
-              ),
-              _buildQuickOrderCard(
-                'Robe',
-                'À partir de 15€',
-                Icons.woman,
-                AppColors.purple,
-              ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildQuickOrderCard(
-      String title, String price, IconData icon, Color color) {
-    return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 12),
+  Widget _buildQuickActionCard(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       child: Container(
-        // Ensure the card fills the parent's vertical space (the horizontal ListView
-        // provides a bounded height). This prevents the inner Column from exceeding
-        // the available height and causing a RenderFlex overflow.
-        height: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface(context),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.surfaceVariant(context),
-            width: 1,
+        width: 140,
+        margin: const EdgeInsets.only(right: 12),
+        child: Container(
+          height: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface(context),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.surfaceVariant(context),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          // Center content vertically so items don't push past the bottom on
-          // small heights.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 28,
+                ),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 28,
+              const SizedBox(height: 12),
+              Flexible(
+                fit: FlexFit.loose,
+                child: Text(
+                  title,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.textPrimary(context),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            // Constrain the title so it can't grow vertically and cause overflow.
-            Flexible(
-              fit: FlexFit.loose,
-              child: Text(
-                title,
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.textPrimary(context),
-                  fontWeight: FontWeight.w600,
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary(context),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              price,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary(context),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -753,14 +789,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // Grid 2x2 avec les 4 services en dur
         LayoutBuilder(
           builder: (context, constraints) {
             final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-            final itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 12) / crossAxisCount;
+            final itemWidth =
+                (constraints.maxWidth - (crossAxisCount - 1) * 12) /
+                    crossAxisCount;
             final itemHeight = itemWidth * 0.85;
-            
+
             return GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -886,7 +924,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       builder: (context, ordersProvider, child) {
         // Récupérer les 3 dernières commandes
         final recentOrders = ordersProvider.orders.take(3).toList();
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -919,7 +957,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // ✅ Afficher les vraies commandes
             if (ordersProvider.isLoading)
               ...List.generate(3, (index) => _buildSkeletonOrderCard())
@@ -927,20 +965,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               _buildEmptyOrdersState()
             else
               ...recentOrders.map((order) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: OrderCard(
-                  order: order,
-                  onTap: () {
-                    // Navigation vers les détails
-                    ordersProvider.selectOrder(order);
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => OrderDetailsScreen(orderId: order.id),
-                      ),
-                    );
-                  },
-                ),
-              )),
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: OrderCard(
+                      order: order,
+                      onTap: () {
+                        // Navigation vers les détails
+                        ordersProvider.selectOrder(order);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                OrderDetailsScreen(orderId: order.id),
+                          ),
+                        );
+                      },
+                    ),
+                  )),
           ],
         );
       },
@@ -1108,11 +1147,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// 🛍️ Gestionnaire Nouvelle Commande
   void _handleNewOrderTap() {
     HapticFeedback.lightImpact();
-    
+
     // Navigation vers l'écran de création de commande complète
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => 
+        pageBuilder: (context, animation, secondaryAnimation) =>
             const CreateOrderScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
@@ -1131,12 +1170,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// ⚡ Gestionnaire Commande Flash
   void _handleFlashOrderTap() {
     HapticFeedback.lightImpact();
-    
+
     // Navigation directe vers l'écran de commande flash
     // La vérification de l'adresse se fera dans FlashOrderScreen
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => 
+        pageBuilder: (context, animation, secondaryAnimation) =>
             const FlashOrderScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
@@ -1200,9 +1239,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               // Navigation vers la gestion des adresses
               Navigator.of(context).push(
                 PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => 
+                  pageBuilder: (context, animation, secondaryAnimation) =>
                       const AddressManagementScreen(),
-                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  transitionsBuilder:
+                      (context, animation, secondaryAnimation, child) {
                     return SlideTransition(
                       position: animation.drive(
                         Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
@@ -1280,27 +1320,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // Menu items
               Consumer<AuthProvider>(
                 builder: (context, authProvider, child) {
                   return Column(
                     children: [
                       ListTile(
-                        leading: Icon(Icons.person_outline, color: AppColors.textPrimary(context)),
-                        title: Text('Profil', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary(context))),
+                        leading: Icon(Icons.person_outline,
+                            color: AppColors.textPrimary(context)),
+                        title: Text('Profil',
+                            style: AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.textPrimary(context))),
                         onTap: () {
                           Navigator.pop(context);
                           // Navigation vers l'écran de profil
                           Navigator.of(context).push(
                             PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) => 
-                                  const ProfileScreen(),
-                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              pageBuilder:
+                                  (context, animation, secondaryAnimation) =>
+                                      const ProfileScreen(),
+                              transitionsBuilder: (context, animation,
+                                  secondaryAnimation, child) {
                                 return SlideTransition(
                                   position: animation.drive(
-                                    Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
-                                        .chain(CurveTween(curve: AppAnimations.slideIn)),
+                                    Tween(
+                                            begin: const Offset(1.0, 0.0),
+                                            end: Offset.zero)
+                                        .chain(CurveTween(
+                                            curve: AppAnimations.slideIn)),
                                   ),
                                   child: child,
                                 );
@@ -1311,16 +1359,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         },
                       ),
                       ListTile(
-                        leading: Icon(Icons.settings_outlined, color: AppColors.textPrimary(context)),
-                        title: Text('Paramètres', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary(context))),
+                        leading: Icon(Icons.settings_outlined,
+                            color: AppColors.textPrimary(context)),
+                        title: Text('Paramètres',
+                            style: AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.textPrimary(context))),
                         onTap: () {
                           Navigator.pop(context);
                           // TODO: Navigate to settings
                         },
                       ),
                       ListTile(
-                        leading: Icon(Icons.help_outline, color: AppColors.textPrimary(context)),
-                        title: Text('Aide', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textPrimary(context))),
+                        leading: Icon(Icons.help_outline,
+                            color: AppColors.textPrimary(context)),
+                        title: Text('Aide',
+                            style: AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.textPrimary(context))),
                         onTap: () {
                           Navigator.pop(context);
                           // TODO: Navigate to help
@@ -1329,12 +1383,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       const Divider(),
                       ListTile(
                         leading: Icon(Icons.logout, color: AppColors.error),
-                        title: Text('Déconnexion', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.error)),
+                        title: Text('Déconnexion',
+                            style: AppTextStyles.bodyLarge
+                                .copyWith(color: AppColors.error)),
                         onTap: () async {
                           Navigator.pop(context);
                           await authProvider.logout();
                           if (mounted) {
-                            Navigator.of(context).pushReplacementNamed('/login');
+                            Navigator.of(context)
+                                .pushReplacementNamed('/login');
                           }
                         },
                       ),
@@ -1346,6 +1403,108 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// 🎁 Navigation vers Loyalty Dashboard
+  void _navigateToLoyaltyDashboard() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const LoyaltyDashboardScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
+      ),
+    );
+  }
+
+  /// 📍 Navigation vers Adresses
+  void _navigateToAddresses() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const AddressManagementScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
+      ),
+    );
+  }
+
+  /// 🎁 Navigation vers Récompenses
+  void _navigateToRewards() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const RewardsCatalogScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
+      ),
+    );
+  }
+
+  /// 🚧 Dialog "Bientôt disponible"
+  void _showComingSoonDialog(String featureName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.construction,
+              color: AppColors.warning,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Bientôt disponible',
+              style: AppTextStyles.headlineSmall.copyWith(
+                color: AppColors.textPrimary(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'La fonctionnalité "$featureName" sera bientôt disponible. Restez connecté!',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textSecondary(context),
+          ),
+        ),
+        actions: [
+          PremiumButton(
+            text: 'Compris',
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
       ),
     );
   }

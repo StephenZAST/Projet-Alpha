@@ -221,20 +221,35 @@ class Reward {
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
       type: _parseRewardType(json['type'] as String),
-      // ✅ Accepte à la fois points_cost (backend) et pointsRequired (fallback)
-      pointsRequired: (json['points_cost'] ?? json['pointsRequired']) as int,
-      // ✅ Accepte discount_value (backend) et discountAmount (fallback)
-      discountAmount: (json['discount_value'] ?? json['discountAmount'])?.toDouble(),
+      // ✅ Accepte points_cost, pointsRequired, points_required, ou 0 par défaut
+      pointsRequired: (json['points_cost'] ?? 
+                       json['pointsRequired'] ?? 
+                       json['points_required'] ?? 
+                       0) as int,
+      // ✅ Accepte discount_value, discountAmount, value, ou null
+      discountAmount: (json['discount_value'] ?? 
+                       json['discountAmount'] ?? 
+                       json['value'])?.toDouble(),
       discountPercentage: json['discountPercentage']?.toDouble(),
-      // ✅ Accepte is_active (backend) et isActive (fallback)
+      // ✅ Accepte is_active, isActive, ou true par défaut
       isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
       validUntil: json['validUntil'] != null 
           ? DateTime.parse(json['validUntil'] as String)
-          : null,
-      // ✅ Accepte created_at (backend) et createdAt (fallback)
-      createdAt: DateTime.parse((json['created_at'] ?? json['createdAt']) as String),
-      // ✅ Accepte updated_at (backend) et updatedAt (fallback)
-      updatedAt: DateTime.parse((json['updated_at'] ?? json['updatedAt']) as String),
+          : json['valid_until'] != null
+              ? DateTime.parse(json['valid_until'] as String)
+              : null,
+      // ✅ Accepte created_at, createdAt, ou DateTime.now()
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'] as String)
+              : DateTime.now(),
+      // ✅ Accepte updated_at, updatedAt, ou DateTime.now()
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : json['updatedAt'] != null
+              ? DateTime.parse(json['updatedAt'] as String)
+              : DateTime.now(),
     );
   }
 
