@@ -231,7 +231,8 @@ class LoyaltyService {
     RewardType? type,
   }) async {
     try {
-      print('[LoyaltyService] Getting all rewards...');
+      print('[LoyaltyService] 🔍 Getting all rewards...');
+      print('[LoyaltyService] Parameters: page=$page, limit=$limit, isActive=$isActive, type=$type');
 
       final queryParams = <String, dynamic>{
         'page': page,
@@ -246,29 +247,68 @@ class LoyaltyService {
         queryParams['type'] = type.name;
       }
 
+      print('[LoyaltyService] Query params: $queryParams');
+
       final response = await _apiService.get(
         '$_baseUrl/admin/rewards',
         queryParameters: queryParams,
       );
 
+      print('[LoyaltyService] Response status: ${response.statusCode}');
+      print('[LoyaltyService] Response data: ${response.data}');
+
       if (response.statusCode == 200 && response.data != null) {
         final responseData = response.data;
+        print('[LoyaltyService] Response structure: ${responseData.toString()}');
+        
         // Le backend retourne { success: true, data: { data: [...], pagination: {...} } }
         if (responseData['success'] == true && responseData['data'] != null) {
           final data = responseData['data'];
+          print('[LoyaltyService] Data structure: ${data.toString()}');
+          
           if (data['data'] is List) {
-            final List<Reward> rewards = (data['data'] as List)
-                .map((item) => Reward.fromJson(item))
+            final rawList = data['data'] as List;
+            print('[LoyaltyService] 📦 Found ${rawList.length} rewards in response');
+            
+            // Log première récompense brute
+            if (rawList.isNotEmpty) {
+              print('[LoyaltyService] 🔍 First reward RAW: ${rawList[0]}');
+            }
+            
+            final List<Reward> rewards = rawList
+                .map((item) {
+                  print('[LoyaltyService] 🔄 Parsing reward: ${item['name']}');
+                  print('[LoyaltyService]    - pointsCost: ${item['pointsCost']}');
+                  print('[LoyaltyService]    - points_cost: ${item['points_cost']}');
+                  print('[LoyaltyService]    - type: ${item['type']}');
+                  print('[LoyaltyService]    - isActive: ${item['isActive']}');
+                  
+                  final reward = Reward.fromJson(item);
+                  print('[LoyaltyService] ✅ Reward parsed: ${reward.name} - ${reward.pointsCost} pts - Active: ${reward.isActive}');
+                  return reward;
+                })
                 .toList();
+            
             print('[LoyaltyService] ✅ Retrieved ${rewards.length} rewards');
+            if (rewards.isNotEmpty) {
+              print('[LoyaltyService] 🎁 First reward: ${rewards[0].name} - ${rewards[0].pointsCost} pts');
+            }
             return rewards;
+          } else {
+            print('[LoyaltyService] ⚠️ data["data"] is not a List: ${data['data'].runtimeType}');
           }
+        } else {
+          print('[LoyaltyService] ⚠️ Invalid response structure - success: ${responseData['success']}, data: ${responseData['data']}');
         }
+      } else {
+        print('[LoyaltyService] ⚠️ Invalid response status or null data');
       }
 
+      print('[LoyaltyService] ⚠️ Returning empty list');
       return [];
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('[LoyaltyService] ❌ Error getting rewards: $e');
+      print('[LoyaltyService] Stack trace: $stackTrace');
       rethrow;
     }
   }

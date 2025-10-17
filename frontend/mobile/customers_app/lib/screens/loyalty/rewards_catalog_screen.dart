@@ -287,14 +287,6 @@ class _RewardsCatalogScreenState extends State<RewardsCatalogScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      reward.valueText,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary(context),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ],
                 ),
               ],

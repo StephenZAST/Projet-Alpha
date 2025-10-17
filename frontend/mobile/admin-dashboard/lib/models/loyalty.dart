@@ -231,16 +231,19 @@ class Reward {
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
+      // ✅ Cherche pointsCost (camelCase du backend) en premier
       pointsCost:
           json['pointsCost'] as int? ?? json['points_cost'] as int? ?? 0,
       type: RewardType.values.firstWhere(
         (e) => e.name == (json['type'] as String? ?? 'DISCOUNT'),
         orElse: () => RewardType.DISCOUNT,
       ),
-      discountValue: (json['discountValue'] as num?)?.toDouble() ??
-          (json['discount_value'] as num?)?.toDouble(),
+      // ✅ Parse discountValue qui peut être String ou num
+      discountValue: _parseDouble(json['discountValue']) ?? 
+                     _parseDouble(json['discount_value']),
       discountType:
           json['discountType'] as String? ?? json['discount_type'] as String?,
+      // ✅ Cherche isActive (camelCase) en premier
       isActive: json['isActive'] as bool? ?? json['is_active'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String? ??
           json['created_at'] as String? ??
@@ -254,6 +257,20 @@ class Reward {
           json['current_redemptions'] as int? ??
           0,
     );
+  }
+
+  // Helper pour parser un double depuis String ou num
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() {

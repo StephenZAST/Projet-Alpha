@@ -164,7 +164,11 @@ class LoyaltyController extends GetxController {
       if (resetPage) currentPage.value = 1;
 
       isLoadingRewards.value = true;
-      print('[LoyaltyController] Fetching rewards...');
+      print('[LoyaltyController] 🔍 Fetching rewards...');
+      print('[LoyaltyController]    - page: ${currentPage.value}');
+      print('[LoyaltyController]    - limit: ${itemsPerPage.value}');
+      print('[LoyaltyController]    - isActive: ${showActiveRewardsOnly.value ? true : null}');
+      print('[LoyaltyController]    - type: ${selectedRewardType.value?.name}');
 
       final result = await LoyaltyService.getAllRewards(
         page: currentPage.value,
@@ -173,12 +177,20 @@ class LoyaltyController extends GetxController {
         type: selectedRewardType.value,
       );
 
+      print('[LoyaltyController] 📦 Service returned ${result.length} rewards');
+      if (result.isNotEmpty) {
+        print('[LoyaltyController]    - First reward: ${result[0].name} - ${result[0].pointsCost} pts - Active: ${result[0].isActive}');
+      }
+
       rewards.value = result;
+      print('[LoyaltyController] 💾 Stored ${rewards.length} rewards in observable');
+      
       _applyRewardFilters();
 
       print('[LoyaltyController] ✅ Fetched ${result.length} rewards');
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('[LoyaltyController] ❌ Error fetching rewards: $e');
+      print('[LoyaltyController] Stack trace: $stackTrace');
       _showErrorSnackbar(
           'Erreur lors du chargement des récompenses', e.toString());
     } finally {
@@ -629,18 +641,33 @@ class LoyaltyController extends GetxController {
 
   /// Applique les filtres pour les récompenses
   void _applyRewardFilters() {
+    print('[LoyaltyController] 🔍 _applyRewardFilters called');
+    print('[LoyaltyController]    - rewards.length: ${rewards.length}');
+    print('[LoyaltyController]    - selectedRewardType: ${selectedRewardType.value?.name}');
+    print('[LoyaltyController]    - showActiveRewardsOnly: ${showActiveRewardsOnly.value}');
+    
     var filtered = List<Reward>.from(rewards);
+    print('[LoyaltyController]    - Initial filtered.length: ${filtered.length}');
 
     // Appliquer le filtre de type
     if (selectedRewardType.value != null) {
+      print('[LoyaltyController]    - Filtering by type: ${selectedRewardType.value?.name}');
       filtered = filtered.where((reward) {
-        return reward.type == selectedRewardType.value;
+        final matches = reward.type == selectedRewardType.value;
+        print('[LoyaltyController]      - ${reward.name}: type=${reward.type.name}, matches=$matches');
+        return matches;
       }).toList();
+      print('[LoyaltyController]    - After type filter: ${filtered.length} rewards');
     }
 
     // Appliquer le filtre actif/inactif
     if (showActiveRewardsOnly.value) {
-      filtered = filtered.where((reward) => reward.isActive).toList();
+      print('[LoyaltyController]    - Filtering by isActive=true');
+      filtered = filtered.where((reward) {
+        print('[LoyaltyController]      - ${reward.name}: isActive=${reward.isActive}');
+        return reward.isActive;
+      }).toList();
+      print('[LoyaltyController]    - After active filter: ${filtered.length} rewards');
     }
 
     // Tri par date de création (plus récent en premier)
@@ -648,7 +675,10 @@ class LoyaltyController extends GetxController {
 
     filteredRewards.value = filtered;
 
-    print('[LoyaltyController] Applied reward filters: ${filtered.length} results');
+    print('[LoyaltyController] ✅ Applied reward filters: ${filtered.length} results');
+    if (filtered.isNotEmpty) {
+      print('[LoyaltyController]    - First reward: ${filtered[0].name} - ${filtered[0].pointsCost} pts');
+    }
   }
 
   /// Applique les filtres pour les demandes de récompenses

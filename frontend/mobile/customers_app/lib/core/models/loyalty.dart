@@ -221,34 +221,37 @@ class Reward {
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
       type: _parseRewardType(json['type'] as String),
-      // ✅ Accepte points_cost, pointsRequired, points_required, ou 0 par défaut
-      pointsRequired: (json['points_cost'] ?? 
+      // ✅ Accepte pointsCost (camelCase du backend), points_cost, pointsRequired, points_required, ou 0 par défaut
+      pointsRequired: (json['pointsCost'] ??      // ← AJOUTÉ EN PREMIER!
+                       json['points_cost'] ?? 
                        json['pointsRequired'] ?? 
                        json['points_required'] ?? 
                        0) as int,
-      // ✅ Accepte discount_value, discountAmount, value, ou null
-      discountAmount: (json['discount_value'] ?? 
-                       json['discountAmount'] ?? 
-                       json['value'])?.toDouble(),
-      discountPercentage: json['discountPercentage']?.toDouble(),
-      // ✅ Accepte is_active, isActive, ou true par défaut
-      isActive: (json['is_active'] ?? json['isActive']) as bool? ?? true,
+      // ✅ Parse discountValue qui peut être String ou num
+      discountAmount: _parseDouble(json['discountValue'] ?? 
+                                    json['discount_value'] ?? 
+                                    json['discountAmount'] ?? 
+                                    json['value']),
+      discountPercentage: _parseDouble(json['discountPercentage']),
+      // ✅ Accepte isActive (camelCase), is_active, ou true par défaut
+      isActive: (json['isActive'] ??              // ← AJOUTÉ EN PREMIER!
+                 json['is_active']) as bool? ?? true,
       validUntil: json['validUntil'] != null 
           ? DateTime.parse(json['validUntil'] as String)
           : json['valid_until'] != null
               ? DateTime.parse(json['valid_until'] as String)
               : null,
-      // ✅ Accepte created_at, createdAt, ou DateTime.now()
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : json['createdAt'] != null
-              ? DateTime.parse(json['createdAt'] as String)
+      // ✅ Accepte createdAt (camelCase), created_at, ou DateTime.now()
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : json['created_at'] != null
+              ? DateTime.parse(json['created_at'] as String)
               : DateTime.now(),
-      // ✅ Accepte updated_at, updatedAt, ou DateTime.now()
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : json['updatedAt'] != null
-              ? DateTime.parse(json['updatedAt'] as String)
+      // ✅ Accepte updatedAt (camelCase), updated_at, ou DateTime.now()
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : json['updated_at'] != null
+              ? DateTime.parse(json['updated_at'] as String)
               : DateTime.now(),
     );
   }
@@ -267,6 +270,20 @@ class Reward {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
+  }
+
+  // Helper pour parser un double depuis String ou num
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   }
 
   static RewardType _parseRewardType(String type) {

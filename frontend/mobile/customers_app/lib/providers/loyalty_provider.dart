@@ -157,22 +157,48 @@ class LoyaltyProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('🔍 [LoyaltyProvider] Chargement des récompenses...');
       final response = await _apiService.get('/loyalty/admin/rewards');
+
+      debugPrint('📦 [LoyaltyProvider] Réponse reçue: ${response.toString().substring(0, 200)}...');
 
       if (response['success'] == true && response['data'] != null) {
         final rewardsData = response['data']['data'] as List;
+        debugPrint('📊 [LoyaltyProvider] ${rewardsData.length} récompenses trouvées');
+        
+        // Log de la première récompense brute
+        if (rewardsData.isNotEmpty) {
+          debugPrint('🔍 [LoyaltyProvider] Première récompense RAW: ${rewardsData[0]}');
+        }
+        
         _rewards = rewardsData
-            .map((json) => Reward.fromJson(json))
+            .map((json) {
+              debugPrint('🔄 [LoyaltyProvider] Parsing reward: ${json['name']}');
+              debugPrint('   - pointsCost: ${json['pointsCost']}');
+              debugPrint('   - points_cost: ${json['points_cost']}');
+              debugPrint('   - pointsRequired: ${json['pointsRequired']}');
+              final reward = Reward.fromJson(json);
+              debugPrint('✅ [LoyaltyProvider] Reward parsé: ${reward.name} - ${reward.pointsRequired} pts');
+              return reward;
+            })
             .where(
                 (reward) => reward.isActive) // Filtrer les récompenses actives
             .toList();
+        
+        debugPrint('✅ [LoyaltyProvider] ${_rewards.length} récompenses actives chargées');
+        if (_rewards.isNotEmpty) {
+          debugPrint('🎁 [LoyaltyProvider] Première récompense: ${_rewards[0].name} - ${_rewards[0].pointsRequired} pts');
+        }
+        
         _rewardsError = null;
       } else {
         _rewardsError = 'Erreur lors du chargement des récompenses';
+        debugPrint('❌ [LoyaltyProvider] Réponse invalide');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       _rewardsError = 'Erreur de connexion: $e';
-      print('Erreur loadRewards: $e');
+      debugPrint('❌ [LoyaltyProvider] Erreur loadRewards: $e');
+      debugPrint('Stack trace: $stackTrace');
     }
 
     _isLoadingRewards = false;

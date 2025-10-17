@@ -150,7 +150,20 @@ export class LoyaltyController {
       const isActive = req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined;
       const type = req.query.type as string;
 
+      console.log('🎯 [LoyaltyController] getAllRewards called with:', { page, limit, isActive, type });
+
       const result = await LoyaltyAdminService.getAllRewards({ page, limit, isActive, type });
+      
+      console.log('📤 [LoyaltyController] Sending response with', result.data.length, 'rewards');
+      if (result.data.length > 0) {
+        console.log('📤 [LoyaltyController] First reward in response:', {
+          id: result.data[0].id,
+          name: result.data[0].name,
+          pointsCost: result.data[0].pointsCost,
+          discountValue: result.data[0].discountValue,
+        });
+      }
+
       res.json({ success: true, data: result });
     } catch (error: any) {
       console.error('[LoyaltyController] Error getting all rewards:', error);

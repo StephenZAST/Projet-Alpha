@@ -289,8 +289,11 @@ export class LoyaltyAdminService {
       const skip = (page - 1) * limit;
 
       const where: any = {};
-      if (isActive !== undefined) where.isActive = isActive;
+      // ✅ Utiliser is_active (snake_case) pour Prisma, pas isActive (camelCase)
+      if (isActive !== undefined) where.is_active = isActive;
       if (type) where.type = type;
+
+      console.log('🔍 [LoyaltyAdminService] Fetching rewards with params:', { page, limit, isActive, type });
 
       const [rewards, total] = await Promise.all([
         prisma.rewards.findMany({
@@ -302,8 +305,38 @@ export class LoyaltyAdminService {
         prisma.rewards.count({ where }),
       ]);
 
+      console.log(`📦 [LoyaltyAdminService] Found ${rewards.length} rewards from DB`);
+      
+      // Log des données brutes de la première récompense
+      if (rewards.length > 0) {
+        console.log('🔍 [LoyaltyAdminService] First reward RAW data from Prisma:', {
+          id: rewards[0].id,
+          name: rewards[0].name,
+          points_cost: rewards[0].points_cost,
+          discount_value: rewards[0].discount_value,
+          discount_type: rewards[0].discount_type,
+          is_active: rewards[0].is_active,
+          type: rewards[0].type,
+        });
+      }
+
+      const formattedRewards = rewards.map(this.formatReward);
+      
+      // Log des données formatées de la première récompense
+      if (formattedRewards.length > 0) {
+        console.log('✅ [LoyaltyAdminService] First reward FORMATTED data:', {
+          id: formattedRewards[0].id,
+          name: formattedRewards[0].name,
+          pointsCost: formattedRewards[0].pointsCost,
+          discountValue: formattedRewards[0].discountValue,
+          discountType: formattedRewards[0].discountType,
+          isActive: formattedRewards[0].isActive,
+          type: formattedRewards[0].type,
+        });
+      }
+
       return {
-        data: rewards.map(this.formatReward),
+        data: formattedRewards,
         pagination: {
           page,
           limit,
@@ -536,13 +569,14 @@ export class LoyaltyAdminService {
       id: reward.id,
       name: reward.name,
       description: reward.description,
-      pointsCost: reward.pointsCost,
+      // ✅ Lire depuis Prisma (snake_case) et transformer en camelCase pour l'API
+      pointsCost: reward.points_cost || 0,
       type: reward.type,
-      discountValue: reward.discountValue,
-      discountType: reward.discountType,
-      isActive: reward.isActive,
-      maxRedemptions: reward.maxRedemptions,
-      currentRedemptions: reward.currentRedemptions || 0,
+      discountValue: reward.discount_value || null,
+      discountType: reward.discount_type || null,
+      isActive: reward.is_active !== undefined ? reward.is_active : true,
+      maxRedemptions: reward.max_redemptions || null,
+      currentRedemptions: reward.current_redemptions || 0,
       createdAt: reward.created_at,
       updatedAt: reward.updated_at,
     };

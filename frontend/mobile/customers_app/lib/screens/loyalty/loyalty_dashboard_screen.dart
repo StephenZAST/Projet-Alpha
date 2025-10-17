@@ -523,13 +523,6 @@ class _LoyaltyDashboardScreenState extends State<LoyaltyDashboardScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  reward.valueText,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary(context),
-                  ),
-                ),
               ],
             ),
           ],
