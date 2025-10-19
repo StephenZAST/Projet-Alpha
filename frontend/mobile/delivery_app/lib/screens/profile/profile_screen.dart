@@ -31,7 +31,13 @@ class ProfileScreen extends StatelessWidget {
             pinned: true,
             backgroundColor: Colors.transparent,
             elevation: 0,
-            leading: const SizedBox.shrink(),
+            leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back_ios,
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              ),
+              onPressed: () => Get.back(),
+            ),
             actions: const [],
           ),
 
