@@ -67,11 +67,20 @@ class AuthService extends GetxService {
   /// Charge la session sauvegardée depuis le stockage local
   Future<void> _loadSavedSession() async {
     try {
+      debugPrint('🔍 [AuthService] Chargement de la session sauvegardée...');
+
       final savedToken = _storage.read<String>(StorageKeys.authToken);
       final savedUserData =
           _storage.read<Map<String, dynamic>>(StorageKeys.userProfile);
 
-      if (savedToken != null && savedUserData != null) {
+      if (savedToken != null &&
+          savedToken.isNotEmpty &&
+          savedUserData != null) {
+        debugPrint(
+            '📦 [AuthService] Token trouvé: ${savedToken.substring(0, 20)}...');
+        debugPrint(
+            '👤 [AuthService] Données utilisateur: ${savedUserData['email']}');
+
         _token.value = savedToken;
         _currentUser.value = DeliveryUser.fromJson(savedUserData);
         _isAuthenticated.value = true;
@@ -79,14 +88,22 @@ class AuthService extends GetxService {
         // Configure le token dans ApiService
         _apiService.setAuthToken(savedToken);
 
-        debugPrint('✅ Session restaurée pour: ${_currentUser.value?.email}');
+        debugPrint(
+            '✅ [AuthService] Session restaurée pour: ${_currentUser.value?.email}');
 
-        // Vérifie la validité du token
-        await _validateToken();
+        // Vérifie la validité du token en arrière-plan (ne bloque pas)
+        _validateToken().catchError((e) {
+          debugPrint(
+              '⚠️ [AuthService] Erreur validation token (non-bloquante): $e');
+          // Ne pas déconnecter si la validation échoue (l'utilisateur peut être offline)
+        });
+      } else {
+        debugPrint('⚠️ [AuthService] Aucune session sauvegardée trouvée');
+        _isAuthenticated.value = false;
       }
     } catch (e) {
-      debugPrint('❌ Erreur lors du chargement de la session: $e');
-      await logout();
+      debugPrint('❌ [AuthService] Erreur lors du chargement de la session: $e');
+      _isAuthenticated.value = false;
     }
   }
 

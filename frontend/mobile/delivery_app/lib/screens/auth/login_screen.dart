@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 import '../../constants.dart';
 import '../../controllers/auth_controller.dart';
@@ -19,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _storage = GetStorage();
   
   bool _obscurePassword = true;
   bool _rememberMe = false;
@@ -28,6 +30,14 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// Bascule le thème
+  void _toggleTheme() {
+    final currentTheme = Get.isDarkMode;
+    final newTheme = currentTheme ? 'light' : 'dark';
+    _storage.write(StorageKeys.themeMode, newTheme);
+    Get.changeThemeMode(currentTheme ? ThemeMode.light : ThemeMode.dark);
   }
 
   @override
@@ -41,7 +51,13 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             children: [
-              SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+              // Bouton de switch theme en haut à droite
+              Align(
+                alignment: Alignment.topRight,
+                child: _buildThemeToggle(isDark),
+              ),
+              
+              SizedBox(height: MediaQuery.of(context).size.height * 0.05),
               
               // Logo et titre
               _buildHeader(isDark),
@@ -58,6 +74,29 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Bouton de switch theme
+  Widget _buildThemeToggle(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: isDark 
+              ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
+              : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity),
+        ),
+      ),
+      child: IconButton(
+        icon: Icon(
+          isDark ? Icons.light_mode : Icons.dark_mode,
+          color: isDark ? AppColors.warning : AppColors.primary,
+        ),
+        onPressed: _toggleTheme,
+        tooltip: isDark ? 'Mode clair' : 'Mode sombre',
       ),
     );
   }

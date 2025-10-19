@@ -13,7 +13,42 @@ export class DeliveryService {
         },
         include: {
           service_types: true,
-          order_metadata: true
+          order_metadata: true,
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          },
+          address: {
+            select: {
+              id: true,
+              street: true,
+              city: true,
+              postal_code: true,
+              gps_latitude: true,
+              gps_longitude: true,
+              name: true
+            }
+          },
+          order_items: {
+            include: {
+              article: {
+                select: {
+                  id: true,
+                  name: true,
+                  article_categories: {
+                    select: {
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       });
       return orders as unknown as Order[];
@@ -32,12 +67,101 @@ export class DeliveryService {
         },
         include: {
           service_types: true,
-          order_metadata: true
+          order_metadata: true,
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          },
+          address: {
+            select: {
+              id: true,
+              street: true,
+              city: true,
+              postal_code: true,
+              gps_latitude: true,
+              gps_longitude: true,
+              name: true
+            }
+          },
+          order_items: {
+            include: {
+              article: {
+                select: {
+                  id: true,
+                  name: true,
+                  article_categories: {
+                    select: {
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       });
       return orders as unknown as Order[];
     } catch (error) {
       console.error('Get assigned orders error:', error);
+      throw error;
+    }
+  }
+
+  static async getDraftOrders(userId: string): Promise<Order[]> {
+    try {
+      const orders = await prisma.orders.findMany({
+        where: {
+          userId,
+          status: 'DRAFT'
+        },
+        include: {
+          service_types: true,
+          order_metadata: true,
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          },
+          address: {
+            select: {
+              id: true,
+              street: true,
+              city: true,
+              postal_code: true,
+              gps_latitude: true,
+              gps_longitude: true,
+              name: true
+            }
+          },
+          order_items: {
+            include: {
+              article: {
+                select: {
+                  id: true,
+                  name: true,
+                  article_categories: {
+                    select: {
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+      return orders as unknown as Order[];
+    } catch (error) {
+      console.error('Get draft orders error:', error);
       throw error;
     }
   }
@@ -51,7 +175,42 @@ export class DeliveryService {
         },
         include: {
           service_types: true,
-          order_metadata: true
+          order_metadata: true,
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          },
+          address: {
+            select: {
+              id: true,
+              street: true,
+              city: true,
+              postal_code: true,
+              gps_latitude: true,
+              gps_longitude: true,
+              name: true
+            }
+          },
+          order_items: {
+            include: {
+              article: {
+                select: {
+                  id: true,
+                  name: true,
+                  article_categories: {
+                    select: {
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       });
       return orders as unknown as Order[];
@@ -90,7 +249,42 @@ export class DeliveryService {
         },
         include: {
           service_types: true,
-          order_metadata: true
+          order_metadata: true,
+          user: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true,
+              email: true,
+              phone: true
+            }
+          },
+          address: {
+            select: {
+              id: true,
+              street: true,
+              city: true,
+              postal_code: true,
+              gps_latitude: true,
+              gps_longitude: true,
+              name: true
+            }
+          },
+          order_items: {
+            include: {
+              article: {
+                select: {
+                  id: true,
+                  name: true,
+                  article_categories: {
+                    select: {
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       });
 

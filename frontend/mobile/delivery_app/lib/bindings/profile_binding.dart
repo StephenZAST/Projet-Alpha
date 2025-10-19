@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/delivery_service.dart';
 import '../controllers/profile_controller.dart';
+import '../controllers/settings_controller.dart';
 
 /// 🔗 Binding Profil - Alpha Delivery App
 ///
@@ -20,6 +21,12 @@ class ProfileBinding extends Bindings {
     // Contrôleur du profil
     Get.lazyPut<ProfileController>(
       () => ProfileController(),
+      fenix: true,
+    );
+
+    // Contrôleur des paramètres
+    Get.lazyPut<SettingsController>(
+      () => SettingsController(),
       fenix: true,
     );
 

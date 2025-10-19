@@ -23,17 +23,40 @@ class ProfileScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           // =================================================================
-          // 📱 APP BAR AVEC PROFIL
+          // 📱 SIMPLE APP BAR
           // =================================================================
-          _buildSliverAppBar(context, controller, isDark),
+          SliverAppBar(
+            expandedHeight: 0,
+            floating: false,
+            pinned: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: const SizedBox.shrink(),
+            actions: const [],
+          ),
+
+          // =================================================================
+          // 👤 HEADER PROFIL GLASSMORPHISM
+          // =================================================================
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _buildProfileHeader(context, controller, isDark),
+            ),
+          ),
 
           // =================================================================
           // 📊 CONTENU PRINCIPAL
           // =================================================================
           SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                const SizedBox(height: AppSpacing.md),
+
                 // Statut de disponibilité
                 _buildAvailabilitySection(controller, isDark),
                 const SizedBox(height: AppSpacing.lg),
@@ -63,53 +86,58 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 📱 App Bar avec photo de profil
-  Widget _buildSliverAppBar(
+  /// 👤 Header profil refactorisé - Glassmorphism
+  Widget _buildProfileHeader(
     BuildContext context,
     ProfileController controller,
     bool isDark,
   ) {
-    return SliverAppBar(
-      expandedHeight: 200.0,
-      floating: false,
-      pinned: true,
-      backgroundColor: AppColors.primary,
-      flexibleSpace: FlexibleSpaceBar(
-        title: Obx(() => Text(
-              controller.user.value?.fullName ?? 'Profil',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            )),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primary,
-                AppColors.primaryDark,
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: AppSpacing.xl),
-                  Obx(() => _buildProfileAvatar(controller, isDark)),
-                  const SizedBox(height: AppSpacing.md),
-                  Obx(() => Column(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withOpacity(0.15),
+            AppColors.primaryDark.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(MobileDimensions.radiusLG),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.2),
+          width: 1.5,
+        ),
+        boxShadow: AppShadows.glassmorphism,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          children: [
+            // ============================================================
+            // 🔝 TOP ROW : Avatar + Infos + Actions
+            // ============================================================
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Avatar
+                Obx(() => _buildProfileAvatar(controller, isDark)),
+                const SizedBox(width: AppSpacing.lg),
+
+                // Infos (Nom + Rôle)
+                Expanded(
+                  child: Obx(() => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             controller.user.value?.fullName ?? 'Livreur',
-                            style: AppTextStyles.h3.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                            style: AppTextStyles.h4.copyWith(
+                              color: isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Container(
@@ -118,68 +146,218 @@ class ProfileScreen extends StatelessWidget {
                               vertical: AppSpacing.xs,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: AppColors.primary.withOpacity(0.15),
                               borderRadius: AppRadius.radiusSM,
+                              border: Border.all(
+                                color: AppColors.primary.withOpacity(0.3),
+                              ),
                             ),
                             child: Text(
                               controller.user.value?.role.toUpperCase() ??
                                   'LIVREUR',
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.white,
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                         ],
                       )),
-                ],
-              ),
+                ),
+
+                // Boutons d'action (Edit + Menu)
+                Column(
+                  children: [
+                    _buildHeaderActionButton(
+                      Icons.edit,
+                      AppColors.info,
+                      () => _showEditProfileDialog(controller),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _buildHeaderActionButton(
+                      Icons.more_vert,
+                      AppColors.gray400,
+                      () => _showHeaderMenu(controller),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ),
-        ),
-      ),
-      actions: [
-        IconButton(
-          onPressed: () => _showEditProfileDialog(controller),
-          icon: const Icon(Icons.edit, color: Colors.white),
-        ),
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.white),
-          onSelected: (value) => _handleMenuAction(value, controller),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'settings',
-              child: Row(
-                children: [
-                  Icon(Icons.settings),
-                  SizedBox(width: AppSpacing.sm),
-                  Text('Paramètres'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'help',
-              child: Row(
-                children: [
-                  Icon(Icons.help),
-                  SizedBox(width: AppSpacing.sm),
-                  Text('Aide'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'logout',
-              child: Row(
-                children: [
-                  Icon(Icons.logout, color: Colors.red),
-                  SizedBox(width: AppSpacing.sm),
-                  Text('Déconnexion', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            // ============================================================
+            // 📊 STATS RAPIDES (2 colonnes)
+            // ============================================================
+            Obx(() => Row(
+                  children: [
+                    Expanded(
+                      child: _buildQuickStatItem(
+                        'Livraisons',
+                        '${controller.stats.value?.totalDeliveries ?? 0}',
+                        Icons.local_shipping,
+                        AppColors.primary,
+                        isDark,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _buildQuickStatItem(
+                        'Revenus',
+                        '${controller.getFormattedStats()['totalEarnings'] ?? '0'} FCFA',
+                        Icons.payments,
+                        AppColors.success,
+                        isDark,
+                      ),
+                    ),
+                  ],
+                )),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // ============================================================
+            // 🟢 STATUT DISPONIBILITÉ
+            // ============================================================
+            Obx(() => Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: controller.isAvailable.value
+                        ? AppColors.success.withOpacity(0.1)
+                        : AppColors.gray400.withOpacity(0.1),
+                    borderRadius: AppRadius.radiusMD,
+                    border: Border.all(
+                      color: controller.isAvailable.value
+                          ? AppColors.success.withOpacity(0.3)
+                          : AppColors.gray400.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        controller.isAvailable.value
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        color: controller.isAvailable.value
+                            ? AppColors.success
+                            : AppColors.gray400,
+                        size: 24,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              controller.isAvailable.value
+                                  ? 'Disponible'
+                                  : 'Non disponible',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              controller.isAvailable.value
+                                  ? 'Prêt pour les livraisons'
+                                  : 'Pas de nouvelles commandes',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark
+                                    ? AppColors.gray400
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: controller.isAvailable.value,
+                        onChanged: (value) =>
+                            controller.toggleAvailability(),
+                        activeColor: AppColors.success,
+                      ),
+                    ],
+                  ),
+                )),
           ],
         ),
-      ],
+      ),
+    );
+  }
+
+  /// 🔘 Bouton d'action du header
+  Widget _buildHeaderActionButton(
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  /// 📊 Item stat rapide
+  Widget _buildQuickStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    bool isDark,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: AppRadius.radiusMD,
+        border: Border.all(
+          color: color.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            value,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
@@ -188,13 +366,13 @@ class ProfileScreen extends StatelessWidget {
     return Stack(
       children: [
         Container(
-          width: 80,
-          height: 80,
+          width: 70,
+          height: 70,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(40),
+            color: AppColors.primary.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(35),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.primary.withOpacity(0.4),
               width: 2,
             ),
           ),
@@ -211,7 +389,10 @@ class ProfileScreen extends StatelessWidget {
                   ? AppColors.success
                   : AppColors.gray400,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white, width: 2),
+              border: Border.all(
+                color: isDark ? AppColors.gray800 : Colors.white,
+                width: 2,
+              ),
             ),
             child: Icon(
               controller.isAvailable.value ? Icons.check : Icons.pause,
@@ -230,8 +411,47 @@ class ProfileScreen extends StatelessWidget {
       child: Text(
         controller.user.value?.initials ?? 'L',
         style: AppTextStyles.h2.copyWith(
-          color: Colors.white,
+          color: AppColors.primary,
           fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  /// 🎬 Menu header
+  void _showHeaderMenu(ProfileController controller) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Menu'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Paramètres'),
+              onTap: () {
+                Get.back();
+                AppRoutes.toSettings();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.help),
+              title: const Text('Aide'),
+              onTap: () {
+                Get.back();
+                _showHelpDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Déconnexion',
+                  style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Get.back();
+                _showLogoutDialog(controller);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -240,51 +460,70 @@ class ProfileScreen extends StatelessWidget {
   /// 🟢 Section statut de disponibilité
   Widget _buildAvailabilitySection(ProfileController controller, bool isDark) {
     return Obx(() => GlassContainer(
-          child: Row(
+          child: Column(
             children: [
-              Icon(
+              Row(
+                children: [
+                  Icon(
+                    controller.isAvailable.value
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: controller.isAvailable.value
+                        ? AppColors.success
+                        : AppColors.gray400,
+                    size: 32,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          controller.isAvailable.value
+                              ? 'Disponible'
+                              : 'Non disponible',
+                          style: AppTextStyles.h4.copyWith(
+                            color: isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          controller.isAvailable.value
+                              ? 'Pour livraisons'
+                              : 'Pas de commandes',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark
+                                ? AppColors.gray400
+                                : AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Switch(
+                    value: controller.isAvailable.value,
+                    onChanged: (value) => controller.toggleAvailability(),
+                    activeColor: AppColors.success,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
                 controller.isAvailable.value
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_off,
-                color: controller.isAvailable.value
-                    ? AppColors.success
-                    : AppColors.gray400,
-                size: 32,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      controller.isAvailable.value
-                          ? 'Disponible pour livraisons'
-                          : 'Non disponible',
-                      style: AppTextStyles.h4.copyWith(
-                        color: isDark
-                            ? AppColors.textLight
-                            : AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      controller.isAvailable.value
-                          ? 'Vous recevrez de nouvelles commandes'
-                          : 'Vous ne recevrez pas de nouvelles commandes',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark
-                            ? AppColors.gray300
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                    ? 'Vous recevrez de nouvelles commandes'
+                    : 'Vous ne recevrez pas de nouvelles commandes',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.gray300 : AppColors.textSecondary,
                 ),
-              ),
-              Switch(
-                value: controller.isAvailable.value,
-                onChanged: (value) => controller.toggleAvailability(),
-                activeColor: AppColors.success,
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -375,6 +614,7 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: AppSpacing.sm),
@@ -384,6 +624,9 @@ class ProfileScreen extends StatelessWidget {
               color: color,
               fontWeight: FontWeight.bold,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -392,6 +635,8 @@ class ProfileScreen extends StatelessWidget {
               color: isDark ? AppColors.gray300 : AppColors.textSecondary,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -541,16 +786,19 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 28),
+            Icon(icon, color: color, size: 24),
             const SizedBox(height: AppSpacing.sm),
             Text(
               label,
-              style: AppTextStyles.bodyMedium.copyWith(
+              style: AppTextStyles.bodySmall.copyWith(
                 color: color,
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -671,24 +919,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 🎬 Gestion des actions du menu
-  void _handleMenuAction(String action, ProfileController controller) {
-    switch (action) {
-      case 'settings':
-        AppRoutes.toSettings();
-        break;
-      case 'help':
-        _showHelpDialog();
-        break;
-      case 'logout':
-        _showLogoutDialog(controller);
-        break;
-    }
-  }
-
   /// ✏️ Dialog d'édition de profil
   void _showEditProfileDialog(ProfileController controller) {
-    // TODO: Implémenter le dialog d'édition
     Get.snackbar(
       'Édition',
       'Fonctionnalité d\'édition à implémenter',
@@ -697,9 +929,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  ///  Afficher l'historique des livraisons
+  /// Afficher l'historique des livraisons
   void _showDeliveryHistory(ProfileController controller) {
-    // TODO: Implémenter l'historique
     Get.snackbar(
       'Historique',
       'Historique des livraisons à implémenter',
@@ -710,7 +941,6 @@ class ProfileScreen extends StatelessWidget {
 
   /// 💰 Afficher les détails des gains
   void _showEarningsDetails(ProfileController controller) {
-    // TODO: Implémenter les détails des gains
     Get.snackbar(
       'Gains',
       'Détails des gains à implémenter',
@@ -721,7 +951,6 @@ class ProfileScreen extends StatelessWidget {
 
   /// 📞 Contacter le support
   void _contactSupport() {
-    // TODO: Implémenter le contact support
     Get.snackbar(
       'Support',
       'Contact support à implémenter',
@@ -732,7 +961,6 @@ class ProfileScreen extends StatelessWidget {
 
   /// ⭐ Évaluer l'application
   void _rateApp() {
-    // TODO: Implémenter l'évaluation
     Get.snackbar(
       'Évaluation',
       'Évaluation de l\'app à implémenter',
@@ -743,7 +971,6 @@ class ProfileScreen extends StatelessWidget {
 
   /// 🔒 Paramètres de confidentialité
   void _showPrivacySettings() {
-    // TODO: Implémenter les paramètres de confidentialité
     Get.snackbar(
       'Confidentialité',
       'Paramètres de confidentialité à implémenter',
@@ -821,6 +1048,8 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
+
+
 
   /// 📅 Formatage des dates
   String _formatDate(DateTime date) {

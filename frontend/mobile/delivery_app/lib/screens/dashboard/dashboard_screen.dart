@@ -6,7 +6,7 @@ import '../../controllers/dashboard_controller.dart';
 import '../../controllers/auth_controller.dart';
 
 /// 🏠 Écran Dashboard - Alpha Delivery App
-/// 
+///
 /// Dashboard principal mobile-first pour les livreurs
 /// avec statistiques, commandes du jour et actions rapides.
 class DashboardScreen extends StatelessWidget {
@@ -15,7 +15,13 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
+    // Calcul intelligent du bottom padding
+    // Navigation bar (70) + FAB spacing (8) + padding de sécurité (8)
+    final bottomNavHeight = 70.0;
+    final bottomPadding =
+        MediaQuery.of(context).padding.bottom + bottomNavHeight + 16;
+
     return Scaffold(
       backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
       body: SafeArea(
@@ -26,32 +32,32 @@ class DashboardScreen extends StatelessWidget {
             slivers: [
               // App Bar personnalisée
               _buildSliverAppBar(isDark),
-              
+
               // Contenu principal avec padding sécurisé
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
                   AppSpacing.md,
                   AppSpacing.sm,
                   AppSpacing.md,
-                  MediaQuery.of(context).padding.bottom + 120, // Espace dynamique pour bottom nav + FAB
+                  bottomPadding,
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Statistiques rapides
                     _buildQuickStats(isDark),
-                    
+
                     const SizedBox(height: AppSpacing.lg),
-                    
+
                     // Actions rapides
                     _buildQuickActions(isDark),
-                    
+
                     const SizedBox(height: AppSpacing.lg),
-                    
+
                     // Commandes du jour
                     _buildTodayOrders(isDark),
-                    
+
                     const SizedBox(height: AppSpacing.lg),
-                    
+
                     // Statut et disponibilité
                     _buildStatusSection(isDark),
                   ]),
@@ -61,10 +67,10 @@ class DashboardScreen extends StatelessWidget {
           ),
         ),
       ),
-      
+
       // Navigation bottom
       bottomNavigationBar: _buildBottomNavigation(isDark),
-      
+
       // FAB pour action principale
       floatingActionButton: _buildFloatingActionButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -74,12 +80,13 @@ class DashboardScreen extends StatelessWidget {
   /// App Bar avec glassmorphism
   Widget _buildSliverAppBar(bool isDark) {
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: 140,
       floating: true,
       pinned: true,
       backgroundColor: Colors.transparent,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.parallax,
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -91,68 +98,87 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
-        ),
-        title: GetBuilder<AuthController>(
-          builder: (authController) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Bonjour,',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: isDark ? AppColors.gray300 : AppColors.gray600,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xs,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: authController.roleColor.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: authController.roleColor.withOpacity(0.3),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: GetBuilder<AuthController>(
+                builder: (authController) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Row(
                         children: [
-                          Icon(
-                            authController.roleIcon,
-                            size: 12,
-                            color: authController.roleColor,
-                          ),
-                          const SizedBox(width: 4),
                           Text(
-                            authController.roleDisplayName,
-                            style: AppTextStyles.caption.copyWith(
-                              color: authController.roleColor,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 10,
+                            'Bonjour,',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark
+                                  ? AppColors.gray300
+                                  : AppColors.gray600,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.xs,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    authController.roleColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color:
+                                      authController.roleColor.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    authController.roleIcon,
+                                    size: 12,
+                                    color: authController.roleColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    authController.roleDisplayName,
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: authController.roleColor,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 10,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                Text(
-                  authController.currentUserName,
-                  style: AppTextStyles.h4.copyWith(
-                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            );
-          },
+                      const SizedBox(height: 4),
+                      Flexible(
+                        child: Text(
+                          authController.currentUserName,
+                          style: AppTextStyles.h4.copyWith(
+                            color: isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
         ),
-        titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
       ),
       actions: [
         // Notifications
@@ -182,7 +208,7 @@ class DashboardScreen extends StatelessWidget {
             // TODO: Ouvrir les notifications
           },
         ),
-        
+
         // Menu profil
         PopupMenuButton<String>(
           icon: Icon(
@@ -212,7 +238,8 @@ class DashboardScreen extends StatelessWidget {
               value: 'logout',
               child: ListTile(
                 leading: Icon(Icons.logout, color: AppColors.error),
-                title: Text('Déconnexion', style: TextStyle(color: AppColors.error)),
+                title: Text('Déconnexion',
+                    style: TextStyle(color: AppColors.error)),
                 contentPadding: EdgeInsets.zero,
               ),
             ),
@@ -229,7 +256,7 @@ class DashboardScreen extends StatelessWidget {
         if (controller.isLoading) {
           return _buildStatsLoading(isDark);
         }
-        
+
         return Row(
           children: [
             Expanded(
@@ -268,16 +295,18 @@ class DashboardScreen extends StatelessWidget {
   }
 
   /// Card de statistique
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, bool isDark) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
         borderRadius: AppRadius.radiusMD,
         border: Border.all(
-          color: isDark 
+          color: isDark
               ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
-              : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity),
+              : AppColors.gray200
+                  .withOpacity(AppColors.glassBorderLightOpacity),
         ),
       ),
       child: Column(
@@ -377,7 +406,8 @@ class DashboardScreen extends StatelessWidget {
   }
 
   /// Bouton d'action
-  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap, bool isDark) {
+  Widget _buildActionButton(String title, IconData icon, Color color,
+      VoidCallback onTap, bool isDark) {
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadius.radiusMD,
@@ -422,7 +452,8 @@ class DashboardScreen extends StatelessWidget {
                   child: Text(
                     'Commandes récentes',
                     style: AppTextStyles.h4.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -439,17 +470,20 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            
+
             // Liste des commandes avec gestion des données et scroll interne
             Container(
               height: 250, // Hauteur fixe pour éviter l'overflow
+              clipBehavior: Clip.hardEdge, // Coupe les contenus qui débordent
               decoration: BoxDecoration(
                 color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
                 borderRadius: AppRadius.radiusMD,
                 border: Border.all(
-                  color: isDark 
-                      ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
-                      : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity),
+                  color: isDark
+                      ? AppColors.gray700
+                          .withOpacity(AppColors.glassBorderDarkOpacity)
+                      : AppColors.gray200
+                          .withOpacity(AppColors.glassBorderLightOpacity),
                 ),
               ),
               child: controller.isLoading
@@ -469,13 +503,17 @@ class DashboardScreen extends StatelessWidget {
                                 Icon(
                                   Icons.inbox_outlined,
                                   size: 48,
-                                  color: isDark ? AppColors.gray600 : AppColors.gray400,
+                                  color: isDark
+                                      ? AppColors.gray600
+                                      : AppColors.gray400,
                                 ),
                                 const SizedBox(height: AppSpacing.sm),
                                 Text(
                                   'Aucune commande récente',
                                   style: AppTextStyles.bodyMedium.copyWith(
-                                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                                    color: isDark
+                                        ? AppColors.gray400
+                                        : AppColors.gray600,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -484,10 +522,16 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         )
                       : ListView.separated(
-                          physics: const BouncingScrollPhysics(), // Scroll interne
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          itemCount: controller.todayOrders.length, // Pas de limite, scroll interne
-                          separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
+                          physics:
+                              const BouncingScrollPhysics(), // Scroll interne
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.sm,
+                          ),
+                          itemCount: controller.todayOrders
+                              .length, // Pas de limite, scroll interne
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: AppSpacing.sm),
                           itemBuilder: (context, index) {
                             final order = controller.todayOrders[index];
                             return _buildOrderCard(order, isDark);
@@ -505,7 +549,6 @@ class DashboardScreen extends StatelessWidget {
     // Gère le cas où order est un DeliveryOrder ou autre type
     String orderId = 'N/A';
     String orderStatus = 'En cours';
-    String customerName = 'Client';
     String amount = '';
     Color statusColor = AppColors.primary;
 
@@ -514,8 +557,8 @@ class DashboardScreen extends StatelessWidget {
         // Si c'est un DeliveryOrder
         if (order.runtimeType.toString().contains('DeliveryOrder')) {
           orderId = order.shortId ?? order.id?.substring(0, 8) ?? 'N/A';
-          orderStatus = order.statusDisplayName ?? order.status?.toString() ?? 'En cours';
-          customerName = order.customerName ?? 'Client';
+          orderStatus =
+              order.statusDisplayName ?? order.status?.toString() ?? 'En cours';
           amount = order.formattedAmount ?? '';
           statusColor = order.statusColor ?? AppColors.primary;
         } else {
@@ -531,12 +574,12 @@ class DashboardScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark 
+        color: isDark
             ? AppColors.gray800.withOpacity(0.5)
             : AppColors.gray100.withOpacity(0.5),
         borderRadius: AppRadius.radiusSM,
         border: Border.all(
-          color: isDark 
+          color: isDark
               ? AppColors.gray600.withOpacity(0.3)
               : AppColors.gray300.withOpacity(0.3),
         ),
@@ -553,7 +596,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          
+
           // Informations commande
           Expanded(
             child: Column(
@@ -586,7 +629,7 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Action button
           IconButton(
             onPressed: () {
@@ -620,9 +663,10 @@ class DashboardScreen extends StatelessWidget {
         color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
         borderRadius: AppRadius.radiusMD,
         border: Border.all(
-          color: isDark 
+          color: isDark
               ? AppColors.gray700.withOpacity(AppColors.glassBorderDarkOpacity)
-              : AppColors.gray200.withOpacity(AppColors.glassBorderLightOpacity),
+              : AppColors.gray200
+                  .withOpacity(AppColors.glassBorderLightOpacity),
         ),
       ),
       child: Column(
@@ -636,7 +680,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          
+
           // Statut de disponibilité
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -655,7 +699,8 @@ class DashboardScreen extends StatelessWidget {
                   Text(
                     'Disponible',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -679,41 +724,60 @@ class DashboardScreen extends StatelessWidget {
       color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
       shape: const CircularNotchedRectangle(),
       notchMargin: 8,
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildNavItem(Icons.home, 'Accueil', true, () {}),
-          _buildNavItem(Icons.list_alt, 'Commandes', false, () => Get.toNamed('/orders')),
-          const SizedBox(width: 40), // Espace pour le FAB
-          _buildNavItem(Icons.map, 'Carte', false, () => Get.toNamed('/map')),
-          _buildNavItem(Icons.person, 'Profil', false, () => Get.toNamed('/profile')),
+          Expanded(
+            child: _buildNavItem(Icons.home, 'Accueil', true, () {}),
+          ),
+          Expanded(
+            child: _buildNavItem(
+                Icons.list_alt, 'Cmd', false, () => Get.toNamed('/orders')),
+          ),
+          const SizedBox(width: 50), // Espace pour le FAB
+          Expanded(
+            child: _buildNavItem(
+                Icons.map, 'Carte', false, () => Get.toNamed('/map')),
+          ),
+          Expanded(
+            child: _buildNavItem(
+                Icons.person, 'Profil', false, () => Get.toNamed('/profile')),
+          ),
         ],
       ),
     );
   }
 
   /// Item de navigation
-  Widget _buildNavItem(IconData icon, String label, bool isActive, VoidCallback onTap) {
+  Widget _buildNavItem(
+      IconData icon, String label, bool isActive, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               color: isActive ? AppColors.primary : AppColors.gray500,
-              size: 24,
+              size: 20,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               label,
               style: AppTextStyles.caption.copyWith(
                 color: isActive ? AppColors.primary : AppColors.gray500,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 8,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ],
         ),

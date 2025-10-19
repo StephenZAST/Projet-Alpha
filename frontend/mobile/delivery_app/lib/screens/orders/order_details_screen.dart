@@ -397,8 +397,10 @@ class OrderDetailsScreen extends StatelessWidget {
     );
   }
 
-  /// 📍 Section adresse avec navigation
+  /// 📍 Section adresse avec navigation - PRIORITÉ AUX COORDONNÉES GPS
   Widget _buildAddressSection(DeliveryOrder order, bool isDark) {
+    final hasGPS = order.address.hasCoordinates;
+
     return GlassContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,98 +408,199 @@ class OrderDetailsScreen extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Adresse de livraison',
+                'Emplacement de livraison',
                 style: AppTextStyles.h4.copyWith(
                   color: isDark ? AppColors.textLight : AppColors.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const Spacer(),
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => _copyAddress(order.address.fullAddress),
-                    child: Container(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: AppColors.info.withOpacity(0.1),
-                        borderRadius: AppRadius.radiusSM,
-                      ),
-                      child: Icon(
-                        Icons.copy,
-                        color: AppColors.info,
-                        size: 20,
-                      ),
+              if (hasGPS)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.2),
+                    borderRadius: AppRadius.radiusXS,
+                  ),
+                  child: Text(
+                    'GPS',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
-                  GestureDetector(
-                    onTap: () => _navigateToAddress(order.address),
-                    child: Container(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: AppRadius.radiusSM,
-                      ),
-                      child: Icon(
-                        Icons.navigation,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // PRIORITÉ 1 : Coordonnées GPS (si disponibles)
+          if (hasGPS) ...[
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: AppRadius.radiusSM,
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.satellite,
                         color: AppColors.primary,
-                        size: 20,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Coordonnées GPS',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    '${order.address.latitude!.toStringAsFixed(6)}, ${order.address.longitude!.toStringAsFixed(6)}',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _copyAddress(
+                          '${order.address.latitude!.toStringAsFixed(6)}, ${order.address.longitude!.toStringAsFixed(6)}',
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            color: AppColors.info.withOpacity(0.1),
+                            borderRadius: AppRadius.radiusXS,
+                          ),
+                          child: Icon(
+                            Icons.copy,
+                            color: AppColors.info,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      GestureDetector(
+                        onTap: () => _navigateToAddress(order.address),
+                        child: Container(
+                          padding: const EdgeInsets.all(AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: AppRadius.radiusXS,
+                          ),
+                          child: Icon(
+                            Icons.navigation,
+                            color: AppColors.primary,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ] else ...[
+            // Pas de GPS disponible
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.1),
+                borderRadius: AppRadius.radiusSM,
+                border: Border.all(
+                  color: AppColors.warning.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_outlined,
+                    color: AppColors.warning,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Coordonnées GPS non disponibles',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.location_on,
-                color: AppColors.primary,
-                size: 24,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (order.address.name != null) ...[
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
+          // PRIORITÉ 2 : Informations supplémentaires de l'adresse
+          if (order.address.fullAddress.isNotEmpty)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.location_on,
+                  color: isDark ? AppColors.gray400 : AppColors.gray600,
+                  size: 20,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        order.address.name!,
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          color: isDark
-                              ? AppColors.textLight
-                              : AppColors.textPrimary,
+                        'Informations supplémentaires',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.gray400 : AppColors.gray600,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                    ],
-                    Text(
-                      order.address.fullAddress,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark
-                            ? AppColors.gray300
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                    if (order.address.hasCoordinates) ...[
-                      const SizedBox(height: AppSpacing.xs),
+                      if (order.address.name != null) ...[
+                        Text(
+                          order.address.name!,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: isDark
+                                ? AppColors.textLight
+                                : AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                      ],
                       Text(
-                        'GPS: ${order.address.latitude!.toStringAsFixed(6)}, ${order.address.longitude!.toStringAsFixed(6)}',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark ? AppColors.gray400 : AppColors.gray500,
+                        order.address.fullAddress,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark
+                              ? AppColors.gray300
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );

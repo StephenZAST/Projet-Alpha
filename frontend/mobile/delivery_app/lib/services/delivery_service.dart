@@ -428,6 +428,38 @@ class DeliveryService extends GetxService {
     }
   }
 
+  /// Récupère les commandes brouillon (DRAFT)
+  Future<DeliveryOrdersResponse> getDraftOrders(
+      {int page = 1, int limit = 20}) async {
+    try {
+      debugPrint('📦 Récupération des commandes brouillon...');
+
+      final response = await _apiService.get(
+        '/delivery/draft-orders',
+        queryParameters: {'page': page, 'limit': limit},
+      );
+
+      // Gère les réponses avec ou sans wrapper "success"
+      if (response.data is Map<String, dynamic>) {
+        if (response.data.containsKey('success') &&
+            response.data['success'] == true) {
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else if (response.data.containsKey('data')) {
+          // Réponse directe avec data
+          return DeliveryOrdersResponse.fromJson(response.data);
+        } else {
+          throw Exception(
+              response.data['error'] ?? 'Format de réponse invalide');
+        }
+      } else {
+        throw Exception('Format de réponse invalide');
+      }
+    } catch (e) {
+      debugPrint('❌ Erreur getDraftOrders: $e');
+      rethrow;
+    }
+  }
+
   // ==========================================================================
   // 🔄 ACTIONS SUR LES COMMANDES
   // ==========================================================================
@@ -576,6 +608,8 @@ class DeliveryService extends GetxService {
 
       // Agrège depuis tous les endpoints de statut delivery pour obtenir uniquement les commandes pertinentes
       final futures = await Future.wait([
+        getDraftOrders(
+            page: 1, limit: 1000), // ✅ AJOUTÉ : Commandes DRAFT
         getPendingOrders(
             page: 1, limit: 1000), // Large limit pour récupérer tout
         getAssignedOrders(page: 1, limit: 1000),
@@ -592,6 +626,16 @@ class DeliveryService extends GetxService {
         allOrders.addAll(response.orders);
         totalCount += response.pagination?.total ?? response.orders.length;
       }
+      
+      debugPrint('📊 Statuts présents dans getAllDeliveryOrders:');
+      final statusCounts = <String, int>{};
+      for (final order in allOrders) {
+        final statusName = order.status.toString().split('.').last;
+        statusCounts[statusName] = (statusCounts[statusName] ?? 0) + 1;
+      }
+      statusCounts.forEach((status, count) {
+        debugPrint('   - $status: $count');
+      });
 
       // Trie par date de création décroissante
       allOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));

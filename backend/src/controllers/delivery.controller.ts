@@ -23,6 +23,19 @@ export class DeliveryController {
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
       const result = await DeliveryService.getAssignedOrders(userId);
+      
+      // 🔍 DEBUG: Log les coordonnées GPS
+      console.log('🗺️ [DeliveryController] Commandes assignées avec GPS:');
+      result.forEach((order: any, index: number) => {
+        const hasGPS = order.address?.gps_latitude && order.address?.gps_longitude;
+        console.log(`   [${index + 1}] ${order.id.substring(0, 8)} - GPS: ${hasGPS ? '✅' : '❌'}`);
+        if (hasGPS) {
+          console.log(`       Lat: ${order.address.gps_latitude}, Lng: ${order.address.gps_longitude}`);
+        } else {
+          console.log(`       ⚠️ Pas de GPS pour: ${order.address?.city}, ${order.address?.street}`);
+        }
+      });
+      
       res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -119,6 +132,25 @@ export class DeliveryController {
       const result = await DeliveryService.getCANCELLEDOrders(userId);
       res.json({ data: result });
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getDraftOrders(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+      console.log('📋 [DeliveryController] Récupération des commandes DRAFT pour userId:', userId);
+      
+      const result = await DeliveryService.getDraftOrders(userId);
+      
+      console.log(`✅ [DeliveryController] ${result.length} commandes DRAFT trouvées`);
+      
+      res.json({ data: result });
+    } catch (error: any) {
+      console.error('❌ [DeliveryController] Erreur getDraftOrders:', error);
       res.status(500).json({ error: error.message });
     }
   }

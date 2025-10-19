@@ -43,6 +43,12 @@ class MapController extends GetxController {
   // Mode sélection de zone
   final isSelectingZone = false.obs;
 
+  // Pagination
+  int currentPage = 1;
+  final int pageSize = 20;
+  final hasMorePages = true.obs;
+  final isLoadingMore = false.obs;
+
   // ==========================================================================
   // 🚀 INITIALISATION
   // ==========================================================================
@@ -137,25 +143,41 @@ class MapController extends GetxController {
   // 📦 GESTION DES COMMANDES
   // ==========================================================================
 
-  /// Charge les commandes depuis le backend
+  /// Charge les commandes depuis le backend (première page)
   Future<void> loadOrders() async {
     try {
       isLoading.value = true;
       hasError.value = false;
       errorMessage.value = '';
+      currentPage = 1;
 
-      debugPrint('📦 Chargement commandes pour carte...');
+      debugPrint('📦 [MapController] Chargement page $currentPage (limit: $pageSize)...');
 
       final deliveryService = Get.find<DeliveryService>();
-      final response = await deliveryService.getAssignedOrders();
+      final response = await deliveryService.getAllDeliveryOrders(
+        page: currentPage,
+        limit: pageSize,
+      );
+
+      debugPrint('📦 [MapController] Réponse reçue: ${response.orders.length} commandes');
+      
+      // Vérifier s'il y a plus de pages
+      if (response.pagination != null) {
+        hasMorePages.value = currentPage < response.pagination!.totalPages;
+        debugPrint('📄 [MapController] Page $currentPage/${response.pagination!.totalPages}');
+      } else {
+        hasMorePages.value = response.orders.length >= pageSize;
+      }
 
       orders.assignAll(response.orders);
       _updateVisibleOrders();
       _updateMarkers();
 
-      debugPrint('✅ ${orders.length} commandes chargées sur carte');
-    } catch (e) {
-      debugPrint('❌ Erreur chargement commandes carte: $e');
+      debugPrint('✅ [MapController] ${orders.length} commandes chargées');
+      debugPrint('✅ [MapController] ${visibleOrders.length} commandes visibles');
+      debugPrint('✅ [MapController] ${orderMarkers.length} markers créés');
+    } catch (e, stackTrace) {
+      debugPrint('❌ [MapController] Erreur chargement commandes: $e');
       hasError.value = true;
       errorMessage.value = 'Impossible de charger les commandes';
 
@@ -171,7 +193,55 @@ class MapController extends GetxController {
     }
   }
 
-  /// Actualise les commandes
+  /// Charge plus de commandes (pagination)
+  Future<void> loadMoreOrders() async {
+    if (isLoadingMore.value || !hasMorePages.value) {
+      debugPrint('⏭️ [MapController] Pas de chargement: isLoadingMore=${isLoadingMore.value}, hasMore=${hasMorePages.value}');
+      return;
+    }
+
+    try {
+      isLoadingMore.value = true;
+      currentPage++;
+
+      debugPrint('📦 [MapController] Chargement page $currentPage...');
+
+      final deliveryService = Get.find<DeliveryService>();
+      final response = await deliveryService.getAllDeliveryOrders(
+        page: currentPage,
+        limit: pageSize,
+      );
+
+      debugPrint('📦 [MapController] Page $currentPage: ${response.orders.length} nouvelles commandes');
+
+      // Vérifier s'il y a plus de pages
+      if (response.pagination != null) {
+        hasMorePages.value = currentPage < response.pagination!.totalPages;
+        debugPrint('📄 [MapController] Page $currentPage/${response.pagination!.totalPages}');
+      } else {
+        hasMorePages.value = response.orders.length >= pageSize;
+      }
+
+      // Ajouter les nouvelles commandes (éviter les doublons)
+      for (final newOrder in response.orders) {
+        if (!orders.any((o) => o.id == newOrder.id)) {
+          orders.add(newOrder);
+        }
+      }
+
+      _updateVisibleOrders();
+      _updateMarkers();
+
+      debugPrint('✅ [MapController] Total: ${orders.length} commandes, ${orderMarkers.length} markers');
+    } catch (e) {
+      debugPrint('❌ [MapController] Erreur chargement page $currentPage: $e');
+      currentPage--; // Revenir à la page précédente en cas d'erreur
+    } finally {
+      isLoadingMore.value = false;
+    }
+  }
+
+  /// Actualise les commandes (recharge depuis le début)
   Future<void> refreshOrders() async {
     await loadOrders();
   }

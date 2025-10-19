@@ -495,6 +495,8 @@ class OrdersScreen extends StatelessWidget {
     switch (filter) {
       case OrderStatusFilter.all:
         return 'Toutes';
+      case OrderStatusFilter.draft:
+        return 'Brouillon';
       case OrderStatusFilter.pending:
         return 'En attente';
       case OrderStatusFilter.collecting:

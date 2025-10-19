@@ -14,6 +14,11 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Initialiser le contrôleur s'il n'existe pas
+    if (!Get.isRegistered<SettingsController>()) {
+      Get.put<SettingsController>(SettingsController());
+    }
+
     final controller = Get.find<SettingsController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -108,7 +113,8 @@ class SettingsScreen extends StatelessWidget {
   }
 
   /// 🔔 Section notifications
-  Widget _buildNotificationsSection(SettingsController controller, bool isDark) {
+  Widget _buildNotificationsSection(
+      SettingsController controller, bool isDark) {
     return GlassContainer(
       child: Column(
         children: [
@@ -120,9 +126,7 @@ class SettingsScreen extends StatelessWidget {
                 (value) => controller.togglePushNotifications(value),
                 isDark,
               )),
-          
           const Divider(height: 1),
-          
           Obx(() => _buildSwitchTile(
                 'Sons de notification',
                 'Jouer un son lors des notifications',
@@ -131,9 +135,7 @@ class SettingsScreen extends StatelessWidget {
                 (value) => controller.toggleNotificationSounds(value),
                 isDark,
               )),
-          
           const Divider(height: 1),
-          
           Obx(() => _buildSwitchTile(
                 'Vibrations',
                 'Vibrer lors des notifications importantes',
@@ -142,9 +144,7 @@ class SettingsScreen extends StatelessWidget {
                 (value) => controller.toggleVibrations(value),
                 isDark,
               )),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Heures de notification',
             'Définir les heures de réception',
@@ -181,9 +181,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 )),
           ),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Langue',
             'Changer la langue de l\'interface',
@@ -197,9 +195,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 )),
           ),
-          
           const Divider(height: 1),
-          
           Obx(() => _buildSwitchTile(
                 'Animations',
                 'Activer les animations de l\'interface',
@@ -231,9 +227,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 )),
           ),
-          
           const Divider(height: 1),
-          
           Obx(() => _buildSwitchTile(
                 'Suivi de position',
                 'Partager votre position en temps réel',
@@ -242,9 +236,7 @@ class SettingsScreen extends StatelessWidget {
                 (value) => controller.toggleLocationTracking(value),
                 isDark,
               )),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'App de navigation',
             'Application de navigation par défaut',
@@ -276,9 +268,7 @@ class SettingsScreen extends StatelessWidget {
                 (value) => controller.toggleOfflineMode(value),
                 isDark,
               )),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Vider le cache',
             'Supprimer les données temporaires',
@@ -292,9 +282,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 )),
           ),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Synchronisation auto',
             'Fréquence de synchronisation des données',
@@ -326,9 +314,7 @@ class SettingsScreen extends StatelessWidget {
                 (value) => controller.toggleAnalytics(value),
                 isDark,
               )),
-          
           const Divider(height: 1),
-          
           Obx(() => _buildSwitchTile(
                 'Crash reports',
                 'Envoyer automatiquement les rapports d\'erreur',
@@ -337,9 +323,7 @@ class SettingsScreen extends StatelessWidget {
                 (value) => controller.toggleCrashReports(value),
                 isDark,
               )),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Politique de confidentialité',
             'Consulter notre politique de confidentialité',
@@ -347,9 +331,7 @@ class SettingsScreen extends StatelessWidget {
             () => controller.openPrivacyPolicy(),
             isDark,
           ),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Conditions d\'utilisation',
             'Consulter les conditions d\'utilisation',
@@ -380,9 +362,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 )),
           ),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Vérifier les mises à jour',
             'Rechercher une nouvelle version',
@@ -390,9 +370,7 @@ class SettingsScreen extends StatelessWidget {
             () => controller.checkForUpdates(),
             isDark,
           ),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Aide et support',
             'Obtenir de l\'aide ou contacter le support',
@@ -400,9 +378,7 @@ class SettingsScreen extends StatelessWidget {
             () => controller.openSupport(),
             isDark,
           ),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Évaluer l\'application',
             'Donner votre avis sur l\'app store',
@@ -410,9 +386,7 @@ class SettingsScreen extends StatelessWidget {
             () => controller.rateApp(),
             isDark,
           ),
-          
           const Divider(height: 1),
-          
           _buildTile(
             'Licences open source',
             'Voir les licences des bibliothèques utilisées',

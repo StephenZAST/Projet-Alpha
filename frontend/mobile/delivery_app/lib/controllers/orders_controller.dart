@@ -155,6 +155,11 @@ class OrdersController extends GetxController {
     debugPrint('📊 Statuts présents: $statusCounts');
 
     switch (filter) {
+      case OrderStatusFilter.draft:
+        filteredOrders.assignAll(orders
+            .where((order) => order.status == OrderStatus.DRAFT)
+            .toList());
+        break;
       case OrderStatusFilter.pending:
         filteredOrders.assignAll(orders
             .where((order) => order.status == OrderStatus.PENDING)
@@ -278,6 +283,8 @@ class OrdersController extends GetxController {
 
   OrderStatus _filterToStatus(OrderStatusFilter filter) {
     switch (filter) {
+      case OrderStatusFilter.draft:
+        return OrderStatus.DRAFT;
       case OrderStatusFilter.pending:
         return OrderStatus.PENDING;
       case OrderStatusFilter.collecting:
@@ -472,6 +479,7 @@ class OrdersController extends GetxController {
 /// 🔍 Filtres de statut pour les commandes
 enum OrderStatusFilter {
   all,
+  draft,
   pending,
   collecting,
   collected,

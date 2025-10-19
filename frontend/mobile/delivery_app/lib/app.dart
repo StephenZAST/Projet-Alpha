@@ -72,14 +72,25 @@ class DeliveryApp extends StatelessWidget {
 
   /// Détermine la route initiale selon l'état d'authentification
   String _getInitialRoute() {
-    // Si un token existe en stockage, on démarre sur le dashboard
-    // Sinon, on va sur la page de connexion
-    final storage = GetStorage();
-    final token = storage.read<String>(StorageKeys.authToken);
-    if (token != null && token.isNotEmpty) {
-      return AppRoutes.dashboard;
+    try {
+      final storage = GetStorage();
+      final token = storage.read<String>(StorageKeys.authToken);
+      
+      debugPrint('🔍 Vérification du token au démarrage: ${token != null ? "présent" : "absent"}');
+      
+      // Si un token existe, on va directement au dashboard
+      // Le middleware vérifiera sa validité
+      if (token != null && token.isNotEmpty) {
+        debugPrint('✅ Token trouvé - Redirection vers dashboard');
+        return AppRoutes.dashboard;
+      }
+      
+      debugPrint('❌ Pas de token - Redirection vers login');
+      return AppRoutes.login;
+    } catch (e) {
+      debugPrint('❌ Erreur lors de la vérification du token: $e');
+      return AppRoutes.login;
     }
-    return AppRoutes.login;
   }
 
   /// Wrapper pour les configurations mobile globales

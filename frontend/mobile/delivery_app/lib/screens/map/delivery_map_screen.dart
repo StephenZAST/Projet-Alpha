@@ -1,132 +1,186 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart' as flutter_map;
+import 'package:flutter_map/flutter_map.dart' as fm;
 import 'package:get/get.dart';
 
 import '../../constants.dart';
-import '../../controllers/map_controller.dart';
+import '../../controllers/map_controller.dart' as app;
 import '../../models/delivery_order.dart';
 import '../../widgets/shared/glass_container.dart';
-import '../../widgets/cards/order_card_mobile.dart';
+import '../../widgets/shared/order_details_bottom_sheet.dart';
 
 /// 🗺️ Écran Carte de Livraison - Alpha Delivery App
 ///
-/// Interface mobile-first pour visualiser les commandes sur une carte.
-/// Fonctionnalités : markers commandes, position livreur, sélection zones, navigation.
-class DeliveryMapScreen extends StatelessWidget {
+/// Page map simple et fonctionnelle pour visualiser les commandes
+class DeliveryMapScreen extends StatefulWidget {
   const DeliveryMapScreen({Key? key}) : super(key: key);
 
   @override
+  State<DeliveryMapScreen> createState() => _DeliveryMapScreenState();
+}
+
+class _DeliveryMapScreenState extends State<DeliveryMapScreen> {
+  late final app.MapController controller;
+  late final RxDouble bottomSheetHeight;
+  late final RxBool isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('🗺️ [DeliveryMapScreen] initState - Initialisation de l\'écran');
+    
+    // Initialiser les variables réactives
+    bottomSheetHeight = 200.0.obs;
+    isExpanded = false.obs;
+    
+    // Obtenir le contrôleur
+    try {
+      controller = Get.find<app.MapController>();
+      debugPrint('✅ [DeliveryMapScreen] MapController trouvé');
+    } catch (e) {
+      debugPrint('❌ [DeliveryMapScreen] Erreur: MapController non trouvé - $e');
+      rethrow;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.find<MapController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    debugPrint('🗺️ [DeliveryMapScreen] build() - Reconstruction du widget');
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
-      body: Stack(
+      body: Column(
         children: [
-          // =================================================================
-          // 🗺️ CARTE PRINCIPALE
-          // =================================================================
-          _buildMap(controller, isDark),
-
-          // =================================================================
-          // 📱 INTERFACE OVERLAY
-          // =================================================================
+          // Header
           SafeArea(
-            child: Column(
-              children: [
-                // Header avec filtres
-                _buildHeader(controller, isDark),
+            bottom: false,
+            child: _buildHeader(controller, isDark),
+          ),
 
-                const Spacer(),
+          // Carte
+          Expanded(
+            child: GetBuilder<app.MapController>(
+              builder: (ctrl) {
+                debugPrint('🗺️ [DeliveryMapScreen] GetBuilder rebuild - Markers: ${ctrl.orderMarkers.length}');
+                return fm.FlutterMap(
+                  mapController: ctrl.mapController,
+                  options: fm.MapOptions(
+                    initialCenter: ctrl.currentCenter.value,
+                    initialZoom: ctrl.currentZoom.value,
+                    minZoom: MapConfig.minZoom,
+                    maxZoom: MapConfig.maxZoom,
+                    onTap: (tapPosition, point) => ctrl.onMapTap(point),
+                  ),
+                  children: [
+                    // Tuiles de la carte
+                    fm.TileLayer(
+                      urlTemplate: MapConfig.osmTileUrl,
+                      userAgentPackageName: 'com.alpha.delivery',
+                    ),
 
-                // Bottom sheet avec liste des commandes
-                _buildBottomSheet(controller, isDark),
-              ],
+                    // Markers des commandes
+                    Obx(() => fm.MarkerLayer(
+                          markers: ctrl.orderMarkers.map((om) {
+                            return fm.Marker(
+                              point: om.position,
+                              width: 40,
+                              height: 40,
+                              child: GestureDetector(
+                                onTap: () {
+                                  debugPrint('🎯 [DeliveryMapScreen] Marker cliqué: ${om.order.shortId}');
+                                  ctrl.selectOrder(om.order);
+                                  _showOrderDetails(om.order, ctrl);
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: om.order.statusColor,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: om.isSelected ? 3 : 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    om.order.statusIcon,
+                                    color: Colors.white,
+                                    size: om.isSelected ? 24 : 20,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        )),
+
+                    // Marker position livreur
+                    Obx(() {
+                      if (ctrl.deliveryPosition.value == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return fm.MarkerLayer(
+                        markers: [
+                          fm.Marker(
+                            point: ctrl.deliveryPosition.value!,
+                            width: 50,
+                            height: 50,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.info,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 3),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.delivery_dining,
+                                color: Colors.white,
+                                size: 28,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ],
+                );
+              },
             ),
           ),
 
-          // =================================================================
-          // 🎯 BOUTONS FLOTTANTS
-          // =================================================================
-          _buildFloatingButtons(controller, isDark),
+          // Bottom sheet avec hauteur variable
+          Obx(() => AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                height: bottomSheetHeight.value,
+                child: _buildBottomSheet(
+                  controller,
+                  isDark,
+                  isExpanded,
+                  bottomSheetHeight,
+                ),
+              )),
         ],
       ),
+
+      // Boutons flottants
+      floatingActionButton: _buildFloatingButtons(controller),
     );
   }
 
-  /// 🗺️ Widget carte principale
-  Widget _buildMap(MapController controller, bool isDark) {
-    return Obx(() => flutter_map.FlutterMap(
-          mapController: controller.mapController,
-          options: flutter_map.MapOptions(
-            center: controller.currentCenter.value,
-            zoom: controller.currentZoom.value,
-            minZoom: MapConfig.minZoom,
-            maxZoom: MapConfig.maxZoom,
-            onTap: (tapPosition, point) => controller.onMapTap(point),
-            onPositionChanged: (position, hasGesture) {
-              if (hasGesture) {
-                controller.onMapMove(position.center!, position.zoom!);
-              }
-            },
-          ),
-          children: [
-            // Tuiles de la carte
-            flutter_map.TileLayer(
-              urlTemplate: MapConfig.osmTileUrl,
-              userAgentPackageName: 'com.alpha.delivery',
-              maxZoom: MapConfig.maxZoom,
-            ),
-
-            // Markers des commandes
-            flutter_map.MarkerLayer(
-              markers: controller.orderMarkers.map((orderMarker) {
-                return flutter_map.Marker(
-                  point: orderMarker.position,
-                  width: 40,
-                  height: 40,
-                  child: _buildOrderMarker(
-                    orderMarker.order,
-                    orderMarker.isSelected,
-                    controller,
-                  ),
-                );
-              }).toList(),
-            ),
-
-            // Marker position livreur
-            if (controller.deliveryPosition.value != null)
-              flutter_map.MarkerLayer(
-                markers: [
-                  flutter_map.Marker(
-                    point: controller.deliveryPosition.value!,
-                    width: 50,
-                    height: 50,
-                    child: _buildDeliveryMarker(isDark),
-                  ),
-                ],
-              ),
-
-            // Cercle de zone sélectionnée
-            if (controller.selectedZone.value != null)
-              flutter_map.CircleLayer(
-                circles: [
-                  flutter_map.CircleMarker(
-                    point: controller.selectedZone.value!.center,
-                    radius: controller.selectedZone.value!.radius,
-                    color: AppColors.primary.withOpacity(0.2),
-                    borderColor: AppColors.primary,
-                    borderStrokeWidth: 2,
-                  ),
-                ],
-              ),
-          ],
-        ));
-  }
-
-  /// 📱 Header avec filtres et actions
-  Widget _buildHeader(MapController controller, bool isDark) {
+  /// Header avec filtres
+  Widget _buildHeader(app.MapController controller, bool isDark) {
     return Container(
       margin: const EdgeInsets.all(AppSpacing.md),
       child: GlassContainer(
@@ -136,7 +190,6 @@ class DeliveryMapScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Bouton retour
             IconButton(
               onPressed: () => Get.back(),
               icon: Icon(
@@ -144,8 +197,6 @@ class DeliveryMapScreen extends StatelessWidget {
                 color: isDark ? AppColors.textLight : AppColors.textPrimary,
               ),
             ),
-
-            // Titre
             Expanded(
               child: Text(
                 'Carte des livraisons',
@@ -155,8 +206,6 @@ class DeliveryMapScreen extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Filtres rapides
             Obx(() => PopupMenuButton<OrderStatus?>(
                   icon: Icon(
                     Icons.filter_list,
@@ -168,57 +217,296 @@ class DeliveryMapScreen extends StatelessWidget {
                   itemBuilder: (context) => [
                     const PopupMenuItem(
                       value: null,
-                      child: Text('Toutes les commandes'),
+                      child: Text('Toutes'),
                     ),
                     ...OrderStatus.values.map((status) => PopupMenuItem(
                           value: status,
                           child: Row(
                             children: [
                               Icon(status.icon, color: status.color, size: 20),
-                              const SizedBox(width: AppSpacing.sm),
+                              const SizedBox(width: 8),
                               Text(status.displayName),
                             ],
                           ),
                         )),
                   ],
                 )),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Menu actions
-            PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert,
-                color: isDark ? AppColors.gray400 : AppColors.gray500,
+  /// Bottom sheet avec liste et bouton expand/collapse
+  Widget _buildBottomSheet(
+    app.MapController controller,
+    bool isDark,
+    RxBool isExpanded,
+    RxDouble bottomSheetHeight,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.lg),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Handle + bouton expand/collapse
+          GestureDetector(
+            onTap: () {
+              isExpanded.value = !isExpanded.value;
+              bottomSheetHeight.value = isExpanded.value ? 500.0 : 200.0;
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.gray600 : AppColors.gray400,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Obx(() => Icon(
+                        isExpanded.value
+                            ? Icons.keyboard_arrow_down
+                            : Icons.keyboard_arrow_up,
+                        color: isDark ? AppColors.gray400 : AppColors.gray600,
+                        size: 20,
+                      )),
+                ],
               ),
-              onSelected: (value) => _handleMenuAction(value, controller),
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'refresh',
-                  child: Row(
-                    children: [
-                      Icon(Icons.refresh),
-                      SizedBox(width: AppSpacing.sm),
-                      Text('Actualiser'),
-                    ],
+            ),
+          ),
+
+          // Header avec statistiques
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Row(
+              children: [
+                Text(
+                  'Commandes',
+                  style: AppTextStyles.h4.copyWith(
+                    color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const PopupMenuItem(
-                  value: 'center_position',
-                  child: Row(
+                const Spacer(),
+                Obx(() => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${controller.visibleOrders.length}',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+
+          // Liste des commandes
+          Expanded(
+            child: Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              if (controller.hasError.value) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.my_location),
-                      SizedBox(width: AppSpacing.sm),
-                      Text('Ma position'),
+                      Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        controller.errorMessage.value,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark ? AppColors.gray400 : AppColors.gray600,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      ElevatedButton.icon(
+                        onPressed: () => controller.refreshOrders(),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Réessayer'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                const PopupMenuItem(
-                  value: 'select_zone',
-                  child: Row(
+                );
+              }
+
+              if (controller.visibleOrders.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.radio_button_unchecked),
-                      SizedBox(width: AppSpacing.sm),
-                      Text('Sélectionner zone'),
+                      Icon(
+                        Icons.inbox_outlined,
+                        size: 48,
+                        color: isDark ? AppColors.gray400 : AppColors.gray600,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Aucune commande',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark ? AppColors.gray400 : AppColors.gray600,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Les commandes assignées apparaîtront ici',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.gray500 : AppColors.gray500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                itemCount: controller.visibleOrders.length + (controller.hasMorePages.value ? 1 : 0),
+                itemBuilder: (context, index) {
+                  // Dernier item = bouton "Charger plus"
+                  if (index == controller.visibleOrders.length) {
+                    return Obx(() => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                          child: controller.isLoadingMore.value
+                              ? const Center(
+                                  child: CircularProgressIndicator(),
+                                )
+                              : ElevatedButton.icon(
+                                  onPressed: () => controller.loadMoreOrders(),
+                                  icon: const Icon(Icons.download),
+                                  label: const Text('Charger plus'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.lg,
+                                      vertical: AppSpacing.md,
+                                    ),
+                                  ),
+                                ),
+                        ));
+                  }
+
+                  final order = controller.visibleOrders[index];
+                  return _buildOrderItem(order, isDark, controller);
+                },
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Item de commande
+  Widget _buildOrderItem(
+      DeliveryOrder order, bool isDark, app.MapController controller) {
+    return GestureDetector(
+      onTap: () {
+        // Sélectionner sur la carte
+        controller.selectOrder(order);
+        // Afficher les détails en bottom sheet
+        _showOrderDetails(order, controller);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.gray800 : AppColors.gray100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: order.statusColor.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 40,
+              decoration: BoxDecoration(
+                color: order.statusColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '#${order.shortId}',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color:
+                          isDark ? AppColors.textLight : AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    order.customerName,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.gray400 : AppColors.gray600,
+                    ),
+                  ),
+                  Text(
+                    order.shortAddress,
+                    style: AppTextStyles.caption.copyWith(
+                      color: isDark ? AppColors.gray500 : AppColors.gray500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              children: [
+                Icon(
+                  order.statusIcon,
+                  color: order.statusColor,
+                  size: 20,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  order.formattedAmount,
+                  style: AppTextStyles.caption.copyWith(
+                    color: isDark ? AppColors.gray400 : AppColors.gray600,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -229,263 +517,66 @@ class DeliveryMapScreen extends StatelessWidget {
     );
   }
 
-  /// 📋 Bottom sheet avec liste des commandes
-  Widget _buildBottomSheet(MapController controller, bool isDark) {
-    return Obx(() => DraggableScrollableSheet(
-          initialChildSize: 0.3,
-          minChildSize: 0.1,
-          maxChildSize: 0.8,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.cardBgDark.withOpacity(0.95)
-                    : AppColors.cardBgLight.withOpacity(0.95),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(AppSpacing.lg),
-                  topRight: Radius.circular(AppSpacing.lg),
-                ),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.white.withOpacity(0.3),
-                ),
-                boxShadow: AppShadows.large,
-              ),
-              child: Column(
-                children: [
-                  // Handle du draggable
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.gray600 : AppColors.gray400,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-
-                  // Header avec statistiques
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.sm,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Commandes visibles',
-                          style: AppTextStyles.h4.copyWith(
-                            color: isDark
-                                ? AppColors.textLight
-                                : AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: AppSpacing.xs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: AppRadius.radiusSM,
-                          ),
-                          child: Text(
-                            '${controller.visibleOrders.length}',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Liste des commandes
-                  Expanded(
-                    child: controller.visibleOrders.isEmpty
-                        ? _buildEmptyState(isDark)
-                        : ListView.builder(
-                            controller: scrollController,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                            ),
-                            itemCount: controller.visibleOrders.length,
-                            itemBuilder: (context, index) {
-                              final order = controller.visibleOrders[index];
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppSpacing.sm,
-                                ),
-                                child: OrderCardMobile(
-                                  order: order,
-                                  onTap: () => controller.selectOrder(order),
-                                  onStatusUpdate: (newStatus) => controller
-                                      .updateOrderStatus(order.id, newStatus),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ));
-  }
-
-  /// 🎯 Boutons flottants
-  Widget _buildFloatingButtons(MapController controller, bool isDark) {
-    return Positioned(
-      right: AppSpacing.md,
-      bottom: 120, // Au-dessus du bottom sheet
-      child: Column(
-        children: [
-          // Bouton ma position
-          FloatingActionButton(
-            heroTag: 'my_location',
-            mini: true,
-            backgroundColor: AppColors.primary,
-            onPressed: () => controller.centerOnDeliveryPosition(),
-            child: const Icon(Icons.my_location, color: Colors.white),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          // Bouton zoom sur commandes
-          FloatingActionButton(
-            heroTag: 'fit_orders',
-            mini: true,
-            backgroundColor: AppColors.secondary,
-            onPressed: () => controller.fitOrdersInView(),
-            child: const Icon(Icons.fit_screen, color: Colors.white),
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          // Bouton actualiser
-          Obx(() => FloatingActionButton(
-                heroTag: 'refresh',
-                mini: true,
-                backgroundColor: controller.isLoading.value
-                    ? AppColors.gray400
-                    : AppColors.success,
-                onPressed: controller.isLoading.value
-                    ? null
-                    : () => controller.refreshOrders(),
-                child: controller.isLoading.value
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : const Icon(Icons.refresh, color: Colors.white),
-              )),
-        ],
+  /// Affiche les détails de la commande
+  void _showOrderDetails(DeliveryOrder order, app.MapController controller) {
+    showModalBottomSheet(
+      context: Get.context!,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => OrderDetailsBottomSheet(
+        order: order,
+        onStatusUpdate: (newStatus) {
+          controller.updateOrderStatus(order.id, newStatus);
+        },
+        onClose: () {
+          controller.clearSelection();
+        },
       ),
     );
   }
 
-  /// 📍 Marker de commande
-  Widget _buildOrderMarker(
-    DeliveryOrder order,
-    bool isSelected,
-    MapController controller,
-  ) {
-    return GestureDetector(
-      onTap: () => controller.selectOrder(order),
-      child: AnimatedContainer(
-        duration: AppAnimations.fast,
-        width: isSelected ? 50 : 40,
-        height: isSelected ? 50 : 40,
-        decoration: BoxDecoration(
-          color: order.status.color,
-          borderRadius: BorderRadius.circular(isSelected ? 25 : 20),
-          border: Border.all(
-            color: Colors.white,
-            width: isSelected ? 3 : 2,
-          ),
-          boxShadow: isSelected ? AppShadows.large : AppShadows.medium,
+  /// Boutons flottants
+  Widget _buildFloatingButtons(app.MapController controller) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FloatingActionButton(
+          heroTag: 'location',
+          mini: true,
+          backgroundColor: AppColors.primary,
+          onPressed: () => controller.centerOnDeliveryPosition(),
+          child: const Icon(Icons.my_location, color: Colors.white),
         ),
-        child: Icon(
-          order.status.icon,
-          color: Colors.white,
-          size: isSelected ? 24 : 20,
+        const SizedBox(height: 8),
+        FloatingActionButton(
+          heroTag: 'fit',
+          mini: true,
+          backgroundColor: AppColors.secondary,
+          onPressed: () => controller.fitOrdersInView(),
+          child: const Icon(Icons.fit_screen, color: Colors.white),
         ),
-      ),
+        const SizedBox(height: 8),
+        Obx(() => FloatingActionButton(
+              heroTag: 'refresh',
+              mini: true,
+              backgroundColor: controller.isLoading.value
+                  ? AppColors.gray400
+                  : AppColors.success,
+              onPressed: controller.isLoading.value
+                  ? null
+                  : () => controller.refreshOrders(),
+              child: controller.isLoading.value
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.refresh, color: Colors.white),
+            )),
+      ],
     );
-  }
-
-  /// 🚚 Marker position livreur
-  Widget _buildDeliveryMarker(bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.info,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: AppShadows.large,
-      ),
-      child: const Icon(
-        Icons.delivery_dining,
-        color: Colors.white,
-        size: 28,
-      ),
-    );
-  }
-
-  /// 📭 État vide
-  Widget _buildEmptyState(bool isDark) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.map_outlined,
-              size: 60,
-              color: isDark ? AppColors.gray400 : AppColors.gray500,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Aucune commande visible',
-              style: AppTextStyles.h4.copyWith(
-                color: isDark ? AppColors.textLight : AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Déplacez la carte ou ajustez les filtres pour voir les commandes',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.gray300 : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 🎬 Gestion des actions du menu
-  void _handleMenuAction(String action, MapController controller) {
-    switch (action) {
-      case 'refresh':
-        controller.refreshOrders();
-        break;
-      case 'center_position':
-        controller.centerOnDeliveryPosition();
-        break;
-      case 'select_zone':
-        controller.startZoneSelection();
-        break;
-    }
   }
 }

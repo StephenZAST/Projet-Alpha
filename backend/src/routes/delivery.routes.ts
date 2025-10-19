@@ -81,5 +81,13 @@ router.get(
   })
 );
 
+router.get(
+  '/draft-orders',
+  authorizeRoles(['DELIVERY', 'ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(async (req: Request, res: Response) => {
+    await DeliveryController.getDraftOrders(req, res);
+  })
+);
+
 export default router;
  

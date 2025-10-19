@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../screens/auth/login_screen.dart';
+import '../screens/auth/splash_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/orders/orders_screen.dart';
 import '../screens/orders/order_details_screen.dart';
@@ -15,6 +16,7 @@ import '../bindings/dashboard_binding.dart';
 import '../bindings/orders_binding.dart';
 import '../bindings/map_binding.dart';
 import '../bindings/profile_binding.dart';
+import '../services/auth_service.dart';
 
 /// 🧭 Configuration des Routes - Alpha Delivery App
 ///
@@ -40,11 +42,10 @@ class AppRoutes {
   // ==========================================================================
 
   static List<GetPage> get routes => [
-        // Route initiale - Redirection automatique
+        // Route initiale - Écran de splash
         GetPage(
           name: initial,
-          page: () => const LoginScreen(),
-          binding: AuthBinding(),
+          page: () => const SplashScreen(),
           transition: Transition.fade,
         ),
 
@@ -204,18 +205,37 @@ class AuthMiddleware extends GetMiddleware {
   @override
   RouteSettings? redirect(String? route) {
     // Vérification de l'authentification
-    // Cette logique sera implémentée avec AuthService
+    try {
+      final authService = Get.find<AuthService>();
 
-    // Pour l'instant, on laisse passer toutes les routes
-    // TODO: Implémenter la vérification d'authentification
-    /*
-    final authService = Get.find<AuthService>();
-    if (!authService.isAuthenticated) {
+      debugPrint('🔐 [AuthMiddleware] Vérification pour: $route');
+      debugPrint(
+          '📊 [AuthMiddleware] Authentifié: ${authService.isAuthenticated}');
+
+      // Si la route est login ou initial, on la laisse passer
+      if (route == AppRoutes.login || route == AppRoutes.initial) {
+        // Mais si l'utilisateur est déjà authentifié, rediriger vers dashboard
+        if (authService.isAuthenticated) {
+          debugPrint(
+              '✅ [AuthMiddleware] Utilisateur déjà connecté, redirection vers dashboard');
+          return const RouteSettings(name: AppRoutes.dashboard);
+        }
+        return null;
+      }
+
+      // Pour les autres routes, on vérifie l'authentification
+      if (!authService.isAuthenticated) {
+        debugPrint(
+            '❌ [AuthMiddleware] Non authentifié, redirection vers login');
+        return const RouteSettings(name: AppRoutes.login);
+      }
+
+      debugPrint('✅ [AuthMiddleware] Accès autorisé à: $route');
+      return null;
+    } catch (e) {
+      debugPrint('❌ [AuthMiddleware] Erreur: $e');
       return const RouteSettings(name: AppRoutes.login);
     }
-    */
-
-    return null;
   }
 
   @override
