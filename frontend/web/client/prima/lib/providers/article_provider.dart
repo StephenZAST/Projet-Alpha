@@ -48,8 +48,7 @@ class ArticleProvider extends ChangeNotifier {
       print('Error in loadData: $e');
       _error = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
@@ -59,5 +58,20 @@ class ArticleProvider extends ChangeNotifier {
         _articles.where((article) => article.categoryId == categoryId).toList();
     print('Found ${articles.length} articles for category $categoryId');
     return articles;
+  }
+
+  void _setError(String error) {
+    _error = error;
+    notifyListeners();
+  }
+
+  // Méthode pour réinitialiser l'état
+  void reset() {
+    _categories = [];
+    _articlesByCategory = {};
+    _services = [];
+    _error = null;
+    _isLoading = false;
+    notifyListeners();
   }
 }

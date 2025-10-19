@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:prima/navigation/navigation_provider.dart';
 import 'package:prima/theme/colors.dart';
+import 'package:prima/widgets/new_order_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 import 'package:spring_button/spring_button.dart';
 import 'package:prima/utils/bottom_sheet_manager.dart';
@@ -89,7 +90,8 @@ class CustomBottomNavigation extends StatelessWidget {
               onTap: () {
                 BottomSheetManager().showCustomBottomSheet(
                   context: context,
-                  builder: (context) => const OrderBottomSheet(),
+                  builder: (context) =>
+                      const NewOrderBottomSheet(), // Utilisez le nouveau bottom sheet
                 );
               },
               scaleCoefficient: 0.9,

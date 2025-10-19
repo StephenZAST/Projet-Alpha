@@ -45,6 +45,12 @@ void main() async {
   await initializeDateFormatting('fr_FR', null);
   final prefs = await SharedPreferences.getInstance();
 
+  // Créer une seule instance de Dio
+  final dio = Dio(BaseOptions(
+    baseUrl: 'http://localhost:3001',
+    contentType: 'application/json',
+  ));
+
   runApp(
     MultiProvider(
       providers: [
@@ -121,78 +127,36 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(
-          create: (context) {
-            final authProvider =
-                Provider.of<AuthProvider>(context, listen: false);
-            final prefs =
-                Provider.of<SharedPreferences>(context, listen: false);
-            return ProfileProvider(authProvider, prefs, useMockData: false);
-          },
-        ),
-        ChangeNotifierProvider(
-          create: (context) {
-            final authProvider =
-                Provider.of<AuthProvider>(context, listen: false);
-            final dio = Dio(BaseOptions(
-              baseUrl: 'http://localhost:3001',
-              contentType: 'application/json',
-              headers: {
-                'Accept': 'application/json',
-              },
-            ));
-
-            // Ajouter l'intercepteur pour le token
-            dio.interceptors.add(InterceptorsWrapper(
-              onRequest: (options, handler) {
-                final token = authProvider.token;
-                if (token != null) {
-                  options.headers['Authorization'] = 'Bearer $token';
-                }
-                return handler.next(options);
-              },
-            ));
-
-            // ...existing interceptors...
-
-            return AddressProvider(authProvider);
-          },
-        ),
-      ],
-      child: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          return MaterialApp(
-            title: 'ZS Laundry',
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              fontFamily: 'SourceSansPro',
-              colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-              useMaterial3: true,
-            ),
-            initialRoute: authProvider.isAuthenticated ? '/' : '/login',
-            routes: {
-              '/': (context) => const MainNavigationWrapper(),
-              '/login': (context) => const LoginPage(),
-              '/register': (context) => const RegisterPage(),
-              '/reset_password': (context) => const ResetPasswordPage(),
-            },
-            onGenerateRoute: (settings) {
-              // Protection des routes qui nécessitent une authentification
-              if (!authProvider.isAuthenticated &&
-                  settings.name != '/login' &&
-                  settings.name != '/register') {
-                return MaterialPageRoute(
-                  builder: (_) => const LoginPage(),
-                );
-              }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authProvider = ref.watch(authProviderProvider);
+    return MaterialApp(
+      title: 'ZS Laundry',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: 'SourceSansPro',
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+        useMaterial3: true,
+      ),
+      initialRoute: authProvider.isAuthenticated ? '/' : '/login',
+      routes: {
+        '/': (context) => const MainNavigationWrapper(),
+        '/login': (context) => const LoginPage(),
+        '/register': (context) => const RegisterPage(),
+        '/reset_password': (context) => const ResetPasswordPage(),
+      },
+      onGenerateRoute: (settings) {
+        // Protection des routes qui nécessitent une authentification
+        if (!authProvider.isAuthenticated &&
+            settings.name != '/login' &&
+            settings.name != '/register') {
+          return MaterialPageRoute(
+            builder: (_) => const LoginPage(),
+          );
+        }
 
               // Routes principales et secondaires
               switch (settings.name) {

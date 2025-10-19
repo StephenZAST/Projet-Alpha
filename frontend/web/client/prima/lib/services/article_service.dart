@@ -7,7 +7,7 @@ class ArticleService {
 
   ArticleService(this._dio);
 
-  Future<List<ArticleCategory>> getCategories() async {
+  Future<List<Service>> getServices() async {
     try {
       final response = await _dio.get('/api/article-categories');
       if (response.data['success'] == true) {
@@ -48,6 +48,33 @@ class ArticleService {
     } catch (e) {
       print('Error fetching articles: $e');
       throw Exception('Failed to load articles: $e');
+    }
+  }
+
+  Future<List<ArticleCategory>> getCategories() async {
+    try {
+      print('Fetching categories');
+
+      final response = await _dio.get('/api/article-categories');
+
+      print('Categories response: ${response.data}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['data'] ?? [];
+        final categories =
+            data.map((json) => ArticleCategory.fromJson(json)).toList();
+        print('Parsed ${categories.length} categories');
+        return categories;
+      }
+
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        message: 'Failed to load categories',
+      );
+    } catch (e) {
+      print('Error loading categories: $e');
+      throw Exception('Error loading categories: $e');
     }
   }
 }

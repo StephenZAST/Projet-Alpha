@@ -18,7 +18,7 @@ dependencies:
   flutter_svg: ^2.0.0
   http: ^1.2.2
   cookie_jar: ^4.0.8
-  path_provider: ^2.0.0
+  path_provider: ^2.1.1
   dio: ^5.0.0
   dio_cookie_manager: ^3.0.0
   supabase_flutter: ^2.8.2
@@ -27,6 +27,7 @@ dependencies:
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
   shared_preferences: ^2.2.2
+<<<<<<< HEAD
   intl: 0.19.0  
   jiffy: ^6.2.1
   flutter_local_notifications: ^16.3.2
@@ -37,11 +38,21 @@ dependencies:
   share_plus: ^7.2.1
   timeago: ^3.7.0
   
+=======
+  path_provider_platform_interface: ^2.1.1
+  path_provider_foundation: ^2.3.1
+  path_provider_android: ^2.2.1
+  flutter_riverpod: ^2.4.9
+  hooks_riverpod: ^2.4.9
+  riverpod_annotation: ^2.3.3
+>>>>>>> d4ccaad7bc3b7befa222d5d4b78a0e6436475874
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  riverpod_generator: ^2.3.9
+  build_runner: ^2.4.7
 
 flutter:
   uses-material-design: true
