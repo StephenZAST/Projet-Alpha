@@ -33,7 +33,7 @@ dotenv.config();
 export const prisma = new PrismaClient();
 
 const app = express();
- 
+
 // Middleware globaux
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -56,7 +56,6 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    
     if (
       allowedOrigins.some(allowedOrigin => {
         if (allowedOrigin instanceof RegExp) {
@@ -153,8 +152,23 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Alpha Laundry API' });
 });
 
-// Export the express app for serverless or external servers to consume.
-// Server initialization (listening, DB connect, scheduler) should be done
-// in a separate entrypoint (e.g., src/server.ts) so that serverless platforms
-// like Vercel can import the app without starting a listener.
-export default app;
+// Add Prisma error handling
+prisma.$connect()
+  .then(() => {
+    console.log('Successfully connected to the database');
+  })
+  .catch((error) => {
+    console.error('Failed to connect to the database:', error);
+    process.exit(1);
+  });
+
+// Add Prisma cleanup on app shutdown
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+});
+
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
