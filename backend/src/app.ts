@@ -53,7 +53,9 @@ const allowedOrigins = [
   /^http:\/\/127\.0\.0\.1:\d+$/ // Any 127.0.0.1 port
 ];
 
-app.use(cors({
+import { CorsOptions } from 'cors';
+
+const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (
@@ -72,7 +74,9 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
+};
+
+app.use(cors(corsOptions) as unknown as express.RequestHandler);
 
 // Rate limiting configuration
 const loginLimiter = rateLimit({
@@ -138,7 +142,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
   res.status(500).json({
     error: 'Internal Server Error',
@@ -157,7 +161,7 @@ prisma.$connect()
   .then(() => {
     console.log('Successfully connected to the database');
   })
-  .catch((error) => {
+  .catch((error: Error) => {
     console.error('Failed to connect to the database:', error);
     process.exit(1);
   });

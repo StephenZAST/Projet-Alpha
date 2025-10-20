@@ -19,19 +19,15 @@
     "prisma:apply": "ts-node src/scripts/applyPrismaSchema.ts",
     "migrate:functions": "ts-node src/scripts/migrateFunctions.ts",
     "migrate:validate": "ts-node src/scripts/validateRelations.ts",
-    "migrate:all": "ts-node src/scripts/migrationRunner.ts"
-    ,
-    "find:user": "ts-node src/scripts/findUser.ts"
-    ,
-    "set:user-password": "ts-node src/scripts/setTempPassword.ts"
-    ,
-    "aff:manage": "ts-node src/scripts/manageAffiliateProfile.ts"
-    ,
+    "migrate:all": "ts-node src/scripts/migrationRunner.ts",
+    "find:user": "ts-node src/scripts/findUser.ts",
+    "set:user-password": "ts-node src/scripts/setTempPassword.ts",
+    "aff:manage": "ts-node src/scripts/manageAffiliateProfile.ts",
     "aff:sync": "ts-node src/scripts/syncAffiliateProfiles.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
-    "@prisma/client": "^6.5.0",
+    "@prisma/client": "^6.17.1",
     "@supabase/supabase-js": "^2.49.1",
     "@types/bcrypt": "^5.0.2",
     "@types/node": "^22.9.3",
@@ -59,7 +55,7 @@
     "ngeohash": "^0.6.3",
     "node-cache": "^5.1.2",
     "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^7.0.9",
     "pdfkit": "^0.15.2",
     "resend": "^4.0.1",
     "serverless-http": "^3.0.0",
