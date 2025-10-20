@@ -4,9 +4,10 @@
   "description": "Backend for Alpha Laundry Management System",
   "main": "src/app.ts",
   "scripts": {
-    "start": "dotenv -- node dist/app.js",
-    "dev": "nodemon --exec ts-node src/app.ts",
+    "start": "node dist/src/server.js",
+    "dev": "nodemon --exec ts-node src/server.ts",
     "build": "tsc",
+    "vercel-build": "npm run build",
     "test": "cross-env NODE_ENV=test jest --config jest.config.ts --detectOpenHandles --forceExit",
     "test:watch": "jest --watch",
     "lint": "eslint . --ext .ts",
@@ -19,14 +20,10 @@
     "prisma:apply": "ts-node src/scripts/applyPrismaSchema.ts",
     "migrate:functions": "ts-node src/scripts/migrateFunctions.ts",
     "migrate:validate": "ts-node src/scripts/validateRelations.ts",
-    "migrate:all": "ts-node src/scripts/migrationRunner.ts"
-    ,
-    "find:user": "ts-node src/scripts/findUser.ts"
-    ,
-    "set:user-password": "ts-node src/scripts/setTempPassword.ts"
-    ,
-    "aff:manage": "ts-node src/scripts/manageAffiliateProfile.ts"
-    ,
+    "migrate:all": "ts-node src/scripts/migrationRunner.ts",
+    "find:user": "ts-node src/scripts/findUser.ts",
+    "set:user-password": "ts-node src/scripts/setTempPassword.ts",
+    "aff:manage": "ts-node src/scripts/manageAffiliateProfile.ts",
     "aff:sync": "ts-node src/scripts/syncAffiliateProfiles.ts"
   },
   "dependencies": {
@@ -38,6 +35,7 @@
     "@types/nodemailer": "^6.4.17",
     "@types/pdfkit": "^0.13.8",
     "@types/socket.io": "^3.0.2",
+    "@vercel/speed-insights": "^1.2.0",
     "alpha-laundry-backend": "file:",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
@@ -62,6 +60,7 @@
     "nodemailer": "^6.9.16",
     "pdfkit": "^0.15.2",
     "resend": "^4.0.1",
+    "serverless-http": "^3.0.0",
     "sharp": "^0.33.5",
     "socket.io": "^4.8.1",
     "uuid": "^11.0.3",
