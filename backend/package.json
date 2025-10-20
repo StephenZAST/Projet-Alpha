@@ -35,7 +35,6 @@
     "@types/nodemailer": "^6.4.17",
     "@types/pdfkit": "^0.13.8",
     "@types/socket.io": "^3.0.2",
-    "@vercel/speed-insights": "^1.2.0",
     "alpha-laundry-backend": "file:",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
