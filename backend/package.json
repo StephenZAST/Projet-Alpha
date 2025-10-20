@@ -4,9 +4,9 @@
   "description": "Backend for Alpha Laundry Management System",
   "main": "src/app.ts",
   "scripts": {
-    "start": "dotenv -- node dist/app.js",
+    "start": "node dist/app.js",
     "dev": "nodemon --exec ts-node src/app.ts",
-    "build": "tsc",
+    "build": "npm run prisma:generate && tsc",
     "test": "cross-env NODE_ENV=test jest --config jest.config.ts --detectOpenHandles --forceExit",
     "test:watch": "jest --watch",
     "lint": "eslint . --ext .ts",

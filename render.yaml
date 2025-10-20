@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: alpha-laundry-backend
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run prisma:generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: alpha-laundry-db
+          property: connectionString
+      - key: DIRECT_URL
+        fromDatabase:
+          name: alpha-laundry-db
+          property: connectionString
