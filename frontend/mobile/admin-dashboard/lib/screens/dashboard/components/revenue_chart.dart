@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'dart:ui';
 import '../../../constants.dart';
 import '../../../controllers/dashboard_controller.dart';
@@ -206,87 +206,99 @@ class _RevenueChartState extends State<RevenueChart>
               borderRadius: AppRadius.radiusSM,
             ),
           ),
-          SfCartesianChart(
-            plotAreaBorderWidth: 0,
-            backgroundColor: Colors.transparent,
-            margin: EdgeInsets.all(AppSpacing.sm),
-            primaryXAxis: CategoryAxis(
-              majorGridLines: MajorGridLines(width: 0),
-              axisLine: AxisLine(width: 0),
-              labelStyle: AppTextStyles.bodySmall.copyWith(
-                color: isDark ? AppColors.gray300 : AppColors.gray600,
-                fontWeight: FontWeight.w500,
+          Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: data.isNotEmpty ? data.reduce((a, b) => a > b ? a : b) / 4 : 1,
+                  getDrawingHorizontalLine: (value) {
+                    return FlLine(
+                      color: (isDark ? AppColors.gray700 : AppColors.gray200).withOpacity(0.5),
+                      strokeWidth: 1,
+                      dashArray: [5, 5],
+                    );
+                  },
+                ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) {
+                        int index = value.toInt();
+                        if (index >= 0 && index < labels.length) {
+                          return Text(
+                            labels[index],
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark ? AppColors.gray300 : AppColors.gray600,
+                            ),
+                          );
+                        }
+                        return SizedBox.shrink();
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 50,
+                      getTitlesWidget: (value, meta) {
+                        return Text(
+                          currencyFormat.format(value.toInt()),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? AppColors.gray300 : AppColors.gray600,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: List.generate(
+                      data.length,
+                      (index) => FlSpot(index.toDouble(), data[index]),
+                    ),
+                    isCurved: true,
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.accent],
+                    ),
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 4,
+                          color: AppColors.primary,
+                          strokeWidth: 2,
+                          strokeColor: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+                        );
+                      },
+                    ),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.primary.withOpacity(0.4),
+                          AppColors.primary.withOpacity(0.1),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              labelRotation: -45,
-              interval: 1,
             ),
-            primaryYAxis: NumericAxis(
-              numberFormat: currencyFormat,
-              majorGridLines: MajorGridLines(
-                width: 1,
-                color: (isDark ? AppColors.gray700 : AppColors.gray200)
-                    .withOpacity(0.5),
-                dashArray: [5, 5],
-              ),
-              axisLine: AxisLine(width: 0),
-              labelStyle: AppTextStyles.bodySmall.copyWith(
-                color: isDark ? AppColors.gray300 : AppColors.gray600,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            tooltipBehavior: TooltipBehavior(
-              enable: true,
-              format: 'point.x : point.y FCFA',
-              color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
-              textStyle: AppTextStyles.bodySmall.copyWith(
-                color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
-              borderColor: isDark ? AppColors.gray600 : AppColors.gray300,
-              borderWidth: 1,
-              elevation: 8,
-              canShowMarker: true,
-              header: '',
-              duration: 1000,
-            ),
-            series: <CartesianSeries>[
-              AreaSeries<_RevenueData, String>(
-                dataSource: List.generate(
-                  labels.length,
-                  (index) => _RevenueData(labels[index], data[index]),
-                ),
-                xValueMapper: (_RevenueData revenue, _) => revenue.date,
-                yValueMapper: (_RevenueData revenue, _) => revenue.amount,
-                name: 'Revenus',
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primary.withOpacity(0.4),
-                    AppColors.primary.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
-                ),
-                borderGradient: LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    AppColors.accent,
-                  ],
-                ),
-                borderWidth: 3,
-                animationDuration: 2000,
-                enableTooltip: true,
-                markerSettings: MarkerSettings(
-                  isVisible: true,
-                  shape: DataMarkerType.circle,
-                  width: 8,
-                  height: 8,
-                  borderWidth: 3,
-                  borderColor: AppColors.primary,
-                  color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
-                ),
-              ),
-            ],
           ),
           // Statistiques overlay
           Positioned(
