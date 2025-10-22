@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'dart:ui';
 import '../../../constants.dart';
 import '../../../controllers/dashboard_controller.dart';
@@ -219,48 +219,22 @@ class _OrderStatusChartState extends State<OrderStatusChart>
                 ),
                 Transform.rotate(
                   angle: _rotationAnimation.value * 0.1,
-                  child: SfCircularChart(
-                    backgroundColor: Colors.transparent,
-                    legend: Legend(isVisible: false),
-                    annotations: [
-                      CircularChartAnnotation(
-                        widget: _buildCenterAnnotation(total, isDark),
-                      ),
-                    ],
-                    series: <CircularSeries>[
-                      DoughnutSeries<_ChartData, String>(
-                        dataSource: data,
-                        xValueMapper: (_ChartData data, _) => data.label,
-                        yValueMapper: (_ChartData data, _) => data.value,
-                        pointColorMapper: (_ChartData data, _) => data.color,
-                        animationDuration: 2000,
-                        innerRadius: '65%',
-                        radius: '85%',
-                        strokeWidth: 2,
-                        strokeColor: isDark
-                            ? AppColors.cardBgDark
-                            : AppColors.cardBgLight,
-                        dataLabelSettings: DataLabelSettings(
-                          isVisible: false,
+                  child: PieChart(
+                    PieChartData(
+                      sections: List.generate(
+                        data.length,
+                        (index) => PieChartSectionData(
+                          value: data[index].value,
+                          color: data[index].color,
+                          radius: 80,
+                          titlePositionPercentageOffset: 0.55,
+                          badgeWidget: _buildCenterAnnotation(total, isDark),
+                          badgePositionPercentageOffset: 0.0,
                         ),
-                        enableTooltip: true,
                       ),
-                    ],
-                    tooltipBehavior: TooltipBehavior(
-                      enable: true,
-                      color:
-                          isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
-                      textStyle: AppTextStyles.bodySmall.copyWith(
-                        color: isDark
-                            ? AppColors.textLight
-                            : AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      borderColor:
-                          isDark ? AppColors.gray600 : AppColors.gray300,
-                      borderWidth: 1,
-                      elevation: 8,
-                      duration: 1000,
+                      centerSpaceRadius: 60,
+                      sectionsSpace: 2,
+                      startDegreeOffset: -90,
                     ),
                   ),
                 ),
