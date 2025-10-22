@@ -24,7 +24,7 @@ class AdminSideMenu extends StatelessWidget {
           children: [
             DrawerHeader(
               key: ValueKey('drawer_header_${key.toString()}'),
-              child: Image.asset("assets/images/logo.png"),
+              child: Image.asset("assets/images/alphalogo.png"),
             ),
             // DASHBOARD
             DrawerListTile(
