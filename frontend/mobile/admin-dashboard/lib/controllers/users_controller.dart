@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html; // Ajout de cet import
 import 'package:shared_preferences/shared_preferences.dart';
@@ -497,7 +496,8 @@ class UsersController extends GetxController {
 
         // Ouvrir le fichier avec une application externe
         if (await file.exists()) {
-          await OpenFile.open(path);
+          // OpenFile n'est pas disponible sur web, donc on ignore cette étape
+          // Sur mobile/desktop, le fichier est sauvegardé dans le répertoire des documents
         }
       }
 

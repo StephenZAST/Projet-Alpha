@@ -15,7 +15,7 @@ dependencies:
   flutter_svg: ^2.0.5
   dio: ^5.3.2
   data_table_2: ^2.4.2
-  syncfusion_flutter_charts: ^23.1.44
+  syncfusion_flutter_charts: ^23.2.7
   provider: ^6.0.5
   badges: ^3.1.1
   dotted_border: ^2.0.0+3
@@ -34,19 +34,16 @@ dependencies:
   flutter_error_handler: ^1.0.0
   stack_trace: ^1.11.0
   csv: ^6.0.0
-  image_picker: ^0.8.5+3
   http: ^1.1.0  # Pour les appels API
   url_launcher: ^6.1.14  # Pour ouvrir les liens externes
 
   # Added dependencies for CSV export and file handling
   path_provider: ^2.0.15
-  open_file: ^3.3.2
   universal_html: ^2.2.4
   cross_file: ^0.3.3+5
 
-  # Optional: for better file handling
-  file_picker: ^5.5.0
-  share_plus: ^7.1.0
+  # Web-compatible file handling
+  js: ^0.6.7
   json_annotation: ^4.9.0
 
 dev_dependencies:

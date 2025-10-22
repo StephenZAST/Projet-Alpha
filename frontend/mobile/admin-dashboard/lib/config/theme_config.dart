@@ -28,7 +28,7 @@ class ThemeConfig {
         labelLarge:
             AppTextStyles.buttonLarge.copyWith(color: AppColors.textLight),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.cardBg,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -136,7 +136,7 @@ class ThemeConfig {
         labelLarge:
             AppTextStyles.buttonLarge.copyWith(color: AppColors.textLight),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.gray800,
         elevation: 0,
         shape: RoundedRectangleBorder(
