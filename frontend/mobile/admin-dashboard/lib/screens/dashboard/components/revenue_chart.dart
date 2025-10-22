@@ -249,7 +249,7 @@ class _RevenueChartState extends State<RevenueChart>
               header: '',
               duration: 1000,
             ),
-            series: <ChartSeries>[
+            series: <CartesianSeries>[
               AreaSeries<_RevenueData, String>(
                 dataSource: List.generate(
                   labels.length,
