@@ -1,6 +1,6 @@
 [build]
 base = "frontend/mobile/admin-dashboard"
-command = "bash -lc 'git clone https://github.com/flutter/flutter.git -b stable --depth 1 flutter-sdk && export PATH=$PWD/flutter-sdk/bin:$PATH && flutter config --no-analytics && flutter pub get && flutter build web --release --no-wasm-dry-run'"
+command = "bash -lc 'rm -rf flutter-sdk && git clone https://github.com/flutter/flutter.git -b stable --depth 1 flutter-sdk && export PATH=$PWD/flutter-sdk/bin:$PATH && flutter config --no-analytics && flutter pub get && flutter build web --release --no-wasm-dry-run'"
 publish = "build/web"
 
 [build.environment]
