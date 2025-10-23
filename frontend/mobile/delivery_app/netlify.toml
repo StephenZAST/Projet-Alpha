@@ -1,0 +1,15 @@
+[build]
+base = "frontend/mobile/delivery_app"
+command = "bash -lc 'rm -rf flutter-sdk && git clone https://github.com/flutter/flutter.git -b stable --depth 1 flutter-sdk && export PATH=$PWD/flutter-sdk/bin:$PATH && flutter config --no-analytics && flutter pub get && flutter build web --release --no-wasm-dry-run'"
+publish = "build/web"
+
+[build.environment]
+FLUTTER_VERSION = "3.35.6"
+FLUTTER_CHANNEL = "stable"
+
+# Redirects pour SPA (Single Page Application)
+# Redirige toutes les routes vers index.html pour le routing côté client
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200

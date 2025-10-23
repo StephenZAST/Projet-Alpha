@@ -21,7 +21,7 @@ class AppColors {
   static const Color accent = Color(0xFF06B6D4); // Cyan moderne
   static const Color accentLight = Color(0xFF7DD3FC); // Cyan clair
   static const Color accentDark = Color(0xFF0369A1); // Cyan foncé
-  
+
   static const Color secondary = Color(0xFF8B5CF6); // Violet secondaire
   static const Color secondaryLight = Color(0xFFEDE9FE); // Violet clair
   static const Color secondaryDark = Color(0xFF6D28D9); // Violet foncé
@@ -653,7 +653,7 @@ class ApiConfig {
     // In debug builds prefer a local backend to avoid DNS failures
     // Use http://localhost:3001 which matches backend/.env PORT
     if (const bool.fromEnvironment('dart.vm.product') == false) {
-      return 'http://localhost:3001';
+      return 'https://alpha-laundry-backend.onrender.com';
     }
 
     // Otherwise, production default

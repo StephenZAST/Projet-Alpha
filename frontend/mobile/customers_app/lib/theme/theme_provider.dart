@@ -90,7 +90,7 @@ class ThemeProvider extends ChangeNotifier {
       ),
 
       // 📱 Card
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.lightSurface,
         shadowColor: Colors.black.withOpacity(0.1),
         elevation: 2,
@@ -169,7 +169,7 @@ class ThemeProvider extends ChangeNotifier {
       ),
 
       // 📱 Card
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.darkSurface,
         shadowColor: Colors.black.withOpacity(0.3),
         elevation: 4,
