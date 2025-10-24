@@ -40,6 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Configure CORS 
 const allowedOrigins = [
+  // Local development
   'http://localhost:3000',   // React default
   'http://localhost:3001',   // Your API
   'http://127.0.0.1:3000',
@@ -49,8 +50,19 @@ const allowedOrigins = [
   'http://localhost:53492',  // Flutter web debug
   'http://localhost:51284',  // Flutter web debug
   'http://localhost:61846',  // Flutter web debug
+  
+  // Netlify deployments - Frontend applications
+  'https://affiliate-app-alpha.netlify.app',
+  'https://customers-app-alpha.netlify.app',
+  'https://delivery-app-alpha.netlify.app',
+  
+  // Render backend
+  'https://alpha-laundry-backend.onrender.com',
+  
+  // Regex patterns for localhost
   /^http:\/\/localhost:\d+$/, // Any localhost port
-  /^http:\/\/127\.0\.0\.1:\d+$/ // Any 127.0.0.1 port
+  /^http:\/\/127\.0\.0\.1:\d+$/, // Any 127.0.0.1 port
+  /^https:\/\/.*\.netlify\.app$/ // Any Netlify app
 ];
 
 import { CorsOptions } from 'cors';
