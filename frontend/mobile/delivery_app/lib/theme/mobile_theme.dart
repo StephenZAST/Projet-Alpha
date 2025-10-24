@@ -584,8 +584,8 @@ class MobileTheme {
   // 💬 DIALOG THEMES
   // ==========================================================================
   
-  static DialogTheme get _lightDialogTheme {
-    return DialogTheme(
+  static DialogThemeData get _lightDialogTheme {
+    return DialogThemeData(
       backgroundColor: AppColors.cardBgLight,
       elevation: 0,
       shadowColor: Colors.transparent,
@@ -604,8 +604,8 @@ class MobileTheme {
     );
   }
   
-  static DialogTheme get _darkDialogTheme {
-    return DialogTheme(
+  static DialogThemeData get _darkDialogTheme {
+    return DialogThemeData(
       backgroundColor: AppColors.cardBgDark,
       elevation: 0,
       shadowColor: Colors.transparent,
