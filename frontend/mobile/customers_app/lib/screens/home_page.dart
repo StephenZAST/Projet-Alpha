@@ -16,9 +16,11 @@ import '../features/profile/screens/address_management_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/notifications/screens/notifications_screen.dart';
 import '../features/services/screens/services_screen.dart';
+import '../features/offers/screens/offers_screen.dart';
 import '../providers/orders_provider.dart';
 import '../providers/loyalty_provider.dart';
 import '../providers/services_provider.dart';
+import '../providers/offers_provider.dart';
 import 'loyalty/loyalty_dashboard_screen.dart';
 import 'loyalty/rewards_catalog_screen.dart';
 
@@ -661,13 +663,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     () => _navigateToAddresses(),
                   ),
 
-                  // 3. Offres (TODO: à implémenter)
+                  // 3. Offres
                   _buildQuickActionCard(
                     'Offres',
                     'Offres',
                     Icons.local_offer,
                     AppColors.warning,
-                    () => _showComingSoonDialog('Offres'),
+                    () => _navigateToOffers(),
                   ),
 
                   // 4. Récompenses
@@ -1444,6 +1446,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
             const AddressManagementScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
+      ),
+    );
+  }
+
+  /// 🎁 Navigation vers Offres
+  void _navigateToOffers() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const OffersScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SlideTransition(
             position: animation.drive(
