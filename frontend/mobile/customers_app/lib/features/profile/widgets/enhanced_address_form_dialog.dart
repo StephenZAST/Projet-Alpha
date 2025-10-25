@@ -5,6 +5,7 @@ import '../../../components/glass_components.dart';
 import '../../../core/models/address.dart';
 import '../../../core/services/location_service.dart';
 import 'location_picker_widget.dart';
+import 'address_parser_helper.dart';
 
 /// 📝 Dialog de Formulaire d'Adresse Amélioré - Alpha Client App
 ///
@@ -147,6 +148,14 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
       _selectedLatitude = latitude;
       _selectedLongitude = longitude;
       _selectedLocationAddress = address;
+      
+      // 🎯 Pré-remplir intelligemment les champs du formulaire avec l'adresse de la carte
+      AddressParserHelper.parseAndFillAddressFields(
+        fullAddress: address,
+        streetController: _streetController,
+        cityController: _cityController,
+        postalCodeController: _postalCodeController,
+      );
     });
   }
 

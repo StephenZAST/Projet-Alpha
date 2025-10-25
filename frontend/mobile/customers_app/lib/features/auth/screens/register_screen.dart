@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../constants.dart';
 import '../../../components/glass_components.dart';
 import '../../../shared/providers/auth_provider.dart';
@@ -34,6 +35,8 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   bool _obscureConfirmPassword = true;
   bool _acceptTerms = false;
   int _currentStep = 0;
+  bool _showErrorDetails = false;
+  String? _lastErrorCode;
 
   @override
   void initState() {
@@ -667,34 +670,226 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   }
 
   Widget _buildErrorMessage(String error) {
-    return Container(
-      padding: const EdgeInsets.all(12),
+    _extractErrorCode(error);
+    
+    return AnimatedContainer(
+      duration: AppAnimations.fast,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
-        borderRadius: AppRadius.radiusSM,
+        color: AppColors.error.withOpacity(0.08),
+        borderRadius: AppRadius.radiusMD,
         border: Border.all(
           color: AppColors.error.withOpacity(0.3),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.error_outline,
-            color: AppColors.error,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              error,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.error,
+          // En-tête avec icône et titre
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.warning_rounded,
+                  color: AppColors.error,
+                  size: 20,
+                ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Erreur d\'inscription',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              // Bouton pour voir les détails
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showErrorDetails = !_showErrorDetails;
+                  });
+                },
+                child: Icon(
+                  _showErrorDetails
+                      ? Icons.expand_less_rounded
+                      : Icons.info_outline_rounded,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Section expandable : Message d'erreur + Code d'erreur
+          AnimatedCrossFade(
+            firstChild: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.textTertiary(context).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Détails de l\'erreur',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.textTertiary(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    error,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textSecondary(context),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.textTertiary(context).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Code d\'erreur',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: AppColors.textTertiary(context),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        SelectableText(
+                          _lastErrorCode ?? 'N/A',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary(context),
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            secondChild: const SizedBox.shrink(),
+            crossFadeState: _showErrorDetails
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            duration: AppAnimations.fast,
+          ),
+          
+          if (_showErrorDetails) const SizedBox(height: 12),
+          
+          // Conseils rassurants
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.info.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline_rounded,
+                      color: AppColors.info,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Conseil',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.info,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Notre serveur peut avoir des délais de retard. Veuillez réessayer l\'opération. Si le problème persiste, contactez notre équipe support.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary(context),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Bouton de contact support
+          SizedBox(
+            width: double.infinity,
+            child: PremiumButton(
+              text: 'Contacter le support',
+              icon: Icons.phone,
+              onPressed: _contactSupport,
+              height: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// 🔍 Extraire le code d'erreur du message
+  void _extractErrorCode(String error) {
+    // Chercher un pattern de code d'erreur (ex: [ERR_001], ERROR_CODE, etc.)
+    final codePattern = RegExp(r'\[([A-Z0-9_]+)\]|ERROR[_:]?([A-Z0-9_]+)');
+    final match = codePattern.firstMatch(error);
+    
+    if (match != null) {
+      _lastErrorCode = match.group(1) ?? match.group(2);
+    } else {
+      // Utiliser un hash du message comme code
+      _lastErrorCode = 'ERR_${error.hashCode.abs().toString().substring(0, 6)}';
+    }
+  }
+
+  /// 📞 Contacter le support via WhatsApp
+  void _contactSupport() async {
+    final whatsappNumber = '+22651542586'; // +226 51 54 25 86
+    final message = Uri.encodeComponent(
+      'Bonjour, j\'ai une erreur d\'inscription sur Alpha Pressing.\n'
+      'Code d\'erreur: $_lastErrorCode\n'
+      'Email: ${_emailController.text}\n'
+      'Veuillez m\'aider à résoudre ce problème.'
+    );
+    
+    final whatsappUrl = 'https://wa.me/$whatsappNumber?text=$message';
+    
+    try {
+      // Essayer d'ouvrir WhatsApp
+      if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
+        await launchUrl(Uri.parse(whatsappUrl), mode: LaunchMode.externalApplication);
+      } else {
+        _showSnackBar('WhatsApp n\'est pas installé', isError: true);
+      }
+    } catch (e) {
+      _showSnackBar('Erreur lors de l\'ouverture de WhatsApp', isError: true);
+    }
   }
 
   /// 🔗 Pied de page

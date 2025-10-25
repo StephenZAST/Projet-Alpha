@@ -8,11 +8,29 @@ import '../constants.dart';
 /// et persistance des préférences utilisateur.
 class ThemeProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
+  late BuildContext _context;
 
   ThemeMode get themeMode => _themeMode;
   
-  // Compatibilité avec l'ancien code
-  bool get isDarkMode => _themeMode == ThemeMode.dark;
+  /// 🌓 Obtenir le vrai mode sombre (même en mode système)
+  /// Retourne true si l'app est actuellement en mode sombre
+  bool get isDarkMode {
+    if (_themeMode == ThemeMode.dark) {
+      return true;
+    } else if (_themeMode == ThemeMode.light) {
+      return false;
+    } else {
+      // Mode système : vérifier la luminosité réelle du système
+      return _context != null && 
+             MediaQuery.of(_context).platformBrightness == Brightness.dark;
+    }
+  }
+
+  /// 📱 Initialiser le provider avec le contexte
+  void initialize(BuildContext context) {
+    _context = context;
+    notifyListeners();
+  }
 
   /// 🌓 Basculer entre les thèmes (clair/sombre uniquement)
   void toggleTheme() {

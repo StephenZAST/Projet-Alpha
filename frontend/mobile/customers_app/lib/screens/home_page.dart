@@ -179,31 +179,33 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ],
       ),
       actions: [
-        // 🌓 Toggle de thème
+        // 🌓 Toggle de thème - Glassmorphism Soft
         Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
-            return Container(
-              margin: const EdgeInsets.only(right: 8),
-              child: ThemeToggle(themeProvider: themeProvider),
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildGlassIconButton(
+                icon: themeProvider.themeMode == ThemeMode.dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                  HapticFeedback.lightImpact();
+                },
+                tooltip: 'Changer le thème',
+              ),
             );
           },
         ),
-        // 🔔 Notifications avec badge
+        // 🔔 Notifications avec badge - Glassmorphism Soft
         Consumer<NotificationProvider>(
           builder: (context, notificationProvider, child) {
-            return Container(
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(12),
-              ),
+            return Padding(
+              padding: const EdgeInsets.only(right: 12),
               child: Stack(
                 children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.notifications_outlined,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  _buildGlassIconButton(
+                    icon: Icons.notifications_none_rounded,
                     onPressed: () {
                       Navigator.of(context).push(
                         PageRouteBuilder(
@@ -227,21 +229,30 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                       );
                     },
+                    tooltip: 'Notifications',
                   ),
+                  // Badge élégant
                   if (notificationProvider.hasUnreadNotifications)
                     Positioned(
-                      right: 8,
-                      top: 8,
+                      right: 4,
+                      top: 4,
                       child: Container(
-                        width: 16,
-                        height: 16,
+                        width: 18,
+                        height: 18,
                         decoration: BoxDecoration(
                           color: AppColors.error,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(9),
                           border: Border.all(
                             color: Theme.of(context).scaffoldBackgroundColor,
                             width: 2,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.error.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Center(
                           child: Text(
@@ -250,7 +261,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 : '${notificationProvider.unreadCount}',
                             style: AppTextStyles.overline.copyWith(
                               color: Colors.white,
-                              fontSize: 8,
+                              fontSize: 9,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -1505,6 +1516,57 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             onPressed: () => Navigator.pop(context),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 💎 Bouton Icône Glassmorphism Soft & Smart
+  /// Design élégant et subtil pour les actions du header
+  Widget _buildGlassIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    String? tooltip,
+  }) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              // Glassmorphism soft background
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.08)
+                  : Colors.black.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.08),
+                width: 1,
+              ),
+              // Subtle shadow pour la profondeur
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black.withOpacity(0.2)
+                      : Colors.black.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.textPrimary(context),
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }
