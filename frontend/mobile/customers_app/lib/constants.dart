@@ -613,7 +613,7 @@ class ApiConfig {
   // flutter run --dart-define=API_BASE_URL=http://localhost:3000
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.alphapressing.com',
+    defaultValue: 'https://alpha-laundry-backend.onrender.com',
   );
 
   // Optional API version segment (omit or set to empty if backend doesn't use it)
@@ -645,15 +645,15 @@ class ApiConfig {
   /// Runtime effective base URL. Priority:
   /// 1. compile-time API_BASE_URL (when provided with --dart-define)
   /// 2. in debug mode, fall back to localhost:3001 (common dev backend)
-  /// 3. production default (https://api.alphapressing.com)
+  /// 3. production default (https://alpha-laundry-backend.onrender.com)
   static String get effectiveBaseUrl {
     // If developer provided an override at compile time, use it
-    if (baseUrl != 'https://api.alphapressing.com') return baseUrl;
+    if (baseUrl != 'https://alpha-laundry-backend.onrender.com') return baseUrl;
 
     // In debug builds prefer a local backend to avoid DNS failures
     // Use http://localhost:3001 which matches backend/.env PORT
     if (const bool.fromEnvironment('dart.vm.product') == false) {
-      return 'https://alpha-laundry-backend.onrender.com';
+      return 'http://localhost:3001';
     }
 
     // Otherwise, production default
