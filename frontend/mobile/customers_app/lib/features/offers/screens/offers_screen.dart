@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../constants.dart';
 import '../../../components/glass_components.dart';
+import '../../../core/models/offer.dart';
 import '../../../providers/offers_provider.dart';
 import '../widgets/offer_card.dart';
 import '../widgets/offer_details_dialog.dart';

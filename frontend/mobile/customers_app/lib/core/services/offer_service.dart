@@ -7,13 +7,14 @@ import 'api_service.dart';
 /// Gère la communication avec l'API backend pour les offres promotionnelles.
 class OfferService {
   static const String _baseUrl = '/api/offers';
+  static final ApiService _apiService = ApiService();
 
   /// 📋 Récupérer toutes les offres disponibles pour l'utilisateur
   static Future<List<Offer>> getAvailableOffers() async {
     try {
       debugPrint('[OfferService] Fetching available offers...');
       
-      final response = await ApiService.get('$_baseUrl/available');
+      final response = await _apiService.get('$_baseUrl/available');
       
       if (response['success'] == true && response['data'] != null) {
         final List<dynamic> offersData = response['data'] as List<dynamic>;
@@ -38,7 +39,7 @@ class OfferService {
     try {
       debugPrint('[OfferService] Fetching user subscriptions...');
       
-      final response = await ApiService.get('$_baseUrl/my-subscriptions');
+      final response = await _apiService.get('$_baseUrl/my-subscriptions');
       
       if (response['success'] == true && response['data'] != null) {
         final List<dynamic> offersData = response['data'] as List<dynamic>;
@@ -63,7 +64,7 @@ class OfferService {
     try {
       debugPrint('[OfferService] Fetching offer details: $offerId');
       
-      final response = await ApiService.get('$_baseUrl/$offerId');
+      final response = await _apiService.get('$_baseUrl/$offerId');
       
       if (response['success'] == true && response['data'] != null) {
         final offer = Offer.fromJson(response['data'] as Map<String, dynamic>);
@@ -83,9 +84,9 @@ class OfferService {
     try {
       debugPrint('[OfferService] Subscribing to offer: $offerId');
       
-      final response = await ApiService.post(
+      final response = await _apiService.post(
         '$_baseUrl/$offerId/subscribe',
-        {},
+        data: {},
       );
       
       if (response['success'] == true) {
@@ -105,9 +106,9 @@ class OfferService {
     try {
       debugPrint('[OfferService] Unsubscribing from offer: $offerId');
       
-      final response = await ApiService.post(
+      final response = await _apiService.post(
         '$_baseUrl/$offerId/unsubscribe',
-        {},
+        data: {},
       );
       
       if (response['success'] == true) {
