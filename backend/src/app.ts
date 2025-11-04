@@ -26,6 +26,7 @@ import subscriptionRoutes from './routes/subscription.routes';
 import weightPricingRoutes from './routes/weightPricing.routes';
 import serviceTypeRoutes from './routes/serviceType.routes';
 import userRoutes from './routes/user.routes';
+import orderPricingRoutes from './routes/orderPricing.routes';
 // Load environment variables
 dotenv.config();
 
@@ -130,6 +131,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/weight-pricing', weightPricingRoutes);
 app.use('/api/service-types', serviceTypeRoutes); 
 app.use('/api/users', userRoutes);
+app.use('/api/orders', orderPricingRoutes);
 
 // Ajouter la route health check
 app.get('/api/health', (req, res) => {

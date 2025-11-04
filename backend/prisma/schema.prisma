@@ -283,6 +283,7 @@ model orders {
   order_items             order_items[]
   order_metadata          order_metadata?
   order_notes             order_notes[]
+  pricing                 order_pricing?
   address                 addresses?                @relation(fields: [addressId], references: [id])
   service_types           service_types             @relation(fields: [service_type_id], references: [id])
   user                    users                     @relation(fields: [userId], references: [id])
@@ -402,6 +403,7 @@ model users {
   notification_preferences      notification_preferences[]
   notifications                 notifications[]
   offer_subscriptions           offer_subscriptions[]
+  pricing_updates               order_pricing[]
   orders                        orders[]
   point_transactions            point_transactions[]
   reset_codes                   reset_codes[]
@@ -562,6 +564,22 @@ model user_subscriptions {
 
   @@index([plan_id], map: "idx_user_subscriptions_plan_id")
   @@index([userId], map: "idx_user_subscriptions_user_id")
+}
+
+model order_pricing {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id     String    @unique @db.Uuid
+  manual_price Decimal?  @db.Decimal
+  is_paid      Boolean   @default(false)
+  paid_at      DateTime? @db.Timestamptz(6)
+  reason       String?   @db.VarChar
+  updated_by   String?   @db.Uuid
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  orders       orders    @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  admin        users?    @relation(fields: [updated_by], references: [id], onUpdate: NoAction)
+
+  @@index([order_id], map: "idx_order_pricing_order_id")
+  @@index([updated_by], map: "idx_order_pricing_updated_by")
 }
 
 enum commission_status {
