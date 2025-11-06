@@ -111,6 +111,7 @@ app.use('/api', standardLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/orders', orderPricingRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/affiliate', affiliateRoutes);
@@ -129,9 +130,8 @@ app.use('/api/order-items', orderItemRoutes);
 app.use('/api/archives', archiveRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/weight-pricing', weightPricingRoutes);
-app.use('/api/service-types', serviceTypeRoutes); 
+app.use('/api/service-types', serviceTypeRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/orders', orderPricingRoutes);
 
 // Ajouter la route health check
 app.get('/api/health', (req, res) => {
