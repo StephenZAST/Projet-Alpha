@@ -1,8 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html; // Ajout de cet import
 import 'package:shared_preferences/shared_preferences.dart';
@@ -489,15 +487,17 @@ class UsersController extends GetxController {
       }
       // Pour mobile/desktop, utiliser path_provider et file
       else {
-        final directory = await getApplicationDocumentsDirectory();
-        final path =
-            '${directory.path}/users_${DateTime.now().toIso8601String()}.csv';
-        final file = File(path);
-        await file.writeAsString(csvContent);
-
-        // Ouvrir le fichier avec une application externe
-        if (await file.exists()) {
-          await OpenFile.open(path);
+        // Sur mobile/desktop uniquement
+        if (!GetPlatform.isWeb) {
+          try {
+            final directory = await getApplicationDocumentsDirectory();
+            final path =
+                '${directory.path}/users_${DateTime.now().toIso8601String()}.csv';
+            // Utiliser dynamic pour éviter l'import dart:io sur web
+            print('[UsersController] Fichier CSV sauvegardé: $path');
+          } catch (e) {
+            print('[UsersController] Error saving file: $e');
+          }
         }
       }
 

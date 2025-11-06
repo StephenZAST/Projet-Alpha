@@ -46,6 +46,11 @@ class AlphaCustomerApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
+          // 🎨 Initialiser le ThemeProvider avec le contexte au premier build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            themeProvider.initialize(context);
+          });
+
           return MaterialApp(
             title: 'Alpha Pressing',
             debugShowCheckedModeBanner: false,

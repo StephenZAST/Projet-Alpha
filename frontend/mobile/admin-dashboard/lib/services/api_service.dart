@@ -14,7 +14,7 @@ class ApiService extends GetxService {
     return _instance;
   }
 
-  static String get baseUrl => 'http://localhost:3001'; // Enlever le /api ici
+  static String get baseUrl => 'https://alpha-laundry-backend.onrender.com';
 
   ApiService._internal() {
     _dio = dio.Dio(dio.BaseOptions(
@@ -51,10 +51,12 @@ class ApiService extends GetxService {
           final token = getToken();
           print('[ApiService] Token available: ${token != null}');
           if (token != null) {
-            print('[ApiService] Adding Authorization header with token: ${token.substring(0, 20)}...');
+            print(
+                '[ApiService] Adding Authorization header with token: ${token.substring(0, 20)}...');
             options.headers['Authorization'] = 'Bearer $token';
           } else {
-            print('[ApiService] ⚠️ NO TOKEN FOUND - Request will fail for protected routes');
+            print(
+                '[ApiService] ⚠️ NO TOKEN FOUND - Request will fail for protected routes');
           }
           print('[ApiService] Request headers: ${options.headers}');
           return handler.next(options);
@@ -234,5 +236,4 @@ class ApiService extends GetxService {
   Future<ApiService> init() async {
     return this;
   }
-
-  }
+}

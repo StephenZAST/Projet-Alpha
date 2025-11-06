@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:dio/dio.dart' as dio;
+import 'package:get/get.dart';
 import '../models/admin_profile.dart';
 import './api_service.dart';
 
@@ -58,10 +58,24 @@ class AdminProfileService {
     }
   }
 
-  static Future<String> uploadProfileImage(File image) async {
+  static Future<String> uploadProfileImage(dynamic image) async {
     try {
+      dio.MultipartFile multipartFile;
+
+      // Web: image est un File HTML
+      if (GetPlatform.isWeb) {
+        // Sur web, utiliser directement le fichier
+        multipartFile = dio.MultipartFile.fromBytes(
+          await image.text() as List<int>,
+          filename: image.name ?? 'profile.jpg',
+        );
+      } else {
+        // Mobile/Desktop: image est un File dart:io
+        multipartFile = await dio.MultipartFile.fromFile(image.path);
+      }
+
       final formData = dio.FormData.fromMap({
-        'image': await dio.MultipartFile.fromFile(image.path),
+        'image': multipartFile,
       });
 
       final response = await _api.post(

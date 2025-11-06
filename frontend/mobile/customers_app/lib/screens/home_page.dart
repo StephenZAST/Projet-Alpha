@@ -16,9 +16,11 @@ import '../features/profile/screens/address_management_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
 import '../features/notifications/screens/notifications_screen.dart';
 import '../features/services/screens/services_screen.dart';
+import '../features/offers/screens/offers_screen.dart';
 import '../providers/orders_provider.dart';
 import '../providers/loyalty_provider.dart';
 import '../providers/services_provider.dart';
+import '../providers/offers_provider.dart';
 import 'loyalty/loyalty_dashboard_screen.dart';
 import 'loyalty/rewards_catalog_screen.dart';
 
@@ -179,31 +181,33 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ],
       ),
       actions: [
-        // 🌓 Toggle de thème
+        // 🌓 Toggle de thème - Glassmorphism Soft
         Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
-            return Container(
-              margin: const EdgeInsets.only(right: 8),
-              child: ThemeToggle(themeProvider: themeProvider),
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _buildGlassIconButton(
+                icon: themeProvider.themeMode == ThemeMode.dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                  HapticFeedback.lightImpact();
+                },
+                tooltip: 'Changer le thème',
+              ),
             );
           },
         ),
-        // 🔔 Notifications avec badge
+        // 🔔 Notifications avec badge - Glassmorphism Soft
         Consumer<NotificationProvider>(
           builder: (context, notificationProvider, child) {
-            return Container(
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(12),
-              ),
+            return Padding(
+              padding: const EdgeInsets.only(right: 12),
               child: Stack(
                 children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.notifications_outlined,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  _buildGlassIconButton(
+                    icon: Icons.notifications_none_rounded,
                     onPressed: () {
                       Navigator.of(context).push(
                         PageRouteBuilder(
@@ -227,21 +231,30 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                       );
                     },
+                    tooltip: 'Notifications',
                   ),
+                  // Badge élégant
                   if (notificationProvider.hasUnreadNotifications)
                     Positioned(
-                      right: 8,
-                      top: 8,
+                      right: 4,
+                      top: 4,
                       child: Container(
-                        width: 16,
-                        height: 16,
+                        width: 18,
+                        height: 18,
                         decoration: BoxDecoration(
                           color: AppColors.error,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(9),
                           border: Border.all(
                             color: Theme.of(context).scaffoldBackgroundColor,
                             width: 2,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.error.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Center(
                           child: Text(
@@ -250,7 +263,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 : '${notificationProvider.unreadCount}',
                             style: AppTextStyles.overline.copyWith(
                               color: Colors.white,
-                              fontSize: 8,
+                              fontSize: 9,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -650,13 +663,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     () => _navigateToAddresses(),
                   ),
 
-                  // 3. Offres (TODO: à implémenter)
+                  // 3. Offres
                   _buildQuickActionCard(
                     'Offres',
                     'Offres',
                     Icons.local_offer,
                     AppColors.warning,
-                    () => _showComingSoonDialog('Offres'),
+                    () => _navigateToOffers(),
                   ),
 
                   // 4. Récompenses
@@ -1447,6 +1460,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// 🎁 Navigation vers Offres
+  void _navigateToOffers() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const OffersScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
+      ),
+    );
+  }
+
   /// 🎁 Navigation vers Récompenses
   void _navigateToRewards() {
     Navigator.of(context).push(
@@ -1505,6 +1538,57 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             onPressed: () => Navigator.pop(context),
           ),
         ],
+      ),
+    );
+  }
+
+  /// 💎 Bouton Icône Glassmorphism Soft & Smart
+  /// Design élégant et subtil pour les actions du header
+  Widget _buildGlassIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    String? tooltip,
+  }) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              // Glassmorphism soft background
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.08)
+                  : Colors.black.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.08),
+                width: 1,
+              ),
+              // Subtle shadow pour la profondeur
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.black.withOpacity(0.2)
+                      : Colors.black.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.textPrimary(context),
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }

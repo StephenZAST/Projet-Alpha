@@ -11,7 +11,7 @@ class ApiConfig {
   // flutter run --dart-define=API_BASE_URL=http://localhost:3001/api
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:3001/api',
+    defaultValue: 'https://alpha-laundry-backend.onrender.com/api',
   );
   static const String affiliateEndpoint = '/affiliate';
 
@@ -41,7 +41,8 @@ class AppColors {
   static const Color secondaryDark = Color(0xFF059669);
   static const Color secondaryLight = Color(0xFF34D399);
 
-  static const Color accent = Color(0xFF49A3F1); // Utiliser la nuance gradient comme accent
+  static const Color accent =
+      Color(0xFF49A3F1); // Utiliser la nuance gradient comme accent
   static const Color accentDark = Color(0xFF2563EB);
   static const Color accentLight = Color(0xFF60A5FA);
 
@@ -96,12 +97,12 @@ class AppColors {
   // Card backgrounds (parité avec admin dashboard)
   static const Color cardBgDark = Color(0xCC1E293B); // gray800 @ 0.8
   static const Color cardBgLight = Color(0xE6FFFFFF); // white @ 0.9
-  
+
   // Glass tokens
   static const double glassBlurSigma = 10.0;
   static const double glassBorderDarkOpacity = 0.3;
   static const double glassBorderLightOpacity = 0.5;
-  
+
   // Micro tokens
   static const double iconBoxOpacity = 0.1;
   static const double badgeBorderOpacity = 0.3;
@@ -487,9 +488,9 @@ String formatNumber(dynamic value) {
   if (value is num) {
     if (value is double && (value.isNaN || value.isInfinite)) return '0';
     return value.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]} ',
-    );
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]} ',
+        );
   }
   return value.toString();
 }

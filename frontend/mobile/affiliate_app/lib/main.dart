@@ -69,7 +69,7 @@ class AffiliateApp extends StatelessWidget {
         elevation: 0,
         centerTitle: false,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.borderRadiusMD,
@@ -129,7 +129,7 @@ class AffiliateApp extends StatelessWidget {
         elevation: 0,
         centerTitle: false,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         color: AppColors.gray800,
         shape: RoundedRectangleBorder(

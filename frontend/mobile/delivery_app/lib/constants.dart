@@ -373,7 +373,8 @@ extension OrderStatusExtension on OrderStatus {
 
 class ApiConfig {
   // URL de base (à adapter selon l'environnement)
-  static const String baseUrl = 'http://localhost:3001/api';
+  static const String baseUrl =
+      'https://alpha-laundry-backend.onrender.com/api';
 
   // Endpoints principaux
   static const String authEndpoint = '/auth';

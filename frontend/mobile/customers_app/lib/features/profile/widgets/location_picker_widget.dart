@@ -41,6 +41,7 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
   bool _isLoadingCurrentLocation = false;
   bool _showSuggestions = false;
   bool _isAddressCardExpanded = false;
+  bool _isReloadingMap = false;
 
   // Paris par défaut
   static const LatLng _defaultLocation = LatLng(48.8566, 2.3522);
@@ -226,6 +227,66 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
     }
   }
 
+  /// 🔄 Recharger la carte (utile en cas de bug d'affichage)
+  Future<void> _reloadMap() async {
+    setState(() {
+      _isReloadingMap = true;
+    });
+
+    try {
+      // Attendre un court délai pour permettre au widget de se reconstruire
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (mounted) {
+        // Forcer la reconstruction du widget
+        setState(() {
+          _isReloadingMap = false;
+        });
+        
+        // Recentrer la carte sur la position sélectionnée
+        _mapController.move(_selectedLocation, 13.0);
+        
+        // Afficher un message de succès
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Carte rechargée avec succès',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: AppRadius.radiusMD,
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorSnackBar('Erreur lors du rechargement de la carte: ${e.toString()}');
+        setState(() {
+          _isReloadingMap = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -394,44 +455,85 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
               ),
             ),
 
-            // Bouton de géolocalisation
-            if (widget.showCurrentLocationButton)
-              Positioned(
-                top: 16,
-                right: 16,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface(context),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: AppShadows.medium,
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
+            // Boutons d'action (géolocalisation + rechargement)
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Column(
+                children: [
+                  // Bouton de rechargement de la carte
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface(context),
                       borderRadius: BorderRadius.circular(12),
-                      onTap: _isLoadingCurrentLocation ? null : _getCurrentLocation,
-                      child: Center(
-                        child: _isLoadingCurrentLocation
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      boxShadow: AppShadows.medium,
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: _isReloadingMap ? null : _reloadMap,
+                        child: Center(
+                          child: _isReloadingMap
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.refresh,
+                                  color: AppColors.primary,
+                                  size: 24,
                                 ),
-                              )
-                            : Icon(
-                                Icons.my_location,
-                                color: AppColors.primary,
-                                size: 24,
-                              ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  
+                  if (widget.showCurrentLocationButton) ...[
+                    const SizedBox(height: 8),
+                    // Bouton de géolocalisation
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.surface(context),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: AppShadows.medium,
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: _isLoadingCurrentLocation ? null : _getCurrentLocation,
+                          child: Center(
+                            child: _isLoadingCurrentLocation
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.my_location,
+                                    color: AppColors.primary,
+                                    size: 24,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
+            ),
 
             // Informations de l'adresse sélectionnée - Version compacte et rétractable
             Positioned(

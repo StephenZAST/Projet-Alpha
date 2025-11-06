@@ -290,7 +290,8 @@ export class LoyaltyController {
   static async calculateOrderPoints(req: Request, res: Response) {
     try {
       const { orderAmount } = req.body;
-      const points = Math.floor(orderAmount * 0.01); // 1 point par FCFA
+      // 1 point pour chaque 100 FCFA dépensés
+      const points = Math.floor(orderAmount * 0.01);
       res.json({ success: true, data: { points } });
     } catch (error: any) {
       console.error('[LoyaltyController] Error calculating order points:', error);

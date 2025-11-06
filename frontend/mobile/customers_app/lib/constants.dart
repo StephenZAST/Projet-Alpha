@@ -21,7 +21,7 @@ class AppColors {
   static const Color accent = Color(0xFF06B6D4); // Cyan moderne
   static const Color accentLight = Color(0xFF7DD3FC); // Cyan clair
   static const Color accentDark = Color(0xFF0369A1); // Cyan foncé
-  
+
   static const Color secondary = Color(0xFF8B5CF6); // Violet secondaire
   static const Color secondaryLight = Color(0xFFEDE9FE); // Violet clair
   static const Color secondaryDark = Color(0xFF6D28D9); // Violet foncé
@@ -613,7 +613,7 @@ class ApiConfig {
   // flutter run --dart-define=API_BASE_URL=http://localhost:3000
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.alphapressing.com',
+    defaultValue: 'https://alpha-laundry-backend.onrender.com',
   );
 
   // Optional API version segment (omit or set to empty if backend doesn't use it)
@@ -644,19 +644,16 @@ class ApiConfig {
 
   /// Runtime effective base URL. Priority:
   /// 1. compile-time API_BASE_URL (when provided with --dart-define)
-  /// 2. in debug mode, fall back to localhost:3001 (common dev backend)
-  /// 3. production default (https://api.alphapressing.com)
+  /// 2. production default (https://alpha-laundry-backend.onrender.com)
+  /// 
+  /// Note: Always use Render URL in production. For local development,
+  /// use: flutter run --dart-define=API_BASE_URL=http://localhost:3001
   static String get effectiveBaseUrl {
     // If developer provided an override at compile time, use it
-    if (baseUrl != 'https://api.alphapressing.com') return baseUrl;
+    if (baseUrl != 'https://alpha-laundry-backend.onrender.com') return baseUrl;
 
-    // In debug builds prefer a local backend to avoid DNS failures
-    // Use http://localhost:3001 which matches backend/.env PORT
-    if (const bool.fromEnvironment('dart.vm.product') == false) {
-      return 'http://localhost:3001';
-    }
-
-    // Otherwise, production default
+    // Always use production URL (Render)
+    // For local development, pass --dart-define=API_BASE_URL=http://localhost:3001
     return baseUrl;
   }
 }
