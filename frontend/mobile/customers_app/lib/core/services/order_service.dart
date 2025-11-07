@@ -47,6 +47,16 @@ class OrderService {
 
       if (response['success'] == true || response['data'] != null) {
         final ordersData = response['data'] ?? [];
+        
+        // 🔍 DEBUG: Log des données reçues
+        if ((ordersData as List).isNotEmpty) {
+          final firstOrder = (ordersData as List).first;
+          print('[OrderService] 📦 First order from API: ${firstOrder.toString().substring(0, 200)}...');
+          print('[OrderService] 🔑 Keys in first order: ${(firstOrder as Map).keys.toList()}');
+          print('[OrderService] 💰 manualPrice: ${(firstOrder as Map)['manualPrice']}');
+          print('[OrderService] 💳 isPaid: ${(firstOrder as Map)['isPaid']}');
+        }
+        
         return (ordersData as List)
             .map((json) => Order.fromJson(json))
             .toList();

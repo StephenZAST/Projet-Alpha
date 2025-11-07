@@ -113,7 +113,8 @@ export class OrderPaymentManagementService {
   }
 
   /**
-   * Calculer les prix (original, manuel, réduction, pourcentage)
+   * Calculer les prix (original, manuel, réduction/augmentation, pourcentage)
+   * ✅ Supporte AUSSI les augmentations (manualPrice > originalPrice)
    */
   private static calculatePricing(
     originalPrice: number,
@@ -124,7 +125,10 @@ export class OrderPaymentManagementService {
     let discount: number | undefined;
     let discountPercentage: number | undefined;
 
-    if (manualPrice !== undefined && manualPrice < originalPrice) {
+    // ✅ CALCUL DE LA RÉDUCTION OU AUGMENTATION
+    if (manualPrice !== undefined && manualPrice !== originalPrice) {
+      // Réduction si manualPrice < originalPrice (discount positif)
+      // Augmentation si manualPrice > originalPrice (discount négatif)
       discount = originalPrice - manualPrice;
       discountPercentage = (discount / originalPrice) * 100;
     }

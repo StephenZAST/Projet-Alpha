@@ -12,6 +12,9 @@ import '../../../models/enums.dart';
 import '../../../widgets/shared/glass_container.dart';
 import 'copy_order_id_row.dart';
 
+// ✅ IMPORT DE LA SECTION PRICING
+import 'order_pricing_section.dart';
+
 // Helpers pour l'affichage des remises
 String discountLabel(String key) {
   switch (key) {
@@ -587,6 +590,13 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog>
       if (controller.orderEditForm.isEmpty) {
         controller.loadOrderEditForm(order);
       }
+      // ✅ CHARGER LES DONNÉES DE PRICING - TOUJOURS RECHARGER POUR ASSURER LA PERSISTANCE
+      // Cela garantit que les données de pricing sont à jour même après un redémarrage de l'app
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (controller.orderPricing.isEmpty) {
+          controller.fetchOrderPricing(widget.orderId);
+        }
+      });
       return Container(
         width: 700,
         padding: const EdgeInsets.all(24),
@@ -609,122 +619,9 @@ class _OrderDetailsDialogState extends State<OrderDetailsDialog>
               const SizedBox(height: 16),
               CopyOrderIdRow(orderId: order.id),
               const SizedBox(height: 16),
-              // Montant total (non modifiable, couleur dynamique)
-              Obx(() {
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                final textColor = isDark ? Colors.white : Colors.black87;
-                final bgColor = isDark
-                    ? Colors.white.withOpacity(0.06)
-                    : Colors.grey.withOpacity(0.08);
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Sous-total
-                    Text('Sous-total',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, color: textColor)),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        controller.orderEditForm['subtotal']?.toString() ?? '',
-                        style: TextStyle(fontSize: 16, color: textColor),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Remises (discounts)
-                    Text('Remises',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, color: textColor)),
-                    const SizedBox(height: 4),
-                    Builder(
-                      builder: (_) {
-                        final discounts = controller.orderEditForm['discounts'];
-                        if (discounts is Map) {
-                          final entries = discounts.entries.toList();
-                          if (entries.isNotEmpty) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ...entries.map<Widget>((e) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 2),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(discountLabel(e.key),
-                                              style:
-                                                  TextStyle(color: textColor)),
-                                          Text('-${e.value} FCFA',
-                                              style:
-                                                  TextStyle(color: textColor)),
-                                        ],
-                                      ),
-                                    )),
-                                Divider(
-                                    height: 12,
-                                    color: bgColor.withOpacity(0.5)),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text('Total remises',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: textColor)),
-                                    Text('-${discountTotal(discounts)} FCFA',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: textColor)),
-                                  ],
-                                ),
-                              ],
-                            );
-                          }
-                        }
-                        // fallback: simple montant
-                        return Container(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            (discounts?.toString() ?? '0'),
-                            style: TextStyle(fontSize: 16, color: textColor),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    // Montant total
-                    Text('Montant total',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600, color: textColor)),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        controller.orderEditForm['totalAmount']?.toString() ??
-                            '',
-                        style: TextStyle(fontSize: 16, color: textColor),
-                      ),
-                    ),
-                  ],
-                );
-              }),
-              const SizedBox(height: 16),
+              // === SECTION PRICING & PAIEMENT ===
+              buildPricingSection(context, order, controller, isDark),
+              const SizedBox(height: 24),
               // Code affilié (modification possible)
               Obx(() {
                 return Column(

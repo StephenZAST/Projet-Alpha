@@ -1,6 +1,7 @@
 import '../models/order.dart';
 import '../models/orders_page_data.dart';
 import 'api_service.dart';
+import 'order_pricing_service.dart';
 
 class OrderService {
   /// Archive une commande (manuel)
@@ -599,5 +600,41 @@ class OrderService {
       print('[OrderService] Error fetching revenue statistics: $e');
       return [];
     }
+  }
+
+  // === Pricing & Payment delegation methods ===
+  /// Récupère les informations de prix et paiement d'une commande
+  static Future<Map<String, dynamic>> getOrderPricing(String orderId) async {
+    return OrderPricingService.getOrderPricing(orderId);
+  }
+
+  /// Met à jour le prix manuel et/ou le statut de paiement
+  static Future<Map<String, dynamic>> updateOrderPricing(
+    String orderId, {
+    double? manualPrice,
+    bool? isPaid,
+    String? reason,
+  }) async {
+    return OrderPricingService.updateOrderPricing(
+      orderId,
+      manualPrice: manualPrice,
+      isPaid: isPaid,
+      reason: reason,
+    );
+  }
+
+  /// Réinitialise le prix manuel (revient au prix original)
+  static Future<void> resetManualPrice(String orderId) async {
+    return OrderPricingService.resetManualPrice(orderId);
+  }
+
+  /// Marque une commande comme payée
+  static Future<void> markOrderPaid(String orderId, {String? reason}) async {
+    return OrderPricingService.markOrderPaid(orderId, reason: reason);
+  }
+
+  /// Marque une commande comme non payée
+  static Future<void> markOrderUnpaid(String orderId, {String? reason}) async {
+    return OrderPricingService.markOrderUnpaid(orderId, reason: reason);
   }
 }

@@ -68,7 +68,8 @@ export class ClientOrderQueryService {
               updated_at: true
             }
           },
-          order_metadata: true
+          order_metadata: true,
+          pricing: true
         },
         orderBy: {
           createdAt: 'desc'
@@ -138,7 +139,8 @@ export class ClientOrderQueryService {
               updated_at: true
             }
           },
-          order_metadata: true
+          order_metadata: true,
+          pricing: true
         }
       });
 
@@ -190,7 +192,8 @@ export class ClientOrderQueryService {
               }
             }
           },
-          order_metadata: true
+          order_metadata: true,
+          pricing: true
         },
         orderBy: {
           createdAt: 'desc'
@@ -347,7 +350,22 @@ export class ClientOrderQueryService {
       
       note: order.order_notes && order.order_notes.length > 0 
         ? order.order_notes[0].note 
-        : null
+        : null,
+      
+      // ✅ NOUVEAU - Données de pricing (prix manuel ajusté par admin)
+      manualPrice: order.pricing?.manual_price ? Number(order.pricing.manual_price) : null,
+      originalPrice: Number(order.totalAmount || 0),  // Le prix original est le totalAmount
+      discountPercentage: order.pricing?.manual_price && order.totalAmount
+        ? Math.round(((Number(order.totalAmount) - Number(order.pricing.manual_price)) / Number(order.totalAmount)) * 100 * 100) / 100
+        : null,
+      isPaid: order.pricing?.is_paid || false,
+      paidAt: order.pricing?.paid_at,
+      pricingReason: order.pricing?.reason,
+      
+      // 🎯 PRIX À AFFICHER - Alterne entre manualPrice et totalAmount
+      displayPrice: order.pricing?.manual_price 
+        ? Number(order.pricing.manual_price)  // Si prix manuel existe, l'utiliser
+        : Number(order.totalAmount || 0)      // Sinon, utiliser le prix original
     };
   }
 }

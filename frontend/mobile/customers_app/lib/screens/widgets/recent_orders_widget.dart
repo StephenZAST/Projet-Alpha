@@ -274,13 +274,40 @@ class _RecentOrdersWidgetState extends State<RecentOrdersWidget> {
                 ],
               ),
             ),
-            // Prix
-            Text(
-              '${order.totalAmount.toInt().toFormattedString()} F',
-              style: AppTextStyles.labelMedium.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-              ),
+            // Prix - Afficher le prix ajusté s'il existe, sinon le prix original
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${(order.manualPrice ?? order.totalAmount).toInt().toFormattedString()} F',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                // ✅ NOUVEAU - Afficher le statut de paiement
+                const SizedBox(height: 2),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: order.isPaid
+                        ? AppColors.success.withOpacity(0.1)
+                        : AppColors.warning.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    order.isPaid ? 'Payée' : 'En attente',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: order.isPaid ? AppColors.success : AppColors.warning,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 9,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

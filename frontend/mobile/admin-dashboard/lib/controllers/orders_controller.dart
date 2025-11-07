@@ -16,6 +16,9 @@ import '../services/service_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
+  // === Pricing & Payment state ===
+  final pricingLoading = false.obs;
+  final orderPricing = <String, dynamic>{}.obs;
   /// Réinitialise tout le contexte du stepper (draft, articles, etc.)
   void resetOrderStepper() {
     orderDraft.value = OrderDraft();
@@ -752,7 +755,86 @@ class OrdersController extends GetxController {
   final isOrderIdSearchActive = false.obs;
   final orderIdResult = Rxn<Order>();
 
-  Future<void> fetchOrders() async {
+  // === Pricing & Payment methods ===
+   Future<void> fetchOrderPricing(String orderId) async {
+     try {
+       pricingLoading.value = true;
+       final pricing = await OrderService.getOrderPricing(orderId);
+       orderPricing.assignAll(pricing);
+     } catch (e) {
+       _showErrorSnackbar('Erreur chargement pricing: $e');
+     } finally {
+       pricingLoading.value = false;
+     }
+   }
+
+   Future<void> applyManualPrice(
+     String orderId, {
+     double? manualPrice,
+     bool? isPaid,
+     String? reason,
+   }) async {
+     try {
+       pricingLoading.value = true;
+       await OrderService.updateOrderPricing(
+         orderId,
+         manualPrice: manualPrice,
+         isPaid: isPaid,
+         reason: reason,
+       );
+       await fetchOrderDetails(orderId, activateOrderIdSearch: false);
+       await fetchOrderPricing(orderId);
+       _showSuccessSnackbar('Prix/Paiement mis à jour');
+     } catch (e) {
+       _showErrorSnackbar('Échec mise à jour prix/paiement: $e');
+     } finally {
+       pricingLoading.value = false;
+     }
+   }
+
+   Future<void> resetManualPriceForOrder(String orderId) async {
+     try {
+       pricingLoading.value = true;
+       await OrderService.resetManualPrice(orderId);
+       await fetchOrderDetails(orderId, activateOrderIdSearch: false);
+       await fetchOrderPricing(orderId);
+       _showSuccessSnackbar('Prix manuel réinitialisé');
+     } catch (e) {
+       _showErrorSnackbar('Échec réinitialisation du prix: $e');
+     } finally {
+       pricingLoading.value = false;
+     }
+   }
+
+   Future<void> markAsPaid(String orderId, {String? reason}) async {
+     try {
+       pricingLoading.value = true;
+       await OrderService.markOrderPaid(orderId, reason: reason);
+       await fetchOrderDetails(orderId, activateOrderIdSearch: false);
+       await fetchOrderPricing(orderId);
+       _showSuccessSnackbar('Commande marquée payée');
+     } catch (e) {
+       _showErrorSnackbar('Échec marquage payée: $e');
+     } finally {
+       pricingLoading.value = false;
+     }
+   }
+
+   Future<void> markAsUnpaid(String orderId, {String? reason}) async {
+     try {
+       pricingLoading.value = true;
+       await OrderService.markOrderUnpaid(orderId, reason: reason);
+       await fetchOrderDetails(orderId, activateOrderIdSearch: false);
+       await fetchOrderPricing(orderId);
+       _showSuccessSnackbar('Commande marquée non payée');
+     } catch (e) {
+       _showErrorSnackbar('Échec marquage non payée: $e');
+     } finally {
+       pricingLoading.value = false;
+     }
+   }
+
+   Future<void> fetchOrders() async {
     // Si une recherche par ID était active, on la désactive
     isOrderIdSearchActive.value = false;
     orderIdResult.value = null;

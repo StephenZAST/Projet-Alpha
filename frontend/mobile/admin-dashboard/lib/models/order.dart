@@ -60,6 +60,9 @@ class Order {
   final String? note; // Ajouter le champ note
   final OrderMetadata? metadata; // Ajouter le champ metadata
   final bool isSubscriptionOrder;
+  
+  // 🎯 NOUVEAU - Données de pricing (prix manuel ajusté par admin)
+  final double? displayPrice;  // Prix à afficher (alterne entre manualPrice et totalAmount)
 
   // Relations
   final Service? service;
@@ -110,6 +113,7 @@ class Order {
     this.note,
     this.metadata,
     this.isSubscriptionOrder = false,
+    this.displayPrice,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -162,6 +166,7 @@ class Order {
             ? OrderMetadata.fromJson(data['metadata'])
             : null,
         isSubscriptionOrder: Order.safeBool(data['isSubscriptionOrder']),
+        displayPrice: data['displayPrice'] != null ? safeDouble(data['displayPrice']) : null,
       );
     } catch (e, stackTrace) {
       print('[Order] Error creating Order from JSON: $e');

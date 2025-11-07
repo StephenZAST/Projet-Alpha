@@ -248,11 +248,11 @@ class OrderCard extends StatelessWidget {
 
         const Spacer(),
 
-        // Total avec icône
+        // Total avec icône - 🎯 Affiche displayPrice (prix ajusté) ou totalAmount (prix original)
         Row(
           children: [
             Text(
-              '${order.totalAmount.toInt().toFormattedString()}',
+              '${(order.displayPrice ?? order.totalAmount).toInt().toFormattedString()}',
               style: AppTextStyles.labelLarge.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w800,

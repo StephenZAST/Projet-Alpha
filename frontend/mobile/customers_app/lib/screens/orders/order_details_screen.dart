@@ -603,25 +603,202 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildPriceRow(context, 'Sous-total', order.subtotal),
-          if (order.discountAmount > 0)
-            _buildPriceRow(
-              context,
-              'Réduction',
-              -order.discountAmount,
-              color: AppColors.success,
-            ),
-          if (order.deliveryFee > 0)
-            _buildPriceRow(context, 'Frais de livraison', order.deliveryFee),
-          if (order.taxAmount > 0)
-            _buildPriceRow(context, 'Taxes', order.taxAmount),
-          const Divider(height: 24),
+          
+          // ✅ NOUVEAU - Afficher le prix manuel si applicable (AVANT le total)
+          if (order.manualPrice != null) ...[
+            _buildManualPricingSection(order),
+            const SizedBox(height: 16),
+          ],
+          
+          // 💰 Prix à payer (prix ajusté ou prix original)
           _buildPriceRow(
             context,
-            'Total',
-            order.totalAmount,
+            order.manualPrice != null ? 'Prix à payer' : 'Total',
+            order.manualPrice ?? order.totalAmount,
             isTotal: true,
+            color: order.manualPrice != null ? AppColors.primary : null,
           ),
+          
+          // ✅ Afficher le statut de paiement
+          const SizedBox(height: 16),
+          _buildPaymentStatusSection(order),
+        ],
+      ),
+    );
+  }
+
+  /// ✅ NOUVEAU - Affiche le prix manuel et la réduction/augmentation
+  Widget _buildManualPricingSection(Order order) {
+    final originalPrice = order.originalPrice ?? order.totalAmount;
+    final hasReduction = order.manualPrice! < originalPrice;
+    final adjustmentAmount = (originalPrice - order.manualPrice!).abs();
+    final adjustmentPercent = order.discountPercentage ?? 0;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: hasReduction 
+          ? AppColors.success.withOpacity(0.1)
+          : AppColors.warning.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: hasReduction 
+            ? AppColors.success.withOpacity(0.3)
+            : AppColors.warning.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Titre avec icône
+          Row(
+            children: [
+              Icon(
+                hasReduction ? Icons.trending_down : Icons.trending_up,
+                color: hasReduction ? AppColors.success : AppColors.warning,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasReduction ? 'Réduction appliquée' : 'Augmentation appliquée',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          
+          // Prix original et manuel
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Prix original',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary(context),
+                ),
+              ),
+              Text(
+                '${originalPrice.toInt().toFormattedString()} FCFA',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Prix ajusté',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary(context),
+                ),
+              ),
+              Text(
+                '${order.manualPrice!.toInt().toFormattedString()} FCFA',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          
+          // Montant et pourcentage
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Montant',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '${hasReduction ? '-' : '+'}${adjustmentAmount.toInt().toFormattedString()} FCFA',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Pourcentage',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '${hasReduction ? '-' : '+'}${adjustmentPercent.toStringAsFixed(2)}%',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ✅ NOUVEAU - Affiche le statut de paiement
+  Widget _buildPaymentStatusSection(Order order) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: order.isPaid 
+          ? AppColors.success.withOpacity(0.15)
+          : AppColors.warning.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: order.isPaid 
+            ? AppColors.success.withOpacity(0.5)
+            : AppColors.warning.withOpacity(0.5),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            order.isPaid ? Icons.check_circle : Icons.pending,
+            color: order.isPaid ? AppColors.success : AppColors.warning,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            order.isPaid ? 'Payée' : 'Non payée',
+            style: AppTextStyles.labelMedium.copyWith(
+              color: order.isPaid ? AppColors.success : AppColors.warning,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (order.paidAt != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              'le ${_formatFullDate(order.paidAt!)}',
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+          ],
         ],
       ),
     );
