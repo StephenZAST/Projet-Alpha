@@ -4,9 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   file_saver
-  file_selector_windows
   flutter_error_handler
-  share_plus
   url_launcher_windows
 )
 

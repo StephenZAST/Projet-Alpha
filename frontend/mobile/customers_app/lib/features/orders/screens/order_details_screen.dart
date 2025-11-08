@@ -382,15 +382,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 
-  /// 💰 Section tarification
+  /// 💰 Section tarification (SIMPLIFIÉE - Compacte)
   Widget _buildPricingSection() {
     return GlassContainer(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tarification',
+            'Détail des Prix',
             style: AppTextStyles.labelLarge.copyWith(
               color: AppColors.textPrimary(context),
               fontWeight: FontWeight.w700,
@@ -398,22 +398,35 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           ),
           const SizedBox(height: 16),
           
-          // ✅ NOUVEAU - Afficher le prix manuel si applicable
-          if (_currentOrder.manualPrice != null)
+          // ✅ Afficher le prix manuel si applicable
+          if (_currentOrder.manualPrice != null) ...[
             _buildManualPricingSection(),
+            const SizedBox(height: 16),
+          ],
           
-          _buildPriceRow('Sous-total', _currentOrder.subtotal),
-          if (_currentOrder.discountAmount > 0)
-            _buildPriceRow('Reduction', -_currentOrder.discountAmount, isDiscount: true),
-          if (_currentOrder.deliveryFee > 0)
-            _buildPriceRow('Frais de livraison', _currentOrder.deliveryFee),
-          if (_currentOrder.taxAmount > 0)
-            _buildPriceRow('Taxes', _currentOrder.taxAmount),
-          const Divider(height: 24),
-          _buildPriceRow('Total', _currentOrder.totalAmount, isTotal: true),
+          // 💰 Prix à payer (prix ajusté ou prix original)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Prix à payer',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '${(_currentOrder.manualPrice ?? _currentOrder.totalAmount).toInt().toFormattedString()} FCFA',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
           
-          // ✅ NOUVEAU - Afficher le statut de paiement
-          const SizedBox(height: 16),
+          // ✅ Afficher le statut de paiement
+          const SizedBox(height: 12),
           _buildPaymentStatusBadge(),
         ],
       ),
@@ -422,8 +435,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   /// ✅ NOUVEAU - Affiche le prix manuel et la réduction/augmentation
   Widget _buildManualPricingSection() {
-    final hasReduction = _currentOrder.manualPrice! < _currentOrder.subtotal;
-    final adjustmentAmount = (_currentOrder.subtotal - _currentOrder.manualPrice!).abs();
+    final hasReduction = _currentOrder.manualPrice! < _currentOrder.totalAmount;
+    final adjustmentAmount = (_currentOrder.totalAmount - _currentOrder.manualPrice!).abs();
     final adjustmentPercent = _currentOrder.discountPercentage ?? 0;
     
     return Container(
@@ -474,7 +487,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 ),
               ),
               Text(
-                '${_currentOrder.subtotal.toInt().toFormattedString()} FCFA',
+                '${_currentOrder.totalAmount.toInt().toFormattedString()} FCFA',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.textPrimary(context),
                   fontWeight: FontWeight.w600,
@@ -543,38 +556,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               ),
             ],
           ),
-          
-          // Raison si disponible
-          if (_currentOrder.pricingReason != null && _currentOrder.pricingReason!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.surface(context),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info,
-                    size: 16,
-                    color: AppColors.textSecondary(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _currentOrder.pricingReason!,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary(context),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -726,10 +707,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    // ✅ CORRIGÉ - Utiliser isPaid au lieu de paymentStatus
                     Text(
-                      _currentOrder.paymentStatus.displayName,
+                      _currentOrder.isPaid ? 'Payé' : 'En attente',
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: _currentOrder.paymentStatus.color,
+                        color: _currentOrder.isPaid ? AppColors.success : AppColors.warning,
                       ),
                     ),
                   ],
@@ -747,7 +729,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  _currentOrder.isPaid ? 'Paye' : 'En attente',
+                  _currentOrder.isPaid ? 'Payé' : 'En attente',
                   style: AppTextStyles.labelSmall.copyWith(
                     color: _currentOrder.isPaid ? AppColors.success : AppColors.warning,
                     fontWeight: FontWeight.w700,

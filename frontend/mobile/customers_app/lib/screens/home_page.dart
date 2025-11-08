@@ -1077,79 +1077,102 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  /// 🎁 Section Promotions
+  /// 🎁 Section Promotions - Offre Généreuse Première Commande
   Widget _buildPromoSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.accent.withOpacity(0.1),
-            AppColors.primary.withOpacity(0.1)
+            AppColors.accent.withOpacity(0.15),
+            AppColors.primary.withOpacity(0.15)
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.2),
-          width: 1,
+          color: AppColors.primary.withOpacity(0.3),
+          width: 1.5,
         ),
       ),
       child: Row(
         children: [
+          // Icône avec gradient
           Container(
-            width: 60,
-            height: 60,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppColors.accent, AppColors.primary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: const Icon(
-              Icons.local_offer,
+              Icons.card_giftcard,
               color: Colors.white,
-              size: 30,
+              size: 26,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
+          // Contenu texte compact
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Offre Spéciale',
-                  style: AppTextStyles.labelLarge.copyWith(
+                  '🎉 Bienvenue chez Alpha!',
+                  style: AppTextStyles.labelMedium.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w700,
+                    fontSize: 12,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  '-20% sur votre prochaine commande de plus de 50€',
-                  style: AppTextStyles.bodyMedium.copyWith(
+                  '2 chemises + 1 pantalon gratuits en premium',
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary(context),
+                    fontSize: 11,
+                    height: 1.3,
                   ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'En profiter',
-                    style: AppTextStyles.labelMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Bouton compact
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              'Profiter',
+              style: AppTextStyles.labelSmall.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
             ),
           ),
         ],

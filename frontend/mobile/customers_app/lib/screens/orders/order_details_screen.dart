@@ -1,3 +1,4 @@
+import 'package:customers_app/features/orders/widgets/order_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../constants.dart';
@@ -175,7 +176,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 
-  /// ⏱️ Timeline des statuts
+  /// ⏱️ Timeline des statuts (✅ UTILISE LE WIDGET RÉUTILISABLE)
   Widget _buildStatusTimeline(Order order) {
     return GlassContainer(
       child: Column(
@@ -189,123 +190,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildTimelineStep(
-            'Commande passée',
-            order.createdAt,
-            true,
-            Icons.shopping_cart,
-            AppColors.primary,
-          ),
-          _buildTimelineStep(
-            'Confirmée',
-            order.confirmedAt,
-            order.status.index >= OrderStatus.pending.index,
-            Icons.check_circle,
-            AppColors.success,
-          ),
-          _buildTimelineStep(
-            'En traitement',
-            order.processingAt,
-            order.status.index >= OrderStatus.processing.index,
-            Icons.settings,
-            AppColors.warning,
-          ),
-          _buildTimelineStep(
-            'Prête',
-            order.readyAt,
-            order.status.index >= OrderStatus.ready.index,
-            Icons.inventory,
-            AppColors.info,
-          ),
-          _buildTimelineStep(
-            'En livraison',
-            order.deliveringAt,
-            order.status.index >= OrderStatus.delivering.index,
-            Icons.local_shipping,
-            AppColors.accent,
-          ),
-          _buildTimelineStep(
-            'Livrée',
-            order.deliveredAt,
-            order.status == OrderStatus.delivered,
-            Icons.check_circle,
-            AppColors.success,
-            isLast: true,
-          ),
+          // ✅ UTILISE LE WIDGET RÉUTILISABLE QUI SE MET À JOUR AUTOMATIQUEMENT
+          OrderTimeline(order: order),
         ],
       ),
-    );
-  }
-
-  Widget _buildTimelineStep(
-    String title,
-    DateTime? date,
-    bool isCompleted,
-    IconData icon,
-    Color color, {
-    bool isLast = false,
-  }) {
-    return Row(
-      children: [
-        Column(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: isCompleted
-                    ? color
-                    : AppColors.textTertiary(context).withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                color: isCompleted
-                    ? Colors.white
-                    : AppColors.textTertiary(context),
-                size: 16,
-              ),
-            ),
-            if (!isLast)
-              Container(
-                width: 2,
-                height: 24,
-                color: isCompleted
-                    ? color
-                    : AppColors.textTertiary(context).withOpacity(0.3),
-              ),
-          ],
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 0 : 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTextStyles.labelMedium.copyWith(
-                    color: isCompleted
-                        ? AppColors.textPrimary(context)
-                        : AppColors.textSecondary(context),
-                    fontWeight: isCompleted ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
-                if (date != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    _formatFullDate(date),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textTertiary(context),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 
