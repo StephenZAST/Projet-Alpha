@@ -15,6 +15,7 @@ import '../screens/subscriptions/subscription_management_page.dart';
 import '../screens/offers/offers_screen.dart';
 import '../screens/loyalty/loyalty_screen.dart';
 import '../screens/delivery/delivery_screen.dart';
+import '../screens/client_managers/client_managers_screen.dart';
 import '../constants.dart';
 
 /// Gestionnaire centralisé des écrans pour éviter les instances multiples
@@ -92,6 +93,8 @@ class ScreenManager extends GetxController {
         return _wrapWithKey(LoyaltyScreen(), 'loyalty_$timestamp');
       case MenuIndices.delivery:
         return _wrapWithKey(DeliveryScreen(), 'delivery_$timestamp');
+      case MenuIndices.clientManagers:
+        return _wrapWithKey(ClientManagersScreen(), 'client_managers_$timestamp');
       default:
         return DashboardScreen(key: Key('dashboard_default_$timestamp'));
     }
@@ -158,6 +161,8 @@ class ScreenManager extends GetxController {
         return 'Loyalty';
       case MenuIndices.delivery:
         return 'Delivery';
+      case MenuIndices.clientManagers:
+        return 'ClientManagers';
       default:
         return 'Unknown';
     }

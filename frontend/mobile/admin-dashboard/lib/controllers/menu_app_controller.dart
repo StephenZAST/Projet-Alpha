@@ -119,6 +119,8 @@ class MenuAppController extends GetxController {
         return 'LoyaltyScreen';
       case MenuIndices.delivery:
         return 'DeliveryScreen';
+      case MenuIndices.clientManagers:
+        return 'ClientManagersScreen';
       default:
         return 'Unknown';
     }
@@ -142,6 +144,7 @@ class MenuAppController extends GetxController {
   void goToProfile() => updateIndex(10);
   void goToNotifications() => updateIndex(11);
   void goToSubscriptions() => updateIndex(13); // Nouvelle section
+  void goToClientManagers() => updateIndex(15); // 👥 Agents & Clients
 
   // Obtenir le titre de la page actuelle
   String getCurrentPageTitle() {
@@ -172,6 +175,8 @@ class MenuAppController extends GetxController {
         return 'Système de Fidélité';
       case MenuIndices.delivery:
         return 'Gestion Livreurs';
+      case MenuIndices.clientManagers:
+        return 'Agents & Clients';
       default:
         return 'Tableau de bord';
     }

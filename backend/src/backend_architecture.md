@@ -8,6 +8,7 @@ services
 types
 utils
 app.ts
+backend_architecture.md
 scheduler.ts
 config\database.ts
 config\index.ts
@@ -41,6 +42,7 @@ controllers\subscription.controller.ts
 controllers\user.controller.ts
 controllers\weightPricing.controller.ts
 controllers\admin\affiliateLink.controller.ts
+controllers\admin\clientManager.controller.ts
 controllers\admin\serviceManagement.controller.ts
 controllers\affiliate\linkedClients.controller.ts
 controllers\client\affiliateLink.controller.ts
@@ -119,6 +121,8 @@ services\articleServicePrice.service.ts
 services\auth.service.ts
 services\blogArticle.service.ts
 services\blogCategory.service.ts
+services\clientManager.service.ts
+services\clientManagerStats.service.ts
 services\defaultService.service.ts
 services\delivery.service.ts
 services\discount.service.ts
@@ -150,6 +154,7 @@ services\order.service\order.service.ts
 services\order.service\orderCreate.service.ts
 services\order.service\orderItem.service.ts
 services\order.service\orderPayment.service.ts
+services\order.service\orderPriceAdjustment.service.ts
 services\order.service\orderQuery.service.ts
 services\order.service\orderStatus.service.ts
 services\order.service\orderUpdate.service.ts

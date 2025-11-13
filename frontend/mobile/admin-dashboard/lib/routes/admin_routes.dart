@@ -21,6 +21,8 @@ import '../controllers/article_service_controller.dart';
 import '../screens/services/service_types_screen.dart';
 import '../screens/services/service_article_couples_screen.dart';
 import '../screens/affiliates/affiliate_management_screen.dart';
+import '../screens/client_managers/client_managers_screen.dart';
+import '../bindings/client_managers_binding.dart';
 import '../middleware/auth_middleware.dart';
 
 class AdminBinding extends Bindings {
@@ -74,6 +76,7 @@ class AdminRoutes {
   static const String loyalty = '/loyalty';
   static const String delivery = '/delivery';
   static const String affiliates = '/affiliates';
+  static const String clientManagers = '/client-managers';
 
   // Ajouter les routes pour les commandes flash
   static const String flashOrders = '/orders/flash';
@@ -109,6 +112,8 @@ class AdminRoutes {
         return notifications;
       case MenuIndices.subscriptions:
         return subscriptions;
+      case MenuIndices.clientManagers:
+        return clientManagers;
       default:
         return dashboard;
     }
@@ -145,6 +150,8 @@ class AdminRoutes {
         return MenuIndices.notifications;
       case subscriptions:
         return MenuIndices.subscriptions;
+      case clientManagers:
+        return MenuIndices.clientManagers;
       default:
         return MenuIndices.dashboard;
     }
@@ -246,6 +253,13 @@ class AdminRoutes {
       middlewares: [AuthMiddleware()],
       transition: Transition.fadeIn,
     ),
+    GetPage(
+      name: clientManagers,
+      page: () => ClientManagersScreen(),
+      binding: ClientManagersBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.fadeIn,
+    ),
   ];
 
   // Navigation helpers
@@ -307,6 +321,10 @@ class AdminRoutes {
 
   static void goToAffiliates() {
     navigateByIndex(MenuIndices.affiliates);
+  }
+
+  static void goToClientManagers() {
+    navigateByIndex(MenuIndices.clientManagers);
   }
 
   // Ajouter les méthodes de navigation

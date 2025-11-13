@@ -6,6 +6,119 @@ const prisma = new PrismaClient();
 const MIN_WITHDRAWAL_AMOUNT = 5000; // 5000 FCFA minimum
 
 export class AffiliateCommissionService {
+  /**
+   * 💰 Traite une nouvelle commission basée sur le prix effectif de la commande
+   * Utilise le prix manuel s'il existe, sinon le prix originel
+   * 
+   * ✅ À UTILISER lors de la création d'une commande avec code affilié
+   * 
+   * @param orderId - ID de la commande
+   * @param order - La commande complète avec relations (doit inclure pricing)
+   * @param affiliateCode - Code affilié
+   * @returns true si la commission a été traitée avec succès
+   */
+  static async processNewCommissionFromOrder(
+    orderId: string,
+    order: any,
+    affiliateCode: string
+  ): Promise<boolean> {
+    try {
+      // Importer la fonction utilitaire
+      const { getEffectiveOrderTotal } = require('../../controllers/order.controller/shared');
+      
+      console.log(`[AffiliateCommissionService] Looking for affiliate with code: ${affiliateCode}`);
+      
+      const affiliate = await prisma.affiliate_profiles.findFirst({
+        where: { 
+          affiliate_code: affiliateCode,
+          is_active: true
+          // ✅ CORRECTION : Accepter PENDING, ACTIVE, SUSPENDED - peu importe le statut tant que is_active = true
+        }
+      });
+
+      if (!affiliate) {
+        console.warn(`[AffiliateCommissionService] Active affiliate not found for code: ${affiliateCode}`);
+        return false;
+      }
+      
+      console.log(`[AffiliateCommissionService] Found affiliate:`, {
+        id: affiliate.id,
+        code: affiliate.affiliate_code,
+        status: affiliate.status,
+        is_active: affiliate.is_active
+      });
+
+      // Récupérer le prix effectif (manuel ou originel)
+      const effectiveOrderAmount = getEffectiveOrderTotal(order);
+      
+      console.log(`[AffiliateCommissionService] DEBUG - Order object:`, {
+        orderId: order.id,
+        totalAmount: order.totalAmount,
+        pricing: order.pricing,
+        effectiveOrderAmount: effectiveOrderAmount
+      });
+      
+      const commissionRate = await this.calculateCommissionRate(affiliate.total_referrals || 0);
+      const commissionAmount = effectiveOrderAmount * (commissionRate / 100);
+
+      console.log(
+        `[AffiliateCommissionService] Processing commission from order:
+        Order ID: ${orderId}
+        Effective Amount: ${effectiveOrderAmount}
+        Commission Rate: ${commissionRate}%
+        Commission Amount: ${commissionAmount}`
+      );
+      
+      // ⚠️ VALIDATION : Si commissionAmount est 0, c'est un problème
+      if (commissionAmount === 0) {
+        console.error(`[AffiliateCommissionService] ⚠️ CRITICAL: Commission amount is 0!`, {
+          effectiveOrderAmount,
+          commissionRate,
+          order: {
+            id: order.id,
+            totalAmount: order.totalAmount,
+            pricing: order.pricing
+          }
+        });
+      }
+
+      await prisma.$transaction([
+        prisma.affiliate_profiles.update({
+          where: { id: affiliate.id },
+          data: {
+            commission_balance: {
+              increment: new Prisma.Decimal(commissionAmount)
+            },
+            total_earned: {
+              increment: new Prisma.Decimal(commissionAmount)
+            },
+            monthly_earnings: {
+              increment: new Prisma.Decimal(commissionAmount)
+            },
+            total_referrals: {
+              increment: 1
+            },
+            updated_at: new Date()
+          }
+        }),
+        prisma.commission_transactions.create({
+          data: {
+            affiliate_id: affiliate.id,
+            order_id: orderId,
+            amount: new Prisma.Decimal(commissionAmount),
+            created_at: new Date(),
+            updated_at: new Date()
+          }
+        })
+      ]);
+
+      return true;
+    } catch (error) {
+      console.error('[AffiliateCommissionService] Process commission from order error:', error);
+      throw error;
+    }
+  }
+
   static async getCommissions(
     affiliateId: string,
     page: number = 1,

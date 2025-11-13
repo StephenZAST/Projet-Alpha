@@ -11,6 +11,7 @@ theme
 types
 utils
 widgets
+admin_dashboard_architecture.md
 constants.dart
 design_buton.md
 main.dart
@@ -18,6 +19,7 @@ order-json.md
 responsive.dart
 bindings\admin_binding.dart
 bindings\app_bindings.dart
+bindings\client_managers_binding.dart
 bindings\flash_orders_binding.dart
 bindings\orders_binding.dart
 bindings\users_binding.dart
@@ -32,6 +34,7 @@ controllers\article_controller.dart
 controllers\article_service_controller.dart
 controllers\auth_controller.dart
 controllers\category_controller.dart
+controllers\client_managers_controller.dart
 controllers\dashboard_controller.dart
 controllers\delivery_controller.dart
 controllers\export_controller.dart
@@ -61,6 +64,7 @@ models\article_category.dart
 models\article_service.dart
 models\category.dart
 models\chart_data.dart
+models\client_manager.dart
 models\dashboard_stats.dart
 models\delivery.dart
 models\enums.dart
@@ -91,6 +95,7 @@ screens\analytics
 screens\articles
 screens\auth
 screens\categories
+screens\client_managers
 screens\components
 screens\dashboard
 screens\delivery
@@ -148,6 +153,13 @@ screens\categories\components\category_dialog.dart
 screens\categories\components\category_filters.dart
 screens\categories\components\category_stats_grid.dart
 screens\categories\components\category_table.dart
+screens\client_managers\components
+screens\client_managers\client_managers_screen.dart
+screens\client_managers\components\agent_dashboard_dialog.dart
+screens\client_managers\components\client_list_item.dart
+screens\client_managers\components\inactive_clients_card.dart
+screens\client_managers\components\index.dart
+screens\client_managers\components\top_clients_card.dart
 screens\components\export_button.dart
 screens\components\header.dart
 screens\dashboard\components
@@ -240,6 +252,9 @@ screens\orders\components\order_map_details_dialog.dart
 screens\orders\components\order_map_filters.dart
 screens\orders\components\order_map_info_panel.dart
 screens\orders\components\order_map_marker.dart
+screens\orders\components\order_pricing_components.dart
+screens\orders\components\order_pricing_dialogs.dart
+screens\orders\components\order_pricing_section.dart
 screens\orders\components\simple_orders_table.dart
 screens\orders\components\status_update_dialog.dart
 screens\orders\flash_orders\components
@@ -343,6 +358,7 @@ services\article_service_couple_service.dart
 services\article_service_service.dart
 services\auth_service.dart
 services\category_service.dart
+services\client_manager_service.dart
 services\dashboard_service.dart
 services\delivery_service.dart
 services\directions_service.dart
@@ -356,6 +372,7 @@ services\notification_service.dart
 services\offer_service.dart
 services\order_cache_service.dart
 services\order_map_service.dart
+services\order_pricing_service.dart
 services\order_service.dart
 services\pricing_service.dart
 services\service_service.dart

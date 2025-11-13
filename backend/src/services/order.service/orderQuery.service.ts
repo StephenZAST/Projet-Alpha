@@ -139,20 +139,79 @@ export class OrderQueryService {
     }
   }
 
-  static async getOrderDetails(orderId: string): Promise<Order> {
+  static async getOrderDetails(orderId: string): Promise<any> {
     try {
       const order = await prisma.orders.findUnique({
         where: {
           id: orderId
         },
-        include: this.orderInclude
+        include: {
+          ...this.orderInclude,
+          pricing: true,
+          commission_transactions: true
+        }
       });
 
       if (!order) {
         throw new Error('Order not found');
       }
 
-      return this.formatOrder(order);
+      // Récupérer les points de loyauté de l'utilisateur
+      const loyaltyPoints = await prisma.loyalty_points.findUnique({
+        where: { userId: order.userId }
+      });
+
+      // Récupérer les infos d'affiliation
+      let affiliateInfo = null;
+      if (order.affiliateCode) {
+        affiliateInfo = await prisma.affiliate_profiles.findUnique({
+          where: { affiliate_code: order.affiliateCode }
+        });
+      }
+
+      // Calculer les prix
+      const originalPrice = Number(order.totalAmount || 0);
+      const manualPrice = order.pricing?.manual_price ? Number(order.pricing.manual_price) : null;
+      const effectivePrice = manualPrice !== null ? manualPrice : originalPrice;
+      const hasManual = manualPrice !== null;
+      const discount = hasManual ? originalPrice - effectivePrice : 0;
+      const discountPercentage = hasManual && originalPrice > 0 ? ((discount / originalPrice) * 100).toFixed(2) : '0';
+
+      // Calculer les totaux de commissions
+      const totalCommissions = order.commission_transactions?.reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0) || 0;
+
+      // Retourner la commande formatée avec les infos enrichies
+      const formattedOrder = this.formatOrder(order);
+      
+      return {
+        ...formattedOrder,
+        pricing: {
+          originalPrice,
+          manualPrice,
+          effectivePrice,
+          hasManualPrice: hasManual,
+          discount,
+          discountPercentage: parseFloat(discountPercentage),
+          isPaid: order.pricing?.is_paid || false,
+          paidAt: order.pricing?.paid_at
+        },
+        loyalty: {
+          pointsBalance: loyaltyPoints?.pointsBalance || 0,
+          totalPointsEarned: loyaltyPoints?.totalEarned || 0
+        },
+        commissions: {
+          affiliateCode: order.affiliateCode,
+          affiliateId: affiliateInfo?.id || null,
+          totalCommissions,
+          commissionRate: affiliateInfo?.commission_rate ? Number(affiliateInfo.commission_rate) : null,
+          transactions: order.commission_transactions?.map((t: any) => ({
+            id: t.id,
+            amount: Number(t.amount),
+            status: t.status,
+            createdAt: t.created_at
+          })) || []
+        }
+      };
     } catch (error) {
       console.error('Error fetching order details:', error);
       throw error;

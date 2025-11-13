@@ -158,23 +158,17 @@ export class PricingService {
       }
     });
 
-    // Si le lien n'existe pas, créer automatiquement une entrée avec prix par défaut
+    // Si le lien n'existe pas, retourner une erreur au lieu de créer un fallback
     if (!servicePrice) {
-      const serviceType = await prisma.service_types.findUnique({ where: { id: serviceTypeId } });
-      servicePrice = await prisma.article_service_prices.create({
-        data: {
-          article_id: articleId,
-          service_type_id: serviceTypeId,
-          base_price: 1,
-          premium_price: 1,
-          is_available: true,
-          price_per_kg: 1,
-          pricing_type: serviceType?.pricing_type || 'PER_ITEM',
-        },
-        include: {
-          service_types: true
-        }
-      });
+      console.error(
+        `[PricingService] ERREUR: Couple article/service/serviceType non trouvé:
+        articleId=${articleId}
+        serviceTypeId=${serviceTypeId}
+        serviceId=${serviceId}`
+      );
+      throw new Error(
+        `Price configuration not found for article ${articleId} with service ${serviceId} and service type ${serviceTypeId}`
+      );
     }
 
     const pricingType = servicePrice.service_types?.pricing_type as PricingType || 'PER_ITEM';
