@@ -8,8 +8,27 @@ import { AuthService } from '../services/auth.service';
 const router = express.Router();
 
 // Routes publiques d'authentification client
+// 🔐 Support pour Email OU Téléphone à la connexion
 router.post('/register', validateRegistration, asyncHandler(AuthController.register));
-router.post('/login', validateLogin, asyncHandler(AuthController.login));
+router.post('/login', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
+      return res.status(400).json({ 
+        error: 'Email/Phone and password are required' 
+      });
+    }
+
+    await AuthController.login(req, res);
+  } catch (error: any) {
+    console.error('Login error:', error);
+    res.status(401).json({
+      success: false,
+      error: error.message || 'Authentication failed'
+    });
+  }
+}));
 
 // Route d'authentification admin
 router.post('/admin/login', validateLogin, asyncHandler(async (req: Request, res: Response) => {

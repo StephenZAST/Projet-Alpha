@@ -29,14 +29,18 @@ export class AuthController {
 
   static async login(req: Request, res: Response) {
     try {
-        const { email, password } = req.body;
-        console.log('Login request received:', { email, password }); // Ajoutez ce log
+        // 🔐 Support pour Email OU Téléphone
+        const { identifier, password } = req.body;
+        console.log('Login request received:', { identifier, password });
 
-        if (!email || !password) {
-          return res.status(400).json({ error: 'Email and password are required' });
+        if (!identifier || !password) {
+          return res.status(400).json({ 
+            error: 'Email/Phone and password are required' 
+          });
         } 
 
-        const { user, token } = await AuthService.login(email, password);
+        // Utiliser la nouvelle méthode qui supporte email ET téléphone
+        const { user, token } = await AuthService.loginWithPhoneOrEmail(identifier, password);
         
         // Définir le cookie avec le token
         res.cookie('token', token, {
@@ -60,7 +64,7 @@ export class AuthController {
             }
         });
     } catch (error: any) {
-        console.error('Login error:', error); // Ajoutez ce log
+        console.error('Login error:', error);
         res.status(401).json({
             success: false,
             error: error.message || 'Authentication failed'

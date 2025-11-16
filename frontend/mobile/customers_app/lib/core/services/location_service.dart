@@ -5,9 +5,8 @@ import 'package:geolocator/geolocator.dart';
 /// 🗺️ Service de Géolocalisation - Alpha Client App
 ///
 /// Service pour gérer la géolocalisation et le géocodage
-/// avec OpenStreetMap (Nominatim) sans clé API requise.
+/// avec backend API (proxy Nominatim sans CORS)
 class LocationService {
-  static const String _nominatimBaseUrl = 'https://nominatim.openstreetmap.org';
   static const Duration _timeout = Duration(seconds: 10);
 
   /// 📍 Obtenir la position actuelle de l'utilisateur
@@ -30,102 +29,130 @@ class LocationService {
         longitude: position.longitude,
       );
     } catch (e) {
-      return LocationResult.error('Impossible d\'obtenir votre position: ${e.toString()}');
+      return LocationResult.error(
+          'Impossible d\'obtenir votre position: ${e.toString()}');
     }
   }
 
   /// 🔍 Rechercher des adresses par texte (géocodage)
+  /// ✅ Utilise maintenant le backend pour éviter les erreurs CORS
   static Future<List<LocationSuggestion>> searchAddresses(String query) async {
     if (query.trim().length < 3) {
       return [];
     }
 
-    // Éviter de rechercher "Position GPS" qui cause des erreurs CORS
-    if (query.trim() == 'Position GPS' || query.contains('Position GPS')) {
-      return [];
-    }
-
     try {
-      final encodedQuery = Uri.encodeComponent(query.trim());
-      final url = '$_nominatimBaseUrl/search?q=$encodedQuery&format=json&limit=5&addressdetails=1&countrycodes=fr';
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'User-Agent': 'AlphaPressing/1.0.0',
-        },
-      ).timeout(_timeout);
+      print('[LocationService] 🔍 Recherche via backend: $query');
+
+      // 🔑 APPEL AU BACKEND au lieu de Nominatim directement
+      const String backendUrl = 'http://localhost:3001/api/geocoding/search';
+
+      final response = await http
+          .post(
+            Uri.parse(backendUrl),
+            headers: {
+              'Content-Type': 'application/json',
+              'User-Agent': 'AlphaPressing/1.0.0',
+            },
+            body: jsonEncode({'query': query.trim()}),
+          )
+          .timeout(_timeout);
 
       if (response.statusCode == 200) {
-        final List<dynamic> results = jsonDecode(response.body);
-        return results.map((result) => LocationSuggestion.fromNominatim(result)).toList();
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data['results'] ?? [];
+
+        print('[LocationService] ✅ Résultats reçus: ${results.length}');
+
+        return results
+            .map((result) => LocationSuggestion(
+                  displayName: result['address'] ?? '',
+                  latitude: result['latitude'],
+                  longitude: result['longitude'],
+                  city: result['city'],
+                  postalCode: result['postalCode'],
+                  street: result['address']?.split(',').first ?? '',
+                ))
+            .toList();
+      } else if (response.statusCode == 404) {
+        print('[LocationService] ⚠️ Aucun résultat trouvé');
+        return [];
       } else {
+        print(
+            '[LocationService] ❌ Erreur ${response.statusCode}: ${response.body}');
         return [];
       }
     } catch (e) {
-      print('Erreur lors de la recherche d\'adresses: $e');
+      print('[LocationService] ❌ Erreur recherche: $e');
       return [];
     }
   }
 
   /// 🗺️ Géocodage inverse (coordonnées vers adresse)
-  static Future<LocationSuggestion?> reverseGeocode(double latitude, double longitude) async {
+  /// ✅ Utilise maintenant le backend pour éviter les erreurs CORS
+  static Future<LocationSuggestion?> reverseGeocode(
+      double latitude, double longitude) async {
     try {
-      // Essayer d'abord avec Nominatim
-      final nominatimResult = await _tryNominatimReverse(latitude, longitude);
-      if (nominatimResult != null) {
-        return nominatimResult;
-      }
+      print(
+          '[LocationService] 🔄 Géocodage inverse via backend: $latitude, $longitude');
 
-      // Fallback : créer une suggestion basique avec les coordonnées
-      print('[LocationService] Fallback: utilisation des coordonnées comme adresse');
-      return LocationSuggestion(
-        displayName: '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}',
-        latitude: latitude,
-        longitude: longitude,
-        city: null,
-        postalCode: null,
-        street: 'Position GPS',
-      );
-    } catch (e) {
-      print('[LocationService] Erreur lors du géocodage inverse: $e');
-      
-      // Retourner une suggestion basique même en cas d'erreur
-      return LocationSuggestion(
-        displayName: '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}',
-        latitude: latitude,
-        longitude: longitude,
-        city: null,
-        postalCode: null,
-        street: 'Position GPS',
-      );
-    }
-  }
+      // 🔑 APPEL AU BACKEND
+      const String backendUrl = 'http://localhost:3001/api/geocoding/reverse';
 
-  /// 🌐 Tentative de géocodage inverse avec Nominatim
-  static Future<LocationSuggestion?> _tryNominatimReverse(double latitude, double longitude) async {
-    try {
-      final url = '$_nominatimBaseUrl/reverse?lat=$latitude&lon=$longitude&format=json&addressdetails=1&accept-language=fr';
-      
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'User-Agent': 'AlphaPressing/1.0.0',
-          'Accept': 'application/json',
-          'Accept-Language': 'fr,en;q=0.9',
-        },
-      ).timeout(const Duration(seconds: 8));
+      final response = await http
+          .post(
+            Uri.parse(backendUrl),
+            headers: {
+              'Content-Type': 'application/json',
+              'User-Agent': 'AlphaPressing/1.0.0',
+            },
+            body: jsonEncode({
+              'latitude': latitude,
+              'longitude': longitude,
+            }),
+          )
+          .timeout(_timeout);
 
       if (response.statusCode == 200) {
-        final result = jsonDecode(response.body);
-        return LocationSuggestion.fromNominatim(result);
+        final data = jsonDecode(response.body);
+        final result = data['result'];
+
+        print('[LocationService] ✅ Adresse trouvée: ${result['address']}');
+
+        return LocationSuggestion(
+          displayName: result['address'] ?? '',
+          latitude: latitude,
+          longitude: longitude,
+          city: result['city'],
+          postalCode: result['postalCode'],
+          street: result['address']?.split(',').first ?? '',
+        );
+      } else {
+        // Fallback : créer une suggestion basique avec les coordonnées
+        print('[LocationService] ⚠️ Fallback: utilisation des coordonnées');
+        return LocationSuggestion(
+          displayName:
+              '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}',
+          latitude: latitude,
+          longitude: longitude,
+          city: null,
+          postalCode: null,
+          street: 'Position GPS',
+        );
       }
-      
-      print('[LocationService] Nominatim échoué: ${response.statusCode}');
-      return null;
     } catch (e) {
-      print('[LocationService] Erreur Nominatim: $e');
-      return null;
+      print('[LocationService] ❌ Erreur géocodage inverse: $e');
+
+      // Retourner une suggestion basique même en cas d'erreur
+      return LocationSuggestion(
+        displayName:
+            '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}',
+        latitude: latitude,
+        longitude: longitude,
+        city: null,
+        postalCode: null,
+        street: 'Position GPS',
+      );
     }
   }
 
@@ -135,12 +162,13 @@ class LocationService {
       // Vérifier si le service de localisation est activé
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        return PermissionResult.error('Le service de localisation est désactivé');
+        return PermissionResult.error(
+            'Le service de localisation est désactivé');
       }
 
       // Vérifier les permissions
       LocationPermission permission = await Geolocator.checkPermission();
-      
+
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
@@ -150,20 +178,22 @@ class LocationService {
 
       if (permission == LocationPermission.deniedForever) {
         return PermissionResult.error(
-          'Permission de localisation refusée définitivement. Veuillez l\'activer dans les paramètres.'
-        );
+            'Permission de localisation refusée définitivement. Veuillez l\'activer dans les paramètres.');
       }
 
       return PermissionResult.success();
     } catch (e) {
-      return PermissionResult.error('Erreur lors de la vérification des permissions: ${e.toString()}');
+      return PermissionResult.error(
+          'Erreur lors de la vérification des permissions: ${e.toString()}');
     }
   }
 
   /// 📏 Calculer la distance entre deux points (en mètres)
   static double calculateDistance(
-    double lat1, double lon1,
-    double lat2, double lon2,
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
   ) {
     return Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
   }
@@ -262,7 +292,7 @@ class LocationSuggestion {
   /// 📊 Conversion depuis Nominatim JSON
   factory LocationSuggestion.fromNominatim(Map<String, dynamic> json) {
     final address = json['address'] ?? {};
-    
+
     return LocationSuggestion(
       displayName: json['display_name'] ?? '',
       houseNumber: address['house_number'],
@@ -278,19 +308,19 @@ class LocationSuggestion {
   /// 🏠 Adresse formatée pour l'affichage
   String get formattedAddress {
     final parts = <String>[];
-    
+
     if (houseNumber != null && street != null) {
       parts.add('$houseNumber $street');
     } else if (street != null) {
       parts.add(street!);
     }
-    
+
     if (postalCode != null && city != null) {
       parts.add('$postalCode $city');
     } else if (city != null) {
       parts.add(city!);
     }
-    
+
     return parts.join(', ');
   }
 

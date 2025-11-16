@@ -15,7 +15,7 @@ class AuthService {
   Future<AuthResult> login(String email, String password) async {
     try {
       debugPrint('[AuthService] POST ${ApiConfig.url('/auth/login')}');
-      debugPrint('[AuthService] Payload: email=$email, password=***');
+      debugPrint('[AuthService] Payload: identifier=$email, password=***');
       final response = await http
           .post(
             Uri.parse(ApiConfig.url('/auth/login')),
@@ -23,7 +23,7 @@ class AuthService {
               'Content-Type': 'application/json',
             },
             body: jsonEncode({
-              'email': email,
+              'identifier': email,
               'password': password,
             }),
           )

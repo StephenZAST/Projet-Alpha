@@ -50,14 +50,15 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// 🔑 Connexion
-  Future<bool> login(String email, String password) async {
-    debugPrint('[AuthProvider] Tentative de connexion pour $email');
+  /// 🔑 Connexion avec Email OU Téléphone
+  /// 📱 Support pour identifier = email ou téléphone (+22651542586)
+  Future<bool> login(String identifier, String password) async {
+    debugPrint('[AuthProvider] Tentative de connexion pour $identifier');
     _setLoading(true);
     _clearError();
 
     try {
-      final result = await _authService.login(email, password);
+      final result = await _authService.login(identifier, password);
       debugPrint(
           '[AuthProvider] Résultat login: isSuccess=${result.isSuccess}, erreur=${result.error}');
       if (result.isSuccess && result.user != null) {
@@ -65,7 +66,7 @@ class AuthProvider extends ChangeNotifier {
         _isAuthenticated = true;
         _clearError();
         notifyListeners();
-        debugPrint('[AuthProvider] Connexion réussie pour $email');
+        debugPrint('[AuthProvider] Connexion réussie pour $identifier');
         return true;
       } else {
         _setError(result.error ?? 'Erreur de connexion');
