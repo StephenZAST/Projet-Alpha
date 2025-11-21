@@ -1,0 +1,142 @@
+/**
+ * 💎 GlassCard Styles - Glassmorphism Effect
+ */
+
+.card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--duration-medium) var(--timing-ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    background: rgba(30, 41, 59, 0.9);
+  }
+}
+
+/* =============================================================================
+   🎨 VARIANTES
+   ============================================================================= */
+
+.neutral {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  .neutral {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.primary {
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(96, 165, 250, 0.05) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .primary {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(37, 99, 235, 0.1) 100%);
+    border-color: rgba(37, 99, 235, 0.4);
+  }
+}
+
+.success {
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(16, 185, 129, 0.05) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .success {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(16, 185, 129, 0.1) 100%);
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+}
+
+.warning {
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 158, 11, 0.05) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .warning {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(245, 158, 11, 0.1) 100%);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+}
+
+.error {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(239, 68, 68, 0.05) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .error {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(239, 68, 68, 0.1) 100%);
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* =============================================================================
+   🎯 ÉTATS
+   ============================================================================= */
+
+.withBorder {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  .withBorder {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.withShadow {
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  .withShadow {
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.15), 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.hover {
+  cursor: pointer;
+}
+
+.hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.15);
+}
+
+.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.clickable:active {
+  transform: scale(0.98);
+}
+
+/* =============================================================================
+   ♿ ACCESSIBILITÉ
+   ============================================================================= */
+
+.clickable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* =============================================================================
+   📱 RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 640px) {
+  .card {
+    padding: var(--spacing-md);
+  }
+}

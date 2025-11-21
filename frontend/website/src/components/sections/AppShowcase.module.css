@@ -1,0 +1,384 @@
+/**
+ * 📱 App Showcase Styles
+ */
+
+.appSection {
+  padding: var(--spacing-xxxl) 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(37, 99, 235, 0.05) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .appSection {
+    background: linear-gradient(180deg, transparent 0%, rgba(37, 99, 235, 0.03) 100%);
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* =============================================================================
+   🎯 HEADER
+   ============================================================================= */
+
+.header {
+  margin-bottom: var(--spacing-xxxl);
+  text-align: center;
+}
+
+.superTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary, #2563EB);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--spacing-md);
+}
+
+.title {
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 700;
+  color: var(--color-text-primary, #0F172A);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .title {
+    color: var(--color-text-dark-primary, #F8FAFC);
+  }
+}
+
+.subtitle {
+  font-size: clamp(16px, 2vw, 18px);
+  color: var(--color-text-secondary, #475569);
+  margin-bottom: var(--spacing-lg);
+  line-height: 1.6;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .subtitle {
+    color: var(--color-text-dark-secondary, #CBD5E1);
+  }
+}
+
+/* =============================================================================
+   📱 APP GRID
+   ============================================================================= */
+
+.appGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xxxl);
+}
+
+@media (max-width: 768px) {
+  .appGrid {
+    gap: var(--spacing-md);
+  }
+}
+
+@media (max-width: 640px) {
+  .appGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =============================================================================
+   🎨 APP CARD
+   ============================================================================= */
+
+.appCard {
+  background: var(--color-surface-light, #FFFFFF);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: var(--spacing-lg);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  opacity: 0;
+  animation: slideUp 0.6s var(--timing-ease-out-quart, cubic-bezier(0.165, 0.84, 0.44, 1)) forwards;
+}
+
+@media (prefers-color-scheme: dark) {
+  .appCard {
+    background: rgba(30, 41, 59, 0.9);
+  }
+}
+
+.appCard:hover {
+  border-color: rgba(37, 99, 235, 0.3);
+  box-shadow: 0 20px 40px rgba(37, 99, 235, 0.1);
+  transform: translateY(-8px);
+}
+
+.appIcon {
+  font-size: 56px;
+  margin-bottom: var(--spacing-md);
+  line-height: 1;
+}
+
+.appTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0F172A);
+  margin-bottom: var(--spacing-sm);
+}
+
+@media (prefers-color-scheme: dark) {
+  .appTitle {
+    color: var(--color-text-dark-primary, #F8FAFC);
+  }
+}
+
+.appDescription {
+  font-size: 14px;
+  color: var(--color-text-secondary, #475569);
+  line-height: 1.6;
+  margin-bottom: var(--spacing-lg);
+  flex-grow: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .appDescription {
+    color: var(--color-text-dark-secondary, #CBD5E1);
+  }
+}
+
+.appFeatures {
+  list-style: none;
+  padding: 0;
+  margin-bottom: var(--spacing-lg);
+  font-size: 13px;
+}
+
+.appFeature {
+  color: var(--color-text-secondary, #475569);
+  margin-bottom: var(--spacing-sm);
+  padding-left: var(--spacing-md);
+  position: relative;
+}
+
+.appFeature::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary, #2563EB);
+  font-weight: 700;
+}
+
+@media (prefers-color-scheme: dark) {
+  .appFeature {
+    color: var(--color-text-dark-secondary, #CBD5E1);
+  }
+}
+
+/* =============================================================================
+   🔘 APP BUTTONS
+   ============================================================================= */
+
+.appButtons {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.appButton {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 120px;
+}
+
+.appButtonPrimary {
+  background: var(--color-primary, #2563EB);
+  color: white;
+}
+
+.appButtonPrimary:hover {
+  background: var(--color-primary-dark, #1E40AF);
+  transform: scale(1.02);
+}
+
+.appButtonSecondary {
+  background: transparent;
+  color: var(--color-primary, #2563EB);
+  border: 2px solid var(--color-primary, #2563EB);
+}
+
+.appButtonSecondary:hover {
+  background: var(--color-primary, #2563EB);
+  color: white;
+}
+
+/* =============================================================================
+   💡 BENEFITS SECTION
+   ============================================================================= */
+
+.benefitsSection {
+  background: var(--color-surface-light, #FFFFFF);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: var(--spacing-lg);
+  backdrop-filter: blur(10px);
+  margin-bottom: var(--spacing-xxxl);
+}
+
+@media (prefers-color-scheme: dark) {
+  .benefitsSection {
+    background: rgba(30, 41, 59, 0.9);
+  }
+}
+
+.benefitsSectionTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0F172A);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .benefitsSectionTitle {
+    color: var(--color-text-dark-primary, #F8FAFC);
+  }
+}
+
+.benefitsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.benefitCard {
+  padding: var(--spacing-lg);
+  background: var(--color-bg-light, #F8FAFC);
+  border-radius: 12px;
+  border-left: 4px solid var(--color-primary, #2563EB);
+  transition: all 0.2s ease;
+}
+
+.benefitCard:hover {
+  background: var(--color-primary-light, #60A5FA);
+  transform: translateX(4px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .benefitCard {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .benefitCard:hover {
+    background: rgba(37, 99, 235, 0.2);
+  }
+}
+
+.benefitIcon {
+  font-size: 32px;
+  margin-bottom: var(--spacing-sm);
+}
+
+.benefitTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0F172A);
+  margin-bottom: var(--spacing-xs);
+}
+
+@media (prefers-color-scheme: dark) {
+  .benefitTitle {
+    color: var(--color-text-dark-primary, #F8FAFC);
+  }
+}
+
+.benefitDescription {
+  font-size: 14px;
+  color: var(--color-text-secondary, #475569);
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  .benefitDescription {
+    color: var(--color-text-dark-secondary, #CBD5E1);
+  }
+}
+
+/* =============================================================================
+   🎬 ANIMATIONS
+   ============================================================================= */
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================================================================
+   📱 RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 768px) {
+  .appSection {
+    padding: var(--spacing-xxl) 0;
+  }
+
+  .header {
+    margin-bottom: var(--spacing-xxl);
+  }
+
+  .title {
+    font-size: 32px;
+  }
+
+  .appCard {
+    padding: var(--spacing-md);
+  }
+
+  .appTitle {
+    font-size: 18px;
+  }
+
+  .appButtons {
+    flex-direction: column;
+  }
+
+  .appButton {
+    flex: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .appSection {
+    padding: var(--spacing-xl) 0;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .benefitsGrid {
+    grid-template-columns: 1fr;
+  }
+}

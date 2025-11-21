@@ -1,0 +1,158 @@
+/**
+ * 🎯 Problems Section Styles
+ */
+
+.problems {
+  padding: var(--spacing-xxxl) 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(239, 68, 68, 0.05) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .problems {
+    background: linear-gradient(180deg, transparent 0%, rgba(239, 68, 68, 0.1) 100%);
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* =============================================================================
+   📝 HEADER
+   ============================================================================= */
+
+.header {
+  text-align: center;
+  margin-bottom: var(--spacing-xxxl);
+}
+
+.title {
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--color-text-primary-light);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .title {
+    color: var(--color-text-primary-dark);
+  }
+}
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 32px;
+  }
+}
+
+/* =============================================================================
+   🎯 GRID - 3 COLONNES
+   ============================================================================= */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+}
+
+/* =============================================================================
+   💎 CARD
+   ============================================================================= */
+
+.card {
+  opacity: 0;
+  animation: slideUp 0.6s var(--timing-ease-out-quart) forwards;
+}
+
+.card.visible {
+  animation: slideUp 0.6s var(--timing-ease-out-quart) forwards;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.icon {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  .cardTitle {
+    color: var(--color-text-primary-dark);
+  }
+}
+
+.cardDescription {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-secondary-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  .cardDescription {
+    color: var(--color-text-secondary-dark);
+  }
+}
+
+/* =============================================================================
+   🎬 ANIMATIONS
+   ============================================================================= */
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =============================================================================
+   📱 RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 640px) {
+  .problems {
+    padding: var(--spacing-xxl) 0;
+  }
+
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+
+  .header {
+    margin-bottom: var(--spacing-xxl);
+  }
+
+  .title {
+    font-size: 28px;
+  }
+}

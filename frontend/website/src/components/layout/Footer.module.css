@@ -1,0 +1,262 @@
+/**
+ * 🔗 Footer Styles
+ */
+
+.footer {
+  background: linear-gradient(180deg, var(--color-gray-50) 0%, var(--color-white) 100%);
+  border-top: 1px solid var(--color-gray-200);
+  padding: var(--spacing-xxxl) 0 var(--spacing-xl);
+  margin-top: var(--spacing-xxxl);
+}
+
+@media (prefers-color-scheme: dark) {
+  .footer {
+    background: linear-gradient(180deg, var(--color-gray-900) 0%, var(--color-gray-800) 100%);
+    border-top-color: var(--color-gray-700);
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* =============================================================================
+   📋 CONTENU PRINCIPAL
+   ============================================================================= */
+
+.content {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+@media (max-width: 1024px) {
+  .content {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 640px) {
+  .content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+}
+
+/* =============================================================================
+   🏷️ COLONNES
+   ============================================================================= */
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.columnTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary-light);
+  margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .columnTitle {
+    color: var(--color-text-primary-dark);
+  }
+}
+
+/* =============================================================================
+   🔗 LIENS
+   ============================================================================= */
+
+.links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.links a {
+  font-size: 14px;
+  color: var(--color-text-secondary-light);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--timing-ease-out);
+}
+
+@media (prefers-color-scheme: dark) {
+  .links a {
+    color: var(--color-text-secondary-dark);
+  }
+}
+
+.links a:hover {
+  color: var(--color-primary);
+}
+
+/* =============================================================================
+   📞 CONTACT
+   ============================================================================= */
+
+.contact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.phone,
+.email {
+  font-size: 14px;
+  color: var(--color-text-secondary-light);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--timing-ease-out);
+}
+
+@media (prefers-color-scheme: dark) {
+  .phone,
+  .email {
+    color: var(--color-text-secondary-dark);
+  }
+}
+
+.phone:hover,
+.email:hover {
+  color: var(--color-primary);
+}
+
+.phone {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* =============================================================================
+   🔗 RÉSEAUX SOCIAUX
+   ============================================================================= */
+
+.socialLinks {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.socialLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: 50%;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all var(--duration-fast) var(--timing-ease-out);
+}
+
+@media (prefers-color-scheme: dark) {
+  .socialLink {
+    background: rgba(37, 99, 235, 0.2);
+  }
+}
+
+.socialLink:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* =============================================================================
+   ➖ SÉPARATEUR
+   ============================================================================= */
+
+.divider {
+  height: 1px;
+  background: var(--color-gray-200);
+  margin: var(--spacing-xl) 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .divider {
+    background: var(--color-gray-700);
+  }
+}
+
+/* =============================================================================
+   📝 BAS DU FOOTER
+   ============================================================================= */
+
+.bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.copyright {
+  font-size: 14px;
+  color: var(--color-text-secondary-light);
+  margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .copyright {
+    color: var(--color-text-secondary-dark);
+  }
+}
+
+.bottomLinks {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.bottomLinks a {
+  font-size: 14px;
+  color: var(--color-text-secondary-light);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--timing-ease-out);
+}
+
+@media (prefers-color-scheme: dark) {
+  .bottomLinks a {
+    color: var(--color-text-secondary-dark);
+  }
+}
+
+.bottomLinks a:hover {
+  color: var(--color-primary);
+}
+
+/* =============================================================================
+   📱 RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 640px) {
+  .footer {
+    padding: var(--spacing-xxl) 0 var(--spacing-lg);
+    margin-top: var(--spacing-xxl);
+  }
+
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+
+  .divider {
+    margin: var(--spacing-lg) 0;
+  }
+}
