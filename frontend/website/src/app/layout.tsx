@@ -3,7 +3,6 @@
  */
 
 import type { Metadata } from 'next';
-import '@/styles/variables.css';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -31,9 +30,17 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="theme-color" content="#2563EB" />
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        
+        {/* Favicones - Meilleure pratique moderne */}
+        <link rel="icon" type="image/svg+xml" href="/images/alphalogo.svg" />
+        <link rel="alternate icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/images/alphalogo.png" />
         <link rel="manifest" href="/manifest.json" />
+        
+        {/* Meta pour PWA */}
+        <meta name="msapplication-TileColor" content="#2563EB" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
         {children}

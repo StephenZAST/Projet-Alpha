@@ -63,15 +63,25 @@ export const Footer: React.FC = () => {
                 <Link href="/pricing">Réductions et offres spéciales</Link>
               </li>
               <li>
-                <Link href="/">Application</Link>
-              </li>
-              <li>
-                <Link href="/">Points de fidélité</Link>
+                <Link href="/pricing">Points de fidélité</Link>
               </li>
             </ul>
           </div>
 
-          {/* Colonne 4 - Contact */}
+          {/* Colonne 4 - Applications */}
+          <div className={styles.column}>
+            <h4 className={styles.columnTitle}>Nos applications</h4>
+            <ul className={styles.links}>
+              <li>
+                <Link href="/client-app">Application Client</Link>
+              </li>
+              <li>
+                <Link href="/affiliate-app">Programme Affiliate</Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Colonne 5 - Contact */}
           <div className={styles.column}>
             <h4 className={styles.columnTitle}>Appelez écrivez nous</h4>
             <div className={styles.contact}>
