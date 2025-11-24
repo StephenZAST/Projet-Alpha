@@ -21,11 +21,7 @@ const nextConfig = {
   // Optimisation des polices
   optimizeFonts: true,
 
-  // Experimental features
-  experimental: {
-    optimizePackageImports: ['@/components', '@/lib'],
-  },
-
+  
   // Headers de sécurité
   async headers() {
     return [
