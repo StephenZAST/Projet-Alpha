@@ -93,8 +93,6 @@ export const Hero: React.FC = () => {
     return null;
   }
 
-  const slide = HERO_SLIDES[currentSlide];
-
   return (
     <section className={styles.hero}>
       <div className={styles.carousel}>
