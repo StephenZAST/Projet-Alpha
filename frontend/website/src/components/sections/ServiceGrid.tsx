@@ -5,7 +5,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Button } from '../common/Button';
 import styles from './ServiceGrid.module.css';
 import { EXTERNAL_LINKS, ADDITIONAL_SERVICES } from '@/lib/constants';
 
