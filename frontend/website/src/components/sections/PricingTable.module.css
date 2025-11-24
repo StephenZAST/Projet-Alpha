@@ -1,0 +1,689 @@
+/**
+ * 💰 Pricing Table Styles - Tableau des tarifs dynamique
+ */
+
+.pricingSection {
+  padding: var(--spacing-xxxl) 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(37, 99, 235, 0.05) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .pricingSection {
+    background: linear-gradient(180deg, transparent 0%, rgba(37, 99, 235, 0.03) 100%);
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+/* =============================================================================
+   🎯 HEADER
+   ============================================================================= */
+
+.header {
+  margin-bottom: var(--spacing-xxxl);
+  text-align: center;
+}
+
+.superTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary, #2563EB);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--spacing-md);
+}
+
+.title {
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 700;
+  color: var(--color-text-primary, #0F172A);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .title {
+    color: var(--color-text-dark-primary, #F8FAFC);
+  }
+}
+
+.subtitle {
+  font-size: clamp(16px, 2vw, 18px);
+  color: var(--color-text-secondary, #475569);
+  margin-bottom: var(--spacing-lg);
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+@media (prefers-color-scheme: dark) {
+  .subtitle {
+    color: var(--color-text-dark-secondary, #CBD5E1);
+  }
+}
+
+/* =============================================================================
+   📋 INTRODUCTION
+   ============================================================================= */
+
+.introduction {
+  background: var(--color-surface-light, #FFFFFF);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xxxl);
+  backdrop-filter: blur(10px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .introduction {
+    background: rgba(30, 41, 59, 0.9);
+  }
+}
+
+.introductionTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0F172A);
+  margin-bottom: var(--spacing-md);
+}
+
+@media (prefers-color-scheme: dark) {
+  .introductionTitle {
+    color: var(--color-text-dark-primary, #F8FAFC);
+  }
+}
+
+.introductionText {
+  font-size: 16px;
+  color: var(--color-text-secondary, #475569);
+  line-height: 1.8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .introductionText {
+    color: var(--color-text-dark-secondary, #CBD5E1);
+  }
+}
+
+/* =============================================================================
+   📊 PRICING TABLE
+   ============================================================================= */
+
+.tableWrapper {
+  background: var(--color-surface-light, #FFFFFF);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-xxxl);
+  backdrop-filter: blur(10px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tableWrapper {
+    background: rgba(30, 41, 59, 0.9);
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .table {
+    font-size: 13px;
+  }
+}
+
+.tableHead {
+  background: linear-gradient(90deg, var(--color-primary, #2563EB), var(--color-primary-light, #60A5FA));
+  color: white;
+  font-weight: 600;
+}
+
+.tableHead th {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  .tableHead th {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+.tableBody tr {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .tableBody tr {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.tableBody tr:hover {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tableBody tr:hover {
+    background: rgba(37, 99, 235, 0.1);
+  }
+}
+
+.tableBody td {
+  padding: var(--spacing-md) var(--spacing-lg);
+  color: var(--color-text-primary, #0F172A);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tableBody td {
+    color: var(--color-text-dark-primary, #F8FAFC);
+  }
+}
+
+@media (max-width: 768px) {
+  .tableBody td {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+}
+
+.articleColumn {
+  font-weight: 600;
+  color: var(--color-primary, #2563EB);
+}
+
+.priceColumn {
+  font-weight: 700;
+  color: var(--color-primary, #2563EB);
+  font-size: 16px;
+}
+
+.notesColumn {
+  font-size: 13px;
+  color: var(--color-text-secondary, #475569);
+  font-style: italic;
+}
+
+@media (prefers-color-scheme: dark) {
+  .notesColumn {
+    color: var(--color-text-dark-secondary, #CBD5E1);
+  }
+}
+
+/* =============================================================================
+   🔍 LOADING STATE
+   ============================================================================= */
+
+.loadingMessage {
+  text-align: center;
+  padding: var(--spacing-xxxl) var(--spacing-lg);
+  color: var(--color-text-secondary, #475569);
+  font-size: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .loadingMessage {
+    color: var(--color-text-dark-secondary, #CBD5E1);
+  }
+}
+
+/* =============================================================================
+   📱 MOBILE RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 1024px) {
+  .pricingSection {
+    padding: var(--spacing-xxl) 0;
+  }
+
+  .header {
+    margin-bottom: var(--spacing-xxl);
+  }
+}
+
+@media (max-width: 640px) {
+  .pricingSection {
+    padding: var(--spacing-xl) 0;
+  }
+
+  .header {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .introduction {
+    padding: var(--spacing-md);
+  }
+
+  .introductionTitle {
+    font-size: 18px;
+  }
+
+  .introductionText {
+    font-size: 14px;
+  }
+
+  .table {
+    font-size: 12px;
+  }
+
+  .tableHead th,
+  .tableBody td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .tableWrapper {
+    overflow-x: auto;
+  }
+}
+
+/* =============================================================================
+   🎬 ANIMATIONS
+   ============================================================================= */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tableWrapper {
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* =============================================================================
+   💳 ARTICLE CARD
+   ============================================================================= */
+
+.articleCard {
+  padding: 16px;
+  background: var(--color-surface-light, #FFFFFF);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  text-align: center;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .articleCard {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .articleCard:hover {
+    border-color: rgba(37, 99, 235, 0.5);
+    background: rgba(30, 41, 59, 0.95);
+  }
+}
+
+.articleCard:hover {
+  border-color: #2563EB;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
+}
+
+.articleCardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+  margin-bottom: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .articleCardTitle {
+    color: var(--color-text-primary-dark, #F8FAFC);
+  }
+}
+
+.articleCardCta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary, #2563EB);
+  background: rgba(37, 99, 235, 0.1);
+  padding: 8px 16px;
+  border-radius: 6px;
+  display: inline-block;
+  transition: all 0.2s;
+}
+
+.articleCard:hover .articleCardCta {
+  background: rgba(37, 99, 235, 0.2);
+  transform: translateX(4px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .articleCardCta {
+    background: rgba(96, 165, 250, 0.15);
+    color: var(--color-accent, #06B6D4);
+  }
+
+  .articleCard:hover .articleCardCta {
+    background: rgba(96, 165, 250, 0.25);
+  }
+}
+
+/* =============================================================================
+   🎨 DIALOG STYLES
+   ============================================================================= */
+
+.dialogOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.dialogContent {
+  background: var(--color-surface-light, #FFFFFF);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogContent {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.dialogHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.dialogTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogTitle {
+    color: var(--color-text-primary-dark, #F8FAFC);
+  }
+}
+
+.dialogSubtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary, #475569);
+  margin: 8px 0 0 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogSubtitle {
+    color: var(--color-text-secondary-dark, #CBD5E1);
+  }
+}
+
+.dialogCloseButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--color-text-secondary, #6B7280);
+  transition: color 0.2s;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialogCloseButton:hover {
+  color: var(--color-primary, #2563EB);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogCloseButton {
+    color: var(--color-text-secondary-dark, #94A3B8);
+  }
+}
+
+.dialogInfoBox {
+  background: rgba(219, 234, 254, 0.5);
+  border: 1px solid rgba(147, 197, 253, 0.5);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: #1E40AF;
+  backdrop-filter: blur(10px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogInfoBox {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.3);
+    color: #93C5FD;
+  }
+}
+
+.dialogPricesList {
+  display: grid;
+  gap: 16px;
+}
+
+.dialogPriceItem {
+  padding: 16px;
+  background: rgba(249, 250, 251, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(229, 231, 235, 0.4);
+  border-radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceItem {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.dialogPriceItemHeader {
+  margin-bottom: 12px;
+}
+
+.dialogPriceItemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceItemTitle {
+    color: var(--color-text-primary-dark, #F8FAFC);
+  }
+}
+
+.dialogPriceItemSubtitle {
+  font-size: 12px;
+  color: var(--color-text-secondary, #475569);
+  margin: 4px 0 0 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceItemSubtitle {
+    color: var(--color-text-secondary-dark, #CBD5E1);
+  }
+}
+
+.dialogPriceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.dialogPriceBox {
+  padding: 12px;
+  background: rgba(219, 234, 254, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(191, 219, 254, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceBox {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(96, 165, 250, 0.2);
+  }
+}
+
+.dialogPriceBox.premium {
+  background: rgba(243, 232, 255, 0.6);
+  border-color: rgba(233, 213, 255, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceBox.premium {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(168, 85, 247, 0.2);
+  }
+}
+
+.dialogPriceBox.disabled {
+  background: rgba(243, 244, 246, 0.4);
+  border-color: rgba(229, 231, 235, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceBox.disabled {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.dialogPriceLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1E40AF;
+  margin-bottom: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceLabel {
+    color: #93C5FD;
+  }
+}
+
+.dialogPriceBox.premium .dialogPriceLabel {
+  color: #7C3AED;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceBox.premium .dialogPriceLabel {
+    color: #D8B4FE;
+  }
+}
+
+.dialogPriceBox.disabled .dialogPriceLabel {
+  color: #9CA3AF;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceBox.disabled .dialogPriceLabel {
+    color: #9CA3AF;
+  }
+}
+
+.dialogPriceValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceValue {
+    color: var(--color-text-primary-dark, #F8FAFC);
+  }
+}
+
+.dialogPriceBox.disabled .dialogPriceValue {
+  color: #9CA3AF;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPriceBox.disabled .dialogPriceValue {
+    color: #9CA3AF;
+  }
+}
+
+.dialogPricePerKg {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: rgba(209, 250, 229, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #065F46;
+  font-weight: 600;
+  border: 1px solid rgba(167, 243, 208, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialogPricePerKg {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(52, 211, 153, 0.2);
+    color: #86EFAC;
+  }
+}
+
+@media (max-width: 640px) {
+  .dialogContent {
+    padding: 24px;
+    border-radius: 12px;
+  }
+
+  .dialogTitle {
+    font-size: 20px;
+  }
+
+  .dialogHeader {
+    margin-bottom: 16px;
+  }
+}

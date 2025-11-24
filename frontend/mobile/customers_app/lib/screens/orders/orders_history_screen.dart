@@ -351,11 +351,34 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
                           color: AppColors.textSecondary(context),
                         ),
                       ),
+                      // ✅ NOUVEAU - Afficher le prix ajusté s'il existe, sinon le prix original
                       Text(
-                        '${order.totalAmount.toFormattedString()} FCFA',
+                        '${(order.displayPrice ?? order.totalAmount).toFormattedString()} FCFA',
                         style: AppTextStyles.labelLarge.copyWith(
                           color: AppColors.textPrimary(context),
                           fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      // ✅ NOUVEAU - Afficher le statut de paiement
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: order.isPaid
+                              ? AppColors.success.withOpacity(0.1)
+                              : AppColors.warning.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          order.isPaid ? 'Payée' : 'En attente',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: order.isPaid ? AppColors.success : AppColors.warning,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10,
+                          ),
                         ),
                       ),
                     ],

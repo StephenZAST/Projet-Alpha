@@ -1688,3 +1688,30 @@ class NotificationService {
 **Rédigé par:** Assistant d'analyse système  
 **Dernier update:** 16 Octobre 2025  
 **Prochaine review:** Après implémentation Phase 1
+
+
+
+| # | Feature | Type | Client | Admin | Delivery | Affiliate | Priority | Channels | Phase |
+|---|---------|------|--------|-------|----------|-----------|----------|----------|-------|
+| 1 | Loyalty | Reward Approved | ✅ | - | - | - | HIGH | PUSH, IN_APP | 1 |
+| 2 | Loyalty | Reward Rejected | ✅ | - | - | - | HIGH | PUSH, IN_APP, EMAIL | 1 |
+| 3 | Loyalty | Points Milestone | ✅ | - | - | - | LOW | PUSH | 3 |
+| 4 | Loyalty | Reward Used | ✅ | ✅ | - | - | HIGH | PUSH, IN_APP | 2 |
+
+| 6 | Orders | Order Placed | ✅ | ✅ | - | - | HIGH | PUSH, IN_APP, EMAIL | 1 |
+| 7 | Orders | Payment Failed | ✅ | ✅ | - | - | CRITICAL | PUSH, IN_APP, EMAIL | 1 |
+| 8 | Orders | Status Changed | ✅ | ✅ | ✅ | - | HIGH | PUSH, IN_APP | 1 |
+| 9 | Orders | Ready Pickup | ✅ | - | - | - | HIGH | PUSH, EMAIL | 1 |
+| 10 | Orders | Reminder | ✅ | - | - | - | LOW | PUSH | 3 |
+| 11 | Orders | Cancelled | ✅ | ✅ | - | - | HIGH | PUSH, IN_APP, EMAIL | 1 |
+
+| 14 | Delivery | Completed | ✅ | ✅ | - | - | HIGH | PUSH, IN_APP | 1 |
+| 15 | Delivery | Problem | ✅ | ✅ | ✅ | - | CRITICAL | PUSH, IN_APP | 1 |
+| 16 | Affiliate | Referral Used | - | - | - | ✅ | HIGH | PUSH, IN_APP | 2 |
+| 17 | Affiliate | Commission Earned | - | - | - | ✅ | HIGH | PUSH, IN_APP | 2 |
+| 18 | Affiliate | Withdrawal Approved | - | - | - | ✅ | HIGH | PUSH, IN_APP, EMAIL | 2 |
+| 19 | Affiliate | Withdrawal Rejected | - | - | - | ✅ | HIGH | PUSH, IN_APP | 2 |
+| 20 | Affiliate | Level Up | - | - | - | ✅ | MEDIUM | PUSH, IN_APP | 3 |
+
+| 24 | Admin | New Order | - | ✅ | - | - | HIGH | PUSH, IN_APP | 1 |
+| 25 | Admin | Payment Issue | - | ✅ | - | - | CRITICAL | PUSH, IN_APP, EMAIL | 2 |

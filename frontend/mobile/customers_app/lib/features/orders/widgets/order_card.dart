@@ -248,11 +248,11 @@ class OrderCard extends StatelessWidget {
 
         const Spacer(),
 
-        // Total avec icône
+        // Total avec icône - 🎯 Affiche displayPrice (prix ajusté) ou totalAmount (prix original)
         Row(
           children: [
             Text(
-              '${order.totalAmount.toInt().toFormattedString()}',
+              '${(order.displayPrice ?? order.totalAmount).toInt().toFormattedString()}',
               style: AppTextStyles.labelLarge.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w800,
@@ -274,6 +274,7 @@ class OrderCard extends StatelessWidget {
     );
   }
 
+  
   /// 📅 Formater la date
   String _formatDate(DateTime date) {
     final now = DateTime.now();

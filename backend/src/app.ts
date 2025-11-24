@@ -27,6 +27,7 @@ import weightPricingRoutes from './routes/weightPricing.routes';
 import serviceTypeRoutes from './routes/serviceType.routes';
 import userRoutes from './routes/user.routes';
 import orderPricingRoutes from './routes/orderPricing.routes';
+import geocodingRoutes from './routes/geocoding.routes';
 // Load environment variables
 dotenv.config();
 
@@ -131,6 +132,7 @@ app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/geocoding', geocodingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/offers', offerRoutes);
 app.use('/api/article-categories', articleCategoryRoutes);

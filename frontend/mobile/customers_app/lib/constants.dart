@@ -609,8 +609,14 @@ class AppDimensions {
 // =============================================================================
 
 class ApiConfig {
+  // ✅ NOUVEAU - Support pour basculer entre localhost et Render
+  // Usage:
+  //   Production (Render):  flutter run -d chrome
+  //   Local (localhost):    flutter run -d chrome --dart-define=USE_LOCAL=true
+  static const bool _useLocal = bool.fromEnvironment('USE_LOCAL', defaultValue: false);
+
   // Allow overriding the base URL at compile time for local/dev testing:
-  // flutter run --dart-define=API_BASE_URL=http://localhost:3000
+  // flutter run --dart-define=API_BASE_URL=http://localhost:3001
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://alpha-laundry-backend.onrender.com',
@@ -643,18 +649,38 @@ class ApiConfig {
   }
 
   /// Runtime effective base URL. Priority:
-  /// 1. compile-time API_BASE_URL (when provided with --dart-define)
-  /// 2. production default (https://alpha-laundry-backend.onrender.com)
+  /// 1. USE_LOCAL flag (when provided with --dart-define=USE_LOCAL=true)
+  /// 2. compile-time API_BASE_URL (when provided with --dart-define)
+  /// 3. production default (https://alpha-laundry-backend.onrender.com)
   /// 
-  /// Note: Always use Render URL in production. For local development,
-  /// use: flutter run --dart-define=API_BASE_URL=http://localhost:3001
+  /// Usage:
+  ///   Production (Render):  flutter run -d chrome
+  ///   Local (localhost):    flutter run -d chrome --dart-define=USE_LOCAL=true
+  ///   Custom URL:           flutter run -d chrome --dart-define=API_BASE_URL=http://custom:3001
   static String get effectiveBaseUrl {
+    // ✅ NOUVEAU - Si USE_LOCAL=true, utiliser localhost
+    if (_useLocal) {
+      return 'http://localhost:3001';
+    }
+
     // If developer provided an override at compile time, use it
     if (baseUrl != 'https://alpha-laundry-backend.onrender.com') return baseUrl;
 
     // Always use production URL (Render)
-    // For local development, pass --dart-define=API_BASE_URL=http://localhost:3001
+    // For local development, pass --dart-define=USE_LOCAL=true
     return baseUrl;
+  }
+
+  /// Debug: Affiche la configuration actuelle
+  static void printConfig() {
+    print('═══════════════════════════════════════════════════════════');
+    print('🔧 API Configuration');
+    print('═══════════════════════════════════════════════════════════');
+    print('USE_LOCAL: $_useLocal');
+    print('Base URL: $baseUrl');
+    print('Effective URL: $effectiveBaseUrl');
+    print('API Version: $apiVersion');
+    print('═══════════════════════════════════════════════════════════');
   }
 }
 

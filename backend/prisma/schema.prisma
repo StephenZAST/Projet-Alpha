@@ -384,34 +384,42 @@ model temp_notifications {
 }
 
 model users {
-  id                            String                     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email                         String                     @db.VarChar
-  password                      String                     @db.VarChar
-  first_name                    String                     @db.VarChar
-  last_name                     String                     @db.VarChar
-  phone                         String?                    @db.VarChar
-  role                          user_role?                 @default(CLIENT)
-  referral_code                 String?                    @db.VarChar
-  created_at                    DateTime?                  @default(now()) @db.Timestamptz(6)
-  updated_at                    DateTime?                  @default(now()) @db.Timestamptz(6)
-  addresses                     addresses[]
-  affiliate_client_links_client affiliate_client_links[]   @relation("affiliate_client_links_client")
-  created_affiliate_links       affiliate_client_links[]   @relation("CreatedAffiliateLinks")
-  affiliate_profiles            affiliate_profiles?
-  blog_articles                 blog_articles[]
-  loyalty_points                loyalty_points?
-  notification_preferences      notification_preferences[]
-  notifications                 notifications[]
-  offer_subscriptions           offer_subscriptions[]
-  pricing_updates               order_pricing[]
-  orders                        orders[]
-  point_transactions            point_transactions[]
-  reset_codes                   reset_codes[]
-  reward_claims                 reward_claims[]
-  temp_notifications            temp_notifications[] @ignore
-  user_activity_logs            user_activity_logs[]
-  user_offers                   user_offers[]
-  user_subscriptions            user_subscriptions[]
+  id                                                                         String                         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email                                                                      String                         @unique(map: "users_email_unique") @db.VarChar
+  password                                                                   String                         @db.VarChar
+  first_name                                                                 String                         @db.VarChar
+  last_name                                                                  String                         @db.VarChar
+  phone                                                                      String?                        @unique(map: "users_phone_unique") @db.VarChar
+  role                                                                       user_role?                     @default(CLIENT)
+  referral_code                                                              String?                        @db.VarChar
+  created_at                                                                 DateTime?                      @default(now()) @db.Timestamptz(6)
+  updated_at                                                                 DateTime?                      @default(now()) @db.Timestamptz(6)
+  addresses                                                                  addresses[]
+  affiliate_client_links_client                                              affiliate_client_links[]       @relation("affiliate_client_links_client")
+  created_affiliate_links                                                    affiliate_client_links[]       @relation("CreatedAffiliateLinks")
+  affiliate_profiles                                                         affiliate_profiles?
+  blog_articles                                                              blog_articles[]
+  client_manager_activity_logs_client_manager_activity_logs_agent_idTousers  client_manager_activity_logs[] @relation("client_manager_activity_logs_agent_idTousers")
+  client_manager_activity_logs_client_manager_activity_logs_client_idTousers client_manager_activity_logs[] @relation("client_manager_activity_logs_client_idTousers")
+  client_manager_stats                                                       client_manager_stats?
+  client_managers_client_managers_agent_idTousers                            client_managers[]              @relation("client_managers_agent_idTousers")
+  client_managers_client_managers_assigned_byTousers                         client_managers[]              @relation("client_managers_assigned_byTousers")
+  client_managers_client_managers_client_idTousers                           client_managers[]              @relation("client_managers_client_idTousers")
+  loyalty_points                                                             loyalty_points?
+  notification_preferences                                                   notification_preferences[]
+  notifications                                                              notifications[]
+  offer_subscriptions                                                        offer_subscriptions[]
+  pricing_updates                                                            order_pricing[]
+  orders                                                                     orders[]
+  point_transactions                                                         point_transactions[]
+  reset_codes                                                                reset_codes[]
+  reward_claims                                                              reward_claims[]
+  temp_notifications                                                         temp_notifications[] @ignore
+  user_activity_logs                                                         user_activity_logs[]
+  user_offers                                                                user_offers[]
+  user_subscriptions                                                         user_subscriptions[]
+
+  @@index([email], map: "idx_users_email")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -580,6 +588,57 @@ model order_pricing {
 
   @@index([order_id], map: "idx_order_pricing_order_id")
   @@index([updated_by], map: "idx_order_pricing_updated_by")
+}
+
+model client_manager_activity_logs {
+  id                                                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id                                            String    @db.Uuid
+  client_id                                           String    @db.Uuid
+  action_type                                         String    @db.VarChar(50)
+  details                                             Json?
+  created_at                                          DateTime? @default(now()) @db.Timestamptz(6)
+  users_client_manager_activity_logs_agent_idTousers  users     @relation("client_manager_activity_logs_agent_idTousers", fields: [agent_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_manager_activity_logs_agent")
+  users_client_manager_activity_logs_client_idTousers users     @relation("client_manager_activity_logs_client_idTousers", fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_manager_activity_logs_client")
+
+  @@index([action_type], map: "idx_client_manager_activity_logs_action_type")
+  @@index([agent_id], map: "idx_client_manager_activity_logs_agent_id")
+  @@index([client_id], map: "idx_client_manager_activity_logs_client_id")
+  @@index([created_at], map: "idx_client_manager_activity_logs_created_at")
+}
+
+model client_manager_stats {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id               String    @unique @db.Uuid
+  total_clients          Int?      @default(0)
+  total_orders           Int?      @default(0)
+  total_revenue          Decimal?  @default(0) @db.Decimal
+  avg_order_value        Decimal?  @default(0) @db.Decimal
+  inactive_clients_count Int?      @default(0)
+  last_updated           DateTime? @default(now()) @db.Timestamptz(6)
+  users                  users     @relation(fields: [agent_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_manager_stats_agent")
+
+  @@index([agent_id], map: "idx_client_manager_stats_agent_id")
+}
+
+model client_managers {
+  id                                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agent_id                                 String    @db.Uuid
+  client_id                                String    @db.Uuid
+  assigned_at                              DateTime? @default(now()) @db.Timestamptz(6)
+  assigned_by                              String?   @db.Uuid
+  is_active                                Boolean?  @default(true)
+  notes                                    String?
+  created_at                               DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                               DateTime? @default(now()) @db.Timestamptz(6)
+  users_client_managers_agent_idTousers    users     @relation("client_managers_agent_idTousers", fields: [agent_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_managers_agent")
+  users_client_managers_assigned_byTousers users?    @relation("client_managers_assigned_byTousers", fields: [assigned_by], references: [id], onUpdate: NoAction, map: "fk_client_managers_assigned_by")
+  users_client_managers_client_idTousers   users     @relation("client_managers_client_idTousers", fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_client_managers_client")
+
+  @@unique([agent_id, client_id], map: "unique_agent_client")
+  @@index([agent_id], map: "idx_client_managers_agent_id")
+  @@index([assigned_at], map: "idx_client_managers_assigned_at")
+  @@index([client_id], map: "idx_client_managers_client_id")
+  @@index([is_active], map: "idx_client_managers_is_active")
 }
 
 enum commission_status {

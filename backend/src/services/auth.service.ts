@@ -111,6 +111,75 @@ export class AuthService {
     };
   }
 
+  /**
+   * 🔐 Connexion par Email OU Téléphone
+   * Permet aux utilisateurs de se connecter avec leur email ou leur numéro de téléphone
+   * Le numéro de téléphone doit être unique et au format: +22651542586 (sans espaces ni parenthèses)
+   */
+  static async loginWithPhoneOrEmail(
+    identifier: string,
+    password: string
+  ): Promise<{ user: User; token: string }> {
+    try {
+      // Normaliser l'identifiant (supprimer les espaces)
+      const normalizedIdentifier = identifier.trim();
+
+      // Déterminer si c'est un email ou un téléphone
+      const isEmail = normalizedIdentifier.includes('@');
+
+      let user;
+
+      if (isEmail) {
+        // Recherche par email
+        user = await prisma.users.findFirst({
+          where: { email: normalizedIdentifier }
+        });
+      } else {
+        // Recherche par téléphone
+        // Le téléphone doit être unique et au format: +22651542586
+        user = await prisma.users.findFirst({
+          where: { phone: normalizedIdentifier }
+        });
+      }
+
+      if (!user) {
+        throw new Error('Invalid email/phone or password');
+      }
+
+      // Vérifier le mot de passe
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        throw new Error('Invalid email/phone or password');
+      }
+
+      // Générer le token JWT
+      const token = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.JWT_SECRET!,
+        { expiresIn: '168h' }
+      );
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          password: user.password,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          phone: user.phone || undefined,
+          role: user.role || 'CLIENT',
+          referralCode: user.referral_code || undefined,
+          createdAt: user.created_at || new Date(),
+          updatedAt: user.updated_at || new Date()
+        },
+        token
+      };
+    } catch (error) {
+      console.error('[AuthService] Login with phone or email error:', error);
+      throw error;
+    }
+  }
+
   static async invalidateToken(token: string): Promise<void> {
     blacklistedTokens.add(token);
   }

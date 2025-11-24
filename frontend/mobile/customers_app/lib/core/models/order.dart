@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants.dart';
+import 'order_pricing.dart';
 
 /// 📦 Modèle Commande - Alpha Client App
 ///
@@ -39,6 +40,14 @@ class Order {
   final String? addressId;
   final String? note;
 
+  // ✅ NOUVEAU - Données de pricing détaillées (prix manuel ajusté par admin)
+  final double? manualPrice;
+  final double? originalPrice;
+  final double? discountPercentage;
+  final DateTime? paidAt;
+  final String? pricingReason;
+  final double? displayPrice;  // 🎯 Prix à afficher (alterne entre manualPrice et totalAmount)
+
   Order({
     required this.id,
     required this.userId,
@@ -72,6 +81,13 @@ class Order {
     this.serviceTypeId,
     this.addressId,
     this.note,
+    // ✅ NOUVEAU - Pricing
+    this.manualPrice,
+    this.originalPrice,
+    this.discountPercentage,
+    this.paidAt,
+    this.pricingReason,
+    this.displayPrice,
   });
 
   /// Returns a copy of this Order with optional updated fields.
@@ -281,7 +297,15 @@ class Order {
       return [];
     }
 
-    return Order(
+    // 🔍 DEBUG: Log des données brutes avant parsing
+    print('[Order.fromJson] 📥 Raw data keys: ${data.keys.toList()}');
+    print('[Order.fromJson] 💰 Raw manualPrice: ${data['manualPrice']}');
+    print('[Order.fromJson] 💰 Raw originalPrice: ${data['originalPrice']}');
+    print('[Order.fromJson] 💰 Raw discountPercentage: ${data['discountPercentage']}');
+    print('[Order.fromJson] 💳 Raw isPaid: ${data['isPaid']}');
+    print('[Order.fromJson] 📅 Raw paidAt: ${data['paidAt']}');
+
+    final order = Order(
       id: data['id']?.toString() ?? '',
       userId: data['userId']?.toString() ?? data['user_id']?.toString() ?? '',
       shortId: data['shortId']?.toString() ?? data['short_id']?.toString(),
@@ -334,7 +358,26 @@ class Order {
       addressId:
           data['addressId']?.toString() ?? data['address_id']?.toString(),
       note: data['note']?.toString(),
+      // ✅ NOUVEAU - Parsing des champs de pricing (support snake_case et camelCase)
+      manualPrice: data['manualPrice'] != null ? parseDouble(data['manualPrice']) : (data['manual_price'] != null ? parseDouble(data['manual_price']) : null),
+      originalPrice: data['originalPrice'] != null ? parseDouble(data['originalPrice']) : (data['original_price'] != null ? parseDouble(data['original_price']) : null),
+      discountPercentage: data['discountPercentage'] != null ? parseDouble(data['discountPercentage']) : (data['discount_percentage'] != null ? parseDouble(data['discount_percentage']) : null),
+      paidAt: parseDate(data['paidAt'] ?? data['paid_at']),
+      pricingReason: data['pricingReason'] ?? data['reason'],
+      displayPrice: data['displayPrice'] != null ? parseDouble(data['displayPrice']) : null,
     );
+
+    // 🔍 DEBUG: Log des données parsées APRÈS création
+    print('[Order.fromJson] ✅ Order parsed successfully:');
+    print('[Order.fromJson]   - ID: ${order.id}');
+    print('[Order.fromJson]   - manualPrice: ${order.manualPrice}');
+    print('[Order.fromJson]   - originalPrice: ${order.originalPrice}');
+    print('[Order.fromJson]   - discountPercentage: ${order.discountPercentage}');
+    print('[Order.fromJson]   - isPaid: ${order.isPaid}');
+    print('[Order.fromJson]   - paidAt: ${order.paidAt}');
+    print('[Order.fromJson]   - displayPrice: ${data['displayPrice']}');
+
+    return order;
   }
 
   Map<String, dynamic> toJson() {

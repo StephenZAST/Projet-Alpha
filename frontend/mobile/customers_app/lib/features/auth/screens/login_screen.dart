@@ -22,7 +22,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
 
   late AnimationController _fadeController;
@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen>
     final settings = await StorageService.getAppSettings();
     if (settings != null && settings['rememberCredentials'] == true) {
       setState(() {
-        _emailController.text = settings['savedEmail'] ?? '';
+        _identifierController.text = settings['savedIdentifier'] ?? '';
         _rememberMe = true;
       });
     }
@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen>
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
-    _emailController.dispose();
+    _identifierController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -221,12 +221,12 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildEmailField() {
     return TextFormField(
-      controller: _emailController,
+      controller: _identifierController,
       keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       decoration: InputDecoration(
-        labelText: 'Email',
-        hintText: 'votre@email.com',
+        labelText: 'Email ou Téléphone',
+        hintText: 'votre@email.com ou +22651542586',
         prefixIcon: Icon(
           Icons.email_outlined,
           color: AppColors.textSecondary(context),
@@ -255,11 +255,27 @@ class _LoginScreenState extends State<LoginScreen>
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Veuillez saisir votre email';
+          return 'Veuillez saisir votre email ou téléphone';
         }
-        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-          return 'Email invalide';
+
+        final trimmedValue = value.trim();
+        final isEmail = trimmedValue.contains('@');
+        final isPhone =
+            trimmedValue.startsWith('+') || trimmedValue.startsWith('0');
+
+        if (isEmail) {
+          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+              .hasMatch(trimmedValue)) {
+            return 'Email invalide';
+          }
+        } else if (isPhone) {
+          if (!RegExp(r'^[0-9+\-\s\(\)]+$').hasMatch(trimmedValue)) {
+            return 'Numéro de téléphone invalide';
+          }
+        } else {
+          return 'Veuillez saisir un email ou un numéro de téléphone valide';
         }
+
         return null;
       },
     );
@@ -397,7 +413,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildErrorMessage(String error) {
     _extractErrorCode(error);
-    
+
     return AnimatedContainer(
       duration: AppAnimations.fast,
       padding: const EdgeInsets.all(16),
@@ -454,7 +470,7 @@ class _LoginScreenState extends State<LoginScreen>
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Section expandable : Message d'erreur + Code d'erreur
           AnimatedCrossFade(
             firstChild: Container(
@@ -519,9 +535,9 @@ class _LoginScreenState extends State<LoginScreen>
                 : CrossFadeState.showSecond,
             duration: AppAnimations.fast,
           ),
-          
+
           if (_showErrorDetails) const SizedBox(height: 12),
-          
+
           // Conseils rassurants
           Container(
             padding: const EdgeInsets.all(12),
@@ -563,7 +579,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
           const SizedBox(height: 12),
-          
+
           // Bouton de contact support
           SizedBox(
             width: double.infinity,
@@ -585,7 +601,7 @@ class _LoginScreenState extends State<LoginScreen>
     // Chercher un pattern de code d'erreur (ex: [ERR_001], ERROR_CODE, etc.)
     final codePattern = RegExp(r'\[([A-Z0-9_]+)\]|ERROR[_:]?([A-Z0-9_]+)');
     final match = codePattern.firstMatch(error);
-    
+
     if (match != null) {
       _lastErrorCode = match.group(1) ?? match.group(2);
     } else {
@@ -598,18 +614,18 @@ class _LoginScreenState extends State<LoginScreen>
   void _contactSupport() async {
     final whatsappNumber = '+22651542586'; // +226 51 54 25 86
     final message = Uri.encodeComponent(
-      'Bonjour, j\'ai une erreur de connexion sur Alpha Pressing.\n'
-      'Code d\'erreur: $_lastErrorCode\n'
-      'Email: ${_emailController.text}\n'
-      'Veuillez m\'aider à résoudre ce problème.'
-    );
-    
+        'Bonjour, j\'ai une erreur de connexion sur Alpha Pressing.\n'
+        'Code d\'erreur: $_lastErrorCode\n'
+        'Identifiant: ${_identifierController.text}\n'
+        'Veuillez m\'aider à résoudre ce problème.');
+
     final whatsappUrl = 'https://wa.me/$whatsappNumber?text=$message';
-    
+
     try {
       // Essayer d'ouvrir WhatsApp
       if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
-        await launchUrl(Uri.parse(whatsappUrl), mode: LaunchMode.externalApplication);
+        await launchUrl(Uri.parse(whatsappUrl),
+            mode: LaunchMode.externalApplication);
       } else {
         _showSnackBar('WhatsApp n\'est pas installé', isError: true);
       }
@@ -709,7 +725,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.login(
-      _emailController.text.trim(),
+      _identifierController.text.trim(),
       _passwordController.text,
     );
 
@@ -718,7 +734,7 @@ class _LoginScreenState extends State<LoginScreen>
       if (_rememberMe) {
         await StorageService.saveAppSettings({
           'rememberCredentials': true,
-          'savedEmail': _emailController.text.trim(),
+          'savedIdentifier': _identifierController.text.trim(),
         });
       }
 
@@ -730,14 +746,14 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void _handleForgotPassword() async {
-    if (_emailController.text.isEmpty) {
+    if (_identifierController.text.isEmpty) {
       _showSnackBar('Veuillez saisir votre email d\'abord', isError: true);
       return;
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success =
-        await authProvider.forgotPassword(_emailController.text.trim());
+        await authProvider.forgotPassword(_identifierController.text.trim());
 
     if (success) {
       _showSnackBar('Email de récupération envoyé !');

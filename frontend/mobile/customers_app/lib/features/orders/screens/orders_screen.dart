@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../constants.dart';
 import '../../../components/glass_components.dart';
@@ -7,6 +8,7 @@ import '../../../core/models/order.dart';
 import '../widgets/order_card.dart';
 import '../widgets/order_filters_dialog.dart';
 import 'order_details_screen.dart';
+import 'create_order_screen.dart';
 
 /// 📦 Écran de Gestion des Commandes - Alpha Client App
 ///
@@ -484,6 +486,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   /// 🎯 Floating Action Button avec effet glassy radiant
+  /// ✅ Lié à la création de commande COMPLÈTE
   Widget _buildFAB() {
     return Container(
       decoration: BoxDecoration(
@@ -513,10 +516,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            // TODO: Navigation vers création de commande
-            Navigator.pushNamed(context, '/create-order');
-          },
+          onTap: _handleNewOrderTap,
           borderRadius: BorderRadius.circular(30),
           child: Container(
             padding: const EdgeInsets.symmetric(
@@ -551,6 +551,29 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// 🛍️ Gestionnaire Nouvelle Commande Complète
+  void _handleNewOrderTap() {
+    HapticFeedback.lightImpact();
+
+    // Navigation vers l'écran de création de commande complète
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const CreateOrderScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: animation.drive(
+              Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+                  .chain(CurveTween(curve: AppAnimations.slideIn)),
+            ),
+            child: child,
+          );
+        },
+        transitionDuration: AppAnimations.medium,
       ),
     );
   }

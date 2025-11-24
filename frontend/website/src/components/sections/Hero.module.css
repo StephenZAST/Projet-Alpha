@@ -1,0 +1,339 @@
+/**
+ * 🦸 Hero Section Styles - Carousel Premium
+ */
+
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =============================================================================
+   🎠 CAROUSEL CONTAINER
+   ============================================================================= */
+
+.carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slides {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: -60px;
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.slide.active {
+  opacity: 1;
+  z-index: 10;
+}
+
+.slide.prev {
+  opacity: 0;
+  z-index: 5;
+}
+
+/* =============================================================================
+   🖼️ BACKGROUND IMAGE & OVERLAY
+   ============================================================================= */
+
+.slideBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.slideImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.slideOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.4) 30%,
+    rgba(0, 0, 0, 0.1) 60%,
+    transparent 100%
+  );
+  z-index: 1;
+}
+
+/* =============================================================================
+   📝 CONTENU TEXTE
+   ============================================================================= */
+
+.slideContent {
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  margin-top: -80px;
+  padding: 0 var(--spacing-lg);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  animation: slideInContent 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+.slide.prev .slideContent {
+  animation: slideOutContent 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+.slideTitle {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: white;
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .slideTitle {
+    font-size: 44px;
+  }
+}
+
+@media (max-width: 768px) {
+  .slideTitle {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 640px) {
+  .slideTitle {
+    font-size: 28px;
+  }
+}
+
+.slideSubtitle {
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  max-width: 500px;
+}
+
+@media (max-width: 768px) {
+  .slideSubtitle {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .slideSubtitle {
+    font-size: 14px;
+  }
+}
+
+/* =============================================================================
+   🔘 BOUTONS
+   ============================================================================= */
+
+.slideCtas {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+@media (max-width: 640px) {
+  .slideCtas {
+    flex-direction: column;
+  }
+
+  .slideCtas button {
+    width: 100%;
+  }
+}
+
+/* =============================================================================
+   🎯 CAROUSEL CONTROLS
+   ============================================================================= */
+
+.controls {
+  position: absolute;
+  bottom: var(--spacing-xl);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.dots {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all var(--duration-medium) var(--timing-ease-out);
+  border: 2px solid transparent;
+}
+
+.dot:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.dot.active {
+  background: white;
+  width: 32px;
+  border-radius: 6px;
+}
+
+.navButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: all var(--duration-fast) var(--timing-ease-out);
+  backdrop-filter: blur(10px);
+}
+
+.navButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: scale(1.1);
+}
+
+.navButton:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 640px) {
+  .controls {
+    bottom: var(--spacing-lg);
+  }
+
+  .navButton {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}
+
+/* =============================================================================
+   🎬 ANIMATIONS
+   ============================================================================= */
+
+@keyframes slideInContent {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutContent {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+
+@keyframes fadeInImage {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* =============================================================================
+   📱 RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 640px) {
+  .hero {
+    height: 80vh;
+    min-height: 500px;
+  }
+
+  .slideContent {
+    padding: 0 var(--spacing-md);
+    gap: var(--spacing-md);
+  }
+}
+
+/* =============================================================================
+   ♿ ACCESSIBILITÉ
+   ============================================================================= */
+
+.navButton:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.dot:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide,
+  .slideContent,
+  .navButton,
+  .dot {
+    transition: none;
+  }
+}

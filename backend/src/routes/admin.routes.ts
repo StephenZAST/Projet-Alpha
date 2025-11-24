@@ -7,8 +7,9 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { AdminService } from '../services/admin.service';
 import { ServiceManagementController } from '../controllers/admin/serviceManagement.controller';
 import { OrderQueryController } from '../controllers/order.controller/orderQuery.controller';
+import { ClientManagerController } from '../controllers/admin/clientManager.controller';
 import { validatePriceData } from '../middleware/priceValidation.middleware';
-import { order_status } from '@prisma/client';  // Correction ici
+import { order_status } from '@prisma/client';
 
 const router = express.Router();
 
@@ -60,7 +61,7 @@ router.get(
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 50;
-      const status = req.query.status as order_status | undefined;  // Correction ici
+      const status = req.query.status as order_status | undefined;
       const sortField = req.query.sort_field as string || 'createdAt';
       const sortOrder = (req.query.sort_order as 'asc' | 'desc') || 'desc';
 
@@ -120,7 +121,6 @@ router.get(
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     const stats = await AdminService.getStatistics();
-    // S'assurer que les données sont dans le bon format
     res.json({
       success: true,
       data: {
@@ -139,7 +139,6 @@ router.get(
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(async (req: Request, res: Response) => {
     const data = await AdminService.getRevenueChartData();
-    // Utiliser la structure correcte du type RevenueChartData
     res.json({
       success: true,
       data: {
@@ -295,6 +294,58 @@ router.post(
   '/profile/password',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
   asyncHandler(AdminController.updatePassword)
+);
+
+// ============================================
+// Routes de gestion des Client Managers (SVA)
+// ============================================
+
+router.post(
+  '/client-managers/assign',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(ClientManagerController.assignClient)
+);
+
+router.delete(
+  '/client-managers/:managerId',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(ClientManagerController.unassignClient)
+);
+
+router.get(
+  '/client-managers/agent/:agentId',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(ClientManagerController.getAgentClients)
+);
+
+router.get(
+  '/client-managers/agent/:agentId/dashboard',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(ClientManagerController.getAgentDashboard)
+);
+
+router.get(
+  '/client-managers/agent/:agentId/inactive',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(ClientManagerController.getInactiveClients)
+);
+
+router.get(
+  '/client-managers/agents/stats',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(ClientManagerController.getAllAgentsStats)
+);
+
+router.get(
+  '/client-managers/available-agents',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(ClientManagerController.getAvailableAgents)
+);
+
+router.patch(
+  '/client-managers/:managerId',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(ClientManagerController.updateClientNotes)
 );
 
 export default router;

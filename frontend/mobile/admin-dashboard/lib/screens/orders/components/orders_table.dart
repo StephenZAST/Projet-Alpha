@@ -463,7 +463,7 @@ class _ModernOrderRowState extends State<_ModernOrderRow>
                   ),
                   _DataCell(
                     child: _AmountChip(
-                      amount: widget.order.totalAmount,
+                      amount: widget.order.displayPrice ?? widget.order.totalAmount,
                       currencyFormat: currencyFormat,
                       isDark: widget.isDark,
                     ),

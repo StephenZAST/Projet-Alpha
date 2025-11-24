@@ -289,7 +289,9 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 🎯 CORRECTION: Forcer la carte à toujours utiliser le thème clair
+    // Le thème sombre de Stadia Maps ne fonctionne pas correctement en déploiement
+    // Solution: utiliser toujours OpenStreetMap en thème clair
     
     return Container(
       height: 400,
@@ -312,9 +314,10 @@ class _LocationPickerWidgetState extends State<LocationPickerWidget> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: isDark
-                      ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
-                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  // 🔑 Toujours utiliser OpenStreetMap en thème clair
+                  // Cela garantit que la carte fonctionne correctement
+                  // peu importe le thème de l'application (clair ou sombre)
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.alphapressing.customers',
                   maxZoom: 19,
                 ),

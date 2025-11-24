@@ -14,7 +14,17 @@ class ApiService extends GetxService {
     return _instance;
   }
 
-  static String get baseUrl => 'https://alpha-laundry-backend.onrender.com';
+  // Environment configuration for local/production testing
+  // Set USE_LOCAL to true for local backend testing
+  // Usage: flutter run -d chrome -v --dart-define=USE_LOCAL=true
+  static const bool _useLocal = bool.fromEnvironment('USE_LOCAL', defaultValue: false);
+  
+  static String get baseUrl {
+    if (_useLocal) {
+      return 'http://localhost:3001';
+    }
+    return 'https://alpha-laundry-backend.onrender.com';
+  }
 
   ApiService._internal() {
     _dio = dio.Dio(dio.BaseOptions(

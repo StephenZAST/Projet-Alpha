@@ -382,30 +382,228 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 
-  /// 💰 Section tarification
+  /// 💰 Section tarification (SIMPLIFIÉE - Compacte)
   Widget _buildPricingSection() {
     return GlassContainer(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tarification',
+            'Détail des Prix',
             style: AppTextStyles.labelLarge.copyWith(
               color: AppColors.textPrimary(context),
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 16),
-          _buildPriceRow('Sous-total', _currentOrder.subtotal),
-          if (_currentOrder.discountAmount > 0)
-            _buildPriceRow('Reduction', -_currentOrder.discountAmount, isDiscount: true),
-          if (_currentOrder.deliveryFee > 0)
-            _buildPriceRow('Frais de livraison', _currentOrder.deliveryFee),
-          if (_currentOrder.taxAmount > 0)
-            _buildPriceRow('Taxes', _currentOrder.taxAmount),
-          const Divider(height: 24),
-          _buildPriceRow('Total', _currentOrder.totalAmount, isTotal: true),
+          
+          // ✅ Afficher le prix manuel si applicable
+          if (_currentOrder.manualPrice != null) ...[
+            _buildManualPricingSection(),
+            const SizedBox(height: 16),
+          ],
+          
+          // 💰 Prix à payer (prix ajusté ou prix original)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Prix à payer',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '${(_currentOrder.manualPrice ?? _currentOrder.totalAmount).toInt().toFormattedString()} FCFA',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          
+          // ✅ Afficher le statut de paiement
+          const SizedBox(height: 12),
+          _buildPaymentStatusBadge(),
+        ],
+      ),
+    );
+  }
+
+  /// ✅ NOUVEAU - Affiche le prix manuel et la réduction/augmentation
+  Widget _buildManualPricingSection() {
+    final hasReduction = _currentOrder.manualPrice! < _currentOrder.totalAmount;
+    final adjustmentAmount = (_currentOrder.totalAmount - _currentOrder.manualPrice!).abs();
+    final adjustmentPercent = _currentOrder.discountPercentage ?? 0;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: hasReduction 
+          ? AppColors.success.withOpacity(0.1)
+          : AppColors.warning.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: hasReduction 
+            ? AppColors.success.withOpacity(0.3)
+            : AppColors.warning.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Titre avec icône
+          Row(
+            children: [
+              Icon(
+                hasReduction ? Icons.trending_down : Icons.trending_up,
+                color: hasReduction ? AppColors.success : AppColors.warning,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasReduction ? 'Réduction appliquée' : 'Augmentation appliquée',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          
+          // Prix original et manuel
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Prix original',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary(context),
+                ),
+              ),
+              Text(
+                '${_currentOrder.totalAmount.toInt().toFormattedString()} FCFA',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Prix ajusté',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary(context),
+                ),
+              ),
+              Text(
+                '${_currentOrder.manualPrice!.toInt().toFormattedString()} FCFA',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textPrimary(context),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          
+          // Montant et pourcentage
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Montant',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '${hasReduction ? '-' : '+'}${adjustmentAmount.toInt().toFormattedString()} FCFA',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Pourcentage',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '${hasReduction ? '-' : '+'}${adjustmentPercent.toStringAsFixed(1)}%',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: hasReduction ? AppColors.success : AppColors.warning,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ✅ NOUVEAU - Badge de statut paiement
+  Widget _buildPaymentStatusBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: _currentOrder.isPaid 
+          ? AppColors.success.withOpacity(0.15)
+          : AppColors.warning.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _currentOrder.isPaid 
+            ? AppColors.success.withOpacity(0.5)
+            : AppColors.warning.withOpacity(0.5),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _currentOrder.isPaid ? Icons.check_circle : Icons.pending,
+            color: _currentOrder.isPaid ? AppColors.success : AppColors.warning,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            _currentOrder.isPaid ? 'Payée' : 'Non payée',
+            style: AppTextStyles.labelMedium.copyWith(
+              color: _currentOrder.isPaid ? AppColors.success : AppColors.warning,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (_currentOrder.paidAt != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              'le ${_formatDate(_currentOrder.paidAt!)}',
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textSecondary(context),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -509,10 +707,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    // ✅ CORRIGÉ - Utiliser isPaid au lieu de paymentStatus
                     Text(
-                      _currentOrder.paymentStatus.displayName,
+                      _currentOrder.isPaid ? 'Payé' : 'En attente',
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: _currentOrder.paymentStatus.color,
+                        color: _currentOrder.isPaid ? AppColors.success : AppColors.warning,
                       ),
                     ),
                   ],
@@ -530,7 +729,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  _currentOrder.isPaid ? 'Paye' : 'En attente',
+                  _currentOrder.isPaid ? 'Payé' : 'En attente',
                   style: AppTextStyles.labelSmall.copyWith(
                     color: _currentOrder.isPaid ? AppColors.success : AppColors.warning,
                     fontWeight: FontWeight.w700,

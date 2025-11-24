@@ -12,6 +12,8 @@ import {
 import { NotificationService } from '../notification.service';
 import { LoyaltyService } from '../loyalty.service';
 import { OrderPaymentService } from './orderPayment.service';
+import { AffiliateCommissionService } from '../affiliate.service/affiliateCommission.service';
+import { getEffectiveOrderTotal } from '../../controllers/order.controller/shared';
 
 const prisma = new PrismaClient();
 
@@ -160,25 +162,62 @@ export class OrderCreateService {
         }
       });
 
-      // Traitement affilié et points
+      // Traitement affilié et points via les nouveaux services
       if (affiliateCodeToUse) {
-        await OrderPaymentService.processAffiliateCommission(
-          createdOrder.id,
-          affiliateCodeToUse,
-          finalAmount
-        );
+        try {
+          const orderWithPricing = await prisma.orders.findUnique({
+            where: { id: createdOrder.id },
+            include: { pricing: true }
+          });
+          
+          if (orderWithPricing) {
+            await AffiliateCommissionService.processNewCommissionFromOrder(
+              createdOrder.id,
+              orderWithPricing,
+              affiliateCodeToUse
+            );
+          }
+        } catch (commissionError: any) {
+          console.error('[OrderCreateService] Error processing affiliate commission:', commissionError);
+          // Fallback : utiliser l'ancienne méthode
+          await OrderPaymentService.processAffiliateCommission(
+            createdOrder.id,
+            affiliateCodeToUse,
+            finalAmount
+          );
+        }
 
         // Créer automatiquement une liaison affilié-client si elle n'existe pas
         await this.ensureAffiliateClientLink(orderData.userId, affiliateCodeToUse);
       }
 
-      const earnedPoints = Math.floor(finalAmount);
-      await LoyaltyService.earnPoints(
-        orderData.userId,
-        earnedPoints,
-        'ORDER',
-        createdOrder.id
-      );
+      // Traiter les points via le nouveau service
+      let earnedPoints = 0;
+      try {
+        const orderWithPricingForLoyalty = await prisma.orders.findUnique({
+          where: { id: createdOrder.id },
+          include: { pricing: true }
+        });
+        
+        if (orderWithPricingForLoyalty) {
+          const loyaltyResult = await LoyaltyService.earnPointsFromOrder(
+            orderData.userId,
+            orderWithPricingForLoyalty,
+            'ORDER'
+          );
+          earnedPoints = loyaltyResult?.pointsBalance || 0;
+        }
+      } catch (loyaltyError: any) {
+        console.error('[OrderCreateService] Error processing loyalty points:', loyaltyError);
+        // Fallback : utiliser l'ancienne méthode
+        earnedPoints = Math.floor(finalAmount);
+        await LoyaltyService.earnPoints(
+          orderData.userId,
+          earnedPoints,
+          'ORDER',
+          createdOrder.id
+        );
+      }
 
       // Notification
       const orderItems = await prisma.order_items.findMany({

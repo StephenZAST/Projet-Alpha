@@ -149,6 +149,13 @@ class AdminSideMenu extends StatelessWidget {
                   menuController.selectedIndex == MenuIndices.delivery, // 9
               onPress: () => menuController.updateIndex(MenuIndices.delivery),
             ),
+            DrawerListTile(
+              title: "Agents & Clients",
+              icon: Icons.people_alt_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.clientManagers, // 15
+              onPress: () => menuController.updateIndex(MenuIndices.clientManagers),
+            ),
             Divider(color: theme.dividerColor),
             // NOTIFICATIONS ET PROFIL
             Padding(

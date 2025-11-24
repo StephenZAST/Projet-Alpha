@@ -5,6 +5,48 @@ import { LoyaltyPoints, PointSource, PointTransactionType } from '../models/type
 const prisma = new PrismaClient();
 
 export class LoyaltyService {
+  /**
+   * 💰 Attribue les points de fidélité basés sur le prix effectif de la commande
+   * Utilise le prix manuel s'il existe, sinon le prix originel
+   * 
+   * ✅ À UTILISER lors de la création d'une commande pour attribuer les points
+   * 
+   * @param userId - ID de l'utilisateur
+   * @param order - La commande complète avec relations (doit inclure pricing)
+   * @param source - Source des points (ORDER, REFERRAL, etc.)
+   * @returns Les points de fidélité mis à jour
+   */
+  static async earnPointsFromOrder(
+    userId: string,
+    order: any,
+    source: PointSource = 'ORDER'
+  ): Promise<LoyaltyPoints> {
+    try {
+      // Importer la fonction utilitaire
+      const { getEffectiveOrderTotal } = require('../controllers/order.controller/shared');
+      
+      // Récupérer le prix effectif (manuel ou originel)
+      const effectiveTotal = getEffectiveOrderTotal(order);
+      
+      // Calculer les points (ex: 1 point par 100 FCFA)
+      const pointsMultiplier = Number(process.env.POINTS_MULTIPLIER || 0.01);
+      const points = Math.floor(effectiveTotal * pointsMultiplier);
+      
+      console.log(
+        `[LoyaltyService] Earning points from order:
+        Order ID: ${order.id}
+        Effective Total: ${effectiveTotal}
+        Points Multiplier: ${pointsMultiplier}
+        Points Earned: ${points}`
+      );
+      
+      // Attribuer les points
+      return await this.earnPoints(userId, points, source, order.id);
+    } catch (error) {
+      console.error('[LoyaltyService] Error earning points from order:', error);
+      throw error;
+    }
+  }
   static async earnPoints(
     userId: string, 
     points: number, 

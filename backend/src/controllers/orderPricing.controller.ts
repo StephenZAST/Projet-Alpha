@@ -1,11 +1,17 @@
 /**
  * 💰 Contrôleur: Gestion Prix & Paiement
  * Endpoints pour récupérer et mettre à jour les prix/paiements
+ * 
+ * ⚠️ IMPORTANT : Lors de la mise à jour du prix manuel, ce contrôleur
+ * déclenche automatiquement la réattribution des points de fidélité
+ * et des commissions affiliés via OrderPriceAdjustmentService
  */
 
 import { Request, Response } from 'express';
 import { OrderPaymentManagementService } from '../services/orderPaymentManagement.service';
+import { OrderPriceAdjustmentService } from '../services/order.service/orderPriceAdjustment.service';
 import { OrderPricingDTO } from '../models/orderPricing.types';
+import prisma from '../config/prisma';
 
 export class OrderPricingController {
   /**
@@ -42,6 +48,11 @@ export class OrderPricingController {
   /**
    * PATCH /api/orders/:orderId/pricing
    * Mettre à jour le prix manuel et/ou le statut de paiement
+   * 
+   * ⚠️ DÉCLENCHE AUTOMATIQUEMENT :
+   * - Réattribution des points de fidélité
+   * - Réajustement des commissions affiliés
+   * - Enregistrement d'un log d'audit
    */
   static async updatePricing(req: Request, res: Response): Promise<void> {
     try {
@@ -74,12 +85,48 @@ export class OrderPricingController {
         return;
       }
 
+      // Récupérer l'ancien prix manuel avant la mise à jour
+      const oldPricing = await prisma.order_pricing.findUnique({
+        where: { order_id: orderId }
+      });
+      const oldManualPrice = oldPricing?.manual_price ? Number(oldPricing.manual_price) : null;
+
+      // Mettre à jour le pricing
       const result = await OrderPaymentManagementService.updatePricing(orderId, adminId, dto);
 
-      res.json({
-        success: true,
-        data: result
-      });
+      // Si le prix manuel a changé, réajuster les points et commissions
+      if (dto.manual_price !== undefined && dto.manual_price !== oldManualPrice) {
+        try {
+          console.log(
+            `[OrderPricingController] Price change detected - triggering loyalty/commission adjustment`
+          );
+          
+          const adjustment = await OrderPriceAdjustmentService.reprocessLoyaltyAndCommissions(
+            orderId,
+            oldManualPrice,
+            dto.manual_price
+          );
+          
+          res.json({
+            success: true,
+            data: result,
+            priceAdjustment: adjustment
+          });
+        } catch (adjustmentError: any) {
+          console.error('[OrderPricingController] Error adjusting loyalty/commissions:', adjustmentError);
+          // Retourner quand même le résultat de la mise à jour du pricing
+          res.json({
+            success: true,
+            data: result,
+            warning: `Price updated but adjustment failed: ${adjustmentError.message}`
+          });
+        }
+      } else {
+        res.json({
+          success: true,
+          data: result
+        });
+      }
     } catch (error: any) {
       console.error('[OrderPricingController] Error in updatePricing:', error);
       res.status(400).json({
@@ -92,6 +139,10 @@ export class OrderPricingController {
   /**
    * DELETE /api/orders/:orderId/pricing/manual-price
    * Réinitialiser le prix manuel (revenir au prix original)
+   * 
+   * ⚠️ DÉCLENCHE AUTOMATIQUEMENT :
+   * - Réattribution des points de fidélité (ajustement inverse)
+   * - Réajustement des commissions affiliés (ajustement inverse)
    */
   static async resetManualPrice(req: Request, res: Response): Promise<void> {
     try {
@@ -114,13 +165,51 @@ export class OrderPricingController {
         return;
       }
 
+      // Récupérer l'ancien prix manuel avant la suppression
+      const oldPricing = await prisma.order_pricing.findUnique({
+        where: { order_id: orderId }
+      });
+      const oldManualPrice = oldPricing?.manual_price ? Number(oldPricing.manual_price) : null;
+
+      // Réinitialiser le prix manuel
       const result = await OrderPaymentManagementService.resetManualPrice(orderId, adminId);
 
-      res.json({
-        success: true,
-        data: result,
-        message: 'Manual price reset successfully'
-      });
+      // Déclencher l'ajustement inverse (retour au prix originel)
+      if (oldManualPrice !== null) {
+        try {
+          console.log(
+            `[OrderPricingController] Manual price reset detected - triggering inverse loyalty/commission adjustment`
+          );
+          
+          const adjustment = await OrderPriceAdjustmentService.reprocessLoyaltyAndCommissions(
+            orderId,
+            oldManualPrice,
+            null  // null = retour au prix originel
+          );
+          
+          res.json({
+            success: true,
+            data: result,
+            message: 'Manual price reset successfully',
+            priceAdjustment: adjustment
+          });
+        } catch (adjustmentError: any) {
+          console.error('[OrderPricingController] Error adjusting loyalty/commissions:', adjustmentError);
+          // Retourner quand même le résultat de la réinitialisation
+          res.json({
+            success: true,
+            data: result,
+            message: 'Manual price reset successfully',
+            warning: `Price reset but adjustment failed: ${adjustmentError.message}`
+          });
+        }
+      } else {
+        res.json({
+          success: true,
+          data: result,
+          message: 'Manual price reset successfully (no manual price was set)'
+        });
+      }
     } catch (error: any) {
       console.error('[OrderPricingController] Error in resetManualPrice:', error);
       res.status(400).json({

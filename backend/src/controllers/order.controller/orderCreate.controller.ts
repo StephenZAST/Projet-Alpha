@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'; 
-import prisma from '../../config/prisma';
+import { PrismaClient } from '@prisma/client';
 import { 
   PricingService, 
   RewardsService, 
@@ -15,9 +15,14 @@ import {
   PaymentMethod,
   OrderItem as OrderItemType 
 } from '../../models/types';
-import { OrderSharedMethods } from './shared';
+import { OrderSharedMethods, getEffectiveOrderTotal } from './shared';
 import { orderNotificationTemplates, getCustomerName } from '../../utils/notificationTemplates';
 import { Prisma, order_status, recurrence_type, payment_method_enum } from '@prisma/client';
+import { LoyaltyService } from '../../services/loyalty.service';
+import { AffiliateCommissionService } from '../../services/affiliate.service/affiliateCommission.service';
+import { ClientManagerStatsService } from '../../services/clientManagerStats.service';
+
+const prisma = new PrismaClient();
 
 interface CreateOrderItemData {
   articleId: string;
@@ -212,21 +217,36 @@ export class OrderCreateController {
         data: mappedItems
       });
 
-      // 5. Si code affilié, créer transaction de commission
+      // 5. Si code affilié, traiter la commission via le service
       if (affiliateCode) {
-        const affiliate = await prisma.affiliate_profiles.findUnique({
-          where: { affiliate_code: affiliateCode }
-        });
-
-        if (affiliate) {
-          await prisma.commission_transactions.create({
-            data: {
-              affiliate_id: affiliate.id,
-              order_id: order.id,
-              amount: pricing.total * Number(affiliate.commission_rate || 0) / 100,
-              status: 'PENDING'
-            }
+        try {
+          console.log(`[OrderController] Processing affiliate commission for code: ${affiliateCode}`);
+          
+          const orderWithPricing = await prisma.orders.findUnique({
+            where: { id: order.id },
+            include: { pricing: true }
           });
+          
+          console.log(`[OrderController] Order with pricing:`, {
+            orderId: orderWithPricing?.id,
+            totalAmount: orderWithPricing?.totalAmount,
+            pricing: orderWithPricing?.pricing
+          });
+          
+          if (orderWithPricing) {
+            const commissionResult = await AffiliateCommissionService.processNewCommissionFromOrder(
+              order.id,
+              orderWithPricing,
+              affiliateCode
+            );
+            console.log(`[OrderController] Commission processing result:`, commissionResult);
+          } else {
+            console.warn(`[OrderController] Order not found for commission processing: ${order.id}`);
+          }
+        } catch (commissionError: any) {
+          console.error('[OrderController] Error processing affiliate commission:', commissionError);
+          console.error('[OrderController] Commission error details:', commissionError.message);
+          // Ne pas bloquer la création de commande si la commission échoue
         }
       }
 
@@ -291,9 +311,28 @@ export class OrderCreateController {
         note: noteUnique
       };
 
-      // 7. Traiter les points et notifications
-      const earnedPoints = Math.floor(pricing.total * SYSTEM_CONSTANTS.POINTS.ORDER_MULTIPLIER);
-      await RewardsService.processOrderPoints(userId, formattedOrder, 'ORDER');
+      // 7. Traiter les points et notifications via le service de loyauté
+      let earnedPoints = 0;
+      try {
+        const orderWithPricingForLoyalty = await prisma.orders.findUnique({
+          where: { id: order.id },
+          include: { pricing: true }
+        });
+        
+        if (orderWithPricingForLoyalty) {
+          const loyaltyResult = await LoyaltyService.earnPointsFromOrder(
+            userId,
+            orderWithPricingForLoyalty,
+            'ORDER'
+          );
+          earnedPoints = loyaltyResult?.pointsBalance || 0;
+        }
+      } catch (loyaltyError: any) {
+        console.error('[OrderController] Error processing loyalty points:', loyaltyError);
+        // Fallback : utiliser l'ancienne méthode si la nouvelle échoue
+        earnedPoints = Math.floor(pricing.total * SYSTEM_CONSTANTS.POINTS.ORDER_MULTIPLIER);
+        await RewardsService.processOrderPoints(userId, formattedOrder, 'ORDER');
+      }
 
       const user: User = {
         id: orderData.user.id,
@@ -319,14 +358,71 @@ export class OrderCreateController {
         notificationTemplate.data
       );
 
-      // 8. Préparer et envoyer la réponse
+      // 7.5. Mettre à jour les stats du client manager si le client est assigné à un agent
+      try {
+        const clientManager = await prisma.client_managers.findFirst({
+          where: {
+            client_id: userId,
+            is_active: true
+          }
+        });
+
+        if (clientManager) {
+          console.log(
+            `[OrderController] Updating client manager stats for agent ${clientManager.agent_id}`
+          );
+          await ClientManagerStatsService.updateAgentStats(clientManager.agent_id);
+        }
+      } catch (statsError: any) {
+        console.error('[OrderController] Error updating client manager stats:', statsError);
+        // Ne pas bloquer la création de commande si la mise à jour des stats échoue
+      }
+
+      // 8. Récupérer les infos de commission enrichies avec le solde actuel
+      let commissionInfo = null;
+      if (affiliateCode) {
+        try {
+          const commissionTransactions = await prisma.commission_transactions.findMany({
+            where: {
+              order_id: order.id
+            }
+          });
+
+          const affiliateProfile = await prisma.affiliate_profiles.findFirst({
+            where: {
+              affiliate_code: affiliateCode,
+              is_active: true
+            }
+          });
+
+          const commissionEarned = commissionTransactions.reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0);
+
+          commissionInfo = {
+            affiliateCode: affiliateCode,
+            affiliateId: affiliateProfile?.id || null,
+            commissionEarned,  // ✅ Commission de cette commande
+            commissionRate: affiliateProfile?.commission_rate ? Number(affiliateProfile.commission_rate) : null,
+            affiliateBalance: affiliateProfile?.commission_balance ? Number(affiliateProfile.commission_balance) : 0,  // ✅ Solde ACTUEL
+            totalEarned: affiliateProfile?.total_earned ? Number(affiliateProfile.total_earned) : 0,  // ✅ Total gagné
+            totalReferrals: affiliateProfile?.total_referrals || 0  // ✅ Nombre de commissions
+          };
+
+          console.log(`[OrderController] Commission info enriched:`, commissionInfo);
+        } catch (enrichError: any) {
+          console.warn('[OrderController] Error enriching commission info:', enrichError.message);
+          // Ne pas bloquer la réponse si l'enrichissement échoue
+        }
+      }
+
+      // 9. Préparer et envoyer la réponse enrichie
       const response = {
         order: formattedOrder,
         pricing,
         rewards: {
           pointsEarned: earnedPoints,
           currentBalance: await OrderSharedMethods.getUserPoints(userId)
-        }
+        },
+        ...(commissionInfo && { commissions: commissionInfo })
       };
 
       res.status(201).json({ data: response });

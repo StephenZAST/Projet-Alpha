@@ -1,9 +1,11 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../constants.dart';
 import '../../../components/glass_components.dart';
 import '../../../core/models/address.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/gps_converter.dart';
 import 'location_picker_widget.dart';
 import 'address_parser_helper.dart';
 
@@ -24,7 +26,8 @@ class EnhancedAddressFormDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<EnhancedAddressFormDialog> createState() => _EnhancedAddressFormDialogState();
+  State<EnhancedAddressFormDialog> createState() =>
+      _EnhancedAddressFormDialogState();
 }
 
 class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
@@ -37,13 +40,13 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
   final _searchController = TextEditingController();
 
   late TabController _tabController;
-  
+
   bool _isDefault = false;
   bool _isLoading = false;
   double? _selectedLatitude;
   double? _selectedLongitude;
   String _selectedLocationAddress = '';
-  
+
   List<LocationSuggestion> _searchSuggestions = [];
   bool _isSearching = false;
   bool _showSuggestions = false;
@@ -66,7 +69,7 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
       _isDefault = address.isDefault;
       _selectedLatitude = address.gpsLatitude;
       _selectedLongitude = address.gpsLongitude;
-      
+
       if (address.hasGpsCoordinates) {
         _selectedLocationAddress = address.formattedAddress;
       }
@@ -87,17 +90,63 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
 
   void _onSearchChanged() {
     final query = _searchController.text.trim();
-    if (query.length >= 3) {
-      _searchAddresses(query);
-    } else {
+
+    print('[EnhancedAddressFormDialog] 🔍 _onSearchChanged: "$query"');
+
+    // ✅ ÉTAPE 1: Query vide
+    if (query.isEmpty) {
+      print('[EnhancedAddressFormDialog] ⚪ Query vide → nettoyage');
       setState(() {
         _searchSuggestions.clear();
         _showSuggestions = false;
+        _isSearching = false;
+      });
+      return; // 🛑 SORTIE 1
+    }
+
+    // ✅ ÉTAPE 2: Vérifier GPS AVANT toute chose
+    final isGps = GpsConverter.isGpsCoordinate(query);
+    if (isGps) {
+      print('[EnhancedAddressFormDialog] 🟢 ✅ GPS DÉTECTÉ: $query');
+
+      // Convertir en format décimal normalisé
+      final decimalFormat = GpsConverter.toDecimalFormat(query);
+      if (decimalFormat != null) {
+        print('[EnhancedAddressFormDialog] ✅ Converti en: $decimalFormat');
+        // Vider les suggestions et utiliser le format converti
+        setState(() {
+          _searchSuggestions.clear();
+          _showSuggestions = false;
+          _isSearching = false;
+        });
+        // Mettre à jour le champ avec le format décimal normalisé
+        _searchController.text = decimalFormat;
+      }
+      return; // IMPORTANT: SORTIE - pas d'appel API Nominatim
+    }
+
+    // ✅ ÉTAPE 3: Si pas GPS et query >= 3 caractères → Recherche Nominatim
+    if (query.length >= 3) {
+      print(
+          '[EnhancedAddressFormDialog] 🔵 Query texte valide ($query.length chars) → Appel API Nominatim');
+      _searchAddresses(query);
+    } else {
+      // Query trop courte
+      print(
+          '[EnhancedAddressFormDialog] ⚪ Query trop courte (${query.length} chars) → nettoyage');
+      setState(() {
+        _searchSuggestions.clear();
+        _showSuggestions = false;
+        _isSearching = false;
       });
     }
   }
 
+  /// 🔍 Rechercher des adresses via Nominatim (OpenStreetMap)
+  /// ⚠️ N'est appelé QUE pour les recherches texte, pas pour les coordonnées GPS
   Future<void> _searchAddresses(String query) async {
+    print('[EnhancedAddressFormDialog] Recherche d\'adresse: $query');
+
     setState(() {
       _isSearching = true;
       _showSuggestions = true;
@@ -110,13 +159,56 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
           _searchSuggestions = suggestions;
           _isSearching = false;
         });
+
+        // Afficher un message si aucun résultat
+        if (suggestions.isEmpty) {
+          print(
+              '[EnhancedAddressFormDialog] Aucun résultat trouvé pour: $query');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Aucune adresse trouvée. Essayez les coordonnées GPS.',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: AppColors.warning,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.radiusMD,
+                ),
+                margin: const EdgeInsets.all(16),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
+      print('[EnhancedAddressFormDialog] ❌ Erreur recherche adresse: $e');
       if (mounted) {
         setState(() {
           _searchSuggestions.clear();
           _isSearching = false;
+          _showSuggestions = false;
         });
+
+        // Afficher l'erreur à l'utilisateur
+        _showErrorSnackBar(
+            'Erreur de recherche: ${e.toString().contains('CORS') ? 'Erreur serveur - Essayez les coordonnées GPS' : e.toString()}');
       }
     }
   }
@@ -127,7 +219,7 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
       _selectedLongitude = suggestion.longitude;
       _selectedLocationAddress = suggestion.formattedAddress;
       _showSuggestions = false;
-      
+
       // Pré-remplir les champs du formulaire
       if (suggestion.fullStreet.isNotEmpty) {
         _streetController.text = suggestion.fullStreet;
@@ -138,7 +230,7 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
       if (suggestion.postalCode != null) {
         _postalCodeController.text = suggestion.postalCode!;
       }
-      
+
       _searchController.text = suggestion.formattedAddress;
     });
   }
@@ -148,7 +240,7 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
       _selectedLatitude = latitude;
       _selectedLongitude = longitude;
       _selectedLocationAddress = address;
-      
+
       // 🎯 Pré-remplir intelligemment les champs du formulaire avec l'adresse de la carte
       AddressParserHelper.parseAndFillAddressFields(
         fullAddress: address,
@@ -161,11 +253,29 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
 
   @override
   Widget build(BuildContext context) {
+    // 📱 Obtenir les dimensions de l'écran et du clavier
+    final screenSize = MediaQuery.of(context).size;
+    final viewInsets = MediaQuery.of(context).viewInsets;
+    final isKeyboardVisible = viewInsets.bottom > 0;
+
+    // 🎯 Calculer la hauteur disponible intelligemment
+    // Laisser de l'espace pour le clavier et la barre système
+    final availableHeight = screenSize.height - viewInsets.bottom - 32;
+    final dialogHeight = isKeyboardVisible
+        ? availableHeight * 0.85 // Réduire quand le clavier est visible
+        : min(availableHeight * 0.9, 800.0);
+
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(16),
+      // 🔑 Empêcher le redimensionnement automatique du dialog
+      insetAnimationDuration: const Duration(milliseconds: 200),
+      insetAnimationCurve: Curves.easeOut,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 800),
+        constraints: BoxConstraints(
+          maxWidth: 600,
+          maxHeight: dialogHeight,
+        ),
         child: GlassContainer(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -205,7 +315,9 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
-            widget.initialAddress != null ? Icons.edit_location : Icons.add_location,
+            widget.initialAddress != null
+                ? Icons.edit_location
+                : Icons.add_location,
             color: AppColors.primary,
             size: 20,
           ),
@@ -223,7 +335,7 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                 ),
               ),
               Text(
-                widget.initialAddress != null 
+                widget.initialAddress != null
                     ? 'Modifiez votre adresse avec précision'
                     : 'Ajoutez une nouvelle adresse avec localisation',
                 style: AppTextStyles.bodySmall.copyWith(
@@ -303,9 +415,9 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
           children: [
             // Recherche d'adresse
             _buildAddressSearchField(),
-            
+
             const SizedBox(height: 16),
-            
+
             // Nom de l'adresse
             _buildTextField(
               controller: _nameController,
@@ -322,9 +434,9 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                 return null;
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Rue
             _buildTextField(
               controller: _streetController,
@@ -341,9 +453,9 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                 return null;
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Ville et Code postal
             Row(
               children: [
@@ -390,15 +502,15 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Informations GPS
             if (_selectedLatitude != null && _selectedLongitude != null)
               _buildGpsInfoCard(),
-            
+
             const SizedBox(height: 16),
-            
+
             // Option par défaut
             _buildDefaultAddressOption(),
           ],
@@ -407,8 +519,11 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
     );
   }
 
-  /// 🔍 Champ de recherche d'adresse
+  /// 🔍 Champ de recherche d'adresse avec support GPS
   Widget _buildAddressSearchField() {
+    final query = _searchController.text.trim();
+    final looksLikeGps = GpsConverter.isGpsCoordinate(query);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -420,13 +535,16 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
           ),
         ),
         const SizedBox(height: 8),
-        
+
         Container(
           decoration: BoxDecoration(
             color: AppColors.surface(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppColors.surfaceVariant(context),
+              color: looksLikeGps
+                  ? AppColors.success.withOpacity(0.5)
+                  : AppColors.surfaceVariant(context),
+              width: looksLikeGps ? 2 : 1,
             ),
           ),
           child: Column(
@@ -437,13 +555,15 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                   color: AppColors.textPrimary(context),
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Tapez une adresse pour la rechercher...',
+                  hintText: 'Adresse, coordonnées GPS ou Plus Code...',
                   hintStyle: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textTertiary(context),
                   ),
                   prefixIcon: Icon(
-                    Icons.search,
-                    color: AppColors.textSecondary(context),
+                    looksLikeGps ? Icons.gps_fixed : Icons.search,
+                    color: looksLikeGps
+                        ? AppColors.success
+                        : AppColors.textSecondary(context),
                     size: 20,
                   ),
                   suffixIcon: _isSearching
@@ -453,7 +573,8 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                           margin: const EdgeInsets.all(14),
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary),
                           ),
                         )
                       : _searchController.text.isNotEmpty
@@ -484,9 +605,9 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                   }
                 },
               ),
-              
-              // Suggestions de recherche
-              if (_showSuggestions && _searchSuggestions.isNotEmpty)
+
+              // Suggestions de recherche ou résultat GPS
+              if (_showSuggestions)
                 Container(
                   decoration: BoxDecoration(
                     border: Border(
@@ -496,30 +617,90 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                     ),
                   ),
                   child: Column(
-                    children: _searchSuggestions.take(5).map((suggestion) {
-                      return ListTile(
-                        dense: true,
-                        leading: Icon(
-                          Icons.location_on_outlined,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                        title: Text(
-                          suggestion.formattedAddress,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textPrimary(context),
+                    children: [
+                      // Afficher un message si GPS détecté
+                      if (looksLikeGps)
+                        ListTile(
+                          dense: true,
+                          leading: Icon(
+                            Icons.gps_fixed,
+                            color: AppColors.success,
+                            size: 20,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onTap: () => _selectSuggestion(suggestion),
-                      );
-                    }).toList(),
+                          title: Text(
+                            'Coordonnées GPS détectées',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            query,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary(context),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )
+                      // Sinon afficher les suggestions d'adresse
+                      else if (_searchSuggestions.isNotEmpty)
+                        ..._searchSuggestions.take(5).map((suggestion) {
+                          return ListTile(
+                            dense: true,
+                            leading: Icon(
+                              Icons.location_on_outlined,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                            title: Text(
+                              suggestion.formattedAddress,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.textPrimary(context),
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () => _selectSuggestion(suggestion),
+                          );
+                        }).toList(),
+                    ],
                   ),
                 ),
             ],
           ),
         ),
+
+        // Aide sur les formats GPS
+        if (query.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.info.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: AppColors.info,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Formats acceptés: adresse, coordonnées GPS (12.359364, -1.473508) ou Plus Code (9GJP+MWJ)',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.info,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -537,7 +718,7 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          
+
           // Carte de localisation
           Container(
             height: 300,
@@ -548,15 +729,15 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
               onLocationSelected: _onLocationSelected,
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Informations GPS
           if (_selectedLatitude != null && _selectedLongitude != null)
             _buildGpsInfoCard(),
-          
+
           const SizedBox(height: 16),
-          
+
           // Nom de l'adresse
           _buildTextField(
             controller: _nameController,
@@ -570,9 +751,9 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
               return null;
             },
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Champs d'adresse manuels
           Container(
             padding: const EdgeInsets.all(16),
@@ -611,7 +792,7 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Rue
                 _buildTextField(
                   controller: _streetController,
@@ -619,9 +800,9 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
                   hint: 'Ex: Kalgodin, Ouaga 2000...',
                   icon: Icons.home_outlined,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Ville et Code postal
                 Row(
                   children: [
@@ -653,9 +834,9 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Option par défaut
           _buildDefaultAddressOption(),
         ],
@@ -887,13 +1068,16 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
   /// 💾 Gestionnaire de sauvegarde
   Future<void> _handleSave() async {
     print('[EnhancedAddressFormDialog] _handleSave called');
-    print('[EnhancedAddressFormDialog] Current tab index: ${_tabController.index}');
-    print('[EnhancedAddressFormDialog] Selected coordinates: lat=$_selectedLatitude, lng=$_selectedLongitude');
+    print(
+        '[EnhancedAddressFormDialog] Current tab index: ${_tabController.index}');
+    print(
+        '[EnhancedAddressFormDialog] Selected coordinates: lat=$_selectedLatitude, lng=$_selectedLongitude');
     print('[EnhancedAddressFormDialog] Name: ${_nameController.text}');
     print('[EnhancedAddressFormDialog] Street: ${_streetController.text}');
     print('[EnhancedAddressFormDialog] City: ${_cityController.text}');
-    print('[EnhancedAddressFormDialog] PostalCode: ${_postalCodeController.text}');
-    
+    print(
+        '[EnhancedAddressFormDialog] PostalCode: ${_postalCodeController.text}');
+
     // Valider selon l'onglet actuel
     if (_tabController.index == 0) {
       // Onglet manuel - valider le formulaire complet
@@ -907,9 +1091,10 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
         _showErrorSnackBar('Le nom de l\'adresse est requis');
         return;
       }
-      
+
       if (_selectedLatitude == null || _selectedLongitude == null) {
-        _showErrorSnackBar('Veuillez sélectionner une localisation sur la carte');
+        _showErrorSnackBar(
+            'Veuillez sélectionner une localisation sur la carte');
         return;
       }
 
@@ -919,15 +1104,18 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
       if (widget.initialAddress == null) {
         // Nouvelle adresse - vérifier les champs requis
         if (_streetController.text.trim().isEmpty) {
-          _showErrorSnackBar('L\'adresse (rue) est requise. Veuillez la saisir dans l\'onglet "Saisie manuelle"');
+          _showErrorSnackBar(
+              'L\'adresse (rue) est requise. Veuillez la saisir dans l\'onglet "Saisie manuelle"');
           return;
         }
         if (_cityController.text.trim().isEmpty) {
-          _showErrorSnackBar('La ville est requise. Veuillez la saisir dans l\'onglet "Saisie manuelle"');
+          _showErrorSnackBar(
+              'La ville est requise. Veuillez la saisir dans l\'onglet "Saisie manuelle"');
           return;
         }
         if (_postalCodeController.text.trim().isEmpty) {
-          _showErrorSnackBar('Le code postal est requis. Veuillez le saisir dans l\'onglet "Saisie manuelle"');
+          _showErrorSnackBar(
+              'Le code postal est requis. Veuillez le saisir dans l\'onglet "Saisie manuelle"');
           return;
         }
       }
@@ -940,7 +1128,7 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
     try {
       // Construire la requête intelligemment
       final CreateAddressRequest request;
-      
+
       if (_tabController.index == 0) {
         // Onglet manuel - utiliser tous les champs du formulaire
         request = CreateAddressRequest(
@@ -958,19 +1146,21 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
         String street = _streetController.text.trim();
         String city = _cityController.text.trim();
         String postalCode = _postalCodeController.text.trim();
-        
+
         // Si c'est une modification et que les champs sont déjà remplis, les garder
         if (widget.initialAddress != null) {
           // Modification d'adresse existante - garder les valeurs existantes si pas modifiées
           // IMPORTANT: Ne jamais remplacer les champs par des coordonnées GPS
           street = street.isNotEmpty ? street : widget.initialAddress!.street;
           city = city.isNotEmpty ? city : widget.initialAddress!.city;
-          postalCode = postalCode.isNotEmpty ? postalCode : widget.initialAddress!.postalCode;
+          postalCode = postalCode.isNotEmpty
+              ? postalCode
+              : widget.initialAddress!.postalCode;
         } else {
           // Nouvelle adresse - les champs ont déjà été validés ci-dessus
           // Les coordonnées GPS ne doivent PAS remplacer les champs texte
         }
-        
+
         request = CreateAddressRequest(
           name: name,
           street: street,
@@ -982,8 +1172,9 @@ class _EnhancedAddressFormDialogState extends State<EnhancedAddressFormDialog>
         );
       }
 
-      print('[EnhancedAddressFormDialog] Final request data: ${request.toJson()}');
-      
+      print(
+          '[EnhancedAddressFormDialog] Final request data: ${request.toJson()}');
+
       final success = await widget.onSave(request);
       print('[EnhancedAddressFormDialog] Save result: $success');
 
