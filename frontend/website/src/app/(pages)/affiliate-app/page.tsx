@@ -8,7 +8,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { FiDownload, FiCheck, FiArrowRight, FiTrendingUp, FiUsers, FiAward, FiDollarSign, FiExternalLink } from 'react-icons/fi';
+import { FiCheck, FiTrendingUp, FiUsers, FiDollarSign, FiExternalLink } from 'react-icons/fi';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { EXTERNAL_LINKS } from '@/lib/constants';
