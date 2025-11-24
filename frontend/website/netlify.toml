@@ -1,0 +1,16 @@
+[build]
+base = "frontend/website"
+command = "npm run build"
+publish = ".next"
+
+[build.environment]
+NODE_VERSION = "18"
+NODE_ENV = "production"
+
+[[plugins]]
+package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
