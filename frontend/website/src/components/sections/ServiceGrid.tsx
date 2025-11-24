@@ -177,7 +177,7 @@ export const ServiceGrid: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  const handleReserve = (serviceId: string) => {
+  const handleReserve = () => {
     window.location.href = EXTERNAL_LINKS.clientApp;
   };
 
@@ -236,7 +236,7 @@ export const ServiceGrid: React.FC = () => {
                 <div className={styles.cardCta}>
                   <button
                     className={styles.cardCtaPrimary}
-                    onClick={() => handleReserve(service.id)}
+                    onClick={handleReserve}
                   >
                     Réserver
                   </button>
