@@ -21,7 +21,6 @@ const nextConfig = {
   // Optimisation des polices
   optimizeFonts: true,
 
-  
   // Headers de sécurité
   async headers() {
     return [
@@ -84,12 +83,6 @@ const nextConfig = {
         },
       ],
     };
-  },
-
-  // Webpack
-  webpack: (config, { isServer }) => {
-    config.optimization.minimize = true;
-    return config;
   },
 };
 
