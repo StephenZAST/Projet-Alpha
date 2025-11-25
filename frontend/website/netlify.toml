@@ -1,5 +1,5 @@
 [build]
-command = "npm install && npm run build"
+command = "npm ci --include=dev && npm run build"
 publish = "out"
 
 [build.environment]
