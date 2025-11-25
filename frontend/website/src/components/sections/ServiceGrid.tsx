@@ -5,7 +5,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Button } from '../common/Button';
 import styles from './ServiceGrid.module.css';
 import { EXTERNAL_LINKS, ADDITIONAL_SERVICES } from '@/lib/constants';
 
@@ -178,7 +177,7 @@ export const ServiceGrid: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  const handleReserve = (serviceId: string) => {
+  const handleReserve = () => {
     window.location.href = EXTERNAL_LINKS.clientApp;
   };
 
@@ -237,7 +236,7 @@ export const ServiceGrid: React.FC = () => {
                 <div className={styles.cardCta}>
                   <button
                     className={styles.cardCtaPrimary}
-                    onClick={() => handleReserve(service.id)}
+                    onClick={handleReserve}
                   >
                     Réserver
                   </button>

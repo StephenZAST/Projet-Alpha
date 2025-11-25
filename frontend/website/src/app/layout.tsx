@@ -2,13 +2,18 @@
  * 🎯 Root Layout - Configuration globale
  */
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '@/styles/globals.css';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   title: 'Alpha Laundry - Blanchisserie & Nettoyage à Sec Premium',
   description: 'Découvrez Alpha Laundry, votre partenaire de confiance pour la blanchisserie, le nettoyage à sec et les services de repassage. Collecte et livraison gratuite.',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
   robots: 'index, follow',
   authors: [{ name: 'Alpha Laundry' }],
   creator: 'Alpha Laundry',

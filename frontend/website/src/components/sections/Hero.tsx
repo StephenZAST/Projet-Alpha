@@ -9,7 +9,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { Button } from '../common/Button';
 import styles from './Hero.module.css';
-import { HERO_SLIDES, EXTERNAL_LINKS } from '@/lib/constants';
+import { HERO_SLIDES } from '@/lib/constants';
 
 export const Hero: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -92,8 +92,6 @@ export const Hero: React.FC = () => {
   if (!isMounted) {
     return null;
   }
-
-  const slide = HERO_SLIDES[currentSlide];
 
   return (
     <section className={styles.hero}>
