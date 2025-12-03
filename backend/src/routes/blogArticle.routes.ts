@@ -5,16 +5,20 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
-// Protection des routes avec authentification
-router.use(authenticateToken as express.RequestHandler);
-
-// Routes publiques (clients)
+// Routes publiques (lecture seule - pas d'authentification requise)
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => BlogArticleController.getAllArticles(req, res))
 );
 
-// Routes admin
+// Route pour récupérer un article par slug (public)
+router.get(
+  '/slug/:slug',
+  asyncHandler(async (req: Request, res: Response) => BlogArticleController.getArticleBySlug(req, res))
+);
+
+// Routes admin (authentification requise)
+router.use(authenticateToken as express.RequestHandler);
 router.use(authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler);
 
 router.post(

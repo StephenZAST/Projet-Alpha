@@ -9,14 +9,21 @@ const prisma = new PrismaClient();
 export class BlogArticleService {
   static async createArticle(title: string, content: string, categoryId: string, authorId: string) {
     try {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const excerpt = content.substring(0, 500);
+      
       const article = await prisma.blog_articles.create({
         data: {
-          id: uuidv4(),
+          title,
+          slug,
+          content,
+          excerpt,
+          category_id: categoryId,
           author_id: authorId,
-          published_at: new Date()
+          is_published: false
         },
         include: {
-          users: {
+          author: {
             select: {
               id: true,
               first_name: true,
@@ -37,19 +44,20 @@ export class BlogArticleService {
     try {
       const articles = await prisma.blog_articles.findMany({
         where: includeUnpublished ? undefined : {
-          published_at: { not: null }
+          is_published: true
         },
         orderBy: {
           published_at: 'desc'
         },
         include: {
-          users: {
+          author: {
             select: {
               id: true,
               first_name: true,
               last_name: true
             }
-          }
+          },
+          category: true
         }
       });
 
@@ -60,15 +68,55 @@ export class BlogArticleService {
     }
   }
 
+  static async getArticleBySlug(slug: string) {
+    try {
+      const article = await prisma.blog_articles.findUnique({
+        where: { slug },
+        include: {
+          author: {
+            select: {
+              id: true,
+              first_name: true,
+              last_name: true
+            }
+          },
+          category: true
+        }
+      });
+
+      if (!article) {
+        return null;
+      }
+
+      // Incrémenter le compteur de vues
+      await prisma.blog_articles.update({
+        where: { id: article.id },
+        data: { views_count: (article.views_count || 0) + 1 }
+      });
+
+      return article;
+    } catch (error) {
+      console.error('[BlogArticleService] Get article by slug error:', error);
+      throw error;
+    }
+  }
+
   static async updateArticle(articleId: string, title: string, content: string, categoryId: string) {
     try {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const excerpt = content.substring(0, 500);
+      
       const article = await prisma.blog_articles.update({
         where: { id: articleId },
         data: {
-          published_at: new Date()
+          title,
+          slug,
+          content,
+          excerpt,
+          category_id: categoryId
         },
         include: {
-          users: {
+          author: {
             select: {
               id: true,
               first_name: true,

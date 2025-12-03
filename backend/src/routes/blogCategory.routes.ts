@@ -5,15 +5,14 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 const router = express.Router();
 
-router.use(authenticateToken);
-
-// Routes publiques (clients)
+// Routes publiques (lecture seule - pas d'authentification requise)
 router.get(
   '/',
   asyncHandler((req, res, next) => BlogCategoryController.getAllCategories(req, res))
 );
 
-// Routes admin
+// Routes admin (authentification requise)
+router.use(authenticateToken);
 router.use(authorizeRoles(['ADMIN', 'SUPER_ADMIN']));
 
 router.post(

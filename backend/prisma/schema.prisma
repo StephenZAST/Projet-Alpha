@@ -124,11 +124,12 @@ model articles {
 }
 
 model blog_categories {
-  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name        String    @unique @db.VarChar
-  description String?
-  created_at  DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+  id            String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name          String          @unique @db.VarChar
+  description   String?
+  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  blog_articles blog_articles[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -378,7 +379,6 @@ model temp_notifications {
   created_at DateTime? @db.Timestamptz(6)
   updated_at DateTime? @db.Timestamptz(6)
   data       Json?
-  users      users?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "temp_notifications_userid_fkey")
 
   @@ignore
 }
@@ -414,7 +414,6 @@ model users {
   point_transactions                                                         point_transactions[]
   reset_codes                                                                reset_codes[]
   reward_claims                                                              reward_claims[]
-  temp_notifications                                                         temp_notifications[] @ignore
   user_activity_logs                                                         user_activity_logs[]
   user_offers                                                                user_offers[]
   user_subscriptions                                                         user_subscriptions[]
@@ -436,13 +435,30 @@ model article_archives {
 }
 
 model blog_articles {
-  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  author_id    String?   @db.Uuid
-  published_at DateTime? @db.Timestamptz(6)
-  users        users?    @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String           @db.VarChar(255)
+  slug            String           @unique @db.VarChar(255)
+  content         String
+  excerpt         String           @db.VarChar(500)
+  category_id     String?          @db.Uuid
+  author_id       String?          @db.Uuid
+  featured_image  String?          @db.VarChar(500)
+  published_at    DateTime?        @db.Timestamptz(6)
+  created_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime?        @default(now()) @updatedAt @db.Timestamptz(6)
+  reading_time    Int?             @default(5)
+  seo_keywords    String[]         @default([])
+  seo_description String?          @db.VarChar(160)
+  views_count     Int?             @default(0)
+  is_published    Boolean?         @default(false)
+  author          users?           @relation(fields: [author_id], references: [id], onUpdate: NoAction)
+  category        blog_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
 
-  @@index([author_id], map: "idx_blog_articles_author")
-  @@index([published_at], map: "idx_blog_articles_published")
+  @@index([author_id], map: "idx_blog_articles_author_id")
+  @@index([category_id], map: "idx_blog_articles_category_id")
+  @@index([is_published], map: "idx_blog_articles_is_published")
+  @@index([published_at(sort: Desc)], map: "idx_blog_articles_published_at")
+  @@index([slug], map: "idx_blog_articles_slug")
 }
 
 model commission_transactions {
