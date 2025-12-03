@@ -157,6 +157,25 @@ class AdminSideMenu extends StatelessWidget {
               onPress: () => menuController.updateIndex(MenuIndices.clientManagers),
             ),
             Divider(color: theme.dividerColor),
+            // GESTION DU CONTENU
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                "GESTION DU CONTENU",
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.textTheme.bodySmall?.color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            DrawerListTile(
+              title: "Articles de Blog",
+              icon: Icons.article_outlined,
+              isSelected:
+                  menuController.selectedIndex == MenuIndices.blog, // 16
+              onPress: () => menuController.updateIndex(MenuIndices.blog),
+            ),
+            Divider(color: theme.dividerColor),
             // NOTIFICATIONS ET PROFIL
             Padding(
               padding: const EdgeInsets.all(16.0),

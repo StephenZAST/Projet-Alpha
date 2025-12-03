@@ -270,4 +270,5 @@ class MenuIndices {
   static const int subscriptions = 13;
   static const int offers = 14;
   static const int clientManagers = 15; // 👥 Nouvelle page Client Managers (SVA)
+  static const int blog = 16; // 📝 Gestion des Articles de Blog
 }

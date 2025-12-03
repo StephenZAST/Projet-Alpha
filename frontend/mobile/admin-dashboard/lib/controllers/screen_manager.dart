@@ -16,6 +16,7 @@ import '../screens/offers/offers_screen.dart';
 import '../screens/loyalty/loyalty_screen.dart';
 import '../screens/delivery/delivery_screen.dart';
 import '../screens/client_managers/client_managers_screen.dart';
+import '../screens/blog/blog_management_screen.dart';
 import '../constants.dart';
 
 /// Gestionnaire centralisé des écrans pour éviter les instances multiples
@@ -95,6 +96,8 @@ class ScreenManager extends GetxController {
         return _wrapWithKey(DeliveryScreen(), 'delivery_$timestamp');
       case MenuIndices.clientManagers:
         return _wrapWithKey(ClientManagersScreen(), 'client_managers_$timestamp');
+      case MenuIndices.blog:
+        return _wrapWithKey(BlogManagementScreen(), 'blog_$timestamp');
       default:
         return DashboardScreen(key: Key('dashboard_default_$timestamp'));
     }
@@ -163,6 +166,8 @@ class ScreenManager extends GetxController {
         return 'Delivery';
       case MenuIndices.clientManagers:
         return 'ClientManagers';
+      case MenuIndices.blog:
+        return 'Blog';
       default:
         return 'Unknown';
     }
