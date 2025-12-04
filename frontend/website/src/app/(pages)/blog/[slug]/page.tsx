@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Metadata, ResolvingMetadata } from 'next';
+import { Metadata } from 'next';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { BlogArticleDetail } from '@/components/sections/BlogArticleDetail';
@@ -40,8 +40,7 @@ async function getArticleData(slug: string) {
 
 // Générer les métadonnées dynamiques
 export async function generateMetadata(
-  { params }: BlogArticlePageProps,
-  parent: ResolvingMetadata
+  { params }: BlogArticlePageProps
 ): Promise<Metadata> {
   const article = await getArticleData(params.slug);
 

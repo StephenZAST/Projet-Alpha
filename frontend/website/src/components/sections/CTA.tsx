@@ -8,7 +8,6 @@ import React from 'react';
 import Image from 'next/image';
 import { Button } from '../common/Button';
 import styles from './CTA.module.css';
-import { EXTERNAL_LINKS } from '@/lib/constants';
 
 export const CTA: React.FC = () => {
   return (
