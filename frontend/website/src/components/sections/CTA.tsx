@@ -34,7 +34,7 @@ export const CTA: React.FC = () => {
               <Button
                 variant="secondary"
                 size="large"
-                onClick={() => window.location.href = EXTERNAL_LINKS.affiliateApp}
+                onClick={() => window.location.href = '/affiliate-app'}
               >
                 Devenir Partenaire
               </Button>

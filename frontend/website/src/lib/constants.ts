@@ -210,6 +210,7 @@ export const EXTERNAL_LINKS = {
   deliveryApp: 'https://68fac646f8312f00079c8b17--alphalaundrydelivers.netlify.app/',
   affiliateApp: 'https://68fac0ae8f30bef299f38200--affiliatealpha.netlify.app/',
   phone: '+226 67 80 16 68',
+  phone2: '+226 54 69 12 41',
   email: 'contact@alphalaundry.com',
 } as const;
 

@@ -1,0 +1,45 @@
+# 🤖 Robots.txt - Directives pour les moteurs de recherche
+# Permet à Google, Bing, etc. de crawler le site correctement
+
+# Règles par défaut pour tous les bots
+User-agent: *
+Allow: /
+Allow: /blog
+Allow: /blog/*
+Allow: /services
+Allow: /pricing
+Allow: /about
+Allow: /contact
+
+# Interdire les pages admin et API
+Disallow: /admin
+Disallow: /api
+Disallow: /admin-dashboard
+Disallow: /*.json$
+Disallow: /*.xml$
+
+# Interdire les fichiers temporaires
+Disallow: /tmp/
+Disallow: /temp/
+Disallow: /.next/
+
+# Crawl delay (délai entre les requêtes)
+Crawl-delay: 1
+
+# Règles spécifiques pour Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Règles spécifiques pour Bing
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Règles spécifiques pour Yandex
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://alphalaundry.com/sitemap.xml

@@ -78,6 +78,16 @@ export const Footer: React.FC = () => {
               <li>
                 <Link href="/affiliate-app">Programme Affiliate</Link>
               </li>
+              <li>
+                <a 
+                  href={EXTERNAL_LINKS.adminApp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.link}
+                >
+                  Tableau de Bord Admin
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -87,6 +97,9 @@ export const Footer: React.FC = () => {
             <div className={styles.contact}>
               <a href={`tel:${EXTERNAL_LINKS.phone}`} className={styles.phone}>
                 {EXTERNAL_LINKS.phone}
+              </a>
+              <a href={`tel:${EXTERNAL_LINKS.phone2}`} className={styles.phone}>
+                {EXTERNAL_LINKS.phone2}
               </a>
               <a href={`mailto:${EXTERNAL_LINKS.email}`} className={styles.email}>
                 {EXTERNAL_LINKS.email}
