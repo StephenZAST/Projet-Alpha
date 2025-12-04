@@ -92,8 +92,7 @@ export async function generateMetadata(
 export async function generateStaticParams() {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'https://alpha-laundry-backend.onrender.com'}/api/blog-articles?limit=50`,
-      { next: { revalidate: 86400 } } // Revalidate daily
+      `${process.env.NEXT_PUBLIC_API_URL || 'https://alpha-laundry-backend.onrender.com'}/api/blog-articles?limit=50`
     );
 
     if (!response.ok) {
