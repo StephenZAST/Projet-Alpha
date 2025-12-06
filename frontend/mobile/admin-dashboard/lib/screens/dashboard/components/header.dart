@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'dart:ui';
 import '../../../controllers/auth_controller.dart';
 import '../../../controllers/menu_app_controller.dart';
+import '../../../controllers/notification_controller.dart';
 import '../../../responsive.dart';
 import '../../../constants.dart';
 import '../../../routes/admin_routes.dart';
@@ -484,47 +485,81 @@ class _NotificationButtonState extends State<_NotificationButton>
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: IconButton(
-                icon: Stack(
-                  children: [
-                    Icon(
-                      Icons.notifications_outlined,
-                      color: isDark ? AppColors.textLight : AppColors.textPrimary,
-                      size: 20,
-                    ),
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: AnimatedBuilder(
-                        animation: _pulseAnimation,
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale: _pulseAnimation.value,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: AppColors.error,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.error.withOpacity(0.5),
-                                    blurRadius: 4,
-                                    spreadRadius: 1,
-                                  ),
-                                ],
+              child: Obx(() {
+                final notificationController = Get.find<NotificationController>();
+                final unreadCount = notificationController.unreadCount.value;
+                
+                return IconButton(
+                  icon: Stack(
+                    children: [
+                      Icon(
+                        Icons.notifications_outlined,
+                        color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                        size: 20,
+                      ),
+                      // Badge avec compteur ou point pulsant
+                      if (unreadCount > 0)
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.error,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.error.withOpacity(0.5),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              unreadCount > 99 ? '99+' : '$unreadCount',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                onPressed: () => AdminRoutes.goToNotifications(),
-                tooltip: 'Notifications',
-                splashRadius: 20,
-              ),
+                          ),
+                        )
+                      else
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: AnimatedBuilder(
+                            animation: _pulseAnimation,
+                            builder: (context, child) {
+                              return Transform.scale(
+                                scale: _pulseAnimation.value,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.error.withOpacity(0.5),
+                                        blurRadius: 4,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                  onPressed: () => AdminRoutes.goToNotifications(),
+                  tooltip: 'Notifications',
+                  splashRadius: 20,
+                );
+              }),
             ),
           );
         },

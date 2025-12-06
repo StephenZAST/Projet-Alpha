@@ -42,23 +42,53 @@ class NotificationController extends GetxController {
       markAsRead(notification);
     }
 
-    // Navigation basée sur le type et l'index
+    // Navigation basée sur le type de notification
     switch (notification.type) {
+      // LOYALTY
+      case NotificationType.REWARD_CLAIM_APPROVED:
+      case NotificationType.REWARD_CLAIM_REJECTED:
+        AdminRoutes.navigateByIndex(8); // Index Loyalty
+        break;
+      // ORDERS
+      case NotificationType.ORDER_PLACED:
+      case NotificationType.ORDER_STATUS_CHANGED:
+      case NotificationType.ORDER_READY_PICKUP:
+      case NotificationType.ORDER_CANCELLED:
       case NotificationType.ORDER:
-        AdminRoutes.navigateByIndex(1); // Index des commandes
+      case NotificationType.NEW_ORDER_ALERT:
+        AdminRoutes.navigateByIndex(1); // Index Orders
         break;
-      case NotificationType.USER:
-        AdminRoutes.navigateByIndex(4); // Index des utilisateurs
-        break;
+      case NotificationType.PAYMENT_FAILED:
       case NotificationType.PAYMENT:
-        // Gestion des paiements (si implémenté)
+      case NotificationType.PAYMENT_SYSTEM_ISSUE:
+        AdminRoutes.navigateByIndex(1); // Index Orders (pour voir les paiements)
         break;
+      // DELIVERY
+      case NotificationType.DELIVERY_ASSIGNED:
+      case NotificationType.DELIVERY_COMPLETED:
+      case NotificationType.DELIVERY_PROBLEM:
       case NotificationType.DELIVERY:
-        // Gestion des livraisons (si implémenté)
+        AdminRoutes.navigateByIndex(9); // Index Delivery
         break;
+      // AFFILIATION
+      case NotificationType.REFERRAL_CODE_USED:
+      case NotificationType.COMMISSION_EARNED:
+      case NotificationType.WITHDRAWAL_APPROVED:
+      case NotificationType.WITHDRAWAL_REJECTED:
       case NotificationType.AFFILIATE:
-        // Gestion des affiliés (si implémenté)
+        AdminRoutes.navigateByIndex(7); // Index Affiliates
         break;
+      // SUBSCRIPTION
+      case NotificationType.SUBSCRIPTION_ACTIVATED:
+      case NotificationType.SUBSCRIPTION_CANCELLED:
+        AdminRoutes.navigateByIndex(13); // Index Subscriptions
+        break;
+      // ADMIN
+      case NotificationType.NEW_USER_REGISTERED:
+      case NotificationType.USER:
+        AdminRoutes.navigateByIndex(6); // Index Users
+        break;
+      // Legacy
       case NotificationType.SYSTEM:
         _handleSystemNotification(notification);
         break;
@@ -66,14 +96,15 @@ class NotificationController extends GetxController {
   }
 
   void _handleSystemNotification(AdminNotification notification) {
-    // À implémenter selon les besoins spécifiques
-    print(
-        '[NotificationController] System notification: ${notification.message}');
+    print('[NotificationController] System notification: ${notification.message}');
+    // Afficher un dialog ou une page de détails si nécessaire
   }
 
   void _initializeRefreshTimer() {
-    // Rafraîchir le compteur toutes les 30 secondes
+    // Rafraîchir les notifications toutes les 30 secondes
     _refreshTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      print('[NotificationController] Auto-refresh triggered');
+      fetchNotifications(refresh: false);
       fetchUnreadCount();
     });
   }

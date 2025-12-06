@@ -329,7 +329,7 @@ class AdminRoutes {
   }
 
   static void goToNotifications() {
-    navigateByIndex(6);
+    navigateByIndex(MenuIndices.notifications);
   }
 
   static void goToLoyalty() {
