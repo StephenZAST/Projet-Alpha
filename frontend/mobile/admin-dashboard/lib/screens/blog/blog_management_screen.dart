@@ -517,6 +517,24 @@ class _BlogManagementScreenState extends State<BlogManagementScreen>
                     ),
                   ),
                 ),
+                SizedBox(width: AppSpacing.sm),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.1),
+                    borderRadius: AppRadius.radiusXS,
+                  ),
+                  child: Text(
+                    '✓ Publié',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ],
             ),
           ],
@@ -526,6 +544,10 @@ class _BlogManagementScreenState extends State<BlogManagementScreen>
             PopupMenuItem(
               child: const Text('Éditer'),
               onTap: () => _showEditDialog(context, article, controller),
+            ),
+            PopupMenuItem(
+              child: const Text('Dépublier'),
+              onTap: () => _showUnpublishDialog(context, article, controller),
             ),
             PopupMenuItem(
               child: const Text('Supprimer'),
@@ -757,6 +779,36 @@ class _BlogManagementScreenState extends State<BlogManagementScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showUnpublishDialog(
+    BuildContext context,
+    BlogArticle article,
+    BlogArticleController controller,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dépublier l\'Article'),
+        content: Text('Êtes-vous sûr de vouloir dépublier "${article.title}"? Il passera en attente de publication.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              controller.updatePublicationStatus(article.id, false);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.warning,
+            ),
+            child: const Text('Dépublier'),
+          ),
+        ],
       ),
     );
   }

@@ -184,6 +184,20 @@ class BlogArticleService extends GetxService {
     }
   }
 
+  // Mettre à jour le statut de publication d'un article
+  Future<BlogArticle> updatePublicationStatus(String id, bool isPublished) async {
+    try {
+      final response = await _apiService.put(
+        '$_generatorUrl/$id/status',
+        data: {'isPublished': isPublished},
+      );
+      return BlogArticle.fromJson(response.data['data']);
+    } catch (e) {
+      print('❌ Error updating publication status: $e');
+      rethrow;
+    }
+  }
+
   // Récupérer les tendances
   Future<List<String>> getTrends({String geo = 'BF'}) async {
     try {

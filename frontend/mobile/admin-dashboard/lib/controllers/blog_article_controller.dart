@@ -29,6 +29,7 @@ class BlogArticleController extends GetxController {
     _blogService = Get.find<BlogArticleService>();
     print('[BlogArticleController] Service initialized');
     loadArticles();
+    loadPendingArticles();
     loadStats();
   }
 
@@ -141,6 +142,25 @@ class BlogArticleController extends GetxController {
       await loadStats();
     } catch (e) {
       Get.snackbar('Erreur', 'Impossible de publier l\'article: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Mettre à jour le statut de publication d'un article
+  Future<void> updatePublicationStatus(String id, bool isPublished) async {
+    try {
+      isLoading.value = true;
+      await _blogService.updatePublicationStatus(id, isPublished);
+
+      final action = isPublished ? 'publié' : 'dépublié';
+      Get.snackbar('Succès', 'Article $action avec succès');
+
+      await loadPendingArticles();
+      await loadArticles();
+      await loadStats();
+    } catch (e) {
+      Get.snackbar('Erreur', 'Impossible de mettre à jour l\'article: $e');
     } finally {
       isLoading.value = false;
     }
