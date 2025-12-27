@@ -1,11 +1,17 @@
 /**
- * 🔧 Next.js Configuration
+ * 🔧 Next.js Configuration - Architecture Hybride SSR + ISR
+ * 
+ * Cette configuration permet :
+ * - Pages statiques pré-générées (SSG) pour Netlify
+ * - Pages dynamiques avec ISR pour les articles blog
+ * - Fallback automatique pour les articles non pré-générés
  */
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Export statique
-  output: 'export',
+  // Mode SSR avec ISR (Incremental Static Regeneration)
+  // Permet les pages dynamiques tout en gardant les bénéfices du SSG
+  output: 'standalone',
   
   // Optimisation des images
   images: {
@@ -19,11 +25,30 @@ const nextConfig = {
   // Compression
   compress: true,
 
-  // Génération statique
-  staticPageGenerationTimeout: 120,
+  // Génération statique avec timeout augmenté
+  // Permet plus de temps pour les appels API
+  staticPageGenerationTimeout: 300, // 5 minutes
 
   // Optimisation des polices
   optimizeFonts: true,
+
+  // Configuration pour les variables d'environnement
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://alpha-laundry-backend.onrender.com',
+  },
+
+  // Optimisation des en-têtes de cache
+  onDemandEntries: {
+    maxInactiveAge: 60 * 1000, // 60 secondes
+    pagesBufferLength: 5,
+  },
+
+  // Logging pour le debug
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
 };
 
 module.exports = nextConfig;

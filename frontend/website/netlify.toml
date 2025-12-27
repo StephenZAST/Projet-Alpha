@@ -1,10 +1,11 @@
 [build]
 command = "npm ci --include=dev && npm run build"
-publish = "out"
+publish = ".next/standalone"
 
 [build.environment]
 NODE_VERSION = "18"
 NODE_ENV = "production"
+NEXT_PUBLIC_API_URL = "https://alpha-laundry-backend.onrender.com"
 
 [[redirects]]
 from = "/admin"

@@ -1,5 +1,6 @@
 /**
  * 📝 Page Article Blog - Article détaillé avec SEO optimisé
+ * Architecture Hybride : SSG + ISR + Fallback
  */
 
 import React from 'react';
@@ -16,17 +17,59 @@ interface BlogArticlePageProps {
   };
 }
 
-// Fonction pour récupérer les données de l'article
+/**
+ * Fonction utilitaire pour les retries avec backoff exponentiel
+ * Gère les timeouts du backend Render (plan gratuit)
+ */
+async function fetchWithRetry(
+  url: string,
+  maxRetries: number = 3,
+  timeout: number = 10000
+): Promise<Response | null> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(url, {
+        signal: controller.signal,
+        next: { revalidate: 3600 }, // ISR: revalidate every hour
+      });
+
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      const isLastAttempt = attempt === maxRetries - 1;
+      const delay = Math.min(1000 * Math.pow(2, attempt), 10000); // Backoff exponentiel
+
+      console.warn(
+        `Fetch attempt ${attempt + 1}/${maxRetries} failed for ${url}. ${
+          isLastAttempt ? 'Giving up.' : `Retrying in ${delay}ms...`
+        }`,
+        error
+      );
+
+      if (!isLastAttempt) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  return null;
+}
+
+// Fonction pour récupérer les données de l'article avec gestion des erreurs
 async function getArticleData(slug: string) {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'https://alpha-laundry-backend.onrender.com'}/api/blog-articles/slug/${slug}`,
-      { 
-        next: { revalidate: 3600 } // ISR: revalidate every hour
-      }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://alpha-laundry-backend.onrender.com';
+    const response = await fetchWithRetry(
+      `${apiUrl}/api/blog-articles/slug/${slug}`,
+      3, // 3 tentatives
+      15000 // 15 secondes de timeout
     );
 
-    if (!response.ok) {
+    if (!response?.ok) {
+      console.error(`Failed to fetch article: ${slug}. Status: ${response?.status}`);
       return null;
     }
 
@@ -91,17 +134,13 @@ export async function generateMetadata(
 // Générer les slugs statiques pour les articles populaires
 export async function generateStaticParams() {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'https://alpha-laundry-backend.onrender.com'}/api/blog-articles?limit=50`
-    );
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
-    return (data.data || []).map((article: any) => ({
-      slug: article.slug
+    const { getSlugsWithFallback } = await import('@/lib/blogCache');
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://alpha-laundry-backend.onrender.com';
+    
+    const slugs = await getSlugsWithFallback(apiUrl, 3);
+    
+    return slugs.map((slug: string) => ({
+      slug,
     }));
   } catch (error) {
     console.error('Error generating static params:', error);
