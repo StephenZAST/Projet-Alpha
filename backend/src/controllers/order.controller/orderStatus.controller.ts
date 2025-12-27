@@ -2,7 +2,10 @@ import { Request, Response } from 'express';
 import supabase from '../../config/database';
 import { NotificationType, OrderStatus } from '../../models/types';
 import { RewardsService, NotificationService } from '../../services';
-import { OrderSharedMethods } from './shared';  
+import { OrderSharedMethods } from './shared';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();  
 
 export class OrderStatusController {
   static async updateOrderStatus(req: Request, res: Response) {
@@ -43,6 +46,50 @@ export class OrderStatusController {
         NotificationType.ORDER_STATUS_UPDATED,
         { newStatus: status }
       );
+
+      // 🔔 Notifier le client que le statut de sa commande a changé
+      try {
+        const oldStatus = order.status || 'UNKNOWN';
+        await NotificationService.notifyOrderStatusChanged(
+          order.userId,
+          orderId,
+          oldStatus,
+          status,
+          Number(order.totalAmount || 0)
+        );
+      } catch (notificationError: any) {
+        console.error('[OrderStatusController] Error sending status changed notification:', notificationError);
+      }
+
+      // 🔔 Si la commande est prête, notifier le client
+      if (status === 'READY') {
+        try {
+          const pickupDeadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          await NotificationService.notifyOrderReadyPickup(
+            order.userId,
+            orderId,
+            pickupDeadline,
+            Number(order.totalAmount || 0)
+          );
+        } catch (notificationError: any) {
+          console.error('[OrderStatusController] Error sending ready pickup notification:', notificationError);
+        }
+      }
+
+      // 🔔 Si la commande est livrée, notifier le client
+      if (status === 'DELIVERED') {
+        try {
+          const deliveryPersonName = req.body.deliveryPersonName || 'Livreur';
+          await NotificationService.notifyDeliveryCompleted(
+            order.userId,
+            orderId,
+            deliveryPersonName,
+            Number(order.totalAmount || 0)
+          );
+        } catch (notificationError: any) {
+          console.error('[OrderStatusController] Error sending delivery completed notification:', notificationError);
+        }
+      }
 
       res.json({ data: completeOrder });
 
@@ -119,16 +166,38 @@ export class OrderStatusController {
         return res.status(403).json({ error: 'Unauthorized' });
       }
 
-        await supabase.orders.delete({
-          where: {
-            id: orderId
-          }
-        });
-        
-        res.json({ message: 'Order deleted successfully' });
-      } catch (error: any) {
-        console.error('[OrderController] Error deleting order:', error);
-        res.status(500).json({ error: error.message });
+      // Récupérer la commande avant suppression pour les notifications
+      const order = await prisma.orders.findUnique({
+        where: { id: orderId }
+      });
+
+      // 🔔 Notifier le client que sa commande a été annulée
+      if (order) {
+        try {
+          const cancellationReason = req.body.reason || 'Annulation administrative';
+          const refundAmount = Number(order.totalAmount || 0);
+          
+          await NotificationService.notifyOrderCancelled(
+            order.userId,
+            orderId,
+            cancellationReason,
+            refundAmount
+          );
+        } catch (notificationError: any) {
+          console.error('[OrderStatusController] Error sending order cancelled notification:', notificationError);
+        }
+      }
+
+      await supabase.orders.delete({
+        where: {
+          id: orderId
+        }
+      });
+      
+      res.json({ message: 'Order deleted successfully' });
+    } catch (error: any) {
+      console.error('[OrderController] Error deleting order:', error);
+      res.status(500).json({ error: error.message });
     }
   }
 }

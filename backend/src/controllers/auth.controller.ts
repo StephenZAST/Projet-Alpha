@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken'; 
 
@@ -20,6 +21,29 @@ export class AuthController {
     try {
       const { email, password, firstName, lastName, phone, affiliateCode, role } = req.body;
       const result = await AuthService.register(email, password, firstName, lastName, phone, affiliateCode, role);
+
+      // 🔔 Notifier les admins qu'un nouvel utilisateur client a été créé
+      if (result && result.id) {
+        try {
+          const userRole = role || 'CLIENT';
+          const userName = `${firstName} ${lastName}`;
+          
+          // Notifier les admins pour les nouveaux clients
+          if (userRole === 'CLIENT') {
+            await NotificationService.notifyAdminNewUserRegistered(
+              result.id,
+              userName,
+              email,
+              phone || 'N/A',
+              userRole
+            );
+          }
+        } catch (notificationError: any) {
+          console.error('[AuthController] Error sending new user registration notification:', notificationError);
+          // Ne pas bloquer l'enregistrement si la notification échoue
+        }
+      }
+
       res.json({ data: result });
     } catch (error: any) {
       console.error('Registration error:', error);

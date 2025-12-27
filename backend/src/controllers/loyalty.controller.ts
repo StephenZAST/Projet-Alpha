@@ -1,6 +1,10 @@
 import { Request, Response } from 'express'; 
 import { LoyaltyService } from '../services/loyalty.service';
 import { LoyaltyAdminService } from '../services/loyaltyAdmin.service';
+import { NotificationService } from '../services';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export class LoyaltyController {
   static async earnPoints(req: Request, res: Response) {
@@ -255,7 +259,33 @@ export class LoyaltyController {
   static async approveRewardClaim(req: Request, res: Response) {
     try {
       const { claimId } = req.params;
+      
+      // Récupérer les détails de la réclamation avant approbation
+      const claim = await prisma.reward_claims.findUnique({
+        where: { id: claimId },
+        include: {
+          rewards: true,
+          users: true
+        }
+      });
+
       await LoyaltyAdminService.approveRewardClaim(claimId);
+
+      // 🔔 Notifier l'utilisateur que sa réclamation a été approuvée
+      if (claim && claim.users) {
+        try {
+          await NotificationService.notifyRewardApproved(
+            claim.users.id,
+            claim.reward_id || '',
+            claim.rewards?.name || 'Récompense',
+            claim.points_used,
+            claimId
+          );
+        } catch (notificationError: any) {
+          console.error('[LoyaltyController] Error sending reward approved notification:', notificationError);
+        }
+      }
+
       res.json({ success: true, message: 'Reward claim approved successfully' });
     } catch (error: any) {
       console.error('[LoyaltyController] Error approving reward claim:', error);
@@ -267,7 +297,34 @@ export class LoyaltyController {
     try {
       const { claimId } = req.params;
       const { reason } = req.body;
+
+      // Récupérer les détails de la réclamation avant rejet
+      const claim = await prisma.reward_claims.findUnique({
+        where: { id: claimId },
+        include: {
+          rewards: true,
+          users: true
+        }
+      });
+
       await LoyaltyAdminService.rejectRewardClaim(claimId, reason);
+
+      // 🔔 Notifier l'utilisateur que sa réclamation a été rejetée
+      if (claim && claim.users) {
+        try {
+          await NotificationService.notifyRewardRejected(
+            claim.users.id,
+            claim.reward_id || '',
+            claim.rewards?.name || 'Récompense',
+            reason || 'Raison non spécifiée',
+            claim.points_used,
+            claimId
+          );
+        } catch (notificationError: any) {
+          console.error('[LoyaltyController] Error sending reward rejected notification:', notificationError);
+        }
+      }
+
       res.json({ success: true, message: 'Reward claim rejected successfully' });
     } catch (error: any) {
       console.error('[LoyaltyController] Error rejecting reward claim:', error);

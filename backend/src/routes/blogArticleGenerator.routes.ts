@@ -48,4 +48,10 @@ router.post(
   asyncHandler((req, res) => BlogArticleGeneratorController.publishArticle(req, res))
 );
 
+// Mettre à jour le statut de publication d'un article
+router.put(
+  '/:articleId/status',
+  asyncHandler((req, res) => BlogArticleGeneratorController.updatePublicationStatus(req, res))
+);
+
 export default router;

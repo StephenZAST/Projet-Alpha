@@ -137,6 +137,38 @@ export class BlogArticleGeneratorController {
   }
 
   /**
+   * Mettre à jour le statut de publication d'un article
+   */
+  static async updatePublicationStatus(req: Request, res: Response) {
+    try {
+      const { articleId } = req.params;
+      const { isPublished } = req.body;
+
+      if (typeof isPublished !== 'boolean') {
+        return res.status(400).json({
+          error: 'Invalid request',
+          message: 'isPublished must be a boolean'
+        });
+      }
+
+      console.log(`🔄 [Controller] Mise à jour du statut de publication: ${articleId} -> ${isPublished}`);
+      const article = await BlogArticleGeneratorService.updatePublicationStatus(articleId, isPublished);
+
+      res.json({
+        success: true,
+        message: `Article ${isPublished ? 'publié' : 'dépublié'} avec succès`,
+        data: article
+      });
+    } catch (error: any) {
+      console.error('[Controller] Error updating publication status:', error);
+      res.status(500).json({
+        error: 'Failed to update publication status',
+        message: error.message
+      });
+    }
+  }
+
+  /**
    * Insérer les 4 articles pilotes
    */
   static async seedPilotArticles(req: Request, res: Response) {

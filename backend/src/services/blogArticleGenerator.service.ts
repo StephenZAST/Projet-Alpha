@@ -305,6 +305,15 @@ CRITICAL:
     try {
       console.log(`📤 [BlogArticleGenerator] Publication de l'article: ${articleId}`);
 
+      // Vérifier que l'article existe
+      const existingArticle = await prisma.blog_articles.findUnique({
+        where: { id: articleId }
+      });
+
+      if (!existingArticle) {
+        throw new Error(`Article not found: ${articleId}`);
+      }
+
       const article = await prisma.blog_articles.update({
         where: { id: articleId },
         data: {
@@ -321,6 +330,42 @@ CRITICAL:
       return article;
     } catch (error) {
       console.error('[BlogArticleGenerator] Error publishing article:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mettre à jour le statut de publication d'un article
+   */
+  static async updatePublicationStatus(articleId: string, isPublished: boolean) {
+    try {
+      console.log(`🔄 [BlogArticleGenerator] Mise à jour du statut de publication: ${articleId} -> ${isPublished}`);
+
+      // Vérifier que l'article existe
+      const existingArticle = await prisma.blog_articles.findUnique({
+        where: { id: articleId }
+      });
+
+      if (!existingArticle) {
+        throw new Error(`Article not found: ${articleId}`);
+      }
+
+      const article = await prisma.blog_articles.update({
+        where: { id: articleId },
+        data: {
+          is_published: isPublished,
+          published_at: isPublished ? new Date() : null
+        },
+        include: {
+          category: true,
+          author: true
+        }
+      });
+
+      console.log(`✅ [BlogArticleGenerator] Statut mis à jour: ${article.title} (publié: ${article.is_published})`);
+      return article;
+    } catch (error) {
+      console.error('[BlogArticleGenerator] Error updating publication status:', error);
       throw error;
     }
   }

@@ -358,6 +358,32 @@ export class OrderCreateController {
         notificationTemplate.data
       );
 
+      // 🔔 Notifier le client que sa commande a été créée
+      try {
+        await NotificationService.notifyOrderPlaced(
+          userId,
+          order.id,
+          Number(order.totalAmount || 0),
+          items.length,
+          `${orderData.user.first_name} ${orderData.user.last_name}`
+        );
+      } catch (notificationError: any) {
+        console.error('[OrderController] Error sending order placed notification:', notificationError);
+      }
+
+      // 🔔 Notifier les admins qu'une nouvelle commande a été créée
+      try {
+        await NotificationService.notifyAdminNewOrder(
+          order.id,
+          `${orderData.user.first_name} ${orderData.user.last_name}`,
+          Number(order.totalAmount || 0),
+          items.length,
+          new Date().toISOString()
+        );
+      } catch (notificationError: any) {
+        console.error('[OrderController] Error sending admin new order notification:', notificationError);
+      }
+
       // 7.5. Mettre à jour les stats du client manager si le client est assigné à un agent
       try {
         const clientManager = await prisma.client_managers.findFirst({
