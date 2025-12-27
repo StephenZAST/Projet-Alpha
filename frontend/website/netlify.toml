@@ -7,6 +7,7 @@ NODE_VERSION = "18"
 NODE_ENV = "production"
 NEXT_PUBLIC_API_URL = "https://alpha-laundry-backend.onrender.com"
 
+# Redirects vers les autres applications
 [[redirects]]
 from = "/admin"
 to = "https://68f95b5655b078000891a633--alphalaundry.netlify.app/"
