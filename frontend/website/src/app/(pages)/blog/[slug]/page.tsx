@@ -139,12 +139,19 @@ export async function generateStaticParams() {
     
     const slugs = await getSlugsWithFallback(apiUrl, 3);
     
+    // Retourner au moins un slug pour éviter l'erreur avec output: 'export'
+    if (slugs.length === 0) {
+      console.warn('⚠️ Aucun slug trouvé, utilisation d\'un slug par défaut');
+      return [{ slug: 'article-par-defaut' }];
+    }
+    
     return slugs.map((slug: string) => ({
       slug,
     }));
   } catch (error) {
     console.error('Error generating static params:', error);
-    return [];
+    // Retourner au moins un slug pour éviter l'erreur avec output: 'export'
+    return [{ slug: 'article-par-defaut' }];
   }
 }
 

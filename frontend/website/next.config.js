@@ -9,9 +9,9 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Mode SSR avec ISR (Incremental Static Regeneration)
-  // Permet les pages dynamiques tout en gardant les bénéfices du SSG
-  output: 'standalone',
+  // Mode export statique pour Netlify
+  // Génère un site statique pur compatible avec Netlify
+  output: 'export',
   
   // Optimisation des images
   images: {
