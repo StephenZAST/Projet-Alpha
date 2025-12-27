@@ -62,27 +62,52 @@ class AdminNotification {
 
   factory AdminNotification.fromJson(Map<String, dynamic> json) {
     try {
+      // Gérer les champs du nouveau format du backend
+      DateTime createdAt;
+      try {
+        final createdAtValue = json['createdAt'] ?? json['created_at'];
+        if (createdAtValue == null || createdAtValue.toString().isEmpty) {
+          createdAt = DateTime.now();
+        } else {
+          createdAt = DateTime.parse(createdAtValue.toString());
+        }
+      } catch (e) {
+        createdAt = DateTime.now();
+      }
+
+      // Parser le type de notification
+      String typeStr = (json['type'] ?? 'SYSTEM').toString().toUpperCase();
+      NotificationType type = NotificationType.SYSTEM;
+      try {
+        type = NotificationType.values.firstWhere(
+          (t) => t.toString().split('.').last == typeStr,
+          orElse: () => NotificationType.SYSTEM,
+        );
+      } catch (e) {
+        type = NotificationType.SYSTEM;
+      }
+
+      // Parser la priorité
+      String priorityStr = (json['priority'] ?? 'NORMAL').toString().toUpperCase();
+      NotificationPriority priority = NotificationPriority.NORMAL;
+      try {
+        priority = NotificationPriority.values.firstWhere(
+          (p) => p.toString().split('.').last == priorityStr,
+          orElse: () => NotificationPriority.NORMAL,
+        );
+      } catch (e) {
+        priority = NotificationPriority.NORMAL;
+      }
+
       return AdminNotification(
         id: json['id']?.toString() ?? '',
         title: json['title']?.toString() ?? 'Notification',
         message: json['message']?.toString() ?? '',
-        type: NotificationType.values.firstWhere(
-          (type) =>
-              type.toString().split('.').last ==
-              (json['type'] ?? '').toString().toUpperCase(),
-          orElse: () => NotificationType.SYSTEM,
-        ),
-        referenceId: json['referenceId']?.toString(),
-        isRead: json['isRead'] == true,
-        createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'])
-            : DateTime.now(),
-        priority: NotificationPriority.values.firstWhere(
-          (p) =>
-              p.toString().split('.').last ==
-              (json['priority'] ?? '').toString().toUpperCase(),
-          orElse: () => NotificationPriority.NORMAL,
-        ),
+        type: type,
+        referenceId: json['referenceId']?.toString() ?? json['reference_id']?.toString(),
+        isRead: json['isRead'] == true || json['read'] == true,
+        createdAt: createdAt,
+        priority: priority,
       );
     } catch (e) {
       print('Error parsing notification: $e');

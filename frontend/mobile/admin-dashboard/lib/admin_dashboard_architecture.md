@@ -1,6 +1,6 @@
-bindings
-components
-config
+bindings                                                                                                                                                                                 
+components                                                                                                                                                                               
+config                                                                                                                                                                                   
 controllers
 middleware
 models
@@ -33,6 +33,7 @@ controllers\affiliates_controller.dart
 controllers\article_controller.dart
 controllers\article_service_controller.dart
 controllers\auth_controller.dart
+controllers\blog_article_controller.dart
 controllers\category_controller.dart
 controllers\client_managers_controller.dart
 controllers\dashboard_controller.dart
@@ -62,6 +63,7 @@ models\api_response.dart
 models\article.dart
 models\article_category.dart
 models\article_service.dart
+models\blog_article.dart
 models\category.dart
 models\chart_data.dart
 models\client_manager.dart
@@ -94,6 +96,7 @@ screens\affiliates
 screens\analytics
 screens\articles
 screens\auth
+screens\blog
 screens\categories
 screens\client_managers
 screens\components
@@ -147,6 +150,7 @@ screens\articles\components\category_dropdown.dart
 screens\auth\components
 screens\auth\admin_login_screen.dart
 screens\auth\components\custom_text_form_field.dart
+screens\blog\blog_management_screen.dart
 screens\categories\components
 screens\categories\categories_screen.dart
 screens\categories\components\category_dialog.dart
@@ -155,7 +159,9 @@ screens\categories\components\category_stats_grid.dart
 screens\categories\components\category_table.dart
 screens\client_managers\components
 screens\client_managers\client_managers_screen.dart
+screens\client_managers\components\agent_clients_list.dart
 screens\client_managers\components\agent_dashboard_dialog.dart
+screens\client_managers\components\assign_client_dialog.dart
 screens\client_managers\components\client_list_item.dart
 screens\client_managers\components\inactive_clients_card.dart
 screens\client_managers\components\index.dart
@@ -357,6 +363,7 @@ services\article_service.dart
 services\article_service_couple_service.dart
 services\article_service_service.dart
 services\auth_service.dart
+services\blog_article_service.dart
 services\category_service.dart
 services\client_manager_service.dart
 services\dashboard_service.dart

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../constants.dart';
 import '../../components/glass_components.dart';
+import '../../shared/providers/notification_provider.dart';
 
 /// 📱 Bottom Navigation Premium - Alpha Client App
 ///

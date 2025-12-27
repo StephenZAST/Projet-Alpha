@@ -82,9 +82,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
-    // Initialiser l'authentification
+    // Initialiser l'authentification et les notifications
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuthProvider>(context, listen: false).initialize();
+      // Démarrer le polling des notifications après authentification
+      Future.delayed(const Duration(seconds: 1), () {
+        Provider.of<NotificationProvider>(context, listen: false).startPolling();
+      });
     });
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/models/notification.dart';
 import '../../core/services/notification_service.dart';
@@ -28,6 +29,11 @@ class NotificationProvider extends ChangeNotifier {
   // Filtres
   NotificationType? _selectedType;
   bool? _showOnlyUnread;
+
+  // 🔄 Polling automatique
+  Timer? _pollingTimer;
+  static const Duration _pollingInterval = Duration(seconds: 30);
+  bool _isPollingEnabled = false;
 
   // Getters
   List<AppNotification> get notifications => _notifications;
@@ -298,9 +304,44 @@ class NotificationProvider extends ChangeNotifier {
     _error = null;
   }
 
+  /// 🔄 Démarrer le polling automatique
+  void startPolling() {
+    if (_isPollingEnabled) return;
+    
+    _isPollingEnabled = true;
+    print('🔄 [NotificationProvider] Polling démarré (intervalle: 30s)');
+    
+    // Charger immédiatement
+    loadNotifications(refresh: true);
+    
+    // Puis polling toutes les 30 secondes
+    _pollingTimer = Timer.periodic(_pollingInterval, (_) async {
+      try {
+        await loadNotifications(refresh: true);
+        await loadStats();
+      } catch (e) {
+        print('❌ [NotificationProvider] Erreur polling: $e');
+      }
+    });
+  }
+
+  /// ⏹️ Arrêter le polling automatique
+  void stopPolling() {
+    if (!_isPollingEnabled) return;
+    
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    _isPollingEnabled = false;
+    print('⏹️ [NotificationProvider] Polling arrêté');
+  }
+
+  /// 🔄 Vérifier si le polling est actif
+  bool get isPollingEnabled => _isPollingEnabled;
+
   /// 🧹 Nettoyage des ressources
   @override
   void dispose() {
+    stopPolling();
     super.dispose();
   }
 

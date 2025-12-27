@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../constants.dart';
 import '../../../components/glass_components.dart';
 import '../../../providers/services_provider.dart';
+import '../../../shared/widgets/notification_badge_helper.dart';
 import '../widgets/service_type_card.dart';
 import '../widgets/service_card.dart';
 import '../widgets/article_card.dart';
@@ -123,6 +124,8 @@ class _ServicesScreenState extends State<ServicesScreen>
         ),
       ),
       actions: [
+        // 🔔 Badge de notifications
+        NotificationBadgeHelper.buildNotificationBadge(context),
         IconButton(
           icon: Icon(
             Icons.search,
