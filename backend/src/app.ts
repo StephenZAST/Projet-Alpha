@@ -90,6 +90,9 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions) as unknown as express.RequestHandler);
 
+// ✅ CORS preflight handling - MUST be before rate limiting
+app.options('*', cors(corsOptions) as unknown as express.RequestHandler);
+
 // Rate limiting configuration
 const loginLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
@@ -113,7 +116,7 @@ const standardLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Appliquer les limites par route
+// Appliquer les limites par route - AFTER CORS
 app.use('/api/auth/admin/login', loginLimiter);
 app.use('/api/admin', adminLimiter);
 app.use('/api/orders', adminLimiter);
