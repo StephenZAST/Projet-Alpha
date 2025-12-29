@@ -205,11 +205,12 @@ export const MOBILE_NAVIGATION = [
 // =============================================================================
 
 export const EXTERNAL_LINKS = {
-  clientApp: 'https://690cfd42ee6cc00008fe21ce--alphalaundryclient.netlify.app/',
-  adminApp: 'https://68f95b5655b078000891a633--alphalaundry.netlify.app/',
-  deliveryApp: 'https://68fac646f8312f00079c8b17--alphalaundrydelivers.netlify.app/',
-  affiliateApp: 'https://68fac0ae8f30bef299f38200--affiliatealpha.netlify.app/',
+  clientApp: 'https://alphalaundryclient.netlify.app/',
+  adminApp: 'https://alphalaundry.netlify.app/',
+  deliveryApp: 'https://alphalaundrydelivers.netlify.app/',
+  affiliateApp: 'https://affiliatealpha.netlify.app/',
   phone: '+226 67 80 16 68',
+  phone2: '+226 54 69 12 41',
   email: 'contact@alphalaundry.com',
 } as const;
 

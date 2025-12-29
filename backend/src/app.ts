@@ -28,6 +28,10 @@ import serviceTypeRoutes from './routes/serviceType.routes';
 import userRoutes from './routes/user.routes';
 import orderPricingRoutes from './routes/orderPricing.routes';
 import geocodingRoutes from './routes/geocoding.routes';
+import blogArticleGeneratorRoutes from './routes/blogArticleGenerator.routes';
+import blogArticleQueueRoutes from './routes/blogArticleQueue.routes';
+import { BlogScheduler } from './scheduler/blogScheduler';
+
 // Load environment variables
 dotenv.config();
 
@@ -43,6 +47,7 @@ app.use(express.urlencoded({ extended: true }));
 // Configure CORS 
 const allowedOrigins = [
   // Local development
+  // Development - localhost
   'http://localhost:3000',   // React default
   'http://localhost:3001',   // Your API
   'http://127.0.0.1:3000',
@@ -52,19 +57,13 @@ const allowedOrigins = [
   'http://localhost:53492',  // Flutter web debug
   'http://localhost:51284',  // Flutter web debug
   'http://localhost:61846',  // Flutter web debug
-  
-  // Netlify deployments - Frontend applications
-  'https://affiliate-app-alpha.netlify.app',
-  'https://customers-app-alpha.netlify.app',
-  'https://delivery-app-alpha.netlify.app',
-  
-  // Render backend
-  'https://alpha-laundry-backend.onrender.com',
-  
-  // Regex patterns for localhost
+  // Production - Netlify deployment
+  'https://alpha-laundry.it.com',
+  'https://www.alpha-laundry.it.com',
+  // Patterns
   /^http:\/\/localhost:\d+$/, // Any localhost port
   /^http:\/\/127\.0\.0\.1:\d+$/, // Any 127.0.0.1 port
-  /^https:\/\/.*\.netlify\.app$/ // Any Netlify app
+  /^https:\/\/(www\.)?alpha-laundry\.it\.com$/ // Production domain with/without www
 ];
 
 import { CorsOptions } from 'cors';
@@ -92,6 +91,9 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions) as unknown as express.RequestHandler);
 
+// ✅ CORS preflight handling - MUST be before rate limiting
+app.options('*', cors(corsOptions) as unknown as express.RequestHandler);
+
 // Rate limiting configuration
 const loginLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
@@ -115,7 +117,7 @@ const standardLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Appliquer les limites par route
+// Appliquer les limites par route - AFTER CORS
 app.use('/api/auth/admin/login', loginLimiter);
 app.use('/api/admin', adminLimiter);
 app.use('/api/orders', adminLimiter);
@@ -140,6 +142,8 @@ app.use('/api/articles', articleRoutes);
 app.use('/api/article-services', articleServiceRoutes);
 app.use('/api/blog-categories', blogCategoryRoutes);
 app.use('/api/blog-articles', blogArticleRoutes);
+app.use('/api/blog-generator', blogArticleGeneratorRoutes);
+app.use('/api/blog-queue', blogArticleQueueRoutes);
 app.use('/api/order-items', orderItemRoutes);
 app.use('/api/archives', archiveRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
@@ -176,6 +180,10 @@ app.get('/', (req, res) => {
 prisma.$connect()
   .then(() => {
     console.log('Successfully connected to the database');
+    // Initialize Blog Scheduler
+    if (process.env.BLOG_SCHEDULER_ENABLED !== 'false') {
+      BlogScheduler.initialize();
+    }
   })
   .catch((error: Error) => {
     console.error('Failed to connect to the database:', error);

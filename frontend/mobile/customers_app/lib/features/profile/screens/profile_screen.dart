@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../constants.dart';
 import '../../../components/glass_components.dart';
 import '../../../shared/providers/user_profile_provider.dart';
+import '../../../shared/widgets/notification_badge_helper.dart';
 import '../../../core/services/auth_service.dart';
 import '../../auth/screens/login_screen.dart';
 import '../widgets/profile_header.dart';
@@ -119,6 +120,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
       ),
       actions: [
+        // 🔔 Badge de notifications
+        NotificationBadgeHelper.buildNotificationBadge(context),
         Consumer<UserProfileProvider>(
           builder: (context, provider, child) {
             if (provider.isLoading) {

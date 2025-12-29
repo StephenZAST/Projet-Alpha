@@ -2,6 +2,7 @@ import 'package:admin/controllers/address_controller.dart';
 import 'package:admin/controllers/flash_orders_controller.dart';
 import 'package:get/get.dart';
 import '../services/api_service.dart';
+import '../services/blog_article_service.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/menu_app_controller.dart';
 import '../controllers/theme_controller.dart';
@@ -16,6 +17,11 @@ class AppBindings extends Bindings {
     // Ne réinitialisez pas l'ApiService s'il existe déjà
     if (!Get.isRegistered<ApiService>()) {
       Get.put(ApiService(), permanent: true);
+    }
+
+    // Enregistrer les services
+    if (!Get.isRegistered<BlogArticleService>()) {
+      Get.put(BlogArticleService(), permanent: true);
     }
 
     // Initialiser uniquement si non déjà initialisé

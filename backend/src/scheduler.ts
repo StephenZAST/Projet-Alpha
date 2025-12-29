@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import cron from 'node-cron';
 import { BlogArticleService } from './services/blogArticle.service';
 import { AffiliateCommissionService } from './services/affiliate.service/affiliateCommission.service';
+import { NotificationCleanupService } from './services/notificationCleanup.service';
 import supabase from './config/database';
 import dotenv from 'dotenv';
 
@@ -72,6 +73,28 @@ cron.schedule('0 0 1 * *', async () => {
     console.log('Réinitialisation mensuelle des gains d\'affiliés terminée avec succès');
   } catch (error) {
     console.error('Erreur lors de la réinitialisation mensuelle des gains d\'affiliés:', error);
+  }
+});
+
+// 🗑️ Nettoyage automatique des notifications (Tous les jours à 01:00)
+// Supprime:
+// - Notifications lues > 7 jours
+// - Notifications non-lues > 30 jours
+// - Notifications critiques > 90 jours
+cron.schedule('0 1 * * *', async () => {
+  try {
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('🗑️  [Scheduler] Démarrage du nettoyage des notifications...');
+    console.log('═══════════════════════════════════════════════════════════');
+    
+    const result = await NotificationCleanupService.cleanupOldNotifications();
+    
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('✅ [Scheduler] Nettoyage des notifications terminé');
+    console.log(`   📊 Total supprimé: ${result.totalDeleted}`);
+    console.log('═══════════════��═══════════════════════════════════════════');
+  } catch (error) {
+    console.error('❌ [Scheduler] Erreur lors du nettoyage des notifications:', error);
   }
 });
 

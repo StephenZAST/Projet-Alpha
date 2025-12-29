@@ -32,17 +32,40 @@ class AppNotification {
 
   /// 📊 Conversion depuis JSON
   factory AppNotification.fromJson(Map<String, dynamic> json) {
+    // Gérer les champs null ou manquants
+    DateTime createdAt;
+    try {
+      final createdAtValue = json['createdAt'];
+      if (createdAtValue == null || createdAtValue.isEmpty) {
+        createdAt = DateTime.now();
+      } else {
+        createdAt = DateTime.parse(createdAtValue.toString());
+      }
+    } catch (e) {
+      createdAt = DateTime.now();
+    }
+
+    DateTime? readAt;
+    try {
+      final readAtValue = json['readAt'];
+      if (readAtValue != null && readAtValue.toString().isNotEmpty) {
+        readAt = DateTime.parse(readAtValue.toString());
+      }
+    } catch (e) {
+      readAt = null;
+    }
+
     return AppNotification(
-      id: json['id'] ?? '',
-      userId: json['userId'] ?? '',
-      type: NotificationType.fromString(json['type'] ?? 'info'),
-      title: json['title'] ?? '',
-      message: json['message'] ?? '',
+      id: json['id']?.toString() ?? '',
+      userId: json['userId']?.toString() ?? '',
+      type: NotificationType.fromString(json['type']?.toString() ?? 'info'),
+      title: json['title']?.toString() ?? '',
+      message: json['message']?.toString() ?? '',
       data: json['data'] as Map<String, dynamic>?,
-      isRead: json['isRead'] ?? false,
-      priority: NotificationPriority.fromString(json['priority'] ?? 'normal'),
-      createdAt: DateTime.parse(json['createdAt']),
-      readAt: json['readAt'] != null ? DateTime.parse(json['readAt']) : null,
+      isRead: json['isRead'] == true,
+      priority: NotificationPriority.fromString(json['priority']?.toString() ?? 'normal'),
+      createdAt: createdAt,
+      readAt: readAt,
     );
   }
 
@@ -260,17 +283,30 @@ class NotificationStats {
     final byType = <NotificationType, int>{};
     
     for (final entry in byTypeJson.entries) {
-      final type = NotificationType.fromString(entry.key);
-      byType[type] = entry.value as int;
+      try {
+        final type = NotificationType.fromString(entry.key);
+        final value = entry.value;
+        byType[type] = value is int ? value : int.tryParse(value.toString()) ?? 0;
+      } catch (e) {
+        // Ignorer les entrées invalides
+      }
     }
 
     return NotificationStats(
-      total: json['total'] ?? 0,
-      unread: json['unread'] ?? 0,
-      today: json['today'] ?? 0,
-      thisWeek: json['thisWeek'] ?? 0,
+      total: _parseInt(json['total']),
+      unread: _parseInt(json['unread']),
+      today: _parseInt(json['today']),
+      thisWeek: _parseInt(json['thisWeek']),
       byType: byType,
     );
+  }
+
+  /// 🔧 Utilitaire pour parser les entiers
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 
   /// 📤 Conversion vers JSON

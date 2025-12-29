@@ -66,3 +66,6 @@ out/
 tmp/
 temp/
 *.tmp
+
+# Blog cache (généré automatiquement au build)
+.blog-cache/

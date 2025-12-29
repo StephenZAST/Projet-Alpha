@@ -5,7 +5,9 @@ publish = "out"
 [build.environment]
 NODE_VERSION = "18"
 NODE_ENV = "production"
+NEXT_PUBLIC_API_URL = "https://alpha-laundry-backend.onrender.com"
 
+# Redirects vers les autres applications
 [[redirects]]
 from = "/admin"
 to = "https://68f95b5655b078000891a633--alphalaundry.netlify.app/"
@@ -21,6 +23,12 @@ from = "/delivery"
 to = "https://68fac646f8312f00079c8b17--alphalaundrydelivers.netlify.app/"
 status = 301
 
+# Règle de redirection pour SPA - Redirige les routes non trouvées vers index.html
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+
 [[headers]]
 for = "/*"
 [headers.values]
@@ -29,3 +37,14 @@ X-Frame-Options = "SAMEORIGIN"
 X-XSS-Protection = "1; mode=block"
 Referrer-Policy = "strict-origin-when-cross-origin"
 Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Cache headers pour les assets statiques
+[[headers]]
+for = "/_next/static/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/images/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"

@@ -11,7 +11,27 @@ export class NotificationController {
       const limit = parseInt(req.query.limit as string) || 10;
 
       const result = await NotificationService.getUserNotifications(userId, page, limit);
-      res.json(result);
+      
+      // Mapper les notifications au format attendu par le frontend
+      const notifications = result.notifications.map((notification: any) => ({
+        id: notification.id,
+        userId: notification.userId,
+        type: notification.type || 'info',
+        title: notification.title || notification.message?.substring(0, 50) || 'Notification',
+        message: notification.message || '',
+        data: notification.data || {},
+        isRead: notification.read === true,
+        priority: notification.priority || 'normal',
+        createdAt: notification.created_at || new Date().toISOString(),
+        readAt: notification.read_at || null,
+      }));
+
+      res.json({
+        notifications,
+        total: result.total,
+        page: result.page,
+        totalPages: result.totalPages
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

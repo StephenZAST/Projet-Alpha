@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:get/get.dart';
 import '../../constants.dart';
+import '../../models/admin_notification.dart';
 import '../../widgets/shared/glass_button.dart';
 import '../../controllers/notification_controller.dart';
 import 'components/notification_tile.dart';
@@ -37,42 +38,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  List<Map<String, dynamic>> _getFilteredNotifications() {
-    final notifications = controller.notifications
-        .map((n) => {
-              'id': n.id,
-              'title': n.title,
-              'message': n.message,
-              'type': n.type.toString().split('.').last.toLowerCase(),
-              'priority': n.priority.toString().split('.').last.toLowerCase(),
-              'isRead': n.isRead,
-              'createdAt': n.createdAt,
-              'referenceId': n.referenceId,
-            })
-        .toList();
+  List<AdminNotification> _getFilteredNotifications() {
+    final notifications = controller.notifications;
 
     final filtered = notifications.where((notification) {
+      final typeStr = notification.type.toString().split('.').last.toLowerCase();
       final matchesType = selectedType == 'ALL' ||
-          (notification['type'] != null &&
-              notification['type'] == selectedType.toLowerCase());
+          (typeStr == selectedType.toLowerCase());
       final matchesStatus = selectedStatus == 'ALL' ||
-          (selectedStatus == 'read' && notification['isRead'] == true) ||
-          (selectedStatus == 'unread' && notification['isRead'] == false);
+          (selectedStatus == 'read' && notification.isRead == true) ||
+          (selectedStatus == 'unread' && notification.isRead == false);
       final matchesSearch = searchQuery.isEmpty ||
-          ((notification['title'] ?? '')
-              .toString()
-              .toLowerCase()
-              .contains(searchQuery.toLowerCase())) ||
-          ((notification['message'] ?? '')
-              .toString()
-              .toLowerCase()
-              .contains(searchQuery.toLowerCase()));
+          (notification.title.toLowerCase().contains(searchQuery.toLowerCase())) ||
+          (notification.message.toLowerCase().contains(searchQuery.toLowerCase()));
       return matchesType && matchesStatus && matchesSearch;
     }).toList();
 
-    // Trier par date (plus récent en premier)
-    filtered.sort((a, b) =>
-        (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime));
+    // Trier par priorité puis date (plus récent en premier)
+    filtered.sort((a, b) {
+      final priorityCompare = b.priority.index.compareTo(a.priority.index);
+      if (priorityCompare != 0) return priorityCompare;
+      return b.createdAt.compareTo(a.createdAt);
+    });
 
     return filtered;
   }
@@ -368,27 +355,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: NotificationTile(
             notification: notification,
             onTap: () => _handleNotificationTap(notification),
-            onDelete: () => _handleNotificationDelete(notification['id']),
+            onDelete: () => _handleNotificationDelete(notification.id),
           ),
         );
       },
     );
   }
 
-  void _handleNotificationTap(Map<String, dynamic> notification) {
+  void _handleNotificationTap(AdminNotification notification) {
     // Marquer comme lu si pas encore lu
-    if (notification['isRead'] == false) {
-      final adminNotification = controller.notifications.firstWhere(
-        (n) => n.id == notification['id'],
-        orElse: () => controller.notifications.first,
-      );
-      controller.markAsRead(adminNotification);
+    if (!notification.isRead) {
+      controller.markAsRead(notification);
     }
 
     // Gérer l'action de navigation
-    controller.handleNotificationAction(
-      controller.notifications.firstWhere((n) => n.id == notification['id']),
-    );
+    controller.handleNotificationAction(notification);
   }
 
   void _handleNotificationDelete(String id) {
@@ -396,6 +377,4 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     // Pour l'instant, on peut juste rafraîchir la liste
     _loadNotifications();
   }
-
-  // Suppression de _showDeleteAllReadDialog car notifications n'est pas défini localement et la méthode _deleteAllRead n'existe pas
 }

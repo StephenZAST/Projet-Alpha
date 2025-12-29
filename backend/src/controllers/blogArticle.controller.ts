@@ -24,6 +24,21 @@ export class BlogArticleController {
     }
   }
 
+  static async getArticleBySlug(req: Request, res: Response) {
+    try {
+      const { slug } = req.params;
+      const article = await BlogArticleService.getArticleBySlug(slug);
+      
+      if (!article) {
+        return res.status(404).json({ error: 'Article not found' });
+      }
+
+      res.json({ data: article });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async updateArticle(req: Request, res: Response) {
     try {
       const { articleId } = req.params;

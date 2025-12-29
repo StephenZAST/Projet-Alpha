@@ -31,6 +31,8 @@ export const PricingTable: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dataSource, setDataSource] = useState<'api' | 'fallback'>('api');
   const [dialogState, setDialogState] = useState<PricingDialogState>({ isOpen: false, article: null });
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   // URL Render du backend
   const RENDER_BACKEND_URL = 'https://alpha-laundry-backend.onrender.com';
@@ -144,21 +146,82 @@ export const PricingTable: React.FC = () => {
     });
   };
 
+  // Fonction pour rafraîchir les tarifs
+  const handleRefreshPrices = async () => {
+    setIsRetrying(true);
+    try {
+      const url = `${RENDER_BACKEND_URL}/api/article-services/prices`;
+      console.log('🔄 Tentative de rafraîchissement des tarifs...');
+      
+      const response = await fetchWithRetry(url, 3);
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const pricingData = Array.isArray(data) ? data : data.data || [];
+      const limitedPrices = pricingData.slice(0, 50);
+
+      if (limitedPrices.length > 0) {
+        setPrices(limitedPrices);
+        setDataSource('api');
+        setRetryCount(0);
+        console.log('✅ Tarifs rafraîchis avec succès depuis API');
+      } else {
+        throw new Error('Aucune donnée retournée');
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors du rafraîchissement:', error);
+      setRetryCount(prev => prev + 1);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
   return (
     <section className={styles.pricingSection}>
       <div className={styles.container}>
         {dataSource === 'fallback' && (
           <div style={{
             backgroundColor: '#FEF3C7',
-            border: '1px solid #FCD34D',
+            border: '2px solid #FCD34D',
             color: '#92400E',
-            padding: '12px 16px',
+            padding: '16px',
             borderRadius: '8px',
             marginBottom: '24px',
             fontSize: '14px',
-            textAlign: 'center'
           }}>
-            ⚠️ Les tarifs affichés sont à titre indicatif. Veuillez vérifier les prix actuels auprès de notre support.
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '250px' }}>
+                <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                  ⚠️ Tarifs Indicatifs
+                </div>
+                <div style={{ fontSize: '13px', opacity: 0.9 }}>
+                  Les tarifs affichés sont à titre indicatif. Le serveur de tarification est actuellement en démarrage. 
+                  {retryCount > 0 && ` (Tentative ${retryCount})`}
+                </div>
+              </div>
+              <button
+                onClick={handleRefreshPrices}
+                disabled={isRetrying}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#F59E0B',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: '600',
+                  cursor: isRetrying ? 'not-allowed' : 'pointer',
+                  opacity: isRetrying ? 0.7 : 1,
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  fontSize: '13px'
+                }}
+              >
+                {isRetrying ? '⏳ Rafraîchissement...' : '🔄 Rafraîchir'}
+              </button>
+            </div>
           </div>
         )}
 

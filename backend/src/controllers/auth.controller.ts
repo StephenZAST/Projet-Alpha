@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken'; 
 
@@ -18,12 +19,77 @@ const generateToken = (user: any) => {
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
+      console.log('[AuthController] Register request received:', { 
+        email: req.body.email, 
+        firstName: req.body.firstName, 
+        lastName: req.body.lastName 
+      });
+
       const { email, password, firstName, lastName, phone, affiliateCode, role } = req.body;
+      
+      // Validation basique
+      if (!email || !password || !firstName || !lastName) {
+        console.warn('[AuthController] Missing required fields');
+        return res.status(400).json({ 
+          error: 'Missing required fields: email, password, firstName, lastName' 
+        });
+      }
+
+      // Créer l'utilisateur
       const result = await AuthService.register(email, password, firstName, lastName, phone, affiliateCode, role);
-      res.json({ data: result });
+      console.log('[AuthController] User created successfully:', result.id);
+
+      // 🔔 Notifier les admins qu'un nouvel utilisateur client a été créé
+      // Cette notification est asynchrone et ne doit pas bloquer la réponse
+      if (result && result.id) {
+        setImmediate(async () => {
+          try {
+            const userRole = role || 'CLIENT';
+            const userName = `${firstName} ${lastName}`;
+            
+            console.log('[AuthController] Sending notification for new user:', result.id);
+            
+            // Notifier les admins pour les nouveaux clients
+            if (userRole === 'CLIENT') {
+              await NotificationService.notifyAdminNewUserRegistered(
+                result.id,
+                userName,
+                email,
+                phone || 'N/A',
+                userRole
+              );
+              console.log('[AuthController] Notification sent successfully');
+            }
+          } catch (notificationError: any) {
+            console.error('[AuthController] Error sending new user registration notification:', notificationError.message);
+            // Ne pas bloquer l'enregistrement si la notification échoue
+          }
+        });
+      }
+
+      // Retourner la réponse immédiatement
+      console.log('[AuthController] Returning success response');
+      res.status(201).json({ 
+        success: true,
+        data: result 
+      });
     } catch (error: any) {
-      console.error('Registration error:', error);
-      res.status(500).json({ error: error.message });
+      console.error('[AuthController] Registration error:', error);
+      
+      // Gérer les erreurs spécifiques
+      if (error.code === 'P2002') {
+        // Erreur d'unicité Prisma
+        const field = error.meta?.target?.[0] || 'email';
+        console.error(`[AuthController] Duplicate ${field}`);
+        return res.status(409).json({ 
+          error: `${field} already exists` 
+        });
+      }
+
+      res.status(500).json({ 
+        error: error.message || 'Registration failed',
+        code: error.code 
+      });
     }
   }
 

@@ -1,6 +1,10 @@
 import { Request, Response } from 'express';
 import { DeliveryService } from '../services/delivery.service';
-import { asyncHandler } from '../utils/asyncHandler'; 
+import { asyncHandler } from '../utils/asyncHandler';
+import { NotificationService } from '../services';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient(); 
 
 export class DeliveryController {
   static async getPendingOrders(req: Request, res: Response) {
@@ -44,16 +48,71 @@ export class DeliveryController {
 
   static async updateOrderStatus(req: Request, res: Response) {
     try {
-      console.log('Request user:', req.user); // Add this line to log the user object
+      console.log('Request user:', req.user);
       const userId = req.user?.id;
       if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
       const orderId = req.params.orderId;
-      const { status } = req.body;
+      const { status, problemType, problemDetails } = req.body;
+
+      // Récupérer la commande avant mise à jour
+      const order = await prisma.orders.findUnique({
+        where: { id: orderId },
+        include: { user: true, address: true }
+      });
+
       const result = await DeliveryService.updateOrderStatus(orderId, status, userId);
+
+      // 🔔 Notifier selon le statut
+      if (order) {
+        try {
+          // Si statut DELIVERING, notifier que la livraison est assignée
+          if (status === 'DELIVERING') {
+            const deliveryPerson = await prisma.users.findUnique({
+              where: { id: userId }
+            });
+            if (deliveryPerson) {
+              await NotificationService.notifyDeliveryAssigned(
+                userId,
+                orderId,
+                `${deliveryPerson.first_name} ${deliveryPerson.last_name}`,
+                deliveryPerson.phone || '',
+                `${order.user.first_name} ${order.user.last_name}`,
+                order.address?.street || 'Adresse non spécifiée'
+              );
+            }
+          }
+
+          // Si statut DELIVERED, notifier que la livraison est complétée
+          if (status === 'DELIVERED') {
+            const deliveryPerson = await prisma.users.findUnique({
+              where: { id: userId }
+            });
+            await NotificationService.notifyDeliveryCompleted(
+              order.userId,
+              orderId,
+              deliveryPerson ? `${deliveryPerson.first_name} ${deliveryPerson.last_name}` : 'Livreur',
+              Number(order.totalAmount || 0)
+            );
+          }
+
+          // Si problème de livraison, notifier les admins
+          if (problemType && problemDetails) {
+            await NotificationService.notifyDeliveryProblem(
+              orderId,
+              problemType,
+              problemDetails,
+              `${order.user.first_name} ${order.user.last_name}`
+            );
+          }
+        } catch (notificationError: any) {
+          console.error('[DeliveryController] Error sending delivery notification:', notificationError);
+        }
+      }
+
       res.json({ data: result });
     } catch (error: any) {
-      console.error('Error updating order status:', error); // Add this line to log the error
+      console.error('Error updating order status:', error);
       res.status(500).json({ error: error.message });
     }
   }

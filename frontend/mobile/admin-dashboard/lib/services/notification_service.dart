@@ -24,9 +24,19 @@ class NotificationService {
         return [];
       }
 
-      if (response.data != null && response.data['data'] != null) {
-        return (response.data['data'] as List)
-            .map((item) => AdminNotification.fromJson(item))
+      // Gérer le nouveau format du backend avec 'notifications' au lieu de 'data'
+      List<dynamic> notificationsList = [];
+      if (response.data != null) {
+        if (response.data['notifications'] != null) {
+          notificationsList = response.data['notifications'] as List;
+        } else if (response.data['data'] != null) {
+          notificationsList = response.data['data'] as List;
+        }
+      }
+
+      if (notificationsList.isNotEmpty) {
+        return notificationsList
+            .map((item) => AdminNotification.fromJson(item as Map<String, dynamic>))
             .toList();
       }
       return [];

@@ -5,6 +5,7 @@ import '../../../constants.dart';
 import '../../../components/glass_components.dart';
 import '../../../providers/orders_provider.dart';
 import '../../../core/models/order.dart';
+import '../../../shared/widgets/notification_badge_helper.dart';
 import '../widgets/order_card.dart';
 import '../widgets/order_filters_dialog.dart';
 import 'order_details_screen.dart';
@@ -97,6 +98,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ),
       ),
       actions: [
+        // 🔔 Badge de notifications
+        NotificationBadgeHelper.buildNotificationBadge(context),
         IconButton(
           icon: Icon(
             Icons.filter_list,

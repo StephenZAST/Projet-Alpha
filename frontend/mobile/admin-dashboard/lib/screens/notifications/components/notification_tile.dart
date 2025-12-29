@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../../constants.dart';
+import '../../../models/admin_notification.dart';
 import '../../../widgets/shared/glass_container.dart';
 import '../../../widgets/shared/glass_button.dart';
 
 class NotificationTile extends StatelessWidget {
-  final Map<String, dynamic> notification;
+  final AdminNotification notification;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
@@ -19,10 +20,10 @@ class NotificationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bool isRead = notification['isRead'] ?? false;
-    final String type = notification['type'] ?? 'system';
-    final String priority = notification['priority'] ?? 'medium';
-    final DateTime createdAt = notification['createdAt'] ?? DateTime.now();
+    final bool isRead = notification.isRead;
+    final String type = notification.type.toString().split('.').last.toLowerCase();
+    final String priority = notification.priority.toString().split('.').last.toLowerCase();
+    final DateTime createdAt = notification.createdAt;
 
     return GlassContainer(
       padding: EdgeInsets.all(AppSpacing.lg),
@@ -82,7 +83,7 @@ class NotificationTile extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              notification['title'] ?? 'Notification',
+                              notification.title,
                               style: AppTextStyles.bodyLarge.copyWith(
                                 fontWeight:
                                     isRead ? FontWeight.w500 : FontWeight.w700,
@@ -97,7 +98,7 @@ class NotificationTile extends StatelessWidget {
                             ),
                           ),
                           // Badge de priorité
-                          if (priority == 'high')
+                          if (priority == 'urgent' || priority == 'high')
                             Container(
                               padding: EdgeInsets.symmetric(
                                 horizontal: AppSpacing.xs,
@@ -122,7 +123,7 @@ class NotificationTile extends StatelessWidget {
                       ),
                       SizedBox(height: AppSpacing.xs),
                       Text(
-                        notification['message'] ?? '',
+                        notification.message,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: isDark
                               ? AppColors.gray300
@@ -340,6 +341,9 @@ class NotificationTile extends StatelessWidget {
   }
 
   void _showNotificationDetails(BuildContext context) {
+    final typeStr = notification.type.toString().split('.').last.toLowerCase();
+    final priorityStr = notification.priority.toString().split('.').last.toLowerCase();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -354,8 +358,8 @@ class NotificationTile extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(_getTypeIcon(notification['type'] ?? 'system'),
-                      color: _getTypeColor(notification['type'] ?? 'system')),
+                  Icon(_getTypeIcon(typeStr),
+                      color: _getTypeColor(typeStr)),
                   SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
@@ -374,7 +378,7 @@ class NotificationTile extends StatelessWidget {
               ),
               SizedBox(height: AppSpacing.xs),
               Text(
-                notification['title'] ?? 'Sans titre',
+                notification.title,
                 style: AppTextStyles.bodyMedium,
               ),
               SizedBox(height: AppSpacing.md),
@@ -386,7 +390,7 @@ class NotificationTile extends StatelessWidget {
               ),
               SizedBox(height: AppSpacing.xs),
               Text(
-                notification['message'] ?? 'Aucun message',
+                notification.message,
                 style: AppTextStyles.bodyMedium,
               ),
               SizedBox(height: AppSpacing.md),
@@ -403,7 +407,7 @@ class NotificationTile extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          _getTypeLabel(notification['type'] ?? 'system'),
+                          _getTypeLabel(typeStr),
                           style: AppTextStyles.bodySmall,
                         ),
                       ],
@@ -420,7 +424,7 @@ class NotificationTile extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          notification['priority'] ?? 'Moyenne',
+                          priorityStr.toUpperCase(),
                           style: AppTextStyles.bodySmall,
                         ),
                       ],
@@ -436,7 +440,7 @@ class NotificationTile extends StatelessWidget {
                 ),
               ),
               Text(
-                _formatDate(notification['createdAt'] ?? DateTime.now()),
+                _formatDate(notification.createdAt),
                 style: AppTextStyles.bodySmall,
               ),
               SizedBox(height: AppSpacing.xl),

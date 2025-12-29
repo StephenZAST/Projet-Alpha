@@ -5,6 +5,7 @@ import { validatePaginationParams } from '../utils/pagination';
 import supabase from '../config/database';
 import { INDIRECT_COMMISSION_RATE, PROFIT_MARGIN_RATE } from '../services/affiliate.service/constants';
 import { NotificationSettings, AffiliateProfile, CommissionTransactionDB } from '../models/types';
+import { NotificationService } from '../services';
 
 const prisma = new PrismaClient();
 
@@ -318,7 +319,30 @@ export class AffiliateController {
         });
       }
 
+      // Récupérer les détails du retrait avant rejet
+      const withdrawal = await prisma.affiliate_profiles.findFirst({
+        where: {
+          id: withdrawalId
+        }
+      });
+
       const result = await AffiliateWithdrawalService.rejectWithdrawal(withdrawalId, reason);
+
+      // 🔔 Notifier l'affilié que son retrait a été rejeté
+      if (withdrawal) {
+        try {
+          const withdrawalAmount = withdrawal.commission_balance ? Number(withdrawal.commission_balance) : 0;
+          await NotificationService.notifyWithdrawalRejected(
+            withdrawal.userId,
+            withdrawalAmount,
+            reason,
+            withdrawalId
+          );
+        } catch (notificationError: any) {
+          console.error('[AffiliateController] Error sending withdrawal rejected notification:', notificationError);
+        }
+      }
+
       res.json({ data: result });
     } catch (error: any) {
       console.error('Reject withdrawal error:', error);
@@ -334,7 +358,32 @@ export class AffiliateController {
       }
 
       const { withdrawalId } = req.params;
+
+      // Récupérer les détails du retrait avant approbation
+      const withdrawal = await prisma.affiliate_profiles.findFirst({
+        where: {
+          id: withdrawalId
+        }
+      });
+
       const result = await AffiliateWithdrawalService.approveWithdrawal(withdrawalId);
+
+      // 🔔 Notifier l'affilié que son retrait a été approuvé
+      if (withdrawal) {
+        try {
+          const estimatedPaymentDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+          const withdrawalAmount = withdrawal.commission_balance ? Number(withdrawal.commission_balance) : 0;
+          await NotificationService.notifyWithdrawalApproved(
+            withdrawal.userId,
+            withdrawalAmount,
+            withdrawalId,
+            estimatedPaymentDate
+          );
+        } catch (notificationError: any) {
+          console.error('[AffiliateController] Error sending withdrawal approved notification:', notificationError);
+        }
+      }
+
       res.json({ data: result });
     } catch (error: any) {
       console.error('Approve withdrawal error:', error);

@@ -1,7 +1,41 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
 
-enum NotificationType { ORDER, USER, SYSTEM, PAYMENT, DELIVERY, AFFILIATE }
+/// Les 19 types de notifications alignés avec le backend
+enum NotificationType {
+  // LOYALTY (2)
+  REWARD_CLAIM_APPROVED,
+  REWARD_CLAIM_REJECTED,
+  // ORDERS (5)
+  ORDER_PLACED,
+  PAYMENT_FAILED,
+  ORDER_STATUS_CHANGED,
+  ORDER_READY_PICKUP,
+  ORDER_CANCELLED,
+  // DELIVERY (3)
+  DELIVERY_ASSIGNED,
+  DELIVERY_COMPLETED,
+  DELIVERY_PROBLEM,
+  // AFFILIATION (4)
+  REFERRAL_CODE_USED,
+  COMMISSION_EARNED,
+  WITHDRAWAL_APPROVED,
+  WITHDRAWAL_REJECTED,
+  // SUBSCRIPTION (2)
+  SUBSCRIPTION_ACTIVATED,
+  SUBSCRIPTION_CANCELLED,
+  // ADMIN (3)
+  NEW_USER_REGISTERED,
+  NEW_ORDER_ALERT,
+  PAYMENT_SYSTEM_ISSUE,
+  // Legacy (pour compatibilité)
+  ORDER,
+  USER,
+  SYSTEM,
+  PAYMENT,
+  DELIVERY,
+  AFFILIATE
+}
 
 enum NotificationPriority { LOW, NORMAL, HIGH, URGENT }
 
@@ -28,27 +62,52 @@ class AdminNotification {
 
   factory AdminNotification.fromJson(Map<String, dynamic> json) {
     try {
+      // Gérer les champs du nouveau format du backend
+      DateTime createdAt;
+      try {
+        final createdAtValue = json['createdAt'] ?? json['created_at'];
+        if (createdAtValue == null || createdAtValue.toString().isEmpty) {
+          createdAt = DateTime.now();
+        } else {
+          createdAt = DateTime.parse(createdAtValue.toString());
+        }
+      } catch (e) {
+        createdAt = DateTime.now();
+      }
+
+      // Parser le type de notification
+      String typeStr = (json['type'] ?? 'SYSTEM').toString().toUpperCase();
+      NotificationType type = NotificationType.SYSTEM;
+      try {
+        type = NotificationType.values.firstWhere(
+          (t) => t.toString().split('.').last == typeStr,
+          orElse: () => NotificationType.SYSTEM,
+        );
+      } catch (e) {
+        type = NotificationType.SYSTEM;
+      }
+
+      // Parser la priorité
+      String priorityStr = (json['priority'] ?? 'NORMAL').toString().toUpperCase();
+      NotificationPriority priority = NotificationPriority.NORMAL;
+      try {
+        priority = NotificationPriority.values.firstWhere(
+          (p) => p.toString().split('.').last == priorityStr,
+          orElse: () => NotificationPriority.NORMAL,
+        );
+      } catch (e) {
+        priority = NotificationPriority.NORMAL;
+      }
+
       return AdminNotification(
         id: json['id']?.toString() ?? '',
         title: json['title']?.toString() ?? 'Notification',
         message: json['message']?.toString() ?? '',
-        type: NotificationType.values.firstWhere(
-          (type) =>
-              type.toString().split('.').last ==
-              (json['type'] ?? '').toString().toUpperCase(),
-          orElse: () => NotificationType.SYSTEM,
-        ),
-        referenceId: json['referenceId']?.toString(),
-        isRead: json['isRead'] == true,
-        createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'])
-            : DateTime.now(),
-        priority: NotificationPriority.values.firstWhere(
-          (p) =>
-              p.toString().split('.').last ==
-              (json['priority'] ?? '').toString().toUpperCase(),
-          orElse: () => NotificationPriority.NORMAL,
-        ),
+        type: type,
+        referenceId: json['referenceId']?.toString() ?? json['reference_id']?.toString(),
+        isRead: json['isRead'] == true || json['read'] == true,
+        createdAt: createdAt,
+        priority: priority,
       );
     } catch (e) {
       print('Error parsing notification: $e');
@@ -100,35 +159,95 @@ class AdminNotification {
 
   IconData get icon {
     switch (type) {
+      // LOYALTY
+      case NotificationType.REWARD_CLAIM_APPROVED:
+      case NotificationType.REWARD_CLAIM_REJECTED:
+        return Icons.card_giftcard;
+      // ORDERS
+      case NotificationType.ORDER_PLACED:
+      case NotificationType.ORDER_STATUS_CHANGED:
+      case NotificationType.ORDER_READY_PICKUP:
+      case NotificationType.ORDER_CANCELLED:
       case NotificationType.ORDER:
         return Icons.shopping_cart;
-      case NotificationType.USER:
-        return Icons.person;
+      case NotificationType.PAYMENT_FAILED:
       case NotificationType.PAYMENT:
         return Icons.payment;
-      case NotificationType.SYSTEM:
-        return Icons.info;
+      // DELIVERY
+      case NotificationType.DELIVERY_ASSIGNED:
+      case NotificationType.DELIVERY_COMPLETED:
+      case NotificationType.DELIVERY_PROBLEM:
       case NotificationType.DELIVERY:
         return Icons.local_shipping;
+      // AFFILIATION
+      case NotificationType.REFERRAL_CODE_USED:
+      case NotificationType.COMMISSION_EARNED:
+      case NotificationType.WITHDRAWAL_APPROVED:
+      case NotificationType.WITHDRAWAL_REJECTED:
       case NotificationType.AFFILIATE:
         return Icons.group;
+      // SUBSCRIPTION
+      case NotificationType.SUBSCRIPTION_ACTIVATED:
+      case NotificationType.SUBSCRIPTION_CANCELLED:
+        return Icons.calendar_month;
+      // ADMIN
+      case NotificationType.NEW_USER_REGISTERED:
+      case NotificationType.USER:
+        return Icons.person_add;
+      case NotificationType.NEW_ORDER_ALERT:
+        return Icons.notifications_active;
+      case NotificationType.PAYMENT_SYSTEM_ISSUE:
+        return Icons.warning;
+      // Legacy
+      case NotificationType.SYSTEM:
+        return Icons.info;
     }
   }
 
   Color get color {
     switch (type) {
+      // LOYALTY
+      case NotificationType.REWARD_CLAIM_APPROVED:
+      case NotificationType.REWARD_CLAIM_REJECTED:
+        return AppColors.success;
+      // ORDERS
+      case NotificationType.ORDER_PLACED:
+      case NotificationType.ORDER_STATUS_CHANGED:
+      case NotificationType.ORDER_READY_PICKUP:
+      case NotificationType.ORDER_CANCELLED:
       case NotificationType.ORDER:
         return AppColors.primary;
-      case NotificationType.USER:
-        return AppColors.warning;
+      case NotificationType.PAYMENT_FAILED:
       case NotificationType.PAYMENT:
-        return AppColors.success;
-      case NotificationType.SYSTEM:
-        return AppColors.info;
+        return AppColors.error;
+      // DELIVERY
+      case NotificationType.DELIVERY_ASSIGNED:
+      case NotificationType.DELIVERY_COMPLETED:
+      case NotificationType.DELIVERY_PROBLEM:
       case NotificationType.DELIVERY:
         return AppColors.accent;
+      // AFFILIATION
+      case NotificationType.REFERRAL_CODE_USED:
+      case NotificationType.COMMISSION_EARNED:
+      case NotificationType.WITHDRAWAL_APPROVED:
+      case NotificationType.WITHDRAWAL_REJECTED:
       case NotificationType.AFFILIATE:
         return AppColors.categoryTag;
+      // SUBSCRIPTION
+      case NotificationType.SUBSCRIPTION_ACTIVATED:
+      case NotificationType.SUBSCRIPTION_CANCELLED:
+        return AppColors.violet;
+      // ADMIN
+      case NotificationType.NEW_USER_REGISTERED:
+      case NotificationType.USER:
+        return AppColors.warning;
+      case NotificationType.NEW_ORDER_ALERT:
+        return AppColors.primary;
+      case NotificationType.PAYMENT_SYSTEM_ISSUE:
+        return AppColors.error;
+      // Legacy
+      case NotificationType.SYSTEM:
+        return AppColors.info;
     }
   }
 
@@ -147,6 +266,51 @@ class AdminNotification {
 
   String get typeLabel {
     switch (type) {
+      // LOYALTY
+      case NotificationType.REWARD_CLAIM_APPROVED:
+        return 'Récompense Approuvée';
+      case NotificationType.REWARD_CLAIM_REJECTED:
+        return 'Récompense Rejetée';
+      // ORDERS
+      case NotificationType.ORDER_PLACED:
+        return 'Commande Créée';
+      case NotificationType.PAYMENT_FAILED:
+        return 'Paiement Échoué';
+      case NotificationType.ORDER_STATUS_CHANGED:
+        return 'Statut Commande';
+      case NotificationType.ORDER_READY_PICKUP:
+        return 'Commande Prête';
+      case NotificationType.ORDER_CANCELLED:
+        return 'Commande Annulée';
+      // DELIVERY
+      case NotificationType.DELIVERY_ASSIGNED:
+        return 'Livraison Assignée';
+      case NotificationType.DELIVERY_COMPLETED:
+        return 'Livraison Complétée';
+      case NotificationType.DELIVERY_PROBLEM:
+        return 'Problème Livraison';
+      // AFFILIATION
+      case NotificationType.REFERRAL_CODE_USED:
+        return 'Code Parrainage Utilisé';
+      case NotificationType.COMMISSION_EARNED:
+        return 'Commission Gagnée';
+      case NotificationType.WITHDRAWAL_APPROVED:
+        return 'Retrait Approuvé';
+      case NotificationType.WITHDRAWAL_REJECTED:
+        return 'Retrait Rejeté';
+      // SUBSCRIPTION
+      case NotificationType.SUBSCRIPTION_ACTIVATED:
+        return 'Abonnement Activé';
+      case NotificationType.SUBSCRIPTION_CANCELLED:
+        return 'Abonnement Annulé';
+      // ADMIN
+      case NotificationType.NEW_USER_REGISTERED:
+        return 'Nouvel Utilisateur';
+      case NotificationType.NEW_ORDER_ALERT:
+        return 'Nouvelle Commande';
+      case NotificationType.PAYMENT_SYSTEM_ISSUE:
+        return 'Problème Paiement';
+      // Legacy
       case NotificationType.ORDER:
         return 'Commande';
       case NotificationType.USER:
