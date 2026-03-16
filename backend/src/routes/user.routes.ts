@@ -144,7 +144,53 @@ router.delete('/:id',
   })
 );
 
+// Route pour rechercher des utilisateurs par extrait d'ID
+// ⚠️ IMPORTANT: Cette route DOIT être avant /:id pour être évaluée correctement
+router.get(
+  '/search-by-id',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(async (req, res) => {
+    const { idFragment, limit = 10 } = req.query;
+
+    if (!idFragment || typeof idFragment !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'ID fragment is required and must be a string'
+      });
+    }
+
+    if (idFragment.length < 4) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID fragment must be at least 4 characters long'
+      });
+    }
+
+    const users = await AuthService.searchUsersByIdFragment(
+      idFragment,
+      Math.min(parseInt(limit as string) || 10, 50)
+    );
+
+    res.json({
+      success: true,
+      data: users,
+      count: users.length
+    });
+  })
+);
+
+// Route pour rechercher des utilisateurs avec filtres avancés
+// ⚠️ IMPORTANT: Cette route DOIT être avant /:id pour être évaluée correctement
+router.get(
+  '/search',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(async (req, res) => {
+    await UserController.searchUsers(req, res);
+  })
+);
+
 // Stats des utilisateurs
+// ⚠️ IMPORTANT: Cette route DOIT être avant /:id pour être évaluée correctement
 router.get(
   '/stats', 
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
@@ -157,16 +203,8 @@ router.get(
   })
 );
 
-// Ajouter cette route avant les autres routes
-router.get(
-  '/search',
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
-  asyncHandler(async (req, res) => {
-    await UserController.searchUsers(req, res);
-  })
-);
-
 // Route pour récupérer un utilisateur par son ID
+// ⚠️ IMPORTANT: Cette route DOIT être la dernière car elle capture tous les GET /:id
 router.get(
   '/:id',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),

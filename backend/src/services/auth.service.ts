@@ -1094,4 +1094,50 @@ export class AuthService {
       updatedAt: user.updated_at || new Date()
     };
   }
+
+  /**
+   * Recherche d'utilisateurs par extrait d'ID (UUID)
+   * Permet de trouver les utilisateurs potentiels en tapant un extrait de leur ID
+   * Exemple: "2c8e" ou "4033" ou "aeb3" ou "8acb98fe1d1c" ou "06657ef1"
+   * @param idFragment - Extrait de l'ID à rechercher (minimum 4 caractères)
+   * @param limit - Nombre maximum de résultats (défaut: 10)
+   * @returns Liste des utilisateurs correspondant à l'extrait
+   */
+  static async searchUsersByIdFragment(
+    idFragment: string,
+    limit: number = 10
+  ): Promise<User[]> {
+    try {
+      // Valider l'extrait (minimum 4 caractères)
+      const fragment = idFragment.trim().toLowerCase();
+      if (fragment.length < 4) {
+        return [];
+      }
+
+      // Utiliser une requête SQL brute pour la recherche de substring sur UUID
+      // car Prisma ne supporte pas 'contains' sur les champs UUID
+      const users = await prisma.$queryRaw<any[]>`
+        SELECT * FROM users 
+        WHERE LOWER(CAST(id AS TEXT)) LIKE ${`%${fragment}%`}
+        ORDER BY created_at DESC
+        LIMIT ${limit}
+      `;
+
+      return users.map(user => ({
+        id: user.id,
+        email: user.email,
+        password: user.password,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone || undefined,
+        role: (user.role as UserRole) || 'CLIENT',
+        referralCode: user.referral_code || undefined,
+        createdAt: user.created_at || new Date(),
+        updatedAt: user.updated_at || new Date()
+      }));
+    } catch (error) {
+      console.error('[AuthService] searchUsersByIdFragment error:', error);
+      throw error;
+    }
+  }
 }
