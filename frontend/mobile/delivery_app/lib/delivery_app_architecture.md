@@ -33,6 +33,7 @@ screens\profile
 screens\auth\login_screen.dart
 screens\auth\splash_screen.dart
 screens\dashboard\dashboard_screen.dart
+screens\dashboard\components\user_id_search_dialog.dart
 screens\map\delivery_map_screen.dart
 screens\orders\advanced_search_screen.dart
 screens\orders\orders_screen.dart
@@ -45,6 +46,7 @@ services\delivery_service.dart
 services\location_service.dart
 services\navigation_service.dart
 services\notification_service.dart
+services\user_id_search_service.dart
 theme\mobile_theme.dart
 widgets\cards
 widgets\shared

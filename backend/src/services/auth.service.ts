@@ -1116,12 +1116,15 @@ export class AuthService {
 
       // Utiliser une requête SQL brute pour la recherche de substring sur UUID
       // car Prisma ne supporte pas 'contains' sur les champs UUID
-      const users = await prisma.$queryRaw<any[]>`
-        SELECT * FROM users 
-        WHERE LOWER(CAST(id AS TEXT)) LIKE ${`%${fragment}%`}
-        ORDER BY created_at DESC
-        LIMIT ${limit}
-      `;
+      // Utiliser Prisma.sql pour éviter les problèmes de validation UUID
+      const users = await prisma.$queryRaw<any[]>(
+        Prisma.sql`
+          SELECT * FROM users 
+          WHERE LOWER(CAST(id AS TEXT)) LIKE ${'%' + fragment + '%'}
+          ORDER BY created_at DESC
+          LIMIT ${limit}
+        `
+      );
 
       return users.map(user => ({
         id: user.id,

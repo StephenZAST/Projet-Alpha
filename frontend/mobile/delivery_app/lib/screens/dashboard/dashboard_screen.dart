@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../constants.dart';
 import '../../controllers/dashboard_controller.dart';
 import '../../controllers/auth_controller.dart';
+import 'components/user_id_search_dialog.dart';
 
 /// 🏠 Écran Dashboard - Alpha Delivery App
 ///
@@ -392,10 +393,10 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _buildActionButton(
-                'Historique',
-                Icons.history,
+                'Utilisateurs',
+                Icons.fingerprint,
                 AppColors.secondary,
-                () => Get.toNamed('/orders?tab=history'),
+                () => _showUserSearchDialog(isDark),
                 isDark,
               ),
             ),
@@ -844,6 +845,25 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  /// Affiche le dialog de recherche d'utilisateurs par ID
+  void _showUserSearchDialog(bool isDark) {
+    Get.dialog(
+      UserIdSearchDialog(
+        onUserSelected: (user) {
+          Get.rawSnackbar(
+            message: 'Utilisateur sélectionné: ${user.firstName} ${user.lastName}',
+            backgroundColor: AppColors.success.withOpacity(0.9),
+            snackPosition: SnackPosition.BOTTOM,
+            duration: Duration(seconds: 2),
+            borderRadius: 8,
+            margin: EdgeInsets.all(AppSpacing.md),
+          );
+        },
+      ),
+      barrierDismissible: true,
     );
   }
 }

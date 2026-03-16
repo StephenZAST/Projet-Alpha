@@ -1,3 +1,4 @@
+import 'package:delivery_app/constants.dart';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
@@ -8,6 +9,9 @@ import 'app.dart';
 /// et lance l'interface mobile-first pour les livreurs.
 void main() async {
   try {
+    // Affiche la configuration API (LOCAL ou PRODUCTION)
+    ApiConfig.printConfig();
+    
     // Initialise l'application
     await AppInitializer.initialize();
     
