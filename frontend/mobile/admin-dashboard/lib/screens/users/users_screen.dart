@@ -1,3 +1,4 @@
+import 'package:admin/models/user.dart';
 import 'package:admin/screens/users/components/users_table.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
@@ -11,6 +12,7 @@ import '../../widgets/shared/glass_container.dart';
 import 'components/user_create_dialog.dart';
 import 'components/user_details_dialog.dart';
 import 'components/user_edit_dialog.dart';
+import 'components/user_id_search_dialog.dart';
 import '../../models/address.dart';
 import '../../services/user_service.dart';
 
@@ -77,19 +79,23 @@ class _UsersScreenState extends State<UsersScreen> {
                         child: GetX<UsersController>(
                           builder: (controller) {
                             print('[UsersScreen] GetX builder: UsersTable');
-                            print('[UsersScreen] Users count: ${controller.users.length}');
+                            print(
+                                '[UsersScreen] Users count: ${controller.users.length}');
 
                             if (controller.isLoading.value) {
                               return Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    CircularProgressIndicator(color: AppColors.primary),
+                                    CircularProgressIndicator(
+                                        color: AppColors.primary),
                                     SizedBox(height: AppSpacing.md),
                                     Text(
                                       'Chargement des utilisateurs...',
                                       style: AppTextStyles.bodyMedium.copyWith(
-                                        color: isDark ? AppColors.textLight : AppColors.textSecondary,
+                                        color: isDark
+                                            ? AppColors.textLight
+                                            : AppColors.textSecondary,
                                       ),
                                     ),
                                   ],
@@ -158,6 +164,29 @@ class _UsersScreenState extends State<UsersScreen> {
         ),
         Row(
           children: [
+            GlassButton(
+              label: 'Rechercher par ID',
+              icon: Icons.fingerprint,
+              variant: GlassButtonVariant.secondary,
+              onPressed: () {
+                print('[UsersScreen] Bouton Rechercher par ID cliqué');
+                Get.dialog(
+                  UserIdSearchDialog(
+                    onUserSelected: (user) {
+                      print(
+                          '[UsersScreen] Utilisateur sélectionné: ${user.id}');
+                      _showUserDetails(user.id);
+                    },
+                    onUserDetailsRequested: (user) {
+                      print('[UsersScreen] Détails demandés pour: ${user.id}');
+                      _showUserDetails(user.id);
+                    },
+                  ),
+                  barrierDismissible: true,
+                );
+              },
+            ),
+            SizedBox(width: AppSpacing.sm),
             GlassButton(
               label: 'Exporter',
               icon: Icons.download_outlined,
@@ -263,7 +292,8 @@ class _UsersScreenState extends State<UsersScreen> {
           ),
           SizedBox(height: AppSpacing.sm),
           Text(
-            controller.searchQuery.value.isNotEmpty || controller.selectedRole.value != null
+            controller.searchQuery.value.isNotEmpty ||
+                    controller.selectedRole.value != null
                 ? 'Aucun utilisateur ne correspond à vos critères de recherche'
                 : 'Aucun utilisateur n\'est encore enregistré dans le système',
             style: AppTextStyles.bodyMedium.copyWith(
@@ -272,7 +302,8 @@ class _UsersScreenState extends State<UsersScreen> {
             textAlign: TextAlign.center,
           ),
           SizedBox(height: AppSpacing.lg),
-          if (controller.searchQuery.value.isNotEmpty || controller.selectedRole.value != null)
+          if (controller.searchQuery.value.isNotEmpty ||
+              controller.selectedRole.value != null)
             GlassButton(
               label: 'Effacer les filtres',
               icon: Icons.clear_all,
@@ -288,7 +319,8 @@ class _UsersScreenState extends State<UsersScreen> {
               label: 'Créer le premier utilisateur',
               icon: Icons.person_add_alt_1,
               variant: GlassButtonVariant.primary,
-              onPressed: () => Get.dialog(UserCreateDialog(), barrierDismissible: false),
+              onPressed: () =>
+                  Get.dialog(UserCreateDialog(), barrierDismissible: false),
             ),
         ],
       ),
@@ -390,15 +422,25 @@ class _UsersScreenState extends State<UsersScreen> {
     try {
       print('[UsersScreen] Affichage des détails pour l\'utilisateur: $userId');
 
-      // Trouver l'utilisateur dans la liste
-      final user = controller.users.firstWhereOrNull((u) => u.id == userId);
+      // Chercher d'abord dans la liste locale
+      User? user = controller.users.firstWhereOrNull((u) => u.id == userId);
+
+      // Si pas trouvé localement, charger depuis l'API
       if (user == null) {
-        Get.rawSnackbar(
-          message: 'Utilisateur introuvable',
-          backgroundColor: AppColors.error,
-          snackPosition: SnackPosition.TOP,
-        );
-        return;
+        print(
+            '[UsersScreen] Utilisateur non trouvé localement, chargement depuis l\'API');
+        try {
+          user = await UserService.getUserById(userId);
+        } catch (e) {
+          print(
+              '[UsersScreen] Erreur lors du chargement de l\'utilisateur: $e');
+          Get.rawSnackbar(
+            message: 'Utilisateur introuvable',
+            backgroundColor: AppColors.error,
+            snackPosition: SnackPosition.TOP,
+          );
+          return;
+        }
       }
 
       // Charger les adresses de l'utilisateur

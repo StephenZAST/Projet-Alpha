@@ -372,9 +372,17 @@ extension OrderStatusExtension on OrderStatus {
 // =============================================================================
 
 class ApiConfig {
-  // URL de base (à adapter selon l'environnement)
-  static const String baseUrl =
-      'https://alpha-laundry-backend.onrender.com/api';
+  // ⚠️ IMPORTANT: Configuration pour tester localement vs production
+  // Utiliser: flutter run -d chrome -v --dart-define=USE_LOCAL=true
+  // Pour tester avec le backend local (localhost:3001)
+  // Sans le flag, utilise le backend Render en production
+  
+  static const bool _useLocal = bool.fromEnvironment('USE_LOCAL', defaultValue: false);
+  
+  // URL de base (adaptée selon l'environnement)
+  static const String baseUrl = _useLocal
+      ? 'http://localhost:3001/api'
+      : 'https://alpha-laundry-backend.onrender.com/api';
 
   // Endpoints principaux
   static const String authEndpoint = '/auth';
@@ -391,6 +399,16 @@ class ApiConfig {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
+  
+  /// Affiche la configuration actuelle (utile pour déboguer)
+  static void printConfig() {
+    print('═══════════════════════════════════════════════════════════');
+    print('🌐 API Configuration');
+    print('═══════════════════════════════════════════════════════════');
+    print('Mode: ${_useLocal ? '🔴 LOCAL (localhost:3001)' : '🟢 PRODUCTION (Render)'}');
+    print('Base URL: $baseUrl');
+    print('═══════════════════════════════════════════════════════════');
+  }
 }
 
 // =============================================================================

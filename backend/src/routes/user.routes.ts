@@ -28,6 +28,87 @@ router.get('/profile', asyncHandler(async (req, res) => {
   }
 }));
 
+// ⚠️ IMPORTANT: Les routes spécifiques DOIVENT être AVANT les routes paramétrées (:id)
+// Sinon Express les traite comme des IDs et cause des erreurs
+
+// Route pour rechercher des utilisateurs par extrait d'ID
+router.get(
+  '/search-by-id',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(async (req, res) => {
+    console.log('[UserRoutes] /search-by-id called with query:', req.query);
+    
+    const { idFragment, limit = 10 } = req.query;
+
+    if (!idFragment || typeof idFragment !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'ID fragment is required and must be a string'
+      });
+    }
+
+    if (idFragment.length < 4) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID fragment must be at least 4 characters long'
+      });
+    }
+
+    console.log('[UserRoutes] Calling searchUsersByIdFragment with:', idFragment);
+    const users = await AuthService.searchUsersByIdFragment(
+      idFragment,
+      Math.min(parseInt(limit as string) || 10, 50)
+    );
+
+    console.log('[UserRoutes] Found users:', users.length);
+    res.json({
+      success: true,
+      data: users,
+      count: users.length
+    });
+  })
+);
+
+// Route pour rechercher des utilisateurs avec filtres avancés
+router.get(
+  '/search',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(async (req, res) => {
+    await UserController.searchUsers(req, res);
+  })
+);
+
+// Stats des utilisateurs
+router.get(
+  '/stats', 
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(async (req, res) => {
+    const stats = await AuthService.getUserStats();
+    res.json({
+      success: true,
+      data: stats 
+    });
+  })
+);
+
+// Routes accessibles uniquement aux admins
+router.get(
+  '/',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
+  asyncHandler(async (req, res) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    const users = await AuthService.getAllUsers({page, limit});
+    
+    res.json({
+      success: true,
+      data: users.data,
+      pagination: users.pagination
+    });
+  })
+);
+
 // Route pour créer un utilisateur par un admin
 router.post('/',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
@@ -95,24 +176,6 @@ router.post('/',
   })
 );
 
-// Routes accessibles uniquement aux admins
-router.get(
-  '/',
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
-  asyncHandler(async (req, res) => {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    
-    const users = await AuthService.getAllUsers({page, limit});
-    
-    res.json({
-      success: true,
-      data: users.data,
-      pagination: users.pagination
-    });
-  })
-);
-
 // Modification d'un utilisateur
 router.put('/:id',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
@@ -144,34 +207,23 @@ router.delete('/:id',
   })
 );
 
-// Stats des utilisateurs
-router.get(
-  '/stats', 
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
-  asyncHandler(async (req, res) => {
-    const stats = await AuthService.getUserStats();
-    res.json({
-      success: true,
-      data: stats 
-    });
-  })
-);
-
-// Ajouter cette route avant les autres routes
-router.get(
-  '/search',
-  authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
-  asyncHandler(async (req, res) => {
-    await UserController.searchUsers(req, res);
-  })
-);
-
 // Route pour récupérer un utilisateur par son ID
+// ⚠️ IMPORTANT: Cette route DOIT être la dernière car elle capture tous les GET /:id
 router.get(
   '/:id',
   authorizeRoles(['ADMIN', 'SUPER_ADMIN']),
   asyncHandler(async (req, res) => {
     const userId = req.params.id;
+    
+    // Validation: l'ID doit être un UUID valide (36 caractères avec tirets)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid user ID format. Expected a valid UUID.' 
+      });
+    }
+    
     const user = await AuthService.getUserById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
@@ -179,8 +231,6 @@ router.get(
     res.json({ success: true, data: user });
   })
 );
-
-// Note : Suppression de la route PUT /users/:userId car elle existe déjà dans auth.routes.ts
 
 router.use(clientAffiliateLinkRoutes);
 
