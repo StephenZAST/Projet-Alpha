@@ -7,6 +7,7 @@ import 'services/api_service.dart';
 import 'services/navigation_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
 import 'screens/linked_clients_screen.dart';
 
 /// 🚀 Application Principale - Alpha Affiliate App
@@ -44,6 +45,7 @@ class AffiliateApp extends StatelessWidget {
             themeMode: ThemeMode.system,
             routes: {
               '/login': (ctx) => const LoginScreen(),
+              '/signup': (ctx) => const SignupScreen(),
               '/dashboard': (ctx) => const DashboardScreen(),
               '/linked-clients': (ctx) => const LinkedClientsScreen(),
             },

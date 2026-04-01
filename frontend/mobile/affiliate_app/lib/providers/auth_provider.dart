@@ -82,7 +82,7 @@ class AuthProvider extends ChangeNotifier {
       final response = await _apiService.post<Map<String, dynamic>>(
         '/auth/login', // Utiliser l'endpoint client standard
         data: {
-          'email': email,
+          'identifier': email, // ✅ CORRIGÉ: Backend attend 'identifier' pas 'email'
           'password': password,
         },
       );
@@ -179,6 +179,73 @@ class AuthProvider extends ChangeNotifier {
       return success;
     } catch (e) {
       _error = 'Erreur d\'inscription: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// 🤝 Inscription en tant qu'Affilié
+  /// 
+  /// Crée un utilisateur et lui génère automatiquement un profil affilié
+  /// avec un code affilié unique
+  Future<bool> registerAsAffiliate({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+    String? phone,
+    String? affiliateCode,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // Utiliser l'endpoint spécifique pour les affiliés
+      final response = await _apiService.post<Map<String, dynamic>>(
+        '/affiliate/register-with-code',
+        data: {
+          'email': email,
+          'password': password,
+          'firstName': firstName,
+          'lastName': lastName,
+          if (phone != null) 'phone': phone,
+          if (affiliateCode != null) 'affiliateCode': affiliateCode,
+        },
+      );
+
+      bool success = false;
+
+      print('📊 Réponse inscription affilié: $response'); // Debug
+
+      if (response.isSuccess && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        
+        // Le backend retourne { data: { user: {...}, token: "..." } }
+        if (data['user'] != null && data['token'] != null) {
+          final token = data['token'] as String;
+          final user = data['user'] as Map<String, dynamic>;
+
+          // Sauvegarder les données d'authentification
+          await _saveAuthData(token, user);
+          _isAuthenticated = true;
+          success = true;
+          
+          print('✅ Inscription affilié réussie pour: $email');
+        } else {
+          _error = 'Réponse invalide du serveur';
+        }
+      } else {
+        _error = response.error?.message ?? 'Erreur lors de l\'inscription';
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _error = 'Erreur d\'inscription: $e';
+      print('❌ Erreur inscription affilié: $e');
       _isLoading = false;
       notifyListeners();
       return false;

@@ -19,7 +19,7 @@ class ApiService {
   /// Initialisation du service
   Future<void> initialize() async {
     _dio = Dio(BaseOptions(
-      baseUrl: ApiConfig.baseUrl,
+      baseUrl: ApiConfig.getBaseUrl(), // ✅ CORRIGÉ: Utiliser getBaseUrl() pour supporter local
       connectTimeout: ApiConfig.timeout,
       receiveTimeout: ApiConfig.timeout,
       sendTimeout: ApiConfig.timeout,

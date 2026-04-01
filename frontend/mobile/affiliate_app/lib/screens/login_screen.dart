@@ -742,17 +742,7 @@ class _LoginScreenState extends State<LoginScreen>
           const SizedBox(height: 12),
           TextButton(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                      'Contactez l\'équipe Alpha pour devenir affilié'),
-                  backgroundColor: AppColors.info,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              );
+              Navigator.of(context).pushNamed('/signup');
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

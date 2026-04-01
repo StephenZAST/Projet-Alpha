@@ -7,12 +7,28 @@ import 'package:flutter/material.dart';
 
 // 🌐 Configuration API
 class ApiConfig {
+  // Support pour URL locale avec --dart-define=USE_LOCAL=true
+  static const bool useLocal = String.fromEnvironment(
+    'USE_LOCAL',
+    defaultValue: 'false',
+  ) == 'true';
+
   // Allow overriding the backend URL at build/run time:
   // flutter run --dart-define=API_BASE_URL=http://localhost:3001/api
+  // Ou pour local: flutter run -d chrome --dart-define=USE_LOCAL=true
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://alpha-laundry-backend.onrender.com/api',
   );
+
+  // URL locale alternative
+  static const String localBaseUrl = 'http://localhost:3001/api';
+
+  // URL effective
+  static String getBaseUrl() {
+    return useLocal ? localBaseUrl : baseUrl;
+  }
+
   static const String affiliateEndpoint = '/affiliate';
 
   // Endpoints principaux
