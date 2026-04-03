@@ -19,7 +19,7 @@ model affiliate_client_links {
   updated_at   DateTime?          @default(now()) @updatedAt @db.Timestamptz(6)
   affiliate    affiliate_profiles @relation("affiliate_client_links_affiliate", fields: [affiliate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   client       users              @relation("affiliate_client_links_client", fields: [client_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  creator      users?             @relation("CreatedAffiliateLinks", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  creator      users?             @relation("CreatedAffiliateLinks", fields: [created_by], references: [id], onUpdate: NoAction)
 
   @@unique([affiliate_id, client_id, start_date], name: "unique_affiliate_client_period", map: "unique_affiliate_client_period")
   @@index([client_id], map: "idx_affiliate_client_links_client")
@@ -72,7 +72,7 @@ model affiliate_profiles {
   affiliate_levels         affiliate_levels?         @relation(fields: [level_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   affiliate_profiles       affiliate_profiles?       @relation("affiliate_profilesToaffiliate_profiles", fields: [parent_affiliate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   other_affiliate_profiles affiliate_profiles[]      @relation("affiliate_profilesToaffiliate_profiles")
-  users                    users                     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "affiliate_profiles_userid_fkey")
+  users                    users                     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "affiliate_profiles_userid_fkey")
   commission_transactions  commission_transactions[]
 }
 
@@ -166,7 +166,7 @@ model notification_preferences {
   loyalty       Boolean?  @default(true)
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
   updated_at    DateTime? @default(now()) @db.Timestamptz(6)
-  users         users     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "notification_preferences_userid_fkey")
+  users         users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notification_preferences_userid_fkey")
 }
 
 model notification_rules {
@@ -187,7 +187,7 @@ model notifications {
   data       Json?
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamptz(6)
-  users      users?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "notifications_userid_fkey")
+  users      users?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "notifications_userid_fkey")
 }
 
 model offer_articles {
@@ -207,7 +207,7 @@ model offer_subscriptions {
   subscribed_at DateTime?          @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?          @default(now()) @db.Timestamptz(6)
   offers        offers?            @relation(fields: [offer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users         users?             @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "offer_subscriptions_userid_fkey")
+  users         users?             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "offer_subscriptions_userid_fkey")
 }
 
 model offers {
@@ -287,7 +287,7 @@ model orders {
   pricing                 order_pricing?
   address                 addresses?                @relation(fields: [addressId], references: [id])
   service_types           service_types             @relation(fields: [service_type_id], references: [id])
-  user                    users                     @relation(fields: [userId], references: [id])
+  user                    users                     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   user_offers             user_offers[]
 }
 
@@ -379,7 +379,7 @@ model temp_notifications {
   created_at DateTime? @db.Timestamptz(6)
   updated_at DateTime? @db.Timestamptz(6)
   data       Json?
-  users      users?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "temp_notifications_userid_fkey")
+  users      users?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "temp_notifications_userid_fkey")
 
   @@ignore
 }
@@ -415,7 +415,7 @@ model users {
   point_transactions                                                         point_transactions[]
   reset_codes                                                                reset_codes[]
   reward_claims                                                              reward_claims[]
-  temp_notifications                                                         temp_notifications[]           @ignore
+  temp_notifications                                                         temp_notifications[]
   user_activity_logs                                                         user_activity_logs[]
   user_offers                                                                user_offers[]
   user_subscriptions                                                         user_subscriptions[]
@@ -548,7 +548,7 @@ model user_offers {
   order_id String? @db.Uuid
   offers   offers? @relation(fields: [offer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   orders   orders? @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users    users?  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_offers_userid_fkey")
+  users    users?  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_offers_userid_fkey")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
