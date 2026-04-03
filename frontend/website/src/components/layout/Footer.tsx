@@ -76,6 +76,16 @@ export const Footer: React.FC = () => {
                 <Link href="/client-app">Application Client</Link>
               </li>
               <li>
+                <a 
+                  href={EXTERNAL_LINKS.deliveryApp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.link}
+                >
+                  Application Livreur
+                </a>
+              </li>
+              <li>
                 <Link href="/affiliate-app">Programme Affiliate</Link>
               </li>
               <li>
