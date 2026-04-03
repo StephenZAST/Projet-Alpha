@@ -3,6 +3,9 @@ import { AffiliateProfileService } from './affiliateProfile.service';
 import { AffiliateCommissionService } from './affiliateCommission.service';
 import { AffiliateWithdrawalService } from './affiliateWithdrawal.service';
 import { PaginationParams } from '../../utils/pagination';
+import bcrypt from 'bcryptjs';
+import * as jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 
@@ -253,6 +256,153 @@ export class AffiliateService {
       };
     } catch (error) {
       console.error('[AffiliateService] Create customer with affiliate code error:', error);
+      throw error;
+    }
+  }
+
+  /// 🤝 Inscription d'un nouvel affilié
+  /// Crée un utilisateur AFFILIATE avec code auto-généré et profil affilié
+  static async registerNewAffiliate(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    phone?: string,
+    parentAffiliateCode?: string
+  ): Promise<{
+    token: string;
+    user: any;
+    affiliateProfile: any;
+  }> {
+    try {
+      console.log('[AffiliateService] Registering new affiliate:', { email, firstName, lastName });
+
+      // Vérifier si l'email existe déjà
+      const existingUser = await prisma.users.findFirst({
+        where: { email }
+      });
+
+      if (existingUser) {
+        throw new Error('Email already exists');
+      }
+
+      // Vérifier le parrain si fourni
+      let parentId: string | undefined;
+      if (parentAffiliateCode) {
+        const parentProfile = await prisma.affiliate_profiles.findFirst({
+          where: {
+            affiliate_code: parentAffiliateCode,
+            is_active: true,
+            status: 'ACTIVE'
+          }
+        });
+
+        if (!parentProfile) {
+          throw new Error('Invalid parent affiliate code');
+        }
+        parentId = parentProfile.id;
+      }
+
+      // Générer un code affilié unique
+      const prefix = 'AFF';
+      const timestamp = Date.now().toString(36);
+      const randomStr = Math.random().toString(36).substring(2, 6);
+      const affiliateCode = `${prefix}-${timestamp}-${randomStr}`.toUpperCase();
+
+      // Créer l'utilisateur AFFILIATE avec password hashé
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const user = await prisma.users.create({
+        data: {
+          id: uuidv4(),
+          email,
+          password: hashedPassword,
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          role: 'AFFILIATE',
+          created_at: new Date(),
+          updated_at: new Date(),
+          // Créer les préférences de notification
+          notification_preferences: {
+            create: {
+              id: uuidv4(),
+              email: true,
+              push: true,
+              sms: false,
+              order_updates: true,
+              promotions: true,
+              payments: true,
+              loyalty: true,
+              created_at: new Date(),
+              updated_at: new Date()
+            }
+          }
+        }
+      });
+
+      // Créer le profil affilié
+      const affiliateProfile = await prisma.affiliate_profiles.create({
+        data: {
+          userId: user.id,
+          affiliate_code: affiliateCode,
+          parent_affiliate_id: parentId,
+          commission_balance: 0,
+          total_earned: 0,
+          commission_rate: 10,
+          is_active: true,
+          total_referrals: 0,
+          monthly_earnings: 0,
+          status: 'PENDING',
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      });
+
+      // Générer le token JWT
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) {
+        throw new Error('JWT_SECRET not configured');
+      }
+
+      const token = jwt.sign(
+        { id: user.id, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '168h' }
+      );
+
+      console.log('[AffiliateService] New affiliate registered successfully:', user.id);
+
+      return {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          phone: user.phone || undefined,
+          role: user.role,
+          createdAt: user.created_at,
+          updatedAt: user.updated_at
+        },
+        affiliateProfile: {
+          id: affiliateProfile.id,
+          userId: affiliateProfile.userId,
+          affiliateCode: affiliateProfile.affiliate_code,
+          parent_affiliate_id: affiliateProfile.parent_affiliate_id,
+          commission_rate: affiliateProfile.commission_rate,
+          commission_balance: affiliateProfile.commission_balance,
+          total_earned: affiliateProfile.total_earned,
+          monthly_earnings: affiliateProfile.monthly_earnings,
+          is_active: affiliateProfile.is_active,
+          status: affiliateProfile.status,
+          total_referrals: affiliateProfile.total_referrals,
+          created_at: affiliateProfile.created_at,
+          updated_at: affiliateProfile.updated_at
+        }
+      };
+    } catch (error: any) {
+      console.error('[AffiliateService] Register new affiliate error:', error);
       throw error;
     }
   }

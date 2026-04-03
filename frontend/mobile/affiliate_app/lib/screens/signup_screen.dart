@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
 import '../providers/auth_provider.dart';
+import '../providers/affiliate_provider.dart';
 import 'dashboard_screen.dart';
 
 /// 📝 Écran d'Inscription Affilié Premium - Alpha Affiliate App
@@ -564,6 +565,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
     }
 
     final authProvider = context.read<AuthProvider>();
+    final affiliateProvider = context.read<AffiliateProvider>();
     authProvider.clearError();
 
     final success = await authProvider.registerAsAffiliate(
@@ -572,13 +574,30 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
       firstName: _firstNameController.text.trim(),
       lastName: _lastNameController.text.trim(),
       phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-      affiliateCode: _affiliateCodeController.text.trim().isEmpty
+      parentAffiliateCode: _affiliateCodeController.text.trim().isEmpty
           ? null
           : _affiliateCodeController.text.trim(),
     );
 
     if (mounted) {
       if (success && authProvider.isAuthenticated) {
+        // Initialiser le profil affilié directement avec les données du signup
+        // ✅ Cela va hydrater le dashboard immédiatement
+        if (authProvider.signupAffiliateProfile != null) {
+          // Passer aussi les données utilisateur (includes phone)
+          final userData = {
+            'id': authProvider.userId,
+            'email': authProvider.email,
+            'firstName': authProvider.firstName,
+            'lastName': authProvider.lastName,
+            'phone': authProvider.phone,
+          };
+          affiliateProvider.initializeProfileFromSignup(
+            authProvider.signupAffiliateProfile!,
+            userData: userData,
+          );
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('✅ Inscription réussie! Bienvenue!'),

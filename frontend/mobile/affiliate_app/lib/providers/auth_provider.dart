@@ -21,6 +21,7 @@ class AuthProvider extends ChangeNotifier {
   String? _email;
   String? _firstName;
   String? _lastName;
+  String? _phone;
   String? _role;
 
   // Getters
@@ -32,6 +33,7 @@ class AuthProvider extends ChangeNotifier {
   String? get email => _email;
   String? get firstName => _firstName;
   String? get lastName => _lastName;
+  String? get phone => _phone;
   String? get role => _role;
 
   String get displayName => _firstName != null && _lastName != null
@@ -58,6 +60,7 @@ class AuthProvider extends ChangeNotifier {
         _email = prefs.getString('user_email');
         _firstName = prefs.getString('user_first_name');
         _lastName = prefs.getString('user_last_name');
+        _phone = prefs.getString('user_phone');
         _role = prefs.getString(StorageKeys.userRole);
 
         await _apiService.setAuthToken(token);
@@ -185,59 +188,89 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // Données du signup
+  Map<String, dynamic>? _signupAffiliateProfile;
+  Map<String, dynamic>? get signupAffiliateProfile => _signupAffiliateProfile;
+
   /// 🤝 Inscription en tant qu'Affilié
   /// 
-  /// Crée un utilisateur et lui génère automatiquement un profil affilié
-  /// avec un code affilié unique
+  /// Crée un utilisateur affilié avec code généré automatiquement
+  /// Optionnel: peut être lié à un affilié parent
+  /// Retourne: `{ user: {...}, token: "...", affiliateProfile: {...} }`
   Future<bool> registerAsAffiliate({
     required String email,
     required String password,
     required String firstName,
     required String lastName,
     String? phone,
-    String? affiliateCode,
+    String? parentAffiliateCode,
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      // Utiliser l'endpoint spécifique pour les affiliés
+      // Utiliser le nouvel endpoint dédié pour l'inscription d'affiliés
       final response = await _apiService.post<Map<String, dynamic>>(
-        '/affiliate/register-with-code',
+        '/affiliate/register',
         data: {
           'email': email,
           'password': password,
           'firstName': firstName,
           'lastName': lastName,
-          if (phone != null) 'phone': phone,
-          if (affiliateCode != null) 'affiliateCode': affiliateCode,
+          if (phone != null && phone.isNotEmpty) 'phone': phone,
+          if (parentAffiliateCode != null && parentAffiliateCode.isNotEmpty) 
+            'parentAffiliateCode': parentAffiliateCode,
         },
       );
 
       bool success = false;
 
-      print('📊 Réponse inscription affilié: $response'); // Debug
+      print('📊 Réponse inscription affilié: ${response.isSuccess}'); // Debug
 
       if (response.isSuccess && response.data != null) {
         final data = response.data as Map<String, dynamic>;
         
-        // Le backend retourne { data: { user: {...}, token: "..." } }
-        if (data['user'] != null && data['token'] != null) {
-          final token = data['token'] as String;
-          final user = data['user'] as Map<String, dynamic>;
+        // Le backend retourne { success: true, data: { token, user, affiliateProfile } }
+        if (data['success'] == true && data['data'] != null) {
+          final responseData = data['data'] as Map<String, dynamic>;
+          final token = responseData['token'] as String?;
+          final user = responseData['user'] as Map<String, dynamic>?;
+          final affiliateProfile = responseData['affiliateProfile'] as Map<String, dynamic>?;
 
-          // Sauvegarder les données d'authentification
-          await _saveAuthData(token, user);
-          _isAuthenticated = true;
-          success = true;
-          
-          print('✅ Inscription affilié réussie pour: $email');
+          if (token != null && user != null) {
+            // Sauvegarder les données d'authentification
+            await _saveAuthData(token, user);
+            
+            // Sauvegarder le profil affilié pour initialized AffiliateProvider
+            _signupAffiliateProfile = affiliateProfile;
+            
+            // Initialiser directement les données (rapide)
+            initializeSignupData(
+              userId: user['id'] as String,
+              email: user['email'] as String,
+              firstName: user['firstName'] as String,
+              lastName: user['lastName'] as String,
+              phone: user['phone'] as String?,
+              role: user['role'] as String,
+            );
+            
+            _isAuthenticated = true;
+            success = true;
+            
+            print('✅ Inscription affilié réussie pour: $email');
+            print('✅ Profil affilié: ${affiliateProfile?['affiliate_code']}');
+          } else {
+            _error = 'Réponse invalide du serveur (token ou user manquant)';
+            print('❌ Token ou user manquant: token=$token, user=$user');
+          }
         } else {
-          _error = 'Réponse invalide du serveur';
+          _error = 'Réponse invalide du serveur (success ou data manquant)';
+          print('❌ Success ou data manquant dans la réponse');
         }
       } else {
         _error = response.error?.message ?? 'Erreur lors de l\'inscription';
+        print('❌ Erreur API: ${response.error?.message}');
       }
 
       _isLoading = false;
@@ -259,8 +292,10 @@ class AuthProvider extends ChangeNotifier {
 
       _userId = user['id'] as String;
       _email = user['email'] as String;
-      _firstName = user['first_name'] as String?; // Utiliser first_name du serveur
-      _lastName = user['last_name'] as String?;   // Utiliser last_name du serveur
+      // ✅ CORRIGÉ: Utiliser camelCase (firstName, lastName) pas snake_case
+      _firstName = user['firstName'] as String?;
+      _lastName = user['lastName'] as String?;
+      _phone = user['phone'] as String?;
       _role = user['role'] as String?;
 
       await Future.wait([
@@ -270,6 +305,7 @@ class AuthProvider extends ChangeNotifier {
         prefs.setString('user_email', _email!),
         if (_firstName != null) prefs.setString('user_first_name', _firstName!),
         if (_lastName != null) prefs.setString('user_last_name', _lastName!),
+        if (_phone != null) prefs.setString('user_phone', _phone!),
         if (_role != null) prefs.setString(StorageKeys.userRole, _role!),
       ]);
     } catch (e) {
@@ -277,7 +313,28 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// 🚪 Déconnexion
+  /// � Initialiser les données depuis le signup affilié
+  /// Appelé après registerAsAffiliate pour hydrater les données immédiatement
+  void initializeSignupData({
+    required String userId,
+    required String email,
+    required String firstName,
+    required String lastName,
+    required String role,
+    String? phone,
+  }) {
+    _userId = userId;
+    _email = email;
+    _firstName = firstName;
+    _lastName = lastName;
+    _phone = phone;
+    _role = role;
+    _isAuthenticated = true;
+    notifyListeners();
+    print('✅ Données signup initialisées: $firstName $lastName, Phone: $_phone');
+  }
+
+  /// �🚪 Déconnexion
   Future<void> logout() async {
     try {
       // Appeler l'endpoint de déconnexion si disponible

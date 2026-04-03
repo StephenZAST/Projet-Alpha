@@ -102,7 +102,62 @@ class AffiliateProvider extends ChangeNotifier {
     }
   }
 
-  /// 👤 Charger le profil affilié
+  /// � Initialiser le profil avec les données du signup
+  /// Hydr les données immédiatement sans appel API
+  void initializeProfileFromSignup(
+    Map<String, dynamic> profileData, {
+    Map<String, dynamic>? userData,
+  }) {
+    try {
+      // Créer un objet AffiliateUser si les données utilisateur sont fournies
+      AffiliateUser? user;
+      if (userData != null) {
+        user = AffiliateUser(
+          id: userData['id'] as String? ?? '',
+          email: userData['email'] as String? ?? '',
+          firstName: userData['firstName'] as String? ?? '',
+          lastName: userData['lastName'] as String? ?? '',
+          phone: userData['phone'] as String?,
+        );
+      }
+
+      // Créer un AffiliateProfile à partir des données de signup
+      _profile = AffiliateProfile(
+        id: profileData['id'] ?? '',
+        userId: profileData['userId'] ?? '',
+        affiliateCode: profileData['affiliateCode'] ?? '',
+        parentAffiliateId: profileData['parent_affiliate_id'],
+        commissionRate: (profileData['commission_rate'] ?? 10.0).toDouble(),
+        commissionBalance: (profileData['commission_balance'] ?? 0.0).toDouble(),
+        totalEarned: (profileData['total_earned'] ?? 0.0).toDouble(),
+        monthlyEarnings: (profileData['monthly_earnings'] ?? 0.0).toDouble(),
+        isActive: profileData['is_active'] ?? true,
+        status: _parseAffiliateStatus(profileData['status'] ?? 'PENDING'),
+        levelId: profileData['level_id'],
+        totalReferrals: profileData['total_referrals'] ?? 0,
+        transactionsCount: 0,
+        createdAt: profileData['created_at'] != null
+            ? DateTime.parse(profileData['created_at'].toString())
+            : DateTime.now(),
+        updatedAt: profileData['updated_at'] != null
+            ? DateTime.parse(profileData['updated_at'].toString())
+            : DateTime.now(),
+        user: user,
+      );
+      
+      _profileError = null;
+      notifyListeners();
+      print('✅ Profil affilié initialisé depuis signup: ${_profile!.affiliateCode}');
+      if (user?.phone != null) {
+        print('✅ Téléphone inclus: ${user?.phone}');
+      }
+    } catch (e) {
+      print('❌ Erreur lors de l\'initialisation du profil: $e');
+      _profileError = 'Erreur lors du chargement du profil';
+    }
+  }
+
+  /// �👤 Charger le profil affilié
   Future<void> loadProfile() async {
     _isLoadingProfile = true;
     _profileError = null;
@@ -422,6 +477,23 @@ class AffiliateProvider extends ChangeNotifier {
     ApiService().clearAuthToken();
 
     notifyListeners();
+  }
+
+  /// 🔄 Convertir une chaîne de statut en énumération AffiliateStatus
+  AffiliateStatus _parseAffiliateStatus(dynamic statusValue) {
+    if (statusValue == null) return AffiliateStatus.pending;
+    
+    String statusStr = statusValue.toString().toLowerCase();
+    
+    try {
+      return AffiliateStatus.values.firstWhere(
+        (status) => status.name == statusStr,
+        orElse: () => AffiliateStatus.pending,
+      );
+    } catch (e) {
+      print('⚠️ Statut inconnu: $statusStr, utilisation de pending par défaut');
+      return AffiliateStatus.pending;
+    }
   }
 
   /// 📊 Statistiques calculées
