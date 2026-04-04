@@ -381,7 +381,7 @@ export class AuthService {
     // 5. Supprimer les commandes de l'utilisateur (si applicables)
     try {
       await prisma.orders.deleteMany({
-        where: { user_id: targetUserId }
+        where: { userId: targetUserId }
       });
     } catch (e) {
       // Les commandes peuvent avoir des dépendances, les laisser intact
