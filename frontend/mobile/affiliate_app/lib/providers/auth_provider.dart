@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
 import '../services/api_service.dart';
+import '../services/backend_health_check.dart';
 
 /// 🔐 Provider d'Authentification - Alpha Affiliate App
 ///
@@ -76,12 +77,26 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login({
     required String email,
     required String password,
+    bool ensureBackendHealthy = true, // ✅ NOUVEAU: Vérifier la santé du backend
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
+      // 🏥 Vérifier la santé du backend AVANT la requête
+      if (ensureBackendHealthy) {
+        print('🚀 [Login] Vérification du backend...');
+        final healthCheck = BackendHealthCheck();
+        await healthCheck.initialize();
+        
+        final isHealthy = await healthCheck.checkHealth(maxRetries: 3);
+        if (!isHealthy) {
+          print('⚠️  [Login] Backend non réactif, tentative quand même...');
+          // Continuer quand même, le retry interceptor gèrera
+        }
+      }
+
       final response = await _apiService.post<Map<String, dynamic>>(
         '/auth/login', // Utiliser l'endpoint client standard
         data: {
@@ -204,12 +219,27 @@ class AuthProvider extends ChangeNotifier {
     required String lastName,
     String? phone,
     String? parentAffiliateCode,
+    bool ensureBackendHealthy = true, // ✅ NOUVEAU: Vérifier la santé du backend
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
+      // 🏥 Vérifier la santé du backend AVANT la requête
+      // Cela aide si le backend de Render démarre (plan gratuit)
+      if (ensureBackendHealthy) {
+        print('🚀 [RegisterAsAffiliate] Vérification du backend...');
+        final healthCheck = BackendHealthCheck();
+        await healthCheck.initialize();
+        
+        final isHealthy = await healthCheck.checkHealth(maxRetries: 3);
+        if (!isHealthy) {
+          print('⚠️  [RegisterAsAffiliate] Backend non réactif, tentative quand même...');
+          // Continuer quand même, le retry interceptor gèrera
+        }
+      }
+
       // Utiliser le nouvel endpoint dédié pour l'inscription d'affiliés
       final response = await _apiService.post<Map<String, dynamic>>(
         '/affiliate/register',

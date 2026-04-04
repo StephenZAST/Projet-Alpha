@@ -293,40 +293,91 @@ class _LoggingInterceptor extends Interceptor {
   }
 }
 
-/// 🔄 Intercepteur de retry
+/// 🔄 Intercepteur de retry avec backoff exponentiel
+/// 
+/// Gère:
+/// - Timeouts et erreurs réseau (retry 5x)
+/// - 404 lors du démarrage à froid (retry 3x)
+/// - 5xx errors (retry 3x)
+/// - 503 Service Unavailable (retry 5x avec attente longue)
 class _RetryInterceptor extends Interceptor {
-  static const int maxRetries = 3;
-  static const Duration retryDelay = Duration(seconds: 1);
+  static const int maxRetriesNetwork = 5;
+  static const int maxRetries404 = 3; // Pour le démarrage à froid
+  static const int maxRetries5xx = 3;
+  static const int maxRetries503 = 5;
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (_shouldRetry(err)) {
-      final retryCount = err.requestOptions.extra['retryCount'] ?? 0;
+    final retryCount = err.requestOptions.extra['retryCount'] ?? 0;
+    final isPost = err.requestOptions.method.toUpperCase() == 'POST';
+    
+    print('🔄 [Retry] Erreur détectée - Type: ${err.type}, Code: ${err.response?.statusCode}');
+    print('🔄 [Retry] Tentative: $retryCount, Méthode: ${err.requestOptions.method}');
 
-      if (retryCount < maxRetries) {
-        err.requestOptions.extra['retryCount'] = retryCount + 1;
+    if (await _shouldRetry(err, retryCount)) {
+      err.requestOptions.extra['retryCount'] = retryCount + 1;
 
-        await Future.delayed(retryDelay * (retryCount + 1));
+      // Calculer le délai avec backoff exponentiel
+      final delaySeconds = _calculateBackoffDelay(retryCount);
+      print('⏳ [Retry] Attente de ${delaySeconds}s avant nouvelle tentative...');
+      
+      await Future.delayed(Duration(seconds: delaySeconds));
 
-        try {
-          final response = await Dio().fetch(err.requestOptions);
-          handler.resolve(response);
-          return;
-        } catch (e) {
-          // Continue avec l'erreur originale
-        }
+      try {
+        print('🔄 [Retry] Tentative ${retryCount + 1}...');
+        final response = await Dio().fetch(err.requestOptions);
+        print('✅ [Retry] Succès à la tentative ${retryCount + 1}');
+        handler.resolve(response);
+        return;
+      } catch (e) {
+        print('❌ [Retry] Tentative ${retryCount + 1} échouée: $e');
+        // Continue avec l'erreur originale si la retry échoue aussi
       }
     }
 
     handler.next(err);
   }
 
-  bool _shouldRetry(DioException err) {
-    return err.type == DioExceptionType.connectionTimeout ||
+  /// Déterminer si une tentative doit être faite
+  Future<bool> _shouldRetry(DioException err, int retryCount) async {
+    final isPost = err.requestOptions.method.toUpperCase() == 'POST';
+    final statusCode = err.response?.statusCode;
+
+    // Erreurs réseau: retry jusqu'à 5x
+    if (err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.sendTimeout ||
         err.type == DioExceptionType.receiveTimeout ||
-        err.type == DioExceptionType.connectionError ||
-        (err.response?.statusCode != null && err.response!.statusCode! >= 500);
+        err.type == DioExceptionType.connectionError) {
+      return retryCount < maxRetriesNetwork;
+    }
+
+    // 404 lors du démarrage à froid (surtout pour /register)
+    // Retry 3x car c'est probablement un démarrage à froid
+    if (statusCode == 404 && isPost) {
+      print('⚠️  [Retry] 404 sur POST - Possiblement démarrage à froid');
+      return retryCount < maxRetries404;
+    }
+
+    // 503 Service Unavailable: backend en démarrage
+    if (statusCode == 503) {
+      print('⚠️  [Retry] 503 Service Unavailable - Backend en démarrage');
+      return retryCount < maxRetries503;
+    }
+
+    // 5xx errors: retry jusqu'à 3x
+    if (statusCode != null && statusCode >= 500 && statusCode != 503) {
+      return retryCount < maxRetries5xx;
+    }
+
+    return false;
+  }
+
+  /// Calculer le délai avec backoff exponentiel
+  /// 1s, 2s, 4s, 8s, 16s
+  int _calculateBackoffDelay(int retryCount) {
+    if (retryCount < 0) return 0;
+    final seconds = 1 << retryCount; // 2^retryCount
+    return seconds.clamp(1, 30); // Max 30 secondes
   }
 }
 
