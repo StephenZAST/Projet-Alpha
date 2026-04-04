@@ -415,7 +415,7 @@ model users {
   point_transactions                                                         point_transactions[]
   reset_codes                                                                reset_codes[]
   reward_claims                                                              reward_claims[]
-  temp_notifications                                                         temp_notifications[]
+  temp_notifications                                                         temp_notifications[] @ignore
   user_activity_logs                                                         user_activity_logs[]
   user_offers                                                                user_offers[]
   user_subscriptions                                                         user_subscriptions[]
