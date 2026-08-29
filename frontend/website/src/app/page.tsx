@@ -20,6 +20,8 @@ export const metadata = {
     title: 'Alpha Laundry - Blanchisserie & Nettoyage à Sec Premium',
     description: 'Votre partenaire de confiance pour vos besoins en blanchisserie et nettoyage à sec.',
     type: 'website',
+    siteName: 'Alpha Laundry',
+    url: 'https://alpha-laundry.it.com',
   },
 };
 
