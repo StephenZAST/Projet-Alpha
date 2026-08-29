@@ -527,4 +527,69 @@ export class AffiliateController {
         .json({ error: error.message });
     }
   }
+
+  /// 🤝 Enregistrer un nouvel affilié
+  /// Endpoint: POST /api/affiliate/register
+  /// Crée un utilisateur AFFILIATE avec code auto-généré
+  static async registerNewAffiliate(req: Request, res: Response) {
+    try {
+      const { email, password, firstName, lastName, phone, parentAffiliateCode } = req.body;
+
+      // Validation basique
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({
+          error: 'Missing required fields',
+          required: ['email', 'password', 'firstName', 'lastName'],
+          received: { email: !!email, password: !!password, firstName: !!firstName, lastName: !!lastName }
+        });
+      }
+
+      // Validation du format email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          error: 'Invalid email format'
+        });
+      }
+
+      // Validation du mot de passe
+      if (password.length < 8) {
+        return res.status(400).json({
+          error: 'Password must be at least 8 characters long'
+        });
+      }
+
+      console.log('[AffiliateController] Register request for:', email);
+
+      const result = await AffiliateService.registerNewAffiliate(
+        email,
+        password,
+        firstName,
+        lastName,
+        phone,
+        parentAffiliateCode
+      );
+
+      res.status(201).json({
+        success: true,
+        data: result
+      });
+    } catch (error: any) {
+      console.error('[AffiliateController] Register affiliate error:', error);
+
+      // Gérer les erreurs spécifiques
+      if (error.message === 'Email already exists') {
+        return res.status(409).json({ error: 'Email already exists' });
+      }
+
+      if (error.message === 'Invalid parent affiliate code') {
+        return res.status(400).json({ error: 'Invalid parent affiliate code' });
+      }
+
+      res.status(500).json({
+        error: error.message || 'Registration failed'
+      });
+    }
+  }
 }
+

@@ -30,6 +30,9 @@ router.get('/levels', AffiliateController.getLevels);
 router.get('/current-level', authMiddleware, AffiliateController.getCurrentLevel);
 router.post('/generate-code', authMiddleware, AffiliateController.generateAffiliateCode);
 
+// 🤝 Nouvelle inscription d'affiliés - AVANT register-with-code
+router.post('/register', AffiliateController.registerNewAffiliate);
+
 // Routes d'administration
 router.get('/admin/list', authenticateToken, adminCheck, AffiliateController.getAllAffiliates);
 router.get('/admin/stats', authenticateToken, adminCheck, AffiliateController.getAffiliateStats);
@@ -39,7 +42,7 @@ router.patch('/admin/withdrawals/:withdrawalId/reject', authenticateToken, admin
 router.patch('/admin/withdrawals/:withdrawalId/approve', authenticateToken, adminCheck, AffiliateController.approveWithdrawal);
 router.patch('/admin/affiliates/:affiliateId/status', authenticateToken, adminCheck, AffiliateController.updateAffiliateStatus);
 
-// Création d'un client avec code affilié
+// Création d'un client avec code affilié (pour lier un client à un affilié parent)
 router.post('/register-with-code', AffiliateController.createCustomerWithAffiliateCode);
 
 // Routes pour les liens d'affiliation

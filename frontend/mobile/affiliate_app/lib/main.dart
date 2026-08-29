@@ -4,9 +4,11 @@ import 'constants.dart';
 import 'providers/auth_provider.dart';
 import 'providers/affiliate_provider.dart';
 import 'services/api_service.dart';
+import 'services/backend_health_check.dart';
 import 'services/navigation_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
 import 'screens/linked_clients_screen.dart';
 
 /// 🚀 Application Principale - Alpha Affiliate App
@@ -19,6 +21,10 @@ void main() async {
 
   // Initialiser les services
   await ApiService().initialize();
+  
+  // 🔥 Pré-chauffer le backend en arrière-plan (pour Render avec plan gratuit)
+  // Ne pas attendre pour ne pas bloquer le démarrage de l'app
+  BackendWarmupService().warmupBackend().ignore();
 
   runApp(const AffiliateApp());
 }
@@ -44,6 +50,7 @@ class AffiliateApp extends StatelessWidget {
             themeMode: ThemeMode.system,
             routes: {
               '/login': (ctx) => const LoginScreen(),
+              '/signup': (ctx) => const SignupScreen(),
               '/dashboard': (ctx) => const DashboardScreen(),
               '/linked-clients': (ctx) => const LinkedClientsScreen(),
             },
