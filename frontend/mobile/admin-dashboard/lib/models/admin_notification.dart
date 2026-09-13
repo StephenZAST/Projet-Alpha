@@ -60,6 +60,147 @@ class AdminNotification {
     this.priority = NotificationPriority.NORMAL,
   });
 
+  static NotificationType _normalizeType(String rawType) {
+    final value = rawType.trim().toUpperCase();
+
+    switch (value) {
+      case 'ORDER_CREATED':
+        return NotificationType.ORDER_PLACED;
+      case 'ORDER_STATUS_UPDATED':
+        return NotificationType.ORDER_STATUS_CHANGED;
+      case 'ORDER_STATUS':
+        return NotificationType.ORDER_STATUS_CHANGED;
+      case 'READY_FOR_PICKUP':
+      case 'ORDER_READY_FOR_PICKUP':
+      case 'ORDER_READY_PICKUP':
+        return NotificationType.ORDER_READY_PICKUP;
+      case 'ORDER_CANCELLED':
+      case 'CANCELLED_ORDER':
+        return NotificationType.ORDER_CANCELLED;
+      case 'NEW_ORDER_ALERT':
+        return NotificationType.NEW_ORDER_ALERT;
+      case 'PAYMENT_SYSTEM_ISSUE':
+        return NotificationType.PAYMENT_SYSTEM_ISSUE;
+      case 'PAYMENT_FAILED':
+        return NotificationType.PAYMENT_FAILED;
+      case 'WITHDRAWAL_APPROVED':
+        return NotificationType.WITHDRAWAL_APPROVED;
+      case 'WITHDRAWAL_REJECTED':
+        return NotificationType.WITHDRAWAL_REJECTED;
+      case 'REFERRAL_CODE_USED':
+        return NotificationType.REFERRAL_CODE_USED;
+      case 'COMMISSION_EARNED':
+        return NotificationType.COMMISSION_EARNED;
+      case 'SUBSCRIPTION_ACTIVATED':
+        return NotificationType.SUBSCRIPTION_ACTIVATED;
+      case 'SUBSCRIPTION_CANCELLED':
+        return NotificationType.SUBSCRIPTION_CANCELLED;
+      case 'NEW_USER_REGISTERED':
+        return NotificationType.NEW_USER_REGISTERED;
+      default:
+        try {
+          return NotificationType.values.firstWhere(
+            (type) => type.toString().split('.').last == value,
+            orElse: () => NotificationType.SYSTEM,
+          );
+        } catch (_) {
+          return NotificationType.SYSTEM;
+        }
+    }
+  }
+
+  static String? _extractEventTypeFromPayload(Map<String, dynamic> json) {
+    final candidates = <String?>[
+      json['type'],
+      json['event_type'],
+      json['eventType'],
+      json['category'],
+      json['kind'],
+      json['title'],
+      json['message'],
+    ];
+
+    final data = json['data'];
+    if (data is Map) {
+      final dataMap = data as Map<String, dynamic>;
+      candidates.addAll([
+        dataMap['type'],
+        dataMap['event_type'],
+        dataMap['eventType'],
+        dataMap['category'],
+        dataMap['kind'],
+      ]);
+    }
+
+    for (final candidate in candidates) {
+      final value = candidate?.toString().trim();
+      if (value == null || value.isEmpty) continue;
+
+      final upper = value.toUpperCase();
+      if (upper.contains('NEW_ORDER_ALERT')) return 'NEW_ORDER_ALERT';
+      if (upper.contains('NEW_USER_REGISTERED')) return 'NEW_USER_REGISTERED';
+      if (upper.contains('ORDER_CREATED')) return 'ORDER_CREATED';
+      if (upper.contains('ORDER_STATUS_UPDATED')) return 'ORDER_STATUS_UPDATED';
+      if (upper.contains('ORDER_READY_PICKUP')) return 'ORDER_READY_PICKUP';
+      if (upper.contains('ORDER_CANCELLED')) return 'ORDER_CANCELLED';
+      if (upper.contains('PAYMENT_FAILED')) return 'PAYMENT_FAILED';
+      if (upper.contains('PAYMENT_SYSTEM_ISSUE')) return 'PAYMENT_SYSTEM_ISSUE';
+      if (upper.contains('SUBSCRIPTION_ACTIVATED')) return 'SUBSCRIPTION_ACTIVATED';
+      if (upper.contains('SUBSCRIPTION_CANCELLED')) return 'SUBSCRIPTION_CANCELLED';
+      if (upper.contains('WITHDRAWAL_APPROVED')) return 'WITHDRAWAL_APPROVED';
+      if (upper.contains('WITHDRAWAL_REJECTED')) return 'WITHDRAWAL_REJECTED';
+      if (upper.contains('REFERRAL_CODE_USED')) return 'REFERRAL_CODE_USED';
+      if (upper.contains('COMMISSION_EARNED')) return 'COMMISSION_EARNED';
+      if (upper.contains('REWARD_CLAIM_APPROVED')) return 'REWARD_CLAIM_APPROVED';
+      if (upper.contains('REWARD_CLAIM_REJECTED')) return 'REWARD_CLAIM_REJECTED';
+      if (upper.contains('DELIVERY_ASSIGNED')) return 'DELIVERY_ASSIGNED';
+      if (upper.contains('DELIVERY_COMPLETED')) return 'DELIVERY_COMPLETED';
+      if (upper.contains('DELIVERY_PROBLEM')) return 'DELIVERY_PROBLEM';
+    }
+
+    return null;
+  }
+
+  static String? _extractReferenceId(Map<String, dynamic> json) {
+    final directCandidates = [
+      json['referenceId'],
+      json['reference_id'],
+      json['orderId'],
+      json['order_id'],
+      json['notificationId'],
+      json['notification_id'],
+      json['id'],
+    ];
+
+    for (final candidate in directCandidates) {
+      final value = candidate?.toString();
+      if (value != null && value.trim().isNotEmpty) {
+        return value;
+      }
+    }
+
+    final payload = json['data'];
+    if (payload is Map) {
+      final nested = payload as Map<String, dynamic>;
+      final nestedCandidates = [
+        nested['orderId'],
+        nested['order_id'],
+        nested['referenceId'],
+        nested['reference_id'],
+        nested['id'],
+      ];
+
+      for (final candidate in nestedCandidates) {
+        final value = candidate?.toString();
+        if (value != null && value.trim().isNotEmpty) {
+          return value;
+        }
+      }
+    }
+
+    return null;
+  }
+
   factory AdminNotification.fromJson(Map<String, dynamic> json) {
     try {
       // Gérer les champs du nouveau format du backend
@@ -76,16 +217,11 @@ class AdminNotification {
       }
 
       // Parser le type de notification
-      String typeStr = (json['type'] ?? 'SYSTEM').toString().toUpperCase();
-      NotificationType type = NotificationType.SYSTEM;
-      try {
-        type = NotificationType.values.firstWhere(
-          (t) => t.toString().split('.').last == typeStr,
-          orElse: () => NotificationType.SYSTEM,
-        );
-      } catch (e) {
-        type = NotificationType.SYSTEM;
-      }
+      final rawType = (json['type'] ?? json['event_type'] ?? json['eventType'] ?? 'SYSTEM').toString();
+      final discoveredType = _extractEventTypeFromPayload(json);
+      final type = discoveredType != null
+          ? _normalizeType(discoveredType)
+          : _normalizeType(rawType);
 
       // Parser la priorité
       String priorityStr = (json['priority'] ?? 'NORMAL').toString().toUpperCase();
@@ -99,12 +235,14 @@ class AdminNotification {
         priority = NotificationPriority.NORMAL;
       }
 
+      final referenceId = _extractReferenceId(json);
+
       return AdminNotification(
         id: json['id']?.toString() ?? '',
         title: json['title']?.toString() ?? 'Notification',
         message: json['message']?.toString() ?? '',
         type: type,
-        referenceId: json['referenceId']?.toString() ?? json['reference_id']?.toString(),
+        referenceId: referenceId,
         isRead: json['isRead'] == true || json['read'] == true,
         createdAt: createdAt,
         priority: priority,
@@ -155,6 +293,76 @@ class AdminNotification {
       createdAt: createdAt ?? this.createdAt,
       priority: priority ?? this.priority,
     );
+  }
+
+  String get categoryKey {
+    switch (type) {
+      case NotificationType.REWARD_CLAIM_APPROVED:
+      case NotificationType.REWARD_CLAIM_REJECTED:
+        return 'loyalty';
+      case NotificationType.ORDER_PLACED:
+      case NotificationType.ORDER_STATUS_CHANGED:
+      case NotificationType.ORDER_READY_PICKUP:
+      case NotificationType.ORDER_CANCELLED:
+      case NotificationType.NEW_ORDER_ALERT:
+      case NotificationType.ORDER:
+        return 'order';
+      case NotificationType.PAYMENT_FAILED:
+      case NotificationType.PAYMENT_SYSTEM_ISSUE:
+      case NotificationType.PAYMENT:
+        return 'payment';
+      case NotificationType.DELIVERY_ASSIGNED:
+      case NotificationType.DELIVERY_COMPLETED:
+      case NotificationType.DELIVERY_PROBLEM:
+      case NotificationType.DELIVERY:
+        return 'delivery';
+      case NotificationType.REFERRAL_CODE_USED:
+      case NotificationType.COMMISSION_EARNED:
+      case NotificationType.WITHDRAWAL_APPROVED:
+      case NotificationType.WITHDRAWAL_REJECTED:
+      case NotificationType.AFFILIATE:
+        return 'affiliate';
+      case NotificationType.SUBSCRIPTION_ACTIVATED:
+      case NotificationType.SUBSCRIPTION_CANCELLED:
+        return 'subscription';
+      case NotificationType.NEW_USER_REGISTERED:
+      case NotificationType.USER:
+        return 'user';
+      case NotificationType.SYSTEM:
+        return 'system';
+    }
+  }
+
+  bool matchesCategory(String selectedType) {
+    final normalized = selectedType.trim().toLowerCase();
+    if (normalized.isEmpty || normalized == 'all') {
+      return true;
+    }
+
+    return categoryKey == normalized;
+  }
+
+  String get categoryLabel {
+    switch (categoryKey) {
+      case 'loyalty':
+        return 'Fidélité';
+      case 'order':
+        return 'Commande';
+      case 'payment':
+        return 'Paiement';
+      case 'delivery':
+        return 'Livraison';
+      case 'affiliate':
+        return 'Affiliation';
+      case 'subscription':
+        return 'Abonnement';
+      case 'user':
+        return 'Utilisateur';
+      case 'system':
+        return 'Système';
+      default:
+        return 'Notification';
+    }
   }
 
   IconData get icon {

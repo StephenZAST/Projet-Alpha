@@ -42,9 +42,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final notifications = controller.notifications;
 
     final filtered = notifications.where((notification) {
-      final typeStr = notification.type.toString().split('.').last.toLowerCase();
       final matchesType = selectedType == 'ALL' ||
-          (typeStr == selectedType.toLowerCase());
+          notification.matchesCategory(selectedType);
       final matchesStatus = selectedStatus == 'ALL' ||
           (selectedStatus == 'read' && notification.isRead == true) ||
           (selectedStatus == 'unread' && notification.isRead == false);

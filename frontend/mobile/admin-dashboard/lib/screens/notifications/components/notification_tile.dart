@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../../../constants.dart';
 import '../../../models/admin_notification.dart';
@@ -21,7 +22,7 @@ class NotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bool isRead = notification.isRead;
-    final String type = notification.type.toString().split('.').last.toLowerCase();
+    final String type = notification.categoryKey;
     final String priority = notification.priority.toString().split('.').last.toLowerCase();
     final DateTime createdAt = notification.createdAt;
 
@@ -220,6 +221,9 @@ class NotificationTile extends StatelessWidget {
                           case 'details':
                             _showNotificationDetails(context);
                             break;
+                          case 'copy-order-id':
+                            _copyOrderId(context);
+                            break;
                           case 'delete':
                             if (onDelete != null) onDelete!();
                             break;
@@ -234,6 +238,16 @@ class NotificationTile extends StatelessWidget {
                             dense: true,
                           ),
                         ),
+                        if (notification.referenceId != null &&
+                            notification.referenceId!.isNotEmpty)
+                          PopupMenuItem<String>(
+                            value: 'copy-order-id',
+                            child: ListTile(
+                              leading: Icon(Icons.copy_all_outlined, size: 18),
+                              title: Text('Copier l\'ID commande'),
+                              dense: true,
+                            ),
+                          ),
                         PopupMenuItem<String>(
                           value: 'delete',
                           child: ListTile(
@@ -260,8 +274,70 @@ class NotificationTile extends StatelessWidget {
                 ),
               ],
             ),
+            if (notification.referenceId != null && notification.referenceId!.isNotEmpty) ...[
+              SizedBox(height: AppSpacing.sm),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.06),
+                  borderRadius: AppRadius.radiusSM,
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.15),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.tag,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
+                    SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        'Commande: ${notification.referenceId}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    SizedBox(width: AppSpacing.xs),
+                    InkWell(
+                      onTap: () => _copyOrderId(context),
+                      child: Icon(
+                        Icons.copy_all_outlined,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  void _copyOrderId(BuildContext context) {
+    final orderId = notification.referenceId;
+    if (orderId == null || orderId.isEmpty) {
+      return;
+    }
+
+    Clipboard.setData(ClipboardData(text: orderId));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('ID commande copié: $orderId'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -341,7 +417,7 @@ class NotificationTile extends StatelessWidget {
   }
 
   void _showNotificationDetails(BuildContext context) {
-    final typeStr = notification.type.toString().split('.').last.toLowerCase();
+    final typeStr = notification.categoryKey;
     final priorityStr = notification.priority.toString().split('.').last.toLowerCase();
     
     showDialog(
