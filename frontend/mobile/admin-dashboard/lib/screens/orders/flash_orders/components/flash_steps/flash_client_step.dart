@@ -168,7 +168,8 @@ class _FlashClientStepState extends State<FlashClientStep>
   Widget _buildClientContent(bool isDark) {
     final draft = widget.controller.draft.value;
 
-    if (draft.userId == null) {
+    // Check if userId is null or empty - treat empty string as null
+    if (draft.userId == null || draft.userId!.isEmpty) {
       return _buildNoClientSelected(isDark);
     }
 
@@ -496,11 +497,36 @@ class _FlashClientStepState extends State<FlashClientStep>
 
         SizedBox(height: AppSpacing.lg),
 
-        // Bouton de changement
-        _ModernSelectClientButton(
-          onPressed: () => _showClientSelection(),
-          label: 'Changer de client',
-          variant: _ClientButtonVariant.secondary,
+        // Information: Client is locked (cannot be changed for draft orders)
+        Container(
+          padding: EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.info.withOpacity(0.1),
+            border: Border.all(
+              color: AppColors.info.withOpacity(0.3),
+              width: 1,
+            ),
+            borderRadius: AppRadius.radiusSM,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.lock,
+                color: AppColors.info,
+                size: 20,
+              ),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  'Le client associé à cette commande est verrouillé et ne peut pas être modifié.',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.info,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

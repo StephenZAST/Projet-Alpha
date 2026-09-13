@@ -69,9 +69,29 @@ class FlashOrderStepperController extends GetxController {
 
   // Initialise le draft à partir d'une commande flash
   void initDraftFromFlashOrder(dynamic flashOrder) {
+    // Extract userId defensively - handle multiple formats from backend
+    String? resolvedUserId = flashOrder.userId;
+    
+    // Fallback 1: if userId is null/empty, try user.id if user object exists
+    if ((resolvedUserId == null || resolvedUserId.toString().isEmpty) && 
+        flashOrder.user != null) {
+      if (flashOrder.user is Map<String, dynamic>) {
+        resolvedUserId = flashOrder.user['id']?.toString();
+      } else {
+        // If user is a User object with id property
+        resolvedUserId = flashOrder.user.id?.toString();
+      }
+    }
+    
+    // Fallback 2: try user_id field (snake_case from backend)
+    if ((resolvedUserId == null || resolvedUserId.toString().isEmpty) && 
+        flashOrder.user_id != null) {
+      resolvedUserId = flashOrder.user_id.toString();
+    }
+
     draft.value = FlashOrderDraft(
       orderId: flashOrder.id,
-      userId: flashOrder.userId,
+      userId: resolvedUserId,
       addressId: flashOrder.addressId,
       serviceId: flashOrder.serviceId,
       serviceTypeId: flashOrder.service?.serviceTypeId,
@@ -100,8 +120,7 @@ class FlashOrderStepperController extends GetxController {
     // Log complet du payload reçu pour debug
     print('[DEBUG] Payload commande flash sélectionnée :');
     print('ID: [33m${flashOrder.id}[0m');
-    print('Adresse: [36m${flashOrder.addressId}[0m');
-    print('Items: ${flashOrder.items}');
+    print('Adresse: [36m${flashOrder.addressId}[0m');    print('UserId résolvé: [32m$resolvedUserId[0m');    print('Items: ${flashOrder.items}');
     print('Note: [35m${flashOrder.note}[0m');
     print('Raw: ${flashOrder}');
     draft.refresh();
