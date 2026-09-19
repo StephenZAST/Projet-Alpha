@@ -318,6 +318,14 @@ export class AdminService {
     const skip = (page - 1) * limit;
     // Construction dynamique du filtre avancé
     const where: any = {};
+    const parseDateBoundary = (value: string, endOfDay = false) => {
+      const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+      const normalizedValue = dateOnly
+        ? `${value}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`
+        : value;
+      const parsedDate = new Date(normalizedValue);
+      return Number.isNaN(parsedDate.getTime()) ? undefined : parsedDate;
+    };
 
     // Statut (inclut le filtre flash si combiné)
     if (params?.status) {
@@ -367,20 +375,46 @@ export class AdminService {
       where.address = { ...where.address, postal_code: { contains: params.postalCode, mode: 'insensitive' } };
     }
 
-    // Plage de dates de collecte
-    if (params?.collectionDateStart) {
-      where.collectionDate = { ...where.collectionDate, gte: new Date(params.collectionDateStart) };
+    // Plage de dates de création
+    const createdAtStart = params?.startDate
+      ? parseDateBoundary(params.startDate)
+      : undefined;
+    const createdAtEnd = params?.endDate
+      ? parseDateBoundary(params.endDate, true)
+      : undefined;
+    if (createdAtStart || createdAtEnd) {
+      where.createdAt = {
+        ...(createdAtStart ? { gte: createdAtStart } : {}),
+        ...(createdAtEnd ? { lte: createdAtEnd } : {}),
+      };
     }
-    if (params?.collectionDateEnd) {
-      where.collectionDate = { ...where.collectionDate, lte: new Date(params.collectionDateEnd) };
+
+    // Plage de dates de collecte
+    const collectionDateStart = params?.collectionDateStart
+      ? parseDateBoundary(params.collectionDateStart)
+      : undefined;
+    const collectionDateEnd = params?.collectionDateEnd
+      ? parseDateBoundary(params.collectionDateEnd, true)
+      : undefined;
+    if (collectionDateStart || collectionDateEnd) {
+      where.collectionDate = {
+        ...(collectionDateStart ? { gte: collectionDateStart } : {}),
+        ...(collectionDateEnd ? { lte: collectionDateEnd } : {}),
+      };
     }
 
     // Plage de dates de livraison
-    if (params?.deliveryDateStart) {
-      where.deliveryDate = { ...where.deliveryDate, gte: new Date(params.deliveryDateStart) };
-    }
-    if (params?.deliveryDateEnd) {
-      where.deliveryDate = { ...where.deliveryDate, lte: new Date(params.deliveryDateEnd) };
+    const deliveryDateStart = params?.deliveryDateStart
+      ? parseDateBoundary(params.deliveryDateStart)
+      : undefined;
+    const deliveryDateEnd = params?.deliveryDateEnd
+      ? parseDateBoundary(params.deliveryDateEnd, true)
+      : undefined;
+    if (deliveryDateStart || deliveryDateEnd) {
+      where.deliveryDate = {
+        ...(deliveryDateStart ? { gte: deliveryDateStart } : {}),
+        ...(deliveryDateEnd ? { lte: deliveryDateEnd } : {}),
+      };
     }
 
     // Commande récurrente

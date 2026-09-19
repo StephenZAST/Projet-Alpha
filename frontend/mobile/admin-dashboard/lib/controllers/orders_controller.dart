@@ -13,6 +13,7 @@ import '../services/order_service.dart';
 import '../services/user_service.dart';
 import '../services/pricing_service.dart';
 import '../services/service_service.dart';
+import '../services/service_type_service.dart';
 import '../constants.dart';
 
 class OrdersController extends GetxController {
@@ -606,31 +607,13 @@ class OrdersController extends GetxController {
     loadServices(); // S'assure que la liste des services est chargée dès l'init
   }
 
-  void loadServiceTypes() {
-    // À adapter selon la source réelle des services
-    serviceTypes.value = [
-      ServiceType(
-        id: 'standard',
-        name: 'Standard',
-        description: 'Service standard',
-        requiresWeight: false,
-        pricingType: 'FIXED',
-        isActive: true,
-        supportsPremium: true,
-        isDefault: true,
-      ),
-      ServiceType(
-        id: 'weight',
-        name: 'Au poids',
-        description: 'Service au poids',
-        requiresWeight: true,
-        pricingType: 'WEIGHT_BASED',
-        isActive: true,
-        supportsPremium: false,
-        isDefault: false,
-      ),
-      // Ajouter d'autres types mock ou charger dynamiquement depuis l'API
-    ];
+  Future<void> loadServiceTypes() async {
+    try {
+      serviceTypes.value = await ServiceTypeService.getAllServiceTypes();
+    } catch (e) {
+      print('[OrdersController] Error loading service types: $e');
+      serviceTypes.clear();
+    }
   }
 
   void loadPaymentMethods() {
