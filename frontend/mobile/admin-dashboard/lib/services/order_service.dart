@@ -126,6 +126,15 @@ class OrderService {
     String? maxAmount,
     bool? isFlashOrder,
     String? searchTerm,
+    String? affiliateCode,
+    String? recurrenceType,
+    String? city,
+    String? postalCode,
+    String? collectionDateStart,
+    String? collectionDateEnd,
+    String? deliveryDateStart,
+    String? deliveryDateEnd,
+    bool? isRecurring,
     String sortField = 'createdAt',
     String sortOrder = 'desc',
   }) {
@@ -155,6 +164,22 @@ class OrderService {
       if (isFlashOrder != null) 'isFlashOrder': isFlashOrder.toString(),
       if (searchTerm != null && searchTerm.trim().isNotEmpty)
         'query': searchTerm.trim(),
+      if (affiliateCode != null && affiliateCode.trim().isNotEmpty)
+        'affiliateCode': affiliateCode.trim(),
+      if (recurrenceType != null && recurrenceType.trim().isNotEmpty)
+        'recurrenceType': recurrenceType.trim(),
+      if (city != null && city.trim().isNotEmpty) 'city': city.trim(),
+      if (postalCode != null && postalCode.trim().isNotEmpty)
+        'postalCode': postalCode.trim(),
+      if (collectionDateStart != null && collectionDateStart.trim().isNotEmpty)
+        'collectionDateStart': collectionDateStart.trim(),
+      if (collectionDateEnd != null && collectionDateEnd.trim().isNotEmpty)
+        'collectionDateEnd': collectionDateEnd.trim(),
+      if (deliveryDateStart != null && deliveryDateStart.trim().isNotEmpty)
+        'deliveryDateStart': deliveryDateStart.trim(),
+      if (deliveryDateEnd != null && deliveryDateEnd.trim().isNotEmpty)
+        'deliveryDateEnd': deliveryDateEnd.trim(),
+      if (isRecurring != null) 'isRecurring': isRecurring.toString(),
     };
 
     return queryParams;
@@ -178,6 +203,15 @@ class OrderService {
     String? maxAmount,
     bool? isFlashOrder,
     String? searchTerm,
+    String? affiliateCode,
+    String? recurrenceType,
+    String? city,
+    String? postalCode,
+    String? collectionDateStart,
+    String? collectionDateEnd,
+    String? deliveryDateStart,
+    String? deliveryDateEnd,
+    bool? isRecurring,
     String sortField = 'createdAt',
     String sortOrder = 'desc',
   }) async {
@@ -194,6 +228,15 @@ class OrderService {
         maxAmount: maxAmount,
         isFlashOrder: isFlashOrder,
         searchTerm: searchTerm,
+        affiliateCode: affiliateCode,
+        recurrenceType: recurrenceType,
+        city: city,
+        postalCode: postalCode,
+        collectionDateStart: collectionDateStart,
+        collectionDateEnd: collectionDateEnd,
+        deliveryDateStart: deliveryDateStart,
+        deliveryDateEnd: deliveryDateEnd,
+        isRecurring: isRecurring,
         sortField: sortField,
         sortOrder: sortOrder,
       );

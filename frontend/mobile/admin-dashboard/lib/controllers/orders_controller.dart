@@ -698,6 +698,8 @@ class OrdersController extends GetxController {
   // Filtres et recherche
   final selectedStatus = Rxn<OrderStatus>();
   final searchQuery = ''.obs;
+  final sortField = 'createdAt'.obs;
+  final sortOrder = 'desc'.obs;
 
   // Ajouter cette propriété pour le filtre de type de commande
   // Suppression de la version Rxn<bool> (doublon)
@@ -865,6 +867,26 @@ class OrdersController extends GetxController {
       isFlashOrder: isFlashOrderFilter.value ? true : null,
       searchTerm:
           searchQuery.value.trim().isNotEmpty ? searchQuery.value.trim() : null,
+      affiliateCode:
+          affiliateCode.value.trim().isNotEmpty ? affiliateCode.value : null,
+      recurrenceType: selectedRecurrenceType.value,
+      city: city.value.trim().isNotEmpty ? city.value : null,
+      postalCode: postalCode.value.trim().isNotEmpty ? postalCode.value : null,
+      collectionDateStart: collectionDateStartController.text.trim().isNotEmpty
+          ? collectionDateStartController.text.trim()
+          : null,
+      collectionDateEnd: collectionDateEndController.text.trim().isNotEmpty
+          ? collectionDateEndController.text.trim()
+          : null,
+      deliveryDateStart: deliveryDateStartController.text.trim().isNotEmpty
+          ? deliveryDateStartController.text.trim()
+          : null,
+      deliveryDateEnd: deliveryDateEndController.text.trim().isNotEmpty
+          ? deliveryDateEndController.text.trim()
+          : null,
+      isRecurring: isRecurring.value ? true : null,
+      sortField: sortField.value,
+      sortOrder: sortOrder.value,
     );
   }
 
@@ -931,14 +953,14 @@ class OrdersController extends GetxController {
   void nextPage() {
     if (currentPage.value < totalPages.value) {
       currentPage.value++;
-      loadOrdersPage(page: currentPage.value, status: filterStatus.value);
+      fetchOrders();
     }
   }
 
   void previousPage() {
     if (currentPage.value > 1) {
       currentPage.value--;
-      loadOrdersPage(page: currentPage.value, status: filterStatus.value);
+      fetchOrders();
     }
   }
 
@@ -1002,8 +1024,17 @@ class OrdersController extends GetxController {
     searchQuery.value = '';
     selectedServiceType.value = null;
     selectedPaymentMethod.value = null;
+    affiliateCode.value = '';
+    selectedRecurrenceType.value = null;
+    city.value = '';
+    postalCode.value = '';
+    isRecurring.value = false;
     startDateController.clear();
     endDateController.clear();
+    collectionDateStartController.clear();
+    collectionDateEndController.clear();
+    deliveryDateStartController.clear();
+    deliveryDateEndController.clear();
     minAmount.value = '';
     maxAmount.value = '';
     currentPage.value = 1;
@@ -1286,14 +1317,16 @@ class OrdersController extends GetxController {
     sortAscending.value = ascending;
 
     final normalizedField = OrderService.normalizeSortField(field);
+    sortField.value = normalizedField;
+    sortOrder.value = ascending ? 'asc' : 'desc';
 
     // Recharger les données avec le nouveau tri
     loadOrdersPage(
       page: currentPage.value,
       limit: itemsPerPage.value,
       status: selectedStatus.value?.name,
-      sortField: normalizedField,
-      sortOrder: ascending ? 'asc' : 'desc',
+      sortField: sortField.value,
+      sortOrder: sortOrder.value,
     );
   }
 
@@ -1325,6 +1358,15 @@ class OrdersController extends GetxController {
     String? maxAmount,
     bool? isFlashOrder,
     String? searchTerm,
+    String? affiliateCode,
+    String? recurrenceType,
+    String? city,
+    String? postalCode,
+    String? collectionDateStart,
+    String? collectionDateEnd,
+    String? deliveryDateStart,
+    String? deliveryDateEnd,
+    bool? isRecurring,
     String sortField = 'createdAt',
     String sortOrder = 'desc',
   }) async {
@@ -1344,6 +1386,15 @@ class OrdersController extends GetxController {
         maxAmount: maxAmount,
         isFlashOrder: isFlashOrder,
         searchTerm: searchTerm,
+        affiliateCode: affiliateCode,
+        recurrenceType: recurrenceType,
+        city: city,
+        postalCode: postalCode,
+        collectionDateStart: collectionDateStart,
+        collectionDateEnd: collectionDateEnd,
+        deliveryDateStart: deliveryDateStart,
+        deliveryDateEnd: deliveryDateEnd,
+        isRecurring: isRecurring,
         sortField: sortField,
         sortOrder: sortOrder,
       );
@@ -1372,8 +1423,17 @@ class OrdersController extends GetxController {
     selectedServiceType.value = null;
     selectedPaymentMethod.value = null;
     isFlashOrderFilter.value = false;
+    affiliateCode.value = '';
+    selectedRecurrenceType.value = null;
+    city.value = '';
+    postalCode.value = '';
+    isRecurring.value = false;
     startDateController.clear();
     endDateController.clear();
+    collectionDateStartController.clear();
+    collectionDateEndController.clear();
+    deliveryDateStartController.clear();
+    deliveryDateEndController.clear();
     minAmount.value = '';
     maxAmount.value = '';
     currentPage.value = 1;
@@ -1383,6 +1443,8 @@ class OrdersController extends GetxController {
   }
 
   Future<void> applyFilters() async {
+    currentPage.value = 1;
+
     // Construction des paramètres avancés
     final params = {
       'searchTerm': searchQuery.value,
@@ -1399,6 +1461,15 @@ class OrdersController extends GetxController {
       'minAmount': minAmount.value.isNotEmpty ? minAmount.value : null,
       'maxAmount': maxAmount.value.isNotEmpty ? maxAmount.value : null,
       'isFlashOrder': isFlashOrderFilter.value ? true : null,
+      'affiliateCode': affiliateCode.value,
+      'recurrenceType': selectedRecurrenceType.value,
+      'city': city.value,
+      'postalCode': postalCode.value,
+      'collectionDateStart': collectionDateStartController.text,
+      'collectionDateEnd': collectionDateEndController.text,
+      'deliveryDateStart': deliveryDateStartController.text,
+      'deliveryDateEnd': deliveryDateEndController.text,
+      'isRecurring': isRecurring.value ? true : null,
     };
     await loadOrdersPage(
       status: params['status'] as String?,
@@ -1410,6 +1481,17 @@ class OrdersController extends GetxController {
       maxAmount: params['maxAmount'] as String?,
       isFlashOrder: params['isFlashOrder'] as bool?,
       searchTerm: params['searchTerm'] as String?,
+      affiliateCode: params['affiliateCode'] as String?,
+      recurrenceType: params['recurrenceType'] as String?,
+      city: params['city'] as String?,
+      postalCode: params['postalCode'] as String?,
+      collectionDateStart: params['collectionDateStart'] as String?,
+      collectionDateEnd: params['collectionDateEnd'] as String?,
+      deliveryDateStart: params['deliveryDateStart'] as String?,
+      deliveryDateEnd: params['deliveryDateEnd'] as String?,
+      isRecurring: params['isRecurring'] as bool?,
+      sortField: sortField.value,
+      sortOrder: sortOrder.value,
     );
   }
 

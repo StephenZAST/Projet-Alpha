@@ -138,10 +138,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
             color: Colors.transparent,
             child: Obx(() {
               // Debug: Afficher l'état du controller
-              print(
-                  '[OrdersScreen] isLoading: ${controller.isLoading.value}');
-              print(
-                  '[OrdersScreen] hasError: ${controller.hasError.value}');
+              print('[OrdersScreen] isLoading: ${controller.isLoading.value}');
+              print('[OrdersScreen] hasError: ${controller.hasError.value}');
               print(
                   '[OrdersScreen] orders.length: ${controller.orders.length}');
               print(
@@ -155,8 +153,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.primary),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(AppColors.primary),
                         ),
                         SizedBox(height: AppSpacing.md),
                         Text(
@@ -197,8 +195,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         AppButton(
                           label: 'Réessayer',
                           icon: Icons.refresh_outlined,
-                          onPressed: () =>
-                              controller.loadOrdersPage(),
+                          onPressed: () => controller.loadOrdersPage(),
                           variant: AppButtonVariant.primary,
                         ),
                       ],
@@ -208,11 +205,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
               }
 
               // Vérifier si on a des données à afficher
-              final ordersToShow =
-                  controller.isOrderIdSearchActive.value &&
-                          controller.orderIdResult.value != null
-                      ? [controller.orderIdResult.value!]
-                      : controller.orders;
+              final ordersToShow = controller.isOrderIdSearchActive.value &&
+                      controller.orderIdResult.value != null
+                  ? [controller.orderIdResult.value!]
+                  : controller.orders;
 
               if (ordersToShow.isEmpty) {
                 return Container(
@@ -241,9 +237,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         Text(
                           'Essayez de modifier vos filtres ou créez une nouvelle commande',
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: isDark
-                                ? AppColors.gray400
-                                : AppColors.gray600,
+                            color:
+                                isDark ? AppColors.gray400 : AppColors.gray600,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -261,6 +256,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     orders: ordersToShow,
                     onStatusUpdate: _updateStatus,
                     onOrderSelect: _handleOrderSelect,
+                    sortField: controller.sortField.value,
+                    sortAscending: controller.sortAscending.value,
+                    onSort: (field) {
+                      final isSameField = controller.sortField.value == field;
+                      controller.sortOrders(
+                        field: field,
+                        ascending: isSameField
+                            ? !controller.sortAscending.value
+                            : true,
+                      );
+                    },
                   ),
 
                   // Pagination fixe en bas (seulement si pas de recherche par ID)
@@ -276,8 +282,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             : AppColors.white.withOpacity(0.8),
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(AppRadius.md),
-                          bottomRight:
-                              Radius.circular(AppRadius.md),
+                          bottomRight: Radius.circular(AppRadius.md),
                         ),
                       ),
                       child: PaginationControls(
@@ -295,8 +300,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         },
                         onPageChanged: (page) {
                           if (page != null &&
-                              page !=
-                                  controller.currentPage.value) {
+                              page != controller.currentPage.value) {
                             controller.currentPage.value = page;
                             controller.loadOrdersPage(page: page);
                           }

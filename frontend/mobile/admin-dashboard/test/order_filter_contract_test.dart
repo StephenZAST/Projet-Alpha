@@ -16,6 +16,15 @@ void main() {
         maxAmount: '5000',
         isFlashOrder: true,
         searchTerm: 'alpha',
+        affiliateCode: 'AFF-1',
+        recurrenceType: 'WEEKLY',
+        city: 'Ouagadougou',
+        postalCode: '11000',
+        collectionDateStart: '2025-01-01',
+        collectionDateEnd: '2025-01-31',
+        deliveryDateStart: '2025-02-01',
+        deliveryDateEnd: '2025-02-28',
+        isRecurring: true,
         sortField: 'created_at',
         sortOrder: 'desc',
       );
@@ -31,6 +40,15 @@ void main() {
       expect(params['maxAmount'], '5000');
       expect(params['isFlashOrder'], 'true');
       expect(params['query'], 'alpha');
+      expect(params['affiliateCode'], 'AFF-1');
+      expect(params['recurrenceType'], 'WEEKLY');
+      expect(params['city'], 'Ouagadougou');
+      expect(params['postalCode'], '11000');
+      expect(params['collectionDateStart'], '2025-01-01');
+      expect(params['collectionDateEnd'], '2025-01-31');
+      expect(params['deliveryDateStart'], '2025-02-01');
+      expect(params['deliveryDateEnd'], '2025-02-28');
+      expect(params['isRecurring'], 'true');
       expect(params['sortField'], 'createdAt');
       expect(params['sortOrder'], 'desc');
       expect(params.containsKey('sort'), isFalse);

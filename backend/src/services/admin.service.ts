@@ -1,4 +1,4 @@
-import { PrismaClient, order_status as OrderStatusEnum, order_status } from '@prisma/client';
+import { Prisma, PrismaClient, order_status as OrderStatusEnum, order_status } from '@prisma/client';
 import {
   Service,
   Article,
@@ -398,14 +398,43 @@ export class AdminService {
 
     // Recherche globale (sur user, email, etc.)
     if (params?.query) {
+      // PostgreSQL ne permet pas d'appliquer contains/ILIKE directement sur un UUID.
+      // On convertit l'UUID en texte via une requête paramétrée, puis on filtre par IDs.
+      const matchingOrderIds = await prisma.$queryRaw<Array<{ id: string }>>(
+        Prisma.sql`SELECT id::text AS id
+                   FROM "orders"
+                   WHERE id::text ILIKE ${`%${params.query}%`}`
+      );
+
       where.OR = [
+        ...(matchingOrderIds.length > 0
+            ? [{ id: { in: matchingOrderIds.map(({ id }) => id) } }]
+            : []),
         {
           user: {
             is: {
               OR: [
                 { first_name: { contains: params.query, mode: 'insensitive' } },
                 { last_name: { contains: params.query, mode: 'insensitive' } },
-                { email: { contains: params.query, mode: 'insensitive' } }
+                { email: { contains: params.query, mode: 'insensitive' } },
+                { phone: { contains: params.query, mode: 'insensitive' } }
+              ]
+            }
+          }
+        },
+        {
+          order_items: {
+            some: {
+              article: { name: { contains: params.query, mode: 'insensitive' } }
+            }
+          }
+        },
+        {
+          address: {
+            is: {
+              OR: [
+                { city: { contains: params.query, mode: 'insensitive' } },
+                { postal_code: { contains: params.query, mode: 'insensitive' } }
               ]
             }
           }
@@ -414,9 +443,13 @@ export class AdminService {
     }
 
     // Gestion du tri par date de récurrence si demandé
-    let orderBy: any = params?.sortField ? {
-      [params.sortField]: params.sortOrder || 'desc'
-    } : { createdAt: 'desc' };
+    const sortDirection = params?.sortOrder || 'desc';
+    const sortField = params?.sortField || 'createdAt';
+    let orderBy: any = sortField === 'user.firstName'
+      ? { user: { first_name: sortDirection } }
+      : ['id', 'createdAt', 'updatedAt', 'totalAmount', 'status'].includes(sortField)
+          ? { [sortField]: sortDirection }
+          : { createdAt: 'desc' };
     if (params?.sortByNextRecurrenceDate) {
       orderBy = { nextRecurrenceDate: params.sortByNextRecurrenceDate };
     }

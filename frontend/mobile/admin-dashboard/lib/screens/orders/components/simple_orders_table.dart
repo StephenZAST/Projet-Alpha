@@ -10,12 +10,18 @@ class SimpleOrdersTable extends StatelessWidget {
   final List<Order> orders;
   final Function(String, OrderStatus) onStatusUpdate;
   final Function(String) onOrderSelect;
+  final String sortField;
+  final bool sortAscending;
+  final ValueChanged<String> onSort;
 
   const SimpleOrdersTable({
     Key? key,
     required this.orders,
     required this.onStatusUpdate,
     required this.onOrderSelect,
+    required this.sortField,
+    required this.sortAscending,
+    required this.onSort,
   }) : super(key: key);
 
   @override
@@ -129,11 +135,13 @@ class SimpleOrdersTable extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _buildHeaderCell('ID', flex: 2, isDark: isDark),
-          _buildHeaderCell('Client', flex: 3, isDark: isDark),
-          _buildHeaderCell('Date', flex: 2, isDark: isDark),
-          _buildHeaderCell('Montant', flex: 2, isDark: isDark),
-          _buildHeaderCell('Statut', flex: 2, isDark: isDark),
+          _buildHeaderCell('ID', field: 'id', flex: 2, isDark: isDark),
+          _buildHeaderCell('Client',
+              field: 'user.firstName', flex: 3, isDark: isDark),
+          _buildHeaderCell('Date', field: 'createdAt', flex: 2, isDark: isDark),
+          _buildHeaderCell('Montant',
+              field: 'totalAmount', flex: 2, isDark: isDark),
+          _buildHeaderCell('Statut', field: 'status', flex: 2, isDark: isDark),
           _buildHeaderCell('Actions', flex: 2, isDark: isDark),
         ],
       ),
@@ -141,14 +149,30 @@ class SimpleOrdersTable extends StatelessWidget {
   }
 
   Widget _buildHeaderCell(String title,
-      {required int flex, required bool isDark}) {
+      {String? field, required int flex, required bool isDark}) {
     return Expanded(
       flex: flex,
-      child: Text(
-        title,
-        style: AppTextStyles.bodyBold.copyWith(
-          color: isDark ? AppColors.textLight : AppColors.textPrimary,
-          fontSize: 13,
+      child: InkWell(
+        onTap: field == null ? null : () => onSort(field),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                title,
+                style: AppTextStyles.bodyBold.copyWith(
+                  color: isDark ? AppColors.textLight : AppColors.textPrimary,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            if (field != null && sortField == field)
+              Icon(
+                sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                size: 14,
+                color: isDark ? AppColors.textLight : AppColors.textPrimary,
+              ),
+          ],
         ),
       ),
     );

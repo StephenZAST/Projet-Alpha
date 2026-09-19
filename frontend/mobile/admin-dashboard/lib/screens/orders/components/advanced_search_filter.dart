@@ -158,6 +158,10 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
               controller.fetchOrders();
             },
             isDark: isDark,
+            suffixAction: _ModernSearchButton(
+              onPressed: () =>
+                  controller.searchOrders(controller.searchQuery.value),
+            ),
           ),
         ),
         SizedBox(width: AppSpacing.md),
@@ -175,8 +179,10 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
             suffixAction: _ModernSearchButton(
               onPressed: () async {
                 if (controller.orderIdSearch.value.isNotEmpty) {
-                  await controller
-                      .fetchOrderDetails(controller.orderIdSearch.value);
+                  await controller.fetchOrderDetails(
+                    controller.orderIdSearch.value,
+                    activateOrderIdSearch: true,
+                  );
                 }
               },
             ),
