@@ -21,10 +21,23 @@ class OrdersController extends GetxController {
   final pricingLoading = false.obs;
   final orderPricing = <String, dynamic>{}.obs;
 
-  /// Réinitialise tout le contexte du stepper (draft, articles, etc.)
+  /// Réinitialise tout le contexte du stepper (draft, articles, étapes, etc.)
   void resetOrderStepper() {
     orderDraft.value = OrderDraft();
+    currentStep.value = 0;
+    selectedClientId.value = null;
+    selectedAddressId.value = null;
+    selectedServiceId.value = null;
+    clientAddresses.clear();
+    selectedItems.clear();
     selectedArticleDetails.clear();
+    lastSelectedArticles.clear();
+    lastCouples.clear();
+    lastIsPremium = false;
+    lastSelectedService = null;
+    lastSelectedServiceType = null;
+    lastWeight = null;
+    lastShowPremiumSwitch = false;
     update();
   }
 
@@ -1136,7 +1149,6 @@ class OrdersController extends GetxController {
         status: filterStatus.value,
       );
       _showSuccessSnackbar('Commande créée avec succès');
-      Get.offAllNamed('/orders');
     } catch (e) {
       print('[OrdersController] Error creating order: $e');
       hasError.value = true;

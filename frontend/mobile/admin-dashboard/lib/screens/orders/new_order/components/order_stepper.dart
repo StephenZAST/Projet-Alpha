@@ -126,7 +126,7 @@ class _OrderStepperState extends State<OrderStepper>
           child: Obx(() {
             // Récupérer la valeur de currentStep pour forcer la réactivité
             final currentStep = controller.currentStep.value;
-            
+
             // Animer le changement d'étape
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) _animateStepChange();
@@ -430,14 +430,25 @@ class _OrderStepperState extends State<OrderStepper>
           'Veuillez remplir tous les champs obligatoires (service, adresse, articles).');
       return;
     }
-    try {
-      await controller.createOrder(orderData);
-      controller.resetOrderStepper(); // Reset le contexte après succès
-      Get.back(); // Ferme le stepper après succès
-      Future.delayed(Duration(milliseconds: 100), () {
-        controller.fetchOrders(); // Recharge la liste des commandes
-      });
-    } catch (_) {}
+
+    await controller.createOrder(orderData);
+    if (controller.hasError.value) {
+      return;
+    }
+
+    controller.resetOrderStepper();
+    Get.back();
+    Get.snackbar(
+      'Commande créée',
+      'La commande a bien été enregistrée.',
+      backgroundColor: AppColors.success,
+      colorText: AppColors.textLight,
+      snackPosition: SnackPosition.TOP,
+      duration: Duration(seconds: 2),
+    );
+    Future.delayed(Duration(milliseconds: 200), () {
+      controller.fetchOrders();
+    });
   }
 }
 
