@@ -19,6 +19,7 @@ class OrdersController extends GetxController {
   // === Pricing & Payment state ===
   final pricingLoading = false.obs;
   final orderPricing = <String, dynamic>{}.obs;
+
   /// Réinitialise tout le contexte du stepper (draft, articles, etc.)
   void resetOrderStepper() {
     orderDraft.value = OrderDraft();
@@ -708,7 +709,8 @@ class OrdersController extends GetxController {
 
   // État de pagination
   final currentPage = 1.obs;
-  final itemsPerPage = 10.obs; // Réduit à 10 par défaut pour de meilleures performances
+  final itemsPerPage =
+      10.obs; // Réduit à 10 par défaut pour de meilleures performances
   final totalPages = 0.obs;
 
   // État spécifique aux commandes flash
@@ -756,89 +758,114 @@ class OrdersController extends GetxController {
   final orderIdResult = Rxn<Order>();
 
   // === Pricing & Payment methods ===
-   Future<void> fetchOrderPricing(String orderId) async {
-     try {
-       pricingLoading.value = true;
-       final pricing = await OrderService.getOrderPricing(orderId);
-       orderPricing.assignAll(pricing);
-     } catch (e) {
-       _showErrorSnackbar('Erreur chargement pricing: $e');
-     } finally {
-       pricingLoading.value = false;
-     }
-   }
+  Future<void> fetchOrderPricing(String orderId) async {
+    try {
+      pricingLoading.value = true;
+      final pricing = await OrderService.getOrderPricing(orderId);
+      orderPricing.assignAll(pricing);
+    } catch (e) {
+      _showErrorSnackbar('Erreur chargement pricing: $e');
+    } finally {
+      pricingLoading.value = false;
+    }
+  }
 
-   Future<void> applyManualPrice(
-     String orderId, {
-     double? manualPrice,
-     bool? isPaid,
-     String? reason,
-   }) async {
-     try {
-       pricingLoading.value = true;
-       await OrderService.updateOrderPricing(
-         orderId,
-         manualPrice: manualPrice,
-         isPaid: isPaid,
-         reason: reason,
-       );
-       await fetchOrderDetails(orderId, activateOrderIdSearch: false);
-       await fetchOrderPricing(orderId);
-       _showSuccessSnackbar('Prix/Paiement mis à jour');
-     } catch (e) {
-       _showErrorSnackbar('Échec mise à jour prix/paiement: $e');
-     } finally {
-       pricingLoading.value = false;
-     }
-   }
+  Future<void> applyManualPrice(
+    String orderId, {
+    double? manualPrice,
+    bool? isPaid,
+    String? reason,
+  }) async {
+    try {
+      pricingLoading.value = true;
+      await OrderService.updateOrderPricing(
+        orderId,
+        manualPrice: manualPrice,
+        isPaid: isPaid,
+        reason: reason,
+      );
+      await fetchOrderDetails(orderId, activateOrderIdSearch: false);
+      await fetchOrderPricing(orderId);
+      _showSuccessSnackbar('Prix/Paiement mis à jour');
+    } catch (e) {
+      _showErrorSnackbar('Échec mise à jour prix/paiement: $e');
+    } finally {
+      pricingLoading.value = false;
+    }
+  }
 
-   Future<void> resetManualPriceForOrder(String orderId) async {
-     try {
-       pricingLoading.value = true;
-       await OrderService.resetManualPrice(orderId);
-       await fetchOrderDetails(orderId, activateOrderIdSearch: false);
-       await fetchOrderPricing(orderId);
-       _showSuccessSnackbar('Prix manuel réinitialisé');
-     } catch (e) {
-       _showErrorSnackbar('Échec réinitialisation du prix: $e');
-     } finally {
-       pricingLoading.value = false;
-     }
-   }
+  Future<void> resetManualPriceForOrder(String orderId) async {
+    try {
+      pricingLoading.value = true;
+      await OrderService.resetManualPrice(orderId);
+      await fetchOrderDetails(orderId, activateOrderIdSearch: false);
+      await fetchOrderPricing(orderId);
+      _showSuccessSnackbar('Prix manuel réinitialisé');
+    } catch (e) {
+      _showErrorSnackbar('Échec réinitialisation du prix: $e');
+    } finally {
+      pricingLoading.value = false;
+    }
+  }
 
-   Future<void> markAsPaid(String orderId, {String? reason}) async {
-     try {
-       pricingLoading.value = true;
-       await OrderService.markOrderPaid(orderId, reason: reason);
-       await fetchOrderDetails(orderId, activateOrderIdSearch: false);
-       await fetchOrderPricing(orderId);
-       _showSuccessSnackbar('Commande marquée payée');
-     } catch (e) {
-       _showErrorSnackbar('Échec marquage payée: $e');
-     } finally {
-       pricingLoading.value = false;
-     }
-   }
+  Future<void> markAsPaid(String orderId, {String? reason}) async {
+    try {
+      pricingLoading.value = true;
+      await OrderService.markOrderPaid(orderId, reason: reason);
+      await fetchOrderDetails(orderId, activateOrderIdSearch: false);
+      await fetchOrderPricing(orderId);
+      _showSuccessSnackbar('Commande marquée payée');
+    } catch (e) {
+      _showErrorSnackbar('Échec marquage payée: $e');
+    } finally {
+      pricingLoading.value = false;
+    }
+  }
 
-   Future<void> markAsUnpaid(String orderId, {String? reason}) async {
-     try {
-       pricingLoading.value = true;
-       await OrderService.markOrderUnpaid(orderId, reason: reason);
-       await fetchOrderDetails(orderId, activateOrderIdSearch: false);
-       await fetchOrderPricing(orderId);
-       _showSuccessSnackbar('Commande marquée non payée');
-     } catch (e) {
-       _showErrorSnackbar('Échec marquage non payée: $e');
-     } finally {
-       pricingLoading.value = false;
-     }
-   }
+  Future<void> markAsUnpaid(String orderId, {String? reason}) async {
+    try {
+      pricingLoading.value = true;
+      await OrderService.markOrderUnpaid(orderId, reason: reason);
+      await fetchOrderDetails(orderId, activateOrderIdSearch: false);
+      await fetchOrderPricing(orderId);
+      _showSuccessSnackbar('Commande marquée non payée');
+    } catch (e) {
+      _showErrorSnackbar('Échec marquage non payée: $e');
+    } finally {
+      pricingLoading.value = false;
+    }
+  }
 
-   Future<void> fetchOrders() async {
+  Future<void> fetchOrders() async {
     // Si une recherche par ID était active, on la désactive
     isOrderIdSearchActive.value = false;
     orderIdResult.value = null;
-    await loadOrdersPage(status: filterStatus.value);
+    await loadOrdersPage(
+      page: currentPage.value,
+      limit: itemsPerPage.value,
+      status: filterStatus.value.trim().isNotEmpty ? filterStatus.value : null,
+      serviceTypeId: selectedServiceType.value == 'all' ||
+              selectedServiceType.value == null
+          ? null
+          : selectedServiceType.value,
+      paymentMethod: selectedPaymentMethod.value == 'all' ||
+              selectedPaymentMethod.value == null
+          ? null
+          : selectedPaymentMethod.value,
+      startDate: startDateController.text.trim().isNotEmpty
+          ? startDateController.text.trim()
+          : null,
+      endDate: endDateController.text.trim().isNotEmpty
+          ? endDateController.text.trim()
+          : null,
+      minAmount:
+          minAmount.value.trim().isNotEmpty ? minAmount.value.trim() : null,
+      maxAmount:
+          maxAmount.value.trim().isNotEmpty ? maxAmount.value.trim() : null,
+      isFlashOrder: isFlashOrderFilter.value ? true : null,
+      searchTerm:
+          searchQuery.value.trim().isNotEmpty ? searchQuery.value.trim() : null,
+    );
   }
 
   /// Récupère les détails d'une commande.
@@ -916,7 +943,8 @@ class OrdersController extends GetxController {
   }
 
   void searchOrders(String query) {
-    searchQuery.value = query;
+    searchQuery.value = query.trim();
+    currentPage.value = 1;
     fetchOrders();
   }
 
@@ -969,8 +997,15 @@ class OrdersController extends GetxController {
 
   void clearFilters() {
     selectedStatus.value = null;
+    filterStatus.value = '';
     isFlashOrderFilter.value = false;
     searchQuery.value = '';
+    selectedServiceType.value = null;
+    selectedPaymentMethod.value = null;
+    startDateController.clear();
+    endDateController.clear();
+    minAmount.value = '';
+    maxAmount.value = '';
     currentPage.value = 1;
     itemsPerPage.value = 10; // Cohérent avec la valeur par défaut
     fetchOrders();
@@ -980,7 +1015,7 @@ class OrdersController extends GetxController {
   Future<void> loadClients({int? page, int? limit}) async {
     try {
       isLoadingClients.value = true;
-      
+
       // Si pas de pagination spécifiée, charger tous les clients (comportement par défaut)
       if (page == null && limit == null) {
         final result = await UserService.getClients();
@@ -993,19 +1028,21 @@ class OrdersController extends GetxController {
         // Chargement paginé (si le service le supporte)
         final currentPageValue = page ?? clientCurrentPage.value;
         final currentLimitValue = limit ?? clientItemsPerPage.value;
-        
+
         // Pour l'instant, on simule la pagination côté client
         // TODO: Implémenter la pagination côté serveur si nécessaire
         final allClients = await UserService.getClients();
         final startIndex = (currentPageValue - 1) * currentLimitValue;
-        final endIndex = (startIndex + currentLimitValue).clamp(0, allClients.length);
-        
+        final endIndex =
+            (startIndex + currentLimitValue).clamp(0, allClients.length);
+
         clients.value = allClients.sublist(startIndex, endIndex);
         clientTotalItems.value = allClients.length;
         clientTotalPages.value = (allClients.length / currentLimitValue).ceil();
         clientCurrentPage.value = currentPageValue;
-        
-        print('[OrdersController] Loaded ${clients.length} clients (page $currentPageValue/${ clientTotalPages.value})');
+
+        print(
+            '[OrdersController] Loaded ${clients.length} clients (page $currentPageValue/${clientTotalPages.value})');
       }
     } catch (e) {
       print('[OrdersController] Error loading clients: $e');
@@ -1035,7 +1072,9 @@ class OrdersController extends GetxController {
   }
 
   void goToClientPage(int page) {
-    if (page >= 1 && page <= clientTotalPages.value && page != clientCurrentPage.value) {
+    if (page >= 1 &&
+        page <= clientTotalPages.value &&
+        page != clientCurrentPage.value) {
       loadClients(page: page);
     }
   }
@@ -1246,12 +1285,14 @@ class OrdersController extends GetxController {
     sortColumnIndex.value = _getSortColumnIndex(field);
     sortAscending.value = ascending;
 
+    final normalizedField = OrderService.normalizeSortField(field);
+
     // Recharger les données avec le nouveau tri
     loadOrdersPage(
       page: currentPage.value,
       limit: itemsPerPage.value,
       status: selectedStatus.value?.name,
-      sortField: field,
+      sortField: normalizedField,
       sortOrder: ascending ? 'asc' : 'desc',
     );
   }
@@ -1263,6 +1304,7 @@ class OrdersController extends GetxController {
       case 'user.firstName':
         return 1;
       case 'created_at':
+      case 'createdAt':
         return 2;
       // ...autres cas...
       default:
@@ -1283,7 +1325,7 @@ class OrdersController extends GetxController {
     String? maxAmount,
     bool? isFlashOrder,
     String? searchTerm,
-    String sortField = 'created_at',
+    String sortField = 'createdAt',
     String sortOrder = 'desc',
   }) async {
     try {
@@ -1325,6 +1367,16 @@ class OrdersController extends GetxController {
 
   void resetFilters() {
     filterStatus.value = '';
+    selectedStatus.value = null;
+    searchQuery.value = '';
+    selectedServiceType.value = null;
+    selectedPaymentMethod.value = null;
+    isFlashOrderFilter.value = false;
+    startDateController.clear();
+    endDateController.clear();
+    minAmount.value = '';
+    maxAmount.value = '';
+    currentPage.value = 1;
     filterStartDate.value = null;
     filterEndDate.value = null;
     fetchOrders();
@@ -1539,13 +1591,14 @@ class OrdersController extends GetxController {
 
   void updateQuickStats() {
     final total = orders.length;
-    final processing = orders.where((o) => 
-        o.status == 'PROCESSING' || 
-        o.status == 'COLLECTING' || 
-        o.status == 'COLLECTED' ||
-        o.status == 'READY' ||
-        o.status == 'DELIVERING'
-    ).length;
+    final processing = orders
+        .where((o) =>
+            o.status == 'PROCESSING' ||
+            o.status == 'COLLECTING' ||
+            o.status == 'COLLECTED' ||
+            o.status == 'READY' ||
+            o.status == 'DELIVERING')
+        .length;
     final delivered = orders.where((o) => o.status == 'DELIVERED').length;
     final flash = orders.where((o) => o.isFlashOrder).length;
 

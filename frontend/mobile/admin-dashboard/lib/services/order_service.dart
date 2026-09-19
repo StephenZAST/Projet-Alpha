@@ -95,6 +95,71 @@ class OrderService {
     }
   }
 
+  static String normalizeSortField(String field) {
+    final normalized = field.trim();
+    switch (normalized) {
+      case 'created_at':
+      case 'createdAt':
+        return 'createdAt';
+      case 'updated_at':
+      case 'updatedAt':
+        return 'updatedAt';
+      case 'total_amount':
+      case 'totalAmount':
+        return 'totalAmount';
+      case 'status':
+        return 'status';
+      default:
+        return normalized;
+    }
+  }
+
+  static Map<String, String> buildOrdersQueryParams({
+    int page = 1,
+    int limit = 50,
+    String? status,
+    String? serviceTypeId,
+    String? paymentMethod,
+    String? startDate,
+    String? endDate,
+    String? minAmount,
+    String? maxAmount,
+    bool? isFlashOrder,
+    String? searchTerm,
+    String sortField = 'createdAt',
+    String sortOrder = 'desc',
+  }) {
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'limit': limit.toString(),
+      'sortField': normalizeSortField(sortField),
+      'sortOrder': sortOrder,
+      if (status != null && status.trim().isNotEmpty)
+        'status': status.trim().toUpperCase(),
+      if (serviceTypeId != null &&
+          serviceTypeId.trim().isNotEmpty &&
+          serviceTypeId != 'all')
+        'serviceTypeId': serviceTypeId.trim(),
+      if (paymentMethod != null &&
+          paymentMethod.trim().isNotEmpty &&
+          paymentMethod != 'all')
+        'paymentMethod': paymentMethod.trim(),
+      if (startDate != null && startDate.trim().isNotEmpty)
+        'startDate': startDate.trim(),
+      if (endDate != null && endDate.trim().isNotEmpty)
+        'endDate': endDate.trim(),
+      if (minAmount != null && minAmount.trim().isNotEmpty)
+        'minAmount': minAmount.trim(),
+      if (maxAmount != null && maxAmount.trim().isNotEmpty)
+        'maxAmount': maxAmount.trim(),
+      if (isFlashOrder != null) 'isFlashOrder': isFlashOrder.toString(),
+      if (searchTerm != null && searchTerm.trim().isNotEmpty)
+        'query': searchTerm.trim(),
+    };
+
+    return queryParams;
+  }
+
   /// Charge une page de commandes avec pagination et filtres
   /// @param page Le numéro de la page à récupérer (commence à 1)
   /// @param limit Le nombre maximum de commandes par page
@@ -117,22 +182,21 @@ class OrderService {
     String sortOrder = 'desc',
   }) async {
     try {
-      final queryParams = {
-        'page': page.toString(),
-        'limit': limit.toString(),
-        'sort': '$sortField:$sortOrder',
-        if (status != null && status.isNotEmpty) 'status': status.toUpperCase(),
-        if (serviceTypeId != null && serviceTypeId != 'all')
-          'serviceTypeId': serviceTypeId,
-        if (paymentMethod != null && paymentMethod != 'all')
-          'paymentMethod': paymentMethod,
-        if (startDate != null) 'startDate': startDate,
-        if (endDate != null) 'endDate': endDate,
-        if (minAmount != null) 'minAmount': minAmount,
-        if (maxAmount != null) 'maxAmount': maxAmount,
-        if (isFlashOrder != null) 'isFlashOrder': isFlashOrder,
-        if (searchTerm != null && searchTerm.isNotEmpty) 'query': searchTerm,
-      };
+      final queryParams = buildOrdersQueryParams(
+        page: page,
+        limit: limit,
+        status: status,
+        serviceTypeId: serviceTypeId,
+        paymentMethod: paymentMethod,
+        startDate: startDate,
+        endDate: endDate,
+        minAmount: minAmount,
+        maxAmount: maxAmount,
+        isFlashOrder: isFlashOrder,
+        searchTerm: searchTerm,
+        sortField: sortField,
+        sortOrder: sortOrder,
+      );
 
       final response = await _api.get(_baseUrl, queryParameters: queryParams);
 
@@ -193,7 +257,8 @@ class OrderService {
     if (data['order_notes'] != null) {
       normalizedData['order_notes'] = data['order_notes'];
       // Extraire la première note pour le champ 'note'
-      if (data['order_notes'] is List && (data['order_notes'] as List).isNotEmpty) {
+      if (data['order_notes'] is List &&
+          (data['order_notes'] as List).isNotEmpty) {
         final firstNote = (data['order_notes'] as List)[0];
         if (firstNote != null && firstNote['note'] != null) {
           normalizedData['note'] = firstNote['note'].toString();
