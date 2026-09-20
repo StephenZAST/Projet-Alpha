@@ -246,16 +246,6 @@ class _OrderMapFiltersState extends State<OrderMapFilters>
               },
               isDark,
             ),
-            SizedBox(height: AppSpacing.xs),
-            _buildFilterChip(
-              'Normales uniquement',
-              controller.filterIsFlashOrder.value == false,
-              () {
-                controller.filterIsFlashOrder.value = false;
-                controller.applyFilters();
-              },
-              isDark,
-            ),
           ],
         )),
       ],

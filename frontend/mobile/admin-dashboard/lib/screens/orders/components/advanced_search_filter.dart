@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'dart:ui';
 import '../../../constants.dart';
 import '../../../controllers/orders_controller.dart';
+import '../../../models/enums.dart';
 import '../../../widgets/shared/glass_container.dart';
 
 class AdvancedSearchFilter extends StatefulWidget {
@@ -293,6 +294,30 @@ class _AdvancedSearchFilterState extends State<AdvancedSearchFilter>
                 onChanged: (value) =>
                     controller.selectedPaymentMethod.value = value,
                 icon: Icons.payment,
+                isDark: isDark,
+              ),
+            ),
+            SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: _ModernDropdownField(
+                label: 'Statut',
+                value: controller.selectedStatus.value?.name,
+                items: [
+                  {'value': null, 'label': 'Tous les statuts'},
+                  ...OrderStatus.values.map((status) => {
+                        'value': status.name,
+                        'label': status.label,
+                      }),
+                ],
+                onChanged: (value) {
+                  final nextStatus = value == null
+                      ? null
+                      : OrderStatus.values.firstWhereOrNull(
+                          (status) => status.name == value,
+                        );
+                  controller.filterByStatus(nextStatus);
+                },
+                icon: Icons.stacked_bar_chart,
                 isDark: isDark,
               ),
             ),
