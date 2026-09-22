@@ -14,16 +14,17 @@ class LogService {
       final queryParams = {
         if (startDate != null) 'startDate': startDate.toIso8601String(),
         if (endDate != null) 'endDate': endDate.toIso8601String(),
-        if (action != null) 'action': action,
+        if (action != null && action.isNotEmpty) 'action': action,
       };
 
       final response =
           await _api.get('/admin/logs', queryParameters: queryParams);
 
       if (response.data != null && response.data['data'] != null) {
-        return (response.data['data'] as List)
-            .map((json) => AdminLog.fromJson(json))
-            .toList();
+        final data = response.data['data'];
+        final logs = data is List ? data : data['logs'];
+
+        return (logs as List).map((json) => AdminLog.fromJson(json)).toList();
       }
 
       throw 'Erreur lors de la récupération des logs';

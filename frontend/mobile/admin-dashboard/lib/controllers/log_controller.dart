@@ -9,6 +9,12 @@ class LogController extends GetxController {
   final dateRange = Rx<DateTimeRange?>(null);
   final selectedAction = ''.obs;
 
+  @override
+  void onInit() {
+    super.onInit();
+    fetchLogs();
+  }
+
   Future<void> fetchLogs() async {
     isLoading.value = true;
     try {

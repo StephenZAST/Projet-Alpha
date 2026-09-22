@@ -296,6 +296,12 @@ router.post(
   asyncHandler(AdminController.updatePassword)
 );
 
+router.get(
+  '/logs',
+  authorizeRoles(['ADMIN', 'SUPER_ADMIN']) as express.RequestHandler,
+  asyncHandler(AdminController.getActivityLogs)
+);
+
 // ============================================
 // Routes de gestion des Client Managers (SVA)
 // ============================================

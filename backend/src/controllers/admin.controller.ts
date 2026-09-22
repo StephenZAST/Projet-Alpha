@@ -1,10 +1,51 @@
 import { Request, Response } from 'express';
 import { AdminService } from '../services/admin.service';
+import { AdminActivityService } from '../services/adminActivity.service';
 import { AdminCreateOrderDTO, OrderStatus } from '../models/types'; 
 import supabase from '../config/database';
 import prisma from '../config/prisma';
 
 export class AdminController {
+  static async getActivityLogs(req: Request, res: Response) {
+    try {
+      const page = Math.max(Number.parseInt(req.query.page as string, 10) || 1, 1);
+      const limit = Math.min(
+        Math.max(Number.parseInt(req.query.limit as string, 10) || 50, 1),
+        100,
+      );
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+
+      if ((startDate && Number.isNaN(startDate.getTime())) || (endDate && Number.isNaN(endDate.getTime()))) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid date filter',
+        });
+      }
+
+      const result = await AdminActivityService.list({
+        userId: req.query.userId as string | undefined,
+        action: req.query.action as string | undefined,
+        startDate,
+        endDate,
+        page,
+        limit,
+      });
+
+      return res.json({
+        success: true,
+        data: result.logs,
+        pagination: result.pagination,
+      });
+    } catch (error) {
+      console.error('[AdminController] Error getting activity logs:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+      });
+    }
+  }
+
   // Profile management methods
   static async getProfile(req: Request, res: Response) {
     try {
@@ -43,6 +84,16 @@ export class AdminController {
 
       const updateData = req.body;
       const updatedProfile = await AdminService.updateAdminProfile(userId, updateData);
+
+      await AdminActivityService.log(req, {
+        action: 'ADMIN.PROFILE_UPDATED',
+        details: {
+          entityType: 'ADMIN',
+          entityId: userId,
+          changedFields: Object.keys(updateData ?? {}),
+          outcome: 'SUCCESS',
+        },
+      });
       
       res.json({ 
         success: true, 
@@ -79,6 +130,15 @@ export class AdminController {
       }
 
       await AdminService.updateAdminPassword(userId, currentPassword, newPassword);
+
+      await AdminActivityService.log(req, {
+        action: 'AUTH.PASSWORD_CHANGED',
+        details: {
+          entityType: 'ADMIN',
+          entityId: userId,
+          outcome: 'SUCCESS',
+        },
+      });
       
       res.json({ 
         success: true, 

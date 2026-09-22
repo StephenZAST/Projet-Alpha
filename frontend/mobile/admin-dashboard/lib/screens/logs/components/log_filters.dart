@@ -10,17 +10,16 @@ class LogFilters extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.all(defaultPadding),
-      child: Row(
+      child: Wrap(
+        spacing: defaultPadding,
+        runSpacing: defaultPadding,
         children: [
-          Expanded(
-            child: DateRangePicker(
-              onChanged: (range) {
-                controller.dateRange.value = range;
-                controller.fetchLogs();
-              },
-            ),
+          DateRangePicker(
+            onChanged: (range) {
+              controller.dateRange.value = range;
+              controller.fetchLogs();
+            },
           ),
-          SizedBox(width: defaultPadding),
           ActionFilter(
             onChanged: (action) {
               controller.selectedAction.value = action ?? '';
@@ -63,7 +62,17 @@ class ActionFilter extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButton<String>(
       hint: Text('Select Action'),
-      items: ['CREATE', 'UPDATE', 'DELETE']
+      items: [
+        'ADMIN.PROFILE_UPDATED',
+        'AUTH.PASSWORD_CHANGED',
+        'AUTH.LOGIN_SUCCEEDED',
+        'USER.UPDATED',
+        'USER.DELETED',
+        'ORDER.STATUS_CHANGED',
+        'ORDER.PRICING_CHANGED',
+        'ORDER.PAYMENT_MARKED_PAID',
+        'DATA.EXPORTED',
+      ]
           .map((action) => DropdownMenuItem(
                 value: action,
                 child: Text(action),
