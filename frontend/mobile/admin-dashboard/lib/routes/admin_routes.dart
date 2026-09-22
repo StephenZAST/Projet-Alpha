@@ -19,12 +19,12 @@ import '../controllers/category_controller.dart';
 import '../controllers/service_type_controller.dart';
 import '../controllers/article_service_controller.dart';
 import '../controllers/blog_article_controller.dart';
-import '../services/blog_article_service.dart';
 import '../screens/services/service_types_screen.dart';
 import '../screens/services/service_article_couples_screen.dart';
 import '../screens/affiliates/affiliate_management_screen.dart';
 import '../screens/client_managers/client_managers_screen.dart';
 import '../screens/blog/blog_management_screen.dart';
+import '../screens/logs/logs_screen.dart';
 import '../bindings/client_managers_binding.dart';
 import '../middleware/auth_middleware.dart';
 
@@ -85,6 +85,7 @@ class AdminRoutes {
   static const String flashOrders = '/orders/flash';
   static const String flashOrderUpdate = '/orders/flash/:id';
   static const String blog = '/blog';
+  static const String logs = '/logs';
 
   // Mapping index -> route
   static String getRouteByIndex(int index) {
@@ -120,6 +121,8 @@ class AdminRoutes {
         return clientManagers;
       case MenuIndices.blog:
         return blog;
+      case MenuIndices.logs:
+        return logs;
       default:
         return dashboard;
     }
@@ -160,6 +163,8 @@ class AdminRoutes {
         return MenuIndices.clientManagers;
       case blog:
         return MenuIndices.blog;
+      case logs:
+        return MenuIndices.logs;
       default:
         return MenuIndices.dashboard;
     }
@@ -274,6 +279,13 @@ class AdminRoutes {
       binding: BindingsBuilder(() {
         Get.put(BlogArticleController());
       }),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: logs,
+      page: () => LogsScreen(),
+      binding: AdminBinding(),
       middlewares: [AuthMiddleware()],
       transition: Transition.fadeIn,
     ),

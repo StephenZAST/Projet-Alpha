@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'dart:ui';
 import '../../../constants.dart';
 import '../../../controllers/log_controller.dart';
 
@@ -7,32 +8,84 @@ class LogFilters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<LogController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: EdgeInsets.all(defaultPadding),
-      child: Wrap(
-        spacing: defaultPadding,
-        runSpacing: defaultPadding,
-        children: [
-          DateRangePicker(
-            onChanged: (range) {
-              controller.dateRange.value = range;
-              controller.fetchLogs();
-            },
-          ),
-          ActionFilter(
-            onChanged: (action) {
-              controller.selectedAction.value = action ?? '';
-              controller.fetchLogs();
-            },
-          ),
-          UserFilter(
-            onSubmitted: (userId) {
-              controller.selectedUserId.value = userId;
-              controller.fetchLogs();
-            },
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.radiusMD,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: Offset(0, 2),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadius.radiusMD,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: AppColors.glassBlurSigma,
+            sigmaY: AppColors.glassBlurSigma,
+          ),
+          child: Container(
+            padding: EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.cardBgDark : AppColors.cardBgLight,
+              borderRadius: AppRadius.radiusMD,
+              border: Border.all(
+                color: isDark
+                    ? AppColors.gray700.withValues(alpha: 0.3)
+                    : AppColors.gray200.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.filter_list_outlined,
+                        color: AppColors.primary, size: 20),
+                    SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Filtres et recherche',
+                      style: AppTextStyles.h4.copyWith(
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppSpacing.md),
+                Wrap(
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.md,
+                  children: [
+                    DateRangePicker(
+                      onChanged: (range) {
+                        controller.dateRange.value = range;
+                        controller.fetchLogs();
+                      },
+                    ),
+                    ActionFilter(
+                      onChanged: (action) {
+                        controller.selectedAction.value = action ?? '';
+                        controller.fetchLogs();
+                      },
+                    ),
+                    UserFilter(
+                      onSubmitted: (userId) {
+                        controller.selectedUserId.value = userId;
+                        controller.fetchLogs();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -48,8 +101,11 @@ class UserFilter extends StatelessWidget {
     return SizedBox(
       width: 240,
       child: TextField(
+        style: AppTextStyles.bodyMedium,
         decoration: InputDecoration(
           labelText: 'Admin ID',
+          prefixIcon: Icon(Icons.person_search_outlined,
+              color: AppColors.primary.withValues(alpha: 0.7)),
           border: OutlineInputBorder(),
         ),
         onSubmitted: onSubmitted,
@@ -65,7 +121,8 @@ class DateRangePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return OutlinedButton.icon(
+      icon: Icon(Icons.date_range_outlined, size: 18),
       onPressed: () async {
         final picked = await showDateRangePicker(
           context: context,
@@ -74,7 +131,7 @@ class DateRangePicker extends StatelessWidget {
         );
         onChanged(picked);
       },
-      child: Text('Select Date Range'),
+      label: Text('Période'),
     );
   }
 }
@@ -86,8 +143,13 @@ class ActionFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButton<String>(
-      hint: Text('Select Action'),
+    return DropdownButtonFormField<String>(
+      decoration: InputDecoration(
+        labelText: 'Action',
+        prefixIcon: Icon(Icons.bolt_outlined,
+            color: AppColors.accent.withValues(alpha: 0.8)),
+        border: OutlineInputBorder(),
+      ),
       items: [
         'ADMIN.PROFILE_UPDATED',
         'AUTH.PASSWORD_CHANGED',

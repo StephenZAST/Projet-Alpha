@@ -152,9 +152,10 @@ class AdminSideMenu extends StatelessWidget {
             DrawerListTile(
               title: "Agents & Clients",
               icon: Icons.people_alt_outlined,
-              isSelected:
-                  menuController.selectedIndex == MenuIndices.clientManagers, // 15
-              onPress: () => menuController.updateIndex(MenuIndices.clientManagers),
+              isSelected: menuController.selectedIndex ==
+                  MenuIndices.clientManagers, // 15
+              onPress: () =>
+                  menuController.updateIndex(MenuIndices.clientManagers),
             ),
             Divider(color: theme.dividerColor),
             // GESTION DU CONTENU
@@ -174,6 +175,12 @@ class AdminSideMenu extends StatelessWidget {
               isSelected:
                   menuController.selectedIndex == MenuIndices.blog, // 16
               onPress: () => menuController.updateIndex(MenuIndices.blog),
+            ),
+            DrawerListTile(
+              title: "Journal d'activité",
+              icon: Icons.fact_check_outlined,
+              isSelected: menuController.selectedIndex == MenuIndices.logs,
+              onPress: () => menuController.updateIndex(MenuIndices.logs),
             ),
             Divider(color: theme.dividerColor),
             // NOTIFICATIONS ET PROFIL
@@ -231,7 +238,8 @@ class DrawerListTile extends StatelessWidget {
     final textColor = theme.textTheme.bodyMedium?.color ?? Colors.grey;
 
     return Material(
-      color: isSelected ? primaryColor.withOpacity(0.1) : Colors.transparent,
+      color:
+          isSelected ? primaryColor.withValues(alpha: 0.1) : Colors.transparent,
       child: ListTile(
         onTap: onPress,
         horizontalTitleGap: 0.0,
