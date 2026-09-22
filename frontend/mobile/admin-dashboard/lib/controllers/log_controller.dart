@@ -8,6 +8,9 @@ class LogController extends GetxController {
   final isLoading = false.obs;
   final dateRange = Rx<DateTimeRange?>(null);
   final selectedAction = ''.obs;
+  final selectedUserId = ''.obs;
+  final currentPage = 1.obs;
+  final totalPages = 1.obs;
 
   @override
   void onInit() {
@@ -15,16 +18,28 @@ class LogController extends GetxController {
     fetchLogs();
   }
 
-  Future<void> fetchLogs() async {
+  Future<void> fetchLogs({bool append = false}) async {
     isLoading.value = true;
     try {
-      logs.value = await LogService.getLogs(
+      final page = append ? currentPage.value + 1 : 1;
+      final result = await LogService.getLogs(
         startDate: dateRange.value?.start,
-        endDate: dateRange.value?.end,
+        endDate: dateRange.value?.end.add(const Duration(days: 1)),
         action: selectedAction.value,
+        userId: selectedUserId.value,
+        page: page,
       );
+      currentPage.value = result.page;
+      totalPages.value = result.totalPages;
+      logs.value = append ? [...logs, ...result.logs] : result.logs;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (!isLoading.value && currentPage.value < totalPages.value) {
+      await fetchLogs(append: true);
     }
   }
 

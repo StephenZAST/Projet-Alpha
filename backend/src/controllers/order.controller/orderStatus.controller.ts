@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import supabase from '../../config/database';
 import { NotificationType, OrderStatus } from '../../models/types';
 import { RewardsService, NotificationService } from '../../services';
+import { AdminActivityService } from '../../services/adminActivity.service';
 import { OrderSharedMethods } from './shared';
 import { PrismaClient } from '@prisma/client';
 
@@ -18,9 +19,26 @@ export class OrderStatusController {
 
       const orderId = req.params.orderId;
       const { status } = req.body; 
+      const orderBeforeUpdate = await supabase.orders.findUnique({
+        where: { id: orderId },
+        select: { status: true },
+      });
 
       // 1. Mettre à jour le statut
       const order = await this.updateStatus(orderId, status, userId, userRole);
+
+      if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+        await AdminActivityService.log(req, {
+          action: 'ORDER.STATUS_CHANGED',
+          details: {
+            entityType: 'ORDER',
+            entityId: orderId,
+            before: { status: orderBeforeUpdate?.status ?? 'UNKNOWN' },
+            after: { status },
+            outcome: 'SUCCESS',
+          },
+        });
+      }
 
       // 2. Récupérer la commande complète avec les items
       const completeOrder = {

@@ -2,12 +2,17 @@ import { Request, Response } from 'express';
 import { ServiceService } from '../services/service.service';
 import { PricingService } from '../services/pricing.service'; 
 import { Service } from '../models/types';
+import { AdminActivityService } from '../services/adminActivity.service';
 
 export class ServiceController {
   static async createService(req: Request, res: Response) {
     try {
       const { name, price, description } = req.body;
       const service = await ServiceService.createService(name, price, description);
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.SERVICE_CREATED',
+        details: { entityType: 'SERVICE', entityId: service.id, outcome: 'SUCCESS' },
+      });
       res.json({ data: service });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -37,6 +42,10 @@ export class ServiceController {
   const serviceId = req.params.serviceId;
   const { name, price, description, service_type_id } = req.body;
   const service = await ServiceService.updateService(serviceId, name, price, description, service_type_id);
+  await AdminActivityService.log(req, {
+    action: 'CATALOG.SERVICE_UPDATED',
+    details: { entityType: 'SERVICE', entityId: serviceId, outcome: 'SUCCESS' },
+  });
   res.json({ data: service });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -47,6 +56,10 @@ export class ServiceController {
     try {
       const serviceId = req.params.serviceId;
       await ServiceService.deleteService(serviceId);
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.SERVICE_DELETED',
+        details: { entityType: 'SERVICE', entityId: serviceId, outcome: 'SUCCESS' },
+      });
       res.json({ message: 'Service deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

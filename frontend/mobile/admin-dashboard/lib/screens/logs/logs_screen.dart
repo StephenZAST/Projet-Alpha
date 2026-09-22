@@ -38,7 +38,18 @@ class LogsScreen extends StatelessWidget {
             child: Obx(
               () => logController.isLoading.value
                   ? Center(child: CircularProgressIndicator())
-                  : LogList(logs: logController.logs),
+                  : Column(
+                      children: [
+                        Expanded(child: LogList(logs: logController.logs)),
+                        if (logController.currentPage.value <
+                            logController.totalPages.value)
+                          TextButton.icon(
+                            onPressed: logController.loadMore,
+                            icon: Icon(Icons.expand_more),
+                            label: Text('Charger plus'),
+                          ),
+                      ],
+                    ),
             ),
           ),
         ],

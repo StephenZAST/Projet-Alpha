@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { ArticleServicePriceService } from '../services/articleServicePrice.service';
 import { handleError } from '../utils/errorHandler';
 import { CreateArticleServicePriceDTO, UpdateArticleServicePriceDTO } from '../models/serviceManagement.types'; 
+import { AdminActivityService } from '../services/adminActivity.service';
 
 export class ArticleServiceController {
   // Retourne tous les couples article/serviceType disponibles avec prix
@@ -70,6 +71,17 @@ export class ArticleServiceController {
       };
 
       const newPrice = await ArticleServicePriceService.create(priceData);
+
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.ARTICLE_SERVICE_CREATED',
+        details: {
+          entityType: 'ARTICLE_SERVICE',
+          entityId: newPrice.id,
+          articleId: newPrice.article_id,
+          serviceTypeId: newPrice.service_type_id,
+          outcome: 'SUCCESS',
+        },
+      });
       
       res.status(201).json({
         success: true,
@@ -92,6 +104,15 @@ export class ArticleServiceController {
       };
 
       const updatedPrice = await ArticleServicePriceService.update(id, updateDTO);
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.ARTICLE_SERVICE_UPDATED',
+        details: {
+          entityType: 'ARTICLE_SERVICE',
+          entityId: id,
+          changedFields: Object.keys(updateDTO).filter((key) => updateDTO[key as keyof UpdateArticleServicePriceDTO] !== undefined),
+          outcome: 'SUCCESS',
+        },
+      });
       res.json({
         success: true,
         data: updatedPrice

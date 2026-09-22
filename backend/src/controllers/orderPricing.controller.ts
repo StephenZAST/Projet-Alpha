@@ -10,6 +10,7 @@
 import { Request, Response } from 'express';
 import { OrderPaymentManagementService } from '../services/orderPaymentManagement.service';
 import { OrderPriceAdjustmentService } from '../services/order.service/orderPriceAdjustment.service';
+import { AdminActivityService } from '../services/adminActivity.service';
 import { OrderPricingDTO } from '../models/orderPricing.types';
 import prisma from '../config/prisma';
 
@@ -94,6 +95,18 @@ export class OrderPricingController {
       // Mettre à jour le pricing
       const result = await OrderPaymentManagementService.updatePricing(orderId, adminId, dto);
 
+      await AdminActivityService.log(req, {
+        action: 'ORDER.PRICING_CHANGED',
+        details: {
+          entityType: 'ORDER',
+          entityId: orderId,
+          before: { manualPrice: oldManualPrice },
+          after: { manualPrice: dto.manual_price ?? oldManualPrice },
+          reason: req.body.reason,
+          outcome: 'SUCCESS',
+        },
+      });
+
       // Si le prix manuel a changé, réajuster les points et commissions
       if (dto.manual_price !== undefined && dto.manual_price !== oldManualPrice) {
         try {
@@ -174,6 +187,18 @@ export class OrderPricingController {
       // Réinitialiser le prix manuel
       const result = await OrderPaymentManagementService.resetManualPrice(orderId, adminId);
 
+      await AdminActivityService.log(req, {
+        action: 'ORDER.PRICING_CHANGED',
+        details: {
+          entityType: 'ORDER',
+          entityId: orderId,
+          before: { manualPrice: oldManualPrice },
+          after: { manualPrice: null },
+          reason: req.body.reason,
+          outcome: 'SUCCESS',
+        },
+      });
+
       // Déclencher l'ajustement inverse (retour au prix originel)
       if (oldManualPrice !== null) {
         try {
@@ -246,6 +271,16 @@ export class OrderPricingController {
       }
 
       const result = await OrderPaymentManagementService.markAsPaid(orderId, adminId, reason);
+
+      await AdminActivityService.log(req, {
+        action: 'ORDER.PAYMENT_MARKED_PAID',
+        details: {
+          entityType: 'ORDER',
+          entityId: orderId,
+          reason,
+          outcome: 'SUCCESS',
+        },
+      });
 
       res.json({
         success: true,

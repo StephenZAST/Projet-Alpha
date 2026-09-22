@@ -26,7 +26,33 @@ class LogFilters extends StatelessWidget {
               controller.fetchLogs();
             },
           ),
+          UserFilter(
+            onSubmitted: (userId) {
+              controller.selectedUserId.value = userId;
+              controller.fetchLogs();
+            },
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class UserFilter extends StatelessWidget {
+  final ValueChanged<String> onSubmitted;
+
+  const UserFilter({Key? key, required this.onSubmitted}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 240,
+      child: TextField(
+        decoration: InputDecoration(
+          labelText: 'Admin ID',
+          border: OutlineInputBorder(),
+        ),
+        onSubmitted: onSubmitted,
       ),
     );
   }
@@ -67,11 +93,28 @@ class ActionFilter extends StatelessWidget {
         'AUTH.PASSWORD_CHANGED',
         'AUTH.LOGIN_SUCCEEDED',
         'USER.UPDATED',
+        'USER.CREATED',
+        'USER.ROLE_CHANGED',
         'USER.DELETED',
         'ORDER.STATUS_CHANGED',
         'ORDER.PRICING_CHANGED',
         'ORDER.PAYMENT_MARKED_PAID',
         'DATA.EXPORTED',
+        'CATALOG.ARTICLE_SERVICE_CREATED',
+        'CATALOG.ARTICLE_SERVICE_UPDATED',
+        'CATALOG.ARTICLE_SERVICE_DELETED',
+        'CATALOG.SERVICE_CREATED',
+        'CATALOG.SERVICE_UPDATED',
+        'CATALOG.SERVICE_DELETED',
+        'CATALOG.ARTICLE_CREATED',
+        'CATALOG.ARTICLE_UPDATED',
+        'CATALOG.ARTICLE_DELETED',
+        'CATALOG.SERVICE_TYPE_CREATED',
+        'CATALOG.SERVICE_TYPE_UPDATED',
+        'CATALOG.SERVICE_TYPE_DELETED',
+        'CATALOG.ARTICLE_CATEGORY_CREATED',
+        'CATALOG.ARTICLE_CATEGORY_UPDATED',
+        'CATALOG.ARTICLE_CATEGORY_DELETED',
       ]
           .map((action) => DropdownMenuItem(
                 value: action,

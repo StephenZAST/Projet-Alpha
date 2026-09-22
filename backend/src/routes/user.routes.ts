@@ -3,6 +3,7 @@ import { AuthService } from '../services/auth.service';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 import { UserController } from '../controllers/user.controller';
+import { AdminActivityService } from '../services/adminActivity.service';
 import clientAffiliateLinkRoutes from './clientAffiliateLink.routes';
 
 const router = express.Router();
@@ -160,6 +161,16 @@ router.post('/',
       // Masquer le mot de passe dans la réponse
       const { password: _, ...userWithoutPassword } = newUser;
 
+      await AdminActivityService.log(req, {
+        action: 'USER.CREATED',
+        details: {
+          entityType: 'USER',
+          entityId: newUser.id,
+          role: newUser.role,
+          outcome: 'SUCCESS',
+        },
+      });
+
       res.status(201).json({
         success: true,
         data: userWithoutPassword
@@ -182,6 +193,7 @@ router.put('/:id',
   asyncHandler(async (req, res) => {
     const userId = req.params.id;
     const { email, firstName, lastName, phone, role } = req.body;
+    const previousUser = await AuthService.getUserById(userId);
     // Passe le rôle de l'utilisateur authentifié à la méthode updateUser
     const updatedUser = await AuthService.updateUser(
       userId,
@@ -192,6 +204,18 @@ router.put('/:id',
       role,
       { id: req.user!.id, role: req.user!.role }
     );
+    await AdminActivityService.log(req, {
+      action: role !== undefined && previousUser?.role !== role
+        ? 'USER.ROLE_CHANGED'
+        : 'USER.UPDATED',
+      details: {
+        entityType: 'USER',
+        entityId: userId,
+        changedFields: Object.keys(req.body).filter((field) => field !== 'password'),
+        after: role ? { role } : undefined,
+        outcome: 'SUCCESS',
+      },
+    });
     res.json({ success: true, data: updatedUser });
   })
 );
@@ -203,6 +227,14 @@ router.delete('/:id',
     const targetUserId = req.params.id;
     const currentUserId = req.user!.id;
     await AuthService.deleteUser(targetUserId, currentUserId);
+    await AdminActivityService.log(req, {
+      action: 'USER.DELETED',
+      details: {
+        entityType: 'USER',
+        entityId: targetUserId,
+        outcome: 'SUCCESS',
+      },
+    });
     res.json({ success: true });
   })
 );

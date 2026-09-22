@@ -1,11 +1,16 @@
 import { Request, Response } from 'express';
 import { ArticleCategoryService } from '../services/articleCategory.service'; 
+import { AdminActivityService } from '../services/adminActivity.service';
 
 export class ArticleCategoryController {
   static async createArticleCategory(req: Request, res: Response) {
     try {
       const categoryData = req.body;
       const result = await ArticleCategoryService.createArticleCategory(categoryData);
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.ARTICLE_CATEGORY_CREATED',
+        details: { entityType: 'ARTICLE_CATEGORY', entityId: result.id, outcome: 'SUCCESS' },
+      });
       res.json({ data: result });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -56,6 +61,10 @@ export class ArticleCategoryController {
         categoryId,
         categoryData
       );
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.ARTICLE_CATEGORY_UPDATED',
+        details: { entityType: 'ARTICLE_CATEGORY', entityId: categoryId, outcome: 'SUCCESS' },
+      });
 
       return res.status(200).json({
         success: true,
@@ -87,6 +96,10 @@ export class ArticleCategoryController {
     try {
       const categoryId = req.params.categoryId;
       await ArticleCategoryService.deleteArticleCategory(categoryId);
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.ARTICLE_CATEGORY_DELETED',
+        details: { entityType: 'ARTICLE_CATEGORY', entityId: categoryId, outcome: 'SUCCESS' },
+      });
       res.json({ message: 'Article category deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

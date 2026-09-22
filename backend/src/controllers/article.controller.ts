@@ -1,10 +1,15 @@
 import { Request, Response } from 'express';
 import { ArticleService } from '../services/article.service'; 
+import { AdminActivityService } from '../services/adminActivity.service';
 
 export class ArticleController {
   static async createArticle(req: Request, res: Response) {
     try {
       const result = await ArticleService.createArticle(req.body);
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.ARTICLE_CREATED',
+        details: { entityType: 'ARTICLE', entityId: result.id, outcome: 'SUCCESS' },
+      });
       return res.status(201).json({
         success: true,
         data: result,
@@ -87,6 +92,15 @@ export class ArticleController {
       console.log('[ArticleController] Prepared update data:', updateData);
 
       const result = await ArticleService.updateArticle(articleId, updateData);
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.ARTICLE_UPDATED',
+        details: {
+          entityType: 'ARTICLE',
+          entityId: articleId,
+          changedFields: Object.keys(updateData),
+          outcome: 'SUCCESS',
+        },
+      });
 
       return res.status(200).json({
         success: true,
@@ -118,6 +132,10 @@ export class ArticleController {
       console.log('[ArticleController] Delete request for article:', articleId);
 
       await ArticleService.deleteArticle(articleId);
+      await AdminActivityService.log(req, {
+        action: 'CATALOG.ARTICLE_DELETED',
+        details: { entityType: 'ARTICLE', entityId: articleId, outcome: 'SUCCESS' },
+      });
       
       return res.status(200).json({
         success: true,
